@@ -362,12 +362,14 @@ namespace.__highlight_code = function() {
  */
 namespace.__prepend_domain_to_links = function()
 {
-  var domain = window.location.origin;
+  // var domain = window.location.origin;
+  var domain = window.location.host + "/";
+  // var domain = "";
 
   if(document.location.domain != null) {
-    domain = document.location.domain + "/";
+    domain = document.location.domain;
   }
-  // domain += "/";
+  domain += "/";
 
   console.log('window.location.origin: ' + window.location.origin);
   console.log('window.location.host: ' + window.location.host);
@@ -383,19 +385,26 @@ namespace.__prepend_domain_to_links = function()
       domain += element + "/";
     }
   }, this);
-  console.log('domain: ' + domain);
+
+  domain = domain.replace('//', '/');
+  domain = domain.replace('//', '/');
+  domain = domain.replace('//', '/');
+//   var domain=domain.split('/').filter(function(item,i,allItems){
+//     return i==allItems.indexOf(item);
+// }).join('/');
+//   console.log('domain: ' + domain);
 
   // prepending cscs domain
   $('.reframe-prepend-domain').each(function(index, element) {
     $(element).attr('href',function(i,v) {
-      return domain + v;
+      return (domain + v).replace('//', '/');
     });
   });
   
   $('#cscs-leftbar-markdown').children('h1').children('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       console.log('victor: ' + domain);
-      return domain + v;
+      return (domain + v).replace('//', '/');
     });
   });  
 
