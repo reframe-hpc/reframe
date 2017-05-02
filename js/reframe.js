@@ -373,6 +373,7 @@ namespace.__prepend_domain_to_links = function()
   console.log('window.location.host: ' + window.location.host);
   console.log('window.location.hostname: ' + window.location.hostname);
   console.log('window.location.pathname: ' + window.location.pathname);
+  console.log('window.location.domain: ' + window.location.domain);
 
   // prepending cscs domain
   // $('.cscs-prepend-domain').each(function(index, element) {
