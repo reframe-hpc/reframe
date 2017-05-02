@@ -362,12 +362,12 @@ namespace.__highlight_code = function() {
  */
 namespace.__prepend_domain_to_links = function()
 {
-  var domain = "";
+  var domain = window.location.origin;
 
   if(document.location.domain != null) {
-    domain = document.location.domain;
+    domain = document.location.domain + "/";
   }
-  domain += "/";
+  // domain += "/";
 
   console.log('window.location.origin: ' + window.location.origin);
   console.log('window.location.host: ' + window.location.host);
@@ -375,13 +375,23 @@ namespace.__prepend_domain_to_links = function()
   console.log('window.location.pathname: ' + window.location.pathname);
   console.log('window.location.domain: ' + window.location.domain);
 
-  // prepending cscs domain
-  // $('.cscs-prepend-domain').each(function(index, element) {
-  //   $(element).attr('href',function(i,v) {
-  //     return domain + v;
-  //   });
-  // });
+  var folders = [ 'about', 'pipeline', 'running', 'started', 'structure', 'usecases', 'writing_checks', '' ]
+  var paths = window.location.pathname.split('/');
+  paths.forEach(function(element) {
+    console.log(element);
+    if (folders.indexOf(element) == -1) {
+      domain += element + "/";
+    }
+  }, this);
+  console.log('domain: ' + domain);
 
+  // prepending cscs domain
+  $('.reframe-prepend-domain').each(function(index, element) {
+    $(element).attr('href',function(i,v) {
+      return domain + v;
+    });
+  });
+  
   $('#cscs-leftbar-markdown').children('h1').children('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       console.log('victor: ' + domain);
