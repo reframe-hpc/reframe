@@ -1,4 +1,4 @@
-/* http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+bash+batch+c+cpp+css-extras+d+fortran+git+java+json+latex+makefile+markdown+php+php-extras+python+r+scala+sql+tcl+vim+yaml&plugins=line-highlight+line-numbers+show-invisibles+autolinker+file-highlight+toolbar+jsonp-highlight+highlight-keywords+autoloader+command-line+normalize-whitespace+data-uri-highlight+copy-to-clipboard */
+/* http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+bash+batch+c+csharp+cpp+css-extras+d+diff+docker+fortran+git+java+json+latex+lua+makefile+matlab+perl+php+php-extras+python+r+scala+sql+tcl+twig+vim+wiki+yaml&plugins=line-numbers+autolinker+file-highlight+toolbar+command-line+show-language+copy-to-clipboard */
 /**
  * prism.js default theme for JavaScript, CSS and HTML
  * Based on dabblet (http://dabblet.com)
@@ -137,51 +137,6 @@ pre[class*="language-"] {
 	cursor: help;
 }
 
-pre[data-line] {
-	position: relative;
-	padding: 1em 0 1em 3em;
-}
-
-.line-highlight {
-	position: absolute;
-	left: 0;
-	right: 0;
-	padding: inherit 0;
-	margin-top: 1em; /* Same as .prism’s padding-top */
-
-	background: hsla(24, 20%, 50%,.08);
-	background: linear-gradient(to right, hsla(24, 20%, 50%,.1) 70%, hsla(24, 20%, 50%,0));
-
-	pointer-events: none;
-
-	line-height: inherit;
-	white-space: pre;
-}
-
-	.line-highlight:before,
-	.line-highlight[data-end]:after {
-		content: attr(data-start);
-		position: absolute;
-		top: .4em;
-		left: .6em;
-		min-width: 1em;
-		padding: 0 .5em;
-		background-color: hsla(24, 20%, 50%,.4);
-		color: hsl(24, 20%, 95%);
-		font: bold 65%/1.5 sans-serif;
-		text-align: center;
-		vertical-align: .3em;
-		border-radius: 999px;
-		text-shadow: none;
-		box-shadow: 0 1px white;
-	}
-
-	.line-highlight[data-end]:after {
-		content: attr(data-end);
-		top: auto;
-		bottom: .4em;
-	}
-
 pre.line-numbers {
 	position: relative;
 	padding-left: 3.8em;
@@ -222,39 +177,6 @@ pre.line-numbers > code {
 			padding-right: 0.8em;
 			text-align: right;
 		}
-.token.tab:not(:empty),
-.token.cr,
-.token.lf,
-.token.space {
-	position: relative;
-}
-
-.token.tab:not(:empty):before,
-.token.cr:before,
-.token.lf:before,
-.token.space:before {
-	color: hsl(24, 20%, 85%);
-	position: absolute;
-}
-
-.token.tab:not(:empty):before {
-    content: '\21E5';
-}
-
-.token.cr:before {
-    content: '\240D';
-}
-
-.token.crlf:before {
-    content: '\240D\240A';
-}
-.token.lf:before {
-    content: '\240A';
-}
-
-.token.space:before {
-	content: '\00B7';
-}
 .token a {
 	color: inherit;
 }

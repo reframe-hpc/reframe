@@ -369,10 +369,10 @@ def setup(self, system, environ, **job_opts):
 
 Note that this test remains portable across different job launchers.
 If it runs on a system with native SLURM it will be translated to
-```python
+```bash
 ddt --offline srun ...
 ```
 whereas if it run on a system with ALPS it will be translated to
-```python
+```bash
 ddt --offline aprun ...
 ```

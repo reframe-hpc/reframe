@@ -345,6 +345,8 @@ namespace.__change_table_layout = function() {
  */
 namespace.__highlight_code = function() {
   try {
+      $('pre').addClass('line-numbers');
+
       $('pre code').addClass(function( index, currentClass ) {
         var addedClass = "language-" + currentClass;
         return addedClass;
