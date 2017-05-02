@@ -2,7 +2,7 @@
 
 Before going into the details of the regression framework's frontend, the simplest way to invoke the regression suite is the following:
 ```bash
-./reframe -r
+reframe -r
 ```
 This will run all the available regression tests suitable for the current system for all the supported programming environments.
 
@@ -12,7 +12,7 @@ The regression frontend comprises three phases which are executed in order:
 3. Action on the selected regression checks
 
 We will describe each of these phases in detail in the following. For each phase there is a distinct set of options that control it.
-`./reframe -h` will give you a detailed listing of all the options grouped by phase.
+`reframe -h` will give you a detailed listing of all the options grouped by phase.
 
 ## Supported actions
 Although this is the last phase the frontend goes through, I list it first since an action is always required.
@@ -26,10 +26,10 @@ To retrieve a listing of the selected checks, you must specify the `-l` or `--li
 An example listing of checks is the following:
 
 ```bash
-./run_regression -l
+reframe -l
 ```
 ```
-Command line: ./run_regression.py -l
+Command line: reframe -l
 Regression paths
 ================
     Check prefix      : /users/karakasv/Devel/PyRegression
@@ -67,10 +67,10 @@ The listing action takes precedence over the execution one, meaning that if you 
 The output of a regression run looks like the following:
 
 ```bash
-./run_regression.py --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 ```
 ```
-Command line: ./run_regression.py --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+Command line: reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 Regression paths
 ================
     Check prefix      :
@@ -173,7 +173,7 @@ When the regression frontend is invoked it tries to locate regression checks in 
 This path can be retrieved with
 
 ```bash
-./run_regression.py -l | grep 'Check search path'
+reframe -l | grep 'Check search path'
 ```
 
 If the path line is prefixed with `(R)`, every directory in the path will search recursively.
@@ -189,7 +189,7 @@ You can override the default check search path by specifying the `-c` or `--chec
 The following command will list all the checks found in `checks/apps/`:
 
 ```bash
-./run_regression.py -c checks/apps/ -l
+reframe -c checks/apps/ -l
 ```
 
 Note that by default the front-end does *not* search recursively into directories specified with the `-c` option.
@@ -202,7 +202,7 @@ The `-c`option accepts also regular files.
 This is very useful when you are implementing new regression checks, since it allows you to run only your check:
 
 ```bash
-./run_regression.py -c /path/to/my/new/check.py -r
+reframe -c /path/to/my/new/check.py -r
 ```
 
 ## Selection of regression checks
@@ -216,7 +216,7 @@ There are two ways to select regression checks: (a) by programming environment a
 To select tests by the programming environment, use the `-p` or `--prgenv` options:
 
 ```bash
-./run_regression.py -p PrgEnv-gnu -l
+reframe -p PrgEnv-gnu -l
 ```
 
 This will select all the checks that support the `PrgEnv-gnu` environment.
@@ -225,7 +225,7 @@ You can also specify multiple times the `-p` option, in which case a test will b
 For example the following will select all the checks that can run with both `PrgEnv-cray` and `PrgEnv-gnu`:
 
 ```bash
-./run_regression.py -p PrgEnv-gnu -p PrgEnv-cray -l
+reframe -p PrgEnv-gnu -p PrgEnv-cray -l
 ```
 
 Note here that specifying the `-p` option will run the selected checks only for the specified programming environments and not for the supported programming environments by the system, which is the default behavior.
@@ -238,7 +238,7 @@ Using the `-t` or `--tag` option you can select the regression checks associated
 For example the following will list all the checks that have a `maintenance` tag:
 
 ```bash
-./run_regression.py -t maintenance -l
+reframe -t maintenance -l
 ```
 
 Similarly to the `-p` option, you can chain multiple `-t` options together, in which case a regression check will be selected if it is associated with all the tags specified in the command line.
@@ -253,7 +253,7 @@ Currently, we have two major "official" tags:
 It is possible to select or exclude checks by name through the `--name` or `-n` and `--exclude` or `-x` options.
 For example, you can select only the `amber_cpu_check` as follows:
 ```bash
-./run_regression.py -n amber_cpu_check -l
+reframe -n amber_cpu_check -l
 ```
 
 ```
@@ -308,7 +308,7 @@ There are, however, two differences:
   For example, if you know that a tests supports only `PrgEnv-cray` and you need to check if it works out-of-the-box with `PrgEnv-gnu`, you can test is as follows:
 
 ```bash
-./run_regression.py -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
+reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
 ```
 
 ## Configuring regression directories
@@ -349,10 +349,10 @@ However you can view the directories that will be created even when you do a lis
 This is useful if you want to check the directories that regression will create.
 
 ```bash
-./run_regression.py --prefix /foo -l
+reframe --prefix /foo -l
 ```
 ```
-Command line: ./run_regression.py --prefix /foo -t foo -l
+Command line: reframe --prefix /foo -t foo -l
 Regression paths
 ================
     Check prefix      : /users/karakasv/Devel/PyRegression
@@ -390,73 +390,73 @@ In the past this was only possible by hacking inside the regression internals.
 Now the configuration of systems and programming environments is performed by a special Python dictionary called `site_configuration` defined in `<install-dir>/regression/settings.py`. Here is how the configuration for Daint looks like:
 
 ```python
-    site_configuration = ReadOnlyField({
-        'systems' : {
-            'daint' : {
-                'descr' : 'Piz Daint',
-                'hostnames' : [ 'daint' ],
-                'outputdir' : '$APPS/UES/jenkins/regression/maintenance',
-                'logdir'    : '$APPS/UES/jenkins/regression/maintenance/logs',
-                'stagedir'  : '$SCRATCH/regression/stage',
-                'partitions' : {
-                    'login' : {
-                        'scheduler' : 'local',
-                        'modules'   : [],
-                        'access'    : [],
-                        'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi' ],
-                        'descr'     : 'Login nodes'
-                    },
-                    'gpu' : {
-                        'scheduler' : 'nativeslurm',
-                        'modules'   : [ 'daint-gpu' ],
-                        'access'    : [ '--constraint=gpu' ],
-                        'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi' ],
-                        'descr'     : 'Hybrid nodes (Haswell/P100)',
-                    },
-                    'mc' : {
-                        'scheduler' : 'nativeslurm',
-                        'modules'   : [ 'daint-mc' ],
-                        'access'    : [ '--constraint=mc' ],
-                        'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi' ],
-                        'descr'     : 'Multicore nodes (Broadwell)',
-                    }
-                }
-            }
-        },
-
-        'environments' : {
-            'kesch' : {
-                'PrgEnv-gnu' : {
-                    'type' : 'ProgEnvironment',
-                    'modules' : [ 'PrgEnv-gnu' ],
-                    'cc'      : 'mpicc',
-                    'cxx'     : 'mpicxx',
-                    'ftn'     : 'mpif90',
+site_configuration = ReadOnlyField({
+    'systems' : {
+        'daint' : {
+            'descr' : 'Piz Daint',
+            'hostnames' : [ 'daint' ],
+            'outputdir' : '$APPS/UES/jenkins/regression/maintenance',
+            'logdir'    : '$APPS/UES/jenkins/regression/maintenance/logs',
+            'stagedir'  : '$SCRATCH/regression/stage',
+            'partitions' : {
+                'login' : {
+                    'scheduler' : 'local',
+                    'modules'   : [],
+                    'access'    : [],
+                    'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi' ],
+                    'descr'     : 'Login nodes'
                 },
-            },
-            '*' : {
-                'PrgEnv-cray' : {
-                    'type' : 'ProgEnvironment',
-                    'modules' : [ 'PrgEnv-cray' ],
+                'gpu' : {
+                    'scheduler' : 'nativeslurm',
+                    'modules'   : [ 'daint-gpu' ],
+                    'access'    : [ '--constraint=gpu' ],
+                    'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi' ],
+                    'descr'     : 'Hybrid nodes (Haswell/P100)',
                 },
-                'PrgEnv-gnu' : {
-                    'type' : 'ProgEnvironment',
-                    'modules' : [ 'PrgEnv-gnu' ],
-                },
-                'PrgEnv-intel' : {
-                    'type' : 'ProgEnvironment',
-                    'modules' : [ 'PrgEnv-intel' ],
-                },
-                'PrgEnv-pgi' : {
-                    'type' : 'ProgEnvironment',
-                    'modules' : [ 'PrgEnv-pgi' ],
+                'mc' : {
+                    'scheduler' : 'nativeslurm',
+                    'modules'   : [ 'daint-mc' ],
+                    'access'    : [ '--constraint=mc' ],
+                    'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi' ],
+                    'descr'     : 'Multicore nodes (Broadwell)',
                 }
             }
         }
-    })
+    },
+
+    'environments' : {
+        'kesch' : {
+            'PrgEnv-gnu' : {
+                'type' : 'ProgEnvironment',
+                'modules' : [ 'PrgEnv-gnu' ],
+                'cc'      : 'mpicc',
+                'cxx'     : 'mpicxx',
+                'ftn'     : 'mpif90',
+            },
+        },
+        '*' : {
+            'PrgEnv-cray' : {
+                'type' : 'ProgEnvironment',
+                'modules' : [ 'PrgEnv-cray' ],
+            },
+            'PrgEnv-gnu' : {
+                'type' : 'ProgEnvironment',
+                'modules' : [ 'PrgEnv-gnu' ],
+            },
+            'PrgEnv-intel' : {
+                'type' : 'ProgEnvironment',
+                'modules' : [ 'PrgEnv-intel' ],
+            },
+            'PrgEnv-pgi' : {
+                'type' : 'ProgEnvironment',
+                'modules' : [ 'PrgEnv-pgi' ],
+            }
+        }
+    }
+})
 ```
 
 ### System configuration
@@ -568,38 +568,38 @@ You can override completely the auto-detection process by specifying a system or
 
 1. Run all tests with the `production` tag and place the output of the regression in your home directory:
 ```bash
-./run_regression.py -o $HOME/regression/output -t production -r
+reframe -o $HOME/regression/output -t production -r
 ```
 
 2. List all tests with the `maintenance` and `slurm` tags:
 ```bash
-./run_regression.py -t maintenance -t slurm -l
+reframe -t maintenance -t slurm -l
 ```
 
 2. Run all the maintenance checks on the `syscheckout` reservation:
 ```bash
-./run_regression.py -t maintenance --reservation=syscheckout -r
+reframe -t maintenance --reservation=syscheckout -r
 ```
 
 2. List all production tests supporting `PrgEnv-gnu` and having the `production` tag:
 ```bash
-./run_regression.py -p PrgEnv-gnu -t production -l
+reframe -p PrgEnv-gnu -t production -l
 ```
 
 3. Run all the checks from a specific check file and relocate both output and stage directories under your current working directory without using timestamps:
 ```bash
-./run_regression.py --prefix . --no-timestamp -c /path/to/my/check.py -r
+reframe --prefix . --no-timestamp -c /path/to/my/check.py -r
 ```
 This is a useful setup while developing new regression checks, since you don't want to "contaminate" the default stage and output locations or end up with lots of directories with different timestamps.
 
 4. Run a specific check on a new system that is not officially supported by the check:
 ```bash
-./run_regression.py -c /path/to/my/check.py --skip-system-check -r
+reframe -c /path/to/my/check.py --skip-system-check -r
 ```
 
 5. Run a specific check on a programming environment (e.g., `PrgEnv-pgi`) that is not officially supported by the check:
 ```bash
-./run_regression.py -c /path/to/my/check.py -p PrgEnv-pgi --skip-prgenv-check -r
+reframe -c /path/to/my/check.py -p PrgEnv-pgi --skip-prgenv-check -r
 ```
 
 # Limitations

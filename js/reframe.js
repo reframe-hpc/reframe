@@ -249,7 +249,7 @@ namespace.__email_protector = function() {
  */
 namespace.__mouseover_link = function() {
 
-  $('#cscs-markdown-content').children("h1, h2").each(function(index, element) {
+  $('#cscs-markdown-content').children("h1, h2, h3").each(function(index, element) {
     $(element).hover(
       function() {
         $(this).wrap(function() {
