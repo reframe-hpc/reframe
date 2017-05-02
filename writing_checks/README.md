@@ -21,13 +21,12 @@ class HelloTest(RegressionTest):
 ```
 
 The base class' constructor needs two positional arguments that must be supplied by the user tests:
-\begin{inparaenum}[(a)]
-\item the name of the test and
-\item its prefix.
-\end{inparaenum}
+* the name of the test and
+* its prefix.
+
 The prefix of a regression test is normally the directory it resides in and it will be used in later phases for resolving relative paths for accessing the test's resources.
 
-The rest of the regression pipeline stages are implemented as different methods by the base class \pyinline{RegressionTest}.
+The rest of the regression pipeline stages are implemented as different methods by the base class `RegressionTest`.
 Normally, a user test does not need to override them, unless it needs to modify the default behavior.
 Even in this case though, a user test need not care about any of the phase implementation details, since it can delegate the actual implementation to the base class after or before its intervention.
 We will show several examples for modifying the default behavior of the pipeline phases in this section.
