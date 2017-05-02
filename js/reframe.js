@@ -397,14 +397,14 @@ namespace.__prepend_domain_to_links = function()
   // prepending cscs domain
   $('.reframe-prepend-domain').each(function(index, element) {
     $(element).attr('href',function(i,v) {
-      return (domain + v).replace('//', '/');
+      return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
   });
   
   $('#cscs-leftbar-markdown').children('h1').children('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       console.log('victor: ' + domain);
-      return (domain + v).replace('//', '/');
+      return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
   });  
 
