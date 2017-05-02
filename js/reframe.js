@@ -381,7 +381,7 @@ namespace.__prepend_domain_to_links = function()
   var paths = window.location.pathname.split('/');
   paths.forEach(function(element) {
     // console.log(element);
-    if (folders.indexOf(element) == -1) {
+    if ((folders.indexOf(element) == -1) && (element.indexOf('.') == -1)) {
       domain += element + "/";
     }
   }, this);
