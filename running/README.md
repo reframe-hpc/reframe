@@ -28,6 +28,7 @@ An example listing of checks is the following:
 ```bash
 reframe -l
 ```
+
 ```
 Command line: reframe -l
 Regression paths
@@ -69,6 +70,7 @@ The output of a regression run looks like the following:
 ```bash
 reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 ```
+
 ```
 Command line: reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 Regression paths

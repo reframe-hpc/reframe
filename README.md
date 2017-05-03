@@ -1,3 +1,16 @@
+# PyRegression
+
+# Documentation
+
+* Official documentation will be maintaned on the [Wiki](https://madra.cscs.ch/scs/PyRegression/wikis/home)
+
+# How to get the new framework
+
+To get the new framework simply check out:
+
+`git clone https://madra.cscs.ch/scs/PyRegression.git`
+
+
 # Reframe
 
 ReFrame is a python framework developed at [CSCS](http://www.cscs.ch) to facilitate the writing of regression tests that check the sanity of HPC systems.
@@ -13,6 +26,7 @@ Of course, the Python interface will still be available for more advanced usage.
 
 It can also be used as a continuous integration test
 
+[Learn more](/about)
 
 # Getting the framework
 
@@ -43,6 +57,6 @@ These tests can be found under the `checks/` directory organized in several subd
 
 You are advised to run the [unit tests](framework#unit-tests) of the framework after installing it on a new system to make sure that everything works fine.
 
-# Citing the Framwwork
+# Citing the Framework
 
 If you use the framework please cite: [Reference of CUG paper](/)

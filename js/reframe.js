@@ -409,6 +409,15 @@ namespace.__prepend_domain_to_links = function()
     });
   });  
 
+  $('#cscs-markdown-content').find('a').each(function(index, element) {
+    $(element).attr('href',function(i, v) {
+      if (v.startsWith("/", 0)) {
+        return window.location.protocol + '//' + (domain + v).replace('//', '/');
+      }
+      // return window.location.protocol + '//' + (domain + v).replace('//', '/');
+    });
+  });  
+
 }
 
 /**
