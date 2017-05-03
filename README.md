@@ -1,30 +1,15 @@
-# PyRegression
+# ReFrame
 
-# Documentation
+ReFrame is a new framework for writing regression tests for HPC systems.
+The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
+This allows users to write easily portable regression tests, focusing only on the functionality.
 
-* Official documentation will be maintaned on the [Wiki](https://madra.cscs.ch/scs/PyRegression/wikis/home)
+Regression tests in ReFrame are simple Python classes that specify the basic parameters of the test.
+The framework will load the test and will send it down a well-defined pipeline that will take care of its execution.
+The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
 
-# How to get the new framework
-
-To get the new framework simply check out:
-
-`git clone https://madra.cscs.ch/scs/PyRegression.git`
-
-
-# Reframe
-
-ReFrame is a python framework developed at [CSCS](http://www.cscs.ch) to facilitate the writing of regression tests that check the sanity of HPC systems.
-
-Its main goal is to allow users to write their own regression tests without having to deal with all the details of setting up the environment for the test, quering the status of their job, managing the output of the job and looking for sanity and/or performance results.
-Users should be concerned only about the logical requirements of their tests.
-This allows users' regression checks to be maintained and adapted to new systems easily.
-
-The user describes his test in a simple Python class and the framework takes care of all the details of the low-level interaction with the system.
-Although the user still has to program in Python new checks, the framework is structured such that only a basic knowledge of Python is required to write a regression test, which will be able to run out-of-the-box on a variety of systems and programming environments.
-In the future, we plan to allow users to describe their tests in a more abstract way using configuration files that wouldn't require any programming skills at all.
-Of course, the Python interface will still be available for more advanced usage.
-
-It can also be used as a continuous integration test
+Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
+Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
 [Learn more](/about)
 

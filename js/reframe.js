@@ -77,11 +77,10 @@ namespace.setup_site_content = function(navbarfile, sidebarfile) {
 
   var presenterMode = document.getElementById('start-cscs-presenter-mode');
   if (presenterMode != null) {
-    presenterMode.onclick = namespace.__show_in_presenter_mode;    
+    presenterMode.onclick = namespace.__show_in_presenter_mode;
   }
 
   namespace.__email_protector();
-  namespace.__prepend_domain_to_links();
 }
 
 /**
@@ -93,6 +92,7 @@ namespace.__markdown_post_features = function() {
   namespace.__create_toc();
   namespace.__change_table_layout();
   namespace.__highlight_code();
+  namespace.__prepend_domain_to_links();
 }
 
 /**
@@ -402,22 +402,23 @@ namespace.__prepend_domain_to_links = function()
       return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
   });
-  
+
   $('#cscs-leftbar-markdown').children('h1').children('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
-  });  
+  });
 
-  $('#cscs-markdown-content').find('a').each(function(index, element) {
+  var ele = $('#cscs-markdown-content');
+  ele.find('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       if (v.startsWith("/", 0)) {
         return window.location.protocol + '//' + (domain + v).replace('//', '/');
+      } else {
+        return v;
       }
-      // return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
-  });  
-
+  });
 }
 
 /**
