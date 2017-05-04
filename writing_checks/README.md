@@ -719,3 +719,20 @@ This list will be printed in case of a test failure.
 self.maintainers = [ 'bob@a.com',
                      'john@a.com' ]
 ```
+
+# Example of Regression Tests
+
+A list contaitning a collection of example regression tests that highlight some implementation details are can be found [here](/examples). The list sorted by feature should contain:
+* Minimal Regression Test:
+  * See the simple [hello world](/examples/#hello-world) check from the unit tests.
+* Setting compilation flags:
+  * Simple case, see [CUDA](/examples/#cuda-regression-tests) checks.
+  * Based on the environment, see [OpenACC](/examples/#openacc-regression-tests) checks.
+* Performance check using statefull parses:
+  * See [CP2K](/examples/#application-regression-tests) check.
+* Differentiate behavior based on the current system and programming environment:
+  * See [OpenACC](/examples/#openacc-regression-tests) checks.
+* Stateful output and/or performance parsing:
+  * See [CP2K](/examples/#application-regression-tests) check.
+* Compile-only checks:
+  * See the [libsci_resolve](/examples/#compile-only-regression-tests) check.

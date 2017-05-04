@@ -2,6 +2,8 @@
 * A recent version of Python 3 (>= 3.5).
   Python 2 is not supported.
 
+* The [`nose` python module](https://pypi.python.org/pypi/nose) must be installed.
+
 * A functional modules software management environment with Python bindings.
   The framework currently supports only the traditional [modules](http://modules.sourceforge.net/) software management environment.
   The following need to be present or functional:
