@@ -81,7 +81,7 @@ module load cudatoolkit
 
 Note that the framework automatically detects conflicting modules and unloads them first.
 So the user need not to care about the existing environment at all.
-He only needs to specify what is needed by his test.
+He/She only needs to specify what is needed by his test.
 
 ## Setup the test's paths
 Each regression test is associated with a stage directory and an output directory.
@@ -99,7 +99,7 @@ It is responsible for submitting a job in a job queue and waiting for its comple
 Currently, the ReFrame framework supports three job scheduler backends:
 * __local__, which is basically a *pseudo-scheduler* that just spawns local OS processes,
 * __nativeslurm__, which is the native [Slurm](https://slurm.schedmd.com) [[Yoo 2003](http://dx.doi.org/10.1007/10968987_3)] job scheduler and
-* __slurm+alps__, which uses Slurm for job submission, but [Cray's ALPS](http://docs.cray.com/books/S-2529-116//S-2529-116.pdf) for launching MPI processes on the compute nodes.
+* __slurm+alps__, which uses [Slurm](https://slurm.schedmd.com) for job submission, but uses [Cray's ALPS](http://docs.cray.com/books/S-2529-116//S-2529-116.pdf) for launching MPI processes on the compute nodes.
 
 # 3. The compilation phase
 
@@ -125,7 +125,7 @@ At this phase it is determined whether the check has finished successfully or no
 Although this decision is test-specific, the ReFrame framework provides the tests with an easy way for specifying complex patterns to check in the output files.
 Multiple output files can be checked at the same time for determining the final sanity result.
 Stateful parsing (e.g., aggregate operations such as average, min, max, etc.) is also supported and implemented transparently to the user.
-We will present in detail the output parsing mechanism of the framework in Section~\ref{sec:reg-output-parsing}.
+We will present in detail the output parsing mechanism of the framework in [Output Parsing and Performance Assesment](/writing_checks/#output-parsing-and-performance-assessment).
 
 
 # 6. The performance checking phase
@@ -133,7 +133,7 @@ We will present in detail the output parsing mechanism of the framework in Secti
 At this phase the performance of the regression test is checked.
 The framework uses the same mechanism for analyzing the output of the tests as in the sanity checking phase.
 The only difference is that the user can now specify reference values per system or system partition, as well as threshold values for the performance.
-The framework will take care of the output parsing and the matching of the correct reference values.
+The framework will take care of the output parsing and the matching of the correct reference values. For further information see [Output Parsing and Performance Assesment](/writing_checks/#output-parsing-and-performance-assessment).
 
 
 # 7. The cleanup phase

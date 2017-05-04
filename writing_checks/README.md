@@ -174,7 +174,7 @@ class MyCompileOnlyTest(CompileOnlyRegressionTest):
         # test's specification
 ```
 
-## Defining your own class of regression tests
+## Defining your Own Class of Regression Tests
 
 An advantage of writing regression tests in a high-level language, such as Python, is that one can take advantage of features not present in classical shell scripting.
 For example, one can create groups of related tests that share common characteristics and/or functionality by implementing them in a base class, from which all the related concrete tests inherit.
@@ -191,7 +191,7 @@ class HPLTest(AcceptanceTest):
         ...
 ```
 
-# Select systems and programming environments
+# Select Systems and Programming Environments
 
 Each test written with ReFrame should define the variables `valid_systems` and `valid_prog_environs`.
 These variables allow the fine-grained control of in which systems and programming environments a given regression tests is allowed to run.
@@ -199,25 +199,25 @@ As the variable names suggest, the variable `valid_systems` defines the list of 
 The names defined inside these variables need not to necessarily correspond to a configured system/partition or programming environment, in which case the test will be ignored (see [Configuration](/configure) on how a new systems and programming environments are configured).
 The system name specification follows the syntax `<sysname>[:<partname>]`, i.e., you can either a specify a whole system or a specific partition in that system.
 ```python
-        self.valid_systems = [
-            'daint:gpu', # Piz Daint gpu virtual partition
-            'dom'        # All Piz Dom's virtual partitions
-        ]
-        self.valid_prog_environs = [
-            'PrgEnv-cray',
-            'PrgEnv-gnu',
-            'PrgEnv-intel',
-            'PrgEnv-pgi'
-        ]
+self.valid_systems = [
+    'daint:gpu', # Piz Daint gpu virtual partition
+    'dom'        # All Piz Dom's virtual partitions
+]
+self.valid_prog_environs = [
+    'PrgEnv-cray',
+    'PrgEnv-gnu',
+    'PrgEnv-intel',
+    'PrgEnv-pgi'
+]
 ```
 In this example, this test will run only on the *gpu* partitions of Piz Daint and in all virtual partitions of Piz Dom.
 
-# Setting up job submission
+# Setting up Job Submission
 
 ReFrame aims to be job scheduler agnostic and to support different job options using a unified interface.
 To the regression check developer, the interface is manifested by a simple collection of member variables defined inside the regression check. The next section describes the supported job options.
 
-## Job options
+## Job Options
 
 Table below shows a listing of these variables and their interpretation in SLURM.
 
@@ -247,7 +247,7 @@ def __init__(self, **kwargs):
 
 
 
-## Additional job options
+## Additional Job Options
 
 Even though the set of variables described on Table above are enough to accommodate most of the common regression scenarios, some regression tests, especially those related to a scheduler, may require additional job options.
 Supporting all job options from all schedulers is a virtually impossible task.
@@ -265,7 +265,7 @@ Note that the option is appended after the call to the superclass' `setup()` met
 Keep in mind that adding custom job options tights the regression test to the scheduler making it less portable, unless proper action is taken.
 Of course, if there is no need to support multiple schedulers, adding any job option becomes trivial as shown in the example above.
 
-# Setting up the environment
+# Setting up the Environment
 
 ReFrame allows the customization of the environment of the regression tests.
 This can be achieved by loading and unloading environment modules and by defining environment variables.
@@ -315,7 +315,7 @@ def setup(self, system, environ, **job_opts):
     super().setup(system, environ, **job_opts)
 ```
 
-## Environment variables
+## Environment Variables
 
 In addition to custom modules, users can also define environment variables for their regression tests.
 In this case, the variable `self.variables` is used, which is as a dictionary where the keys are the names of the environment variables and the values match the environment variables' values:
@@ -332,7 +332,7 @@ self.variables = {
 }
 ```
 
-# Customising the compilation phase
+# Customising the Compilation Phase
 
 ReFrame supports the compilation of the source code associated with the test.
 As discussed in the hello world example, if the provided source code is a single source file (defined by the member variable `self.sourcepath`), the language will be detected from its extension and the file will be compiled.
@@ -392,11 +392,11 @@ make -C <stagedir> -f build.mk PREP='scorep' CC='cc' CXX='CC' FC='ftn' CFLAGS=''
 ```
 Finally, pre- and post-compilation steps can be added through special variables (e.g., a `configure` step may be needed before compilation), however, ReFrame is not designed to be an automatic compilation and deployment tool.
 
-# Customising the run of a test
+# Customising the Run of a Test
 
 ReFrame offers several other options for customizing the behavior of regression tests.
 
-## Executable options
+## Executable Options
 
 ReFrame allows a list of options to be passed to regression check executable.
 ```python
@@ -414,7 +414,7 @@ In the above example, the executable will be launched as follows with the SLURM 
 srun ./a.out -i inputfile -o outputfile
 ```
 
-## Pre- and post-run commands
+## Pre- and Post-run Commands
 
 The framework allows the execution of additional commands before and/or after the scheduler launcher invocation.
 This can be useful for invoking  pre- or post-processing tools.
@@ -431,7 +431,7 @@ def setup(self, system, environ, **job_opts):
     ]
 ```
 
-## Changing the regression test resources path
+## Changing the Regression Test Resources Path
 
 ReFrame allows individual regressions tests to define a custom folder for their resources, different than the default `src/` described in [Folder Structure](/structure).
 This is especially important for applications with a large number of input files or large input files, where these input files may need to be saved in a different filesystem due to several reasons, such as filesystem size, I/O performance, network configuration, backup policy etc.
@@ -442,7 +442,7 @@ def __init__(self, **kwargs):
     self.sourcesdir = '/apps/input/folders'
 ```
 
-## Launcher wrappers
+## Launcher Wrappers
 
 In some cases, it is necessary to wrap the scheduler launcher call with another program.
 This is the typical case with debuggers of distributed programs, e.g., `ddt`.
@@ -468,7 +468,7 @@ whereas if it run on a system with ALPS it will be translated to
 ddt --offline aprun ...
 ```
 
-# Output parsing and performance assessment
+# Output Parsing and Performance Assessment
 
 ReFrame provides a powerful mechanism for describing the patterns to look for inside the output and/or performance file of a test without the need to override the `check_sanity()` or `check_performance()` methods.
 It allows you to search for multiple different patterns in different files and also associate callback functions for interpreting the matched values and for deciding on the validity of the match.
@@ -516,11 +516,11 @@ self.sanity_patterns = {
 }
 ```
 
-## End of file pattern
+## End of File Pattern
 To better support stateful parsing (see below), ReFrame also define a special regex pattern (`'\\e'`) that matches the end-of-file.
 This pattern can only be associated with a callback function taking no arguments, which will be called after the processing of the file has finished.
 
-## Output scanning
+## Output Scanning
 The Figure below shows general concept of the algorithm used by the framework for matching the sanity and performance patterns.
 
 ![Output scanning](img/output-scanning.png)
@@ -557,7 +557,7 @@ The action is a simple lambda function that checks if the value of the tag is `1
 Note that inside the lambda function `value` is already converted to a float number by the conversion callable `float`.
 
 
-## Tag resolution and reference lookup
+## Tag Resolution and Reference Lookup
 
 The only difference between `sanity_patterns` and `perf_patterns` is that for the latter the framework looks up the tags in a special dictionary that holds reference values and picks up the correct one, whereas for `sanity_patterns`, the reference value is always set to `None`.
 A representative reference value dictionary is shown below:
@@ -598,7 +598,7 @@ In the above example, we provide different reference values for different system
 Although the global scope `'*'` seems not to offer anything in a reference value dictionary (what would be the need to have a global reference for any system?), it is quite useful when we need stateful parsing for performance patterns.
 
 
-## Stateful parsing of output
+## Stateful Parsing of Output
 
 It is often the case with the output of a regression test that you cannot judge its outcome by just looking for single occurrences of patterns in the output file.
 Consider the case that you have to count the lines of the output before deciding about success of the test or not.
@@ -704,7 +704,7 @@ self.perf_patterns = {
 ```
 
 
-# Check tagging
+# Check Tagging
 
 To facilitate the organization of regression tests inside a test suite, ReFrame allows to assign tags to regression tests.
 You can later select specific tests to run based on their tags.

@@ -10,6 +10,20 @@ Although the user still has to program in Python new checks, the framework is st
 In the future, we plan to allow users to describe their tests in a more abstract way using configuration files that wouldn't require any programming skills at all.
 Of course, the Python interface will still be available for more advanced usage.
 
+# General Goals
+
+When designing the framework we have set three major goals:
+
+* __Productivity__
+  The writer of a regression test should focus only on the logical structure and requirements of the test and should not need to deal with any of the low level details of interacting with the system, e.g., how the environment of the test is loaded, how the associated job is created and has its status checked, how the output parsing is performed etc.
+* __Portability__
+  Configuring the framework to support new systems and system configurations should be easy and should not affect the existing tests.
+  Also, adding support of a new system in a regression test should require minimal adjustments.
+* __Robustness and ease of use__
+  The new framework must be stable enough and easy to use by non-advanced users.
+  When the system needs to be returned to users outside normal working hours the personnel in charge should be able to run the regression suite and verify the sanity of the system with a minimal involvement.
+
+
 # Why ReFrame?
 
 HPC systems are highly complex systems in all levels of integration;
@@ -22,7 +36,16 @@ However, given the complexity of HPC systems, writing and maintaining regression
 A small change in system configuration or deployment may require adapting hundreds of regression tests at the same time.
 Similarly, porting a test to a different system may require significant effort if the new system's configuration is substantially different than that of the system that it was originally written for.
 
-ReFrame was designed to help HPC support teams in each of the problems discribed above.
+This way, ReFrame was designed to help HPC support teams to:
+* monitor the impact of changes to the system that would affect negativelly the users
+* monitor system performance
+* monitor system stability
+* guarantee quality of service
+
+And also decrease the amount of time and resources required to:
+* write and maintain regression tests
+* port the regression test to other HPC systems
+
 
 # What does it do?
 
@@ -34,24 +57,12 @@ The writer of a regression test need not also care about generating a job script
 All of these are taken care of by the framework without affecting the regression test.
 This not only makes a regression test easier to write, but it increases its readability as well, since the intent of the test is made clear right from its high-level description.
 
-# Quality Control
+# Development process
 To meet the requirement of robustness we have employed a test-driven development process along with continuous integration right from the beginning of the framework's development, so as to make sure that it is tested thoroughly as it grows larger.
 As a matter of fact, the amount of unit test code accompanying the framework almost matches the amount of the framework's code itself.
 Regarding the ease of use we have tried to make the common case of invoking the regression suite as simple as possible by selecting reasonable defaults or by allowing to set default settings values per system configuration.
 
 
-# Specific Goals
-
-When designing the framework we have set three major goals:
-
-* __Productivity__
-  The writer of a regression test should focus only on the logical structure and requirements of the test and should not need to deal with any of the low level details of interacting with the system, e.g., how the environment of the test is loaded, how the associated job is created and has its status checked, how the output parsing is performed etc.
-* __Portability__
-  Configuring the framework to support new systems and system configurations should be easy and should not affect the existing tests.
-  Also, adding support of a new system in a regression test should require minimal adjustments.
-* __Robustness and ease of use__
-  The new framework must be stable enough and easy to use by non-advanced users.
-  When the system needs to be returned to users outside normal working hours the personnel in charge should be able to run the regression suite and verify the sanity of the system with a minimal involvement.
 
 # Why Python?
 
