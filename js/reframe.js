@@ -78,7 +78,6 @@ namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
           if (err) throw err;
           document.getElementById("cscs-jumbotron-content").innerHTML = content;
         });
-        namespace.__correct_navbar();
       });
   } else {
     $(".jumbotron").hide();
@@ -107,6 +106,10 @@ namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
  *  the main markdown is rendered
  */
 namespace.__correct_navbar = function() {
+    $('#cscs-leftbar-markdown').find("li").each(function(index, element) {
+        $(element).addClass('reframe-prepend-domain');
+    });
+
     $('#cscs-leftbar-markdown').children("ul").each(function(index, element) {
       if ($(element).hasClass('nav navbar-nav') == false) {
         $(element).addClass('nav navbar-nav');
@@ -392,10 +395,10 @@ namespace.__highlight_code = function() {
 }
 
 /**
- *  @description prepends the domain to the navbar.
- *  @returns {void}
+ *  @description get the current domain.
+ *  @returns {string}
  */
-namespace.__prepend_domain_to_links = function()
+namespace.__correct_domain = function()
 {
   // var domain = window.location.origin;
   var domain = window.location.host + "/";
@@ -424,10 +427,18 @@ namespace.__prepend_domain_to_links = function()
   domain = domain.replace('//', '/');
   domain = domain.replace('//', '/');
   domain = domain.replace('//', '/');
-//   var domain=domain.split('/').filter(function(item,i,allItems){
-//     return i==allItems.indexOf(item);
-// }).join('/');
-//   console.log('domain: ' + domain);
+
+  return domain
+}
+
+/**
+ *  @description prepends the domain to the main content.
+ *  @returns {string}
+ */
+namespace.__prepend_domain_to_links = function()
+{
+  // var domain = window.location.origin;
+  var domain = namespace.__correct_domain();
 
   // prepending cscs domain
   $('.reframe-prepend-domain').each(function(index, element) {
