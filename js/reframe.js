@@ -107,7 +107,6 @@ namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
  */
 namespace.__correct_navbar = function() {
     $('#cscs-leftbar-markdown').find("a").each(function(index, element) {
-      console.log(element);
         $(element).addClass('reframe-prepend-domain');
     });
     $('#cscs-leftbar-markdown').children("ul").each(function(index, element) {
