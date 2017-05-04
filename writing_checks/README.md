@@ -63,14 +63,14 @@ from reframe.core.checks import RegressionTest
 class HelloWorldTest(RegressionTest):
     def __init__(self, **kwargs):
         super().__init__(
-            'hello_world', 
-            os.path.dirname(__file__), 
+            'hello_world',
+            os.path.dirname(__file__),
             **kwargs
         )
         self.descr = 'Hello World C Test'
         self.sourcepath = 'hello.c'
         self.valid_systems = [
-            'daint:gpu', 
+            'daint:gpu',
             'daint:mc'
         ]
         self.valid_prog_environs = [
@@ -118,7 +118,7 @@ In fact, we have used this capability extensively while developing the Piz Daint
 
 # Setting up job submission
 
-\RegressionName aims to be job scheduler agnostic and to support different job options using a unified interface.
+ReFrame aims to be job scheduler agnostic and to support different job options using a unified interface.
 To the regression check developer, the interface is manifested by a simple collection of member variables defined inside the regression check.
 These variables are converted internally by the framework to express the appropriate job options for a given scheduler.
 Table~\ref{tab:job-options} shows a listing of these variables and their interpretation in SLURM.
@@ -136,7 +136,7 @@ def __init__(self, **kwargs):
 
 Regression checks' member variables related to job options and their SLURM scheduler associated options
 
-`RegressionTest`'s member variable | Interpreted SLURM option 
+`RegressionTest`'s member variable | Interpreted SLURM option
 --- | ---
 `self.time_limit = (10, 20, 30)`  | `#SBATCH --time=10:20:30`
 `self.use_multithreading = True`  | `#SBATCH --hint=multithread`
@@ -165,7 +165,7 @@ class HPLTest(AcceptanceTest):
 
 Even though the set of variables described on Table~\ref{tab:job-options} are enough to accommodate most of the common regression scenarios, some regression tests, especially those related to a scheduler, may require additional job options.
 Supporting all job options from all schedulers is a virtually impossible task.
-Therefore \RegressionName allows the definition of custom job options.
+Therefore ReFrame allows the definition of custom job options.
 These options can be appended to the test's job descriptor during the test's setup phase.
 In the following example, a memory limit is passed explicitly to the backend scheduler, here SLURM:
 ```python
@@ -185,10 +185,10 @@ ReFrame allows the customization of the environment of the regression tests.
 This can be achieved by loading and unloading environment modules and by defining environment variables.
 Every regression test may define its required modules using the `self.modules` variable.
 ```python
-self.modules = [ 
+self.modules = [
     'cudatoolkit',
     'cray-libsci_acc',
-    'fftw/3.3.4.10' 
+    'fftw/3.3.4.10'
 ]
 ```
 These modules will be loaded during the test's setup phase after the programming environment and any other environment associated to the current system partition are loaded.
@@ -205,11 +205,11 @@ Following is an actual example from CSCS' Score-P regression tests:
 ```python
 def __init__(self, **kwargs):
     ...
-    self.valid_prog_environs = [ 
+    self.valid_prog_environs = [
         'PrgEnv-cray',
         'PrgEnv-gnu',
         'PrgEnv-intel',
-        'PrgEnv-pgi' 
+        'PrgEnv-pgi'
     ]
 
     self.scorep_modules = {
@@ -272,7 +272,7 @@ def __init__(self, **kwargs):
 
 def compile(self):
     flag = self.prgenv_flags[
-        self.current_environ.name 
+        self.current_environ.name
     ]
     self.current_environ.cflags   = flag
     self.current_environ.cxxflags = flag

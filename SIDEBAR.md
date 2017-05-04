@@ -1,13 +1,8 @@
-Reframe
-
----
-
-<!-- use only links inside h1, h2, h3 and h4 -->
-
-# [Home](/)
-# [Getting Started](/started)
-# [Running ReFrame](/running)
-# [Regression Pipeline](/pipeline)
-# [Writing Regression Checks](/writing_checks)
-# [Folder structure](/structure)
-# [Uses cases](/usecases)
+* [Home](/)
+* [Getting Started](/started)
+* [Running](/running)
+* [Pipeline](/pipeline)
+* [Writing Checks](/writing_checks)
+* [Folder structure](/structure)
+* [Configuration](/configure)
+<!--* [Uses cases](/usecases)-->

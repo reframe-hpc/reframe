@@ -40,14 +40,13 @@ namespace.read_file_contents = function (filename, callback)
  *  @param {string} sidebarfile
  *  @returns {void}
  */
-namespace.setup_site_content = function(navbarfile, sidebarfile) {
+namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
 
   namespace.read_file_contents(navbarfile, function __populate_site_content(argument) {
     document.getElementById("cscs-site-content").innerHTML = argument;
   });
 
   namespace.read_file_contents(sidebarfile, function cscs_populate_site_content(argument) {
-
     marked.setOptions({
       gfm: true,
       tables: true,
@@ -61,8 +60,29 @@ namespace.setup_site_content = function(navbarfile, sidebarfile) {
       if (err) throw err;
       document.getElementById("cscs-leftbar-markdown").innerHTML = content;
     });
-
+    namespace.__correct_navbar();
   });
+
+  if(jumbotron != null) {
+    namespace.read_file_contents(jumbotron, function cscs_populate_site_content(argument) {
+        marked.setOptions({
+          gfm: true,
+          tables: true,
+          breaks: false,
+          pedantic: true,
+          sanitize: false,
+          smartLists: true,
+          langPrefix: '',
+        });
+        marked(argument, function (err, content) {
+          if (err) throw err;
+          document.getElementById("cscs-jumbotron-content").innerHTML = content;
+        });
+        namespace.__correct_navbar();
+      });
+  } else {
+    $(".jumbotron").hide();
+  }
 
   // presentation mode is hidden if remark.js is not included
   try {
@@ -79,9 +99,22 @@ namespace.setup_site_content = function(navbarfile, sidebarfile) {
   if (presenterMode != null) {
     presenterMode.onclick = namespace.__show_in_presenter_mode;
   }
-
   namespace.__email_protector();
 }
+
+/**
+ *  @description this is a wrapper to a selection of functions that need to be called after
+ *  the main markdown is rendered
+ */
+namespace.__correct_navbar = function() {
+    $('#cscs-leftbar-markdown').children("ul").each(function(index, element) {
+      if ($(element).hasClass('nav navbar-nav') == false) {
+        $(element).addClass('nav navbar-nav');
+      }
+      $(this).unwrap();
+    });
+}
+
 
 /**
  *  @description this is a wrapper to a selection of functions that need to be called after
