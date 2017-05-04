@@ -415,7 +415,7 @@ namespace.__correct_domain = function()
   // console.log('window.location.pathname: ' + window.location.pathname);
   // console.log('window.location.domain: ' + window.location.domain);
 
-  var folders = [ 'about', 'pipeline', 'running', 'started', 'structure', 'usecases', 'writing_checks', '' ]
+  var folders = [ 'about', 'pipeline', 'running', 'started', 'structure', 'usecases', 'writing_checks', 'configure', '' ]
   var paths = window.location.pathname.split('/');
   paths.forEach(function(element) {
     // console.log(element);
