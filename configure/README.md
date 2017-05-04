@@ -1,8 +1,6 @@
 ReFrame provides an easy and flexible way to configure new systems and new programming environments.
-It is shipped by default with the Cray Swan system configured.
+It is shipped by default with a local and the Cray Swan systems configured.
 As soon as you have configured a new system with its programming environments, adapting an existing regression test could be as easy as just adding the system's name in the `valid_systems` list and its associated programming environments in the `valid_prog_environs` list.
-
-...
 
 # The Configuration file
 

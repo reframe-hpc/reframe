@@ -11,26 +11,26 @@ This is where all the basic information of the test is set.
 At this point, although it is initialized, the regression test is not yet *live*, meaning that it does not run yet.
 The framework will then go over all the loaded and initialized checks (we will talk about the loading and selection phases later), it will pick the next partition of the current system and the next programming environment for testing and will try to run the test.
 If the test supports the current system partition and the current programming environment, it will be run and will go through all the following seven phases:
-* setup,
-* compilation,
-* running,
-* sanity checking,
-* performance checking and
-* cleanup.
+* Setup
+* Compilation
+* Running
+* Sanity checking
+* Performance checking
+* Cleanup
 
 A test could implement some of them as no-ops.
 As soon as the test is finished, its resources are cleaned up and the regression's environment is restored.
 The regression will try to repeat the same procedure on the same regression test using the next programming environment until no further environments are left to be tested.
 In the following we elaborate on each of the individual phases of the lifetime of a regression test.
 
-# The initialization phase
+# 1. The initialization phase
 
 Although this phase is not part of the regression check pipeline as shown in the Figure abobe, it is quite important, since it sets up the definition of the regression test.
 It serves as the *specification* of the check, where all the needed information to run the test is set.
 A test could go through the whole pipeline performing all of its work without the need to override any of the pipeline stages.
 In fact, this is the case for the majority of tests we have implemented for CSCS production systems.
 
-# The setup phase
+# 2. The setup phase
 
 A regression test is instantiated once by the framework and it is then reused several times for each of the system's partitions and their corresponding programming environments.
 This first phase of the regression pipeline serves the purpose of preparing the test to run on the specified partition and programming environment by performing a number of operations described below:
@@ -68,14 +68,14 @@ Currently, the ReFrame framework supports three job scheduler backends:
 * __local__, which is basically a *pseudo-scheduler* that just spawns local OS processes,
 * __nativeslurm__, which is the native [Slurm](https://slurm.schedmd.com) [[Yoo 2003](http://dx.doi.org/10.1007/10968987_3)] job scheduler and
 * __slurm+alps__, which uses Slurm for job submission, but [Cray's ALPS](http://docs.cray.com/books/S-2529-116//S-2529-116.pdf) for launching MPI processes on the compute nodes.
-  
-# The compilation phase
+
+# 3. The compilation phase
 
 At this phase the source code associated with test is compiled with the current programming environment.
 Before compiling, all the resources of the test are copied to its stage directory and the framework changes into it.
 After finishing the compilation, the framework returns to its original working directory.
 
-# The run phase
+# 4. The run phase
 
 This phase comprises two subphases:
 * __Job launch__: At this subphase a job script file for the regression test is generated and submitted to the job scheduler queue.
@@ -87,7 +87,7 @@ This phase comprises two subphases:
 
 Currently, these two subphases are performed back-to-back making the ReFrame framework effectively serial, but in the future we plan to support asynchronous execution of regression tests.
 
-## The sanity checking phase
+# 5. The sanity checking phase
 
 At this phase it is determined whether the check has finished successfully or not.
 Although this decision is test-specific, the ReFrame framework provides the tests with an easy way for specifying complex patterns to check in the output files.
@@ -96,7 +96,7 @@ Stateful parsing (e.g., aggregate operations such as average, min, max, etc.) is
 We will present in detail the output parsing mechanism of the framework in Section~\ref{sec:reg-output-parsing}.
 
 
-## The performance checking phase
+# 6. The performance checking phase
 
 At this phase the performance of the regression test is checked.
 The framework uses the same mechanism for analyzing the output of the tests as in the sanity checking phase.
@@ -104,7 +104,7 @@ The only difference is that the user can now specify reference values per system
 The framework will take care of the output parsing and the matching of the correct reference values.
 
 
-## The cleanup phase
+# 7. The cleanup phase
 
 This is the final stage of the regression pipeline and cleans up the resources of the environment.
 Three steps are performed in this phase:

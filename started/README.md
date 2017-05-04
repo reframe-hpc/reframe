@@ -13,7 +13,7 @@
   Please note that the Cray ALPS launcher is not thoroughly tested.
   Slurm accounting storage (`sacct` command) is required.
 
-You are advised to run the [unit tests](framework#unit-tests) of the framework after installing it on a new system to make sure that everything works fine.
+You are advised to run the [unit tests](#running-the-unit-tests) of the framework after installing it on a new system to make sure that everything works fine.
 
 # Getting the framework
 
@@ -77,10 +77,13 @@ The `-A` option takes any valid python expression, so that for example you can r
 
 # Where to go from here
 
-ReFrame is available with only example regression checks.
-You will need to read the sections [Configure your site](/configure), [Pipeline](/pipeline) and [Writing checks](/writing_checks) in order to write your own regression tests.
+ReFrame is shipped with example regression checks. But before attempting to run these examples, please configure your site following the [Configure your site](/configure) guide and update the `valid_systems` and `valid_prog_environs` variables accordingly. These variables are defined inside the examples regression tests (see [Select systems and programming environments](/writing_checks/#select-systems-and-programming-environments) for further details).
 
-If you are just looking on how to invoked the regression test written with ReFrame, please look at [Running](/running) section.
+In order to understand the regression output, please refer to the [Pipeline](/pipeline) section.
+
+Prior to attempt to start writing your own tests please check the [Pipeline](/pipeline) and the [Writing checks](/writing_checks) sections.
+
+If you are just looking on how to invoked the regression test written with ReFrame, please take look at the [Running](/running) section.
 
 
 

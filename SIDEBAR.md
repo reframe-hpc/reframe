@@ -1,8 +1,7 @@
-* [Home](/)
 * [Getting Started](/started)
-* [Running](/running)
-* [Pipeline](/pipeline)
-* [Writing Checks](/writing_checks)
-* [Folder structure](/structure)
 * [Configuration](/configure)
+* [Folder Structure](/structure)
+* [ReFrame Pipeline](/pipeline)
+* [Writing Checks](/writing_checks)
+* [Running](/running)
 <!--* [Uses cases](/usecases)-->

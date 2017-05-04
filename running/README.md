@@ -1,18 +1,18 @@
 # Running the Framework
 
-Before going into the details of the regression framework's frontend, the simplest way to invoke the regression suite is the following:
+Before going into any details about the framework front-end and command-line interfaces, the simplest way to invoke ReFrame is the following:
 ```bash
-reframe -r
+./reframe -c /path/to/checks -R --run
 ```
-This will run all the available regression tests suitable for the current system for all the supported programming environments.
+This will search recursively for test files in `/path/to/checks` and will start running them on the current system.
 
-The regression frontend comprises three phases which are executed in order:
-1. Regression check discovery
-2. Regression check selection
-3. Action on the selected regression checks
+ReFrame's front-end goes through three phases:
+* test discovery,
+*  test selection and
+* action.
 
-We will describe each of these phases in detail in the following. For each phase there is a distinct set of options that control it.
-`reframe -h` will give you a detailed listing of all the options grouped by phase.
+In the following, we will elaborate on these phases and the key command-line options controlling them.
+A detailed listing of all the options grouped by phase is given by `reframe -h`.
 
 ## Supported actions
 Although this is the last phase the frontend goes through, I list it first since an action is always required.
@@ -372,7 +372,7 @@ However, the command line options take always precedence over any default direct
 
 ## Logging
 
-Since PyRegression [2.1](https://madra.cscs.ch/scs/PyRegression/tags/v2.1), it is supported a very simple logging of the performance values of the performance checks.
+ReFrame supports a very simple logging of the performance values of the performance checks.
 For each performance check, a log file of the form `<check-name>.log` is created under the regression's [log directory](#configuring-regression-directories) for logging the check's performance.
 Regression always appends to this file, so you can keep a history of the performance of the check.
 This file looks like the following:

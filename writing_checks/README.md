@@ -90,21 +90,20 @@ After the base class' constructor is called with the boiler plate code we showed
 The `RegressionTest` base class makes available a set of member variables that can be used to set up the test.
 All these variables are dynamically type checked;
 if they are assigned a value of different type, a runtime error will be raised and the regression test will be skipped from execution.
-Due to space limitations, we will not go into all of the `RegressionTest`'s member variables.
-We will only discuss the most important ones that come up in our examples.
 
 The *Hello, World!* example shown above shows a minimal set of variables that needs to be set for describing a test.
 `descr` is an optional arbitrary textual description of the test that defaults to the test's name if not set.
 `sourcepath` is a path to either a source file or a source directory.
 By default, source paths are resolved against `'<testprefix>/src'`, where `testprefix` is stored in the `prefix` member variable.
-If `sourcepath` refers to a file, it will be compiled picking the correct compiler based on its extension (C/C++/Fortran/CUDA).
-If it refers to a directory, ReFrame will invoke `make` inside that directory.
+If `sourcepath` refers to a file, it will be compiled picking the correct compiler based on its extension (C/C++/Fortran/CUDA). If it refers to a directory, ReFrame will invoke `make` inside that directory.
+
 `valid_systems` and `valid_prog_environs` are the variables that basically enable a test to run on certain systems and programming environments.
 They are both simple list of names.
-The names need not necessarily correspond to a configured system/partition or programming environment, in which case the test will be ignored (see [Configuration](/configure)) on how a new systems and programming environments are configured).
+The names need not to necessarily correspond to a configured system/partition or programming environment, in which case the test will be ignored (see [Configuration](/configure) on how a new systems and programming environments are configured).
 The system name specification follows the syntax `<sysname>[:<partname>]`, i.e., you can either a specify a whole system or a specific partition in that system.
-In our example, this test will run on both the *gpu* and *mc* partitions of Daint.
+In our previous example, this test will run on both the *gpu* and *mc* partitions of Piz Daint.
 If we specified simply *daint* in our example, then the above test would be eligible to run on any configured partition for that system.
+
 Next, you need to define the `sanity_patterns` variable, which tells the framework what to look for in the standard output of the test to verify the sanity of the check.
 We will cover the output parsing capabilities of ReFrame in detail in [Output Parsing and Performance Assesment](#output-parsing-and-performance-assessment).
 
@@ -191,6 +190,27 @@ class AcceptanceTest(RegressionTest):
 class HPLTest(AcceptanceTest):
         ...
 ```
+
+# Select systems and programming environments
+
+Each test written with ReFrame should define the variables `valid_systems` and `valid_prog_environs`.
+These variables allow the fine-grained control of in which systems and programming environments a given regression tests is allowed to run.
+As the variable names suggest, the variable `valid_systems` defines the list of valid systems and the variable `valid_prog_environs` defines the list of valid programming environments.
+The names defined inside these variables need not to necessarily correspond to a configured system/partition or programming environment, in which case the test will be ignored (see [Configuration](/configure) on how a new systems and programming environments are configured).
+The system name specification follows the syntax `<sysname>[:<partname>]`, i.e., you can either a specify a whole system or a specific partition in that system.
+```python
+        self.valid_systems = [
+            'daint:gpu', # Piz Daint gpu virtual partition
+            'dom'        # All Piz Dom's virtual partitions
+        ]
+        self.valid_prog_environs = [
+            'PrgEnv-cray',
+            'PrgEnv-gnu',
+            'PrgEnv-intel',
+            'PrgEnv-pgi'
+        ]
+```
+In this example, this test will run only on the *gpu* partitions of Piz Daint and in all virtual partitions of Piz Dom.
 
 # Setting up job submission
 

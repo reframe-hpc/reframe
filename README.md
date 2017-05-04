@@ -11,9 +11,12 @@ The stages of this pipeline take care of all the system interaction details, suc
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
 Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
-# Citing the Framework
+<!--# Citing the Framework
 
 If you use the framework please cite:
 
-*ReFrame* [Reference of CUG paper](/).
+*ReFrame* [Reference of CUG paper](/).-->
 
+# Use cases
+
+...

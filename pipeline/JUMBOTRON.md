@@ -1,2 +1,2 @@
-# Regression Pipeline
+# ReFrame Pipeline
 Standardized general regression pipeline.
