@@ -436,7 +436,7 @@ namespace.__prepend_domain_to_links = function()
     });
   });
 
-  $('#cscs-leftbar-markdown').children('h1').children('a').each(function(index, element) {
+  $('#cscs-leftbar-markdown').find('a').each(function(index, element) {
     $(element).attr('href',function(i, v) {
       return window.location.protocol + '//' + (domain + v).replace('//', '/');
     });
