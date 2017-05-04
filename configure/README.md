@@ -6,7 +6,9 @@ As soon as you have configured a new system with its programming environments, a
 
 The configuration of systems and programming environments is performed by a special Python dictionary called `site_configuration` defined inside the file `<install-dir>/reframe/settings.py`.
 
-Here is an example of how the configuration for Piz Daint at CSCS looks like:
+The `site_configuration` dictionary should define two entries, `'systems'` and `'environments'`. The former defines the available system to the regression tests and the latter the available programming environments.
+
+An example of how the configuration for Piz Daint at CSCS looks like:
 
 ```python
 site_configuration = ReadOnlyField({
@@ -78,7 +80,7 @@ site_configuration = ReadOnlyField({
 })
 ```
 
-# New System configuration
+# System configuration
 The list of supported systems is defined as a set of key/value pairs under the global configuration key `systems`.
 Each system is a key/value pair, with the key being the name of the system and the value being another set of key/value pairs defining its attributes.
 The valid attributes of a system are the following:
@@ -90,19 +92,7 @@ The valid attributes of a system are the following:
 * `outputdir`: Default output directory for this system (default `None`).
 * `logdir`: Default log directory for this system (default `None`).
 * `partitions`: A set of key/value pairs defining the partitions of this system and their properties (default `{}`).
-  See [next section](#partition-configuration) on how to define system partitions.
-
-
-## System auto-detection
-When the regression is launched, it tries to auto-detect the system it runs on based on its site configuration.
-The auto-detection process is as follows:
-
-The regression first tries to obtain the hostname from `/etc/xthostname`, which provides the unqualified "machine name" in Cray systems.
-If this cannot be found the hostname will be obtained from the standard `hostname` command.
-Having retrieved the hostname, the regression goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the `hostnames` attribute.
-The detection process stops at the first match found, and the system it belongs to is considered as the current system.
-If the system cannot be auto-detected, regression will fail with an error message.
-You can override completely the auto-detection process by specifying a system or a system partition with the `--system` option (e.g., `--system daint` or `--system daint:gpu`).
+  See [Partition configuration section](#partition-configuration) on how to define system partitions.
 
 
 # Partition configuration
@@ -157,7 +147,7 @@ therefore requesting from the resource scheduler to allocate it 8 GPUs.
 
 # Environment configuration
 
-The environments available for testing to the different systems are defined under the `environments` key of the top-level `site_configuration` dictionary.
+The environments available for testing the different systems are defined under the `environments` key of the top-level `site_configuration` dictionary.
 The `environments` of the `site_configuration` is a special dictionary that defines scopes for looking up an environment.
 The `*` denotes the global scope and all environments defined there can be used by any system.
 You can define a dictionary only for a specific system by placing it under an entry keyed with the name of that system, e.g., `daint`, or even for a specific partition, e.g., `daint:gpu`.

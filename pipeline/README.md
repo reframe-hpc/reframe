@@ -11,12 +11,44 @@ This is where all the basic information of the test is set.
 At this point, although it is initialized, the regression test is not yet *live*, meaning that it does not run yet.
 The framework will then go over all the loaded and initialized checks (we will talk about the loading and selection phases later), it will pick the next partition of the current system and the next programming environment for testing and will try to run the test.
 If the test supports the current system partition and the current programming environment, it will be run and will go through all the following seven phases:
-* Setup
-* Compilation
-* Running
-* Sanity checking
-* Performance checking
-* Cleanup
+1. Initialization
+2. Setup
+3. Compilation
+4. Running
+5. Sanity checking
+6. Performance checking
+7. Cleanup
+
+
+<!--1. *Setup*
+   * During this phase the check is set up for the current partition and the current programming environment.
+     The check's stage and output directories as well as its job descriptor are set up.
+     The job descriptor contains all the necessary information needed to launch the regression check.
+2. *Compilation*
+   * Here the source code of the check, if any, is compiled. Some tests may not need to compile anything, in which case the status of this phase is always success.
+3. *Job submission*
+   * At this phase the regression check is launched.
+     How the check will be launched depends on the job scheduler that serves the current system partition.
+     A system partition (e.g., the login nodes of the system) may only accept local jobs (see [Site configuration](#site-configuration) for more information), in which case a local OS process will be launched for running the check.
+     You can also force the regression to run all checks locally using the `--force-local` option.
+
+4. *Job wait*
+   * During this phase the previously launched job or process is waited for until it finishes and the job ID or the process ID are reported respectively.
+     No check is performed whether the job or process finished gracefully.
+     It is responsibility for the check to judge this.
+     In practice, this means that this phase should always pass, unless something catastrophic has happened (bug in the framework or malfunctioning job scheduler).
+
+5. *Sanity checking*
+   * At this phase the regression check verifies whether it has finished successfully or not.
+
+6. *Performance verification*
+   * This phase is only relevant for performance regression checks, in which case the check verifies whether it has met its performance requirements.
+     For simple regression checks, this phase is always a success.
+
+7. *Clean up*
+   * This phase is responsible for cleaning up the resources of the regression check.
+     This includes copying some important files of the check to the output directory (e.g., generated job scripts, standard output/error etc.), removing its temporary stage directory and unloading its environment.-->
+
 
 A test could implement some of them as no-ops.
 As soon as the test is finished, its resources are cleaned up and the regression's environment is restored.
@@ -25,7 +57,7 @@ In the following we elaborate on each of the individual phases of the lifetime o
 
 # 1. The initialization phase
 
-Although this phase is not part of the regression check pipeline as shown in the Figure abobe, it is quite important, since it sets up the definition of the regression test.
+Although this phase is not part of the regression check pipeline as shown in the Figure above, it is quite important, since it sets up the definition of the regression test.
 It serves as the *specification* of the check, where all the needed information to run the test is set.
 A test could go through the whole pipeline performing all of its work without the need to override any of the pipeline stages.
 In fact, this is the case for the majority of tests we have implemented for CSCS production systems.

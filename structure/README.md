@@ -1,7 +1,7 @@
 # Folder Structure
 
 ReFrame allows the users to organize their regression tests in any way that is the most convenient for their needs.
-The only soft requirement imposed by the framework is that a `src/}`folder should be present at the same level as the test's source file. This is just the default behavior. The users may override this by redefining the `self.sourcesdir` variable in their tests.
+The only soft requirement imposed by the framework is that a `src/`folder should be present at the same level as the test's source file. This is just the default behavior. The users may override this by redefining the `self.sourcesdir` variable in their tests.
 
 Users can group together related tests in a common directory sharing the same `src/` folder as in the `foobar` family of tests in the following example.
 This sharing can eliminate duplication at the level of regression test resources, which can prove beneficial in maintaining a large regression test suite.
@@ -31,3 +31,6 @@ mychecks/
               input.txt
           prog2.py
 ```
+
+In this example, the `compile` folder stores the `helloworld` and `foobar` folders that contain the regression checks implementation files with the same names.
+Similarly, the `apps` folder stores the application regression checks `prog1` and `prog2`.

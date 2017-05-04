@@ -14,12 +14,25 @@ ReFrame's front-end goes through three phases:
 In the following, we will elaborate on these phases and the key command-line options controlling them.
 A detailed listing of all the options grouped by phase is given by `reframe -h`.
 
+## System auto-detection
+When the regression is launched, it tries to auto-detect the system it runs on based on its site configuration.
+The auto-detection process is as follows:
+
+The regression first tries to obtain the hostname from `/etc/xthostname`, which provides the unqualified *machine name* in Cray systems.
+If this cannot be found the hostname will be obtained from the standard `hostname` command.
+Having retrieved the hostname, the regression goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the `hostnames` attribute (see the [Configure your site section](/configure) for further details).
+The detection process stops at the first match found, and the system it belongs to is considered as the current system.
+If the system cannot be auto-detected, regression will fail with an error message.
+You can override completely the auto-detection process by specifying a system or a system partition with the `--system` option (e.g., `--system daint` or `--system daint:gpu`).
+
+
 ## Supported actions
-Although this is the last phase the frontend goes through, I list it first since an action is always required.
+Even though the actions is the last phase the front-end goes through, it is listed first since an action is always required.
 Otherwise, you will only get the regression's help message.
 Currently there are only two available actions:
 1. Listing of the selected checks
 2. Execution of the selected checks
+
 
 ### Listing of regression checks
 To retrieve a listing of the selected checks, you must specify the `-l` or `--list` options.
@@ -29,6 +42,7 @@ An example listing of checks is the following:
 reframe -l
 ```
 
+The ouput looks like:
 ```
 Command line: reframe -l
 Regression paths
@@ -57,7 +71,7 @@ List of matched checks
   ...
 Found 115 check(s).
 ```
-The listing contains the name of the check, its description, the tags associated with it (see [Discovery of regression checks](discovery-of-regression-checks)) and a list of its maintainers.
+The listing contains the name of the check, its description, the tags associated with it (see [Discovery of regression checks](#discovery-of-regression-checks)) and a list of its maintainers.
 Note that this listing may also contain checks that are not supported by the current system.
 These checks will be just skipped if you try to run them.
 
@@ -65,12 +79,11 @@ These checks will be just skipped if you try to run them.
 
 To run the regression checks you should specify the `run` action though the `-r` or `--run` options.
 The listing action takes precedence over the execution one, meaning that if you specify both `-l -r`, only the listing action will be performed.
-The output of a regression run looks like the following:
-
 ```bash
 reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 ```
 
+The output of the regression run looks like the following:
 ```
 Command line: reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 Regression paths
@@ -128,47 +141,6 @@ Stats for partition: gpu
 ===> end date Fri Mar  3 11:50:09 2017
 ```
 
-The first thing the regression does, even before loading any check, is to try to auto-detect the system it runs on.
-From PyRegression [2.1](https://madra.cscs.ch/scs/PyRegression/tags/v2.1) onward, the regression supports heterogeneous clusters consisting of multiple partitions.
-The term "partition" here does not refer to a partition in the job scheduler, but rather to a logical partition of the system (e.g., GPU nodes vs. multicore-only nodes vs. KNL nodes etc.).
-The way a job gets access to that logical partition can be performed in different ways by the job scheduler (e.g., using partitions, constraints, resource specifications etc.).
-For more information on how a new system is configured inside the regression, please have a look [here](#site-configuration).
-
-After the current system is [auto-detected](#system-auto-detection) successfully, the regression will go over all its partitions and try to run all the checks skipping those that are not supported.
-Each test is executed repeatedly for all the programming environments it supports and a status line for each individual phase of the execution of the check is printed.
-Generally, each regression check passes through a set of phases during its execution, which are summarized below.
-We will not get into all the details of each phase, since these are relevant only to the implementors of new regression checks.
-There are seven phases a regression check goes through during its execution:
-1. *Setup*
-   * During this phase the check is set up for the current partition and the current programming environment.
-     The check's stage and output directories as well as its job descriptor are set up.
-     The job descriptor contains all the necessary information needed to launch the regression check.
-2. *Compilation*
-   * Here the source code of the check, if any, is compiled. Some tests may not need to compile anything, in which case the status of this phase is always success.
-3. *Job submission*
-   * At this phase the regression check is launched.
-     How the check will be launched depends on the job scheduler that serves the current system partition.
-     A system partition (e.g., the login nodes of the system) may only accept local jobs (see [Site configuration](#site-configuration) for more information), in which case a local OS process will be launched for running the check.
-     You can also force the regression to run all checks locally using the `--force-local` option.
-
-4. *Job wait*
-   * During this phase the previously launched job or process is waited for until it finishes and the job ID or the process ID are reported respectively.
-     No check is performed whether the job or process finished gracefully.
-     It is responsibility for the check to judge this.
-     In practice, this means that this phase should always pass, unless something catastrophic has happened (bug in the framework or malfunctioning job scheduler).
-
-5. *Sanity checking*
-   * At this phase the regression check verifies whether it has finished successfully or not.
-
-6. *Performance verification*
-   * This phase is only relevant for performance regression checks, in which case the check verifies whether it has met its performance requirements.
-     For simple regression checks, this phase is always a success.
-
-7. *Clean up*
-   * This phase is responsible for cleaning up the resources of the regression check.
-     This includes copying some important files of the check to the output directory (e.g., generated job scripts, standard output/error etc.), removing its temporary stage directory and unloading its environment.
-
-
 ## Discovery of regression checks
 
 When the regression frontend is invoked it tries to locate regression checks in a predefined path.
@@ -179,7 +151,6 @@ reframe -l | grep 'Check search path'
 ```
 
 If the path line is prefixed with `(R)`, every directory in the path will search recursively.
-From version 2.1 onward, the default behavior of the regression is to search recursively for checks under the `checks/` directory.
 
 User checks are essentially python source files that provide a special function, which returns the actual regression check instances.
 A single source file may provide multiple regression checks.
@@ -296,7 +267,7 @@ They are summarized below:
 * `--force-local`: Forces a local execution of the selected checks. No jobs will be submitted.
 * `--skip-sanity-check`: Skips sanity checking phase.
 * `--skip-performance-check`: Skips performance verification phase.
-* `--relax-performance-check`: (since [2.0.2]((https://madra.cscs.ch/scs/PyRegression/tags/v2.0.2)) This option is similar to the `--skip-performance-check` in that the regression will not fail if the performance of the check is not the expected.
+* `--relax-performance-check`: This option is similar to the `--skip-performance-check` in that the regression will not fail if the performance of the check is not the expected.
 There are, however, two differences:
   1. The performance check *will be* performed and its performance will be logged (see [Logging](#logging)), but the regression will always report success for this phase.
   2. This option affects only those tests that can accept such a relaxed behavior (`strict_check = False` property).
@@ -324,7 +295,7 @@ The regression framework uses three basic directories during the execution of te
   * After a regression check finishes execution some important files will be copied from the stage directory to the output directory.
     By default these are the standard output, standard error and the generated job script file.
     The regression may also specify to keep additional files.
-* The log directory (since [2.0.2](https://madra.cscs.ch/scs/PyRegression/tags/v2.0.2))
+* The log directory
   * This is where the log files of the individual performance checks are placed (see [Logging](#logging) for more information)
 
 By default all these directories are placed under a common prefix, which defaults to `.`.
@@ -332,11 +303,11 @@ The rest of the directories are organized as follows:
 
 * Stage directory: `${prefix}/stage/<timestamp>`
 * Output directory: `${prefix}/output/<timestamp>`
-* Log directory (since [2.0.2](https://madra.cscs.ch/scs/PyRegression/tags/v2.0.2)): `${prefix}/logs`
+* Log directory: `${prefix}/logs`
 
 A timestamp directory will be appended to the stage and output directories, unless you specify the `--notimestamp` option.
 The default format of the timestamp is `yyyy-mm-ddThh:mm:ss`.
-Since PyRegression [2.1](https://madra.cscs.ch/scs/PyRegression/tags/v2.1), you can change the timestamp format using the `--timefmt` option, which accepts a `strftime()` compatible string.
+You can change the timestamp format using the `--timefmt` option, which accepts a `strftime()` compatible string.
 
 
 You can override either the default global prefix or any of the default individual regression directories using the corresponding options.
@@ -344,7 +315,7 @@ You can override either the default global prefix or any of the default individu
 * `--prefix DIR`: set regression's prefix to `DIR`.
 * `--output DIR`: set regression's output directory to `DIR`.
 * `--stage DIR`: set regression's stage directory to `DIR`.
-* `--logdir DIR`: (since [2.0.2](https://madra.cscs.ch/scs/PyRegression/tags/v2.1)) set regression's log directory to `DIR`.
+* `--logdir DIR`: set regression's log directory to `DIR`.
 
 The stage and output directories are created only when you run a regression check.
 However you can view the directories that will be created even when you do a listing of the available checks with the `-l` option.
@@ -367,7 +338,7 @@ List of matched checks
 Found 0 check(s).
 ```
 
-You can also define different default regression directories per system by specifying them in the [site configuration](#site-configuration) settings file.
+You can also define different default regression directories per system by specifying them in the [site configuration](/configure/#new-system-configuration) settings file.
 However, the command line options take always precedence over any default directory.
 
 ## Logging

@@ -77,7 +77,7 @@ The `-A` option takes any valid python expression, so that for example you can r
 
 # Where to go from here
 
-ReFrame is shipped with example regression checks. But before attempting to run these examples, please configure your site following the [Configure your site](/configure) guide and update the `valid_systems` and `valid_prog_environs` variables accordingly. These variables are defined inside the examples regression tests (see [Select systems and programming environments](/writing_checks/#select-systems-and-programming-environments) for further details).
+ReFrame is shipped with example regression checks. But before attempting to run these examples, please configure your site reading the [Configure your site section](/configure) and update the `valid_systems` and `valid_prog_environs` variables accordingly. These variables are defined inside the examples regression tests (see [Select systems and programming environments](/writing_checks/#select-systems-and-programming-environments) for further details).
 
 In order to understand the regression output, please refer to the [Pipeline](/pipeline) section.
 
