@@ -106,7 +106,7 @@ namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
  *  the main markdown is rendered
  */
 namespace.__correct_navbar = function() {
-    $('#cscs-leftbar-markdown').find("li").each(function(index, element) {
+    $('#cscs-leftbar-markdown').find("a").each(function(index, element) {
       console.log(element);
         $(element).addClass('reframe-prepend-domain');
     });
