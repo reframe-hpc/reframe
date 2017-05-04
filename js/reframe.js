@@ -107,15 +107,16 @@ namespace.setup_site_content = function(navbarfile, sidebarfile, jumbotron) {
  */
 namespace.__correct_navbar = function() {
     $('#cscs-leftbar-markdown').find("li").each(function(index, element) {
+      console.log(element);
         $(element).addClass('reframe-prepend-domain');
     });
-
     $('#cscs-leftbar-markdown').children("ul").each(function(index, element) {
       if ($(element).hasClass('nav navbar-nav') == false) {
         $(element).addClass('nav navbar-nav');
       }
       $(this).unwrap();
     });
+
 }
 
 
