@@ -1,0 +1,3 @@
+# wall-time (s) and % performance difference on 16 nodes, 1 tasks per node
+daint 18-11-2016_00-49-59 610462 	 Time=59.144 Difference=0%
+dom 18-11-2016_00-49-59 610462 	 Time=59.144 Difference=0%

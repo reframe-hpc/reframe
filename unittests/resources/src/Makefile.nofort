@@ -1,0 +1,14 @@
+.PHONY: all clean
+
+PROGRAMS = hello_c hello_cpp
+
+all: $(PROGRAMS)
+
+hello_c: hello.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+hello_cpp: hello.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+clean:
+	/bin/rm -f $(PROGRAMS)
