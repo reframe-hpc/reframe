@@ -6,7 +6,7 @@ Users should be concerned only about the logical requirements of their tests.
 This allows users' regression checks to be maintained and adapted to new systems easily.
 
 The user describes his test in a simple Python class and the framework takes care of all the details of the low-level interaction with the system.
-Although the user still has to program in Python new checks, the framework is structured such that only a basic knowledge of Python is required to write a regression test, which will be able to run out-of-the-box on a variety of systems and programming environments.
+Although the user still has to program new checks in Python, the framework is structured such that only a basic knowledge of Python is required to write a regression test, which will be able to run out-of-the-box on a variety of systems and programming environments.
 In the future, we plan to allow users to describe their tests in a more abstract way using configuration files that wouldn't require any programming skills at all.
 Of course, the Python interface will still be available for more advanced usage.
 
@@ -36,15 +36,15 @@ However, given the complexity of HPC systems, writing and maintaining regression
 A small change in system configuration or deployment may require adapting hundreds of regression tests at the same time.
 Similarly, porting a test to a different system may require significant effort if the new system's configuration is substantially different than that of the system that it was originally written for.
 
-This way, ReFrame was designed to help HPC support teams to:
+ReFrame was designed to help HPC support teams to easily write tests that
 * monitor the impact of changes to the system that would affect negativelly the users
 * monitor system performance
 * monitor system stability
 * guarantee quality of service
 
-And also decrease the amount of time and resources required to:
+And also decrease the amount of time and resources required to
 * write and maintain regression tests
-* port the regression test to other HPC systems
+* port regression tests to other HPC systems
 
 
 # What does it do?
@@ -63,12 +63,8 @@ As a matter of fact, the amount of unit test code accompanying the framework alm
 Regarding the ease of use we have tried to make the common case of invoking the regression suite as simple as possible by selecting reasonable defaults or by allowing to set default settings values per system configuration.
 
 
-
 # Why Python?
 
 We have written the framework entirely in Python and followed a layered design that abstracts away the system related details.
 An API for writing regression tests is provided to the user at the highest level, allowing the description of the requirements of the test.
-An advantage of writing regression tests in a high-level language, such as Python, is that one can take advantage of features not present in classical shell scripting.
-For example, one can create groups of related tests that share common characteristics and/or functionality by implementing them in a base class, from which all the related concrete tests inherit.
-This eliminates unnecessary code duplication and reduces significantly the maintenance cost.
-
+An advantage of writing regression tests in a high-level language, such as Python, is that one can take advantage of features not present in classical shell scripting, that would eliminate unnecessary code duplication and reduce significantly the maintenance cost.

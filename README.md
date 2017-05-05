@@ -9,7 +9,7 @@ The framework will load the test and will send it down a well-defined pipeline t
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
 
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
-Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
+Users can create their own test hierarchies or test factories for generating multiple tests at the same time and they can also customize them in a simple and expressive way.
 
 <!--# Citing the Framework
 
@@ -19,5 +19,6 @@ If you use the framework please cite:
 
 # Use cases
 
-The ReFrame framework has been in production at [CSCS](http://www.cscs.ch) since the upgrade of the [Piz Daint](http://www.cscs.ch/computers/piz_daint/index.html) system in early December 2016. [Read the full story](/usecases)...
+The ReFrame framework has been in production at [CSCS](http://www.cscs.ch) since the upgrade of the [Piz Daint](http://www.cscs.ch/computers/piz_daint/index.html) system in early December 2016.
 
+[Read the full story](/usecases)...
