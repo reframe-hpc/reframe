@@ -74,4 +74,4 @@ To learn how to invoke the ReFrame command-line interface for running your tests
 
 Finally, ReFrame ships with a set of example regression tests that lie in the `examples/` directory.
 These examples are slightly simplified examples of real regression tests we run at CSCS.
-You can use them as a starting point for your tests.
+You can use them as a starting point for your tests. For a small subset of those examples, please refer to the [examples section](/examples).
