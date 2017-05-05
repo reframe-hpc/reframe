@@ -1,7 +1,7 @@
 * [Getting Started](/started)
 * [Site Configuration](/configure)
-* [Folder Structure](/structure)
 * [Regression Pipeline](/pipeline)
 * [Writing Checks](/writing_checks)
+* [Folder Structure](/structure)
 * [Running](/running)
 <!--* [Uses cases](/usecases)-->
