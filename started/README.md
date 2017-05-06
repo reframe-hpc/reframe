@@ -51,7 +51,7 @@ test_always_true (unittests.test_utility.TestUtilityFunctions) ... ok
 test_standard_threshold (unittests.test_utility.TestUtilityFunctions) ... ok
 
 ----------------------------------------------------------------------
-Ran 190 tests in 13.254s
+Ran 189 tests in 12.251s
 
 OK (SKIP=7)
 ```
