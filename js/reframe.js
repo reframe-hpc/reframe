@@ -316,8 +316,11 @@ namespace.__create_toc = function() {
     $('#toc').affix({
       offset: {
         // top: $('.cscs-global-nav').outerHeight(),
+        // top: function () {
+        //   return $('.cscs-global-nav').outerHeight()
+        // },
         top: function () {
-          return $('.cscs-global-nav').outerHeight()
+          return $('.jumbotron').outerHeight()
         },
         bottom: function () {
           return (this.bottom = $('.footer').outerHeight(true));
