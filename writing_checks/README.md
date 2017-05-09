@@ -388,7 +388,7 @@ def compile(self):
 
 The generated compilation command in this case will be
 ```bash
-make -C <stagedir> -f build.mk PREP='scorep' CC='cc' CXX='CC' FC='ftn' CFLAGS='' \CXXFLAGS='' FFLAGS='' LDFLAGS=''
+make -C <stagedir> -f build.mk PREP='scorep' CC='cc' CXX='CC' FC='ftn' CFLAGS='' CXXFLAGS='' FFLAGS='' LDFLAGS=''
 ```
 Finally, pre- and post-compilation steps can be added through special variables (e.g., a `configure` step may be needed before compilation), however, ReFrame is not designed to be an automatic compilation and deployment tool.
 
