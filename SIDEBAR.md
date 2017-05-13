@@ -4,4 +4,5 @@
 * [Writing Checks](/writing_checks)
 * [Folder Structure](/structure)
 * [Running](/running)
+* [Reference Guide](/reference)
 <!--* [Uses cases](/usecases)-->
