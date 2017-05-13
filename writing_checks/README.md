@@ -120,7 +120,7 @@ The ReFrame framework provides three basic types of regression tests:
 * __Normal test__: This is the typical test that goes through all the phases of the pipeline.
 * __Run-only test__: This test skips the compilation phase.
   This is quite a common type of test, especially when you want to test the functionality of installed software.
-  Note that in this test the copying of the resources to the stage directory happens during the run phase and not during the compilation phase, as is the case of a normal test.
+  Note that in this type of test the copying of the resources to the stage directory happens during the run phase and not during the compilation phase, as is the case of a normal test.
 * __Compile-only test__: This test a special test that skips completely the run phase.
   However it makes available the standard output and standard error of the compilation, so that their output can be parsed during the check sanity phase in the same way that this happens for the other type of tests.
 
@@ -736,3 +736,46 @@ A list contaitning a collection of example regression tests that highlight some 
   * See [CP2K](/examples/#application-regression-tests) check.
 * Compile-only checks:
   * See the [libsci_resolve](/examples/#compile-only-regression-tests) check.
+
+# Reference of `RegressionTest`'s fields
+
+| Field name | Description | Default value | Type |
+| ---------- | ----------- | ------------- | ---- |
+| `current_environ` | The programming environment that the regression test is currently executing with. This is set by the framework during the regression test's setup phase | Read-only | `Environment` |
+| `current_partition` | The system partition the regression test is currently executing on. This is set by the framework during the regression test's setup phase. | Read-only | `SystemPartition` |
+| `current_system` | The system the regression test is currently executing on. This is set by the framework during the regression test's initialization. | Read-only | `System` |
+| `descr`    | A detailed description of the test | `self.name` | string |
+| `executable` | The name of the executable to be launched. | `./<name>` | string |
+| `executable_opts` | List of options to be passed to the `executable`. | `[]` | list of strings |
+| `job` | The job descriptor associated with this test. This is created during the setup phase of the test | Read-only | `Job` |
+| `keep_files` |  List of files to kept after the test finishes. By default, the framework saves the standard output and error and the (job) shell script generated. These files will be copied over to the framework's output directory during the cleanup phase. Directories are also accepted in this field. Non-absolute path names are resolved relative to the stage directory. | `[]` | list of strings |
+| `local` | Always execute this test locally. | `False` | boolean |
+| `maintainers` | List of people responsible for this test. When the test fails, this contact list will be printed out. | `[]` | list of strings |
+| `modules` | List of modules to be loaded before running this test. These modules will be loaded during the test's setup phase. | `[]` | list of strings |
+| `name`     | The name of the test | N/A | alphanumeric |
+| `num_cpus_per_task` | Number of CPUs per task required by this test. Ignored if `None`. | `None` | integer |
+| `num_gpus_per_node` | Number of GPUs per node required by this test. | `0` | integer |
+| `num_tasks` | Number of tasks required by this test. | `1` | integer |
+| `num_tasks_per_core` | Number of tasks per core required by this test. Ignored if `None`. | `None` | integer |
+| `num_tasks_per_node` | Number of tasks per node required by this test. Ignored if `None`. | `None` | integer |
+| `num_tasks_per_socket` | Number of tasks per socket required by this test. Ignored if `None`. | `None` | integer |
+| `perf_patterns` | The set of performance patterns to look for for this test. Set to `None` for non-performance checks. | `None` | See [Output parsing](#output-parsing-and-performance-assessment) |
+| `prefix` | The prefix directory of the test. | The directory of the test file | string |
+| `postbuild_cmd` | List of shell commands to be executed after building. These commands are executed from inside the stage directory. | `[]` | list of strings |
+| `prebuild_cmd` | List of shell commands to be executed before building. These commands are executed from inside the stage directory. | `[]` | list of strings |
+| `reference` | The set of reference values for this test. | `{}` | scoped dictionary |
+| `sanity_patterns` | The set of sanity patterns to look for for this test. | `None` | See [Output parsing](#output-parsing-and-performance-assessment) |
+| `sourcepath` | The path to the source file or source directory of the test. If not absolute, it is resolved against the `sourcesdir` directory. If it refers to a regular file, this file will be compiled (its language will be automatically recognized) and the produced executable will be placed in the test's stage directory. If it refers to a directory, this will be copied to the test's stage directory and `make` will be invoked in that. | `''` | string |
+| `sourcesdir` | The directory containing the test's resources. | `<test-prefix>/src/` | string |
+| `stagedir` | The stage directory of the test. This is set during the test's setup phase. | Read-only | string |
+| `stderr` | The file containing the standard error of the test. This is set during the test's setup phase. | Read-only | string |
+| `stdout` | The file containing the standard output of the test. This is set during the test's setup phase. | Read-only* | string |
+| `strict_check` | Specify whether this test allows a relaxed performance interpretation through the `--relax-performance-check` command-line option. If set to `False` and the aforementioned option is specified, the result of the performance checking phase will always be success. Note that the performance check is not skipped; it is just its result that is ignored. If set to `True`, the performance check for this test cannot be relaxed. |  `True` | boolean |
+| `tags` | Set of tags to be associated with this regression test. This regression test can be selected from the frontend using any of these tags. | `{}` | set of strings |
+| `time_limit` | Time limit for this test in the form of `(hh, mm, ss)`. | `(0, 10, 0)` | tuple of integers |
+| `use_multithreading` | Specify whether this tests needs multithreading or not. | `False` | boolean |
+| `valid_prog_environs` | Programming environmets supported by this test. | `[]` | list of strings |
+| `valid_systems` | Systems supported by this test. The general syntax for systems is `<sysname>[:<partname]`. | `[]` | list of strings |
+| `variables` | Environment variables to be set before running this test. These variables will be set during the test's setup phase. | `{}` | dictionary of string keys and string values|
+
+\* _Fields marked as "read-only" are not meant to be assigned by the user tests, although this policy is currently not enforced._
