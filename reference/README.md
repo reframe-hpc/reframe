@@ -12,7 +12,7 @@ This is the complete reference of the various fields and classes that a user of 
 | Field name | Description | Default value | Type |
 | ---------- | ----------- | ------------- | ---- |
 | `launcher` | The job launcher associated to this job descriptor, e.g., "srun", "mpirun" etc. | Read-only* | `JobLauncher` |
-| `post_run`  | List of shell commands to emit after the actual job launch. | `[]` | list of strings |
+| `post_run` | List of shell commands to emit after the actual job launch. | `[]` | list of strings |
 | `pre_run`  | List of shell commands to emit before the actual job launch. | `[]` | list of strings |
 
 # `JobLauncher` class
@@ -21,7 +21,7 @@ This is the complete reference of the various fields and classes that a user of 
 | ---------- | ----------- | ------------- | ---- |
 | `options`  | List of options to be passed to this job launcher. | `[]` | list of strings |
 
-The only `JobLauncher` that users can use is the `LauncherWrapper`, which wraps an existing launcher by prepending a user program to its invocation.
+The only `JobLauncher` that users may use is the `LauncherWrapper`, which wraps an existing launcher by prepending a user program to its invocation.
 This is useful for parallel debuggers.
 
 ```python
