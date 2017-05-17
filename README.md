@@ -25,4 +25,4 @@ The ReFrame framework has been in production at [CSCS](http://www.cscs.ch) since
 
 
 # Publications
-* _ReFrame: A regression framework for checking the health of large HPC systems_ @ [CUG 2017](https://cug.org/CUG2017) conference. [[slides](/files/reframe-cug17-slides.pdf)]
+* _ReFrame: A regression framework for checking the health of large HPC systems_ [[slides](/files/reframe-cug17-slides.pdf)]
