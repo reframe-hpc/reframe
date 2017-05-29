@@ -42,13 +42,12 @@ def run_checks_partition(checks, options, partition, printer, stats):
 
     # Sandbox variables passed to setup
     sandbox = Sandbox()
-    sandbox.system = partition
 
     # Prepare for running the tests
     environ_save = EnvironmentSnapshot()
     for check in checks:
         if not options.skip_system_check and \
-           not check.supports_system(sandbox.system.name):
+           not check.supports_system(partition.name):
             printer.print_unformatted(
                 'Skipping unsupported test %s...' % check.name)
             continue
@@ -60,8 +59,9 @@ def run_checks_partition(checks, options, partition, printer, stats):
         if not options.relax_performance_check:
             check.strict_check = True
 
-        for env in sandbox.system.environs:
-            # Add current environment to the sandbox
+        for env in partition.environs:
+            # Add current partition and environment to the sandbox
+            sandbox.system  = partition
             sandbox.environ = env
             try:
                 if not options.skip_prgenv_check and \
@@ -101,9 +101,10 @@ def run_checks_partition(checks, options, partition, printer, stats):
                     success = False
 
                 if not options.skip_performance_check and \
-                   not printer.print_check_progress('Verifying performance',
-                                                    check.check_performance,
-                                                    expected_ret=True):
+                   not printer.print_check_progress(
+                       'Verifying performance',
+                       check.check_performance_relaxed,
+                       expected_ret=True):
                     if check._logfile:
                         printer.print_unformatted(
                             'Check log file: %s' % check._logfile
@@ -393,10 +394,11 @@ def main():
 
     # Print command line
     print('Command line:', ' '.join(sys.argv))
+    print('Reframe version: ' + settings.version)
 
     # Print important paths
-    print('Regression paths')
-    print('================')
+    print('Reframe paths')
+    print('=============')
     print('    Check prefix      :', loader.prefix)
     print('%03s Check search path :' % ('(R)' if loader.recurse else ''),
           "'%s'" % ':'.join(loader.load_path))

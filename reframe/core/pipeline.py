@@ -33,7 +33,7 @@ class RegressionTest:
     descr               = StringField('descr')
     sourcepath          = StringField('sourcepath')
     prebuild_cmd        = TypedListField('prebuild_cmd', str)
-    postbuild_cmd       = TypedListField('prebuild_cmd', str)
+    postbuild_cmd       = TypedListField('postbuild_cmd', str)
     executable          = StringField('executable')
     executable_opts     = TypedListField('executable_opts', str)
     current_system      = TypedField('current_system', System)
@@ -42,6 +42,7 @@ class RegressionTest:
     current_environ     = TypedField('current_environ', Environment,
                                      allow_none=True)
     keep_files          = TypedListField('keep_files', str)
+    readonly_files      = TypedListField('readonly_files', str)
     tags                = TypedSetField('tags', str)
     maintainers         = TypedListField('maintainers', str)
     strict_check        = BooleanField('strict_check')
@@ -85,6 +86,7 @@ class RegressionTest:
         self.job               = None
         self.job_resources     = {}
         self.keep_files        = []
+        self.readonly_files    = []
         self.tags              = set()
         self.maintainers       = []
 
@@ -303,7 +305,7 @@ class RegressionTest:
 
 
     def _copy_to_stagedir(self, path):
-        os_ext.copytree(path, self.stagedir)
+        os_ext.copytree_virtual(path, self.stagedir, self.readonly_files)
 
 
     def prebuild(self):
@@ -372,24 +374,17 @@ class RegressionTest:
 
 
     def check_sanity(self):
-        # Check explicitly against None; otherwise the if will be triggered also
-        # on empty sanity_patterns
-        if self.sanity_patterns == None:
-            return False
-
         return self._match_patterns(self.sanity_patterns, None)
 
 
-    def check_performance(self):
-        # Check explicitly against None; otherwise the if will be triggered also
-        # on empty perf_patterns
-        if self.perf_patterns == None:
-            return True
-
-        # We don't want to skip performance check (because of logging) in case
-        # strict_check is False
-        ret = self._match_patterns(self.perf_patterns, self.reference)
+    def check_performance_relaxed(self):
+        """Implements the relaxed performance check logic."""
+        ret = self.check_performance()
         return ret if self.strict_check else True
+
+
+    def check_performance(self):
+        return self._match_patterns(self.perf_patterns, self.reference)
 
 
     def cleanup(self, remove_files=False, unload_env=True):
@@ -456,8 +451,8 @@ class RegressionTest:
 
 
     def _match_patterns(self, multi_patterns, reference):
-        if not len(multi_patterns):
-            return False
+        if not multi_patterns:
+            return True
 
         for file_patt, patterns in multi_patterns.items():
             if file_patt == '-' or file_patt == '&1':
