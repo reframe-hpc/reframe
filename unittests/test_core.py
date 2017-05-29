@@ -33,6 +33,13 @@ class TestEnvironment(unittest.TestCase):
 
     def setUp(self):
         module_path_add([TEST_MODULES])
+
+        # Always add a base module; this is a workaround for the modules
+        # environment's inconsistent behaviour, that starts with an empty
+        # LOADEDMODULES variable and ends up removing it completely if all
+        # present modules are removed.
+        module_load('testmod_base')
+
         os.environ['_fookey1'] = 'origfoo'
         self.environ_save = EnvironmentSnapshot()
         self.environ = Environment(name='TestEnv1', modules=['testmod_foo'])
@@ -293,5 +300,6 @@ class TestModules(unittest.TestCase):
 
 
     def test_module_purge(self):
+        module_load('testmod_base')
         module_purge()
         self.assertNotIn('LOADEDMODULES', os.environ)

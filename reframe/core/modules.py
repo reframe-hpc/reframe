@@ -14,8 +14,7 @@ class Module:
     """Module wrapper.
 
     We basically need it for defining operators for use in standard Python
-    algorithms.
-    """
+    algorithms."""
     def __init__(self, name):
         if not name:
             raise ModuleError('no module name specified')
@@ -58,15 +57,14 @@ def module_equal(rhs, lhs):
 
 def module_list():
     try:
-        return os.environ['LOADEDMODULES'].split(':')
+        # LOADEDMODULES may be defined but empty
+        return [ m for m in os.environ['LOADEDMODULES'].split(':') if m ]
     except KeyError:
         return []
 
 
 def module_conflict_list(name):
-    """
-    Return the list of conflicted packages
-    """
+    """Return the list of conflicted packages"""
     conflict_list = []
     completed = os_ext.run_command(
         cmd = '%s show %s' % (reframe.MODULECMD_PYTHON, name))

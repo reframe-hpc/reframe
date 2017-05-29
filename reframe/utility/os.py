@@ -51,7 +51,8 @@ def grep_command_output(cmd, pattern, where = 'stdout'):
     return False
 
 
-def run_command_async(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=1):
+def run_command_async(cmd, stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE, bufsize=1):
     return subprocess.Popen(args=shlex.split(cmd),
                             stdout=stdout,
                             stderr=stderr,
@@ -61,10 +62,10 @@ def run_command_async(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsi
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False):
-    """
-    Same as shutil.copytree() but valid also if 'dst' exists, in which case it
-    will first remove it and then call the standard shutil.copytree()
-    """
+    """Same as shutil.copytree() but valid also if 'dst' exists.
+
+    In this case it will first remove it and then call the standard
+    shutil.copytree()."""
     if os.path.exists(dst):
         shutil.rmtree(dst)
 
@@ -72,17 +73,67 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
                     ignore_dangling_symlinks)
 
 
+def copytree_virtual(src, dst, file_links=[],
+                     symlinks=False, copy_function=shutil.copy2,
+                     ignore_dangling_symlinks=False):
+    """Copy `dst` to `src`, but create symlinks for the files in `file_links`.
+
+    If `file_links` is empty, this is equivalent to `copytree()`.  The rest of
+    the arguments are passed as-is to `copytree()`.  Paths in `file_links` must
+    be relative to `src`. If you try to pass `.` in `file_links`, `OSError` will
+    be raised."""
+
+    # Work with absolute paths
+    src = os.path.abspath(src)
+    dst = os.path.abspath(dst)
+
+    # 1. Check that the link targets are valid
+    # 2. Convert link targes to absolute paths
+    # 3. Store them in a set for quick look up inside the ignore function
+    link_targets = set()
+    for f in file_links:
+        if os.path.isabs(f):
+            raise ReframeError(
+                "copytree_virtual() failed: `%s': "
+                "absolute paths not allowed in file_links" % f)
+
+        target = os.path.join(src, f)
+        if not os.path.exists(target):
+            raise ReframeError(
+                "copytree_virtual() failed: `%s' does not exist" % target)
+
+        if os.path.commonpath([src, target]) != src:
+            raise ReframeError(
+                "copytree_virtual() failed: "
+                "`%s' not under `%s'" % (target, src))
+
+        link_targets.add(os.path.abspath(target))
+
+
+    if not file_links:
+        ignore = None
+    else:
+        ignore = lambda dir, contents: \
+                 [ c for c in contents if os.path.join(dir, c) in link_targets ]
+
+    # Copy to dst ignoring the file_links
+    copytree(src, dst, symlinks, ignore, copy_function, ignore_dangling_symlinks)
+
+    # Now create the symlinks
+    for f in link_targets:
+        link_name = f.replace(src, dst)
+        os.symlink(f, link_name)
+
+
 def inpath(entry, pathvar):
     """Check if entry is in pathvar. pathvar is a string of the form
-    'entry1:entry2:entry3'
-    """
+    `entry1:entry2:entry3`."""
     return entry in set(pathvar.split(':'))
 
 
 def subdirs(dirname, recurse=False):
     """Returns a list of dirname + its subdirectories. If recurse is True,
-    recursion is performed in pre-order.
-    """
+    recursion is performed in pre-order."""
     dirs = []
     if os.path.isdir(dirname):
         dirs.append(dirname)

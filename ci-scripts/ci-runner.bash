@@ -19,6 +19,20 @@ MODULEUSE=""
 
 CI_EXITCODE=0
 
+swap_files()
+{
+    if [ $# -lt 2 ]; then
+       echo "too few arguments to swap_files()" 1>&2
+       exit 1
+    fi
+
+    tmp="${1}_save"
+    cp $1 $tmp
+    cp $2 $1
+    cp $tmp $2
+    /bin/rm $tmp
+}
+
 usage()
 {
     cat <<EOF
@@ -26,7 +40,7 @@ Usage: $(tput setaf 1)$scriptname$(tput sgr0) $(tput setaf 3)[OPTIONS]$(tput sgr
 
     $(tput setaf 3)OPTIONS:$(tput sgr0)
 
-    $(tput setaf 3)-f | --folder$(tput sgr0) $(tput setaf 1)DIR$(tput sgr0)        ci folder, e.g. PyRegression-CI
+    $(tput setaf 3)-f | --folder$(tput sgr0) $(tput setaf 1)DIR$(tput sgr0)        ci folder, e.g. reframe-ci
     $(tput setaf 3)-i | --invocation$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   invocation for modified user checks. Multiple \`-i' options are multiple invocations
     $(tput setaf 3)-l | --load-profile$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0) sources the given file before any execution of commands
     $(tput setaf 3)-m | --module-use$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   executes module use of the give folder before loading the regression
@@ -129,7 +143,7 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-module load PyRegression
+module load reframe
 
 echo "=============="
 echo "Loaded Modules"
@@ -138,13 +152,25 @@ module list
 
 cd ${CI_FOLDER}
 
-echo "Running regression on ${CI_FOLDER}"
+echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
 # Performing the unittests
 echo "=================="
 echo "Running unit tests"
 echo "=================="
 checked_exec ./test_reframe.py -v
+
+if [ $CI_EXITCODE -eq 0 ]; then
+    # Run unit tests for the public release
+    swap_files reframe/settings.py reframe/settings.public.py
+
+    echo "================================="
+    echo "Running public release unit tests"
+    echo "================================="
+    checked_exec ./test_reframe.py -v
+
+    swap_files reframe/settings.public.py reframe/settings.py
+fi
 
 # Find modified or added user checks
 userchecks=( $(git log --name-status --oneline --no-merges -1 | \
