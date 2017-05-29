@@ -8,7 +8,7 @@ from datetime import datetime
 from reframe.core.fields import ReadOnlyField
 
 class RegressionSettings:
-    version     = ReadOnlyField('2.2')
+    version     = ReadOnlyField('2.3')
     module_name = ReadOnlyField('PyRegression')
     job_state_poll_intervals = ReadOnlyField([ 1, 2, 3 ])
     job_init_poll_intervals  = ReadOnlyField([ 1 ])

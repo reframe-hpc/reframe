@@ -9,7 +9,7 @@ import tempfile
 import reframe.utility.os as os_ext
 
 from reframe.frontend.loader import SiteConfiguration, autodetect_system
-from unittests.fixtures import system_with_scheduler
+from unittests.fixtures import guess_system, system_with_scheduler
 
 class TestFrontend(unittest.TestCase):
     def setUp(self):
@@ -17,7 +17,7 @@ class TestFrontend(unittest.TestCase):
         self.stagedir   = os.path.join(self.prefix, 'stage')
         self.outputdir  = os.path.join(self.prefix, 'output')
         self.logdir     = os.path.join(self.prefix, 'logs')
-        self.python     = 'python'
+        self.python     = 'python3'
         self.executable = 'reframe.py'
         self.sysopt     = 'generic:login'
         self.checkfile  = 'unittests/resources/hellocheck.py'
@@ -88,11 +88,14 @@ class TestFrontend(unittest.TestCase):
                      'job submission not supported')
     def test_check_submit_success(self):
         # This test will run on the auto-detected system
+        system = guess_system()
+        partition = system_with_scheduler(None)
+
         self.local = False
-        self.sysopt = None
+        self.sysopt = '%s:%s' % (system.name, partition.name)
 
         # pick up the programming environment of the partition
-        self.prgenv = system_with_scheduler(None).environs[0].name
+        self.prgenv = partition.environs[0].name
 
         command = os_ext.run_command(self._invocation_cmd(), check=True)
         self.assertNotIn('FAILED', command.stdout)

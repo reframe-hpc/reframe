@@ -312,6 +312,14 @@ class TestRegressionOutputScan(unittest.TestCase):
         self.assertTrue(self.test.check_performance())
 
 
+    def test_empty_file(self):
+        self.output_file.close()
+        self.test.sanity_patterns = {
+            self.output_file.name : { '.*' : [] }
+        }
+        self.assertFalse(self.test.check_sanity())
+
+
     def test_sanity_failure(self):
         self.output_file.write('result = failure\n')
         self.output_file.close()
@@ -425,7 +433,7 @@ class TestRegressionOutputScan(unittest.TestCase):
                                       performance2=2.7,
                                       performance3=3.2)
         self.test.strict_check = False
-        self.assertTrue(self.test.check_performance())
+        self.assertTrue(self.test.check_performance_relaxed())
 
 
     def test_invalid_threshold(self):
@@ -738,19 +746,16 @@ class TestRegressionOutputScan(unittest.TestCase):
                       self.test.sanity_patterns[self.output_file.name].keys())
 
 
-
     def test_patterns_empty(self):
         self.test.perf_patterns = {}
         self.test.sanity_patterns = {}
-        self.assertFalse(self.test.check_sanity())
-        self.assertFalse(self.test.check_performance())
+        self.assertTrue(self.test.check_sanity())
+        self.assertTrue(self.test.check_performance())
 
-
-    def test_patterns_empty(self):
-        self.test.perf_patterns = {}
-        self.test.sanity_patterns = {}
-        self.assertFalse(self.test.check_sanity())
-        self.assertFalse(self.test.check_performance())
+        self.test.sanity_patterns = None
+        self.test.perf_patterns = None
+        self.assertTrue(self.test.check_sanity())
+        self.assertTrue(self.test.check_performance())
 
 
     def test_file_not_found(self):

@@ -128,7 +128,7 @@ class Environment:
         return \
             'Name: %s\n' % self.name + \
             'Modules: %s\n' % str(self.modules) + \
-            'Environment: %s\n' % str(self.variables)
+            'Environment: %s' % str(self.variables)
 
 
 def swap_environments(src, dst):
@@ -171,11 +171,11 @@ class ProgEnvironment(Environment):
                  cc  = 'cc',
                  cxx = 'CC',
                  ftn = 'ftn',
-                 cppflags = '',
-                 cflags   = '',
-                 cxxflags = '',
-                 fflags   = '',
-                 ldflags  = '',
+                 cppflags = None,
+                 cflags   = None,
+                 cxxflags = None,
+                 fflags   = None,
+                 ldflags  = None,
                  **kwargs):
         super().__init__(name, modules, variables)
         self.cc  = cc
@@ -187,6 +187,8 @@ class ProgEnvironment(Environment):
         self.fflags   = fflags
         self.ldflags  = ldflags
         self.include_search_path = []
+        self.propagate = True
+
 
     def guess_language(self, filename):
         ext = filename.split('.')[-1]
@@ -222,28 +224,34 @@ class ProgEnvironment(Environment):
         if not lang:
             lang  = self.guess_language(source_file)
 
-        flags = self.cppflags
+        # Replace None's with empty strings
+        cppflags = self.cppflags if self.cppflags else ''
+        cflags   = self.cflags if self.cflags else ''
+        cxxflags = self.cxxflags if self.cxxflags else ''
+        fflags   = self.fflags if self.fflags else ''
+        ldflags  = self.ldflags if self.ldflags else ''
+
+        flags = [ cppflags ]
         if lang == 'C':
             compiler = self.cc
-            flags += ' ' + self.cflags
+            flags.append(cflags)
         elif lang == 'C++':
             compiler = self.cxx
-            flags += ' ' + self.cxxflags
+            flags.append(cxxflags)
         elif lang == 'Fortran':
             compiler = self.ftn
-            flags += ' ' + self.fflags
+            flags.append(fflags)
         elif lang == 'CUDA':
             compiler = 'nvcc'
-            flags += ' ' + self.cxxflags
+            flags.append(cxxflags)
         else:
             raise ReframeError('Unknown language')
 
-        # append include search path
-        for d in self.include_search_path:
-            flags += ' -I%s' % d
-
+        # Append include search path
+        flags += [ '-I' + d for d in self.include_search_path ]
         cmd = '%s %s %s -o %s %s %s' % \
-              (compiler, flags, source_file, executable, self.ldflags, options)
+              (compiler, ' '.join(flags), source_file,
+               executable, ldflags, options)
         try:
             return os_ext.run_command(cmd, check=True)
         except CommandError as e:
@@ -256,20 +264,34 @@ class ProgEnvironment(Environment):
 
     def _compile_dir(self, source_dir, makefile, options):
         if makefile:
-            cmd = 'make -C %s -f %s %s' % (source_dir, makefile, options)
+            cmd = 'make -C %s -f %s %s ' % (source_dir, makefile, options)
         else:
-            cmd = 'make -C %s %s' % (source_dir, options)
+            cmd = 'make -C %s %s ' % (source_dir, options)
 
-        # pass a set of predefined options to the Makefile
-        # Naming convetion for implicit make variables
-        cmd = cmd + \
-              " CC='%s'"  % self.cc + \
-              " CXX='%s'" % self.cxx + \
-              " FC='%s'"  % self.ftn + \
-              " CFLAGS='%s'" % self.cflags + \
-              " CXXFLAGS='%s'" % self.cxxflags + \
-              " FFLAGS='%s'" % self.fflags + \
-              " LDFLAGS='%s'" % self.ldflags
+        # Pass a set of predefined options to the Makefile
+        if self.propagate:
+            flags = [ "CC='%s'"  % self.cc,
+                      "CXX='%s'" % self.cxx,
+                      "FC='%s'"  % self.ftn ]
+
+            # Explicitly check against None here; the user may explicitly want
+            # to clear the flags
+            if self.cppflags != None:
+                flags.append("CPPFLAGS='%s'" % self.cppflags)
+
+            if self.cflags != None:
+                flags.append("CFLAGS='%s'" % self.cflags)
+
+            if self.cxxflags != None:
+                flags.append("CXXFLAGS='%s'" % self.cxxflags)
+
+            if self.fflags != None:
+                flags.append("FFLAGS='%s'" % self.fflags)
+
+            if self.ldflags != None:
+                flags.append("LDFLAGS='%s'" % self.ldflags)
+
+            cmd += ' '.join(flags)
 
         try:
             return os_ext.run_command(cmd, check=True)
