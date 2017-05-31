@@ -23,6 +23,10 @@ The ReFrame framework has been in production at [CSCS](http://www.cscs.ch) since
 
 [Read the full story](/usecases)...
 
+# Latest release
+
+Reframe is being actively developed at [CSCS](http://www.cscs.ch/). You can always find the latest release [here](https://github.com/eth-cscs/reframe/releases/latest).
+
 
 # Publications
 * _ReFrame: A regression framework for checking the health of large HPC systems_ [[slides](/files/reframe-cug17-slides.pdf)]
