@@ -14,4 +14,4 @@ Users can create their own test hierarchies, create test factories for generatin
 
 ## Documentation
 
-The official documentation is maintaned [here](https://madra.cscs.ch/scs/reframe/wikis/home).
+The official documentation is maintaned [here](https://eth-cscs.github.io/reframe/).
