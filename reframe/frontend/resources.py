@@ -29,7 +29,7 @@ class ResourcesManager:
         else:
             self.stage_prefix = os.path.join(self.prefix, 'stage', time)
 
-        # regression logs
+        # regression performance logs
         if not log_prefix:
             self.log_prefix = os.path.join(self.prefix, 'logs')
         else:

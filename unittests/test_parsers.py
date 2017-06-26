@@ -15,7 +15,7 @@ from reframe.utility.parsers import *
 class StatefulParserTest(unittest.TestCase):
     def setUp(self):
         self.system = System('daint')
-        self.system.partitions.append(SystemPartition('gpu'))
+        self.system.partitions.append(SystemPartition('gpu', self.system))
 
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)

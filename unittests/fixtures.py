@@ -74,7 +74,6 @@ TEST_SITE_CONFIG = {
 }
 
 
-
 def force_remove_file(filename):
     try:
         os.remove(filename)

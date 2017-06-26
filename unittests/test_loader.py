@@ -22,6 +22,8 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
         self.assertEqual(2, len(system.partitions))
         self.assertNotEqual(None, system.partition('login'))
         self.assertNotEqual(None, system.partition('gpu'))
+        self.assertEqual('testsys:login', system.partition('login').fullname)
+        self.assertEqual('testsys:gpu', system.partition('gpu').fullname)
 
         self.assertEqual(3, len(system.partition('login').environs))
         self.assertEqual(2, len(system.partition('gpu').environs))
@@ -169,13 +171,13 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources', recurse=True,
             system=self.system, resources=self.resources
         )
-        self.assertEqual(10, len(checks))
+        self.assertEqual(11, len(checks))
 
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all(system=self.system,
                                                 resources=self.resources)
-        self.assertEqual(9, len(checks))
+        self.assertEqual(10, len(checks))
 
 
     def test_load_all_with_prefix(self):

@@ -230,7 +230,7 @@ class TestRegression(unittest.TestCase):
 class TestRegressionOutputScan(unittest.TestCase):
     def setUp(self):
         self.system = System('testsys')
-        self.system.partitions.append(SystemPartition('gpu'))
+        self.system.partitions.append(SystemPartition('gpu', self.system))
 
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
@@ -353,7 +353,6 @@ class TestRegressionOutputScan(unittest.TestCase):
 
 
     def test_multiple_files(self):
-
         # Create multiple files following the same pattern
         files = [ tempfile.NamedTemporaryFile(mode='wt', prefix='regtmp',
                                               dir=self.test.prefix,
@@ -426,14 +425,6 @@ class TestRegressionOutputScan(unittest.TestCase):
                                       performance2=2.7,
                                       performance3=3.2)
         self.assertFalse(self.test.check_performance())
-
-
-    def test_nostrict_performance_check(self):
-        self.write_performance_output(performance1=1.4,
-                                      performance2=2.7,
-                                      performance3=3.2)
-        self.test.strict_check = False
-        self.assertTrue(self.test.check_performance_relaxed())
 
 
     def test_invalid_threshold(self):

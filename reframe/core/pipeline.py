@@ -5,26 +5,27 @@
 import copy
 import glob
 import os
-import logging.config
 import shutil
 
 import reframe
+import reframe.core.logging as logging
 import reframe.settings as settings
 import reframe.utility.os as os_ext
 
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ReframeFatalError
 from reframe.core.fields import *
 from reframe.core.launchers  import *
+from reframe.core.logging import getlogger, LoggerAdapter, null_logger
 from reframe.core.schedulers import *
 from reframe.core.shell import BashScriptBuilder
 from reframe.core.systems import System, SystemPartition
 from reframe.frontend.resources import ResourcesManager
 
 
-class RegressionTest:
+class RegressionTest(object):
     """Base class for regression checks providing the implementation of the
-       different phases the regression goes through"""
+       different phases the regression goes through."""
 
     name                = AlphanumericField('name')
     valid_prog_environs = TypedListField('valid_prog_environs', str)
@@ -52,14 +53,15 @@ class RegressionTest:
     num_cpus_per_task   = IntegerField('num_cpus_per_task', allow_none=True)
     num_tasks_per_core  = IntegerField('num_tasks_per_core', allow_none=True)
     num_tasks_per_socket = IntegerField('num_tasks_per_socket', allow_none=True)
-    use_multithreading  = BooleanField('use_multithreading')
+    use_multithreading  = BooleanField('use_multithreading', allow_none=True)
     local               = BooleanField('local')
     prefix              = StringField('prefix')
     sourcesdir          = StringField('sourcesdir')
     stagedir            = StringField('stagedir', allow_none=True)
     stdout              = StringField('stdout', allow_none=True)
     stderr              = StringField('stderr', allow_none=True)
-    _logfile            = StringField('_logfile', allow_none=True)
+    logger              = TypedField('logger', LoggerAdapter)
+    _perf_logfile       = StringField('_perf_logfile', allow_none=True)
     reference           = ScopedDictField('reference', object)
     sanity_patterns     = SanityPatternField('sanity_patterns', allow_none=True)
     perf_patterns       = SanityPatternField('perf_patterns', allow_none=True)
@@ -100,7 +102,7 @@ class RegressionTest:
         self.num_cpus_per_task = None
         self.num_tasks_per_core = None
         self.num_tasks_per_socket = None
-        self.use_multithreading = False
+        self.use_multithreading = None
 
         # True only if check is to be run locally
         self.local = False
@@ -113,7 +115,7 @@ class RegressionTest:
         self.stagedir = None
         self.stdout   = None
         self.stderr   = None
-        self._logfile = None
+        self._perf_logfile = None
 
         # Output patterns
         self.sanity_patterns = None
@@ -136,7 +138,8 @@ class RegressionTest:
         self._compile_task = None
 
         # Check-specific logging
-        self._logger = None
+        self._perf_logger = null_logger
+        self.logger = null_logger
 
         # Type of launcher to use for launching jobs
         self._launcher_type = None
@@ -171,6 +174,7 @@ class RegressionTest:
     def _setup_environ(self, environ):
         """Setup the current environment and load it."""
 
+        self.logger.debug('setting up the environment')
         self.current_environ = environ
 
         # Add user modules and variables to the environment
@@ -181,12 +185,17 @@ class RegressionTest:
             self.current_environ.set_variable(k, v)
 
         # First load the local environment of the partition
+        self.logger.debug('loading environment for partition %s' %
+                          self.current_partition.fullname)
         self.current_partition.local_env.load()
+
+        self.logger.debug('loading environment %s' % self.current_environ.name)
         self.current_environ.load()
 
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
+        self.logger.debug('setting up paths')
         self.stagedir  = self._resources.stagedir(
             self.current_partition.name, self.name, self.current_environ.name)
         self.outputdir = self._resources.outputdir(
@@ -197,6 +206,11 @@ class RegressionTest:
 
     def _setup_job(self, **job_opts):
         """Setup the job related to this check."""
+
+        self.logger.debug('setting up the job descriptor')
+        self.logger.debug(
+            'job scheduler backend: %s' %
+            ('local' if self.is_local() else self.current_partition.scheduler))
 
         # num_gpus_per_node is a managed resource
         if self.num_gpus_per_node > 0:
@@ -213,8 +227,8 @@ class RegressionTest:
             self._launcher_type = AlpsLauncher
         else:
             # Oops
-            raise RegressionFatalError('Oops: unsupported launcher: %s' %
-                                       self.current_partition.scheduler)
+            raise ReframeFatalError('Oops: unsupported launcher: %s' %
+                                    self.current_partition.scheduler)
 
         job_name = '%s_%s_%s_%s' % (self.name,
                                     self.current_system.name,
@@ -233,10 +247,6 @@ class RegressionTest:
                 time_limit=self.time_limit,
                 **job_opts)
         else:
-            # We need to deep copy job_opts since we may be called repeatedly
-            # from the front-end
-            job_opts = copy.deepcopy(job_opts)
-
             self.job = SlurmJob(
                 job_name=job_name,
                 job_environ_list=[
@@ -272,55 +282,65 @@ class RegressionTest:
 
 
     # FIXME: This is a temporary solution to address issue #157
-    def _setup_logging(self):
-        self._logfile = os.path.join(
+    def _setup_perf_logging(self):
+        self.logger.debug('setting up performance logging')
+        self._perf_logfile = os.path.join(
             self._resources.logdir(self.current_partition.name),
             self.name + '.log'
         )
 
-        self._logger = logging.getLogger('reframe.checks.%s' % self.name)
-        formatter = logging.Formatter(
-            fmt='[%(asctime)s] %(name)s: %(levelname)s: %(message)s',
-            datefmt='%FT%T'
+        perf_logging_config = {
+            'level': 'INFO',
+            'handlers': {
+                self._perf_logfile : {
+                    'level'     : 'DEBUG',
+                    'format'    : '[%(asctime)s] %(check_name)s '
+                                  '(jobid=%(check_jobid)s): %(message)s',
+                    'append'    : True,
+                }
+            }
+        }
+
+        self._perf_logger = LoggerAdapter(
+            logger=logging.load_from_dict(perf_logging_config),
+            check=self
         )
-
-        handler = logging.handlers.RotatingFileHandler(
-            filename=self._logfile,
-            maxBytes=10*1024*1024,
-        )
-        handler.setLevel(logging.INFO)
-        handler.setFormatter(formatter)
-
-        self._logger.addHandler(handler)
-        self._logger.setLevel(logging.INFO)
-
 
     def setup(self, system, environ, **job_opts):
+        # Logging prevents deep copy, so we initialize the check's logger late
+        # during the check's setup phase
+        self.logger = getlogger('check', check=self)
+
         self.current_partition = system
         self._setup_environ(environ)
         self._setup_paths()
         self._setup_job(**job_opts)
         if self.perf_patterns != None:
-            self._setup_logging()
+            self._setup_perf_logging()
 
 
     def _copy_to_stagedir(self, path):
+        self.logger.debug('copying %s to stage directory (%s)' %
+                          (path, self.stagedir))
+        self.logger.debug('symlinking files: %s' % self.readonly_files)
         os_ext.copytree_virtual(path, self.stagedir, self.readonly_files)
 
 
     def prebuild(self):
         for cmd in self.prebuild_cmd:
+            self.logger.debug('executing prebuild command: %s' % cmd)
             os_ext.run_command(cmd, check=True)
 
 
     def postbuild(self):
         for cmd in self.postbuild_cmd:
+            self.logger.debug('executing postbuild command: %s' % cmd)
             os_ext.run_command(cmd, check=True)
 
 
     def compile(self, **compile_opts):
         if not self.current_environ:
-            raise ReframeError('No programming environment set')
+            raise ReframeError('no programming environment set')
 
         # if self.sourcepath refers to a directory, stage it first
         target_sourcepath = os.path.join(self.sourcesdir, self.sourcepath)
@@ -331,6 +351,7 @@ class RegressionTest:
             includedir = os.path.abspath(self.stagedir)
         else:
             includedir = os.path.abspath(self.sourcesdir)
+
 
         # Add the the correct source directory to the include path
         self.current_environ.include_search_path.append(includedir)
@@ -347,40 +368,52 @@ class RegressionTest:
         os.chdir(self.stagedir)
         try:
             self.prebuild()
+            self.logger.debug('compilation started')
             self._compile_task = self.current_environ.compile(
                 sourcepath=target_sourcepath,
                 executable=os.path.join(self.stagedir, self.executable),
                 **compile_opts)
+            self.logger.debug('compilation stdout:\n%s' %
+                              self._compile_task.stdout)
+            self.logger.debug('compilation stderr:\n%s' %
+                              self._compile_task.stderr)
             self.postbuild()
         finally:
             # Always restore working directory
             os.chdir(wd_save)
+            self.logger.debug('compilation finished')
 
 
     def run(self):
         if not self.current_system or not self.current_partition:
-            raise ReframeError('No system or system partition is set')
+            raise ReframeError('no system or system partition is set')
 
         self.job.submit(cmd='%s %s' %
                         (self.executable, ' '.join(self.executable_opts)),
                         workdir=self.stagedir)
-        if self._logger:
-            msg = 'submitted job' if not self.is_local() else 'launched process'
-            self._logger.info('%s (id=%s)' % (msg, self.job.jobid))
+
+        msg = 'spawned job (%s=%s)' % \
+              ('pid' if self.is_local() else 'jobid', self.job.jobid)
+        self.logger.debug(msg)
+
+
+    def poll(self):
+        """Poll the test's status.
+
+        Returns `True` if the associated job has finished, `False` otherwise."""
+        if not self.job:
+            return True
+
+        return self.job.finished()
 
 
     def wait(self):
         self.job.wait()
+        self.logger.debug('spawned job finished')
 
 
     def check_sanity(self):
         return self._match_patterns(self.sanity_patterns, None)
-
-
-    def check_performance_relaxed(self):
-        """Implements the relaxed performance check logic."""
-        ret = self.check_performance()
-        return ret if self.strict_check else True
 
 
     def check_performance(self):
@@ -389,6 +422,7 @@ class RegressionTest:
 
     def cleanup(self, remove_files=False, unload_env=True):
         # Copy stdout/stderr and job script
+        self.logger.debug('copying interesting files to output directory')
         shutil.copy(self.stdout, self.outputdir)
         shutil.copy(self.stderr, self.outputdir)
         if self.job:
@@ -401,9 +435,11 @@ class RegressionTest:
             shutil.copy(f, self.outputdir)
 
         if remove_files:
+            self.logger.debug('removing stage directory')
             shutil.rmtree(self.stagedir)
 
         if unload_env:
+            self.logger.debug("unloading test's environment")
             self.current_environ.unload()
             self.current_partition.local_env.unload()
 
@@ -439,7 +475,7 @@ class RegressionTest:
                               if reference != None else None
                         if thres(value=conv(match.group(tag)),
                                  reference=ref,
-                                 logger=self._logger):
+                                 logger=self._perf_logger):
                             found_tags.add(tag)
         except (OSError, ValueError) as e:
             raise ReframeError('Caught %s: %s' % (type(e).__name__, str(e)))
@@ -490,7 +526,7 @@ class RegressionTest:
                 # We need eof_handler to be called anyway that's why we do not
                 # combine this check with the above and we delay the breaking
                 # out of the loop here
-                if eof_handler and not eof_handler(logger=self._logger):
+                if eof_handler and not eof_handler(logger=self._perf_logger):
                     ret = False
                     break
 

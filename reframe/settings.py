@@ -8,8 +8,8 @@ from datetime import datetime
 from reframe.core.fields import ReadOnlyField
 
 class RegressionSettings:
-    version     = ReadOnlyField('2.3')
-    module_name = ReadOnlyField('PyRegression')
+    version     = ReadOnlyField('2.4')
+    module_name = ReadOnlyField('reframe')
     job_state_poll_intervals = ReadOnlyField([ 1, 2, 3 ])
     job_init_poll_intervals  = ReadOnlyField([ 1 ])
     job_init_poll_max_tries  = ReadOnlyField(30)
@@ -74,6 +74,29 @@ class RegressionSettings:
             }
         }
     })
+
+    logging_config = {
+        'level': 'DEBUG',
+        'handlers': {
+            'reframe.log' : {
+                'level'     : 'DEBUG',
+                'format'    : '[%(asctime)s] %(levelname)s: '
+                              '%(check_name)s: %(message)s',
+                'append'    : False,
+            },
+
+            # Output handling
+            '&1': {
+                'level'     : 'INFO',
+                'format'    : '%(message)s'
+            },
+            'reframe.out' : {
+                'level'     : 'INFO',
+                'format'    : '%(message)s',
+                'append'    : False,
+            }
+        }
+    }
 
 
 settings = RegressionSettings()
