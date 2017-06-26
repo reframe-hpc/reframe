@@ -3,8 +3,7 @@ import shutil
 import subprocess
 import reframe.utility.os as os_ext
 
-from reframe.core.exceptions import ReframeError, CommandError, \
-                                       CompilationError
+from reframe.core.exceptions import ReframeError, CommandError, CompilationError
 from reframe.core.fields import *
 from reframe.core.modules import *
 
@@ -40,17 +39,19 @@ class Environment:
 
     def load(self):
         """Load environment."""
-        for k, v in self.variables.items():
-            if k in os.environ:
-                self._saved_variables[k] = os.environ[k]
-            os.environ[k] = v
 
-        # conlicted module list must be filled at the time of load
+        # conflicted module list must be filled at the time of load
         for m in self.modules:
             if module_present(m):
                 self._preloaded.add(m)
 
             self._conflicted += module_force_load(m)
+
+        for k, v in self.variables.items():
+            if k in os.environ:
+                self._saved_variables[k] = os.environ[k]
+
+            os.environ[k] = os.path.expandvars(v)
 
         self.loaded = True
 
@@ -94,14 +95,14 @@ class Environment:
     # FIXME: Does not correspond to the actual process in unload()
     def emit_unload_instructions(self, builder):
         """Emit shell instructions for loading this environment."""
+        for k, v in self.variables.items():
+            builder.unset_variable(k)
+
         for m in self.modules:
             builder.verbatim('module unload %s' % m)
 
         for m in self._conflicted:
             builder.verbatim('module load %s' % m)
-
-        for k, v in self.variables.items():
-            builder.unset_variable(k)
 
 
     def __eq__(self, other):

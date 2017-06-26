@@ -47,7 +47,7 @@ class Job:
         self.post_run = []
 
         # Live job information; to be filled during job's lifetime
-        self.jobid    = None
+        self.jobid    = -1
         self.state    = None
         self.exitcode = None
 
@@ -68,6 +68,11 @@ class Job:
 
     def wait(self):
         """Wait for the job to finish."""
+        raise NotImplementedError('Attempt to call an abstract method')
+
+
+    def finished(self):
+        """Status of the job."""
         raise NotImplementedError('Attempt to call an abstract method')
 
 
@@ -98,6 +103,7 @@ class JobState:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
 
     def __str__(self):
         return self.state
@@ -195,6 +201,15 @@ class LocalJob(Job):
             self._stderr.close()
 
 
+    def finished(self):
+        # poll spawned process
+        self.proc.poll()
+        if self.proc.returncode == None:
+            return False
+
+        return True
+
+
 class SlurmJobState(JobState):
     def __init__(self, state):
         super().__init__(state)
@@ -210,8 +225,8 @@ SLURM_JOB_FAILED      = SlurmJobState('FAILED')
 SLURM_JOB_NODE_FAILED = SlurmJobState('NODE_FAILED')
 SLURM_JOB_PENDING     = SlurmJobState('PENDING')
 SLURM_JOB_PREEMPTED   = SlurmJobState('PREEMPTED')
-SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
 SLURM_JOB_RESIZING    = SlurmJobState('RESIZING')
+SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
 SLURM_JOB_SUSPENDED   = SlurmJobState('SUSPENDED')
 SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 
@@ -219,7 +234,7 @@ SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 class SlurmJob(Job):
     def __init__(self,
                  time_limit = (0, 10, 0),
-                 use_smt = False,
+                 use_smt = None,
                  exclusive = True,
                  nodelist = None,
                  exclude = None,
@@ -248,6 +263,13 @@ class SlurmJob(Job):
         self.num_cpus_per_task = num_cpus_per_task
         self.num_tasks_per_core = num_tasks_per_core
         self.num_tasks_per_socket = num_tasks_per_socket
+        self.completion_states = [ SLURM_JOB_BOOT_FAIL,
+                                   SLURM_JOB_CANCELLED,
+                                   SLURM_JOB_COMPLETED,
+                                   SLURM_JOB_FAILED,
+                                   SLURM_JOB_NODE_FAILED,
+                                   SLURM_JOB_PREEMPTED,
+                                   SLURM_JOB_TIMEOUT ]
 
     def emit_preamble(self, builder):
         builder.verbatim('%s --job-name="%s"' % (self.prefix, self.name))
@@ -284,10 +306,9 @@ class SlurmJob(Job):
             builder.verbatim(
                 '%s --exclude=%s' % (self.prefix, self.exclude))
 
-        if self.use_smt:
-            builder.verbatim('%s --hint=multithread' % self.prefix)
-        else:
-            builder.verbatim('%s --hint=nomultithread' % self.prefix)
+        if self.use_smt != None:
+            hint = 'multithread' if self.use_smt else 'nomultithread'
+            builder.verbatim('%s --hint=%s'%(self.prefix, hint))
 
         if self.reservation:
             builder.verbatim('%s --reservation=%s' % (self.prefix,
@@ -355,7 +376,7 @@ class SlurmJob(Job):
 
         if state_match.group('jobid') != self.jobid:
             # this shouldn't happen
-            raise RegressionFatalError(
+            raise ReframeFatalError(
                 'Oops: job ids do not match. Expected %s, got %s' % \
                 (self.jobid, state_match.group('jobid')))
 
@@ -363,19 +384,18 @@ class SlurmJob(Job):
         self.exitcode = int(state_match.group('exitcode'))
         self.signal   = int(state_match.group('signal'))
 
-    def wait(self, states = [ SLURM_JOB_BOOT_FAIL,
-                              SLURM_JOB_CANCELLED,
-                              SLURM_JOB_COMPLETED,
-                              SLURM_JOB_FAILED,
-                              SLURM_JOB_NODE_FAILED,
-                              SLURM_JOB_PREEMPTED,
-                              SLURM_JOB_TIMEOUT ]):
-        if not states:
-            raise RuntimeError('No state was specified to wait for.')
-
+    def wait(self):
         intervals = itertools.cycle(settings.job_state_poll_intervals)
 
+        # Quickly return in case we have finished already
+        if self.state in self.completion_states:
+            return
+
         self._update_state()
-        while not self.state or not self.state in states:
+        while not self.state in self.completion_states:
             time.sleep(next(intervals))
             self._update_state()
+
+    def finished(self):
+        self._update_state()
+        return self.state in self.completion_states

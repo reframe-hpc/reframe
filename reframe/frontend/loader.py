@@ -2,6 +2,7 @@
 # Regression test loader
 #
 
+import ast
 import os
 import logging
 import sys
@@ -13,6 +14,21 @@ from reframe.core.exceptions import ConfigurationError, ReframeError
 from reframe.core.systems import System, SystemPartition
 from reframe.core.fields import ScopedDict
 from reframe.settings import settings
+
+
+class RegressionCheckValidator(ast.NodeVisitor):
+    def __init__(self):
+        self._validated = False
+
+    @property
+    def valid(self):
+        return self._validated
+
+    def visit_FunctionDef(self, node):
+        if node.name == '_get_checks' and \
+           node.col_offset == 0       and \
+           node.args.kwarg:
+            self._validated = True
 
 
 class RegressionCheckLoader:
@@ -34,6 +50,22 @@ class RegressionCheckLoader:
             return (os.path.splitext(filename)[0]).replace('/', '.')
 
 
+    def _validate_source(self, filename):
+        """Check if `filename` is a valid Reframe source file.
+
+        This is not a full validation test, but rather a first step that
+        verifies that the file defines the `_get_checks()` method correctly.
+        A second step follows, which actually loads the test file, performing
+        further tests and finalizes and validation."""
+
+        with open(filename, 'r') as f:
+            source_tree = ast.parse(f.read())
+
+        validator = RegressionCheckValidator()
+        validator.visit(source_tree)
+        return validator.valid
+
+
     def load_from_module(self, module, **check_args):
         """Load user checks from module.
 
@@ -41,22 +73,21 @@ class RegressionCheckLoader:
         and validates its return value."""
         from reframe.core.pipeline import RegressionTest
 
-        if hasattr(module, '_get_checks') and callable(module._get_checks):
-            try:
-                checks = [ c for c in module._get_checks(**check_args)
-                           if isinstance(c, RegressionTest) ]
-            except TypeError:
-                # Guard against _get_checks() returning a non-iterable
-                checks = []
+        # We can safely call `_get_checks()` here, since the source file is
+        # already validated
+        candidates = module._get_checks(**check_args)
+        if isinstance(candidates, list):
+            return [ c for c in candidates if isinstance(c, RegressionTest) ]
         else:
-            checks = []
-
-        return checks
+            return []
 
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
         try:
+            if not self._validate_source(filename):
+                return []
+
             loader = SourceFileLoader(module_name, filename)
             return self.load_from_module(loader.load_module(), **check_args)
         except OSError as e:
@@ -189,11 +220,11 @@ class SiteConfiguration:
                         "as a dictionary" % partname
                     )
 
-                partition = SystemPartition(partname)
+                partition = SystemPartition(partname, system)
                 partition.descr = partconfig.get('descr', partname)
                 partition.scheduler = partconfig.get('scheduler', 'local')
                 partition.local_env = Environment(
-                    name='__env_%s' % partname,
+                    name='__rfm_env_%s' % partname,
                     modules=partconfig.get('modules', []),
                     variables=partconfig.get('variables', {})
                 )
@@ -203,6 +234,7 @@ class SiteConfiguration:
                 ]
                 partition.access = partconfig.get('access', [])
                 partition.resources = partconfig.get('resources', {})
+                partition.max_jobs = partconfig.get('max_jobs', 1)
                 system.partitions.append(partition)
 
             self.systems[sysname] = system

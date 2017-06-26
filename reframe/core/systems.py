@@ -5,19 +5,22 @@ from reframe.core.environments import *
 from reframe.core.exceptions import ReframeError
 
 class SystemPartition:
-    name        = NonWhitespaceField('name')
-    descr       = StringField('descr')
-    scheduler   = NonWhitespaceField('scheduler', allow_none=True)
-    access      = TypedListField('access', str)
-    environs    = TypedListField('environs', Environment)
-    resources   = TypedDictField('resources', str, (list, str))
-    local_env   = TypedField('local_env', Environment, allow_none=True)
-    prefix      = StringField('prefix')
-    stagedir    = StringField('stagedir')
-    outputdir   = StringField('outputdir')
-    logdir      = StringField('logdir')
+    name      = NonWhitespaceField('name')
+    descr     = StringField('descr')
+    scheduler = NonWhitespaceField('scheduler', allow_none=True)
+    access    = TypedListField('access', str)
+    environs  = TypedListField('environs', Environment)
+    resources = TypedDictField('resources', str, (list, str))
+    local_env = TypedField('local_env', Environment, allow_none=True)
+    prefix    = StringField('prefix')
+    stagedir  = StringField('stagedir')
+    outputdir = StringField('outputdir')
+    logdir    = StringField('logdir')
 
-    def __init__(self, name):
+    # maximum concurrent jobs
+    max_jobs  = IntegerField('max_jobs')
+
+    def __init__(self, name, system):
         self.name  = name
         self.descr = name
         self.scheduler = None
@@ -25,6 +28,14 @@ class SystemPartition:
         self.environs  = []
         self.resources = {}
         self.local_env = None
+        self.system = system
+        self.max_jobs = 1
+
+
+    @property
+    def fullname(self):
+        """Return fully-qualified name for this partition."""
+        return '%s:%s' % (self.system.name, self.name)
 
 
     def get_resource(self, name, value):

@@ -1,9 +1,8 @@
 import datetime
-import os
-import re
 import sys
 
-from reframe.core.exceptions import ReframeError
+from reframe.core.logging import LoggerAdapter, load_from_dict, getlogger
+
 
 class Colorizer:
     def colorize(string, foreground, background):
@@ -31,100 +30,75 @@ class AnsiColorizer(Colorizer):
 
     def colorize(string, foreground, background = None):
         return AnsiColorizer.escape_seq + \
-            AnsiColorizer.fgcolor + foreground + string + \
-            AnsiColorizer.escape_seq + AnsiColorizer.reset_term
+               AnsiColorizer.fgcolor + foreground + string + \
+               AnsiColorizer.escape_seq + AnsiColorizer.reset_term
 
 
-class Printer:
-    def __init__(self, colorize = True):
-        self.ostream = sys.stdout
-        self.linefill = 77
-        self.status_msg_fill = 10
-        self.colorize = colorize
+class PrettyPrinter(object):
+    """Pretty printing facility for the framework.
 
-    def print_sys_info(self, system):
-        from socket import gethostname
-        self._print('Regression suite started by %s on %s' %
-                    (os.environ['USER'], gethostname()))
-        self._print('Using configuration for system: %s' % system.name)
+    Final printing is delegated to an internal logger, which is responsible for
+    printing both to standard output and in a specfial output file."""
 
-
-    def print_separator(self):
-        self._print('=' * self.linefill)
+    def __init__(self):
+        self.colorize = True
+        self.line_width = 78
+        self.status_width = 10
+        self._logger = getlogger('frontend')
 
 
-    def print_timestamp(self, prefix=''):
-        self._print('===> %s %s' %
-                    (prefix, datetime.datetime.today().strftime('%c %Z')))
+    def separator(self, linestyle, msg = ''):
+        if linestyle == 'short double line':
+            line = self.status_width * '='
+        elif linestyle == 'short single line':
+            line = self.status_width * '-'
+        else:
+            raise ValueError('unknown line style')
+
+        self.info('[%s] %s' % (line, msg))
 
 
-    def print_check_title(self, check, environ):
-        self._print('Test: %s for %s' % (check.descr, environ.name))
-        self.print_separator()
+    def status(self, status, message = '', just=None):
+        if just == 'center':
+            status = status.center(self.status_width - 2)
+        elif just == 'right':
+            status = status.rjust(self.status_width - 2)
+        else:
+            status = status.ljust(self.status_width - 2)
 
-
-    def print_check_progress(self, msg, op, expected_ret = None, **op_args):
-        try:
-            msg = '  | %s ...' % msg
-            self._print(msg, end='', flush=True)
-
-            success = False
-            ret = op(**op_args)
-            if ret == expected_ret:
-                success = True
-
-        except Exception:
-            ret = None
-            raise
-        finally:
-            if success:
-                color = AnsiColorizer.green
-                status_msg = 'OK'
+        if self.colorize:
+            status_stripped = status.strip().lower()
+            if status_stripped == 'skip':
+                status = AnsiColorizer.colorize(status, AnsiColorizer.yellow)
+            elif status_stripped in [ 'fail', 'failed' ]:
+                status = AnsiColorizer.colorize(status, AnsiColorizer.red)
             else:
-                color = AnsiColorizer.red
-                status_msg = 'FAILED'
+                status = AnsiColorizer.colorize(status, AnsiColorizer.green)
 
-            self._print_result_line(None, status_msg, color, len(msg))
-
-        return ret
+        self.info('[ %s ] %s' % (status, message))
 
 
-    def print_unformatted(self, msg):
-        self._print(msg)
+    def result(self, check, partition, environ, success):
+        if success:
+            result_str = 'OK'
+        else:
+            result_str = 'FAIL'
+
+        self.status(result_str, '%s on %s using %s' % \
+                    (check.name, partition.fullname, environ.name), just='right')
 
 
-    def print_check_success(self, check):
-        self._print_result_line(check.descr, 'PASSED', AnsiColorizer.green)
+    def timestamp(self, msg='', separator=None):
+        msg = '%s %s' % (msg, datetime.datetime.today().strftime('%c %Z'))
+        if separator:
+            self.separator(separator, msg)
+        else:
+            self.info(msg)
 
 
-    def print_check_failure(self, check, msg = None):
-        self._print_result_line(check.descr, 'FAILED', AnsiColorizer.red)
-        # print out also the maintainers of the test
-        self._print('| Please contact: %s' %
-                    (check.maintainers if check.maintainers else
-                                          'No maintainers specified!'))
-        self._print("Check's files are left in `%s'" % check.stagedir)
-        if msg:
-            self._print('More information: %s' % msg)
+    def error(self, msg):
+        self._logger.error('%s: %s' % (sys.argv[0], msg))
 
 
-    def _print_result_line(self, status_msg, result_msg, result_color,
-                           status_len=0):
-        if status_msg:
-            msg = '| Result: %s' % status_msg
-            status_len = len(msg)
-            self._print(msg, end='')
-
-        rem_fill = self.linefill - status_len
-        msg = ('[ %s ]' % result_msg).center(self.status_msg_fill)
-        if result_color and self.colorize:
-            colored_msg = msg.replace(
-                result_msg, AnsiColorizer.colorize(result_msg, result_color))
-            rem_fill = rem_fill + len(colored_msg) - len(msg)
-            msg = colored_msg
-
-        self._print(msg.rjust(rem_fill))
-
-
-    def _print(self, msg, **print_opts):
-        print(msg, file=self.ostream, **print_opts)
+    def info(self, msg = ''):
+        self._logger.info(msg)

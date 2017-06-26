@@ -1,182 +1,36 @@
 import argparse
-import datetime
 import os
+import socket
 import sys
 import traceback
-import reframe.utility.os as os_ext
 
-from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.exceptions import \
-    ModuleError, RegressionFatalError, ReframeError
+import reframe.core.logging as logging
+
+from reframe.core.exceptions import ModuleError
 from reframe.core.modules import module_force_load, module_unload
-from reframe.frontend.loader import \
-    RegressionCheckLoader, SiteConfiguration, autodetect_system
-from reframe.frontend.printer import Printer
+from reframe.frontend.executors import Runner
+from reframe.frontend.executors.policies import SerialExecutionPolicy, \
+                                                AsynchronousExecutionPolicy
+from reframe.frontend.loader import RegressionCheckLoader, \
+                                    SiteConfiguration, autodetect_system
+from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-from reframe.frontend.statistics import RegressionStats
 from reframe.settings import settings
-from reframe.utility.sandbox import Sandbox
 
 
-def print_error(msg):
-    print('%s: %s' % (sys.argv[0], msg), file=sys.stderr)
-
-
-def list_supported_systems(systems):
-    print('List of supported systems:', file=sys.stderr)
+def list_supported_systems(systems, printer):
+    printer.info('List of supported systems:')
     for s in systems:
-        print('    ', s)
+        printer.info('    ', s)
 
 
-def list_checks(checks):
-    print('List of matched checks')
-    print('======================')
+def list_checks(checks, printer):
+    printer.info('List of matched checks')
+    printer.info('======================')
     for c in checks:
-        print('  * %s' % c)
+        printer.info('  * %s' % c)
 
-    print('Found %d check(s).' % len(checks))
-
-
-def run_checks_partition(checks, options, partition, printer, stats):
-    """Run checks on partition."""
-
-    # Sandbox variables passed to setup
-    sandbox = Sandbox()
-
-    # Prepare for running the tests
-    environ_save = EnvironmentSnapshot()
-    for check in checks:
-        if not options.skip_system_check and \
-           not check.supports_system(partition.name):
-            printer.print_unformatted(
-                'Skipping unsupported test %s...' % check.name)
-            continue
-
-        stats.num_checks += 1
-        if options.force_local:
-            check.local = True
-
-        if not options.relax_performance_check:
-            check.strict_check = True
-
-        for env in partition.environs:
-            # Add current partition and environment to the sandbox
-            sandbox.system  = partition
-            sandbox.environ = env
-            try:
-                if not options.skip_prgenv_check and \
-                   not check.supports_progenv(sandbox.environ.name):
-                    printer.print_unformatted(
-                        'Skipping unsupported environment %s...' %
-                        sandbox.environ.name)
-                    continue
-
-                stats.num_cases += 1
-                printer.print_check_title(check, sandbox.environ)
-                printer.print_check_progress(
-                    'Setting up', check.setup,
-                    system=sandbox.system,
-                    environ=sandbox.environ,
-                    account=options.account,
-                    partition=options.partition,
-                    reservation=options.reservation,
-                    nodelist=options.nodelist,
-                    exclude=options.exclude_nodes,
-                    options=options.job_options
-                )
-                printer.print_check_progress('Compiling', check.compile)
-                printer.print_check_progress('Submitting job', check.run)
-                printer.print_check_progress(
-                    'Waiting %s (id=%s)' % \
-                    ('process' if check.is_local() else 'job',
-                     check.job.jobid if check.job else '-1'), check.wait)
-
-                remove_stage_files = not options.keep_stage_files
-                success = True
-                if not options.skip_sanity_check and \
-                   not printer.print_check_progress('Checking sanity',
-                                                    check.check_sanity,
-                                                    expected_ret=True):
-                    remove_stage_files = False
-                    success = False
-
-                if not options.skip_performance_check and \
-                   not printer.print_check_progress(
-                       'Verifying performance',
-                       check.check_performance_relaxed,
-                       expected_ret=True):
-                    if check._logfile:
-                        printer.print_unformatted(
-                            'Check log file: %s' % check._logfile
-                        )
-
-                    remove_stage_files = False
-                    success = False
-
-                printer.print_check_progress('Cleaning up', check.cleanup,
-                                             remove_files=remove_stage_files,
-                                             unload_env=False)
-                if success:
-                    printer.print_check_success(check)
-                else:
-                    stats.add_failure(check, env)
-                    printer.print_check_failure(check)
-
-            except (NotImplementedError, RegressionFatalError) as e:
-                # These are fatal; mark the failure and reraise them
-                stats.add_failure(check, env)
-                printer.print_check_failure(check)
-                raise
-            except ReframeError as e:
-                stats.add_failure(check, env)
-                printer.print_check_failure(check, str(e))
-                print(check.current_partition.local_env)
-                print(check.current_environ)
-            except Exception as e:
-                stats.add_failure(check, env)
-                printer.print_check_failure(check, str(e))
-                traceback.print_exc()
-            finally:
-                environ_save.load()
-
-
-def run_checks(checks, system, options):
-    printer = Printer(colorize=options.colorize)
-    printer.print_sys_info(system)
-    printer.print_timestamp('start date')
-    stats = []
-
-    for part in system.partitions:
-        # Keep stats per partition
-        part_stats = RegressionStats()
-        if options.prgenv:
-            # Groom the environments of this partition
-            part.environs = [
-                e for e in filter(
-                    lambda e: e if e.name in options.prgenv else None,
-                    part.environs
-                )
-            ]
-
-        printer.print_unformatted(
-            '>>>> Running regression on partition: %s' % part.name
-        )
-        run_checks_partition(checks, options, part, printer, part_stats)
-        printer.print_separator()
-        stats.append((part.name, part_stats))
-
-    # Print summary of failed checks
-    success = True
-    for st in stats:
-        partname, part_stats = st
-        printer.print_unformatted('Stats for partition: %s' % partname)
-        printer.print_unformatted(part_stats)
-        if part_stats.num_fails != 0:
-            printer.print_unformatted(part_stats.details())
-            success = False
-
-    printer.print_timestamp('end date')
-    return success
+    printer.info('Found %d check(s).' % len(checks))
 
 
 def main():
@@ -192,9 +46,6 @@ def main():
     run_options = argparser.add_argument_group(
         'Options controlling execution of checks')
     misc_options = argparser.add_argument_group('Miscellaneous options')
-
-    argparser.add_argument('--version', action='version',
-                           version=settings.version)
 
     # Output directory options
     output_options.add_argument(
@@ -287,7 +138,11 @@ def main():
     run_options.add_argument(
         '--skip-prgenv-check', action='store_true',
         help='Skip prog. environment check')
-
+    run_options.add_argument(
+        '--exec-policy', metavar='POLICY', action='store',
+        choices=[ 'serial', 'async' ], default='serial',
+        help='Specify the execution policy for running the regression tests. '
+             'Available policies: "serial" (default), "async"')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -305,7 +160,13 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
-
+    misc_options.add_argument(
+        '--save-log-files', action='store_true', dest='save_log_files',
+        default=False,
+        help='Copy the log file from the work dir to the output dir at the '
+             'end of the program')
+    misc_options.add_argument('-V', '--version', action='version',
+                              version=settings.version)
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -313,6 +174,13 @@ def main():
 
     # Parse command line
     options = argparser.parse_args()
+
+    # Configure logging
+    logging.configure_logging(settings.logging_config)
+
+    # Setup printer
+    printer = PrettyPrinter()
+    printer.colorize = options.colorize
 
     # Load site configuration
     site_config = SiteConfiguration()
@@ -323,8 +191,8 @@ def main():
         load_path = []
         for d in options.checkpath:
             if not os.path.exists(d):
-                print("%s: path `%s' does not exist. Skipping...\n" %
-                      (argparser.prog, d))
+                printer.info("%s: path `%s' does not exist. Skipping...\n" %
+                             (argparser.prog, d))
                 continue
 
             load_path.append(d)
@@ -356,16 +224,16 @@ def main():
                 raise KeyError(options.system)
 
         except KeyError:
-            print_error("unknown system specified: `%s'" % options.system)
-            list_supported_systems(site_config.systems.values())
+            printer.error("unknown system specified: `%s'" % options.system)
+            list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
     else:
         # Try to autodetect system
         system = autodetect_system(site_config)
         if not system:
-            print_error("could not auto-detect system. Please specify "
-                        "it manually using the `--system' option.")
-            list_supported_systems(site_config.systems.values())
+            printer.error("could not auto-detect system. Please specify "
+                          "it manually using the `--system' option.")
+            list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
     # Adjust system directories
@@ -393,18 +261,21 @@ def main():
                                  timefmt=options.timefmt)
 
     # Print command line
-    print('Command line:', ' '.join(sys.argv))
-    print('Reframe version: ' + settings.version)
+    printer.info('Command line: %s' % ' '.join(sys.argv))
+    printer.info('Reframe version: ' + settings.version)
+    printer.info('Launched by user: ' + os.environ['USER'])
+    printer.info('Launched on host: ' + socket.gethostname())
 
     # Print important paths
-    print('Reframe paths')
-    print('=============')
-    print('    Check prefix      :', loader.prefix)
-    print('%03s Check search path :' % ('(R)' if loader.recurse else ''),
-          "'%s'" % ':'.join(loader.load_path))
-    print('    Stage dir prefix  :', resources.stage_prefix)
-    print('    Output dir prefix :', resources.output_prefix)
-    print('    Logging dir       :', resources.log_prefix)
+    printer.info('Reframe paths')
+    printer.info('=============')
+    printer.info('    Check prefix      : %s' % loader.prefix)
+    printer.info('%03s Check search path : %s' % \
+                 ('(R)' if loader.recurse else '',
+                  "'%s'" % ':'.join(loader.load_path)))
+    printer.info('    Stage dir prefix  : %s' % resources.stage_prefix)
+    printer.info('    Output dir prefix : %s' % resources.output_prefix)
+    printer.info('    Logging dir       : %s' % resources.log_prefix)
     try:
         # Locate and load checks
         checks_found = loader.load_all(system=system, resources=resources)
@@ -440,8 +311,8 @@ def main():
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
-            print_error("options `--gpu-only' and `--cpu-only' "
-                        "are mutually exclusive")
+            printer.error("options `--gpu-only' and `--cpu-only' "
+                          "are mutually exclusive")
             sys.exit(1)
 
         if options.gpu_only:
@@ -466,25 +337,70 @@ def main():
             try:
                 module_force_load(m)
             except ModuleError:
-               print("Could not load module `%s': Skipping..." % m)
+               printer.info("Could not load module `%s': Skipping..." % m)
 
         success = True
         if options.list:
             # List matched checks
-            list_checks(list(checks_matched))
+            list_checks(list(checks_matched), printer)
+
         elif options.run:
-            success = run_checks(checks_matched, system, options)
+            # Setup the execution policy
+            if options.exec_policy == 'serial':
+                exec_policy = SerialExecutionPolicy()
+            elif options.exec_policy == 'async':
+                exec_policy = AsynchronousExecutionPolicy()
+            else:
+                # This should not happen, since choices are handled by argparser
+                printer.error("unknown execution policy `%s': Exiting...")
+                sys.exit(1)
+
+            exec_policy.skip_system_check = options.skip_system_check
+            exec_policy.force_local = options.force_local
+            exec_policy.relax_performance_check = options.relax_performance_check
+            exec_policy.skip_environ_check = options.skip_prgenv_check
+            exec_policy.skip_sanity_check = options.skip_sanity_check
+            exec_policy.skip_performance_check = options.skip_performance_check
+            exec_policy.only_environs = options.prgenv
+            exec_policy.keep_stage_files = options.keep_stage_files
+            exec_policy.sched_account = options.account
+            exec_policy.sched_partition = options.partition
+            exec_policy.sched_reservation = options.reservation
+            exec_policy.sched_nodelist = options.nodelist
+            exec_policy.sched_exclude_nodelist = options.exclude_nodes
+            exec_policy.sched_options = options.job_options
+
+            runner = Runner(exec_policy)
+            try:
+                runner.runall(checks_matched, system)
+            finally:
+                # always print a report
+                if runner.stats.num_failures():
+                    printer.info(runner.stats.failure_report())
+                    success = False
+
         else:
-            print('No action specified. Exiting...')
-            print("Try `%s -h' for a list of available actions." %
-                  argparser.prog)
+            printer.info('No action specified. Exiting...')
+            printer.info("Try `%s -h' for a list of available actions." %
+                         argparser.prog)
 
         if not success:
             sys.exit(1)
 
         sys.exit(0)
 
+    except KeyboardInterrupt:
+        sys.exit(1)
+    except OSError as e:
+        printer.error("`%s': %s" % (e.filename, e.strerror))
+        sys.exit(1)
     except Exception as e:
-        print_error('fatal error: %s\n' % str(e))
+        printer.error('fatal error: %s\n' % str(e))
         traceback.print_exc()
         sys.exit(1)
+    finally:
+        try:
+            if options.save_log_files:
+                logging.save_log_files(resources.output_prefix)
+        except OSError as e:
+            printer.error("`%s': %s" % (e.filename, e.strerror))

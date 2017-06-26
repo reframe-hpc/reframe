@@ -41,11 +41,15 @@ class TestEnvironment(unittest.TestCase):
         module_load('testmod_base')
 
         os.environ['_fookey1'] = 'origfoo'
+        os.environ['_fookey1b'] = 'foovalue1'
+        os.environ['_fookey2b'] = 'foovalue2'
         self.environ_save = EnvironmentSnapshot()
         self.environ = Environment(name='TestEnv1', modules=['testmod_foo'])
         self.environ.set_variable(name='_fookey1', value='value1')
         self.environ.set_variable(name='_fookey2', value='value2')
         self.environ.set_variable(name='_fookey1', value='value3')
+        self.environ.set_variable(name='_fookey3b', value='$_fookey1b')
+        self.environ.set_variable(name='_fookey4b', value='${_fookey2b}')
         self.environ_other = Environment(name='TestEnv2',
                                          modules=['testmod_boo'])
         self.environ_other.set_variable(name='_fookey11', value='value11')
@@ -58,7 +62,7 @@ class TestEnvironment(unittest.TestCase):
 
     def test_setup(self):
         self.assertEqual(len(self.environ.modules), 1)
-        self.assertEqual(len(self.environ.variables.keys()), 2)
+        self.assertEqual(len(self.environ.variables.keys()), 4)
         self.assertEqual(self.environ.variables['_fookey1'], 'value3')
         self.assertEqual(self.environ.variables['_fookey2'], 'value2')
         self.assertIn('testmod_foo', self.environ.modules)
@@ -80,6 +84,8 @@ class TestEnvironment(unittest.TestCase):
         self.environ.load()
         self.assertEnvironmentVariable(name='_fookey1', value='value3')
         self.assertEnvironmentVariable(name='_fookey2', value='value2')
+        self.assertEnvironmentVariable(name='_fookey3b', value='foovalue1')
+        self.assertEnvironmentVariable(name='_fookey4b', value='foovalue2')
         self.assertModulesLoaded(self.environ.modules)
         self.assertTrue(self.environ.loaded)
 
@@ -213,9 +219,6 @@ class TestProgEnvironment(unittest.TestCase):
             self.compile_with_env(env, skip_fortran=True)
             self.compile_dir_with_env(env, skip_fortran=True)
         except CompilationError as e:
-            print('Environment: %s' % e.environ.name)
-            print('Compiler command: %s' % e.command)
-            print('Compiler error:\n%s' % e.stderr)
             self.fail("Compilation failed\n")
 
 
