@@ -20,36 +20,6 @@ If the test supports the current system partition and the current programming en
 7. Cleanup
 
 
-<!--1. *Setup*
-   * During this phase the check is set up for the current partition and the current programming environment.
-     The check's stage and output directories as well as its job descriptor are set up.
-     The job descriptor contains all the necessary information needed to launch the regression check.
-2. *Compilation*
-   * Here the source code of the check, if any, is compiled. Some tests may not need to compile anything, in which case the status of this phase is always success.
-3. *Job submission*
-   * At this phase the regression check is launched.
-     How the check will be launched depends on the job scheduler that serves the current system partition.
-     A system partition (e.g., the login nodes of the system) may only accept local jobs (see [Site configuration](#site-configuration) for more information), in which case a local OS process will be launched for running the check.
-     You can also force the regression to run all checks locally using the `--force-local` option.
-
-4. *Job wait*
-   * During this phase the previously launched job or process is waited for until it finishes and the job ID or the process ID are reported respectively.
-     No check is performed whether the job or process finished gracefully.
-     It is responsibility for the check to judge this.
-     In practice, this means that this phase should always pass, unless something catastrophic has happened (bug in the framework or malfunctioning job scheduler).
-
-5. *Sanity checking*
-   * At this phase the regression check verifies whether it has finished successfully or not.
-
-6. *Performance verification*
-   * This phase is only relevant for performance regression checks, in which case the check verifies whether it has met its performance requirements.
-     For simple regression checks, this phase is always a success.
-
-7. *Clean up*
-   * This phase is responsible for cleaning up the resources of the regression check.
-     This includes copying some important files of the check to the output directory (e.g., generated job scripts, standard output/error etc.), removing its temporary stage directory and unloading its environment.-->
-
-
 A test could implement some of them as no-ops.
 As soon as the test is finished, its resources are cleaned up and the regression's environment is restored.
 The regression will try to repeat the same procedure on the same regression test using the next programming environment until no further environments are left to be tested.
@@ -64,9 +34,12 @@ In fact, this is the case for the majority of tests we have implemented for CSCS
 
 # 2. The setup phase
 
-A regression test is instantiated once by the framework and it is then reused several times for each of the system's partitions and their corresponding programming environments.
+A regression test is instantiated once by the framework and it is then copied each time a new system partition or programming environment is tried.
 This first phase of the regression pipeline serves the purpose of preparing the test to run on the specified partition and programming environment by performing a number of operations described below:
 
+> NOTE: Until version **2.3**, a regression test was reused across the different system partitions and programming environments.
+> From version **2.4** onward, the regression test is **copied** for each system partition and programming environment it is tried.
+> This facilitates programming of regression tests and allows a more efficient execution of regression tests.
 
 ## Setup and load the test's environment
 At this point the environment of the current partition, the current programming environment and any test's specific environment will be loaded.

@@ -44,6 +44,7 @@ test_check_success (unittests.test_cli.TestFrontend) ... ok
 test_checkpath_recursion (unittests.test_cli.TestFrontend) ... ok
 test_custom_performance_check_failure (unittests.test_cli.TestFrontend) ... ok
 ...
+test_copytree (unittests.test_utility.TestOSTools) ... ok
 test_grep (unittests.test_utility.TestOSTools) ... ok
 test_inpath (unittests.test_utility.TestOSTools) ... ok
 test_subdirs (unittests.test_utility.TestOSTools) ... ok
@@ -51,7 +52,7 @@ test_always_true (unittests.test_utility.TestUtilityFunctions) ... ok
 test_standard_threshold (unittests.test_utility.TestUtilityFunctions) ... ok
 
 ----------------------------------------------------------------------
-Ran 189 tests in 12.251s
+Ran 235 tests in 33.842s
 
 OK (SKIP=7)
 ```

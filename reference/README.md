@@ -75,10 +75,10 @@ make -C <srcdir> -f <makefile> CC=$cc CXX=$cxx FC=$ftn \
 ```
 If `propagate` is set to `False`, no flags will be passed to `make`.
 
-> Note: From version 2.3 onward all the compilation flags default to `None`.
+> NOTE: From version 2.3 onward all the compilation flags default to `None` instead of the empty string.
 > This has no difference to the previous versions when you compile a single file, but the behavior changes in case a directory is compiled and `make` is invoked.
 > In this case, if a flag variable is set to `None`, it will not be passed over to the `make` invocation.
-> Note that if a flag variable is set to the empty string, it *will* be passed to the `make` invocation.
+> Note that if a flag variable is set explicitly to the empty string, it **will** be passed to the `make` invocation.
 
 
 # `RegressionTest` class
@@ -118,10 +118,16 @@ If `propagate` is set to `False`, no flags will be passed to `make`.
 | `strict_check` | Specify whether this test allows a relaxed performance interpretation through the `--relax-performance-check` command-line option. If set to `False` and the aforementioned option is specified, the result of the performance checking phase will always be success. Note that the performance check is not skipped; it is just its result that is ignored. If set to `True`, the performance check for this test cannot be relaxed. |  `True` | boolean | 2.2 |
 | `tags` | Set of tags to be associated with this regression test. This regression test can be selected from the frontend using any of these tags. | `{}` | set of strings | 2.2 |
 | `time_limit` | Time limit for this test in the form of `(hh, mm, ss)`. | `(0, 10, 0)` | tuple of integers | 2.2 |
-| `use_multithreading` | Specify whether this tests needs multithreading or not. | `False` | boolean | 2.2 |
+| `use_multithreading` | Specify whether this tests needs multithreading or not. | `None` | boolean | 2.2 |
 | `valid_prog_environs` | Programming environmets supported by this test. | `[]` | list of strings | 2.2 |
 | `valid_systems` | Systems supported by this test. The general syntax for systems is `<sysname>[:<partname]`. | `[]` | list of strings | 2.2 |
 | `variables` | Environment variables to be set before running this test. These variables will be set during the test's setup phase. | `{}` | dictionary of string/string pairs | 2.2 |
+
+> NOTES:
+>   * From version 2.4 onwards, the `variables` field of `RegressionTest` may accept other environment variables as values using standard shell syntax, e.g., `$VARNAME` or `${VARNAME}`. Also the variables are now set after the environment modules in `modules` field are loaded.
+>   * From version 2.4 onwards, the `use_multithreading` field defaults to `None` instead of `False`.
+>     If not set, no hint will be emitted for the Slurm scheduler.
+
 
 # `System` class
 

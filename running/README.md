@@ -2,7 +2,7 @@
 
 Before going into any details about the framework front-end and command-line interfaces, the simplest way to invoke ReFrame is the following:
 ```bash
-./reframe -c /path/to/checks -R --run
+./bin/reframe -c /path/to/checks -R --run
 ```
 This will search recursively for test files in `/path/to/checks` and will start running them on the current system.
 
@@ -12,7 +12,7 @@ ReFrame's front-end goes through three phases:
 * action.
 
 In the following, we will elaborate on these phases and the key command-line options controlling them.
-A detailed listing of all the options grouped by phase is given by `reframe -h`.
+A detailed listing of all the options grouped by phase is given by `./bin/reframe -h`.
 
 ## System auto-detection
 When the regression is launched, it tries to auto-detect the system it runs on based on its site configuration.
@@ -39,18 +39,21 @@ To retrieve a listing of the selected checks, you must specify the `-l` or `--li
 An example listing of checks is the following:
 
 ```bash
-reframe -l
+./bin/reframe -l
 ```
 
 The ouput looks like:
 ```
-Command line: reframe -l
-Regression paths
-================
-    Check prefix      : /users/karakasv/Devel/PyRegression
-    Check search path : 'checks/'
-    Stage dir prefix  : /scratch/snx3000/karakasv/regression/stage/2017-03-03T11:50:08
-    Output dir prefix : /apps/daint/UES/jenkins/regression/maintenance/2017-03-03T11:50:08
+Command line: ./bin/reframe -l
+Reframe version: 2.4
+Launched by user: karakasv
+Launched on host: daint101
+Reframe paths
+=============
+    Check prefix      : /users/karakasv/Devel/reframe
+(R) Check search path : 'checks/'
+    Stage dir prefix  : /scratch/snx3000/karakasv/regression/stage/2017-06-27T23:48:26
+    Output dir prefix : /apps/daint/UES/jenkins/regression/maintenance/2017-06-27T23:48:26
     Logging dir       : /apps/daint/UES/jenkins/regression/maintenance/logs
 List of matched checks
 ======================
@@ -80,65 +83,82 @@ These checks will be just skipped if you try to run them.
 To run the regression checks you should specify the `run` action though the `-r` or `--run` options.
 The listing action takes precedence over the execution one, meaning that if you specify both `-l -r`, only the listing action will be performed.
 ```bash
-reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
 ```
 
 The output of the regression run looks like the following:
 ```
-Command line: reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
-Regression paths
-================
+Command line: ./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+Reframe version: 2.4
+Launched by user: karakasv
+Launched on host: daint101
+Reframe paths
+=============
     Check prefix      :
     Check search path : 'checks/cuda/cuda_checks.py'
-    Stage dir prefix  : /users/karakasv/Devel/PyRegression/stage/
-    Output dir prefix : /users/karakasv/Devel/PyRegression/output/
-    Logging dir       : /users/karakasv/Devel/PyRegression/logs
-Regression test started by karakasv on dom
-===> start date Fri Mar  3 11:48:31 2017
->>>> Running regression on partition: login
-Skipping unsupported test cuda_bandwidth_check...
-Skipping unsupported test cuda_concurrentkernels_check...
-Skipping unsupported test cuda_devicequery_check...
-Skipping unsupported test cuda_matrixmulcublas_check...
-Skipping unsupported test cuda_simplempi_check...
-=============================================================================
->>>> Running regression on partition: mc
-Skipping unsupported test cuda_bandwidth_check...
-Skipping unsupported test cuda_concurrentkernels_check...
-Skipping unsupported test cuda_devicequery_check...
-Skipping unsupported test cuda_matrixmulcublas_check...
-Skipping unsupported test cuda_simplempi_check...
-=============================================================================
->>>> Running regression on partition: gpu
-Test: CUDA bandwidthTest compile and run for PrgEnv-cray
-=============================================================================
-  | Setting up ...                                                   [ OK ]
-  | Compiling ...                                                    [ OK ]
-  | Submitting job ...                                               [ OK ]
-  | Waiting job (id=640085) ...                                      [ OK ]
-  | Checking sanity ...                                              [ OK ]
-  | Verifying performance ...                                        [ OK ]
-  | Cleaning up ...                                                  [ OK ]
-| Result: CUDA bandwidthTest compile and run                       [ PASSED ]
-Test: CUDA bandwidthTest compile and run for PrgEnv-gnu
-=============================================================================
-  | Setting up ...                                                   [ OK ]
-  | Compiling ...                                                    [ OK ]
-  | Submitting job ...                                               [ OK ]
-  | Waiting job (id=640086) ...                                      [ OK ]
-  | Checking sanity ...                                              [ OK ]
-  | Verifying performance ...                                        [ OK ]
-  | Cleaning up ...                                                  [ OK ]
-| Result: CUDA bandwidthTest compile and run                       [ PASSED ]
-...
-=============================================================================
-Stats for partition: login
-  | Ran 0 case(s) of 0 supported check(s) (0 failure(s))
-Stats for partition: mc
-  | Ran 0 case(s) of 0 supported check(s) (0 failure(s))
-Stats for partition: gpu
-  | Ran 10 case(s) of 5 supported check(s) (0 failure(s))
-===> end date Fri Mar  3 11:50:09 2017
+    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
+    Output dir prefix : /users/karakasv/Devel/reframe/output/
+    Logging dir       : /users/karakasv/Devel/reframe/logs
+[==========] Running 5 check(s)
+[==========] Started on Tue Jun 27 21:55:26 2017
+
+[----------] started processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
+[   SKIP   ] skipping daint:login
+[ RUN      ] cuda_bandwidth_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_bandwidth_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_bandwidth_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_bandwidth_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[   SKIP   ] skipping daint:mc
+[----------] finished processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
+
+[----------] started processing cuda_concurrentkernels_check (Use of streams for concurrent execution)
+[   SKIP   ] skipping daint:login
+[ RUN      ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[   SKIP   ] skipping daint:mc
+[----------] finished processing cuda_concurrentkernels_check (Use of streams for concurrent execution)
+
+[----------] started processing cuda_devicequery_check (Queries the properties of the CUDA devices)
+[   SKIP   ] skipping daint:login
+[ RUN      ] cuda_devicequery_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_devicequery_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_devicequery_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_devicequery_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[   SKIP   ] skipping daint:mc
+[----------] finished processing cuda_devicequery_check (Queries the properties of the CUDA devices)
+
+[----------] started processing cuda_matrixmulcublas_check (Implements matrix multiplication using CUBLAS)
+[   SKIP   ] skipping daint:login
+[ RUN      ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[   SKIP   ] skipping daint:mc
+[----------] finished processing cuda_matrixmulcublas_check (Implements matrix multiplication using CUBLAS)
+
+[----------] started processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
+[   SKIP   ] skipping daint:login
+[ RUN      ] cuda_simplempi_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[   SKIP   ] skipping daint:mc
+[----------] finished processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
+
+[  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
+[==========] Finished on Tue Jun 27 22:44:11 2017
 ```
 
 ## Discovery of regression checks
@@ -147,7 +167,7 @@ When the regression frontend is invoked it tries to locate regression checks in 
 This path can be retrieved with
 
 ```bash
-reframe -l | grep 'Check search path'
+./bin/reframe -l | grep 'Check search path'
 ```
 
 If the path line is prefixed with `(R)`, every directory in the path will search recursively.
@@ -162,7 +182,7 @@ You can override the default check search path by specifying the `-c` or `--chec
 The following command will list all the checks found in `checks/apps/`:
 
 ```bash
-reframe -c checks/apps/ -l
+./bin/reframe -c checks/apps/ -l
 ```
 
 Note that by default the front-end does *not* search recursively into directories specified with the `-c` option.
@@ -175,7 +195,7 @@ The `-c`option accepts also regular files.
 This is very useful when you are implementing new regression checks, since it allows you to run only your check:
 
 ```bash
-reframe -c /path/to/my/new/check.py -r
+./bin/reframe -c /path/to/my/new/check.py -r
 ```
 
 ## Selection of regression checks
@@ -189,7 +209,7 @@ There are two ways to select regression checks: (a) by programming environment a
 To select tests by the programming environment, use the `-p` or `--prgenv` options:
 
 ```bash
-reframe -p PrgEnv-gnu -l
+./bin/reframe -p PrgEnv-gnu -l
 ```
 
 This will select all the checks that support the `PrgEnv-gnu` environment.
@@ -198,7 +218,7 @@ You can also specify multiple times the `-p` option, in which case a test will b
 For example the following will select all the checks that can run with both `PrgEnv-cray` and `PrgEnv-gnu`:
 
 ```bash
-reframe -p PrgEnv-gnu -p PrgEnv-cray -l
+./bin/reframe -p PrgEnv-gnu -p PrgEnv-cray -l
 ```
 
 Note here that specifying the `-p` option will run the selected checks only for the specified programming environments and not for the supported programming environments by the system, which is the default behavior.
@@ -211,7 +231,7 @@ Using the `-t` or `--tag` option you can select the regression checks associated
 For example the following will list all the checks that have a `maintenance` tag:
 
 ```bash
-reframe -t maintenance -l
+./bin/reframe -t maintenance -l
 ```
 
 Similarly to the `-p` option, you can chain multiple `-t` options together, in which case a regression check will be selected if it is associated with all the tags specified in the command line.
@@ -226,7 +246,7 @@ Currently, we have two major "official" tags:
 It is possible to select or exclude checks by name through the `--name` or `-n` and `--exclude` or `-x` options.
 For example, you can select only the `amber_cpu_check` as follows:
 ```bash
-reframe -n amber_cpu_check -l
+./bin/reframe -n amber_cpu_check -l
 ```
 
 ```
@@ -281,7 +301,7 @@ There are, however, two differences:
   For example, if you know that a tests supports only `PrgEnv-cray` and you need to check if it works out-of-the-box with `PrgEnv-gnu`, you can test is as follows:
 
 ```bash
-reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
+./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
 ```
 
 ## Configuring regression directories
@@ -322,20 +342,23 @@ However you can view the directories that will be created even when you do a lis
 This is useful if you want to check the directories that regression will create.
 
 ```bash
-reframe --prefix /foo -l
+./bin/reframe --prefix /foo -l
 ```
 ```
-Command line: reframe --prefix /foo -t foo -l
-Regression paths
-================
-    Check prefix      : /users/karakasv/Devel/PyRegression
+Command line: ./bin/reframe --prefix /foo -l
+Reframe version: 2.4
+Launched by user: karakasv
+Launched on host: daint101
+Reframe paths
+=============
+    Check prefix      : /users/karakasv/Devel/reframe
 (R) Check search path : 'checks/'
-    Stage dir prefix  : /foo/stage/2017-03-09T15:01:11
-    Output dir prefix : /foo/output/2017-03-09T15:01:11
+    Stage dir prefix  : /foo/stage/2017-06-27T23:51:26
+    Output dir prefix : /foo/output/2017-06-27T23:51:26
     Logging dir       : /foo/logs
 List of matched checks
 ======================
-Found 0 check(s).
+...
 ```
 
 You can also define different default regression directories per system by specifying them in the [site configuration](/configure/#new-system-configuration) settings file.
@@ -361,36 +384,36 @@ There is no low tolerance, since lower values denote higher performance.
 
 1. Run all tests with the `production` tag and place the output of the regression in your home directory:
 ```bash
-reframe -o $HOME/regression/output -t production -r
+./bin/reframe -o $HOME/regression/output -t production -r
 ```
 
 2. List all tests with the `maintenance` and `slurm` tags:
 ```bash
-reframe -t maintenance -t slurm -l
+./bin/reframe -t maintenance -t slurm -l
 ```
 
 2. Run all the maintenance checks on the `syscheckout` reservation:
 ```bash
-reframe -t maintenance --reservation=syscheckout -r
+./bin/reframe -t maintenance --reservation=syscheckout -r
 ```
 
 2. List all production tests supporting `PrgEnv-gnu` and having the `production` tag:
 ```bash
-reframe -p PrgEnv-gnu -t production -l
+./bin/reframe -p PrgEnv-gnu -t production -l
 ```
 
 3. Run all the checks from a specific check file and relocate both output and stage directories under your current working directory without using timestamps:
 ```bash
-reframe --prefix . --no-timestamp -c /path/to/my/check.py -r
+./bin/reframe --prefix . --no-timestamp -c /path/to/my/check.py -r
 ```
 This is a useful setup while developing new regression checks, since you don't want to "contaminate" the default stage and output locations or end up with lots of directories with different timestamps.
 
 4. Run a specific check on a new system that is not officially supported by the check:
 ```bash
-reframe -c /path/to/my/check.py --skip-system-check -r
+./bin/reframe -c /path/to/my/check.py --skip-system-check -r
 ```
 
 5. Run a specific check on a programming environment (e.g., `PrgEnv-pgi`) that is not officially supported by the check:
 ```bash
-reframe -c /path/to/my/check.py -p PrgEnv-pgi --skip-prgenv-check -r
+./bin/reframe -c /path/to/my/check.py -p PrgEnv-pgi --skip-prgenv-check -r
 ```
