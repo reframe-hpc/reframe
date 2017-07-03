@@ -1,2 +1,2 @@
 # Folder Structure
-Standardized but flexible folder structure to acommodate different HPC scenarios.
+Standardized but flexible folder structure to accommodate different HPC scenarios.

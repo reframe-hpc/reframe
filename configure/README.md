@@ -28,6 +28,7 @@ site_configuration = ReadOnlyField({
                     'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi' ],
                     'descr'     : 'Login nodes'
+                    'max_jobs'  : 4
                 },
                 'gpu' : {
                     'scheduler' : 'nativeslurm',
@@ -36,6 +37,7 @@ site_configuration = ReadOnlyField({
                     'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi' ],
                     'descr'     : 'Hybrid nodes (Haswell/P100)',
+                    'max_jobs'  : 100
                 },
                 'mc' : {
                     'scheduler' : 'nativeslurm',
@@ -44,6 +46,7 @@ site_configuration = ReadOnlyField({
                     'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi' ],
                     'descr'     : 'Multicore nodes (Broadwell)',
+                    'max_jobs'  : 100
                 }
             }
         }
@@ -125,6 +128,8 @@ The available partition attributes are the following:
     'OTHER' : 'foo'
 }
 ```
+* `max_jobs`: (new in [2.4](https://github.com/eth-cscs/reframe/releases/tag/v2.4)) The maximum number of concurrent regression checks that may be active (not completed) on this partition.
+   This option is relevant only when Reframe executes with the [asynchronous execution policy](/running#asynchronous-execution-of-regression-checks).
 
 * `resources`: A set of custom resource specifications and how these can be requested from the partition's scheduler (default `{}`).
   This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition's job scheduler.

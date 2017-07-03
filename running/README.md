@@ -380,6 +380,119 @@ The reference value is a three-element tuple of the form `(<reference>, <low-thr
 There is no low tolerance, since lower values denote higher performance.
 
 
+## Asynchronous execution of regression checks
+
+From version [2.4](https://github.com/eth-cscs/reframe/releases/tag/v2.4), Reframe supports asynchronous execution of the regression checks.
+This execution policy can be enabled by passing the option `--exec-policy=async` to the command line.
+The default execution policy is `serial` which enforces a sequential execution of the selected regression checks.
+The asynchronous execution policy parallelizes the "run" phase of the checks only.
+The rest of the phases remain sequential.
+
+A limit of concurrent jobs (pending and running) may be configured for each virtual system partition.
+As soon as the concurrency limit of a partition is reached, Reframe will hold the execution of the regression check until a slot is released in that partition.
+
+When executing in asynchronous mode, Reframe's output differs from the sequential execution.
+The final result of the checks will be printed at the end and additional messages may be printed to indicate that a check is held.
+Here is an example output of Reframe using asynchronous execution policy:
+
+```
+Command line: ./bin/reframe --exec-policy=async --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+Reframe version: 2.4
+Launched by user: karakasv
+Launched on host: daint101
+Reframe paths
+=============
+    Check prefix      :
+    Check search path : 'checks/cuda/cuda_checks.py'
+    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
+    Output dir prefix : /users/karakasv/Devel/reframe/output/
+    Logging dir       : /users/karakasv/Devel/reframe/logs
+[==========] Running 5 check(s)
+[==========] Started on Fri Jun 30 19:28:28 2017
+
+[----------] started processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
+[   SKIP   ] skipping daint:login
+[   SKIP   ] skipping daint:mc
+[ RUN      ] cuda_bandwidth_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_bandwidth_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[----------] finished processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
+
+[----------] started processing cuda_concurrentkernels_check (Use of streams for concurrent execution)
+[   SKIP   ] skipping daint:login
+[   SKIP   ] skipping daint:mc
+[ RUN      ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[----------] finished processing cuda_concurrentkernels_check (Use of streams for concurrent execution)
+
+[----------] started processing cuda_matrixmulcublas_check (Implements matrix multiplication using CUBLAS)
+[   SKIP   ] skipping daint:login
+[   SKIP   ] skipping daint:mc
+[ RUN      ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[----------] finished processing cuda_matrixmulcublas_check (Implements matrix multiplication using CUBLAS)
+
+[----------] started processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
+[   SKIP   ] skipping daint:login
+[   SKIP   ] skipping daint:mc
+[ RUN      ] cuda_simplempi_check on daint:gpu using PrgEnv-cray
+[ RUN      ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
+[   SKIP   ] skipping PrgEnv-intel for daint:gpu
+[   SKIP   ] skipping PrgEnv-pgi for daint:gpu
+[----------] finished processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
+
+[----------] waiting for spawned checks
+[       OK ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_bandwidth_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_bandwidth_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_concurrentkernels_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_devicequery_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_devicequery_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_matrixmulcublas_check on daint:gpu using PrgEnv-gnu
+[       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-cray
+[       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
+[----------] all spawned checks finished
+[  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
+[==========] Finished on Fri Jun 30 19:34:56 2017
+```
+
+The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
+For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.
+
+
+### Setting concurrency limits
+As mentioned earlier, it is possible to specify different limits for concurrent jobs per configured virtual partitioned.
+This can be achieved by setting the `max_jobs` property of a partition in the `site_configuration` dictionary as follows:
+
+```python
+...
+'systems' : {
+    # Generic system used for cli unit tests
+    'generic' : {
+        'descr' : 'Generic example system',
+        'partitions' : {
+            'login' : {
+                'scheduler' : 'local',
+                'modules'   : [],
+                'access'    : [],
+                'environs'  : [ 'builtin-gcc' ],
+                'descr'     : 'Login nodes',
+                'max_jobs'  : 4
+            }
+        }
+    }
+},
+...
+
+```
+
+
 ## Examples of usage
 
 1. Run all tests with the `production` tag and place the output of the regression in your home directory:
