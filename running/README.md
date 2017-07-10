@@ -366,18 +366,116 @@ However, the command line options take always precedence over any default direct
 
 ## Logging
 
-ReFrame supports a very simple logging of the performance values of the performance checks.
-For each performance check, a log file of the form `<check-name>.log` is created under the regression's [log directory](#configuring-regression-directories) for logging the check's performance.
-Regression always appends to this file, so you can keep a history of the performance of the check.
-This file looks like the following:
+From version 2.4 onward, Reframe supports logging of its actions.
+Reframe creates two files inside the current working directory every time it is run:
+* `reframe.out`: This file stores the output of the reframe run as it was printed in the standard output.
+* `reframe.log`: This file stores more detailed of information on Reframe's actions.
+
+By default, the output in `reframe.log` looks like the following:
 ```
-[2017-02-27T16:32:48] regression.checks.namd_cpu_check: INFO: submitted job (id=637895)
-[2017-02-27T16:42:42] regression.checks.namd_cpu_check: INFO: value: 4.440446666666666, reference: (1.37, None, 0.15)
+[2017-07-09T21:22:05] info: reframe: [ RUN      ] amber_gpu_check on daint:gpu using PrgEnv-gnu
+[2017-07-09T21:22:05] debug: amber_gpu_check: setting up the environment
+[2017-07-09T21:22:05] debug: amber_gpu_check: loading environment for partition daint:gpu
+[2017-07-09T21:22:05] debug: amber_gpu_check: loading environment PrgEnv-gnu
+[2017-07-09T21:22:06] debug: amber_gpu_check: setting up paths
+[2017-07-09T21:22:06] debug: amber_gpu_check: setting up the job descriptor
+[2017-07-09T21:22:06] debug: amber_gpu_check: job scheduler backend: nativeslurm
+[2017-07-09T21:22:06] debug: amber_gpu_check: setting up performance logging
+[2017-07-09T21:22:06] debug: amber_gpu_check: copying /apps/common/regression/resources/Amber/ to stage directory (/users/karakasv/Devel/reframe/stage/gpu/amber_gpu_check/PrgEnv-gnu)
+[2017-07-09T21:22:06] debug: amber_gpu_check: symlinking files: []
+[2017-07-09T21:22:06] debug: amber_gpu_check: spawned job (jobid=2251529)
+[2017-07-09T21:22:54] debug: amber_gpu_check: spawned job finished
+[2017-07-09T21:22:54] debug: amber_gpu_check: sanity check result: True
+[2017-07-09T21:22:54] debug: amber_gpu_check: performance check result: True
+[2017-07-09T21:22:54] debug: amber_gpu_check: copying interesting files to output directory
+[2017-07-09T21:22:54] debug: amber_gpu_check: removing stage directory
+[2017-07-09T21:22:54] info: reframe: [       OK ] amber_gpu_check on daint:gpu using PrgEnv-gnu
+```
+Each line starts with a timestamp, the level of this message (`info`, `debug` etc.), the context that the framework is currently executing in (either `reframe` or the name of the check, of which behalf it executes) and, finally, the actual message.
+
+Every time Reframe is run, both the `reframe.out` and `reframe.log` files will be rewritten.
+However, you can ask Reframe to copy them to the output directory before exiting by passing it the `--save-log-files` option.
+
+### Configuring logging
+
+You can configure several aspects of logging in Reframe and even how the output will look like.
+Reframe's logging mechanism is built upon Python's [logging](https://docs.python.org/3.5/library/logging.html) framework adding extra logging levels and more formatting capabilities.
+
+Logging in Reframe is configured by the `logging_config` variable in the `reframe/settings.py` file.
+The default configuration looks as follows:
+```
+logging_config = {
+    'level': 'DEBUG',
+    'handlers': {
+        'reframe.log' : {
+            'level'     : 'DEBUG',
+            'format'    : '[%(asctime)s] %(levelname)s: '
+                          '%(check_name)s: %(message)s',
+            'append'    : False,
+        },
+
+        # Output handling
+        '&1': {
+            'level'     : 'INFO',
+            'format'    : '%(message)s'
+        },
+        'reframe.out' : {
+            'level'     : 'INFO',
+            'format'    : '%(message)s',
+            'append'    : False,
+        }
+    }
+}
 ```
 
-The interpretation of the performance values depend on the individual checks. In the above check, for example, the performance value refers to days/ns.
-The reference value is a three-element tuple of the form `(<reference>, <low-threshold>, <high-threshold>)`, where the `low-threshold` and `high-threshold` are the acceptable tolerance thresholds expressed in percentages. For example, the performance check shown above has a reference value of 1.37 days/ns with a maximum high tolerance of 15%.
-There is no low tolerance, since lower values denote higher performance.
+Please not that this configuration dictionary is not the same as the one used by Python's logging framework.
+It is a simplified version adapted to the needs of Reframe.
+
+The `logging_config` dictionary has two main key entries:
+* `level`: [default: `'INFO'`] This is the lowest level of messages that will be passed down to the different log record handlers.
+   Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
+   Reframe defines the following logging levels with a decreasing severity: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `VERBOSE` and `DEBUG`.
+   Note that the level name is *not* case sensitive in Reframe.
+* `handlers`: A dictionary defining the properties of the handlers that are attached to Reframe's logging mechanism.
+   The key is either filename or a special character combination denoting standard output (`&1`) or standard error (`&2`).
+   You can attach as many handlers as you like.
+   The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.
+
+The configurable properties of a log record handler are the following:
+* `level`: [default: `'debug'`] The lowest level of log records that this handler can process.
+* `format`: [default: `'%(message)s'`] Format string for the printout of the log record.
+   Reframe supports all the [format strings](https://docs.python.org/3.5/library/logging.html#logrecord-attributes) from Python's logging library and provides two additional ones:
+     - `check_name`: Prints the name of the regression check on behalf of which Reframe is currently executing.
+       If Reframe is not in the context of regression check, `reframe` will be printed.
+     - `check_jobid`: Prints the job or process id of the job or process associated to currently executing regression check.
+       If a job or process is not yet created, `-1` will be printed.
+* `datefmt`: [default: `'%FT%T'`] The format that will be used for outputting timestamps (i.e., the `%(asctime)s` field).
+  Acceptable formats must conform to standard library's [time.strftime()](https://docs.python.org/3.5/library/time.html#time.strftime) function.
+* `append`: [default: `False`] Controls whether Reframe should append to this file or not.
+  This is ignored for the standard output/error handlers.
+* `timestamp` [default: `None`]: Append a timestamp to this log filename.
+  This property may accept any date format as the `datefmt` property.
+  If set for a `filename.log` handler entry, the resulting log file name will be `filename_<timestamp>.log`.
+  This property is ignored for the standard output/error handlers.
+
+### Performance Logging
+
+ReFrame supports an additional level of logging for performance checks specifically, in order to record historical performance data.
+For each performance check, a log file of the form `<check-name>.log` is created under the regression's [log directory](#configuring-regression-directories) where the check's performance is record.
+The default format used for this file is `'[%(asctime)s] %(check_name)s (jobid=%(check_jobid)s): %(message)s'` and Reframe always appends to this file.
+Currently, it is not possible for users to configure performance logging.
+
+This resulting log file looks like the following:
+```
+[2017-07-09T21:22:54] amber_gpu_check (jobid=2251529): value: 21.45, reference: (21.0, -0.05, None)
+[2017-07-09T21:37:55] amber_gpu_check (jobid=2251565): value: 21.56, reference: (21.0, -0.05, None)
+[2017-07-09T21:44:06] amber_gpu_check (jobid=2251588): value: 21.49, reference: (21.0, -0.05, None)
+```
+
+The interpretation of the performance values depend on the individual checks.
+In the above check, for example, the performance value refers to ns/day.
+The reference value is a three-element tuple of the form `(<reference>, <low-threshold>, <high-threshold>)`, where the `low-threshold` and `high-threshold` are the acceptable tolerance thresholds expressed in percentages. For example, the performance check shown above has a reference value of 21.0 ns/day with a maximum high tolerance of 5%.
+There is no upper tolerance, since higher values denote higher performance in this case.
 
 
 ## Asynchronous execution of regression checks
