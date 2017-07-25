@@ -398,7 +398,7 @@ ReFrame offers several other options for customizing the behavior of regression 
 
 ## Executable Options
 
-ReFrame allows a list of options to be passed to regression check executable.
+ReFrame allows a list of options to be passed to the regression check executable.
 ```python
 def __init__(self, **kwargs):
     ...
@@ -408,7 +408,7 @@ def __init__(self, **kwargs):
         '-o outputfile'
     ]
 ```
-These options are passed to the executable, which will be invoked but the scheduler launcher.
+These options are passed to the executable, which will be invoked by the scheduler launcher.
 In the above example, the executable will be launched as follows with the SLURM scheduler:
 ```bash
 srun ./a.out -i inputfile -o outputfile
@@ -466,6 +466,38 @@ ddt --offline srun ...
 whereas if it run on a system with ALPS it will be translated to
 ```bash
 ddt --offline aprun ...
+```
+
+## Custom Launchers
+
+ReFrame permits the simple addition of custom scheduler launchers. A launcher that invokes `mpirun` can for example be added as follows:
+
+```python
+class MpirunLauncher(JobLauncher):
+    @property
+    def executable(self):
+        return 'mpirun'
+
+    @property
+    def fixed_options(self):
+        return [ '-np %s' % self.job.num_tasks ]
+```
+It will be translated to `mpirun -np ...`. While the definition of the property `executable` is obviously mandatory, the definition of `fixed_options` is optional; it defaults to no options. Note that the launcher class may use the information contained in `self.job`.
+
+A custom launcher as the above defined `MpirunLauncher` may be used in a regression test as follows:
+
+```python
+class MpirunTest(RegressionTest):
+    ...
+    def setup(self, system, environ, **job_opts):
+        super().setup(system, environ, **job_opts)
+        self.job.launcher = MpirunLauncher(self.job)
+```
+
+ReFrame will provide a collection of custom launchers (added uppon request). Currently it provides only one: a launcher for VisIt. The VisIt launcher can be used in a regression test the same way as the above `MpirunLauncher`; only the following import statement is required to make it available:
+```python
+from regression.core.launchers import VisitLauncher
+
 ```
 
 # Output Parsing and Performance Assessment
