@@ -7,7 +7,8 @@ As soon as a new system with its programming environments is configured, adaptin
 
 The configuration of systems and programming environments is performed by a special Python dictionary called `site_configuration` defined inside the file `<install-dir>/reframe/settings.py`.
 
-The `site_configuration` dictionary should define two entries, `'systems'` and `'environments'`. The former defines the available systems to the regression tests and the latter the available programming environments.
+The `site_configuration` dictionary should define two entries,`systems` and `environments`.
+The former defines the available systems to the regression tests and the latter the available programming environments.
 
 An example of how the configuration for [Piz Daint](http://www.cscs.ch/computers/piz_daint/index.html) at CSCS looks like:
 

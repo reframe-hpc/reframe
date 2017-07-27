@@ -590,6 +590,49 @@ This can be achieved by setting the `max_jobs` property of a partition in the `s
 
 ```
 
+## Execution modes
+
+Reframe 2.5 permits you to define different *execution modes* of the framework.
+An execution mode is merely a set of predefined command-line options that will be passed to Reframe when this mode is invoked.
+You can define execution modes per system in the Reframe's configuration file.
+For example, one could define a global `maintenance` execution mode as follows in the `settings.py` file:
+
+```python
+site_configuration = ReadOnlyField({
+    'systems' : {
+        ...
+    },
+    'environments' : {
+        ...
+    },
+    'modes' : {
+        *' : {
+            'maintenance' : [
+                '--exec-policy=async',
+                '--output=$APPS/UES/$USER/regression/maintenance',
+                '--logdir=$APPS/UES/$USER/regression/maintenance/logs',
+                '--stage=$SCRATCH/regression/maintenance/stage',
+                '--reservation=maintenance',
+                '--save-log-files',
+                '--tag=maintenance',
+                '--timestamp=%F_%H-%M-%S',
+            ],
+        }
+    }
+})
+```
+
+Whenever a user invokes Reframe with `--mode=maintenance`, all of the predefined options of that mode will be passed to the invocation.
+The user may pass any additional command line option.
+Command line options always override the options set by the mode, so that using the above configuration, the following will reset the execution policy to `serial`:
+```
+./bin/reframe --mode=maintenance --exec-policy=serial -r
+```
+
+It should be noted here that if a boolean option is defined in an execution mode, this may not be overriden if the inverse option is not provided by the framework.
+For example, with the above definition of the `maintenance` mode the `--save-log-files` option cannot be overriden, since there is no option currently in the framework to invert its action.
+
+Execution modes may be defined or redefined per system as it is the case also with the [programming environments](/configure#environment-configuration).
 
 ## Examples of usage
 
