@@ -592,7 +592,7 @@ This can be achieved by setting the `max_jobs` property of a partition in the `s
 
 ## Execution modes
 
-Reframe 2.5 permits you to define different *execution modes* of the framework.
+From version 2.5 onward, Reframe permits users to define different *execution modes* of the framework.
 An execution mode is merely a set of predefined command-line options that will be passed to Reframe when this mode is invoked.
 You can define execution modes per system in the Reframe's configuration file.
 For example, one could define a global `maintenance` execution mode as follows in the `settings.py` file:
@@ -609,9 +609,9 @@ site_configuration = ReadOnlyField({
         *' : {
             'maintenance' : [
                 '--exec-policy=async',
-                '--output=$APPS/UES/$USER/regression/maintenance',
-                '--logdir=$APPS/UES/$USER/regression/maintenance/logs',
-                '--stage=$SCRATCH/regression/maintenance/stage',
+                '--output=$STORE/regression/maintenance',
+                '--logdir=$STORE/regression/maintenance/logs',
+                '--stage=$WORK/regression/maintenance/stage',
                 '--reservation=maintenance',
                 '--save-log-files',
                 '--tag=maintenance',
@@ -623,8 +623,9 @@ site_configuration = ReadOnlyField({
 ```
 
 Whenever a user invokes Reframe with `--mode=maintenance`, all of the predefined options of that mode will be passed to the invocation.
-The user may pass any additional command line option.
-Command line options always override the options set by the mode, so that using the above configuration, the following will reset the execution policy to `serial`:
+Note that the framework will expand any shell variables specified inside a mode.
+The user may also pass additional command line options.
+Command line options always override the options set by the mode, so that with the above configuration, the following will reset the execution policy to `serial`:
 ```
 ./bin/reframe --mode=maintenance --exec-policy=serial -r
 ```
