@@ -470,7 +470,13 @@ ddt --offline aprun ...
 
 ## Custom Launchers
 
-ReFrame permits the simple addition of custom scheduler launchers. A launcher that invokes `mpirun` can for example be added as follows:
+From version 2.5 onward, ReFrame permits the simple addition of custom scheduler launchers. 
+A launcher is basically a program that sets up the distributed execution of another program. Example launchers are `srun` and `mpirun`.
+
+Launchers in Reframe are instances of the `JobLauncher` class and are responsible for setting up the command line to execute a program distributedly. 
+The command line is the concatenation of (a) the launcher executable (e.g. `mpirun`), (b) fixed launcher options (e.g. `-np <num_tasks>`), (c) user launcher options, (d) the application exectutable and (e) application options; for example: `mpirun -np <num_tasks> -hostfile myhostfile hostname -s`.
+
+A launcher that invokes `mpirun` as in the above example be implemented as follows:
 
 ```python
 class MpirunLauncher(JobLauncher):
@@ -482,7 +488,9 @@ class MpirunLauncher(JobLauncher):
     def fixed_options(self):
         return [ '-np %s' % self.job.num_tasks ]
 ```
-It will be translated to `mpirun -np ...`. While the definition of the property `executable` is obviously mandatory, the definition of `fixed_options` is optional; it defaults to no options. Note that the launcher class may use the information contained in `self.job`.
+
+While the definition of the property `executable` is obviously mandatory, the definition of `fixed_options` is optional; it defaults to no options. 
+Note that each launcher has a job descriptor associated (`self.job`); the launcher class may use the job submission information contained there.
 
 A custom launcher as the above defined `MpirunLauncher` may be used in a regression test as follows:
 
@@ -494,7 +502,9 @@ class MpirunTest(RegressionTest):
         self.job.launcher = MpirunLauncher(self.job)
 ```
 
-ReFrame will provide a collection of custom launchers (added uppon request). Currently it provides only one: a launcher for VisIt. The VisIt launcher can be used in a regression test the same way as the above `MpirunLauncher`; only the following import statement is required to make it available:
+ReFrame will provide a collection of custom launchers (added uppon request). 
+Currently it provides only one: a launcher for the [VisIt visualisation software](https://visit.llnl.gov/). 
+The VisIt launcher can be used in a regression test the same way as the above `MpirunLauncher`; only the following import statement is required to make it available:
 ```python
 from regression.core.launchers import VisitLauncher
 
