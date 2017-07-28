@@ -11,6 +11,7 @@ import reframe.core.logging as logging
 
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
+from reframe.core.environments import EnvironmentSnapshot
 from reframe.frontend.loader import SiteConfiguration, autodetect_system
 from reframe.settings import settings
 from unittests.fixtures import guess_system, system_with_scheduler
@@ -18,6 +19,7 @@ from unittests.fixtures import guess_system, system_with_scheduler
 
 def run_command_inline(argv, funct, *args, **kwargs):
     argv_save = sys.argv
+    environ_save = EnvironmentSnapshot()
     captured_stdout = StringIO()
     captured_stderr = StringIO()
     sys.argv = argv
@@ -28,6 +30,8 @@ def run_command_inline(argv, funct, *args, **kwargs):
     except SystemExit as e:
         exitcode = e.code
     finally:
+        # restore environment and command-line arguments
+        environ_save.load()
         sys.argv = argv_save
         return (exitcode,
                 captured_stdout.getvalue(),
@@ -43,9 +47,9 @@ class TestFrontend(unittest.TestCase):
         self.prgenv     = 'builtin-gcc'
         self.cmdstr     = '{executable} {checkopt} ' \
                           '--prefix {prefix} {prgenvopt} '    \
-                          '--notimestamp --nocolor {action} ' \
+                          '--nocolor {action} ' \
                           '{sysopt} {local} {options}'
-        self.options    = ''
+        self.options    = []
         self.action     = '-r'
         self.local      = True
 
@@ -85,6 +89,7 @@ class TestFrontend(unittest.TestCase):
             sysopt     = ('--system %s' % self.sysopt) if self.sysopt else ''
         ).split()
 
+        print(argv)
         return run_command_inline(argv, cli.main)
 
 
@@ -227,6 +232,16 @@ class TestFrontend(unittest.TestCase):
         self.assert_log_file_is_saved()
 
 
+    def test_unknown_system(self):
+        self.action = '-l'
+        self.sysopt = 'foo'
+        self.checkfile = None
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertEqual(1, returncode)
+
+
     def test_sanity_of_optconfig(self):
         # Test the sanity of the command line options configuration
         self.action = '-h'
@@ -254,6 +269,18 @@ class TestFrontend(unittest.TestCase):
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual('0', num_checks_in_checkdir)
 
+
+    def test_same_output_stage_dir(self):
+        output_dir = os.path.join(self.prefix, 'foo')
+        self.options = ('-o %s -s %s' % (output_dir, output_dir)).split()
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertEqual(1, returncode)
+
+        # retry with --keep-stage-files
+        self.options.append('--keep-stage-files')
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertEqual(0, returncode)
+        self.assertTrue(os.path.exists(output_dir))
 
     def tearDown(self):
         shutil.rmtree(self.prefix)

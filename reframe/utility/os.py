@@ -142,3 +142,29 @@ def subdirs(dirname, recurse=False):
                 dirs.extend(subdirs(entry.path, recurse))
 
     return dirs
+
+
+def follow_link(path):
+    """Return the final target of a symlink chain"""
+    while os.path.islink(path):
+        path = os.readlink(path)
+
+    return path
+
+
+def samefile(path1, path2):
+    """Check if paths refer to the same file.
+
+    If paths exist, this is equivalent to `os.path.samefile()`. If only one of
+    the paths exists, it will be followed if it is a symbolic link and its final
+    target will be compared to the other path. If both paths do not exist, a
+    simple string comparison will be performed (after they have been
+    normalized)."""
+
+    # normalise the paths first
+    path1 = os.path.normpath(path1)
+    path2 = os.path.normpath(path2)
+    if os.path.exists(path1) and os.path.exists(path2):
+        return os.path.samefile(path1, path2)
+
+    return follow_link(path1) == follow_link(path2)

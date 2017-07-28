@@ -126,7 +126,8 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):
         super().setUp()
-        self.runner = Runner(AsynchronousExecutionPolicy())
+        self.debug_policy = DebugAsynchronousExecutionPolicy()
+        self.runner       = Runner(self.debug_policy)
 
 
     def set_max_jobs(self, value):
@@ -134,56 +135,104 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
             p.max_jobs = value
 
 
+    def read_timestamps_sorted(self):
+        self.begin_stamps = []
+        self.end_stamps   = []
+        for c in self.debug_policy.checks:
+            with open(c.stdout, 'r') as f:
+                self.begin_stamps.append(float(f.readline().strip()))
+                self.end_stamps.append(float(f.readline().strip()))
+
+        self.begin_stamps.sort()
+        self.end_stamps.sort()
+
+
     def test_concurrency_unlimited(self):
         from unittests.resources.frontend_checks import SleepCheck
 
-        checks = [ SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources) ]
-        self.set_max_jobs(3)
-
-        t_run = datetime.now()
+        checks = [
+            SleepCheck(0.5, system=self.system, resources=self.resources),
+            SleepCheck(0.5, system=self.system, resources=self.resources),
+            SleepCheck(0.5, system=self.system, resources=self.resources)
+        ]
+        num_checks = len(checks)
+        self.set_max_jobs(num_checks)
         self.runner.runall(checks, self.system)
-        t_run = datetime.now() - t_run
-        self.assertLess(t_run.seconds, 2)
 
-        self.assertEqual(3, self.runner.stats.num_cases())
+        # Assure that all tests were run and without failures
+        self.assertEqual(num_checks, self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
+
+        # Read the timestamps sorted to permit simple concurrency tests
+        self.read_timestamps_sorted()
+
+        # Assure that all tests were run in parallel
+        self.assertTrue(self.begin_stamps[-1] < self.end_stamps[0])
 
 
     def test_concurrency_limited(self):
         from unittests.resources.frontend_checks import SleepCheck
 
-        checks = [ SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources) ]
-        self.set_max_jobs(2)
-
-        t_run = datetime.now()
+        # The number of checks must be <= 2*max_jobs
+        t = 0.5
+        checks = [ SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources) ]
+        num_checks = len(checks)
+        max_jobs  = num_checks - 2
+        self.set_max_jobs(max_jobs)
         self.runner.runall(checks, self.system)
-        t_run = datetime.now() - t_run
-        self.assertGreaterEqual(t_run.seconds, 2)
-        self.assertLess(t_run.seconds, 3)
 
-        self.assertEqual(3, self.runner.stats.num_cases())
+        # Assure that all tests were run and without failures
+        self.assertEqual(num_checks, self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
+
+        # Read the timestamps sorted to permit simple concurrency tests
+        self.read_timestamps_sorted()
+
+        # Assure that the first #max_jobs jobs were run in parallel
+        self.assertTrue(self.begin_stamps[max_jobs-1] < self.end_stamps[0])
+
+        # Assure that the remaining jobs were each run after one of the
+        # previous #max_jobs jobs had finished (e.g. begin[max_jobs] > end[0])
+        begin_after_end = [b > e for b, e in zip(self.begin_stamps[max_jobs:],
+                                                 self.end_stamps[:-max_jobs])]
+        self.assertTrue(all(begin_after_end))
+
+        # NOTE: to assure that these remaining jobs were also run
+        # in parallel one could do the command hereafter; however, it would
+        # require to substantially increase the sleep time (in SleepCheck),
+        # because of the delays in rescheduling (1s, 2s, 3s, 1s, 2s,...).
+        # We currently prefer not to do this last concurrency test to avoid an
+        # important prolongation of the unit test execution time.
+        # self.assertTrue(self.begin_stamps[-1] < self.end_stamps[max_jobs])
 
 
     def test_concurrency_none(self):
         from unittests.resources.frontend_checks import SleepCheck
 
-        checks = [ SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources),
-                   SleepCheck(1, system=self.system, resources=self.resources) ]
+        t = 0.5
+        checks = [ SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources),
+                   SleepCheck(t, system=self.system, resources=self.resources) ]
+        num_checks = len(checks)
         self.set_max_jobs(1)
-
-        t_run = datetime.now()
         self.runner.runall(checks, self.system)
-        t_run = datetime.now() - t_run
-        self.assertGreaterEqual(t_run.seconds, 3)
 
-        self.assertEqual(3, self.runner.stats.num_cases())
+        # Assure that all tests were run and without failures
+        self.assertEqual(num_checks, self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
+
+        # Read the timestamps sorted to permit simple concurrency tests
+        self.read_timestamps_sorted()
+
+        # Assure that the jobs were run after the previous job had finished
+        # (e.g. begin[1] > end[0])
+        begin_after_end = [ b > e for b, e in zip(self.begin_stamps[1:],
+                                                  self.end_stamps[:-1]) ]
+        self.assertTrue(all(begin_after_end))
 
 
     def _run_checks(self, checks, max_jobs):

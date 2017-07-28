@@ -12,7 +12,7 @@ from importlib.machinery import SourceFileLoader
 from reframe.core.environments import Environment, ProgEnvironment
 from reframe.core.exceptions import ConfigurationError, ReframeError
 from reframe.core.systems import System, SystemPartition
-from reframe.core.fields import ScopedDict
+from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.settings import settings
 
 
@@ -134,8 +134,11 @@ class RegressionCheckLoader:
 
 class SiteConfiguration:
     """Holds the configuration of systems and environments"""
+    modes = ScopedDictField('modes', (list, str))
+
     def __init__(self):
         self.systems = {}
+        self.modes = ScopedDict({})
 
 
     def load_from_dict(self, site_config):
@@ -144,6 +147,7 @@ class SiteConfiguration:
 
         sysconfig = site_config.get('systems', None)
         envconfig = site_config.get('environments', None)
+        modes = site_config.get('modes', {})
 
         if not sysconfig:
             raise ConfigurationError('no entry for systems was found')
@@ -156,6 +160,15 @@ class SiteConfiguration:
             envconfig = ScopedDict(envconfig)
         except TypeError:
             raise ConfigurationError('environments configuration '
+                                     'is not properly formatted')
+
+        # Convert modes to a `ScopedDict`; note that `modes` will implicitly
+        # converted to a scoped dict here, since `self.modes` is a
+        # `ScopedDictField`.
+        try:
+            self.modes = modes
+        except TypeError:
+            raise ConfigurationError('modes configuration '
                                      'is not properly formatted')
 
         def create_env(system, partition, name):

@@ -372,3 +372,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         self.printer.separator(
             'short single line', 'all spawned checks finished'
         )
+
+
+class DebugAsynchronousExecutionPolicy(AsynchronousExecutionPolicy):
+    def __init__(self):
+        super().__init__()
+        self.keep_stage_files = True
+        self.checks = []
+
+    def exit_environ(self, c, p, e):
+        super().exit_environ(c, p, e)
+        self.checks.append(c)

@@ -21,6 +21,20 @@ class Field(object):
         obj.__dict__[self.name] = value
 
 
+class ForwardField(object):
+    """Simple field that forwards set/get to a target object."""
+    def __init__(self, obj, attr):
+        self.target = obj
+        self.attr = attr
+
+    def __get__(self, obj, objtype):
+        return self.target.__dict__[self.attr]
+
+
+    def __set__(self, obj, value):
+        self.target.__dict__[self.attr] = value
+
+
 class TypedField(Field):
     """Stores a field of predefined type"""
     def __init__(self, fieldname, fieldtype, allow_none = False):
@@ -352,6 +366,11 @@ class ScopedDict(dict):
         self.scopes = copy.deepcopy(mapping)
         self.scope_sep = scope_sep
         self.global_scope = global_scope
+
+
+    def __str__(self):
+        # just print the internal dictionary
+        return str(self.scopes)
 
 
     def _check_scope_type(self, key, value):

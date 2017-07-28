@@ -74,7 +74,7 @@ class TestOSTools(unittest.TestCase):
         self.assertFalse(os_ext.inpath('/foo/bin', '/bin:/usr/local/bin'))
 
 
-    def test_subdirs(self):
+    def _make_testdirs(self, prefix):
         # Create a temporary directory structure
         # foo/
         #   bar/
@@ -82,11 +82,15 @@ class TestOSTools(unittest.TestCase):
         #   goo/
         # loo/
         #   bar/
-        prefix = tempfile.mkdtemp()
         os.makedirs(os.path.join(prefix, 'foo', 'bar'), exist_ok=True)
         os.makedirs(os.path.join(prefix, 'foo', 'bar', 'boo'), exist_ok=True)
         os.makedirs(os.path.join(prefix, 'foo', 'goo'), exist_ok=True)
         os.makedirs(os.path.join(prefix, 'loo', 'bar'), exist_ok=True)
+
+
+    def test_subdirs(self):
+        prefix = tempfile.mkdtemp()
+        self._make_testdirs(prefix)
 
         # Try to fool the algorithm by adding normal files
         open(os.path.join(prefix, 'foo', 'bar', 'file.txt'), 'w').close()
@@ -106,6 +110,35 @@ class TestOSTools(unittest.TestCase):
         returned_subdirs = os_ext.subdirs(prefix, recurse=True)
         self.assertEqual(expected_subdirs, set(returned_subdirs))
         shutil.rmtree(prefix)
+
+
+    def test_samefile(self):
+        # Create a temporary directory structure
+        prefix = tempfile.mkdtemp()
+        self._make_testdirs(prefix)
+
+        # Try to fool the algorithm by adding symlinks
+        os.symlink(os.path.join(prefix, 'foo'),
+                   os.path.join(prefix, 'foolnk'))
+        os.symlink(os.path.join(prefix, 'foolnk'),
+                   os.path.join(prefix, 'foolnk1'))
+
+        # Create a broken link on purpose
+        os.symlink('/foo', os.path.join(prefix, 'broken'))
+        os.symlink(os.path.join(prefix, 'broken'),
+                   os.path.join(prefix, 'broken1'))
+
+        self.assertTrue(os_ext.samefile('/foo', '/foo'))
+        self.assertTrue(os_ext.samefile('/foo', '/foo/'))
+        self.assertTrue(os_ext.samefile('/foo/bar', '/foo//bar/'))
+        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'foo'),
+                                        os.path.join(prefix, 'foolnk')))
+        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'foo'),
+                                        os.path.join(prefix, 'foolnk1')))
+        self.assertFalse(os_ext.samefile('/foo', '/bar'))
+        self.assertTrue(os_ext.samefile('/foo', os.path.join(prefix, 'broken')))
+        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'broken'),
+                                        os.path.join(prefix, 'broken1')))
 
 
 class TestCopyTree(unittest.TestCase):

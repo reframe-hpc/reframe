@@ -60,7 +60,14 @@ checked_exec()
 
 run_user_checks()
 {
-    cmd="python reframe.py --prefix . --notimestamp -r -t production $@"
+    cmd="./bin/reframe --exec-policy=async  -r -t production $@"
+    echo "Running user checks with \`$cmd'"
+    checked_exec $cmd
+}
+
+run_serial_user_checks()
+{
+    cmd="./bin/reframe --exec-policy=serial  -r -t production-serial $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -194,6 +201,7 @@ if [ ${#userchecks[@]} -ne 0 ]; then
     #
     for i in ${!invocations[@]}; do
         run_user_checks ${userchecks_path} ${invocations[i]}
+        run_serial_user_checks ${userchecks_path} ${invocations[i]}
     done
 fi
 

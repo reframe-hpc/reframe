@@ -1,54 +1,86 @@
+from math import ceil
+
+
 class JobLauncher:
-    def __init__(self, job, options):
-        self.job = job
+    def __init__(self, job, options=[]):
+        self.job     = job
         self.options = options
 
-    def emit_run_command(self, cmd, builder, **builder_opts):
+    @property
+    def executable(self):
         raise NotImplementedError('Attempt to call an abstract method')
+
+    @property
+    def fixed_options(self):
+        return []
+
+    def emit_run_command(self, target_executable, builder, **builder_opts):
+        options = ' '.join(self.fixed_options + self.options)
+        return builder.verbatim('%s %s %s' % \
+                                (self.executable, options, target_executable),
+                                **builder_opts)
+
+
+class NativeSlurmLauncher(JobLauncher):
+    @property
+    def executable(self):
+        return 'srun'
+
+
+class AlpsLauncher(JobLauncher):
+    @property
+    def executable(self):
+        return 'aprun'
+
+    @property
+    def fixed_options(self):
+        return [ '-B' ]
+
+
+class LauncherWrapper(JobLauncher):
+    """Wrap a launcher object so that its invocation may be modified."""
+    def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
+        super().__init__(target_launcher.job, target_launcher.options)
+        self.target_launcher = target_launcher
+        self.wrapper_command = wrapper_command
+        self.wrapper_options = wrapper_options
+
+    @property
+    def executable(self):
+        return self.wrapper_command
+
+    @property
+    def fixed_options(self):
+        return self.wrapper_options + [ self.target_launcher.executable ] + \
+               self.target_launcher.fixed_options
 
 
 class LocalLauncher(JobLauncher):
-    def __init__(self, job, options = []):
-        super().__init__(job, options)
-
     def emit_run_command(self, cmd, builder, **builder_opts):
         # Just emit the command
         return builder.verbatim(cmd, **builder_opts)
 
 
-class NativeSlurmLauncher(JobLauncher):
-    def __init__(self, job, options = []):
+class VisitLauncher(JobLauncher):
+    def __init__(self, job, options=[]):
         super().__init__(job, options)
-        self.launcher = 'srun %s' % (' '.join(self.options))
+        if self.job:
+            # The self.job.launcher must be stored at the moment of the
+            # VisitLauncher construction, because the user will afterwards set
+            # the newly created VisitLauncher as new self.job.launcher!
+            self.target_launcher = self.job.launcher
 
+    @property
+    def executable(self):
+        return 'visit'
 
-    def emit_run_command(self, cmd, builder, **builder_opts):
-        return builder.verbatim('%s %s' % (self.launcher, cmd), **builder_opts)
-
-
-class AlpsLauncher(JobLauncher):
-    def __init__(self, job, options = []):
-        super().__init__(job, options)
-        self.launcher = 'aprun -B %s' % (' '.join(self.options))
-
-    def emit_run_command(self, cmd, builder, **builder_opts):
-        return builder.verbatim('%s %s' % (self.launcher, cmd), **builder_opts)
-
-
-class LauncherWrapper(JobLauncher):
-    """
-    Wraps a launcher object so that you can modify the launcher's invocation
-    """
-    def __init__(self, launcher, wrapper_cmd, wrapper_options = []):
-        self.launcher = launcher
-        self.wrapper  = wrapper_cmd
-        self.wrapper_options = wrapper_options
-
-
-    def emit_run_command(self, cmd, builder, **builder_opts):
-        # Suppress the output of the wrapped launcher in the builder
-        launcher_cmd = self.launcher.emit_run_command(cmd, builder,
-                                                      suppress=True)
-        return builder.verbatim(
-            '%s %s %s' % (self.wrapper, ' '.join(self.wrapper_options),
-                          launcher_cmd), **builder_opts)
+    @property
+    def fixed_options(self):
+        options = []
+        if self.target_launcher and \
+            not isinstance(self.target_launcher, LocalLauncher):
+            num_nodes = ceil(self.job.num_tasks/self.job.num_tasks_per_node)
+            options.append('-np %s' % self.job.num_tasks)
+            options.append('-nn %s' % num_nodes)
+            options.append('-l %s' % self.target_launcher.executable)
+        return options
