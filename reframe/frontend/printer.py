@@ -38,7 +38,7 @@ class PrettyPrinter(object):
     """Pretty printing facility for the framework.
 
     Final printing is delegated to an internal logger, which is responsible for
-    printing both to standard output and in a specfial output file."""
+    printing both to standard output and in a special output file."""
 
     def __init__(self):
         self.colorize = True
@@ -102,3 +102,11 @@ class PrettyPrinter(object):
 
     def info(self, msg = ''):
         self._logger.info(msg)
+
+
+    def log_config(self, options):
+        config_str = 'configuration\n'
+        for attr, val in sorted(options.__dict__.items()):
+            config_str += '    %s=%s\n' % (attr, str(val))
+
+        self._logger.debug(config_str)

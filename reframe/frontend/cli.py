@@ -1,13 +1,15 @@
-import argparse
 import os
 import socket
 import sys
 import traceback
 
 import reframe.core.logging as logging
+import reframe.utility.os as os_ext
 
 from reframe.core.exceptions import ModuleError
 from reframe.core.modules import module_force_load, module_unload
+from reframe.core.logging import getlogger
+from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import SerialExecutionPolicy, \
                                                 AsynchronousExecutionPolicy
@@ -21,7 +23,7 @@ from reframe.settings import settings
 def list_supported_systems(systems, printer):
     printer.info('List of supported systems:')
     for s in systems:
-        printer.info('    ', s)
+        printer.info('    %s' % s)
 
 
 def list_checks(checks, printer):
@@ -35,7 +37,7 @@ def list_checks(checks, printer):
 
 def main():
     # Setup command line options
-    argparser = argparse.ArgumentParser()
+    argparser = ArgumentParser()
     output_options = argparser.add_argument_group(
         'Options controlling regression directories')
     locate_options = argparser.add_argument_group('Options for locating checks')
@@ -63,6 +65,10 @@ def main():
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
         help='Keep stage directory even if check is successful')
+    output_options.add_argument(
+        '--save-log-files', action='store_true', default=False,
+        help='Copy the log file from the work dir to the output dir at the '
+             'end of the program')
 
     # Check discovery options
     locate_options.add_argument(
@@ -74,7 +80,7 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '-t', '--tag', action='append', default=[],
+        '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
     select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
@@ -143,6 +149,9 @@ def main():
         choices=[ 'serial', 'async' ], default='serial',
         help='Specify the execution policy for running the regression tests. '
              'Available policies: "serial" (default), "async"')
+    run_options.add_argument(
+        '--mode', action='store', help='Execution mode to use'
+    )
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -152,19 +161,14 @@ def main():
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
     misc_options.add_argument(
-        '--notimestamp', action='store_false', dest='timestamp', default=True,
-        help='Disable timestamping when creating regression directories')
-    misc_options.add_argument(
-        '--timefmt', action='store', default='%FT%T',
-        help='Set timestamp format (default "%%FT%%T")')
+        '--timestamp', action='store', nargs='?',
+        const='%FT%T', metavar='TIMEFMT',
+        help='Append a timestamp component to the regression directories'
+             '(default format "%%FT%%T")'
+    )
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
-    misc_options.add_argument(
-        '--save-log-files', action='store_true', dest='save_log_files',
-        default=False,
-        help='Copy the log file from the work dir to the output dir at the '
-             'end of the program')
     misc_options.add_argument('-V', '--version', action='version',
                               version=settings.version)
 
@@ -185,27 +189,6 @@ def main():
     # Load site configuration
     site_config = SiteConfiguration()
     site_config.load_from_dict(settings.site_configuration)
-
-    # Setup the check loader
-    if options.checkpath:
-        load_path = []
-        for d in options.checkpath:
-            if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
-                             (argparser.prog, d))
-                continue
-
-            load_path.append(d)
-
-        loader = RegressionCheckLoader(load_path, recurse=options.recursive)
-    else:
-        loader = RegressionCheckLoader(
-            load_path=settings.checks_path,
-            prefix=os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', '..')
-            ),
-            recurse=settings.checks_path_recurse,
-        )
 
     if options.system:
         try:
@@ -236,29 +219,72 @@ def main():
             list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
+
+    if options.mode:
+        try:
+            mode_key = '%s:%s' % (system.name, options.mode)
+            mode_args = site_config.modes[options.mode]
+
+            # Parse the mode's options and reparse the command-line
+            options = argparser.parse_args(mode_args)
+            options = argparser.parse_args(namespace=options)
+        except KeyError:
+            printer.error("no such execution mode: `%s'" % (options.mode))
+            sys.exit(1)
+
+
+    # Setup the check loader
+    if options.checkpath:
+        load_path = []
+        for d in options.checkpath:
+            if not os.path.exists(d):
+                printer.info("%s: path `%s' does not exist. Skipping...\n" %
+                             (argparser.prog, d))
+                continue
+
+            load_path.append(d)
+
+        loader = RegressionCheckLoader(load_path, recurse=options.recursive)
+    else:
+        loader = RegressionCheckLoader(
+            load_path=settings.checks_path,
+            prefix=os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', '..')
+            ),
+            recurse=settings.checks_path_recurse,
+        )
+
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
-        system.prefix = options.prefix
+        system.prefix = os.path.expandvars(options.prefix)
         system.outputdir = None
         system.stagedir  = None
         system.logdir    = None
 
     if options.output:
-        system.outputdir = options.output
+        system.outputdir = os.path.expandvars(options.output)
 
     if options.stage:
-        system.stagedir = options.stage
+        system.stagedir = os.path.expandvars(options.stage)
 
     if options.logdir:
-        system.logdir = options.logdir
+        system.logdir = os.path.expandvars(options.logdir)
 
     resources = ResourcesManager(prefix=system.prefix,
                                  output_prefix=system.outputdir,
                                  stage_prefix=system.stagedir,
                                  log_prefix=system.logdir,
-                                 timestamp=options.timestamp,
-                                 timefmt=options.timefmt)
+                                 timestamp=options.timestamp)
+    if os_ext.samefile(resources.stage_prefix, resources.output_prefix) and \
+       not options.keep_stage_files:
+        printer.error('stage and output refer to the same directory. '
+                      'If this is on purpose, please use also the '
+                      "`--keep-stage-files' option.")
+        sys.exit(1)
+
+
+    printer.log_config(options)
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
@@ -293,7 +319,7 @@ def main():
             )
 
         # Filter checks by tags
-        user_tags = set(options.tag)
+        user_tags = set(options.tags)
         checks_matched = filter(
             lambda c: c if user_tags.issubset(c.tags) else None,
             checks_matched

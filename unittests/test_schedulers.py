@@ -181,27 +181,3 @@ class TestJobSubmission(unittest.TestCase):
 
         self.assertGreaterEqual(t_job.seconds, 2)
         self.assertLess(t_job.seconds, 10)
-
-
-    def test_launcher_wrapper_native_slurm(self):
-        builder = BashScriptBuilder()
-        ddt_launcher = LauncherWrapper(NativeSlurmLauncher(None),
-                                       'ddt', '-o foo.out'.split())
-        ddt_launcher.emit_run_command('hostname', builder)
-        script_text = builder.finalise()
-        self.assertIsNone(re.search('^\s*srun', script_text, re.MULTILINE))
-        self.assertIsNotNone(re.search('^ddt\s+-o\s+foo\.out\s+srun\s+hostname',
-                                       script_text, re.MULTILINE))
-
-
-    def test_launcher_wrapper_alps(self):
-        builder = BashScriptBuilder()
-        ddt_launcher = LauncherWrapper(AlpsLauncher(None),
-                                       'ddt', '-o foo.out'.split())
-        ddt_launcher.emit_run_command('hostname', builder)
-        script_text = builder.finalise()
-        self.assertIsNone(re.search('^\s*aprun', script_text, re.MULTILINE))
-        self.assertIsNotNone(
-            re.search('^ddt\s+-o\s+foo\.out\s+aprun\s+-B\s+hostname',
-                      script_text, re.MULTILINE)
-        )

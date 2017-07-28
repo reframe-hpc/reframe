@@ -146,6 +146,15 @@ class TestRegression(unittest.TestCase):
         self._run_test(test)
 
 
+    def test_hellocheck_local_slashes(self):
+        # Try to fool path creation by adding slashes to environment partitions
+        # names
+        self.system.name    += os.sep + 'bad'
+        self.progenv.name   += os.sep + 'bad'
+        self.partition.name += os.sep + 'bad'
+        self.test_hellocheck_local()
+
+
     def test_run_only(self):
         test = RunOnlyRegressionTest('runonlycheck',
                                      'unittests/resources',
@@ -154,8 +163,8 @@ class TestRegression(unittest.TestCase):
         test.executable = './hello.sh'
         test.executable_opts = ['Hello, World!']
         test.local = True
-        test.valid_prog_environs = [ self.progenv.name ]
-        test.valid_systems = [ self.system.name ]
+        test.valid_prog_environs = [ '*' ]
+        test.valid_systems = [ '*' ]
         test.sanity_patterns = {
             '-' : { 'Hello, World\!' : [] }
         }
@@ -225,6 +234,45 @@ class TestRegression(unittest.TestCase):
         self.assertFalse(test.supports_system('login'))
         self.assertFalse(test.supports_system('testsys:gpu'))
         self.assertFalse(test.supports_system('testsys:login'))
+
+
+    def test_sourcesdir_none(self):
+        test = RegressionTest('hellocheck',
+                              'unittests/resources',
+                              resources=self.resources,
+                              system=self.system)
+        test.sourcesdir = None
+        test.valid_prog_environs = [ '*' ]
+        test.valid_systems = [ '*' ]
+        self.assertRaises(ReframeError, self._run_test, test)
+
+
+    def test_sourcesdir_none_compile_only(self):
+        test = CompileOnlyRegressionTest('hellocheck',
+                                         'unittests/resources',
+                                         resources=self.resources,
+                                         system=self.system)
+        test.sourcesdir = None
+        test.valid_prog_environs = [ '*' ]
+        test.valid_systems = [ '*' ]
+        self.assertRaises(ReframeError, self._run_test, test)
+
+
+    def test_sourcesdir_none_run_only(self):
+        test = RunOnlyRegressionTest('hellocheck',
+                                     'unittests/resources',
+                                     resources=self.resources,
+                                     system=self.system)
+        test.sourcesdir = None
+        test.executable = 'echo'
+        test.executable_opts = [ "Hello, World!" ]
+        test.local = True
+        test.valid_prog_environs = [ '*' ]
+        test.valid_systems = [ '*' ]
+        test.sanity_patterns = {
+            '-' : { 'Hello, World\!' : [] }
+        }
+        self._run_test(test)
 
 
 class TestRegressionOutputScan(unittest.TestCase):

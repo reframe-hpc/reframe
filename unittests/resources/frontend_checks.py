@@ -145,11 +145,20 @@ class SleepCheck(BaseFrontendCheck):
         super().__init__(type(self).__name__, **kwargs)
         self.name += str(id(self))
         self.sleep_time = sleep_time
-        self.executable = 'sleep %s' % self.sleep_time
+        self.executable = 'python3'
+        self.executable_opts = [
+            '-c "from time import sleep; sleep(%s)"' % sleep_time
+        ]
         self.sanity_patterns = None
         self.valid_systems = [ '*' ]
         self.valid_prog_environs = [ '*' ]
 
+    def setup(self, system, environ, **job_opts):
+        super().setup(system, environ, **job_opts)
+        print_timestamp = "python3 -c \"from datetime import datetime; " \
+                          "print(datetime.today().strftime('%s.%f'))\""
+        self.job.pre_run  = [ print_timestamp ]
+        self.job.post_run = [ print_timestamp ]
 
 def _get_checks(**kwargs):
     return [ BadSetupCheck(**kwargs),

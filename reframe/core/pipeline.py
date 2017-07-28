@@ -56,7 +56,7 @@ class RegressionTest(object):
     use_multithreading  = BooleanField('use_multithreading', allow_none=True)
     local               = BooleanField('local')
     prefix              = StringField('prefix')
-    sourcesdir          = StringField('sourcesdir')
+    sourcesdir          = StringField('sourcesdir', allow_none=True)
     stagedir            = StringField('stagedir', allow_none=True)
     stdout              = StringField('stdout', allow_none=True)
     stderr              = StringField('stderr', allow_none=True)
@@ -171,6 +171,13 @@ class RegressionTest(object):
         return self.local or self.current_partition.scheduler == 'local'
 
 
+    def _sanitize_basename(self, name):
+        """Create a basename safe to be used as path component
+
+        Replace all path separator characters in `name` with underscores."""
+        return name.replace(os.sep, '_')
+
+
     def _setup_environ(self, environ):
         """Setup the current environment and load it."""
 
@@ -196,10 +203,17 @@ class RegressionTest(object):
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
+
         self.stagedir  = self._resources.stagedir(
-            self.current_partition.name, self.name, self.current_environ.name)
+            self._sanitize_basename(self.current_partition.name),
+            self.name,
+            self._sanitize_basename(self.current_environ.name)
+        )
         self.outputdir = self._resources.outputdir(
-            self.current_partition.name, self.name, self.current_environ.name)
+            self._sanitize_basename(self.current_partition.name),
+            self.name,
+            self._sanitize_basename(self.current_environ.name)
+        )
         self.stdout = os.path.join(self.stagedir, '%s.out' % self.name)
         self.stderr = os.path.join(self.stagedir, '%s.err' % self.name)
 
@@ -230,10 +244,13 @@ class RegressionTest(object):
             raise ReframeFatalError('Oops: unsupported launcher: %s' %
                                     self.current_partition.scheduler)
 
-        job_name = '%s_%s_%s_%s' % (self.name,
-                                    self.current_system.name,
-                                    self.current_partition.name,
-                                    self.current_environ.name)
+        job_name = '%s_%s_%s_%s' % (
+            self.name,
+            self._sanitize_basename(self.current_system.name),
+            self._sanitize_basename(self.current_partition.name),
+            self._sanitize_basename(self.current_environ.name)
+        )
+
         if self.is_local():
             self.job = LocalJob(
                 job_name=job_name,
@@ -342,6 +359,9 @@ class RegressionTest(object):
         if not self.current_environ:
             raise ReframeError('no programming environment set')
 
+        if not self.sourcesdir:
+            raise ReframeError('sourcesdir is not set')
+
         # if self.sourcepath refers to a directory, stage it first
         target_sourcepath = os.path.join(self.sourcesdir, self.sourcepath)
         if os.path.isdir(target_sourcepath):
@@ -420,8 +440,8 @@ class RegressionTest(object):
         return self._match_patterns(self.perf_patterns, self.reference)
 
 
-    def cleanup(self, remove_files=False, unload_env=True):
-        # Copy stdout/stderr and job script
+    def _copy_to_outputdir(self):
+        """Copy checks interesting files to the output directory."""
         self.logger.debug('copying interesting files to output directory')
         shutil.copy(self.stdout, self.outputdir)
         shutil.copy(self.stderr, self.outputdir)
@@ -433,6 +453,15 @@ class RegressionTest(object):
             if not os.path.isabs(f):
                 f = os.path.join(self.stagedir, f)
             shutil.copy(f, self.outputdir)
+
+
+    def cleanup(self, remove_files=False, unload_env=True):
+        aliased = os.path.samefile(self.stagedir, self.outputdir)
+        if aliased:
+            self.logger.debug('skipping copy to output dir '
+                              'since they alias each other')
+        else:
+            self._copy_to_outputdir()
 
         if remove_files:
             self.logger.debug('removing stage directory')
@@ -550,7 +579,11 @@ class RunOnlyRegressionTest(RegressionTest):
 
 
     def run(self):
-        self._copy_to_stagedir(os.path.join(self.sourcesdir, self.sourcepath))
+        # The sourcesdir can be set to None by the user; then we don't copy.
+        if self.sourcesdir:
+            self._copy_to_stagedir(os.path.join(self.sourcesdir,
+                                                self.sourcepath))
+
         super().run()
 
 

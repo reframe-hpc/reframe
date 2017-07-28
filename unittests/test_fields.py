@@ -418,6 +418,28 @@ class TestFields(unittest.TestCase):
         self.assertEqual(system.name, 'mysystem')
 
 
+    def test_proxy_field(self):
+        class Target:
+            def __init__(self):
+                self.a = 1
+                self.b = 2
+
+        t = Target()
+
+        class Proxy:
+            a = ForwardField(t, 'a')
+            b = ForwardField(t, 'b')
+
+        proxy = Proxy()
+        self.assertEqual(1, proxy.a)
+        self.assertEqual(2, proxy.b)
+
+        proxy.a = 3
+        proxy.b = 4
+        self.assertEqual(3, t.a)
+        self.assertEqual(4, t.b)
+
+
     def test_settings(self):
         from reframe.settings import settings
 

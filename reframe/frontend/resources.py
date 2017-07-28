@@ -5,14 +5,13 @@
 import os
 
 from datetime import datetime
-from reframe.settings import settings
 
 class ResourcesManager:
     def __init__(self, prefix = '.', output_prefix = None, stage_prefix = None,
-                 log_prefix = None, timestamp = False, timefmt = '%FT%T'):
+                 log_prefix = None, timestamp = None):
 
         # Get the timestamp
-        time = datetime.now().strftime(timefmt) if timestamp else ''
+        time = datetime.now().strftime(timestamp) if timestamp else ''
 
         self.prefix = os.path.abspath(prefix)
         if output_prefix:
