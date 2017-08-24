@@ -158,7 +158,7 @@ Reframe paths
 [----------] finished processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
 
 [  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
-[==========] Finished on Tue Jun 27 22:44:11 2017
+[==========] Finished on Thu Aug 24 17:36:55 2017
 ```
 
 ## Discovery of regression checks
@@ -506,7 +506,7 @@ Reframe paths
     Output dir prefix : /users/karakasv/Devel/reframe/output/
     Logging dir       : /users/karakasv/Devel/reframe/logs
 [==========] Running 5 check(s)
-[==========] Started on Fri Jun 30 19:28:28 2017
+[==========] Started on Thu Aug 24 17:53:39 2017
 
 [----------] started processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
 [   SKIP   ] skipping daint:login
@@ -557,7 +557,7 @@ Reframe paths
 [       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
 [----------] all spawned checks finished
 [  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
-[==========] Finished on Fri Jun 30 19:34:56 2017
+[==========] Finished on Thu Aug 24 18:04:18 2017
 ```
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
@@ -592,7 +592,7 @@ This can be achieved by setting the `max_jobs` property of a partition in the `s
 
 ## Execution modes
 
-From version 2.5 onward, Reframe permits users to define different *execution modes* of the framework.
+From version [2.5](https://github.com/eth-cscs/reframe/releases/tag/v2.5) onward, Reframe permits users to define different *execution modes* of the framework.
 An execution mode is merely a set of predefined command-line options that will be passed to Reframe when this mode is invoked.
 You can define execution modes per system in the Reframe's configuration file.
 For example, one could define a global `maintenance` execution mode as follows in the `settings.py` file:
