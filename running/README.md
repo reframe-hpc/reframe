@@ -83,15 +83,15 @@ These checks will be just skipped if you try to run them.
 To run the regression checks you should specify the `run` action though the `-r` or `--run` options.
 The listing action takes precedence over the execution one, meaning that if you specify both `-l -r`, only the listing action will be performed.
 ```bash
-./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+./bin/reframe -c checks/cuda/cuda_checks.py -r
 ```
 
 The output of the regression run looks like the following:
 ```
-Command line: ./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
-Reframe version: 2.4
+Command line: ./bin/reframe -c checks/cuda/cuda_checks.py -r
+Reframe version: 2.5
 Launched by user: karakasv
-Launched on host: daint101
+Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
@@ -100,7 +100,7 @@ Reframe paths
     Output dir prefix : /users/karakasv/Devel/reframe/output/
     Logging dir       : /users/karakasv/Devel/reframe/logs
 [==========] Running 5 check(s)
-[==========] Started on Tue Jun 27 21:55:26 2017
+[==========] Started on Thu Aug 24 15:30:30 2017
 
 [----------] started processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
 [   SKIP   ] skipping daint:login
@@ -158,7 +158,7 @@ Reframe paths
 [----------] finished processing cuda_simplempi_check (Simple example demonstrating how to use MPI with CUDA)
 
 [  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
-[==========] Finished on Tue Jun 27 22:44:11 2017
+[==========] Finished on Thu Aug 24 17:36:55 2017
 ```
 
 ## Discovery of regression checks
@@ -321,14 +321,14 @@ The regression framework uses three basic directories during the execution of te
 By default all these directories are placed under a common prefix, which defaults to `.`.
 The rest of the directories are organized as follows:
 
-* Stage directory: `${prefix}/stage/<timestamp>`
-* Output directory: `${prefix}/output/<timestamp>`
+* Stage directory: `${prefix}/stage/`
+* Output directory: `${prefix}/output/`
 * Log directory: `${prefix}/logs`
 
-A timestamp directory will be appended to the stage and output directories, unless you specify the `--notimestamp` option.
+You can append timestamp directory to the stage and output directories using the `--timestamp` option.
 The default format of the timestamp is `yyyy-mm-ddThh:mm:ss`.
-You can change the timestamp format using the `--timefmt` option, which accepts a `strftime()` compatible string.
-
+You can change the timestamp by passing a time format to the `--timestamp` option.
+The time format is any `strftime()` compatible string.
 
 You can override either the default global prefix or any of the default individual regression directories using the corresponding options.
 
@@ -494,10 +494,10 @@ The final result of the checks will be printed at the end and additional message
 Here is an example output of Reframe using asynchronous execution policy:
 
 ```
-Command line: ./bin/reframe --exec-policy=async --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
-Reframe version: 2.4
+Command line: ./bin/reframe --exec-policy=async -c checks/cuda/cuda_checks.py -r
+Reframe version: 2.5
 Launched by user: karakasv
-Launched on host: daint101
+Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
@@ -506,7 +506,7 @@ Reframe paths
     Output dir prefix : /users/karakasv/Devel/reframe/output/
     Logging dir       : /users/karakasv/Devel/reframe/logs
 [==========] Running 5 check(s)
-[==========] Started on Fri Jun 30 19:28:28 2017
+[==========] Started on Thu Aug 24 17:53:39 2017
 
 [----------] started processing cuda_bandwidth_check (CUDA bandwidthTest compile and run)
 [   SKIP   ] skipping daint:login
@@ -557,7 +557,7 @@ Reframe paths
 [       OK ] cuda_simplempi_check on daint:gpu using PrgEnv-gnu
 [----------] all spawned checks finished
 [  PASSED  ] Ran 10 test case(s) from 5 check(s) (0 failure(s))
-[==========] Finished on Fri Jun 30 19:34:56 2017
+[==========] Finished on Thu Aug 24 18:04:18 2017
 ```
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
@@ -592,7 +592,7 @@ This can be achieved by setting the `max_jobs` property of a partition in the `s
 
 ## Execution modes
 
-From version 2.5 onward, Reframe permits users to define different *execution modes* of the framework.
+From version [2.5](https://github.com/eth-cscs/reframe/releases/tag/v2.5) onward, Reframe permits users to define different *execution modes* of the framework.
 An execution mode is merely a set of predefined command-line options that will be passed to Reframe when this mode is invoked.
 You can define execution modes per system in the Reframe's configuration file.
 For example, one could define a global `maintenance` execution mode as follows in the `settings.py` file:
@@ -647,9 +647,9 @@ Execution modes may be defined or redefined per system as it is the case also wi
 ./bin/reframe -t maintenance -t slurm -l
 ```
 
-2. Run all the maintenance checks on the `syscheckout` reservation:
+2. Run all the maintenance checks on the `foo` reservation:
 ```bash
-./bin/reframe -t maintenance --reservation=syscheckout -r
+./bin/reframe -t maintenance --reservation=foo -r
 ```
 
 2. List all production tests supporting `PrgEnv-gnu` and having the `production` tag:
@@ -657,18 +657,12 @@ Execution modes may be defined or redefined per system as it is the case also wi
 ./bin/reframe -p PrgEnv-gnu -t production -l
 ```
 
-3. Run all the checks from a specific check file and relocate both output and stage directories under your current working directory without using timestamps:
-```bash
-./bin/reframe --prefix . --no-timestamp -c /path/to/my/check.py -r
-```
-This is a useful setup while developing new regression checks, since you don't want to "contaminate" the default stage and output locations or end up with lots of directories with different timestamps.
-
-4. Run a specific check on a new system that is not officially supported by the check:
+3. Run a specific check on a new system that is not officially supported by the check:
 ```bash
 ./bin/reframe -c /path/to/my/check.py --skip-system-check -r
 ```
 
-5. Run a specific check on a programming environment (e.g., `PrgEnv-pgi`) that is not officially supported by the check:
+4. Run a specific check on a programming environment (e.g., `PrgEnv-pgi`) that is not officially supported by the check:
 ```bash
 ./bin/reframe -c /path/to/my/check.py -p PrgEnv-pgi --skip-prgenv-check -r
 ```
