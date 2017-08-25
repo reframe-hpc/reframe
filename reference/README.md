@@ -89,6 +89,7 @@ If `propagate` is set to `False`, no flags will be passed to `make`.
 | `current_partition` | The system partition the regression test is currently executing on. This is set by the framework during the regression test's setup phase. | Read-only* | `SystemPartition` | 2.2 |
 | `current_system` | The system the regression test is currently executing on. This is set by the framework during the regression test's initialization. | Read-only* | `System` | 2.2 |
 | `descr`    | A detailed description of the test | `self.name` | string | 2.2 |
+| `exclusive_access` | Ask the underlying job scheduler for exclusive access to the nodes needed by this check. | `False` | boolean | 2.6 |
 | `executable` | The name of the executable to be launched. | `./<name>` | string | 2.2 |
 | `executable_opts` | List of options to be passed to the `executable`. | `[]` | list of strings | 2.2 |
 | `job` | The job descriptor associated with this test. This is created during the setup phase of the test | Read-only* | `Job` | 2.2 |
