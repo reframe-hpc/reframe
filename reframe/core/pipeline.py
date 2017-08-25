@@ -54,6 +54,7 @@ class RegressionTest(object):
     num_tasks_per_core  = IntegerField('num_tasks_per_core', allow_none=True)
     num_tasks_per_socket = IntegerField('num_tasks_per_socket', allow_none=True)
     use_multithreading  = BooleanField('use_multithreading', allow_none=True)
+    exclusive_access    = BooleanField('exclusive_access')
     local               = BooleanField('local')
     prefix              = StringField('prefix')
     sourcesdir          = StringField('sourcesdir', allow_none=True)
@@ -103,6 +104,7 @@ class RegressionTest(object):
         self.num_tasks_per_core = None
         self.num_tasks_per_socket = None
         self.use_multithreading = None
+        self.exclusive_access = False
 
         # True only if check is to be run locally
         self.local = False
@@ -277,6 +279,7 @@ class RegressionTest(object):
                 num_tasks_per_core=self.num_tasks_per_core,
                 num_tasks_per_socket=self.num_tasks_per_socket,
                 use_smt=self.use_multithreading,
+                exclusive_access=self.exclusive_access,
                 launcher=self._launcher_type,
                 stdout=self.stdout,
                 stderr=self.stderr,

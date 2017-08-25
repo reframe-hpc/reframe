@@ -235,7 +235,6 @@ class SlurmJob(Job):
     def __init__(self,
                  time_limit = (0, 10, 0),
                  use_smt = None,
-                 exclusive = True,
                  nodelist = None,
                  exclude = None,
                  partition = None,
@@ -245,12 +244,13 @@ class SlurmJob(Job):
                  num_cpus_per_task=None,
                  num_tasks_per_core=None,
                  num_tasks_per_socket=None,
+                 exclusive_access = False,
                  **kwargs):
         super().__init__(**kwargs)
         self.partition   = partition
         self.time_limit  = time_limit
         self.use_smt     = use_smt
-        self.exclusive   = exclusive
+        self.exclusive_access   = exclusive_access
         self.nodelist    = nodelist
         self.exclude     = exclude
         self.reservation = reservation
@@ -291,7 +291,7 @@ class SlurmJob(Job):
         if self.partition:
             builder.verbatim('%s --partition=%s' % (self.prefix, self.partition))
 
-        if self.exclusive:
+        if self.exclusive_access:
             builder.verbatim('%s --exclusive' % self.prefix)
 
         if self.account:
