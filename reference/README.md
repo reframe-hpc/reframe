@@ -128,6 +128,7 @@ If `propagate` is set to `False`, no flags will be passed to `make`.
 >   * From version 2.4 onwards, the `variables` field of `RegressionTest` may accept other environment variables as values using standard shell syntax, e.g., `$VARNAME` or `${VARNAME}`. Also the variables are now set after the environment modules in `modules` field are loaded.
 >   * From version 2.4 onwards, the `use_multithreading` field defaults to `None` instead of `False`.
 >     If not set, no hint will be emitted for the Slurm scheduler.
+>   * Before version 2.5, it was not allowed to set `sourcesdir = None` (it would have resulted in an error).
 
 
 # `System` class

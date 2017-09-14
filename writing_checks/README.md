@@ -441,11 +441,10 @@ def __init__(self, **kwargs):
     ...
     self.sourcesdir = '/apps/input/folders'
 ```
-In a `RunOnlyRegressionTest`, you can set 
+In a `RunOnlyRegressionTest`, you can set `self.sourcesdir` to `None` if you do not need any resources at all:
 ```python
 self.sourcesdir = None
 ```
-if you do not need any resources at all.
 
 ## Launcher Wrappers
 
