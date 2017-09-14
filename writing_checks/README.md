@@ -435,7 +435,7 @@ def setup(self, system, environ, **job_opts):
 
 ReFrame allows individual regressions tests to define a custom folder for their resources, different than the default `src/` described in [Folder Structure](/structure).
 This is especially important for applications with a large number of input files or large input files, where these input files may need to be saved in a different filesystem due to several reasons, such as filesystem size, I/O performance, network configuration, backup policy etc.
-The location of this folder can be changed be redefining the `self.sourcesdir`  variable:
+The location of this folder can be changed be redefining the `self.sourcesdir` variable:
 ```python
 def __init__(self, **kwargs):
     ...

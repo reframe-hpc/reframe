@@ -112,7 +112,7 @@ If `propagate` is set to `False`, no flags will be passed to `make`.
 | `reference` | The set of reference values for this test. | `{}` | scoped dictionary | 2.2 |
 | `sanity_patterns` | The set of sanity patterns to look for for this test. | `None` | See [Output parsing](#output-parsing-and-performance-assessment) | 2.2 |
 | `sourcepath` | The path to the source file or source directory of the test. If not absolute, it is resolved against the `sourcesdir` directory. If it refers to a regular file, this file will be compiled (its language will be automatically recognized) and the produced executable will be placed in the test's stage directory. If it refers to a directory, this will be copied to the test's stage directory and `make` will be invoked in that. | `''` | string | 2.2 |
-| `sourcesdir` | The directory containing the test's resources. In a `RunOnlyRegressionTest`, you can set this field to `None`, if you do not need any resources at all. | `<test-prefix>/src/` | string | 2.2 |
+| `sourcesdir` | The directory containing the test's resources. In a `RunOnlyRegressionTest`, you can set this field to `None` if you do not need any resources at all. | `<test-prefix>/src/` | string | 2.2 |
 | `stagedir` | The stage directory of the test. This is set during the test's setup phase. | Read-only* | string | 2.2 |
 | `stderr` | The name of the file containing the standard error of the test. This is set during the test's setup phase. | Read-only* | string | 2.2 |
 | `stdout` | The name of the file containing the standard output of the test. This is set during the test's setup phase. | Read-only* | string | 2.2 |
