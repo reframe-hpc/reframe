@@ -679,9 +679,9 @@ self.sanity_patterns = {
         '(?P<line>Hello, World\!)' : [
             ('line',
              str, parser.match_line)
-        ]
-    },
-    '\e' : parser.match_eof
+        ],
+        '\e' : parser.match_eof
+    }
 }
 ```
 
