@@ -11,63 +11,63 @@ TEST_RESOURCES = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 TEST_MODULES = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             'modules')
 TEST_SITE_CONFIG = {
-    'systems' : {
-        'testsys' : {
-            'descr' : 'Fake system for unit tests',
-            'hostnames' : [ 'testsys' ],
-            'prefix' : '/foo/bar',
-            'partitions' : {
-                'login' : {
-                    'scheduler' : 'local',
-                    'modules'   : [],
-                    'access'    : [],
-                    'resources' : {},
-                    'environs'  : [ 'PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc' ],
-                    'descr'     : 'Login nodes'
+    'systems': {
+        'testsys': {
+            'descr': 'Fake system for unit tests',
+            'hostnames': ['testsys'],
+            'prefix': '/foo/bar',
+            'partitions': {
+                'login': {
+                    'scheduler': 'local',
+                    'modules'  : [],
+                    'access'   : [],
+                    'resources': {},
+                    'environs' : ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
+                    'descr'    : 'Login nodes'
                 },
 
-                'gpu' : {
-                    'scheduler' : 'nativeslurm',
-                    'modules'   : [],
-                    'resources' : {
-                        'num_gpus_per_node' : [
+                'gpu': {
+                    'scheduler': 'nativeslurm',
+                    'modules'  : [],
+                    'resources': {
+                        'num_gpus_per_node': [
                             '--gres=gpu:{num_gpus_per_node}'
                         ],
                     },
-                    'access'    : [],
-                    'environs'  : [ 'PrgEnv-gnu', 'builtin-gcc' ],
-                    'descr'     : 'GPU partition',
+                    'access'  : [],
+                    'environs': ['PrgEnv-gnu', 'builtin-gcc'],
+                    'descr'   : 'GPU partition',
                 }
             }
         }
     },
 
-    'environments' : {
-        'testsys:login' : {
-            'PrgEnv-gnu' : {
-                'type' : 'ProgEnvironment',
-                'modules' : [ 'PrgEnv-gnu' ],
-                'cc'   : 'gcc',
-                'cxx'  : 'g++',
-                'ftn'  : 'gfortran',
+    'environments': {
+        'testsys:login': {
+            'PrgEnv-gnu': {
+                'type': 'ProgEnvironment',
+                'modules': ['PrgEnv-gnu'],
+                'cc' : 'gcc',
+                'cxx': 'g++',
+                'ftn': 'gfortran',
             },
         },
-        '*' : {
-            'PrgEnv-gnu' : {
-                'type' : 'ProgEnvironment',
-                'modules' : [ 'PrgEnv-gnu' ],
+        '*': {
+            'PrgEnv-gnu': {
+                'type': 'ProgEnvironment',
+                'modules': ['PrgEnv-gnu'],
             },
 
-            'PrgEnv-cray' : {
-                'type' : 'ProgEnvironment',
-                'modules' : [ 'PrgEnv-cray' ],
+            'PrgEnv-cray': {
+                'type': 'ProgEnvironment',
+                'modules': ['PrgEnv-cray'],
             },
 
             'builtin-gcc' : {
-                'type' : 'ProgEnvironment',
-                'cc'   : 'gcc',
-                'cxx'  : 'g++',
-                'ftn'  : 'gfortran',
+                'type': 'ProgEnvironment',
+                'cc'  : 'gcc',
+                'cxx' : 'g++',
+                'ftn' : 'gfortran',
             }
         }
     }
@@ -80,6 +80,7 @@ def force_remove_file(filename):
     except FileNotFoundError:
         pass
 
+
 def guess_system():
     site_config = SiteConfiguration()
     site_config.load_from_dict(settings.site_configuration)
@@ -88,11 +89,11 @@ def guess_system():
 
 # FIXME: This may conflict in the unlikely situation that a user defines a
 # system named `kesch` with a partition named `pn`.
-def system_with_scheduler(sched_type, skip_partitions = [ 'kesch:pn' ]):
+def system_with_scheduler(sched_type, skip_partitions=['kesch:pn']):
     """Retrieve a partition from the current system with a specific scheduler.
 
-    If `sched_type == None`, the first partition with a non-local scheduler will
-    be returned.
+    If `sched_type` is `None`, the first partition with a non-local scheduler
+    will be returned.
 
     Partitions in `skip_partitions` will be skipped from searching.  Items of
     `skip_partitions` are of the form `<system>:<partname>`."""
@@ -105,7 +106,7 @@ def system_with_scheduler(sched_type, skip_partitions = [ 'kesch:pn' ]):
         if canon_name in skip_partitions:
             continue
 
-        if sched_type == None and p.scheduler != 'local':
+        if sched_type is None and p.scheduler != 'local':
             return p
 
         if p.scheduler == sched_type:

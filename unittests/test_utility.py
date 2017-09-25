@@ -13,17 +13,16 @@ from reframe.utility.functions import *
 
 from unittests.fixtures import TEST_MODULES
 
+
 class TestOSTools(unittest.TestCase):
     def test_command_success(self):
         completed = os_ext.run_command('echo foobar')
         self.assertEqual(completed.returncode, 0)
         self.assertEqual(completed.stdout, 'foobar\n')
 
-
     def test_command_error(self):
         self.assertRaises(CommandError, os_ext.run_command,
                           'false', 'check=True')
-
 
     def test_command_timeout(self):
         try:
@@ -31,7 +30,6 @@ class TestOSTools(unittest.TestCase):
             self.fail('Expected timeout')
         except CommandError as e:
             self.assertEqual(e.timeout, 2)
-
 
     def test_command_async(self):
         from datetime import datetime
@@ -48,12 +46,11 @@ class TestOSTools(unittest.TestCase):
         self.assertLess(t_launch.seconds, 1)
         self.assertGreaterEqual(t_sleep.seconds, 1)
 
-
     def test_grep(self):
         self.assertTrue(os_ext.grep_command_output(cmd='echo hello',
-                                                     pattern='hello'))
+                                                   pattern='hello'))
         self.assertFalse(os_ext.grep_command_output(cmd='echo hello',
-                                                      pattern='foo'))
+                                                    pattern='foo'))
 
     def test_copytree(self):
         dir_src = tempfile.mkdtemp()
@@ -68,11 +65,9 @@ class TestOSTools(unittest.TestCase):
         shutil.rmtree(dir_src)
         shutil.rmtree(dir_dst)
 
-
     def test_inpath(self):
         self.assertTrue(os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin'))
         self.assertFalse(os_ext.inpath('/foo/bin', '/bin:/usr/local/bin'))
-
 
     def _make_testdirs(self, prefix):
         # Create a temporary directory structure
@@ -87,7 +82,6 @@ class TestOSTools(unittest.TestCase):
         os.makedirs(os.path.join(prefix, 'foo', 'goo'), exist_ok=True)
         os.makedirs(os.path.join(prefix, 'loo', 'bar'), exist_ok=True)
 
-
     def test_subdirs(self):
         prefix = tempfile.mkdtemp()
         self._make_testdirs(prefix)
@@ -96,13 +90,13 @@ class TestOSTools(unittest.TestCase):
         open(os.path.join(prefix, 'foo', 'bar', 'file.txt'), 'w').close()
         open(os.path.join(prefix, 'loo', 'file.txt'), 'w').close()
 
-        expected_subdirs = { prefix,
-                             os.path.join(prefix, 'foo'),
-                             os.path.join(prefix, 'foo', 'bar'),
-                             os.path.join(prefix, 'foo', 'bar', 'boo'),
-                             os.path.join(prefix, 'foo', 'goo'),
-                             os.path.join(prefix, 'loo'),
-                             os.path.join(prefix, 'loo', 'bar') }
+        expected_subdirs = {prefix,
+                            os.path.join(prefix, 'foo'),
+                            os.path.join(prefix, 'foo', 'bar'),
+                            os.path.join(prefix, 'foo', 'bar', 'boo'),
+                            os.path.join(prefix, 'foo', 'goo'),
+                            os.path.join(prefix, 'loo'),
+                            os.path.join(prefix, 'loo', 'bar')}
 
         returned_subdirs = os_ext.subdirs(prefix)
         self.assertEqual([prefix], returned_subdirs)
@@ -110,7 +104,6 @@ class TestOSTools(unittest.TestCase):
         returned_subdirs = os_ext.subdirs(prefix, recurse=True)
         self.assertEqual(expected_subdirs, set(returned_subdirs))
         shutil.rmtree(prefix)
-
 
     def test_samefile(self):
         # Create a temporary directory structure
@@ -136,7 +129,8 @@ class TestOSTools(unittest.TestCase):
         self.assertTrue(os_ext.samefile(os.path.join(prefix, 'foo'),
                                         os.path.join(prefix, 'foolnk1')))
         self.assertFalse(os_ext.samefile('/foo', '/bar'))
-        self.assertTrue(os_ext.samefile('/foo', os.path.join(prefix, 'broken')))
+        self.assertTrue(os_ext.samefile(
+            '/foo', os.path.join(prefix, 'broken')))
         self.assertTrue(os_ext.samefile(os.path.join(prefix, 'broken'),
                                         os.path.join(prefix, 'broken1')))
 
@@ -166,8 +160,7 @@ class TestCopyTree(unittest.TestCase):
         open(os.path.join(self.prefix, 'bar.txt'), 'w').close()
         open(os.path.join(self.prefix, 'foo.txt'), 'w').close()
 
-
-    def verify_target_directory(self, file_links = []):
+    def verify_target_directory(self, file_links=[]):
         """Verify the directory structure"""
         self.assertTrue(
             os.path.exists(os.path.join(self.target, 'bar', 'bar.txt')))
@@ -187,46 +180,39 @@ class TestCopyTree(unittest.TestCase):
             self.assertTrue(os.path.islink(link_name))
             self.assertEqual(target_name, os.readlink(link_name))
 
-
     def test_virtual_copy_nolinks(self):
         os_ext.copytree_virtual(self.prefix, self.target)
         self.verify_target_directory()
 
-
     def test_virtual_copy_valid_links(self):
-        file_links = [ 'bar/', 'foo/bar.txt', 'foo.txt' ]
+        file_links = ['bar/', 'foo/bar.txt', 'foo.txt']
         os_ext.copytree_virtual(self.prefix, self.target, file_links)
         self.verify_target_directory(file_links)
 
-
     def test_virtual_copy_inexistent_links(self):
-        file_links = [ 'foobar/', 'foo/bar.txt', 'foo.txt' ]
+        file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
         self.assertRaises(ReframeError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
-
 
     def test_virtual_copy_absolute_paths(self):
-        file_links = [ os.path.join(self.prefix, 'bar'),
-                       'foo/bar.txt', 'foo.txt' ]
+        file_links = [os.path.join(self.prefix, 'bar'),
+                      'foo/bar.txt', 'foo.txt']
         self.assertRaises(ReframeError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
-
 
     def test_virtual_copy_irrelevenant_paths(self):
-        file_links = [ '/bin', 'foo/bar.txt', 'foo.txt' ]
+        file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
         self.assertRaises(ReframeError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
-        file_links = [ os.path.dirname(self.prefix), 'foo/bar.txt', 'foo.txt' ]
+        file_links = [os.path.dirname(self.prefix), 'foo/bar.txt', 'foo.txt']
         self.assertRaises(ReframeError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
-
 
     def test_virtual_copy_linkself(self):
-        file_links = [ '.' ]
+        file_links = ['.']
         self.assertRaises(OSError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
-
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
@@ -248,7 +234,6 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertRaises(ReframeError, standard_threshold, 0.9, 1.0)
         self.assertRaises(ReframeError, standard_threshold, 0.9, (1.0,))
         self.assertRaises(ReframeError, standard_threshold, 0.9, (1.0, None))
-
 
     def test_always_true(self):
         self.assertTrue(always_true(0, None))

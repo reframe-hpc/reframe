@@ -3,11 +3,12 @@ import os
 import logging.handlers
 import sys
 import shutil
+import reframe.core.debug as debug
 
 from datetime import datetime
 
-from reframe.settings import settings
 from reframe.core.exceptions import ConfigurationError, ReframeError
+from reframe.settings import settings
 
 # Reframe's log levels
 CRITICAL = 50
@@ -20,25 +21,26 @@ NOTSET   = 0
 
 
 _log_level_names = {
-    CRITICAL : 'critical',
-    ERROR    : 'error',
-    WARNING  : 'warning',
-    INFO     : 'info',
-    VERBOSE  : 'verbose',
-    DEBUG    : 'debug',
-    NOTSET   : 'undefined'
+    CRITICAL: 'critical',
+    ERROR:    'error',
+    WARNING:  'warning',
+    INFO:     'info',
+    VERBOSE:  'verbose',
+    DEBUG:    'debug',
+    NOTSET:   'undefined'
 }
 
 _log_level_values = {
-    'critical'  : CRITICAL,
-    'error'     : ERROR,
-    'warning'   : WARNING,
-    'info'      : INFO,
-    'verbose'   : VERBOSE,
-    'debug'     : DEBUG,
-    'undefined' : NOTSET,
-    'notset'    : NOTSET
+    'critical':  CRITICAL,
+    'error':     ERROR,
+    'warning':   WARNING,
+    'info':      INFO,
+    'verbose':   VERBOSE,
+    'debug':     DEBUG,
+    'undefined': NOTSET,
+    'notset':    NOTSET
 }
+
 
 def _check_level(level):
     if isinstance(level, int):
@@ -60,6 +62,9 @@ def _check_level(level):
 class Handler(logging.Handler):
     def setLevel(self, level):
         self.level = _check_level(level)
+
+    def __repr__(self):
+        return debug.repr(self)
 
 
 class StreamHandler(Handler, logging.StreamHandler):
@@ -125,9 +130,7 @@ def _extract_handlers(handlers_dict):
                     basename, datetime.now().strftime(timestamp), ext
                 )
 
-            hdlr = RotatingFileHandler(
-                filename, mode='a+' if append else 'w+'
-            )
+            hdlr = RotatingFileHandler(filename, mode='a+' if append else 'w+')
 
         hdlr.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
         hdlr.setLevel(level)
@@ -138,16 +141,17 @@ def _extract_handlers(handlers_dict):
 
 class Logger(logging.Logger):
     def __init__(self, name, level=logging.NOTSET):
-        # We will set the logger level ourselves so as to bypass the base class'
-        # check
+        # We will set the logger level ourselves so as to bypass the base
+        # class' check
         super().__init__(name, logging.NOTSET)
         self.level = _check_level(level)
         self.check = None
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def setLevel(self, level):
         self.level = _check_level(level)
-
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
@@ -166,57 +170,51 @@ class Logger(logging.Logger):
 
         return record
 
-
     # Override all the convenience logging functions, because we want to make
     # sure that they map to our level definitions
 
     def critical(self, msg, *args, **kwargs):
         return self.log(CRITICAL, msg, *args, **kwargs)
 
-
     def error(self, msg, *args, **kwargs):
         return self.log(ERROR, msg, *args, **kwargs)
-
 
     def warning(self, msg, *args, **kwargs):
         return self.log(WARNING, msg, *args, **kwargs)
 
-
     def info(self, msg, *args, **kwargs):
         return self.log(INFO, msg, *args, **kwargs)
 
-
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
-
 
     def debug(self, message, *args, **kwargs):
         self.log(DEBUG, message, *args, **kwargs)
 
 
 class LoggerAdapter(logging.LoggerAdapter):
-    def __init__(self, logger = None, check = None):
+    def __init__(self, logger=None, check=None):
         super().__init__(
             logger,
             {
-                'check_name'  : check.name if check else 'reframe',
-                'check_jobid' : '-1'
+                'check_name': check.name if check else 'reframe',
+                'check_jobid': '-1'
             }
         )
         if self.logger:
             self.logger.check = check
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def setLevel(self, level):
         if self.logger:
             super().setLevel(level)
 
-
     # Override log() function to treat `None` loggers
     def log(self, level, msg, *args, **kwargs):
         if self.logger:
             super().log(level, msg, *args, **kwargs)
-
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
@@ -228,11 +226,12 @@ null_logger = LoggerAdapter()
 _logger = None
 _frontend_logger = null_logger
 
+
 def configure_logging(config):
     global _logger
     global _frontend_logger
 
-    if config == None:
+    if config is None:
         _logger = None
         _frontend_logger = null_logger
         return
@@ -246,6 +245,7 @@ def save_log_files(dest):
     for hdlr in _logger.handlers:
         if isinstance(hdlr, logging.FileHandler):
             shutil.copy(hdlr.baseFilename, dest, follow_symlinks=True)
+
 
 def getlogger(logger_kind, *args, **kwargs):
     if logger_kind  == 'frontend':

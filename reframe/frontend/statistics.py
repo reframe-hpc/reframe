@@ -1,11 +1,13 @@
 import traceback
+import reframe.core.debug as debug
 
 from reframe.core.exceptions import ReframeError
 
 
 class TestStats:
     """Stores test case statistics."""
-    def __init__(self, test_cases = []):
+
+    def __init__(self, test_cases=[]):
         if not isinstance(test_cases, list):
             raise TypeError('TestStats is expecting a list of TestCase')
 
@@ -18,8 +20,10 @@ class TestStats:
             tclist = self.test_cases_bypart.setdefault(partname, [])
             tclist.append(t)
 
+    def __repr__(self):
+        return debug.repr(self)
 
-    def num_failures(self, partition = None):
+    def num_failures(self, partition=None):
         num_fails = 0
         if partition:
             num_fails += len([
@@ -28,20 +32,18 @@ class TestStats:
         else:
             # count all failures
             for tclist in self.test_cases_bypart.values():
-                num_fails += len([ t for t in tclist if t.failed() ])
+                num_fails += len([t for t in tclist if t.failed()])
 
         return num_fails
-
 
     def num_failures_stage(self, stage):
         num_fails = 0
         for tclist in self.test_cases_bypart.values():
-            num_fails += len([  t for t in tclist if t.failed_stage == stage ])
+            num_fails += len([t for t in tclist if t.failed_stage == stage])
 
         return num_fails
 
-
-    def num_cases(self, partition = None):
+    def num_cases(self, partition=None):
         num_cases = 0
         if partition:
             num_cases += len(self.test_cases_bypart[partition])
@@ -52,17 +54,16 @@ class TestStats:
 
         return num_cases
 
-
     def failure_report(self):
         line_width = 78
-        report = line_width*'=' + '\n'
+        report = line_width * '=' + '\n'
         report += 'SUMMARY OF FAILURES\n'
         for partname, tclist in self.test_cases_bypart.items():
-            for tf in [ t for t in tclist if t.failed() ]:
+            for tf in [t for t in tclist if t.failed()]:
                 check = tf.executor.check
-                environ_name = check.current_environ.name \
-                               if check.current_environ else 'None'
-                report += line_width*'-' + '\n'
+                environ_name = (check.current_environ.name
+                                if check.current_environ else 'None')
+                report += line_width * '-' + '\n'
                 report += 'FAILURE INFO for %s\n' % check.name
                 report += '  * System partition: %s\n' % partname
                 report += '  * Environment: %s\n' % environ_name
@@ -81,15 +82,19 @@ class TestStats:
                     elif isinstance(value, KeyboardInterrupt):
                         report += 'cancelled by user\n'
                     else:
-                        report += 'caught unexpected exception: %s (%s)\n' % \
-                                  (etype.__name__, value)
+                        report += ('caught unexpected exception: %s (%s)\n' %
+                                   (etype.__name__, value))
                         report += ''.join(
                             traceback.format_exception(*tf.exc_info))
+                elif tf.failed_stage == 'sanity':
+                    report += ('Sanity check failure\n' +
+                               check.sanity_info.failure_report())
+                elif tf.failed_stage == 'performance':
+                    report += ('Performance check failure\n' +
+                               check.perf_info.failure_report())
                 else:
-                    report += "sanity/performance check failure " \
-                              "(performance log kept in `%s')\n" % \
-                              check._perf_logfile
+                    # This shouldn't happen...
+                    report += 'Unknown error.'
 
-
-        report += line_width*'-' + '\n'
+        report += line_width * '-' + '\n'
         return report

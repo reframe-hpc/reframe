@@ -9,7 +9,22 @@ from reframe.frontend.loader import *
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
 
+from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
+                                                 SleepCheck,
+                                                 SystemExitCheck)
 from unittests.fixtures import TEST_SITE_CONFIG
+
+
+class DebugAsynchronousExecutionPolicy(AsynchronousExecutionPolicy):
+    def __init__(self):
+        super().__init__()
+        self.keep_stage_files = True
+        self.checks = []
+
+    def exit_environ(self, c, p, e):
+        super().exit_environ(c, p, e)
+        self.checks.append(c)
+
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
@@ -29,7 +44,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
-
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
 
@@ -39,7 +53,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(2, stats.num_failures_stage('setup'))
         self.assertEqual(1, stats.num_failures_stage('sanity'))
         self.assertEqual(2, stats.num_failures_stage('performance'))
-
 
     def test_runall_skip_system_check(self):
         self.runner.policy.skip_system_check = True
@@ -52,7 +65,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(1, stats.num_failures_stage('sanity'))
         self.assertEqual(2, stats.num_failures_stage('performance'))
 
-
     def test_runall_skip_prgenv_check(self):
         self.runner.policy.skip_environ_check = True
         self.runner.runall(self.checks, self.system)
@@ -63,7 +75,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(2, stats.num_failures_stage('setup'))
         self.assertEqual(1, stats.num_failures_stage('sanity'))
         self.assertEqual(2, stats.num_failures_stage('performance'))
-
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
@@ -76,7 +87,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(0, stats.num_failures_stage('sanity'))
         self.assertEqual(2, stats.num_failures_stage('performance'))
 
-
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True
         self.runner.runall(self.checks, self.system)
@@ -87,7 +97,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(2, stats.num_failures_stage('setup'))
         self.assertEqual(1, stats.num_failures_stage('sanity'))
         self.assertEqual(0, stats.num_failures_stage('performance'))
-
 
     def test_run_relaxed_performance_check(self):
         self.runner.policy.relax_performance_check = True
@@ -100,25 +109,19 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(1, stats.num_failures_stage('sanity'))
         self.assertEqual(0, stats.num_failures_stage('performance'))
 
-
     def test_kbd_interrupt_within_test(self):
-        from unittests.resources.frontend_checks import KeyboardInterruptCheck
-
         check = KeyboardInterruptCheck(system=self.system,
                                        resources=self.resources)
         self.assertRaises(KeyboardInterrupt, self.runner.runall,
-                          [ check ], self.system)
+                          [check], self.system)
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
 
-
     def test_system_exit_within_test(self):
-        from unittests.resources.frontend_checks import SystemExitCheck
-
         check = SystemExitCheck(system=self.system, resources=self.resources)
 
         # This should not raise and should not exit
-        self.runner.runall([ check ], self.system)
+        self.runner.runall([check], self.system)
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
 
@@ -129,11 +132,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.debug_policy = DebugAsynchronousExecutionPolicy()
         self.runner       = Runner(self.debug_policy)
 
-
     def set_max_jobs(self, value):
         for p in self.system.partitions:
             p.max_jobs = value
-
 
     def read_timestamps_sorted(self):
         self.begin_stamps = []
@@ -146,10 +147,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.begin_stamps.sort()
         self.end_stamps.sort()
 
-
     def test_concurrency_unlimited(self):
-        from unittests.resources.frontend_checks import SleepCheck
-
         checks = [
             SleepCheck(0.5, system=self.system, resources=self.resources),
             SleepCheck(0.5, system=self.system, resources=self.resources),
@@ -169,17 +167,14 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # Assure that all tests were run in parallel
         self.assertTrue(self.begin_stamps[-1] < self.end_stamps[0])
 
-
     def test_concurrency_limited(self):
-        from unittests.resources.frontend_checks import SleepCheck
-
         # The number of checks must be <= 2*max_jobs
         t = 0.5
-        checks = [ SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources) ]
+        checks = [SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources)]
         num_checks = len(checks)
         max_jobs  = num_checks - 2
         self.set_max_jobs(max_jobs)
@@ -193,7 +188,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.read_timestamps_sorted()
 
         # Assure that the first #max_jobs jobs were run in parallel
-        self.assertTrue(self.begin_stamps[max_jobs-1] < self.end_stamps[0])
+        self.assertTrue(self.begin_stamps[max_jobs - 1] < self.end_stamps[0])
 
         # Assure that the remaining jobs were each run after one of the
         # previous #max_jobs jobs had finished (e.g. begin[max_jobs] > end[0])
@@ -209,14 +204,11 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # important prolongation of the unit test execution time.
         # self.assertTrue(self.begin_stamps[-1] < self.end_stamps[max_jobs])
 
-
     def test_concurrency_none(self):
-        from unittests.resources.frontend_checks import SleepCheck
-
         t = 0.5
-        checks = [ SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources),
-                   SleepCheck(t, system=self.system, resources=self.resources) ]
+        checks = [SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources),
+                  SleepCheck(t, system=self.system, resources=self.resources)]
         num_checks = len(checks)
         self.set_max_jobs(1)
         self.runner.runall(checks, self.system)
@@ -230,10 +222,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
         # Assure that the jobs were run after the previous job had finished
         # (e.g. begin[1] > end[0])
-        begin_after_end = [ b > e for b, e in zip(self.begin_stamps[1:],
-                                                  self.end_stamps[:-1]) ]
+        begin_after_end = [b > e for b, e in zip(self.begin_stamps[1:],
+                                                 self.end_stamps[:-1])]
         self.assertTrue(all(begin_after_end))
-
 
     def _run_checks(self, checks, max_jobs):
         self.set_max_jobs(max_jobs)
@@ -243,11 +234,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.assertEqual(4, self.runner.stats.num_cases())
         self.assertEqual(4, self.runner.stats.num_failures())
 
-
     def test_kbd_interrupt_in_wait_with_concurrency(self):
-        from unittests.resources.frontend_checks import SleepCheck, \
-                                                        KeyboardInterruptCheck
-
         checks = [
             KeyboardInterruptCheck(system=self.system,
                                    resources=self.resources),
@@ -257,11 +244,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         ]
         self._run_checks(checks, 4)
 
-
     def test_kbd_interrupt_in_wait_with_limited_concurrency(self):
-        from unittests.resources.frontend_checks import SleepCheck, \
-                                                        KeyboardInterruptCheck
-
         checks = [
             KeyboardInterruptCheck(system=self.system,
                                    resources=self.resources),
@@ -271,11 +254,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         ]
         self._run_checks(checks, 2)
 
-
     def test_kbd_interrupt_in_setup_with_concurrency(self):
-        from unittests.resources.frontend_checks import SleepCheck, \
-                                                        KeyboardInterruptCheck
-
         checks = [
             SleepCheck(1, system=self.system, resources=self.resources),
             SleepCheck(1, system=self.system, resources=self.resources),
@@ -286,11 +265,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         ]
         self._run_checks(checks, 4)
 
-
     def test_kbd_interrupt_in_setup_with_limited_concurrency(self):
-        from unittests.resources.frontend_checks import SleepCheck, \
-                                                        KeyboardInterruptCheck
-
         checks = [
             SleepCheck(1, system=self.system, resources=self.resources),
             SleepCheck(1, system=self.system, resources=self.resources),

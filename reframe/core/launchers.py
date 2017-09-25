@@ -1,10 +1,14 @@
-from math import ceil
+import math
+import reframe.core.debug as debug
 
 
 class JobLauncher:
     def __init__(self, job, options=[]):
         self.job     = job
         self.options = options
+
+    def __repr__(self):
+        return debug.repr(self)
 
     @property
     def executable(self):
@@ -16,7 +20,7 @@ class JobLauncher:
 
     def emit_run_command(self, target_executable, builder, **builder_opts):
         options = ' '.join(self.fixed_options + self.options)
-        return builder.verbatim('%s %s %s' % \
+        return builder.verbatim('%s %s %s' %
                                 (self.executable, options, target_executable),
                                 **builder_opts)
 
@@ -34,11 +38,12 @@ class AlpsLauncher(JobLauncher):
 
     @property
     def fixed_options(self):
-        return [ '-B' ]
+        return ['-B']
 
 
 class LauncherWrapper(JobLauncher):
     """Wrap a launcher object so that its invocation may be modified."""
+
     def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
         super().__init__(target_launcher.job, target_launcher.options)
         self.target_launcher = target_launcher
@@ -51,8 +56,9 @@ class LauncherWrapper(JobLauncher):
 
     @property
     def fixed_options(self):
-        return self.wrapper_options + [ self.target_launcher.executable ] + \
-               self.target_launcher.fixed_options
+        return (self.wrapper_options +
+                [self.target_launcher.executable] +
+                self.target_launcher.fixed_options)
 
 
 class LocalLauncher(JobLauncher):
@@ -77,10 +83,12 @@ class VisitLauncher(JobLauncher):
     @property
     def fixed_options(self):
         options = []
-        if self.target_launcher and \
-            not isinstance(self.target_launcher, LocalLauncher):
-            num_nodes = ceil(self.job.num_tasks/self.job.num_tasks_per_node)
+        if (self.target_launcher and
+            not isinstance(self.target_launcher, LocalLauncher)):
+            num_nodes = math.ceil(
+                self.job.num_tasks / self.job.num_tasks_per_node)
             options.append('-np %s' % self.job.num_tasks)
             options.append('-nn %s' % num_nodes)
             options.append('-l %s' % self.target_launcher.executable)
+
         return options

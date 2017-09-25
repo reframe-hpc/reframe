@@ -11,10 +11,11 @@ from reframe.core.modules import module_force_load, module_unload
 from reframe.core.logging import getlogger
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
-from reframe.frontend.executors.policies import SerialExecutionPolicy, \
-                                                AsynchronousExecutionPolicy
-from reframe.frontend.loader import RegressionCheckLoader, \
-                                    SiteConfiguration, autodetect_system
+from reframe.frontend.executors.policies import (SerialExecutionPolicy,
+                                                 AsynchronousExecutionPolicy)
+from reframe.frontend.loader import (RegressionCheckLoader,
+                                     SiteConfiguration,
+                                     autodetect_system)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
@@ -40,7 +41,8 @@ def main():
     argparser = ArgumentParser()
     output_options = argparser.add_argument_group(
         'Options controlling regression directories')
-    locate_options = argparser.add_argument_group('Options for locating checks')
+    locate_options = argparser.add_argument_group(
+        'Options for locating checks')
     select_options = argparser.add_argument_group(
         'Options for selecting checks')
     action_options = argparser.add_argument_group(
@@ -146,7 +148,7 @@ def main():
         help='Skip prog. environment check')
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
-        choices=[ 'serial', 'async' ], default='serial',
+        choices=['serial', 'async'], default='serial',
         help='Specify the execution policy for running the regression tests. '
              'Available policies: "serial" (default), "async"')
     run_options.add_argument(
@@ -219,7 +221,6 @@ def main():
             list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
-
     if options.mode:
         try:
             mode_key = '%s:%s' % (system.name, options.mode)
@@ -231,7 +232,6 @@ def main():
         except KeyError:
             printer.error("no such execution mode: `%s'" % (options.mode))
             sys.exit(1)
-
 
     # Setup the check loader
     if options.checkpath:
@@ -276,13 +276,12 @@ def main():
                                  stage_prefix=system.stagedir,
                                  log_prefix=system.logdir,
                                  timestamp=options.timestamp)
-    if os_ext.samefile(resources.stage_prefix, resources.output_prefix) and \
-       not options.keep_stage_files:
+    if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
+        not options.keep_stage_files):
         printer.error('stage and output refer to the same directory. '
                       'If this is on purpose, please use also the '
                       "`--keep-stage-files' option.")
         sys.exit(1)
-
 
     printer.log_config(options)
 
@@ -296,7 +295,7 @@ def main():
     printer.info('Reframe paths')
     printer.info('=============')
     printer.info('    Check prefix      : %s' % loader.prefix)
-    printer.info('%03s Check search path : %s' % \
+    printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
     printer.info('    Stage dir prefix  : %s' % resources.stage_prefix)
@@ -308,7 +307,8 @@ def main():
 
         # Filter checks by name
         checks_matched = filter(
-            lambda c: c if c.name not in options.exclude_names else None,
+            lambda c:
+            c if c.name not in options.exclude_names else None,
             checks_found
         )
 
@@ -328,9 +328,9 @@ def main():
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             checks_matched = filter(
-                lambda c: c \
-                if sum([ c.supports_progenv(p)
-                         for p in options.prgenv ]) == len(options.prgenv)
+                lambda c: c
+                if sum([c.supports_progenv(p)
+                        for p in options.prgenv]) == len(options.prgenv)
                 else None,
                 checks_matched
             )
@@ -352,18 +352,17 @@ def main():
                 checks_matched
             )
 
-
-        checks_matched = [ c for c in checks_matched ]
+        checks_matched = [c for c in checks_matched]
 
         # Act on checks
 
         # Unload regression's module and load user-specified modules
-        module_unload(settings.module_name);
+        module_unload(settings.module_name)
         for m in options.user_modules:
             try:
                 module_force_load(m)
             except ModuleError:
-               printer.info("Could not load module `%s': Skipping..." % m)
+                printer.info("Could not load module `%s': Skipping..." % m)
 
         success = True
         if options.list:
@@ -377,13 +376,15 @@ def main():
             elif options.exec_policy == 'async':
                 exec_policy = AsynchronousExecutionPolicy()
             else:
-                # This should not happen, since choices are handled by argparser
+                # This should not happen, since choices are handled by
+                # argparser
                 printer.error("unknown execution policy `%s': Exiting...")
                 sys.exit(1)
 
             exec_policy.skip_system_check = options.skip_system_check
             exec_policy.force_local = options.force_local
-            exec_policy.relax_performance_check = options.relax_performance_check
+            exec_policy.relax_performance_check = (
+                options.relax_performance_check)
             exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
@@ -421,7 +422,7 @@ def main():
         printer.error("`%s': %s" % (e.filename, e.strerror))
         sys.exit(1)
     except Exception as e:
-        printer.error('fatal error: %s\n' % str(e))
+        printer.error('fatal error: %s\n' % e)
         traceback.print_exc()
         sys.exit(1)
     finally:

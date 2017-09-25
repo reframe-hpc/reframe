@@ -11,9 +11,9 @@ from reframe.core.fields import ForwardField
 # are of an "unknown" type to the users of the `argparse` module, since they
 # inherit from an internal private class.
 #
-# For this reason, we base our design on composition by implementing wrappers of
-# both the argument group and the argument parser. These wrappers provide the
-# same public interface as their `argparse` counterparts (currently we only
+# For this reason, we base our design on composition by implementing wrappers
+# of both the argument group and the argument parser. These wrappers provide
+# the same public interface as their `argparse` counterparts (currently we only
 # implement the part of the interface that matters for Reframe), delegating the
 # parsing work to them. For these "shadow" data structures for argument groups
 # and the parser, we follow a similar design as in the `argparse` module: both
@@ -27,7 +27,7 @@ from reframe.core.fields import ForwardField
 #
 
 
-class _ArgumentHolder(object):
+class _ArgumentHolder:
     def __init__(self, holder):
         self._holder = holder
         self._defaults = argparse.Namespace()
@@ -37,13 +37,11 @@ class _ArgumentHolder(object):
             if m[0] != '_':
                 setattr(self.__class__, m, ForwardField(self._holder, m))
 
-
     def _attr_from_flag(self, *flags):
         if not flags:
             raise ValueError('could not infer a dest name: no flags defined')
 
         return flags[-1].lstrip('-').replace('-', '_')
-
 
     def _extract_default(self, *flags, **kwargs):
         attr = kwargs.get('dest', self._attr_from_flag(*flags))
@@ -51,8 +49,8 @@ class _ArgumentHolder(object):
         if action == 'store_true' or action == 'store_false':
             # These actions imply a default; we will convert them to their
             # 'const' action equivalent and add an explicit default value
-            kwargs['action']  = 'store_const'
-            kwargs['const']   = True  if action == 'store_true' else False
+            kwargs['action'] = 'store_const'
+            kwargs['const'] = True if action == 'store_true' else False
             kwargs['default'] = False if action == 'store_true' else True
 
         try:
@@ -62,7 +60,6 @@ class _ArgumentHolder(object):
             self._defaults.__dict__[attr] = None
         finally:
             return kwargs
-
 
     def add_argument(self, *flags, **kwargs):
         return self._holder.add_argument(
@@ -81,36 +78,34 @@ class ArgumentParser(_ArgumentHolder):
     `argparse.ArgumenParser`. In fact, it uses such a parser internally,
     delegating all the calls to it. The key difference is how newly parsed
     options are combined with existing namespaces in `parse_args()`."""
+
     def __init__(self, **kwargs):
         super().__init__(argparse.ArgumentParser(**kwargs))
         self._groups = []
 
-
     def add_argument_group(self, *args, **kwargs):
-        group = _ArgumentGroup(self._holder.add_argument_group(*args, **kwargs))
+        group = _ArgumentGroup(
+            self._holder.add_argument_group(*args, **kwargs))
         self._groups.append(group)
         return group
 
     def _resolve_attr(self, attr, namespaces):
         for ns in namespaces:
-            if ns == None:
+            if ns is None:
                 continue
 
             val = ns.__dict__.setdefault(attr, None)
-            if val != None:
+            if val is not None:
                 return val
 
         return None
-
 
     def _update_defaults(self):
         for g in self._groups:
             self._defaults.__dict__.update(g._defaults.__dict__)
 
-
     def print_help(self):
         self._holder.print_help()
-
 
     def parse_args(self, args=None, namespace=None):
         """Convert argument strings to objects and return them as attributes of a
@@ -120,9 +115,9 @@ class ArgumentParser(_ArgumentHolder):
         `argparse.ArgumentParser.parse_args()`.
 
         If `namespace` is not `None` and an attribute has not been assigned a
-        value during the parsing process of argument strings `args`, a value for
-        it will be looked up first in `namespace` and if not found there, it
-        will be assigned the default value as specified in its corresponding
+        value during the parsing process of argument strings `args`, a value
+        for it will be looked up first in `namespace` and if not found there,
+        it will be assigned the default value as specified in its corresponding
         `add_argument()` call. If no default value was specified either, the
         attribute will be set to `None`."""
 
@@ -136,9 +131,9 @@ class ArgumentParser(_ArgumentHolder):
         # Update parser's defaults with groups' defaults
         self._update_defaults()
         for attr, val in options.__dict__.items():
-            if val == None:
+            if val is None:
                 options.__dict__[attr] = self._resolve_attr(
-                    attr, [ namespace, self._defaults ]
+                    attr, [namespace, self._defaults]
                 )
 
         return options

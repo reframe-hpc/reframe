@@ -3,23 +3,24 @@ import re
 from reframe.core.pipeline import RegressionTest
 from reframe.core.environments import *
 
+
 class HelloMakeTest(RegressionTest):
     def __init__(self, **kwargs):
-        super().__init__('hellocheck_make', os.path.dirname(__file__), **kwargs)
+        super().__init__('hellocheck_make',
+                         os.path.dirname(__file__), **kwargs)
         self.descr = 'C++ Hello World test'
 
         # All available systems are supported
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
         self.sourcepath = ''
         self.executable = './hello_cpp'
-        self.keep_files = [ 'hello_cpp' ]
-        self.tags = { 'foo', 'bar' }
+        self.keep_files = ['hello_cpp']
+        self.tags = {'foo', 'bar'}
         self.sanity_patterns = {
-            '-' : { 'Hello, World\!' : [] }
+            '-' : {'Hello, World\!' : []}
         }
-        self.maintainers = [ 'VK' ]
-
+        self.maintainers = ['VK']
 
     def compile(self):
         self.current_environ.cflags = '-O3'
@@ -28,4 +29,4 @@ class HelloMakeTest(RegressionTest):
 
 
 def _get_checks(**kwargs):
-    return [ HelloMakeTest(**kwargs) ]
+    return [HelloMakeTest(**kwargs)]

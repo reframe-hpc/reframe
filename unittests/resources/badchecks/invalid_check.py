@@ -12,5 +12,6 @@ class InvalidTest:
     def __init__(self, **kwargs):
         pass
 
+
 def _get_checks(**kwargs):
-    return [ EmptyTest(**kwargs), InvalidTest(**kwargs) ]
+    return [EmptyTest(**kwargs), InvalidTest(**kwargs)]

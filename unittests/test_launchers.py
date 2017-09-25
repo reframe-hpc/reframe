@@ -14,12 +14,12 @@ class _TestLauncher(unittest.TestCase):
         # Pattern to match: must include only horizontal spaces [ \t]
         # (\h in perl; in python \h might be introduced in future)
         self.expected_launcher_patt = None
-        self.launcher_options       = [ '--foo' ]
-        self.target_executable      = 'hostname'
+        self.launcher_options  = ['--foo']
+        self.target_executable = 'hostname'
 
     @property
     def launcher_command(self):
-        return ' '.join([ self.launcher.executable ] +
+        return ' '.join([self.launcher.executable] +
                         self.launcher.fixed_options)
 
     @property
@@ -64,7 +64,7 @@ class TestLauncherWrapperAlps(_TestLauncher):
     def setUp(self):
         super().setUp()
         self.launcher = LauncherWrapper(AlpsLauncher(None),
-                                       'ddt', '-o foo.out'.split())
+                                        'ddt', '-o foo.out'.split())
         self.expected_launcher_patt = '^[ \t]*ddt[ \t]+-o[ \t]+foo.out' \
                                       '[ \t]+aprun[ \t]+-B[ \t]*$'
 
@@ -73,7 +73,7 @@ class TestLauncherWrapperNativeSlurm(_TestLauncher):
     def setUp(self):
         super().setUp()
         self.launcher = LauncherWrapper(NativeSlurmLauncher(None),
-                                       'ddt', '-o foo.out'.split())
+                                        'ddt', '-o foo.out'.split())
         self.expected_launcher_patt = '^[ \t]*ddt[ \t]+-o[ \t]+foo.out' \
                                       '[ \t]+srun[ \t]*$'
 
@@ -119,7 +119,7 @@ class TestVisitLauncherNativeSlurm(_TestLauncher):
         self.launcher = VisitLauncher(self.job)
         self.expected_launcher_patt = '^[ \t]*visit[ \t]+-np[ \t]+5[ \t]+' \
                                       '-nn[ \t]+3[ \t]+-l[ \t]+srun[ \t]*$'
-        self.launcher_options  = [ '-o data.nc' ]
+        self.launcher_options  = ['-o data.nc']
         self.target_executable = ''
 
     @property
@@ -135,7 +135,7 @@ class TestVisitLauncherLocal(_TestLauncher):
                             job_script_builder=self.builder)
         self.launcher = VisitLauncher(self.job)
         self.expected_launcher_patt = '^[ \t]*visit[ \t]*$'
-        self.launcher_options  = [ '-o data.nc' ]
+        self.launcher_options  = ['-o data.nc']
         self.target_executable = ''
 
     @property

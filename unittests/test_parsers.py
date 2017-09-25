@@ -12,6 +12,7 @@ from reframe.core.systems import System, SystemPartition
 from reframe.utility.functions import standard_threshold
 from reframe.utility.parsers import *
 
+
 class StatefulParserTest(unittest.TestCase):
     def setUp(self):
         self.system = System('daint')
@@ -54,14 +55,12 @@ class StatefulParserTest(unittest.TestCase):
             }
         }
 
-
     def tearDown(self):
         self.perf_file.close()
         self.output_file.close()
         os.remove(self.perf_file.name)
         os.remove(self.output_file.name)
         shutil.rmtree(self.resourcesdir)
-
 
     def _add_parser_region(self):
         self.test.perf_patterns[self.perf_file.name].update({
@@ -84,14 +83,11 @@ class StatefulParserTest(unittest.TestCase):
 
         self.test.reference['*:switch'] = None
 
-
     def _write_marker_enable(self, file):
         file.write('== ENABLE ==\n')
 
-
     def _write_marker_disable(self, file):
         file.write('== DISABLE ==\n')
-
 
     def is_parser_clear(self, parser, **kwargs):
         return not parser.is_on
@@ -100,7 +96,6 @@ class StatefulParserTest(unittest.TestCase):
 class TestStatefulParserPerformance(StatefulParserTest):
     def setUp(self):
         super().setUp()
-
 
     def _write_good_performance(self, file, with_region=False):
         if with_region:
@@ -116,7 +111,6 @@ class TestStatefulParserPerformance(StatefulParserTest):
 
         file.close()
 
-
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
             file.write('performance = 1.9\n')
@@ -131,13 +125,11 @@ class TestStatefulParserPerformance(StatefulParserTest):
 
         file.close()
 
-
     def test_performance_success(self):
         self.test.perf_parser.on()
         self._write_good_performance(file=self.perf_file)
         self.assertTrue(self.test.check_performance())
         self.assertTrue(self.is_parser_clear(self.test.perf_parser))
-
 
     def test_performance_success_with_region(self):
         self._add_parser_region()
@@ -145,13 +137,11 @@ class TestStatefulParserPerformance(StatefulParserTest):
         self.assertTrue(self.test.check_performance())
         self.assertTrue(self.is_parser_clear(self.test.perf_parser))
 
-
     def test_performance_failure(self):
         self.test.perf_parser.on()
         self._write_bad_performance(file=self.perf_file)
         self.assertFalse(self.test.check_performance())
         self.assertTrue(self.is_parser_clear(self.test.perf_parser))
-
 
     def test_performance_failure_with_region(self):
         self._add_parser_region()
@@ -159,12 +149,10 @@ class TestStatefulParserPerformance(StatefulParserTest):
         self.assertFalse(self.test.check_performance())
         self.assertTrue(self.is_parser_clear(self.test.perf_parser))
 
-
     def test_default_status(self):
         self._write_good_performance(file=self.perf_file)
         self.assertFalse(self.test.check_performance())
         self.assertTrue(self.is_parser_clear(self.test.perf_parser))
-
 
     def test_empty_file(self):
         self.perf_file.close()
@@ -175,7 +163,6 @@ class TestStatefulParserPerformance(StatefulParserTest):
 class TestStatefulParserSanity(StatefulParserTest):
     def setUp(self):
         super().setUp()
-
 
     def _write_good_sanity(self, file, with_region=False):
         if with_region:
@@ -191,7 +178,6 @@ class TestStatefulParserSanity(StatefulParserTest):
 
         file.close()
 
-
     def _write_bad_sanity(self, file, with_region=False):
         if with_region:
             file.write('result = success\n')
@@ -206,13 +192,11 @@ class TestStatefulParserSanity(StatefulParserTest):
 
         file.close()
 
-
     def test_sanity_success(self):
         self.test.sanity_parser.on()
         self._write_good_sanity(file=self.output_file)
         self.assertTrue(self.test.check_sanity())
         self.assertTrue(self.is_parser_clear(self.test.sanity_parser))
-
 
     def test_sanity_success_with_region(self):
         self._add_parser_region()
@@ -220,13 +204,11 @@ class TestStatefulParserSanity(StatefulParserTest):
         self.assertTrue(self.test.check_sanity())
         self.assertTrue(self.is_parser_clear(self.test.sanity_parser))
 
-
     def test_sanity_failure(self):
         self.test.sanity_parser.on()
         self._write_bad_sanity(file=self.output_file)
         self.assertFalse(self.test.check_sanity())
         self.assertTrue(self.is_parser_clear(self.test.sanity_parser))
-
 
     def test_sanity_failure_with_region(self):
         self._add_parser_region()
@@ -234,12 +216,10 @@ class TestStatefulParserSanity(StatefulParserTest):
         self.assertFalse(self.test.check_sanity())
         self.assertTrue(self.is_parser_clear(self.test.sanity_parser))
 
-
     def test_default_status(self):
         self._write_good_sanity(file=self.output_file)
         self.assertFalse(self.test.check_sanity())
         self.assertTrue(self.is_parser_clear(self.test.sanity_parser))
-
 
     def test_empty_file(self):
         self.output_file.close()
@@ -277,7 +257,6 @@ class TestSingleOccurrenceParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
             file.write('performance = 1.9\n')
@@ -292,7 +271,6 @@ class TestSingleOccurrenceParser(TestStatefulParserPerformance):
             self._write_marker_disable(file)
 
         file.close()
-
 
     def is_parser_clear(self, parser, **kwargs):
         if parser.count != 0:
@@ -314,7 +292,6 @@ class TestCounterParser(TestStatefulParserSanity):
             }
         }
 
-
     def _write_good_sanity(self, file, with_region=False):
         if with_region:
             self._write_marker_enable(file)
@@ -332,7 +309,6 @@ class TestCounterParser(TestStatefulParserSanity):
 
         file.close()
 
-
     def _write_bad_sanity(self, file, with_region=False):
         if with_region:
             self._write_marker_enable(file)
@@ -349,9 +325,8 @@ class TestCounterParser(TestStatefulParserSanity):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.count != 0 or parser.last_match != None:
+        if parser.count != 0 or parser.last_match is not None:
             return False
 
         return super().is_parser_clear(parser)
@@ -370,7 +345,6 @@ class TestCounterParserExactMatch(TestStatefulParserSanity):
             }
         }
 
-
     def _write_good_sanity(self, file, with_region=False):
         if with_region:
             file.write('nid123\n')
@@ -386,7 +360,6 @@ class TestCounterParserExactMatch(TestStatefulParserSanity):
             file.write('nid3213\n')
 
         file.close()
-
 
     def _write_bad_sanity(self, file, with_region=False):
         if with_region:
@@ -404,12 +377,11 @@ class TestCounterParserExactMatch(TestStatefulParserSanity):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
         if parser.count != 0:
             return False
 
-        if parser.last_match != None:
+        if parser.last_match is not None:
             return False
 
         return True
@@ -429,7 +401,6 @@ class TestCounterParserLastOccurrence(TestStatefulParserPerformance):
             }
         }
 
-
     def _write_good_performance(self, file, with_region=False):
         if with_region:
             self._write_marker_enable(file)
@@ -444,7 +415,6 @@ class TestCounterParserLastOccurrence(TestStatefulParserPerformance):
             file.write('performance = 0.2\n')
 
         file.close()
-
 
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
@@ -461,9 +431,8 @@ class TestCounterParserLastOccurrence(TestStatefulParserPerformance):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.count != 0 or parser.last_match != None:
+        if parser.count != 0 or parser.last_match is not None:
             return False
 
         return super().is_parser_clear(parser)
@@ -482,7 +451,6 @@ class TestUniqueOccurrencesParser(TestStatefulParserSanity):
             }
         }
 
-
     def _write_good_sanity(self, file, with_region=False):
         if with_region:
             file.write('nid009\n')
@@ -499,7 +467,6 @@ class TestUniqueOccurrencesParser(TestStatefulParserSanity):
             file.write('nid004\n')
 
         file.close()
-
 
     def _write_bad_sanity(self, file, with_region=False):
         if with_region:
@@ -519,7 +486,6 @@ class TestUniqueOccurrencesParser(TestStatefulParserSanity):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
         return not parser.matched
 
@@ -537,7 +503,6 @@ class TestMinParser(TestStatefulParserPerformance):
             }
         }
 
-
     def _write_good_performance(self, file, with_region=False):
         if with_region:
             file.write('performance = 0.2\n')
@@ -553,7 +518,6 @@ class TestMinParser(TestStatefulParserPerformance):
             file.write('performance = 0.1\n')
 
         file.close()
-
 
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
@@ -571,12 +535,11 @@ class TestMinParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.value != None:
+        if parser.value is not None:
             return False
 
-        if parser.reference != None:
+        if parser.reference is not None:
             return False
 
         return True
@@ -595,7 +558,6 @@ class TestMaxParser(TestStatefulParserPerformance):
             }
         }
 
-
     def _write_good_performance(self, file, with_region=False):
         if with_region:
             file.write('performance = 10.1\n')
@@ -611,7 +573,6 @@ class TestMaxParser(TestStatefulParserPerformance):
             file.write('performance = 9.1\n')
 
         file.close()
-
 
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
@@ -629,12 +590,11 @@ class TestMaxParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.value != None:
+        if parser.value is not None:
             return False
 
-        if parser.reference != None:
+        if parser.reference is not None:
             return False
 
         return True
@@ -655,7 +615,6 @@ class TestSumParser(TestStatefulParserPerformance):
             }
         }
 
-
     def _write_good_performance(self, file, with_region=False):
         if with_region:
             file.write('val = 1\n')
@@ -672,7 +631,6 @@ class TestSumParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
             file.write('val = 4\n')
@@ -688,12 +646,11 @@ class TestSumParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.value != None:
+        if parser.value is not None:
             return False
 
-        if parser.reference != None:
+        if parser.reference is not None:
             return False
 
         return True
@@ -712,7 +669,6 @@ class TestAverageParser(TestStatefulParserPerformance):
             }
         }
 
-
     def _write_good_performance(self, file, with_region=False):
         if with_region:
             file.write('val = 100\n')
@@ -729,7 +685,6 @@ class TestAverageParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def _write_bad_performance(self, file, with_region=False):
         if with_region:
             file.write('val = -100\n')
@@ -745,12 +700,11 @@ class TestAverageParser(TestStatefulParserPerformance):
 
         file.close()
 
-
     def is_parser_clear(self, parser, **kwargs):
-        if parser.value != None:
+        if parser.value is not None:
             return False
 
-        if parser.reference != None:
+        if parser.reference is not None:
             return False
 
         if parser.count != 0:

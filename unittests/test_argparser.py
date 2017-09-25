@@ -21,16 +21,14 @@ class TestArgumentParser(unittest.TestCase):
                                       action='append', default=[])
         self.foo_options.add_argument('--barfoo', action='store_true')
 
-
     def test_arguments(self):
         self.assertRaises(ValueError, self.foo_options.add_argument,
                           action='store', default='FOO')
         self.foo_options.add_argument('--foo-bar', action='store_true')
         self.foo_options.add_argument('--alist', action='append', default=[])
-        options = self.parser.parse_args([ '--foobar', '--foo-bar'])
+        options = self.parser.parse_args(['--foobar', '--foo-bar'])
         self.assertTrue(options.foobar)
         self.assertTrue(options.foo_bar)
-
 
     def test_parsing(self):
         options = self.parser.parse_args(

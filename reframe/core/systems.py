@@ -1,8 +1,10 @@
 import copy
+import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 
 from reframe.core.environments import *
 from reframe.core.exceptions import ReframeError
+
 
 class SystemPartition:
     name      = NonWhitespaceField('name')
@@ -31,25 +33,22 @@ class SystemPartition:
         self.system = system
         self.max_jobs = 1
 
-
     @property
     def fullname(self):
         """Return fully-qualified name for this partition."""
         return '%s:%s' % (self.system.name, self.name)
-
 
     def get_resource(self, name, value):
         """Instantiate managed resource `name' with `value'"""
         ret = []
         for r in self.resources.get(name, []):
             try:
-                args = { name : value }
+                args = {name: value}
                 ret.append(r.format(**args))
             except KeyError:
                 pass
 
         return ret
-
 
     def environment(self, name):
         for e in self.environs:
@@ -58,23 +57,23 @@ class SystemPartition:
 
         return None
 
-
     def __eq__(self, other):
-        return other != None and \
-               self.name        == other.name and \
-               self.scheduler   == other.scheduler and \
-               self.access      == other.access and \
-               self.environs    == other.environs and \
-               self.resources   == other.resources and \
-               self.local_env   == other.local_env
-
+        return (other is not None and
+                self.name      == other.name and
+                self.scheduler == other.scheduler and
+                self.access    == other.access and
+                self.environs  == other.environs and
+                self.resources == other.resources and
+                self.local_env == other.local_env)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return debug.repr(self)
 
 
 class System:
@@ -90,7 +89,6 @@ class System:
         self.hostnames  = []
         self.partitions = []
 
-
     def partition(self, name):
         """Retrieve partition with name"""
         for p in self.partitions:
@@ -99,22 +97,18 @@ class System:
 
         return None
 
-
     def __eq__(self, other):
-        return other != None and \
-               self.name == other.name and \
-               self.hostnames  == other.hostnames and \
-               self.partitions == other.partitions
-
+        return (other is not None and
+                self.name == other.name and
+                self.hostnames  == other.hostnames and
+                self.partitions == other.partitions)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def __str__(self):
-        ret = self.name + ' (partitions: [ '
-        for p in self.partitions:
-            ret += str(p) + ' '
-
-        ret += '])'
-        return ret
+        return '%s (partitions: %s)' % (self.name,
+                                        [str(p) for p in self.partitions])

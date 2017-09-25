@@ -1,6 +1,7 @@
 from reframe.core.fields import CopyOnWriteField
 
-class Sandbox(object):
+
+class Sandbox:
     """Sandbox class for manipulating shared resources."""
     environ = CopyOnWriteField('environ')
     system  = CopyOnWriteField('system')

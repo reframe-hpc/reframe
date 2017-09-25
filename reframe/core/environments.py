@@ -2,8 +2,11 @@ import os
 import shutil
 import subprocess
 import reframe.utility.os as os_ext
+import reframe.core.debug as debug
 
-from reframe.core.exceptions import ReframeError, CommandError, CompilationError
+from reframe.core.exceptions import (ReframeError,
+                                     CommandError,
+                                     CompilationError)
 from reframe.core.fields import *
 from reframe.core.modules import *
 
@@ -13,21 +16,20 @@ class Environment:
     modules   = TypedListField('modules', str)
     variables = TypedDictField('variables', str, str)
 
-    def __init__(self, name, modules = [], variables = {}, **kwargs):
+    def __init__(self, name, modules=[], variables={}, **kwargs):
         self.name = name
-        self.modules = copy.deepcopy(modules)
-        self.variables = copy.deepcopy(variables)
+        self.modules = list(modules)
+        self.variables = dict(variables)
         self.loaded = False
 
         self._saved_variables = {}
         self._conflicted = []
         self._preloaded = set()
-
+        self._load_stmts = []
 
     def add_module(self, name):
         """Add module to the list of modules to be loaded."""
         self.modules.append(name)
-
 
     def set_variable(self, name, value):
         """Set environment variable to name.
@@ -35,7 +37,6 @@ class Environment:
         If variable exists, its value will be
         saved internally and restored when Restore() is called."""
         self.variables[name] = value
-
 
     def load(self):
         """Load environment."""
@@ -46,6 +47,10 @@ class Environment:
                 self._preloaded.add(m)
 
             self._conflicted += module_force_load(m)
+            for conflict in self._conflicted:
+                self._load_stmts += ['module unload %s' % conflict]
+
+            self._load_stmts += ['module load %s' % m]
 
         for k, v in self.variables.items():
             if k in os.environ:
@@ -54,7 +59,6 @@ class Environment:
             os.environ[k] = os.path.expandvars(v)
 
         self.loaded = True
-
 
     def unload(self):
         """Restore environment to its previous state."""
@@ -69,7 +73,7 @@ class Environment:
 
         # Unload modules in reverse order
         for m in reversed(self.modules):
-            if not m in self._preloaded:
+            if m not in self._preloaded:
                 module_unload(m)
 
         # Reload the conflicted packages, previously removed
@@ -78,19 +82,13 @@ class Environment:
 
         self.loaded = False
 
-
-    # FIXME: Does not correspond to the actual process in load()
     def emit_load_instructions(self, builder):
         """Emit shell instructions for loading this environment."""
-        for m in self._conflicted:
-            builder.verbatim('module unload %s' % m)
-
-        for m in self.modules:
-            builder.verbatim('module load %s' % m)
+        for stmt in self._load_stmts:
+            builder.verbatim(stmt)
 
         for k, v in self.variables.items():
             builder.set_variable(k, v, export=True)
-
 
     # FIXME: Does not correspond to the actual process in unload()
     def emit_unload_instructions(self, builder):
@@ -104,32 +102,21 @@ class Environment:
         for m in self._conflicted:
             builder.verbatim('module load %s' % m)
 
-
     def __eq__(self, other):
-        return \
-            other != None and \
-            self.name == other.name and \
-            set(self.modules) == set(other.modules) and \
-            self.variables    == other.variables
-
+        return (other is not None and
+                self.name == other.name and
+                set(self.modules) == set(other.modules) and
+                self.variables == other.variables)
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
-
     def __repr__(self):
-        return self.__str__()
-
-
-    def __hash__(self):
-        return self.name.__hash__()
-
+        return debug.repr(self)
 
     def __str__(self):
-        return \
-            'Name: %s\n' % self.name + \
-            'Modules: %s\n' % str(self.modules) + \
-            'Environment: %s' % str(self.variables)
+        return ('Name: %s\nModules: %s\nEnvironment: %s' %
+                (self.name, modules, self.variables))
 
 
 def swap_environments(src, dst):
@@ -145,20 +132,16 @@ class EnvironmentSnapshot(Environment):
         self.variables = dict(os.environ)
         self._conflicted = []
 
-
     def add_module(self, name):
         raise RuntimeError('environment snapshot is read-only')
 
-
     def set_variable(self, name, value):
         raise RuntimeError('environment snapshot is read-only')
-
 
     def load(self):
         os.environ.clear()
         os.environ.update(self.variables)
         self.loaded = True
-
 
     def unload(self):
         raise RuntimeError('cannot unload an environment snapshot')
@@ -167,16 +150,16 @@ class EnvironmentSnapshot(Environment):
 class ProgEnvironment(Environment):
     def __init__(self,
                  name,
-                 modules = [],
-                 variables = {},
-                 cc  = 'cc',
-                 cxx = 'CC',
-                 ftn = 'ftn',
-                 cppflags = None,
-                 cflags   = None,
-                 cxxflags = None,
-                 fflags   = None,
-                 ldflags  = None,
+                 modules=[],
+                 variables={},
+                 cc='cc',
+                 cxx='CC',
+                 ftn='ftn',
+                 cppflags=None,
+                 cflags=None,
+                 cxxflags=None,
+                 fflags=None,
+                 ldflags=None,
                  **kwargs):
         super().__init__(name, modules, variables)
         self.cc  = cc
@@ -190,31 +173,28 @@ class ProgEnvironment(Environment):
         self.include_search_path = []
         self.propagate = True
 
-
     def guess_language(self, filename):
         ext = filename.split('.')[-1]
-        if ext in [ 'c' ]:
+        if ext in ['c']:
             return 'C'
 
-        if ext in [ 'cc', 'cp', 'cxx', 'cpp', 'CPP', 'c++', 'C' ]:
+        if ext in ['cc', 'cp', 'cxx', 'cpp', 'CPP', 'c++', 'C']:
             return 'C++'
 
-        if ext in [ 'f', 'for', 'ftn', 'F', 'FOR', 'fpp', 'FPP', 'FTN',
-                    'f90', 'f95', 'f03', 'f08', 'F90', 'F95', 'F03', 'F08' ]:
+        if ext in ['f', 'for', 'ftn', 'F', 'FOR', 'fpp', 'FPP', 'FTN',
+                   'f90', 'f95', 'f03', 'f08', 'F90', 'F95', 'F03', 'F08']:
             return 'Fortran'
 
-        if ext in [ 'cu' ]:
+        if ext in ['cu']:
             return 'CUDA'
 
-
-    def compile(self, sourcepath, makefile = None, executable = None,
-                lang = None, options = ''):
+    def compile(self, sourcepath, makefile=None, executable=None,
+                lang=None, options=''):
 
         if os.path.isdir(sourcepath):
             return self._compile_dir(sourcepath, makefile, options)
         else:
             return self._compile_file(sourcepath, executable, lang, options)
-
 
     def _compile_file(self, source_file, executable, lang, options):
         if not executable:
@@ -226,13 +206,13 @@ class ProgEnvironment(Environment):
             lang  = self.guess_language(source_file)
 
         # Replace None's with empty strings
-        cppflags = self.cppflags if self.cppflags else ''
-        cflags   = self.cflags if self.cflags else ''
-        cxxflags = self.cxxflags if self.cxxflags else ''
-        fflags   = self.fflags if self.fflags else ''
-        ldflags  = self.ldflags if self.ldflags else ''
+        cppflags = self.cppflags or ''
+        cflags   = self.cflags   or ''
+        cxxflags = self.cxxflags or ''
+        fflags   = self.fflags   or ''
+        ldflags  = self.ldflags  or ''
 
-        flags = [ cppflags ]
+        flags = [cppflags]
         if lang == 'C':
             compiler = self.cc
             flags.append(cflags)
@@ -249,19 +229,18 @@ class ProgEnvironment(Environment):
             raise ReframeError('Unknown language')
 
         # Append include search path
-        flags += [ '-I' + d for d in self.include_search_path ]
-        cmd = '%s %s %s -o %s %s %s' % \
-              (compiler, ' '.join(flags), source_file,
-               executable, ldflags, options)
+        flags += ['-I' + d for d in self.include_search_path]
+        cmd = ('%s %s %s -o %s %s %s' % (compiler, ' '.join(flags),
+                                         source_file, executable,
+                                         ldflags, options))
         try:
             return os_ext.run_command(cmd, check=True)
         except CommandError as e:
-            raise CompilationError(command  = e.command,
-                                   stdout   = e.stdout,
-                                   stderr   = e.stderr,
-                                   exitcode = e.exitcode,
-                                   environ  = self)
-
+            raise CompilationError(command=e.command,
+                                   stdout=e.stdout,
+                                   stderr=e.stderr,
+                                   exitcode=e.exitcode,
+                                   environ=self)
 
     def _compile_dir(self, source_dir, makefile, options):
         if makefile:
@@ -271,25 +250,25 @@ class ProgEnvironment(Environment):
 
         # Pass a set of predefined options to the Makefile
         if self.propagate:
-            flags = [ "CC='%s'"  % self.cc,
-                      "CXX='%s'" % self.cxx,
-                      "FC='%s'"  % self.ftn ]
+            flags = ["CC='%s'"  % self.cc,
+                     "CXX='%s'" % self.cxx,
+                     "FC='%s'"  % self.ftn]
 
             # Explicitly check against None here; the user may explicitly want
             # to clear the flags
-            if self.cppflags != None:
+            if self.cppflags is not None:
                 flags.append("CPPFLAGS='%s'" % self.cppflags)
 
-            if self.cflags != None:
+            if self.cflags is not None:
                 flags.append("CFLAGS='%s'" % self.cflags)
 
-            if self.cxxflags != None:
+            if self.cxxflags is not None:
                 flags.append("CXXFLAGS='%s'" % self.cxxflags)
 
-            if self.fflags != None:
+            if self.fflags is not None:
                 flags.append("FFLAGS='%s'" % self.fflags)
 
-            if self.ldflags != None:
+            if self.ldflags is not None:
                 flags.append("LDFLAGS='%s'" % self.ldflags)
 
             cmd += ' '.join(flags)
@@ -297,8 +276,8 @@ class ProgEnvironment(Environment):
         try:
             return os_ext.run_command(cmd, check=True)
         except CommandError as e:
-            raise CompilationError(command  = e.command,
-                                   stdout   = e.stdout,
-                                   stderr   = e.stderr,
-                                   exitcode = e.exitcode,
-                                   environ  = self)
+            raise CompilationError(command=e.command,
+                                   stdout=e.stdout,
+                                   stderr=e.stderr,
+                                   exitcode=e.exitcode,
+                                   environ=self)

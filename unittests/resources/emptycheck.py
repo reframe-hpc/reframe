@@ -9,4 +9,4 @@ class EmptyTest(RegressionTest):
 
 
 def _get_checks(**kwargs):
-    return [ EmptyTest(**kwargs) ]
+    return [EmptyTest(**kwargs)]

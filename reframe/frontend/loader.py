@@ -6,6 +6,7 @@ import ast
 import os
 import logging
 import sys
+import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 
 from importlib.machinery import SourceFileLoader
@@ -25,18 +26,20 @@ class RegressionCheckValidator(ast.NodeVisitor):
         return self._validated
 
     def visit_FunctionDef(self, node):
-        if node.name == '_get_checks' and \
-           node.col_offset == 0       and \
-           node.args.kwarg:
+        if (node.name == '_get_checks' and
+            node.col_offset == 0 and
+            node.args.kwarg):
             self._validated = True
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, prefix = '', recurse = False):
+    def __init__(self, load_path, prefix='', recurse=False):
         self.load_path = load_path
-        self.prefix = prefix if prefix != None else ''
+        self.prefix = prefix or ''
         self.recurse = recurse
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def _module_name(self, filename):
         """Figure out a module name from filename.
@@ -48,7 +51,6 @@ class RegressionCheckLoader:
             return os.path.splitext(os.path.basename(filename))[0]
         else:
             return (os.path.splitext(filename)[0]).replace('/', '.')
-
 
     def _validate_source(self, filename):
         """Check if `filename` is a valid Reframe source file.
@@ -65,7 +67,6 @@ class RegressionCheckLoader:
         validator.visit(source_tree)
         return validator.valid
 
-
     def load_from_module(self, module, **check_args):
         """Load user checks from module.
 
@@ -77,10 +78,9 @@ class RegressionCheckLoader:
         # already validated
         candidates = module._get_checks(**check_args)
         if isinstance(candidates, list):
-            return [ c for c in candidates if isinstance(c, RegressionTest) ]
+            return [c for c in candidates if isinstance(c, RegressionTest)]
         else:
             return []
-
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
@@ -92,9 +92,8 @@ class RegressionCheckLoader:
             return self.load_from_module(loader.load_module(), **check_args)
         except OSError as e:
             raise ReframeError(
-                "Could not load module `%s' from file `%s': %s" % \
+                "Could not load module `%s' from file `%s': %s" %
                 (module_name, filename, e.strerror))
-
 
     def load_from_dir(self, dirname, recurse=False, **check_args):
         checks = []
@@ -104,15 +103,14 @@ class RegressionCheckLoader:
                     self.load_from_dir(entry.path, recurse, **check_args)
                 )
 
-            if     entry.name.startswith('.') or \
-               not entry.name.endswith('.py') or \
-               not entry.is_file():
+            if (entry.name.startswith('.') or
+                not entry.name.endswith('.py') or
+                not entry.is_file()):
                 continue
 
             checks.extend(self.load_from_file(entry.path, **check_args))
 
         return checks
-
 
     def load_all(self, **check_args):
         """Load all checks in self.load_path.
@@ -125,7 +123,7 @@ class RegressionCheckLoader:
                 continue
             if os.path.isdir(d):
                 checks.extend(self.load_from_dir(d, self.recurse,
-                                                  **check_args))
+                                                 **check_args))
             else:
                 checks.extend(self.load_from_file(d, **check_args))
 
@@ -140,6 +138,8 @@ class SiteConfiguration:
         self.systems = {}
         self.modes = ScopedDict({})
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def load_from_dict(self, site_config):
         if not isinstance(site_config, dict):
@@ -191,7 +191,6 @@ class SiteConfiguration:
             except KeyError:
                 raise ConfigurationError("no type specified for `%s'" % name)
 
-
         # Populate the systems directory
         for sysname, config in sysconfig.items():
             if not isinstance(config, dict):
@@ -242,7 +241,7 @@ class SiteConfiguration:
                     variables=partconfig.get('variables', {})
                 )
                 partition.environs = [
-                    create_env(sysname, partname, e) \
+                    create_env(sysname, partname, e)
                     for e in partconfig.get('environs', [])
                 ]
                 partition.access = partconfig.get('access', [])

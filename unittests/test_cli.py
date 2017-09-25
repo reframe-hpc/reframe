@@ -74,24 +74,21 @@ class TestFrontend(unittest.TestCase):
             }
         }
 
-
     def _run_reframe(self):
         import reframe.frontend.cli as cli
 
         argv = self.cmdstr.format(
-            executable = self.executable,
-            checkopt   = ('-c %s' % self.checkfile) if self.checkfile else '',
-            prefix     = self.prefix,
-            prgenvopt  = ('-p %s' % self.prgenv) if self.prgenv else '',
-            action     = self.action,
-            local      = '--force-local' if self.local else '',
-            options    = ' '.join(self.options),
-            sysopt     = ('--system %s' % self.sysopt) if self.sysopt else ''
+            executable=self.executable,
+            checkopt=('-c %s' % self.checkfile) if self.checkfile else '',
+            prefix=self.prefix,
+            prgenvopt=('-p %s' % self.prgenv) if self.prgenv else '',
+            action=self.action,
+            local='--force-local' if self.local else '',
+            options=' '.join(self.options),
+            sysopt=('--system %s' % self.sysopt) if self.sysopt else ''
         ).split()
 
-        print(argv)
         return run_command_inline(argv, cli.main)
-
 
     def _stage_exists(self, check_name, partitions, prgenv_name):
         stagedir = os.path.join(self.prefix, 'stage')
@@ -103,7 +100,6 @@ class TestFrontend(unittest.TestCase):
 
         return True
 
-
     def _perflog_exists(self, check_name, partitions):
         logdir = os.path.join(self.prefix, 'logs')
         for p in partitions:
@@ -113,22 +109,19 @@ class TestFrontend(unittest.TestCase):
 
         return True
 
-
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(os.path.exists(
-            os.path.join(outputdir,os.path.basename(self.logfile))))
-
+            os.path.join(outputdir, os.path.basename(self.logfile))))
 
     def test_check_success(self):
-        self.options = [ '--save-log-files' ]
+        self.options = ['--save-log-files']
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
-
 
     @unittest.skipIf(not system_with_scheduler(None),
                      'job submission not supported')
@@ -148,19 +141,17 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
 
-
     def test_check_failure(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--tag BadSetupCheck' ]
+        self.options = ['--tag BadSetupCheck']
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
 
-
     def test_check_sanity_failure(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--tag SanityFailureCheck' ]
+        self.options = ['--tag SanityFailureCheck']
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('FAILED', stdout)
@@ -169,12 +160,11 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(returncode, 0)
         self.assertTrue(self._stage_exists('SanityFailureCheck',
-                                           [ 'login' ], self.prgenv))
-
+                                           ['login'], self.prgenv))
 
     def test_performance_check_failure(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--tag PerformanceFailureCheck' ]
+        self.options = ['--tag PerformanceFailureCheck']
         returncode, stdout, stderr = self._run_reframe()
 
         self.assertIn('FAILED', stdout)
@@ -183,14 +173,13 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('PerformanceFailureCheck',
-                                           [ 'login' ], self.prgenv))
+                                           ['login'], self.prgenv))
         self.assertTrue(self._perflog_exists('PerformanceFailureCheck',
-                                             [ 'login' ]))
-
+                                             ['login']))
 
     def test_custom_performance_check_failure(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--tag CustomPerformanceFailureCheck' ]
+        self.options = ['--tag CustomPerformanceFailureCheck']
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('FAILED', stdout)
@@ -200,37 +189,33 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(0, returncode)
 
         self.assertTrue(self._stage_exists('CustomPerformanceFailureCheck',
-                                           [ 'login' ], self.prgenv))
+                                           ['login'], self.prgenv))
         self.assertNotIn('Check log file:', stdout)
-
 
     def test_skip_system_check_option(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--skip-system-check', '--tag NoSystemCheck' ]
+        self.options = ['--skip-system-check', '--tag NoSystemCheck']
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('PASSED', stdout)
-
 
     def test_skip_prgenv_check_option(self):
         self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = [ '--skip-prgenv-check', '--tag NoPrgEnvCheck' ]
+        self.options = ['--skip-prgenv-check', '--tag NoPrgEnvCheck']
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
-
 
     def test_sanity_of_checks(self):
         # This test will effectively load all the tests in the checks path and
         # will force a syntactic and runtime check at least for the constructor
         # of the checks
         self.action = '-l'
-        self.options = [ '--save-log-files' ]
+        self.options = ['--save-log-files']
         self.checkfile = None
         returncode, stdout, stderr = self._run_reframe()
 
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
-
 
     def test_unknown_system(self):
         self.action = '-l'
@@ -241,13 +226,11 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(1, returncode)
 
-
     def test_sanity_of_optconfig(self):
         # Test the sanity of the command line options configuration
         self.action = '-h'
         self.checkfile = None
         returncode, stdout, stderr = self._run_reframe()
-
 
     def test_checkpath_recursion(self):
         self.action = '-l'
@@ -257,7 +240,7 @@ class TestFrontend(unittest.TestCase):
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
 
         self.checkfile = 'checks/'
-        self.options = [ '-R' ]
+        self.options = ['-R']
         returncode, stdout, stderr = self._run_reframe()
         num_checks_in_checkdir = re.search(
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
@@ -268,7 +251,6 @@ class TestFrontend(unittest.TestCase):
         num_checks_in_checkdir = re.search(
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual('0', num_checks_in_checkdir)
-
 
     def test_same_output_stage_dir(self):
         output_dir = os.path.join(self.prefix, 'foo')

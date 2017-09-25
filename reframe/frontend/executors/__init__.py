@@ -1,4 +1,5 @@
 import sys
+import reframe.core.debug as debug
 
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ReframeFatalError, ReframeError
@@ -8,7 +9,8 @@ from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
 
-class TestCase(object):
+
+class TestCase:
     """Test case result placeholder class."""
     STATE_SUCCESS = 0
     STATE_FAILURE = 1
@@ -19,13 +21,16 @@ class TestCase(object):
         self.failed_stage = None
         self.exc_info = None
 
+    def __repr__(self):
+        return debug.repr(self)
+
     def valid(self):
-        return self.result != None
+        return self.result is not None
 
     def success(self):
         self.result = TestCase.STATE_SUCCESS
 
-    def fail(self, exc_info = None):
+    def fail(self, exc_info=None):
         self.result = TestCase.STATE_FAILURE
         self.failed_stage  = self.executor.current_stage
         self.exc_info = exc_info
@@ -34,11 +39,11 @@ class TestCase(object):
         return self.result == TestCase.STATE_FAILURE
 
 
-class RegressionTestExecutor(object):
+class RegressionTestExecutor:
     """Responsible for the execution of `RegressionTest`'s pipeline stages.
 
-    Keeps track of the current stage and implements relaxed performance checking
-    logic."""
+    Keeps track of the current stage and implements relaxed performance
+    checking logic."""
     check = TypedField('check', RegressionTest)
     current_stage = StringField('current_stage')
 
@@ -46,6 +51,9 @@ class RegressionTestExecutor(object):
         self.current_stage = 'init'
         self.check = check
         self.relax_performance_check = False
+
+    def __repr__(self):
+        return debug.repr(self)
 
     def setup(self, system, environ, **job_opts):
         self.current_stage = 'setup'
@@ -88,17 +96,20 @@ class RegressionTestExecutor(object):
         self.current_stage = 'completed'
 
 
-class Runner(object):
+class Runner:
     """Responsible for executing a set of regression tests based on an execution
     policy."""
-    def __init__(self, policy, printer = None):
-        self.printer = PrettyPrinter() if not printer else printer
+
+    def __init__(self, policy, printer=None):
+        self.printer = printer or PrettyPrinter()
         self.policy = policy
         self.policy.printer = self.printer
         self.policy.runner = self
         self.sandbox = Sandbox()
         self.stats = None
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def runall(self, checks, system):
         try:
@@ -113,19 +124,17 @@ class Runner(object):
             num_failures = self.stats.num_failures()
             self.printer.status(
                 'FAILED' if num_failures else 'PASSED',
-                'Ran %d test case(s) from %d check(s) (%d failure(s))' % \
+                'Ran %d test case(s) from %d check(s) (%d failure(s))' %
                 (self.stats.num_cases(), len(checks), num_failures),
                 just='center'
             )
             self.printer.timestamp('Finished on', 'short double line')
-
 
     def _partition_supported(self, check, partition):
         if self.policy.skip_system_check:
             return True
 
         return check.supports_system(partition.name)
-
 
     def _environ_supported(self, check, environ):
         precond = True
@@ -136,7 +145,6 @@ class Runner(object):
             return precond
         else:
             return precond and check.supports_progenv(environ.name)
-
 
     def _runall(self, checks, system):
         self.policy.enter()
@@ -153,7 +161,7 @@ class Runner(object):
                 for e in p.environs:
                     if not self._environ_supported(c, e):
                         self.printer.status('SKIP',
-                                            'skipping %s for %s' % \
+                                            'skipping %s for %s' %
                                             (e.name, p.fullname),
                                             just='center')
                         continue
@@ -178,10 +186,11 @@ class Runner(object):
         self.policy.exit()
 
 
-class ExecutionPolicy(object):
+class ExecutionPolicy:
     """Base abstract class for execution policies.
 
     An execution policy implements the regression check pipeline."""
+
     def __init__(self):
         # Options controlling the check execution
         self.skip_system_check = False
@@ -202,6 +211,9 @@ class ExecutionPolicy(object):
         self.sched_nodelist = None
         self.sched_exclude_nodelist = None
         self.sched_options = []
+
+    def __repr__(self):
+        return debug.repr(self)
 
     def enter(self):
         pass

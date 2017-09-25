@@ -1,10 +1,14 @@
 import datetime
 import sys
+import reframe.core.debug as debug
 
 from reframe.core.logging import LoggerAdapter, load_from_dict, getlogger
 
 
 class Colorizer:
+    def __repr__(self):
+        return debug.repr(self)
+
     def colorize(string, foreground, background):
         raise NotImplementedError('attempt to call an abstract method')
 
@@ -28,13 +32,13 @@ class AnsiColorizer(Colorizer):
     white   = '7m'
     default = '9m'
 
-    def colorize(string, foreground, background = None):
-        return AnsiColorizer.escape_seq + \
-               AnsiColorizer.fgcolor + foreground + string + \
-               AnsiColorizer.escape_seq + AnsiColorizer.reset_term
+    def colorize(string, foreground, background=None):
+        return (AnsiColorizer.escape_seq +
+                AnsiColorizer.fgcolor + foreground + string +
+                AnsiColorizer.escape_seq + AnsiColorizer.reset_term)
 
 
-class PrettyPrinter(object):
+class PrettyPrinter:
     """Pretty printing facility for the framework.
 
     Final printing is delegated to an internal logger, which is responsible for
@@ -46,8 +50,10 @@ class PrettyPrinter(object):
         self.status_width = 10
         self._logger = getlogger('frontend')
 
+    def __repr__(self):
+        return debug.repr(self)
 
-    def separator(self, linestyle, msg = ''):
+    def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':
             line = self.status_width * '='
         elif linestyle == 'short single line':
@@ -57,8 +63,7 @@ class PrettyPrinter(object):
 
         self.info('[%s] %s' % (line, msg))
 
-
-    def status(self, status, message = '', just=None):
+    def status(self, status, message='', just=None):
         if just == 'center':
             status = status.center(self.status_width - 2)
         elif just == 'right':
@@ -70,13 +75,12 @@ class PrettyPrinter(object):
             status_stripped = status.strip().lower()
             if status_stripped == 'skip':
                 status = AnsiColorizer.colorize(status, AnsiColorizer.yellow)
-            elif status_stripped in [ 'fail', 'failed' ]:
+            elif status_stripped in ['fail', 'failed']:
                 status = AnsiColorizer.colorize(status, AnsiColorizer.red)
             else:
                 status = AnsiColorizer.colorize(status, AnsiColorizer.green)
 
         self.info('[ %s ] %s' % (status, message))
-
 
     def result(self, check, partition, environ, success):
         if success:
@@ -84,9 +88,9 @@ class PrettyPrinter(object):
         else:
             result_str = 'FAIL'
 
-        self.status(result_str, '%s on %s using %s' % \
-                    (check.name, partition.fullname, environ.name), just='right')
-
+        self.status(
+            result_str, '%s on %s using %s' %
+            (check.name, partition.fullname, environ.name), just='right')
 
     def timestamp(self, msg='', separator=None):
         msg = '%s %s' % (msg, datetime.datetime.today().strftime('%c %Z'))
@@ -95,18 +99,14 @@ class PrettyPrinter(object):
         else:
             self.info(msg)
 
-
     def error(self, msg):
         self._logger.error('%s: %s' % (sys.argv[0], msg))
 
-
-    def info(self, msg = ''):
+    def info(self, msg=''):
         self._logger.info(msg)
 
-
     def log_config(self, options):
-        config_str = 'configuration\n'
-        for attr, val in sorted(options.__dict__.items()):
-            config_str += '    %s=%s\n' % (attr, str(val))
+        opt_list = ['    %s=%s' % (attr, val)
+                    for attr, val in sorted(options.__dict__.items())]
 
-        self._logger.debug(config_str)
+        self._logger.debug('configuration\n%s' % '\n'.join(opt_list))
