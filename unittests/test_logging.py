@@ -40,10 +40,8 @@ class TestLogger(unittest.TestCase):
             )
         )
 
-
     def tearDown(self):
         os.remove(self.logfile)
-
 
     def found_in_logfile(self, string):
         found = False
@@ -52,11 +50,9 @@ class TestLogger(unittest.TestCase):
 
         return found
 
-
     def test_invalid_loglevel(self):
         self.assertRaises(ReframeError, self.logger.setLevel, 'level')
         self.assertRaises(ReframeError, Logger, 'logger', 'level')
-
 
     def test_custom_loglevels(self):
         self.logger_without_check.info('foo')
@@ -67,7 +63,6 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(self.found_in_logfile('verbose'))
         self.assertTrue(self.found_in_logfile('reframe'))
 
-
     def test_check_logger(self):
         self.logger_with_check.info('foo')
         self.logger_with_check.verbose('bar')
@@ -76,7 +71,6 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(self.found_in_logfile('info'))
         self.assertTrue(self.found_in_logfile('verbose'))
         self.assertTrue(self.found_in_logfile('random_check'))
-
 
     def test_custom_handler_levels(self):
         self.handler.setLevel('verbose')
@@ -87,7 +81,6 @@ class TestLogger(unittest.TestCase):
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
-
 
     def test_logger_levels(self):
         self.logger_with_check.setLevel('verbose')
@@ -116,15 +109,13 @@ class TestLoggerConfiguration(unittest.TestCase):
             }
         }
         self.logger = None
-        self.check =  RegressionTest(
+        self.check = RegressionTest(
             'random_check', '.', System('foosys'), ResourcesManager()
         )
-
 
     def tearDown(self):
         if os.path.exists(self.logfile):
             os.remove(self.logfile)
-
 
     def found_in_logfile(self, string):
         for handler in self.logger.handlers:
@@ -137,36 +128,29 @@ class TestLoggerConfiguration(unittest.TestCase):
 
         return found
 
-
     def set_logger(self):
         from reframe.core.logging import load_from_dict
         self.logger = load_from_dict(self.logging_config)
-
 
     def close_handlers(self):
         for h in self.logger.handlers:
             h.close()
 
-
     def flush_handlers(self):
         for h in self.logger.handlers:
             h.flush()
-
 
     def test_valid_level(self):
         self.set_logger()
         self.assertEqual(INFO, self.logger.getEffectiveLevel())
 
-
     def test_no_handlers(self):
         del self.logging_config['handlers']
         self.assertRaises(ConfigurationError, self.set_logger)
 
-
     def test_empty_handlers(self):
         self.logging_config['handlers'] = {}
         self.assertRaises(ConfigurationError, self.set_logger)
-
 
     def test_handler_level(self):
         self.set_logger()
@@ -175,7 +159,6 @@ class TestLoggerConfiguration(unittest.TestCase):
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
-
 
     def test_handler_append(self):
         self.set_logger()
@@ -188,7 +171,6 @@ class TestLoggerConfiguration(unittest.TestCase):
 
         self.assertTrue(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
-
 
     def test_handler_noappend(self):
         self.logging_config = {
@@ -214,14 +196,12 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
-
     # FIXME: this test is not robust
     def test_date_format(self):
         self.set_logger()
         self.logger.warning('foo')
         self.flush_handlers()
         self.assertTrue(self.found_in_logfile(datetime.now().strftime('%F')))
-
 
     def test_stream_handler_stdout(self):
         self.logging_config = {
@@ -238,7 +218,6 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertTrue(isinstance(handler, StreamHandler))
         self.assertEqual(handler.stream, sys.stdout)
 
-
     def test_stream_handler_stderr(self):
         self.logging_config = {
             'level'   : 'INFO',
@@ -254,7 +233,6 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertTrue(isinstance(handler, StreamHandler))
         self.assertEqual(handler.stream, sys.stderr)
 
-
     def test_multiple_handlers(self):
         self.logging_config = {
             'level'   : 'INFO',
@@ -266,7 +244,6 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.set_logger()
         self.assertEqual(len(self.logger.handlers), 2)
 
-
     def test_global_noconfig(self):
         # This is to test the case when no configuration is set, but since the
         # order the unit tests are invoked is arbitrary, we emulate the
@@ -277,7 +254,6 @@ class TestLoggerConfiguration(unittest.TestCase):
         check_logger = getlogger('check', self.check)
         self.assertEqual(None, frontend_logger.logger)
         self.assertEqual(None, check_logger.logger)
-
 
     def test_global_config(self):
         configure_logging(self.logging_config)

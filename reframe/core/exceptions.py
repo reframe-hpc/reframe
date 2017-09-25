@@ -2,12 +2,19 @@
 # Base regression exceptions
 #
 
+import reframe.core.debug as debug
+
+
 class ReframeError(Exception):
     """
     Base exception for regression errors.
     """
-    def __init__(self, msg = ''):
+
+    def __init__(self, msg=''):
         self.message = msg
+
+    def __repr__(self):
+        return debug.repr(self)
 
     def __str__(self):
         return self.message
@@ -42,7 +49,7 @@ class CommandError(ReframeError):
 
         else:
             super().__init__(
-                "Command `%s' failed with exit code: %d" % \
+                "Command `%s' failed with exit code: %d" %
                 (self.command, exitcode))
 
         self.stdout   = stdout
@@ -50,14 +57,13 @@ class CommandError(ReframeError):
         self.exitcode = exitcode
         self.timeout  = timeout
 
-
     def __str__(self):
-        ret = '\n' + super().__str__() + \
-              "\n=== STDOUT ===\n" + \
-               self.stdout + \
-              "\n=== STDERR ===\n" + \
-               self.stderr
-        return ret
+        return ('\n' +
+                super().__str__() +
+                '\n=== STDOUT ===\n' +
+                self.stdout +
+                '\n=== STDERR ===\n' +
+                self.stderr)
 
 
 class CompilationError(CommandError):
@@ -67,4 +73,8 @@ class CompilationError(CommandError):
 
 
 class JobSubmissionError(CommandError):
+    pass
+
+
+class JobResourcesError(ReframeError):
     pass

@@ -29,11 +29,12 @@ try:
                                 stderr=subprocess.PIPE,
                                 universal_newlines=True)
     if re.search('Unknown shell type', _completed.stderr, re.MULTILINE):
-        sys.stderr.write('Python is not supported by this modules framework.\n')
+        sys.stderr.write(
+            'Python is not supported by this modules framework.\n')
         sys.exit(1)
 
 except OSError:
     # modulecmd was not found
-    sys.stderr.write("Could not run modulecmd. Tried `%s' and failed.\n" % \
+    sys.stderr.write("Could not run modulecmd. Tried `%s' and failed.\n" %
                      MODULECMD_PYTHON)
     sys.exit(1)

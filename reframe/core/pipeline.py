@@ -7,7 +7,7 @@ import glob
 import os
 import shutil
 
-import reframe
+import reframe.core.debug as debug
 import reframe.core.logging as logging
 import reframe.settings as settings
 import reframe.utility.os as os_ext
@@ -15,7 +15,7 @@ import reframe.utility.os as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import ReframeFatalError
 from reframe.core.fields import *
-from reframe.core.launchers  import *
+from reframe.core.launchers import *
 from reframe.core.logging import getlogger, LoggerAdapter, null_logger
 from reframe.core.schedulers import *
 from reframe.core.shell import BashScriptBuilder
@@ -23,7 +23,101 @@ from reframe.core.systems import System, SystemPartition
 from reframe.frontend.resources import ResourcesManager
 
 
-class RegressionTest(object):
+class _OutputScanInfo:
+    """Holds information for the output scanning algorithm."""
+
+    def __init__(self):
+        self._scanned_patterns = {}
+
+    def __repr__(self):
+        return debug.repr(self)
+
+    def set_patterns(self, path, patterns):
+        self._scanned_patterns.setdefault(path, {})
+        for patt in patterns:
+            self._scanned_patterns[path][patt] = None
+
+    def add_match_pattern(self, path, patt):
+        self._scanned_patterns[path][patt] = []
+
+    def add_match_tag(self, path, patt, tag, value, reference, action_result):
+        self._scanned_patterns[path][patt].append(
+            (tag, value, reference, action_result))
+
+    def add_match_eof(self, path, eof_result):
+        self._scanned_patterns[path]['\e'] = eof_result
+
+    # Routines for querying matches
+    def matched_pattern(self, path, patt):
+        return self._scanned_patterns[path][patt]
+
+    def matched_tag(self, path, patt, tag):
+        for tinfo in self._scanned_patterns[path][patt]:
+            if tinfo[0] == tag:
+                return tinfo
+        return None
+
+    def matched_eof(self, path):
+        return self._scanned_patterns[path]['\e']
+
+    # Routines for producing formatted reports
+    def failure_report(self, full_paths=True):
+        """Provide information of the whole scan process"""
+        ret = ''
+        for path, patterns in self._scanned_patterns.items():
+            if not full_paths:
+                path = os.path.basename(path)
+
+            for patt, taglist in patterns.items():
+                if patt == '\e':
+                    # taglist here is actually the result of the eof test
+                    ret += "`%s': eof action failed\n" % path
+                    continue
+
+                if taglist is None:
+                    ret += ("`%s': pattern `%s' was not matched\n" %
+                            (path, patt))
+                    continue
+
+                for t in taglist:
+                    tag, val, ref, res = t
+                    if not res:
+                        ret += ("%s: pattern `%s': "
+                                "action for tag `%s' failed "
+                                "(value: %s, reference: %s)\n" %
+                                (path, patt, tag, val, ref))
+        return ret
+
+    def scan_report(self):
+        """Provide information of the whole scan process"""
+        ret = ''
+        for path, patterns in self._scanned_patterns.items():
+            ret += "%s:\n" % path
+            for patt, taglist in patterns.items():
+                if patt == '\e':
+                    # Here taglist refers to the action taken at eof
+                    ret += ('  action at end of file: %s' %
+                            'success' if taglist else 'fail')
+                    ret += '\n'
+                    continue
+
+                ret += "  pattern: '%s': " % patt
+                if taglist is None:
+                    ret += 'not matched\n'
+                    continue
+
+                ret += 'matched\n'
+                for t in taglist:
+                    tag, val, ref, res = t
+                    ret += ("    tag: '%s': %s (value: %s, reference: %s)\n" %
+                            (tag, 'success' if res else 'fail', val, str(ref)))
+        return ret
+
+    def __str__(self):
+        return str(self._scanned_patterns)
+
+
+class RegressionTest:
     """Base class for regression checks providing the implementation of the
        different phases the regression goes through."""
 
@@ -52,7 +146,8 @@ class RegressionTest(object):
     num_gpus_per_node   = IntegerField('num_gpus_per_node')
     num_cpus_per_task   = IntegerField('num_cpus_per_task', allow_none=True)
     num_tasks_per_core  = IntegerField('num_tasks_per_core', allow_none=True)
-    num_tasks_per_socket = IntegerField('num_tasks_per_socket', allow_none=True)
+    num_tasks_per_socket = IntegerField('num_tasks_per_socket',
+                                        allow_none=True)
     use_multithreading  = BooleanField('use_multithreading', allow_none=True)
     exclusive_access    = BooleanField('exclusive_access')
     local               = BooleanField('local')
@@ -64,7 +159,8 @@ class RegressionTest(object):
     logger              = TypedField('logger', LoggerAdapter)
     _perf_logfile       = StringField('_perf_logfile', allow_none=True)
     reference           = ScopedDictField('reference', object)
-    sanity_patterns     = SanityPatternField('sanity_patterns', allow_none=True)
+    sanity_patterns     = SanityPatternField('sanity_patterns',
+                                             allow_none=True)
     perf_patterns       = SanityPatternField('perf_patterns', allow_none=True)
     modules             = TypedListField('modules', str)
     variables           = TypedDictField('variables', str, str)
@@ -110,8 +206,8 @@ class RegressionTest(object):
         self.local = False
 
         # Static directories of the regression check
-        self.prefix        = os.path.abspath(prefix)
-        self.sourcesdir    = os.path.join(self.prefix, 'src')
+        self.prefix = os.path.abspath(prefix)
+        self.sourcesdir = os.path.join(self.prefix, 'src')
 
         # Dynamic paths of the regression check; will be set in setup()
         self.stagedir = None
@@ -121,9 +217,11 @@ class RegressionTest(object):
 
         # Output patterns
         self.sanity_patterns = None
+        self.sanity_info = _OutputScanInfo()
 
         # Performance patterns: None -> no performance checking
         self.perf_patterns = None
+        self.perf_info = _OutputScanInfo()
         self.reference = {}
 
         # Environment setup
@@ -136,7 +234,7 @@ class RegressionTest(object):
         # Private fields
         self._resources = resources
 
-        # Compilation task output; not meant to be touched by users
+        # Compilation task output
         self._compile_task = None
 
         # Check-specific logging
@@ -146,6 +244,8 @@ class RegressionTest(object):
         # Type of launcher to use for launching jobs
         self._launcher_type = None
 
+    def __repr__(self):
+        return debug.repr(self)
 
     def supports_system(self, partition_name):
         if '*' in self.valid_systems:
@@ -161,24 +261,20 @@ class RegressionTest(object):
 
         return partition_name in self.valid_systems
 
-
     def supports_progenv(self, env_name):
         if '*' in self.valid_prog_environs:
             return True
 
         return env_name in self.valid_prog_environs
 
-
     def is_local(self):
         return self.local or self.current_partition.scheduler == 'local'
-
 
     def _sanitize_basename(self, name):
         """Create a basename safe to be used as path component
 
         Replace all path separator characters in `name` with underscores."""
         return name.replace(os.sep, '_')
-
 
     def _setup_environ(self, environ):
         """Setup the current environment and load it."""
@@ -201,7 +297,6 @@ class RegressionTest(object):
         self.logger.debug('loading environment %s' % self.current_environ.name)
         self.current_environ.load()
 
-
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
@@ -218,7 +313,6 @@ class RegressionTest(object):
         )
         self.stdout = os.path.join(self.stagedir, '%s.out' % self.name)
         self.stderr = os.path.join(self.stagedir, '%s.err' % self.name)
-
 
     def _setup_job(self, **job_opts):
         """Setup the job related to this check."""
@@ -287,19 +381,19 @@ class RegressionTest(object):
                 **job_opts)
 
             # Get job options from managed resources and prepend them to
-            # job_opts. We want any user supplied options to be able to override
-            # those set by the framework.
+            # job_opts. We want any user supplied options to be able to
+            # override those set by the framework.
             resources_opts = []
             for r, v in self.job_resources.items():
-                resources_opts.extend(self.current_partition.get_resource(r, v))
+                resources_opts.extend(
+                    self.current_partition.get_resource(r, v))
 
-            self.job.options = self.current_partition.access + \
-                               resources_opts + self.job.options
+            self.job.options = (self.current_partition.access +
+                                resources_opts + self.job.options)
 
         # Prepend job path to script name
         self.job.script_filename = os.path.join(self.stagedir,
                                                 self.job.script_filename)
-
 
     # FIXME: This is a temporary solution to address issue #157
     def _setup_perf_logging(self):
@@ -312,11 +406,11 @@ class RegressionTest(object):
         perf_logging_config = {
             'level': 'INFO',
             'handlers': {
-                self._perf_logfile : {
-                    'level'     : 'DEBUG',
-                    'format'    : '[%(asctime)s] %(check_name)s '
-                                  '(jobid=%(check_jobid)s): %(message)s',
-                    'append'    : True,
+                self._perf_logfile: {
+                    'level': 'DEBUG',
+                    'format': '[%(asctime)s] %(check_name)s '
+                              '(jobid=%(check_jobid)s): %(message)s',
+                    'append': True,
                 }
             }
         }
@@ -335,9 +429,8 @@ class RegressionTest(object):
         self._setup_environ(environ)
         self._setup_paths()
         self._setup_job(**job_opts)
-        if self.perf_patterns != None:
+        if self.perf_patterns is not None:
             self._setup_perf_logging()
-
 
     def _copy_to_stagedir(self, path):
         self.logger.debug('copying %s to stage directory (%s)' %
@@ -345,18 +438,15 @@ class RegressionTest(object):
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         os_ext.copytree_virtual(path, self.stagedir, self.readonly_files)
 
-
     def prebuild(self):
         for cmd in self.prebuild_cmd:
             self.logger.debug('executing prebuild command: %s' % cmd)
             os_ext.run_command(cmd, check=True)
 
-
     def postbuild(self):
         for cmd in self.postbuild_cmd:
             self.logger.debug('executing postbuild command: %s' % cmd)
             os_ext.run_command(cmd, check=True)
-
 
     def compile(self, **compile_opts):
         if not self.current_environ:
@@ -375,7 +465,6 @@ class RegressionTest(object):
         else:
             includedir = os.path.abspath(self.sourcesdir)
 
-
         # Add the the correct source directory to the include path
         self.current_environ.include_search_path.append(includedir)
 
@@ -384,8 +473,8 @@ class RegressionTest(object):
         compile_opts.pop('executable', None)
 
         # Change working dir to stagedir although absolute paths are used
-        # everywhere in the compilation process. This is done to ensure that any
-        # other files (besides the executable) generated during the the
+        # everywhere in the compilation process. This is done to ensure that
+        # any other files (besides the executable) generated during the the
         # compilation will remain in the stage directory
         wd_save = os.getcwd()
         os.chdir(self.stagedir)
@@ -406,7 +495,6 @@ class RegressionTest(object):
             os.chdir(wd_save)
             self.logger.debug('compilation finished')
 
-
     def run(self):
         if not self.current_system or not self.current_partition:
             raise ReframeError('no system or system partition is set')
@@ -415,33 +503,31 @@ class RegressionTest(object):
                         (self.executable, ' '.join(self.executable_opts)),
                         workdir=self.stagedir)
 
-        msg = 'spawned job (%s=%s)' % \
-              ('pid' if self.is_local() else 'jobid', self.job.jobid)
+        msg = ('spawned job (%s=%s)' %
+               ('pid' if self.is_local() else 'jobid', self.job.jobid))
         self.logger.debug(msg)
-
 
     def poll(self):
         """Poll the test's status.
 
-        Returns `True` if the associated job has finished, `False` otherwise."""
+        Returns `True` if the associated job has finished, `False`
+        otherwise."""
         if not self.job:
             return True
 
         return self.job.finished()
 
-
     def wait(self):
         self.job.wait()
         self.logger.debug('spawned job finished')
 
-
     def check_sanity(self):
-        return self._match_patterns(self.sanity_patterns, None)
-
+        return self._match_patterns(self.sanity_patterns, None,
+                                    self.sanity_info)
 
     def check_performance(self):
-        return self._match_patterns(self.perf_patterns, self.reference)
-
+        return self._match_patterns(self.perf_patterns, self.reference,
+                                    self.perf_info)
 
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
@@ -456,7 +542,6 @@ class RegressionTest(object):
             if not os.path.isabs(f):
                 f = os.path.join(self.stagedir, f)
             shutil.copy(f, self.outputdir)
-
 
     def cleanup(self, remove_files=False, unload_env=True):
         aliased = os.path.samefile(self.stagedir, self.outputdir)
@@ -475,18 +560,16 @@ class RegressionTest(object):
             self.current_environ.unload()
             self.current_partition.local_env.unload()
 
-
-    def _match_patterns_file(self, path, patterns, reference):
+    def _match_patterns_infile(self, path, patterns, reference, scan_info):
         def _resolve_tag(tag):
             try:
-                return reference['%s:%s:%s' % \
-                                 (self.current_system.name,
-                                  self.current_partition.name, tag)]
+                key = '%s:%s' % (self.current_partition.fullname, tag)
+                return reference[key]
             except KeyError:
                 raise ReframeError(
                     "tag `%s' could not be resolved "
                     "in perf. references for `%s'" %
-                    (tag, self.current_system.name)
+                    (tag, self.current_partition.fullname)
                 )
 
         matched_patt = set()
@@ -501,32 +584,39 @@ class RegressionTest(object):
                         continue
 
                     matched_patt.add(patt)
+                    scan_info.add_match_pattern(path, patt)
                     for td in taglist:
-                        tag, conv, thres = td
-                        ref = _resolve_tag(tag) \
-                              if reference != None else None
-                        if thres(value=conv(match.group(tag)),
-                                 reference=ref,
-                                 logger=self._perf_logger):
+                        tag, conv, action = td
+                        val = conv(match.group(tag))
+                        ref = (_resolve_tag(tag)
+                               if reference is not None else None)
+                        res = action(value=val, reference=ref,
+                                     logger=self._perf_logger)
+                        if tag in found_tags:
+                            # At least one match is sufficient
+                            continue
+
+                        scan_info.add_match_tag(path, patt, tag, val, ref, res)
+                        if res:
                             found_tags.add(tag)
+
         except (OSError, ValueError) as e:
-            raise ReframeError('Caught %s: %s' % (type(e).__name__, str(e)))
+            raise ReframeError('Caught %s: %s' % (type(e).__name__, e))
         finally:
             if file:
                 file.close()
 
         return (matched_patt, found_tags)
 
-
-    def _match_patterns(self, multi_patterns, reference):
+    def _match_patterns(self, multi_patterns, reference, scan_info):
         if not multi_patterns:
             return True
 
         for file_patt, patterns in multi_patterns.items():
             if file_patt == '-' or file_patt == '&1':
-                files = [ self.stdout ]
+                files = [self.stdout]
             elif file_patt == '&2':
-                files = [ self.stderr ]
+                files = [self.stderr]
             else:
                 files = glob.glob(os.path.join(self.stagedir, file_patt))
 
@@ -542,44 +632,47 @@ class RegressionTest(object):
             else:
                 eof_handler = None
 
+            required_patterns = patterns.keys()
             required_tags = frozenset(
-                [ td[0] for taglist in patterns.values() for td in taglist ]
+                [td[0] for taglist in patterns.values() for td in taglist]
             )
 
             ret = True
             for filename in files:
-                matched_patt, found_tags = self._match_patterns_file(
-                    filename, patterns, reference
+                scan_info.set_patterns(filename, required_patterns)
+                matched_patt, found_tags = self._match_patterns_infile(
+                    filename, patterns, reference, scan_info
                 )
-                if matched_patt != patterns.keys() or \
-                   found_tags != required_tags:
+                if (matched_patt != required_patterns or
+                    found_tags   != required_tags):
                     ret = False
 
                 # We need eof_handler to be called anyway that's why we do not
                 # combine this check with the above and we delay the breaking
                 # out of the loop here
-                if eof_handler and not eof_handler(logger=self._perf_logger):
-                    ret = False
-                    break
+                if eof_handler:
+                    eof_result = eof_handler(logger=self._perf_logger)
+                    scan_info.add_match_eof(filename, eof_result)
+                    if not eof_result:
+                        ret = False
 
             if eof_handler:
                 # Restore the handler
                 patterns['\e'] = eof_handler
 
+        self.logger.debug('output scan info:\n' + scan_info.scan_report())
         return ret
 
-
     def __str__(self):
-        return '%s (%s)\n' \
-                '        tags: [ %s ], maintainers: [ %s ]' % \
+        return ('%s (%s)\n'
+                '        tags: [%s], maintainers: [%s]' %
                 (self.name, self.descr,
-                ', '.join(self.tags), ', '.join(self.maintainers))
+                 ', '.join(self.tags), ', '.join(self.maintainers)))
 
 
 class RunOnlyRegressionTest(RegressionTest):
     def compile(self, **compile_opts):
         pass
-
 
     def run(self):
         # The sourcesdir can be set to None by the user; then we don't copy.
@@ -595,13 +688,11 @@ class CompileOnlyRegressionTest(RegressionTest):
         super().__init__(*args, **kwargs)
         self.local = True
 
-
     # No need to setup the job for compile-only checks
     def setup(self, system, environ, **job_opts):
         self.current_partition = system
         self._setup_environ(environ)
         self._setup_paths()
-
 
     def compile(self, **compile_opts):
         super().compile(**compile_opts)
@@ -612,10 +703,8 @@ class CompileOnlyRegressionTest(RegressionTest):
         with open(self.stderr, 'w') as f:
             f.write(self._compile_task.stderr)
 
-
     def run(self):
         pass
-
 
     def wait(self):
         pass

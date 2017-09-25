@@ -16,19 +16,18 @@ class BaseFrontendCheck(RunOnlyRegressionTest):
         self.local = True
         self.executable = 'echo hello'
         self.sanity_patterns = {
-            '-' : { 'hello' : [] }
+            '-' : {'hello' : []}
         }
-        self.tags = { self.name }
-        self.maintainers = [ 'VK' ]
+        self.tags = {self.name}
+        self.maintainers = ['VK']
 
 
 class BadSetupCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
 
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
-
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
 
     def setup(self, system, environ, **job_opts):
         super().setup(system, environ, **job_opts)
@@ -39,9 +38,8 @@ class BadSetupCheckEarly(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
 
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
-
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
 
     def setup(self, system, environ, **job_opts):
         raise ReframeError('Setup failure')
@@ -50,30 +48,30 @@ class BadSetupCheckEarly(BaseFrontendCheck):
 class NoSystemCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.valid_prog_environs = [ '*' ]
+        self.valid_prog_environs = ['*']
 
 
 class NoPrgEnvCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.valid_systems = [ '*' ]
+        self.valid_systems = ['*']
 
 
 class SanityFailureCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
         self.sanity_patterns = {
-            '-' : { 'foo' : [] }
+            '-' : {'foo' : []}
         }
 
 
 class PerformanceFailureCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
         self.perf_patterns = {
             '-' : {
                 '(?P<match>\S+)' : [
@@ -92,12 +90,12 @@ class PerformanceFailureCheck(BaseFrontendCheck):
 
 class CustomPerformanceFailureCheck(BaseFrontendCheck):
     """Simulate a performance check that ignores completely logging"""
+
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
         self.strict_check = False
-
 
     def check_performance(self):
         return False
@@ -105,19 +103,18 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
 
 class KeyboardInterruptCheck(BaseFrontendCheck):
     """Simulate keyboard interrupt during test's execution."""
+
     def __init__(self, phase='wait', **kwargs):
         super().__init__(type(self).__name__, **kwargs)
 
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
         self.phase = phase
-
 
     def setup(self, system, environ, **job_opts):
         super().setup(system, environ, **job_opts)
         if self.phase == 'setup':
             raise KeyboardInterrupt
-
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -129,11 +126,12 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
 
 class SystemExitCheck(BaseFrontendCheck):
     """Simulate system exit from within a check."""
+
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
 
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -150,21 +148,22 @@ class SleepCheck(BaseFrontendCheck):
             '-c "from time import sleep; sleep(%s)"' % sleep_time
         ]
         self.sanity_patterns = None
-        self.valid_systems = [ '*' ]
-        self.valid_prog_environs = [ '*' ]
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
 
     def setup(self, system, environ, **job_opts):
         super().setup(system, environ, **job_opts)
         print_timestamp = "python3 -c \"from datetime import datetime; " \
                           "print(datetime.today().strftime('%s.%f'))\""
-        self.job.pre_run  = [ print_timestamp ]
-        self.job.post_run = [ print_timestamp ]
+        self.job.pre_run  = [print_timestamp]
+        self.job.post_run = [print_timestamp]
+
 
 def _get_checks(**kwargs):
-    return [ BadSetupCheck(**kwargs),
-             BadSetupCheckEarly(**kwargs),
-             NoSystemCheck(**kwargs),
-             NoPrgEnvCheck(**kwargs),
-             SanityFailureCheck(**kwargs),
-             PerformanceFailureCheck(**kwargs),
-             CustomPerformanceFailureCheck(**kwargs), ]
+    return [BadSetupCheck(**kwargs),
+            BadSetupCheckEarly(**kwargs),
+            NoSystemCheck(**kwargs),
+            NoPrgEnvCheck(**kwargs),
+            SanityFailureCheck(**kwargs),
+            PerformanceFailureCheck(**kwargs),
+            CustomPerformanceFailureCheck(**kwargs), ]

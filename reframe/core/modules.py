@@ -6,15 +6,18 @@ import os
 import subprocess
 import re
 import reframe
+import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 
 from reframe.core.exceptions import ModuleError
+
 
 class Module:
     """Module wrapper.
 
     We basically need it for defining operators for use in standard Python
     algorithms."""
+
     def __init__(self, name):
         if not name:
             raise ModuleError('no module name specified')
@@ -27,7 +30,7 @@ class Module:
             self.version = None
 
     def __eq__(self, other):
-        if other != None and self.name == other.name:
+        if other is not None and self.name == other.name:
             if not self.version or not other.version:
                 return True
             else:
@@ -38,17 +41,14 @@ class Module:
     def __neq__(self, other):
         return not self.__eq__(other)
 
-
     def __repr__(self):
-        return self.__str__()
-
+        return debug.repr(self)
 
     def __str__(self):
         if self.version:
             return '%s/%s' % (self.name, self.version)
         else:
             return self.name
-
 
 
 def module_equal(rhs, lhs):
@@ -58,7 +58,7 @@ def module_equal(rhs, lhs):
 def module_list():
     try:
         # LOADEDMODULES may be defined but empty
-        return [ m for m in os.environ['LOADEDMODULES'].split(':') if m ]
+        return [m for m in os.environ['LOADEDMODULES'].split(':') if m]
     except KeyError:
         return []
 
@@ -67,7 +67,7 @@ def module_conflict_list(name):
     """Return the list of conflicted packages"""
     conflict_list = []
     completed = os_ext.run_command(
-        cmd = '%s show %s' % (reframe.MODULECMD_PYTHON, name))
+        cmd='%s show %s' % (reframe.MODULECMD_PYTHON, name))
 
     # Search for lines starting with 'conflict'
     for line in completed.stderr.split('\n'):
@@ -88,7 +88,7 @@ def module_present(name):
 
 def module_load(name):
     completed = os_ext.run_command(
-        cmd = '%s load %s' % (reframe.MODULECMD_PYTHON, name))
+        cmd='%s load %s' % (reframe.MODULECMD_PYTHON, name))
     exec(completed.stdout)
 
     if not module_present(name):
@@ -118,7 +118,7 @@ def module_force_load(name):
 
 def module_unload(name):
     completed = os_ext.run_command(
-        cmd = '%s unload %s' % (reframe.MODULECMD_PYTHON, name))
+        cmd='%s unload %s' % (reframe.MODULECMD_PYTHON, name))
     exec(completed.stdout)
 
     if module_present(name):
@@ -127,7 +127,7 @@ def module_unload(name):
 
 def module_purge():
     completed = os_ext.run_command(
-        cmd = '%s purge' % reframe.MODULECMD_PYTHON)
+        cmd='%s purge' % reframe.MODULECMD_PYTHON)
     exec(completed.stdout)
 
 
@@ -137,7 +137,7 @@ def module_path_add(dirs):
     """
     args = ' '.join(dirs)
     completed = os_ext.run_command(
-        cmd = '%s use %s' % (reframe.MODULECMD_PYTHON, args))
+        cmd='%s use %s' % (reframe.MODULECMD_PYTHON, args))
     exec(completed.stdout)
 
 
@@ -147,5 +147,5 @@ def module_path_remove(dirs):
     """
     args = ' '.join(dirs)
     completed = os_ext.run_command(
-        cmd = '%s unuse %s' % (reframe.MODULECMD_PYTHON, args))
+        cmd='%s unuse %s' % (reframe.MODULECMD_PYTHON, args))
     exec(completed.stdout)

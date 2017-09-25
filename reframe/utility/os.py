@@ -10,6 +10,7 @@ import subprocess
 
 from reframe.core.exceptions import *
 
+
 def run_command(cmd, check=False, timeout=None):
     try:
         return subprocess.run(shlex.split(cmd),
@@ -19,30 +20,30 @@ def run_command(cmd, check=False, timeout=None):
                               timeout=timeout,
                               check=check)
     except subprocess.CalledProcessError as e:
-        raise CommandError(command  = e.cmd,
-                           stdout   = e.stdout,
-                           stderr   = e.stderr,
-                           exitcode = e.returncode)
+        raise CommandError(command=e.cmd,
+                           stdout=e.stdout,
+                           stderr=e.stderr,
+                           exitcode=e.returncode)
 
     except subprocess.TimeoutExpired as e:
-        raise CommandError(command  = e.cmd,
-                           stdout   = e.stdout,
-                           stderr   = e.stderr,
-                           exitcode = None,
-                           timeout  = e.timeout)
+        raise CommandError(command=e.cmd,
+                           stdout=e.stdout,
+                           stderr=e.stderr,
+                           exitcode=None,
+                           timeout=e.timeout)
 
 
-def grep_command_output(cmd, pattern, where = 'stdout'):
+def grep_command_output(cmd, pattern, where='stdout'):
     completed = subprocess.run(shlex.split(cmd),
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE,
                                universal_newlines=True)
     if where == 'stdout':
-        outlist = [ completed.stdout ]
+        outlist = [completed.stdout]
     elif where == 'stderr':
-        outlist = [ completed.stderr ]
+        outlist = [completed.stderr]
     else:
-        outlist = [ completed.stdout, completed.stderr ]
+        outlist = [completed.stdout, completed.stderr]
 
     for out in outlist:
         if re.search(pattern, out, re.MULTILINE):
@@ -51,13 +52,17 @@ def grep_command_output(cmd, pattern, where = 'stdout'):
     return False
 
 
-def run_command_async(cmd, stdout=subprocess.PIPE,
-                      stderr=subprocess.PIPE, bufsize=1):
+def run_command_async(cmd,
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE,
+                      bufsize=1,
+                      **popen_args):
     return subprocess.Popen(args=shlex.split(cmd),
                             stdout=stdout,
                             stderr=stderr,
                             universal_newlines=True,
-                            bufsize=bufsize)
+                            bufsize=bufsize,
+                            **popen_args)
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
@@ -80,8 +85,8 @@ def copytree_virtual(src, dst, file_links=[],
 
     If `file_links` is empty, this is equivalent to `copytree()`.  The rest of
     the arguments are passed as-is to `copytree()`.  Paths in `file_links` must
-    be relative to `src`. If you try to pass `.` in `file_links`, `OSError` will
-    be raised."""
+    be relative to `src`. If you try to pass `.` in `file_links`, `OSError`
+    will be raised."""
 
     # Work with absolute paths
     src = os.path.abspath(src)
@@ -109,15 +114,16 @@ def copytree_virtual(src, dst, file_links=[],
 
         link_targets.add(os.path.abspath(target))
 
-
     if not file_links:
         ignore = None
     else:
-        ignore = lambda dir, contents: \
-                 [ c for c in contents if os.path.join(dir, c) in link_targets ]
+        def ignore(dir, contents):
+            return [c for c in contents
+                    if os.path.join(dir, c) in link_targets]
 
     # Copy to dst ignoring the file_links
-    copytree(src, dst, symlinks, ignore, copy_function, ignore_dangling_symlinks)
+    copytree(src, dst, symlinks, ignore,
+             copy_function, ignore_dangling_symlinks)
 
     # Now create the symlinks
     for f in link_targets:
@@ -156,9 +162,9 @@ def samefile(path1, path2):
     """Check if paths refer to the same file.
 
     If paths exist, this is equivalent to `os.path.samefile()`. If only one of
-    the paths exists, it will be followed if it is a symbolic link and its final
-    target will be compared to the other path. If both paths do not exist, a
-    simple string comparison will be performed (after they have been
+    the paths exists, it will be followed if it is a symbolic link and its
+    final target will be compared to the other path. If both paths do not
+    exist, a simple string comparison will be performed (after they have been
     normalized)."""
 
     # normalise the paths first
