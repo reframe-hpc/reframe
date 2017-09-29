@@ -45,10 +45,10 @@ An example listing of checks is the following:
 The ouput looks like:
 ```
 Command line: ./bin/reframe -l
-ReFrame version: 2.4
+Reframe version: 2.4
 Launched by user: karakasv
 Launched on host: daint101
-ReFrame paths
+Reframe paths
 =============
     Check prefix      : /users/karakasv/Devel/reframe
 (R) Check search path : 'checks/'
@@ -89,10 +89,10 @@ The listing action takes precedence over the execution one, meaning that if you 
 The output of the regression run looks like the following:
 ```
 Command line: ./bin/reframe -c checks/cuda/cuda_checks.py -r
-ReFrame version: 2.5
+Reframe version: 2.5
 Launched by user: karakasv
 Launched on host: daint103
-ReFrame paths
+Reframe paths
 =============
     Check prefix      :
     Check search path : 'checks/cuda/cuda_checks.py'
@@ -346,10 +346,10 @@ This is useful if you want to check the directories that regression will create.
 ```
 ```
 Command line: ./bin/reframe --prefix /foo -l
-ReFrame version: 2.4
+Reframe version: 2.4
 Launched by user: karakasv
 Launched on host: daint101
-ReFrame paths
+Reframe paths
 =============
     Check prefix      : /users/karakasv/Devel/reframe
 (R) Check search path : 'checks/'
@@ -495,10 +495,10 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 ```
 Command line: ./bin/reframe --exec-policy=async -c checks/cuda/cuda_checks.py -r
-ReFrame version: 2.5
+Reframe version: 2.5
 Launched by user: karakasv
 Launched on host: daint103
-ReFrame paths
+Reframe paths
 =============
     Check prefix      :
     Check search path : 'checks/cuda/cuda_checks.py'
