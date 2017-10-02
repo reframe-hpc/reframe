@@ -366,10 +366,10 @@ However, the command line options take always precedence over any default direct
 
 ## Logging
 
-From version 2.4 onward, Reframe supports logging of its actions.
-Reframe creates two files inside the current working directory every time it is run:
+From version 2.4 onward, ReFrame supports logging of its actions.
+ReFrame creates two files inside the current working directory every time it is run:
 * `reframe.out`: This file stores the output of the reframe run as it was printed in the standard output.
-* `reframe.log`: This file stores more detailed of information on Reframe's actions.
+* `reframe.log`: This file stores more detailed of information on ReFrame's actions.
 
 By default, the output in `reframe.log` looks like the following:
 ```
@@ -393,15 +393,15 @@ By default, the output in `reframe.log` looks like the following:
 ```
 Each line starts with a timestamp, the level of this message (`info`, `debug` etc.), the context that the framework is currently executing in (either `reframe` or the name of the check, of which behalf it executes) and, finally, the actual message.
 
-Every time Reframe is run, both the `reframe.out` and `reframe.log` files will be rewritten.
-However, you can ask Reframe to copy them to the output directory before exiting by passing it the `--save-log-files` option.
+Every time ReFrame is run, both the `reframe.out` and `reframe.log` files will be rewritten.
+However, you can ask ReFrame to copy them to the output directory before exiting by passing it the `--save-log-files` option.
 
 ### Configuring logging
 
-You can configure several aspects of logging in Reframe and even how the output will look like.
-Reframe's logging mechanism is built upon Python's [logging](https://docs.python.org/3.5/library/logging.html) framework adding extra logging levels and more formatting capabilities.
+You can configure several aspects of logging in ReFrame and even how the output will look like.
+ReFrame's logging mechanism is built upon Python's [logging](https://docs.python.org/3.5/library/logging.html) framework adding extra logging levels and more formatting capabilities.
 
-Logging in Reframe is configured by the `logging_config` variable in the `reframe/settings.py` file.
+Logging in ReFrame is configured by the `logging_config` variable in the `reframe/settings.py` file.
 The default configuration looks as follows:
 ```
 logging_config = {
@@ -429,14 +429,14 @@ logging_config = {
 ```
 
 Please not that this configuration dictionary is not the same as the one used by Python's logging framework.
-It is a simplified version adapted to the needs of Reframe.
+It is a simplified version adapted to the needs of ReFrame.
 
 The `logging_config` dictionary has two main key entries:
 * `level`: [default: `'INFO'`] This is the lowest level of messages that will be passed down to the different log record handlers.
    Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
-   Reframe defines the following logging levels with a decreasing severity: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `VERBOSE` and `DEBUG`.
-   Note that the level name is *not* case sensitive in Reframe.
-* `handlers`: A dictionary defining the properties of the handlers that are attached to Reframe's logging mechanism.
+   ReFrame defines the following logging levels with a decreasing severity: `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `VERBOSE` and `DEBUG`.
+   Note that the level name is *not* case sensitive in ReFrame.
+* `handlers`: A dictionary defining the properties of the handlers that are attached to ReFrame's logging mechanism.
    The key is either filename or a special character combination denoting standard output (`&1`) or standard error (`&2`).
    You can attach as many handlers as you like.
    The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.
@@ -444,14 +444,14 @@ The `logging_config` dictionary has two main key entries:
 The configurable properties of a log record handler are the following:
 * `level`: [default: `'debug'`] The lowest level of log records that this handler can process.
 * `format`: [default: `'%(message)s'`] Format string for the printout of the log record.
-   Reframe supports all the [format strings](https://docs.python.org/3.5/library/logging.html#logrecord-attributes) from Python's logging library and provides two additional ones:
-     - `check_name`: Prints the name of the regression check on behalf of which Reframe is currently executing.
-       If Reframe is not in the context of regression check, `reframe` will be printed.
+   ReFrame supports all the [format strings](https://docs.python.org/3.5/library/logging.html#logrecord-attributes) from Python's logging library and provides two additional ones:
+     - `check_name`: Prints the name of the regression check on behalf of which ReFrame is currently executing.
+       If ReFrame is not in the context of regression check, `reframe` will be printed.
      - `check_jobid`: Prints the job or process id of the job or process associated to currently executing regression check.
        If a job or process is not yet created, `-1` will be printed.
 * `datefmt`: [default: `'%FT%T'`] The format that will be used for outputting timestamps (i.e., the `%(asctime)s` field).
   Acceptable formats must conform to standard library's [time.strftime()](https://docs.python.org/3.5/library/time.html#time.strftime) function.
-* `append`: [default: `False`] Controls whether Reframe should append to this file or not.
+* `append`: [default: `False`] Controls whether ReFrame should append to this file or not.
   This is ignored for the standard output/error handlers.
 * `timestamp` [default: `None`]: Append a timestamp to this log filename.
   This property may accept any date format as the `datefmt` property.
@@ -462,7 +462,7 @@ The configurable properties of a log record handler are the following:
 
 ReFrame supports an additional level of logging for performance checks specifically, in order to record historical performance data.
 For each performance check, a log file of the form `<check-name>.log` is created under the regression's [log directory](#configuring-regression-directories) where the check's performance is record.
-The default format used for this file is `'[%(asctime)s] %(check_name)s (jobid=%(check_jobid)s): %(message)s'` and Reframe always appends to this file.
+The default format used for this file is `'[%(asctime)s] %(check_name)s (jobid=%(check_jobid)s): %(message)s'` and ReFrame always appends to this file.
 Currently, it is not possible for users to configure performance logging.
 
 This resulting log file looks like the following:
@@ -480,18 +480,18 @@ There is no upper tolerance, since higher values denote higher performance in th
 
 ## Asynchronous execution of regression checks
 
-From version [2.4](https://github.com/eth-cscs/reframe/releases/tag/v2.4), Reframe supports asynchronous execution of the regression checks.
+From version [2.4](https://github.com/eth-cscs/reframe/releases/tag/v2.4), ReFrame supports asynchronous execution of the regression checks.
 This execution policy can be enabled by passing the option `--exec-policy=async` to the command line.
 The default execution policy is `serial` which enforces a sequential execution of the selected regression checks.
 The asynchronous execution policy parallelizes the "run" phase of the checks only.
 The rest of the phases remain sequential.
 
 A limit of concurrent jobs (pending and running) may be configured for each virtual system partition.
-As soon as the concurrency limit of a partition is reached, Reframe will hold the execution of the regression check until a slot is released in that partition.
+As soon as the concurrency limit of a partition is reached, ReFrame will hold the execution of the regression check until a slot is released in that partition.
 
-When executing in asynchronous mode, Reframe's output differs from the sequential execution.
+When executing in asynchronous mode, ReFrame's output differs from the sequential execution.
 The final result of the checks will be printed at the end and additional messages may be printed to indicate that a check is held.
-Here is an example output of Reframe using asynchronous execution policy:
+Here is an example output of ReFrame using asynchronous execution policy:
 
 ```
 Command line: ./bin/reframe --exec-policy=async -c checks/cuda/cuda_checks.py -r
@@ -592,9 +592,9 @@ This can be achieved by setting the `max_jobs` property of a partition in the `s
 
 ## Execution modes
 
-From version [2.5](https://github.com/eth-cscs/reframe/releases/tag/v2.5) onward, Reframe permits users to define different *execution modes* of the framework.
-An execution mode is merely a set of predefined command-line options that will be passed to Reframe when this mode is invoked.
-You can define execution modes per system in the Reframe's configuration file.
+From version [2.5](https://github.com/eth-cscs/reframe/releases/tag/v2.5) onward, ReFrame permits users to define different *execution modes* of the framework.
+An execution mode is merely a set of predefined command-line options that will be passed to ReFrame when this mode is invoked.
+You can define execution modes per system in the ReFrame's configuration file.
 For example, one could define a global `maintenance` execution mode as follows in the `settings.py` file:
 
 ```python
@@ -622,7 +622,7 @@ site_configuration = ReadOnlyField({
 })
 ```
 
-Whenever a user invokes Reframe with `--mode=maintenance`, all of the predefined options of that mode will be passed to the invocation.
+Whenever a user invokes ReFrame with `--mode=maintenance`, all of the predefined options of that mode will be passed to the invocation.
 Note that the framework will expand any shell variables specified inside a mode.
 The user may also pass additional command line options.
 Command line options always override the options set by the mode, so that with the above configuration, the following will reset the execution policy to `serial`:

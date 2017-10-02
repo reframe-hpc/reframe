@@ -477,7 +477,7 @@ ddt --offline aprun ...
 From version 2.5 onward, ReFrame permits the simple addition of custom scheduler launchers. 
 A launcher is basically a program that sets up the distributed execution of another program. Example launchers are `srun` and `mpirun`.
 
-Launchers in Reframe are instances of the `JobLauncher` class and are responsible for setting up the command line to execute a program distributedly. 
+Launchers in ReFrame are instances of the `JobLauncher` class and are responsible for setting up the command line to execute a program distributedly. 
 The command line is the concatenation of (a) the launcher executable (e.g. `mpirun`), (b) fixed launcher options (e.g. `-np <num_tasks>`), (c) user launcher options, (d) the application exectutable and (e) application options; for example: `mpirun -np <num_tasks> -hostfile myhostfile hostname -s`.
 
 A launcher that invokes `mpirun` as in the above example be implemented as follows:

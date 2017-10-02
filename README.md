@@ -25,7 +25,7 @@ The ReFrame framework has been in production at [CSCS](http://www.cscs.ch) since
 
 # Latest release
 
-Reframe is being actively developed at [CSCS](http://www.cscs.ch/). You can always find the latest release [here](https://github.com/eth-cscs/reframe/releases/latest).
+ReFrame is being actively developed at [CSCS](http://www.cscs.ch/). You can always find the latest release [here](https://github.com/eth-cscs/reframe/releases/latest).
 
 
 # Publications
