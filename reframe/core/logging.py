@@ -1,4 +1,6 @@
+import collections.abc
 import logging
+import numbers
 import os
 import logging.handlers
 import sys
@@ -43,7 +45,7 @@ _log_level_values = {
 
 
 def _check_level(level):
-    if isinstance(level, int):
+    if isinstance(level, numbers.Integral):
         ret = level
     elif isinstance(level, str):
         norm_level = level.lower()
@@ -84,7 +86,7 @@ class NullHandler(Handler, logging.NullHandler):
 
 
 def load_from_dict(logging_config):
-    if not isinstance(logging_config, dict):
+    if not isinstance(logging_config, collections.abc.Mapping):
         raise ConfigurationError('logging configuration is not a dict')
 
     level = logging_config.get('level', 'info').lower()
@@ -108,7 +110,7 @@ def _extract_handlers(handlers_dict):
         raise ConfigurationError('no handlers are defined for logger')
 
     for filename, handler_config in handlers_dict.items():
-        if not isinstance(handler_config, dict):
+        if not isinstance(handler_config, collections.abc.Mapping):
             raise ConfigurationError(
                 'handler %s is not a dictionary' % filename
             )

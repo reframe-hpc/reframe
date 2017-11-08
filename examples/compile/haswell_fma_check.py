@@ -2,6 +2,7 @@ import os
 
 from reframe.core.pipeline import RegressionTest
 
+
 class HaswellFmaCheck(RegressionTest):
     def __init__(self, **kwargs):
         super().__init__('haswell_fma_check',
@@ -10,22 +11,22 @@ class HaswellFmaCheck(RegressionTest):
 
         # Uncomment and adjust for the systems/partitions where compilation
         # takes place
-        # self.valid_systems = [ 'compilation_nodes' ]
+        # self.valid_systems = ['compilation_nodes']
 
         # Uncomment and set the valid prog. environments for your site
-        # self.valid_prog_environs = [ 'PrgEnv-cray', 'PrgEnv-gnu',
-        #                              'PrgEnv-intel', 'PrgEnv-pgi' ]
+        # self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+        #                             'PrgEnv-intel', 'PrgEnv-pgi']
 
         self.sourcepath = 'haswell_fma'
         self.sanity_patterns = {
-            'vectorize_fma_c.s' : { 'vfmadd' : [] },
-            'vectorize_fma_cplusplus.s' : { 'vfmadd' : [] },
-            'vectorize_fma_ftn.s' : { 'vfmadd' : [] }
+            'vectorize_fma_c.s': {'vfmadd': []},
+            'vectorize_fma_cplusplus.s': {'vfmadd': []},
+            'vectorize_fma_ftn.s': {'vfmadd': []}
         }
 
         # Uncomment and set the maintainers and/or tags
-        # self.maintainers = [ 'me' ]
-        # self.tags = { 'example' }
+        # self.maintainers = ['me']
+        # self.tags = {'example'}
 
     def compile(self):
         self.current_environ.cflags = '-O3 -S'
@@ -35,4 +36,4 @@ class HaswellFmaCheck(RegressionTest):
 
 
 def _get_checks(**kwargs):
-    return [ HaswellFmaCheck(**kwargs) ]
+    return [HaswellFmaCheck(**kwargs)]

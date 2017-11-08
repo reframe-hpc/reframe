@@ -17,25 +17,24 @@ class VASPBaseCheck(RunOnlyRegressionTest):
         # self.modules = [ 'VASP' ]
 
         self.sanity_patterns = {
-            '-' : {
-                '1 F=\s+(?P<result>\S+)' : [
+            '-': {
+                '1 F=\s+(?P<result>\S+)': [
                     ('result', float,
-                     lambda value, **kwargs: \
+                     lambda value, **kwargs:
                          standard_threshold(
-                             value, (-.85026214E+03, -1e-5, 1e-5))
-                         )
+                             value, (-.85026214E+03, -1e-5, 1e-5)))
                 ],
             }
         }
 
-        self.keep_files = [ 'OUTCAR' ]
+        self.keep_files = ['OUTCAR']
         self.parser = StatefulParser(standard_threshold)
         self.perf_patterns = {
-            'OUTCAR' : {
-                '(?P<perf_section>General timing and accounting)' : [
+            'OUTCAR': {
+                '(?P<perf_section>General timing and accounting)': [
                     ('perf_section', str, self.parser.on)
                 ],
-                'Total CPU time used \(sec\):\s+(?P<perf>\S+)' : [
+                'Total CPU time used \(sec\):\s+(?P<perf>\S+)': [
                     ('perf', float, self.parser.match)
                 ]
             }
@@ -49,8 +48,8 @@ class VASPBaseCheck(RunOnlyRegressionTest):
             # 'gpusys' : {
             #     'perf' : (71.0, None, 0.10)
             # },
-            '*' : {
-                'perf_section' : None,
+            '*': {
+                'perf_section': None,
             }
         }
 
@@ -58,12 +57,11 @@ class VASPBaseCheck(RunOnlyRegressionTest):
         # self.maintainers = [ 'me' ]
         # self.tags = { 'example' }
 
-
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
+    def setup(self, partition, environ, **job_opts):
+        super().setup(partition, environ, **job_opts)
 
         # Needed from VASP to avoid segfaults
-        self.job.pre_run = [ 'ulimit -s unlimited' ]
+        self.job.pre_run = ['ulimit -s unlimited']
 
 
 class VASPGPUCheck(VASPBaseCheck):
@@ -71,7 +69,7 @@ class VASPGPUCheck(VASPBaseCheck):
         super().__init__('vasp_gpu_check', **kwargs)
 
         # Uncomment and adjust for your gpu systems
-        # self.valid_systems = [ 'gpusys' ]
+        # self.valid_systems = ['gpusys']
 
         self.descr = 'VASP GPU check'
 
@@ -79,8 +77,7 @@ class VASPGPUCheck(VASPBaseCheck):
         self.sourcesdir = os.path.join(self.sourcesdir, 'gpu')
 
         self.executable = 'vasp_gpu'
-        self.variables = { 'CRAY_CUDA_MPS': '1' }
-
+        self.variables = {'CRAY_CUDA_MPS': '1'}
 
         # Uncomment and adjust for your site
         # self.num_tasks = 16
@@ -108,4 +105,4 @@ class VASPCPUCheck(VASPBaseCheck):
 
 
 def _get_checks(**kwargs):
-    return [ VASPGPUCheck(**kwargs), VASPCPUCheck(**kwargs) ]
+    return [VASPGPUCheck(**kwargs), VASPCPUCheck(**kwargs)]

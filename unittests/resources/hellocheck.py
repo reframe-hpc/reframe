@@ -15,7 +15,7 @@ class HelloTest(RegressionTest):
         self.sourcepath = 'hello.c'
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = {
-            '-' : {'Hello, World\!' : []}
+            '-': {'Hello, World\!': []}
         }
         self.maintainers = ['VK']
 

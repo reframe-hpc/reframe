@@ -16,10 +16,10 @@ from reframe.core.environments import EnvironmentSnapshot
 class SerialExecutionPolicy(ExecutionPolicy):
     def __init__(self):
         super().__init__()
-        self.test_cases = []
+        self._test_cases = []
 
     def getstats(self):
-        return TestStats(self.test_cases)
+        return TestStats(self._test_cases)
 
     def run_check(self, check, partition, environ):
         self.printer.status(
@@ -27,19 +27,18 @@ class SerialExecutionPolicy(ExecutionPolicy):
             (check.name, partition.fullname, environ.name)
         )
         try:
-            executor = RegressionTestExecutor(check)
-            executor.relax_performance_check = self.relax_performance_check
+            executor = RegressionTestExecutor(check, self.strict_check)
             testcase = TestCase(executor)
 
             executor.setup(
-                system=partition,
+                partition=partition,
                 environ=environ,
-                account=self.sched_account,
-                partition=self.sched_partition,
-                reservation=self.sched_reservation,
-                nodelist=self.sched_nodelist,
-                exclude=self.sched_exclude_nodelist,
-                options=self.sched_options
+                sched_account=self.sched_account,
+                sched_partition=self.sched_partition,
+                sched_reservation=self.sched_reservation,
+                sched_nodelist=self.sched_nodelist,
+                sched_exclude=self.sched_exclude_nodelist,
+                sched_options=self.sched_options
             )
 
             executor.compile()
@@ -63,14 +62,13 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not testcase.failed():
                 testcase.success()
 
-        except (NotImplementedError, KeyboardInterrupt,
-                ReframeFatalError, AssertionError):
+        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
         except:
             testcase.fail(sys.exc_info())
         finally:
-            self.test_cases.append(testcase)
+            self._test_cases.append(testcase)
             self.printer.result(check, partition, environ,
                                 not testcase.failed())
             self.environ_snapshot.load()
@@ -78,14 +76,22 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
 class RunningTestCase:
     def __init__(self, testcase, environ):
-        self.testcase = testcase
-        self.environ  = environ
+        self._testcase = testcase
+        self._environ  = environ
 
         # Test case has finished, but has not been waited for yet
         self.zombie = False
 
     def __repr__(self):
         return debug.repr(self)
+
+    @property
+    def testcase(self):
+        return self._testcase
+
+    @property
+    def environ(self):
+        return self._environ
 
 
 class WaitError(BaseException):
@@ -95,37 +101,44 @@ class WaitError(BaseException):
     associated exception info."""
 
     def __init__(self, running_testcase, exc_info):
-        self.running_case = running_testcase
-        self.exc_info = exc_info
+        self._running_case = running_testcase
+        self._exc_info = exc_info
+
+    @property
+    def running_case(self):
+        return self._running_case
+
+    @property
+    def exc_info(self):
+        return self._exc_info
 
 
 class AsynchronousExecutionPolicy(ExecutionPolicy):
     def __init__(self):
         super().__init__()
         # all currently running cases
-        self.running_cases = []
+        self._running_cases = []
 
         # counts of running cases per partition
-        self.running_cases_counts = {}
+        self._running_cases_counts = {}
 
         # ready cases to be executed per partition
-        self.ready_cases = {}
+        self._ready_cases = {}
 
         # Test case results
-        self.test_cases = []
+        self._test_cases = []
 
         # Job limit per partition
-        self.max_jobs = {}
+        self._max_jobs = {}
 
-        self.logger = getlogger('frontend')
+        self._logger = getlogger('frontend')
 
     def _compile_run_testcase(self, testcase):
         try:
             executor = testcase.executor
             executor.compile()
             executor.run()
-        except (NotImplementedError, KeyboardInterrupt,
-                ReframeFatalError, AssertionError):
+        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
         except:
@@ -159,8 +172,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             if not testcase.failed():
                 testcase.success()
 
-        except (NotImplementedError, KeyboardInterrupt,
-                ReframeFatalError, AssertionError):
+        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
         except:
@@ -174,63 +186,61 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
 
     def _failall(self):
         """Mark all tests as failures"""
-        for rc in self.running_cases:
+        for rc in self._running_cases:
             rc.testcase.fail(sys.exc_info())
 
-        for ready_list in self.ready_cases.values():
+        for ready_list in self._ready_cases.values():
             for rc in ready_list:
                 rc.testcase.fail(sys.exc_info())
 
     def enter_partition(self, c, p):
-        self.running_cases_counts.setdefault(p.fullname, 0)
-        self.ready_cases.setdefault(p.fullname, [])
-        self.max_jobs.setdefault(p.fullname, p.max_jobs)
+        self._running_cases_counts.setdefault(p.fullname, 0)
+        self._ready_cases.setdefault(p.fullname, [])
+        self._max_jobs.setdefault(p.fullname, p.max_jobs)
 
     def getstats(self):
-        return TestStats(self.test_cases)
+        return TestStats(self._test_cases)
 
     def _print_executor_status(self, status, executor):
         checkname = executor.check.name
         partname  = executor.check.current_partition.fullname
         envname   = executor.check.current_environ.name
         msg = '%s on %s using %s' % (checkname, partname, envname)
-        self.logger.debug('%s %s' % (status.lower(), msg))
+        self._logger.debug('%s %s' % (status.lower(), msg))
         self.printer.status(status, msg)
 
     def run_check(self, check, partition, environ):
         try:
-            executor = RegressionTestExecutor(check)
-            executor.relax_performance_check = self.relax_performance_check
+            executor = RegressionTestExecutor(check, self.strict_check)
             testcase = TestCase(executor)
 
             executor.setup(
-                system=partition,
+                partition=partition,
                 environ=environ,
-                account=self.sched_account,
-                partition=self.sched_partition,
-                reservation=self.sched_reservation,
-                nodelist=self.sched_nodelist,
-                exclude=self.sched_exclude_nodelist,
-                options=self.sched_options
+                sched_account=self.sched_account,
+                sched_partition=self.sched_partition,
+                sched_reservation=self.sched_reservation,
+                sched_nodelist=self.sched_nodelist,
+                sched_exclude=self.sched_exclude_nodelist,
+                sched_options=self.sched_options
             )
 
             ready_testcase = RunningTestCase(testcase, EnvironmentSnapshot())
             partname = partition.fullname
-            if self.running_cases_counts[partname] >= partition.max_jobs:
+            if self._running_cases_counts[partname] >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
-                self.logger.debug('reached job limit (%s) for partition %s' %
-                                  (partition.max_jobs, partname))
+                self._logger.debug('reached job limit (%s) for partition %s' %
+                                   (partition.max_jobs, partname))
                 self._update_running_counts()
 
-            if self.running_cases_counts[partname] < partition.max_jobs:
+            if self._running_cases_counts[partname] < partition.max_jobs:
                 # Test's environment is already loaded; no need to be reloaded
                 self._reschedule(ready_testcase, load_env=False)
             else:
                 self._print_executor_status('HOLD', executor)
-                self.ready_cases[partname].append(ready_testcase)
+                self._ready_cases[partname].append(ready_testcase)
 
-        except (NotImplementedError, KeyboardInterrupt,
-                ReframeFatalError, AssertionError):
+        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             if not testcase.failed():
                 # test case failed during setup
                 testcase.fail(sys.exc_info())
@@ -249,24 +259,24 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                 self.printer.result(executor.check, partition, environ,
                                     not testcase.failed())
 
-            self.test_cases.append(testcase)
+            self._test_cases.append(testcase)
             self.environ_snapshot.load()
 
     def _update_running_counts(self):
         """Update the counts of running checks per partition."""
         freed_slots = {}
-        for rc in self.running_cases:
+        for rc in self._running_cases:
             check = rc.testcase.executor.check
             if not rc.zombie and check.poll():
                 # Tests without a job descriptor are considered finished
                 rc.zombie = True
                 partname = check.current_partition.fullname
-                self.running_cases_counts[partname] -= 1
+                self._running_cases_counts[partname] -= 1
                 freed_slots.setdefault(partname, 0)
                 freed_slots[partname] += 1
 
         for p, ns in freed_slots.items():
-            self.logger.debug('freed %s slot(s) on partition %s' % (ns, p))
+            self._logger.debug('freed %s slot(s) on partition %s' % (ns, p))
 
     def _reschedule(self, ready_testcase, load_env=True):
         testcase = ready_testcase.testcase
@@ -280,32 +290,31 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         self._print_executor_status('RUN', executor)
         self._compile_run_testcase(testcase)
         if not testcase.failed():
-            self.running_cases_counts[partname] += 1
-            self.running_cases.append(ready_testcase)
+            self._running_cases_counts[partname] += 1
+            self._running_cases.append(ready_testcase)
 
     def _reschedule_all(self):
         self._update_running_counts()
-        for partname, num_jobs in self.running_cases_counts.items():
+        for partname, num_jobs in self._running_cases_counts.items():
             assert(num_jobs >= 0)
-            num_empty_slots = self.max_jobs[partname] - num_jobs
+            num_empty_slots = self._max_jobs[partname] - num_jobs
             num_schedule_jobs = min([
-                num_empty_slots, len(self.ready_cases[partname])
+                num_empty_slots, len(self._ready_cases[partname])
             ])
 
             if num_schedule_jobs:
-                self.logger.debug('rescheduling %s job(s) on %s' %
-                                  (num_schedule_jobs, partname))
+                self._logger.debug('rescheduling %s job(s) on %s' %
+                                   (num_schedule_jobs, partname))
 
-            for i in range(0, num_schedule_jobs):
-                ready_case = self.ready_cases[partname].pop()
+            for i in range(num_schedule_jobs):
+                ready_case = self._ready_cases[partname].pop()
                 ready_case.environ.load()
                 self._reschedule(ready_case)
 
     def _waitany(self):
         intervals = itertools.cycle(settings.job_state_poll_intervals)
         while True:
-            for i in range(len(self.running_cases)):
-                running = self.running_cases[i]
+            for i, running in enumerate(self._running_cases):
                 testcase = running.testcase
                 executor = testcase.executor
                 running_check = executor.check
@@ -313,8 +322,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                     try:
                         running_check.wait()
                         return running
-                    except (NotImplementedError, KeyboardInterrupt,
-                            ReframeFatalError, AssertionError):
+                    except (KeyboardInterrupt, ReframeFatalError, AssertionError):
                         # These errors should be propagated as-is
                         testcase.fail(sys.exc_info())
                         raise
@@ -323,10 +331,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                         raise WaitError(running, sys.exc_info())
                     finally:
                         # Case is no more running; update our logs
-                        del self.running_cases[i]
+                        del self._running_cases[i]
                         if not running.zombie:
                             partname = running_check.current_partition.fullname
-                            self.running_cases_counts[partname] -= 1
+                            self._running_cases_counts[partname] -= 1
 
                             # This is just for completeness; the case is no
                             # more a zombie, since it has been waited for
@@ -346,13 +354,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             'short single line', 'waiting for spawned checks'
         )
 
-        while len(self.running_cases):
+        while len(self._running_cases):
             try:
                 ready_testcase = self._waitany()
                 self._finalize_testcase(ready_testcase)
                 self._reschedule_all()
-            except (NotImplementedError, KeyboardInterrupt,
-                    ReframeFatalError, AssertionError):
+            except (KeyboardInterrupt, ReframeFatalError, AssertionError):
                 self._failall()
                 raise
             except WaitError:

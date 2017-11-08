@@ -1,3 +1,4 @@
+import itertools
 import os
 import re
 import shutil
@@ -23,80 +24,103 @@ def run_command_inline(argv, funct, *args, **kwargs):
     captured_stdout = StringIO()
     captured_stderr = StringIO()
     sys.argv = argv
-    try:
-        with redirect_stdout(captured_stdout):
-            with redirect_stderr(captured_stderr):
+
+    exitcode = None
+    print(' '.join(argv))
+    with redirect_stdout(captured_stdout):
+        with redirect_stderr(captured_stderr):
+            try:
                 exitcode = funct(*args, **kwargs)
-    except SystemExit as e:
-        exitcode = e.code
-    finally:
-        # restore environment and command-line arguments
-        environ_save.load()
-        sys.argv = argv_save
-        return (exitcode,
-                captured_stdout.getvalue(),
-                captured_stderr.getvalue())
+            except SystemExit as e:
+                exitcode = e.code
+            finally:
+                # restore environment and command-line arguments
+                environ_save.load()
+                sys.argv = argv_save
+
+    return (exitcode,
+            captured_stdout.getvalue(),
+            captured_stderr.getvalue())
 
 
 class TestFrontend(unittest.TestCase):
+    @property
+    def argv(self):
+        ret = ['./bin/reframe', '--prefix', self.prefix, '--nocolor']
+        if self.mode:
+            ret += ['--mode', self.mode]
+
+        if self.system:
+            ret += ['--system', self.system]
+
+        ret += itertools.chain(*(['-c', c] for c in self.checkpath))
+        ret += itertools.chain(*(['-p', e] for e in self.environs))
+
+        if self.local:
+            ret += ['--force-local']
+
+        if self.action == 'run':
+            ret += ['-r']
+        elif self.action == 'list':
+            ret += ['-l']
+        elif self.action == 'help':
+            ret += ['-h']
+
+        ret += self.more_options
+        return ret
+
     def setUp(self):
-        self.prefix     = tempfile.mkdtemp(dir='unittests')
-        self.executable = './reframe.py'
-        self.sysopt     = 'generic:login'
-        self.checkfile  = 'unittests/resources/hellocheck.py'
-        self.prgenv     = 'builtin-gcc'
-        self.cmdstr     = '{executable} {checkopt} ' \
-                          '--prefix {prefix} {prgenvopt} '    \
-                          '--nocolor {action} ' \
-                          '{sysopt} {local} {options}'
-        self.options    = []
-        self.action     = '-r'
-        self.local      = True
+        self.prefix = tempfile.mkdtemp(dir='unittests')
+        self.system = 'generic:login'
+        self.checkpath = ['unittests/resources/hellocheck.py']
+        self.environs  = ['builtin-gcc']
+        self.local  = True
+        self.action = 'run'
+        self.more_options = []
+        self.mode = None
 
-        # needed for enabling/disabling tests based on the current system
-        self.system = autodetect_system(SiteConfiguration())
+        # Monkey patch logging configuration
         self.logfile = os.path.join(self.prefix, 'reframe.log')
-
-        settings.logging_config = {
-            'level': 'INFO',
+        settings._logging_config = {
+            'level': 'DEBUG',
             'handlers': {
-                self.logfile : {
-                    'level'     : 'DEBUG',
-                    'format'    : '[%(asctime)s] %(levelname)s: '
+                self.logfile: {
+                    'level': 'DEBUG',
+                    'format': '[%(asctime)s] %(levelname)s: '
                     '%(check_name)s: %(message)s',
-                    'datefmt'   : '%FT%T',
-                    'append'    : False,
+                    'datefmt': '%FT%T',
+                    'append': False,
                 },
                 '&1': {
-                    'level'     : 'INFO',
-                    'format'    : '%(message)s'
+                    'level': 'INFO',
+                    'format': '%(message)s'
                 },
+            }
+        }
+
+        # Monkey patch site configuration setting a mode
+        settings._site_configuration['modes'] = {
+            '*': {
+                'unittest': [
+                    '-c', 'unittests/resources/hellocheck.py',
+                    '-p', 'builtin-gcc',
+                    '--force-local'
+                ]
             }
         }
 
     def _run_reframe(self):
         import reframe.frontend.cli as cli
+        return run_command_inline(self.argv, cli.main)
 
-        argv = self.cmdstr.format(
-            executable=self.executable,
-            checkopt=('-c %s' % self.checkfile) if self.checkfile else '',
-            prefix=self.prefix,
-            prgenvopt=('-p %s' % self.prgenv) if self.prgenv else '',
-            action=self.action,
-            local='--force-local' if self.local else '',
-            options=' '.join(self.options),
-            sysopt=('--system %s' % self.sysopt) if self.sysopt else ''
-        ).split()
-
-        return run_command_inline(argv, cli.main)
-
-    def _stage_exists(self, check_name, partitions, prgenv_name):
+    def _stage_exists(self, check_name, partitions, environs):
         stagedir = os.path.join(self.prefix, 'stage')
 
         for p in partitions:
-            if not os.path.exists(os.path.join(
-                    stagedir, p, check_name, prgenv_name)):
-                return False
+            for e in environs:
+                path = os.path.join(stagedir, p, check_name, e)
+                if not os.path.exists(path):
+                    return False
 
         return True
 
@@ -116,8 +140,8 @@ class TestFrontend(unittest.TestCase):
             os.path.join(outputdir, os.path.basename(self.logfile))))
 
     def test_check_success(self):
-        self.options = ['--save-log-files']
-        returncode, stdout, stderr = self._run_reframe()
+        self.more_options = ['--save-log-files']
+        returncode, stdout, _ = self._run_reframe()
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
@@ -131,27 +155,37 @@ class TestFrontend(unittest.TestCase):
         partition = system_with_scheduler(None)
 
         self.local = False
-        self.sysopt = partition.fullname
+        self.system = partition.fullname
 
         # pick up the programming environment of the partition
-        self.prgenv = partition.environs[0].name
+        self.environs = [partition.environs[0].name]
 
-        returncode, stdout, stderr = self._run_reframe()
+        returncode, stdout, _ = self._run_reframe()
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
 
     def test_check_failure(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--tag BadSetupCheck']
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'BadSetupCheck']
+
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('FAILED', stdout)
+        self.assertNotEqual(returncode, 0)
+
+    def test_check_setup_failure(self):
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'BadSetupCheckEarlyNonLocal']
+        self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stderr)
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
 
     def test_check_sanity_failure(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--tag SanityFailureCheck']
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'SanityFailureCheck']
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('FAILED', stdout)
@@ -160,11 +194,11 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(returncode, 0)
         self.assertTrue(self._stage_exists('SanityFailureCheck',
-                                           ['login'], self.prgenv))
+                                           ['login'], self.environs))
 
     def test_performance_check_failure(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--tag PerformanceFailureCheck']
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'PerformanceFailureCheck']
         returncode, stdout, stderr = self._run_reframe()
 
         self.assertIn('FAILED', stdout)
@@ -173,35 +207,20 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('PerformanceFailureCheck',
-                                           ['login'], self.prgenv))
+                                           ['login'], self.environs))
         self.assertTrue(self._perflog_exists('PerformanceFailureCheck',
                                              ['login']))
 
-    def test_custom_performance_check_failure(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--tag CustomPerformanceFailureCheck']
-
-        returncode, stdout, stderr = self._run_reframe()
-        self.assertIn('FAILED', stdout)
-
-        # This is a normal failure, it should not raise any exception
-        self.assertNotIn('Traceback', stderr)
-        self.assertNotEqual(0, returncode)
-
-        self.assertTrue(self._stage_exists('CustomPerformanceFailureCheck',
-                                           ['login'], self.prgenv))
-        self.assertNotIn('Check log file:', stdout)
-
     def test_skip_system_check_option(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--skip-system-check', '--tag NoSystemCheck']
-        returncode, stdout, stderr = self._run_reframe()
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['--skip-system-check', '-t', 'NoSystemCheck']
+        returncode, stdout, _ = self._run_reframe()
         self.assertIn('PASSED', stdout)
 
     def test_skip_prgenv_check_option(self):
-        self.checkfile = 'unittests/resources/frontend_checks.py'
-        self.options = ['--skip-prgenv-check', '--tag NoPrgEnvCheck']
-        returncode, stdout, stderr = self._run_reframe()
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['--skip-prgenv-check', '-t', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
 
@@ -209,18 +228,18 @@ class TestFrontend(unittest.TestCase):
         # This test will effectively load all the tests in the checks path and
         # will force a syntactic and runtime check at least for the constructor
         # of the checks
-        self.action = '-l'
-        self.options = ['--save-log-files']
-        self.checkfile = None
-        returncode, stdout, stderr = self._run_reframe()
+        self.action = 'list'
+        self.more_options = ['--save-log-files']
+        self.checkpath = []
+        returncode, *_ = self._run_reframe()
 
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
 
     def test_unknown_system(self):
-        self.action = '-l'
-        self.sysopt = 'foo'
-        self.checkfile = None
+        self.action = 'list'
+        self.system = 'foo'
+        self.checkpath = []
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
@@ -228,25 +247,26 @@ class TestFrontend(unittest.TestCase):
 
     def test_sanity_of_optconfig(self):
         # Test the sanity of the command line options configuration
-        self.action = '-h'
-        self.checkfile = None
-        returncode, stdout, stderr = self._run_reframe()
+        self.action = 'help'
+        self.checkpath = []
+        returncode, *_ = self._run_reframe()
+        self.assertEqual(0, returncode)
 
     def test_checkpath_recursion(self):
-        self.action = '-l'
-        self.checkfile = None
-        returncode, stdout, stderr = self._run_reframe()
+        self.action = 'list'
+        self.checkpath = []
+        returncode, stdout, _ = self._run_reframe()
         num_checks_default = re.search(
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
 
-        self.checkfile = 'checks/'
-        self.options = ['-R']
-        returncode, stdout, stderr = self._run_reframe()
+        self.checkpath = ['checks/']
+        self.more_options = ['-R']
+        returncode, stdout, _ = self._run_reframe()
         num_checks_in_checkdir = re.search(
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual(num_checks_in_checkdir, num_checks_default)
 
-        self.options = []
+        self.more_options = []
         returncode, stdout, stderr = self._run_reframe()
         num_checks_in_checkdir = re.search(
             'Found (\d+) check', stdout, re.MULTILINE).group(1)
@@ -254,15 +274,27 @@ class TestFrontend(unittest.TestCase):
 
     def test_same_output_stage_dir(self):
         output_dir = os.path.join(self.prefix, 'foo')
-        self.options = ('-o %s -s %s' % (output_dir, output_dir)).split()
-        returncode, stdout, stderr = self._run_reframe()
+        self.more_options = ['-o', output_dir, '-s', output_dir]
+        returncode, *_ = self._run_reframe()
         self.assertEqual(1, returncode)
 
         # retry with --keep-stage-files
-        self.options.append('--keep-stage-files')
-        returncode, stdout, stderr = self._run_reframe()
+        self.more_options.append('--keep-stage-files')
+        returncode, *_ = self._run_reframe()
         self.assertEqual(0, returncode)
         self.assertTrue(os.path.exists(output_dir))
+
+    def test_execution_modes(self):
+        self.checkpath = []
+        self.environs  = []
+        self.local = False
+        self.mode = 'unittest'
+
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stderr)
+        self.assertNotIn('FAILED', stdout)
+        self.assertIn('PASSED', stdout)
+        self.assertIn('Ran 1 test case', stdout)
 
     def tearDown(self):
         shutil.rmtree(self.prefix)

@@ -19,24 +19,24 @@ TEST_SITE_CONFIG = {
             'partitions': {
                 'login': {
                     'scheduler': 'local',
-                    'modules'  : [],
-                    'access'   : [],
+                    'modules': [],
+                    'access': [],
                     'resources': {},
-                    'environs' : ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
-                    'descr'    : 'Login nodes'
+                    'environs': ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
+                    'descr': 'Login nodes'
                 },
 
                 'gpu': {
                     'scheduler': 'nativeslurm',
-                    'modules'  : [],
+                    'modules': [],
                     'resources': {
                         'num_gpus_per_node': [
                             '--gres=gpu:{num_gpus_per_node}'
                         ],
                     },
-                    'access'  : [],
+                    'access': [],
                     'environs': ['PrgEnv-gnu', 'builtin-gcc'],
-                    'descr'   : 'GPU partition',
+                    'descr': 'GPU partition',
                 }
             }
         }
@@ -47,7 +47,7 @@ TEST_SITE_CONFIG = {
             'PrgEnv-gnu': {
                 'type': 'ProgEnvironment',
                 'modules': ['PrgEnv-gnu'],
-                'cc' : 'gcc',
+                'cc': 'gcc',
                 'cxx': 'g++',
                 'ftn': 'gfortran',
             },
@@ -63,15 +63,30 @@ TEST_SITE_CONFIG = {
                 'modules': ['PrgEnv-cray'],
             },
 
-            'builtin-gcc' : {
+            'builtin-gcc': {
                 'type': 'ProgEnvironment',
-                'cc'  : 'gcc',
-                'cxx' : 'g++',
-                'ftn' : 'gfortran',
+                'cc': 'gcc',
+                'cxx': 'g++',
+                'ftn': 'gfortran',
             }
         }
     }
 }
+
+
+def get_setup_config():
+    """Get a regression tests setup configuration.
+
+    Returns a tuple of system, partition and environment that you can pass to
+    `RegressionTest`'s setup method.
+    """
+    site_config = SiteConfiguration()
+    site_config.load_from_dict(TEST_SITE_CONFIG)
+
+    system    = site_config.systems['testsys']
+    partition = system.partition('gpu')
+    environ   = partition.environment('builtin-gcc')
+    return (system, partition, environ)
 
 
 def force_remove_file(filename):

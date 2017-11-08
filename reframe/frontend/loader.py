@@ -3,6 +3,7 @@
 #
 
 import ast
+import collections.abc
 import os
 import logging
 import sys
@@ -34,9 +35,9 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 class RegressionCheckLoader:
     def __init__(self, load_path, prefix='', recurse=False):
-        self.load_path = load_path
-        self.prefix = prefix or ''
-        self.recurse = recurse
+        self._load_path = load_path
+        self._prefix = prefix or ''
+        self._recurse = recurse
 
     def __repr__(self):
         return debug.repr(self)
@@ -67,6 +68,18 @@ class RegressionCheckLoader:
         validator.visit(source_tree)
         return validator.valid
 
+    @property
+    def load_path(self):
+        return self._load_path
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @property
+    def recurse(self):
+        return self._recurse
+
     def load_from_module(self, module, **check_args):
         """Load user checks from module.
 
@@ -77,7 +90,7 @@ class RegressionCheckLoader:
         # We can safely call `_get_checks()` here, since the source file is
         # already validated
         candidates = module._get_checks(**check_args)
-        if isinstance(candidates, list):
+        if isinstance(candidates, collections.abc.Sequence):
             return [c for c in candidates if isinstance(c, RegressionTest)]
         else:
             return []
@@ -113,16 +126,16 @@ class RegressionCheckLoader:
         return checks
 
     def load_all(self, **check_args):
-        """Load all checks in self.load_path.
+        """Load all checks in self._load_path.
 
-        If a self.prefix exists, it will be prepended to each path."""
+        If a prefix exists, it will be prepended to each path."""
         checks = []
-        for d in self.load_path:
-            d = os.path.join(self.prefix, d)
+        for d in self._load_path:
+            d = os.path.join(self._prefix, d)
             if not os.path.exists(d):
                 continue
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self.recurse,
+                checks.extend(self.load_from_dir(d, self._recurse,
                                                  **check_args))
             else:
                 checks.extend(self.load_from_file(d, **check_args))
@@ -132,17 +145,25 @@ class RegressionCheckLoader:
 
 class SiteConfiguration:
     """Holds the configuration of systems and environments"""
-    modes = ScopedDictField('modes', (list, str))
+    _modes = ScopedDictField('_modes', (list, str))
 
     def __init__(self):
-        self.systems = {}
-        self.modes = ScopedDict({})
+        self._systems = {}
+        self._modes = {}
 
     def __repr__(self):
         return debug.repr(self)
 
+    @property
+    def systems(self):
+        return self._systems
+
+    @property
+    def modes(self):
+        return self._modes
+
     def load_from_dict(self, site_config):
-        if not isinstance(site_config, dict):
+        if not isinstance(site_config, collections.abc.Mapping):
             raise ConfigurationError('site configuration is not a dict')
 
         sysconfig = site_config.get('systems', None)
@@ -163,10 +184,10 @@ class SiteConfiguration:
                                      'is not properly formatted')
 
         # Convert modes to a `ScopedDict`; note that `modes` will implicitly
-        # converted to a scoped dict here, since `self.modes` is a
+        # converted to a scoped dict here, since `self._models` is a
         # `ScopedDictField`.
         try:
-            self.modes = modes
+            self._modes = modes
         except TypeError:
             raise ConfigurationError('modes configuration '
                                      'is not properly formatted')
@@ -180,7 +201,7 @@ class SiteConfiguration:
                     "could not find a definition for `%s'" % name
                 )
 
-            if not isinstance(config, dict):
+            if not isinstance(config, collections.abc.Mapping):
                 raise ConfigurationError(
                     "config for `%s' is not a dictionary" % name
                 )
@@ -192,64 +213,84 @@ class SiteConfiguration:
                 raise ConfigurationError("no type specified for `%s'" % name)
 
         # Populate the systems directory
-        for sysname, config in sysconfig.items():
+        for sys_name, config in sysconfig.items():
             if not isinstance(config, dict):
                 raise ConfigurationError(
                     'system configuration is not a dictionary'
                 )
 
-            if not isinstance(config['partitions'], dict):
+            if not isinstance(config['partitions'], collections.abc.Mapping):
                 raise ConfigurationError('partitions must be a dictionary')
 
-            system = System(sysname)
-            system.descr     = config.get('descr', sysname)
-            system.hostnames = config.get('hostnames', [])
+            sys_descr     = config.get('descr', sys_name)
+            sys_hostnames = config.get('hostnames', [])
 
-            # prefix must always be defined; the rest default to None, so as to
-            # be set from the ResourcesManager
-            system.prefix    = config.get('prefix', '.')
-            system.stagedir  = config.get('stagedir', None)
-            system.outputdir = config.get('outputdir', None)
-            system.logdir    = config.get('logdir', None)
+            # The System's constructor provides also reasonable defaults, but
+            # since we are going to set them anyway from the values provided by
+            # the configuration, we should set default values here. The stage,
+            # output and log directories default to None, since they are
+            # going to be set dynamically by the ResourcesManager
+            sys_prefix    = config.get('prefix', '.')
+            sys_stagedir  = config.get('stagedir', None)
+            sys_outputdir = config.get('outputdir', None)
+            sys_logdir    = config.get('logdir', None)
+            sys_resourcesdir = config.get('resourcesdir', '.')
 
-            # expand variables
-            if system.prefix:
-                system.prefix = os.path.expandvars(system.prefix)
+            # Expand variables
+            if sys_prefix:
+                sys_prefix = os.path.expandvars(sys_prefix)
 
-            if system.stagedir:
-                system.stagedir = os.path.expandvars(system.stagedir)
+            if sys_stagedir:
+                sys_stagedir = os.path.expandvars(sys_stagedir)
 
-            if system.outputdir:
-                system.outputdir = os.path.expandvars(system.outputdir)
+            if sys_outputdir:
+                sys_outputdir = os.path.expandvars(sys_outputdir)
 
-            if system.logdir:
-                system.logdir = os.path.expandvars(system.logdir)
+            if sys_logdir:
+                sys_logdir = os.path.expandvars(sys_logdir)
 
-            for partname, partconfig in config.get('partitions', {}).items():
-                if not isinstance(partconfig, dict):
+            if sys_resourcesdir:
+                sys_resourcesdir = os.path.expandvars(sys_resourcesdir)
+
+            system = System(name=sys_name,
+                            descr=sys_descr,
+                            hostnames=sys_hostnames,
+                            prefix=sys_prefix,
+                            stagedir=sys_stagedir,
+                            outputdir=sys_outputdir,
+                            logdir=sys_logdir,
+                            resourcesdir=sys_resourcesdir)
+            for part_name, partconfig in config.get('partitions', {}).items():
+                if not isinstance(partconfig, collections.abc.Mapping):
                     raise ConfigurationError(
                         "partition `%s' not configured "
-                        "as a dictionary" % partname
+                        "as a dictionary" % part_name
                     )
 
-                partition = SystemPartition(partname, system)
-                partition.descr = partconfig.get('descr', partname)
-                partition.scheduler = partconfig.get('scheduler', 'local')
-                partition.local_env = Environment(
-                    name='__rfm_env_%s' % partname,
+                part_descr = partconfig.get('descr', part_name)
+                part_scheduler = partconfig.get('scheduler', 'local')
+                part_local_env = Environment(
+                    name='__rfm_env_%s' % part_name,
                     modules=partconfig.get('modules', []),
                     variables=partconfig.get('variables', {})
                 )
-                partition.environs = [
-                    create_env(sysname, partname, e)
+                part_environs = [
+                    create_env(sys_name, part_name, e)
                     for e in partconfig.get('environs', [])
                 ]
-                partition.access = partconfig.get('access', [])
-                partition.resources = partconfig.get('resources', {})
-                partition.max_jobs = partconfig.get('max_jobs', 1)
-                system.partitions.append(partition)
+                part_access = partconfig.get('access', [])
+                part_resources = partconfig.get('resources', {})
+                part_max_jobs = partconfig.get('max_jobs', 1)
+                system.add_partition(SystemPartition(name=part_name,
+                                                     descr=part_descr,
+                                                     scheduler=part_scheduler,
+                                                     access=part_access,
+                                                     environs=part_environs,
+                                                     resources=part_resources,
+                                                     local_env=part_local_env,
+                                                     max_jobs=part_max_jobs))
 
-            self.systems[sysname] = system
+            self._systems[sys_name] = system
 
 
 def autodetect_system(site_config):

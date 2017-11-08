@@ -2,41 +2,67 @@
 # Useful descriptors for advanced operations on fields
 #
 
+import collections.abc
 import copy
+import numbers
 import re
+
 import reframe.core.debug as debug
 
-from reframe.core.exceptions import FieldError
+from collections import UserDict
+from reframe.core.exceptions import FieldError, user_deprecation_warning
 
 
 class Field:
     """Base class for fields"""
 
     def __init__(self, fieldname):
-        self.name = fieldname
+        self._name = fieldname
 
     def __repr__(self):
         return debug.repr(self)
 
     def __get__(self, obj, objtype):
-        return obj.__dict__[self.name]
+        return obj.__dict__[self._name]
 
     def __set__(self, obj, value):
-        obj.__dict__[self.name] = value
+        obj.__dict__[self._name] = value
 
 
 class ForwardField:
     """Simple field that forwards set/get to a target object."""
 
     def __init__(self, obj, attr):
-        self.target = obj
-        self.attr = attr
+        self._target = obj
+        self._attr = attr
 
     def __get__(self, obj, objtype):
-        return self.target.__dict__[self.attr]
+        return self._target.__dict__[self._attr]
 
     def __set__(self, obj, value):
-        self.target.__dict__[self.attr] = value
+        self._target.__dict__[self._attr] = value
+
+
+class AnyField(Field):
+    """Store a value that may be validated by distinct fields."""
+
+    def __init__(self, fieldname, fields, allow_none=False):
+        super().__init__(fieldname)
+        self._fields = [fieldtype(self._name, *args, allow_none=allow_none)
+                        for fieldtype, *args in fields]
+
+    def __set__(self, obj, value):
+        # Try the field descriptors in turn until one validates the input
+        for f in self._fields:
+            try:
+                f.__set__(obj, value)
+                break
+            except FieldError:
+                pass
+        else:
+            # All field set attemps have failed
+            # FIXME: This is not a very informative message.
+            raise FieldError('attempt to set a field of different type.')
 
 
 class TypedField(Field):
@@ -44,15 +70,15 @@ class TypedField(Field):
 
     def __init__(self, fieldname, fieldtype, allow_none=False):
         super().__init__(fieldname)
-        self.fieldtype = fieldtype
-        self.allow_none = allow_none
+        self._fieldtype = fieldtype
+        self._allow_none = allow_none
 
     def __set__(self, obj, value):
-        if ((value is not None or not self.allow_none) and
-            not isinstance(value, self.fieldtype)):
+        if ((value is not None or not self._allow_none) and
+            not isinstance(value, self._fieldtype)):
             raise FieldError('attempt to set a field of different type. '
                              'Required: %s, got: %s' %
-                             (self.fieldtype, value.__class__.__name__))
+                             (self._fieldtype, type(value).__name__))
 
         super().__set__(obj, value)
 
@@ -73,23 +99,23 @@ class AggregateTypeField(Field):
 
     def __init__(self, fieldname, typespec, allow_none=False):
         super().__init__(fieldname)
-        self.typespec = typespec
-        self.allow_none = allow_none
+        self._typespec = typespec
+        self._allow_none = allow_none
 
     def __set__(self, obj, value):
         if not self._check_type_ext(value):
             raise FieldError('attempt to set an aggregate field '
                              'of different type. Required typespec: %s' %
-                             str(self.typespec))
+                             str(self._typespec))
 
         super().__set__(obj, value)
 
     def _check_type_ext(self, value):
         # Checks also value against None if that's allowed
-        if value is None and self.allow_none:
+        if value is None and self._allow_none:
             return True
 
-        return self._check_type(value, self.typespec)
+        return self._check_type(value, self._typespec)
 
     def _extract_typeinfo(self, typespec):
         """Check if a typespec is of the form (type, None)
@@ -125,7 +151,7 @@ class AggregateTypeField(Field):
         if not isinstance(value, container_type):
             return False
 
-        if container_type in [tuple, list]:
+        if issubclass(container_type, collections.abc.Sequence):
             if isinstance(element_type, tuple) and len(element_type) == 1:
                 # non-uniformly typed container
                 elem_types = element_type[0]
@@ -141,12 +167,12 @@ class AggregateTypeField(Field):
                     if not self._check_type(v, element_type):
                         return False
 
-        elif container_type in [set, frozenset]:
+        elif issubclass(container_type, collections.abc.Set):
             for v in value:
                 if not self._check_type(v, element_type):
                     return False
 
-        elif container_type == dict:
+        elif issubclass(container_type, collections.abc.Mapping):
             if len(element_type) != 2:
                 raise FieldError('invalid mapping typespec: %s' %
                                  str(element_type))
@@ -213,7 +239,7 @@ class IntegerField(TypedField):
     """Stores an integer object"""
 
     def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, int, allow_none)
+        super().__init__(fieldname, numbers.Integral, allow_none)
 
 
 class BooleanField(TypedField):
@@ -226,22 +252,26 @@ class BooleanField(TypedField):
 class TypedListField(AggregateTypeField):
     """Stores a list of objects of the same type"""
 
-    def __init__(self, fieldname, elemtype):
-        super().__init__(fieldname, (list, elemtype))
+    def __init__(self, fieldname, elemtype, allow_none=False):
+        super().__init__(
+            fieldname, (collections.abc.Sequence, elemtype), allow_none)
 
 
 class TypedSetField(AggregateTypeField):
     """Stores a list of objects of the same type"""
 
-    def __init__(self, fieldname, elemtype):
-        super().__init__(fieldname, (set, elemtype))
+    def __init__(self, fieldname, elemtype, allow_none=False):
+        super().__init__(
+            fieldname, (collections.abc.Set, elemtype), allow_none)
 
 
 class TypedDictField(AggregateTypeField):
     """Stores a list of objects of the same type"""
 
-    def __init__(self, fieldname, keytype, valuetype):
-        super().__init__(fieldname, (dict, (keytype, valuetype)))
+    def __init__(self, fieldname, keytype, valuetype, allow_none=False):
+        super().__init__(fieldname,
+                         (collections.abc.Mapping, (keytype, valuetype)),
+                         allow_none)
 
 
 class CopyOnWriteField(Field):
@@ -256,10 +286,10 @@ class ReadOnlyField(Field):
 
     def __init__(self, value):
         super().__init__('_readonly_')
-        self.value = value
+        self._value = value
 
     def __get__(self, obj, objtype):
-        return self.value
+        return self._value
 
     def __set__(self, obj, value):
         raise FieldError('attempt to set a read-only variable')
@@ -274,24 +304,29 @@ class SanityPatternField(AggregateTypeField):
 
     def __init__(self, fieldname, allow_none=False):
         # The type of the outer dictionary
-        self.outer_typespec = (dict, (str, object))
+        self._outer_typespec = (dict, (str, object))
 
         # The type of the inner dictionary, excluding the special '\e' entries
-        self.inner_typespec = (dict, (
+        self._inner_typespec = (dict, (
             str, (list, (tuple, ((str, callable, callable),))))
         )
-        super().__init__(fieldname, self.inner_typespec, allow_none)
+        super().__init__(fieldname, self._inner_typespec, allow_none)
 
     def __set__(self, obj, value):
-        if value is None and self.allow_none:
+        if value is None and self._allow_none:
             # Call directly Field's __set__() method; no need for further type
             # checking
             Field.__set__(self, obj, value)
             return
 
+        user_deprecation_warning(
+            'This syntax for sanity and performance checking is deprecated. '
+            'Please have a look in the ReFrame tutorial.'
+        )
+
         # Check first the outer dictionary
-        if not self._check_type(value, self.outer_typespec):
-            raise FieldError('attempt to set a sanity pattern field'
+        if not self._check_type(value, self._outer_typespec):
+            raise FieldError('attempt to set a sanity pattern field '
                              'with an invalid dictionary object')
 
         # For the inner dictionary, we need special treatment for the '\e'
@@ -309,7 +344,7 @@ class SanityPatternField(AggregateTypeField):
                 del v['\e']
 
             try:
-                if not self._check_type(v, self.inner_typespec):
+                if not self._check_type(v, self._inner_typespec):
                     raise FieldError('attempt to set a sanity pattern field'
                                      'with an invalid dictionary object')
             finally:
@@ -346,7 +381,7 @@ class TimerField(AggregateTypeField):
 
 
 # FIXME: This is not probably the best place for this to go
-class ScopedDict(dict):
+class ScopedDict(UserDict):
     """This is a special dict that imposes scopes on its keys.
 
     When a key is not found it will be searched up in the scope hierarchy."""
@@ -357,8 +392,8 @@ class ScopedDict(dict):
         Keyword arguments:
         mapping -- A two-level mapping of the form
                    mapping = {
-                        scope1: { k1 : v1, k2 : v2 },
-                        scope2: { k1 : v1, k3 : v3 }
+                        scope1: {k1: v1, k2: v2},
+                        scope2: {k1: v1, k3: v3}
                    }
 
                    Both the scope keys and the actual dictionary keys must be
@@ -366,76 +401,95 @@ class ScopedDict(dict):
 
         scope_sep -- character that separates the scopes
         global_scope -- key to look up for the global scope"""
-        if not isinstance(mapping, dict):
-            raise TypeError('attempt to initialize a scoped dict '
-                            'with an improper type')
+        super().__init__(mapping)
+        self._scope_sep = scope_sep
+        self._global_scope = global_scope
 
-        for k, v in mapping.items():
-            self._check_scope_type(k, v)
+    @property
+    def scope_separator(self):
+        return self._scope_sep
 
-        # We need deep copy here, since mapping is a two-level dictionary
-        self.scopes = copy.deepcopy(mapping)
-        self.scope_sep = scope_sep
-        self.global_scope = global_scope
+    @property
+    def global_scope_mark(self):
+        return self._global_scope
+
+    def update(self, other):
+        if not isinstance(other, collections.abc.Mapping):
+            raise TypeError('ScopedDict may only be initialized '
+                            'from a mapping type')
+
+        for scope, scope_dict in other.items():
+            self._check_scope_type(scope, scope_dict)
+            self.data.setdefault(scope, {})
+            for k, v in scope_dict.items():
+                self.data[scope][k] = v
 
     def __str__(self):
-        # just print the internal dictionary
-        return str(self.scopes)
+        # just return the internal dictionary
+        return str(self.data)
 
     def _check_scope_type(self, key, value):
         if not isinstance(key, str):
-            raise TypeError('scope keys in a scoped dict must be strings')
+            raise TypeError('scope keys in a ScopedDict must be strings')
 
-        if not isinstance(value, dict):
-            raise TypeError('scope namespaces must be dictionaries')
+        if not isinstance(value, collections.abc.Mapping):
+            raise TypeError('scope namespaces must be mappings')
 
         for k in value.keys():
             if not isinstance(k, str):
                 raise TypeError('keys must be strings')
 
-    def add_scopes(self, scopes={}):
-        if not isinstance(scopes, dict):
-            raise TypeError('scopes is not a dictionary')
-
-        for k, v in scopes.items():
-            self._check_scope_type(k, v)
-            if k in self.scopes:
-                raise KeyError(str(k))
-
-            self.scopes[k] = copy.deepcopy(v)
-
     def _keyinfo(self, key):
-        key_parts = key.rsplit(self.scope_sep, maxsplit=1)
+        key_parts = key.rsplit(self._scope_sep, maxsplit=1)
         if len(key_parts) == 2:
             return (key_parts[0], key_parts[1])
         else:
-            return (self.global_scope, key_parts[0])
+            return (self._global_scope, key_parts[0])
 
     def _parent_scope(self, scope):
         scope_parts = scope.rsplit(':', maxsplit=1)[:-1]
-        return scope_parts[0] if scope_parts else self.global_scope
+        return scope_parts[0] if scope_parts else self._global_scope
 
-    def __getitem__(self, key):
+    def _lookup(self, key):
         scope, lookup_key = self._keyinfo(key)
-        while scope != self.global_scope:
-            if scope in self.scopes and lookup_key in self.scopes[scope]:
-                return self.scopes[scope][lookup_key]
+        while scope != self._global_scope:
+            if scope in self.data and lookup_key in self.data[scope]:
+                return self.data[scope][lookup_key]
 
             scope = self._parent_scope(scope)
 
         # last chance to find the key
-        if scope in self.scopes and lookup_key in self.scopes[scope]:
-            return self.scopes[scope][lookup_key]
+        if scope in self.data and lookup_key in self.data[scope]:
+            return self.data[scope][lookup_key]
+
+        raise KeyError(str(key))
+
+    def __iter__(self):
+        for scope, scope_dict in self.data.items():
+            for k in scope_dict.keys():
+                yield self._scope_sep.join([scope, k])
+
+    def __contains__(self, key):
+        try:
+            self._lookup(key)
+        except KeyError:
+            return False
         else:
+            return True
+
+    def __getitem__(self, key):
+        try:
+            return self._lookup(key)
+        except KeyError:
             return self.__missing__(key)
 
     def __setitem__(self, key, value):
         scope, lookup_key = self._keyinfo(key)
-        if scope not in self.scopes:
+        if scope not in self.data:
             # create the scope if does not exist
-            self.scopes[scope] = {}
+            self.data[scope] = {}
 
-        self.scopes[scope][lookup_key] = value
+        self.data[scope][lookup_key] = value
 
     def __delitem__(self, key):
         """Deletes either a key or a scope if key refers to a scope.
@@ -443,12 +497,12 @@ class ScopedDict(dict):
         If key refers to scope, the whole scope entry will be deleted. If not,
         the exact key requested will be deleted. No key resolution will be
         performed."""
-        if key in self.scopes:
+        if key in self.data:
             # key is a scope
-            del self.scopes[key]
+            del self.data[key]
         else:
             scope, lookup_key = self._keyinfo(key)
-            del self.scopes[scope][lookup_key]
+            del self.data[scope][lookup_key]
 
     def __missing__(self, key):
         raise KeyError(str(key))
@@ -465,11 +519,16 @@ class ScopedDictField(AggregateTypeField):
         )
 
     def __set__(self, obj, value):
-        if not self._check_type_ext(value):
-            raise FieldError('attempt to set a ScopedDict '
-                             'of different type. Required typespec: %s' %
-                             str(self.typespec))
+        if isinstance(value, ScopedDict):
+            # value is already a ScopedDict
+            Field.__set__(self, obj, value)
+        else:
+            # Try to convert value to a ScopedDict
+            if not self._check_type_ext(value):
+                raise FieldError('attempt to set a ScopedDict '
+                                 'of different type. Required typespec: %s' %
+                                 str(self._typespec))
 
-        # Call Field's __set__() method, type checking is already performed
-        Field.__set__(self, obj,
-                      ScopedDict(value) if value is not None else value)
+            # Call Field's __set__() method, type checking is already performed
+            Field.__set__(self, obj,
+                          ScopedDict(value) if value is not None else value)

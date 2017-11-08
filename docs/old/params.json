@@ -1,0 +1,6 @@
+{
+  "name": "Production",
+  "tagline": "General interest repository for CSCS users",
+  "body": "# CSCS Production\r\n\r\nGeneral interest repository for CSCS users\r\n* [CSCS Production Wiki](https://github.com/eth-cscs/production/wiki)\r\n* [EasyBuild recipes](https://github.com/eth-cscs/production/tree/master/easybuild)\r\n* [Jenkins production lists](https://github.com/eth-cscs/production/tree/master/jenkins-builds)\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}

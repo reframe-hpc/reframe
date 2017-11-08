@@ -66,7 +66,7 @@ class TestSlurmJob(_TestJob):
             num_tasks_per_node=self.num_tasks_per_node,
             stdout=self.stdout_f.name,
             stderr=self.stderr_f.name,
-            launcher=NativeSlurmLauncher
+            launcher_type=NativeSlurmLauncher
         )
         self.testjob.pre_run  = ['echo prerun', 'echo prerun']
         self.testjob.post_run = ['echo postrun']
@@ -189,7 +189,7 @@ class TestLocalJob(_TestJob):
         self.assertEqual(self.testjob.state, LOCAL_JOB_SUCCESS)
 
     def test_submission_timelimit(self):
-        self.testjob.time_limit = (0, 0, 2)
+        self.testjob._time_limit = (0, 0, 2)
 
         t_job = datetime.now()
         self.testjob.submit('echo before && sleep 10 && echo after')
@@ -235,7 +235,7 @@ class TestLocalJob(_TestJob):
         #
         # We also check that the additional spawned process is also killed.
 
-        self.testjob.time_limit = (0, 1, 0)
+        self.testjob._time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
         self.testjob.pre_run = ['trap -- "" TERM']
         self.testjob.post_run = ['echo $!', 'wait']

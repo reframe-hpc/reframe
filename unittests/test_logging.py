@@ -101,10 +101,10 @@ class TestLoggerConfiguration(unittest.TestCase):
             'level': 'INFO',
             'handlers': {
                 self.logfile: {
-                    'level'     : 'WARNING',
-                    'format'    : '[%(asctime)s] %(levelname)s: %(message)s',
-                    'datefmt'   : '%F',
-                    'append'    : True,
+                    'level': 'WARNING',
+                    'format': '[%(asctime)s] %(levelname)s: %(message)s',
+                    'datefmt': '%F',
+                    'append': True,
                 }
             }
         }
@@ -174,13 +174,13 @@ class TestLoggerConfiguration(unittest.TestCase):
 
     def test_handler_noappend(self):
         self.logging_config = {
-            'level'   : 'INFO',
+            'level': 'INFO',
             'handlers': {
                 self.logfile: {
-                    'level'  : 'WARNING',
-                    'format' : '[%(asctime)s] %(levelname)s: %(message)s',
+                    'level': 'WARNING',
+                    'format': '[%(asctime)s] %(levelname)s: %(message)s',
                     'datefmt': '%F',
-                    'append' : False,
+                    'append': False,
                 }
             }
         }
@@ -205,7 +205,7 @@ class TestLoggerConfiguration(unittest.TestCase):
 
     def test_stream_handler_stdout(self):
         self.logging_config = {
-            'level'   : 'INFO',
+            'level': 'INFO',
             'handlers': {
                 '&1': {},
             }
@@ -220,7 +220,7 @@ class TestLoggerConfiguration(unittest.TestCase):
 
     def test_stream_handler_stderr(self):
         self.logging_config = {
-            'level'   : 'INFO',
+            'level': 'INFO',
             'handlers': {
                 '&2': {},
             }
@@ -235,7 +235,7 @@ class TestLoggerConfiguration(unittest.TestCase):
 
     def test_multiple_handlers(self):
         self.logging_config = {
-            'level'   : 'INFO',
+            'level': 'INFO',
             'handlers': {
                 '&1': {},
                 self.logfile: {},

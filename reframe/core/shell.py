@@ -8,16 +8,20 @@ import reframe.core.debug as debug
 
 class ShellScriptBuilder:
     def __init__(self, name='default', login=False):
-        self.name = name
+        self._name = name
         if login:
-            self.header = '#!/bin/sh -l'
+            self._header = '#!/bin/sh -l'
         else:
-            self.header = '#!/bin/sh'
+            self._header = '#!/bin/sh'
 
         self.statements = []
 
     def __repr__(self):
         return debug.repr(self)
+
+    @property
+    def name():
+        return self._name
 
     def verbatim(self, stmt, suppress=False):
         """Append statement stmt verbatim.
@@ -45,13 +49,13 @@ class ShellScriptBuilder:
         return self.verbatim('unset %s' % name, suppress)
 
     def finalise(self):
-        return '%s\n' % self.header + '\n'.join(self.statements) + '\n'
+        return '%s\n' % self._header + '\n'.join(self.statements) + '\n'
 
 
 class BashScriptBuilder(ShellScriptBuilder):
     def __init__(self, name='bash', login=False):
         super().__init__(name, login)
         if login:
-            self.header = '#!/bin/bash -l'
+            self._header = '#!/bin/bash -l'
         else:
-            self.header = '#!/bin/bash'
+            self._header = '#!/bin/bash'
