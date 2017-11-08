@@ -3,37 +3,39 @@ import shutil
 import stat
 import tempfile
 import unittest
+import warnings
 
 import reframe.settings as settings
+import reframe.utility.sanity as sn
 
+from reframe.core.exceptions import (ReframeDeprecationWarning,
+                                     ReframeError, CompilationError)
 from reframe.core.pipeline import *
-from reframe.core.exceptions import ReframeError, CompilationError
 from reframe.core.modules import *
 from reframe.frontend.loader import *
 from reframe.frontend.resources import ResourcesManager
 from reframe.utility.functions import standard_threshold
 
-from unittests.fixtures import TEST_MODULES, TEST_SITE_CONFIG
+from unittests.fixtures import TEST_MODULES, get_setup_config
 from unittests.fixtures import system_with_scheduler
 
 
 class TestRegression(unittest.TestCase):
     def setUp(self):
+        # Ignore deprecation warnings
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
+
         module_path_add([TEST_MODULES])
 
         # Load a system configuration
-        self.site_config = SiteConfiguration()
-        self.site_config.load_from_dict(TEST_SITE_CONFIG)
-        self.system    = self.site_config.systems['testsys']
-        self.partition = self.system.partition('gpu')
-        self.progenv   = self.partition.environment('builtin-gcc')
-
+        self.system, self.partition, self.progenv = get_setup_config()
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader    = RegressionCheckLoader(['unittests/resources'])
         self.resources = ResourcesManager(prefix=self.resourcesdir)
 
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
+        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def setup_from_site(self):
         self.partition = system_with_scheduler(None)
@@ -47,8 +49,10 @@ class TestRegression(unittest.TestCase):
         return os.path.join(new_prefix, basename)
 
     def keep_files_list(self, test, compile_only=False):
-        ret = [self.replace_prefix(test.stdout, test.outputdir),
-               self.replace_prefix(test.stderr, test.outputdir)]
+        from reframe.core.deferrable import evaluate
+
+        ret = [self.replace_prefix(evaluate(test.stdout), test.outputdir),
+               self.replace_prefix(evaluate(test.stderr), test.outputdir)]
 
         if not compile_only:
             ret.append(self.replace_prefix(test.job.script_filename,
@@ -107,6 +111,24 @@ class TestRegression(unittest.TestCase):
 
     @unittest.skipIf(not system_with_scheduler(None),
                      'job submission not supported')
+    def test_hellocheck_new_sanity(self):
+        self.setup_from_site()
+        test = self.loader.load_from_file(
+            'unittests/resources/hellocheck.py',
+            system=self.system, resources=self.resources
+        )[0]
+
+        # Set the new sanity patterns
+        test.sanity_patterns = sn.assert_true(
+            sn.extractall('Hello, World\!', test.stdout, 0)
+        )
+
+        # Use test environment for the regression check
+        test.valid_prog_environs = [self.progenv.name]
+        self._run_test(test)
+
+    @unittest.skipIf(not system_with_scheduler(None),
+                     'job submission not supported')
     def test_hellocheck_make(self):
         self.setup_from_site()
         test = self.loader.load_from_file(
@@ -139,9 +161,14 @@ class TestRegression(unittest.TestCase):
     def test_hellocheck_local_slashes(self):
         # Try to fool path creation by adding slashes to environment partitions
         # names
-        self.system.name    += os.sep + 'bad'
-        self.progenv.name   += os.sep + 'bad'
-        self.partition.name += os.sep + 'bad'
+        from reframe.core.environments import ProgEnvironment
+
+        self.progenv = ProgEnvironment('bad/name', self.progenv.modules,
+                                       self.progenv.variables)
+
+        # That's a bit hacky, but we are in a unit test
+        self.system._name    += os.sep + 'bad'
+        self.partition._name += os.sep + 'bad'
         self.test_hellocheck_local()
 
     def test_run_only(self):
@@ -155,8 +182,21 @@ class TestRegression(unittest.TestCase):
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.sanity_patterns = {
-            '-' : {'Hello, World\!': []}
+            '-': {'Hello, World\!': []}
         }
+        self._run_test(test)
+
+    def test_run_only_new_sanity(self):
+        test = RunOnlyRegressionTest('runonlycheck',
+                                     'unittests/resources',
+                                     resources=self.resources,
+                                     system=self.system)
+        test.executable = './hello.sh'
+        test.executable_opts = ['Hello, World!']
+        test.local = True
+        test.valid_prog_environs = ['*']
+        test.valid_systems = ['*']
+        test.sanity_patterns = sn.assert_found('Hello, World\!', test.stdout)
         self._run_test(test)
 
     def test_compile_only_failure(self):
@@ -184,12 +224,23 @@ class TestRegression(unittest.TestCase):
         }
         self._run_test(test, compile_only=True)
 
+    def test_compile_only_warning_new_sanity(self):
+        test = CompileOnlyRegressionTest('compileonlycheckwarning',
+                                         'unittests/resources',
+                                         resources=self.resources,
+                                         system=self.system)
+        test.sourcepath = 'compiler_warning.c'
+        self.progenv.cflags = '-Wall'
+        test.valid_prog_environs = [self.progenv.name]
+        test.valid_systems = [self.system.name]
+        test.sanity_patterns = sn.assert_found('warning', test.stderr)
+        self._run_test(test, compile_only=True)
+
     def test_supports_system(self):
         test = self.loader.load_from_file(
             'unittests/resources/hellocheck.py',
             system=self.system, resources=self.resources
         )[0]
-        test.current_system = System('testsys')
 
         test.valid_systems = ['*']
         self.assertTrue(test.supports_system('gpu'))
@@ -253,16 +304,20 @@ class TestRegression(unittest.TestCase):
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.sanity_patterns = {
-            '-' : {'Hello, World\!': []}
+            '-': {'Hello, World\!': []}
         }
         self._run_test(test)
 
 
 class TestRegressionOutputScan(unittest.TestCase):
     def setUp(self):
-        self.system = System('testsys')
-        self.system.partitions.append(SystemPartition('gpu', self.system))
+        # Ignore deprecation warnings
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
+        # Load test site configuration
+        self.system, self.partition, self.progenv = get_setup_config()
+
+        # Set up RegressionTest instance
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
         self.test = RegressionTest('test_performance',
@@ -270,8 +325,7 @@ class TestRegressionOutputScan(unittest.TestCase):
                                    resources=self.resources,
                                    system=self.system)
 
-        self.test.current_system    = self.system
-        self.test.current_partition = self.system.partition('gpu')
+        self.test.setup(self.partition, self.progenv)
         self.test.reference = {
             'testsys': {
                 'value1': (1.4, -0.1, 0.1),
@@ -303,7 +357,6 @@ class TestRegressionOutputScan(unittest.TestCase):
                 'result = success': []
             }
         }
-        self.test.stagedir = self.test.prefix
 
     def tearDown(self):
         self.perf_file.close()
@@ -311,6 +364,7 @@ class TestRegressionOutputScan(unittest.TestCase):
         os.remove(self.perf_file.name)
         os.remove(self.output_file.name)
         shutil.rmtree(self.resourcesdir)
+        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def write_performance_output(self, file=None, **kwargs):
         if not file:
@@ -370,12 +424,12 @@ class TestRegressionOutputScan(unittest.TestCase):
                 for t in taglist:
                     tinfo = self.test.perf_info.matched_tag(path, patt, t[0])
                     self.assertIsNotNone(tinfo)
-                    self.assertEquals(t, tinfo)
+                    self.assertEqual(t, tinfo)
 
     def test_empty_file(self):
         self.output_file.close()
         self.test.sanity_patterns = {
-            self.output_file.name : {'.*': []}
+            self.output_file.name: {'.*': []}
         }
         self.assertFalse(self.test.check_sanity())
         self.assertIsNone(self.test.sanity_info.matched_pattern(
@@ -418,9 +472,9 @@ class TestRegressionOutputScan(unittest.TestCase):
     def test_multiple_files(self):
         # Create multiple files following the same pattern
         files = [tempfile.NamedTemporaryFile(mode='wt', prefix='regtmp',
-                                             dir=self.test.prefix,
+                                             dir=self.test.stagedir,
                                              delete=False)
-                 for i in range(0, 2)]
+                 for i in range(2)]
 
         # Write the performance files
         for f in files:
@@ -666,7 +720,7 @@ class TestRegressionOutputScan(unittest.TestCase):
                 'value1': (1.4, -0.1, 0.1),
                 'value2': (1.7, -0.1, 0.1),
             },
-            '*' : {
+            '*': {
                 'value3': (3.1, -0.1, 0.1),
             }
         }
@@ -792,7 +846,7 @@ class TestRegressionOutputScan(unittest.TestCase):
         self.assertTrue(self.test.check_performance())
 
     def test_file_not_found(self):
-        self.test.stagedir = self.test.prefix
+        self.test._stagedir = self.test.prefix
         self.test.perf_patterns = {
             'foobar': {
                 'performance1 = (?P<value1>\S+)': [
@@ -808,3 +862,185 @@ class TestRegressionOutputScan(unittest.TestCase):
         }
 
         self.assertFalse(self.test.check_performance())
+
+
+class TestNewSanityPatterns(unittest.TestCase):
+    def setUp(self):
+        # Ignore deprecation warnings
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
+
+        # Load test site configuration
+        self.system, self.partition, self.progenv = get_setup_config()
+
+        # Set up RegressionTest instance
+        self.resourcesdir = tempfile.mkdtemp(dir='unittests')
+        self.resources = ResourcesManager(prefix=self.resourcesdir)
+        self.test = RegressionTest('test_performance',
+                                   'unittests/resources',
+                                   resources=self.resources,
+                                   system=self.system)
+
+        self.test.setup(self.partition, self.progenv)
+        self.test.reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1),
+                'value2': (1.7, -0.1, 0.1),
+            },
+            'testsys:gpu': {
+                'value3': (3.1, -0.1, 0.1),
+            }
+        }
+
+        self.perf_file = tempfile.NamedTemporaryFile(mode='wt', delete=False)
+        self.output_file = tempfile.NamedTemporaryFile(mode='wt', delete=False)
+        self.test.perf_patterns = {
+            'value1': sn.extractsingle('performance1 = (\S+)',
+                                       self.perf_file.name, 1, float),
+            'value2': sn.extractsingle('performance2 = (\S+)',
+                                       self.perf_file.name, 1, float),
+            'value3': sn.extractsingle('performance3 = (\S+)',
+                                       self.perf_file.name, 1, float)
+        }
+
+        self.test.sanity_patterns = sn.assert_found('result = success',
+                                                    self.output_file.name)
+
+    def tearDown(self):
+        self.perf_file.close()
+        self.output_file.close()
+        os.remove(self.perf_file.name)
+        os.remove(self.output_file.name)
+        shutil.rmtree(self.resourcesdir)
+        warnings.simplefilter('default', ReframeDeprecationWarning)
+
+    def write_performance_output(self, fp=None, **kwargs):
+        if not fp:
+            fp = self.perf_file
+
+        for k, v in kwargs.items():
+            fp.write('%s = %s\n' % (k, v))
+
+        fp.close()
+
+    def test_success(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.output_file.write('result = success\n')
+        self.output_file.close()
+        self.assertTrue(self.test.check_sanity())
+        self.assertTrue(self.test.check_performance())
+
+    def test_sanity_failure(self):
+        self.output_file.write('result = failure\n')
+        self.output_file.close()
+        self.assertRaises(SanityError, self.test.check_sanity)
+
+    def test_sanity_failure_noassert(self):
+        self.test.sanity_patterns = sn.findall('result = success',
+                                               self.output_file.name)
+        self.output_file.write('result = failure\n')
+        self.output_file.close()
+        self.assertRaises(SanityError, self.test.check_sanity)
+
+    def test_sanity_multiple_patterns(self):
+        self.output_file.write('result1 = success\n')
+        self.output_file.write('result2 = success\n')
+        self.output_file.close()
+
+        # Simulate a pure sanity test; invalidate the reference values
+        self.test.reference = {}
+        self.test.sanity_patterns = sn.assert_eq(
+            sn.count(sn.findall('result\d = success', self.output_file.name)),
+            2)
+        self.assertTrue(self.test.check_sanity())
+
+        # Require more patterns to be present
+        self.test.sanity_patterns = sn.assert_eq(
+            sn.count(sn.findall('result\d = success', self.output_file.name)),
+            3)
+        self.assertRaises(SanityError, self.test.check_sanity)
+
+    def test_sanity_multiple_files(self):
+        files = [tempfile.NamedTemporaryFile(mode='wt', prefix='regtmp',
+                                             dir=self.test.stagedir,
+                                             delete=False)
+                 for i in range(2)]
+
+        for f in files:
+            f.write('result = success\n')
+            f.close()
+
+        self.test.sanity_patterns = sn.all([
+            sn.assert_found('result = success', files[0].name),
+            sn.assert_found('result = success', files[1].name)
+        ])
+        self.assertTrue(self.test.check_sanity())
+        for f in files:
+            os.remove(f.name)
+
+    def test_performance_failure(self):
+        self.write_performance_output(performance1=1.0,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.output_file.write('result = success\n')
+        self.output_file.close()
+        self.assertTrue(self.test.check_sanity())
+        self.assertRaises(SanityError, self.test.check_performance)
+
+    def test_unknown_tag(self):
+        self.test.reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1),
+                'value2': (1.7, -0.1, 0.1),
+                'foo': (3.1, -0.1, 0.1),
+            }
+        }
+
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.assertRaises(SanityError, self.test.check_performance)
+
+    def test_unknown_system(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.test.reference = {
+            'testsys:login': {
+                'value1': (1.4, -0.1, 0.1),
+                'value2': (1.7, -0.1, 0.1),
+                'value3': (3.1, -0.1, 0.1),
+            }
+        }
+        self.assertRaises(SanityError, self.test.check_performance)
+
+    def test_default_reference(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.test.reference = {
+            '*': {
+                'value1': (1.4, -0.1, 0.1),
+                'value2': (1.7, -0.1, 0.1),
+                'value3': (3.1, -0.1, 0.1),
+            }
+        }
+
+        self.assertTrue(self.test.check_performance())
+
+    def test_tag_resolution(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+
+        self.test.reference = {
+            'testsys': {
+                'value1': (1.4, -0.1, 0.1),
+                'value2': (1.7, -0.1, 0.1),
+            },
+            '*': {
+                'value3': (3.1, -0.1, 0.1),
+            }
+        }
+        self.assertTrue(self.test.check_performance())

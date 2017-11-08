@@ -88,6 +88,9 @@ def copytree_virtual(src, dst, file_links=[],
     be relative to `src`. If you try to pass `.` in `file_links`, `OSError`
     will be raised."""
 
+    if not hasattr(file_links, '__iter__'):
+        raise TypeError('expecting an iterable as file_links')
+
     # Work with absolute paths
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)

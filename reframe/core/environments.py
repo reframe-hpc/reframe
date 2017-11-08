@@ -12,37 +12,71 @@ from reframe.core.modules import *
 
 
 class Environment:
+    """This class abstracts away an environment to run regression tests.
+
+    It is simply a collection of modules to be loaded and environment variables
+    to be set when this environment is loaded by the framework.
+    Users may not create or modify directly environments.
+    """
     name      = NonWhitespaceField('name')
     modules   = TypedListField('modules', str)
     variables = TypedDictField('variables', str, str)
 
     def __init__(self, name, modules=[], variables={}, **kwargs):
-        self.name = name
-        self.modules = list(modules)
-        self.variables = dict(variables)
-        self.loaded = False
-
+        self._name = name
+        self._modules = list(modules)
+        self._variables = dict(variables)
+        self._loaded = False
         self._saved_variables = {}
         self._conflicted = []
         self._preloaded = set()
         self._load_stmts = []
 
+    @property
+    def name(self):
+        """The name of this environment.
+
+        :type: :class:`str`
+        """
+        return self._name
+
+    @property
+    def modules(self):
+        """The modules associated with this environment.
+
+        :type: :class:`list` of :class:`str`
+        """
+        return self._modules
+
+    @property
+    def variables(self):
+        """The environment variables associated with this environment.
+
+        :type: dictionary of :class:`str` keys/values.
+        """
+        return self._variables
+
+    @property
+    def is_loaded(self):
+        """:class:`True` if this environment is loaded,
+        :class:`False` otherwise.
+        """
+        return self._loaded
+
+    # Add module to the list of modules to be loaded.
     def add_module(self, name):
-        """Add module to the list of modules to be loaded."""
-        self.modules.append(name)
+        self._modules.append(name)
 
+    # Set environment variable to name.
+    #
+    # If variable exists, its value will be saved internally and restored
+    # during unloading.
     def set_variable(self, name, value):
-        """Set environment variable to name.
-
-        If variable exists, its value will be
-        saved internally and restored when Restore() is called."""
-        self.variables[name] = value
+        self._variables[name] = value
 
     def load(self):
-        """Load environment."""
-
         # conflicted module list must be filled at the time of load
-        for m in self.modules:
+        for m in self._modules:
             if module_present(m):
                 self._preloaded.add(m)
 
@@ -52,27 +86,26 @@ class Environment:
 
             self._load_stmts += ['module load %s' % m]
 
-        for k, v in self.variables.items():
+        for k, v in self._variables.items():
             if k in os.environ:
                 self._saved_variables[k] = os.environ[k]
 
             os.environ[k] = os.path.expandvars(v)
 
-        self.loaded = True
+        self._loaded = True
 
     def unload(self):
-        """Restore environment to its previous state."""
-        if not self.loaded:
+        if not self._loaded:
             return
 
-        for k, v in self.variables.items():
+        for k, v in self._variables.items():
             if k in self._saved_variables:
                 os.environ[k] = self._saved_variables[k]
             elif k in os.environ:
                 del os.environ[k]
 
         # Unload modules in reverse order
-        for m in reversed(self.modules):
+        for m in reversed(self._modules):
             if m not in self._preloaded:
                 module_unload(m)
 
@@ -80,56 +113,52 @@ class Environment:
         for m in self._conflicted:
             module_load(m)
 
-        self.loaded = False
+        self._loaded = False
 
     def emit_load_instructions(self, builder):
-        """Emit shell instructions for loading this environment."""
         for stmt in self._load_stmts:
             builder.verbatim(stmt)
 
-        for k, v in self.variables.items():
+        for k, v in self._variables.items():
             builder.set_variable(k, v, export=True)
 
     # FIXME: Does not correspond to the actual process in unload()
     def emit_unload_instructions(self, builder):
-        """Emit shell instructions for loading this environment."""
-        for k, v in self.variables.items():
+        for k, v in self._variables.items():
             builder.unset_variable(k)
 
-        for m in self.modules:
+        for m in self._modules:
             builder.verbatim('module unload %s' % m)
 
         for m in self._conflicted:
             builder.verbatim('module load %s' % m)
 
     def __eq__(self, other):
-        return (other is not None and
-                self.name == other.name and
-                set(self.modules) == set(other.modules) and
-                self.variables == other.variables)
+        if not isinstance(other, type(self)):
+            return NotImplemented
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+        return (self._name == other._name and
+                set(self._modules) == set(other._modules) and
+                self._variables == other._variables)
 
     def __repr__(self):
         return debug.repr(self)
 
     def __str__(self):
         return ('Name: %s\nModules: %s\nEnvironment: %s' %
-                (self.name, modules, self.variables))
+                (self._name, self._modules, self._variables))
 
 
 def swap_environments(src, dst):
-    """Switch from src to dst environment."""
     src.unload()
     dst.load()
 
 
 class EnvironmentSnapshot(Environment):
     def __init__(self, name='env_snapshot'):
-        self.name = name
-        self.modules = module_list()
-        self.variables = dict(os.environ)
+        self._name = name
+        self._modules = module_list()
+        self._variables = dict(os.environ)
         self._conflicted = []
 
     def add_module(self, name):
@@ -140,14 +169,81 @@ class EnvironmentSnapshot(Environment):
 
     def load(self):
         os.environ.clear()
-        os.environ.update(self.variables)
-        self.loaded = True
+        os.environ.update(self._variables)
+        self._loaded = True
 
     def unload(self):
         raise RuntimeError('cannot unload an environment snapshot')
 
 
 class ProgEnvironment(Environment):
+    """A class representing a programming environment.
+
+    This type of environment adds also attributes for setting the compiler and
+    compilation flags.
+
+    If compilation flags are set to :class:`None` (the default, if not set
+    otherwise in ReFrame's `configuration
+    <configure.html#environments-configuration>`__), they are not passed to the
+    ``make`` invocation.
+
+    If you want to disable completely the propagation of the compilation flags
+    to the ``make`` invocation, even if they are set, you should set the
+    :attr:`propagate` attribute to :class:`False`.
+    """
+
+    #: The C compiler of this programming environment.
+    #:
+    #: :type: :class:`str`
+    cc = StringField('cc')
+
+    #: The C++ compiler of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    cxx = StringField('cxx', allow_none=True)
+
+    #: The Fortran compiler of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    ftn = StringField('ftn', allow_none=True)
+
+    #: The preprocessor flags of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    cppflags = StringField('cppflags', allow_none=True)
+
+    #: The C compiler flags of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    cflags = StringField('cflags', allow_none=True)
+
+    #: The C++ compiler flags of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    cxxflags = StringField('cxxflags', allow_none=True)
+
+    #: The Fortran compiler flags of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    fflags = StringField('fflags', allow_none=True)
+
+    #: The linker flags of this programming environment.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    ldflags = StringField('ldflags', allow_none=True)
+
+    #: The include search path of this programming environment.
+    #:
+    #: :type: :class:`list` of :class:`str`
+    #: :default: ``[]``
+    include_search_path = TypedListField('include_search_path', str)
+
+    #: Propagate the compilation flags to the ``make`` invocation.
+    #:
+    #: :type: :class:`bool`
+    #: :default: :class:`True`
+    propagate = BooleanField('propagate')
+
     def __init__(self,
                  name,
                  modules=[],

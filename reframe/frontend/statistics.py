@@ -1,23 +1,24 @@
 import traceback
 import reframe.core.debug as debug
 
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ReframeError, SanityError
 
 
 class TestStats:
     """Stores test case statistics."""
 
-    def __init__(self, test_cases=[]):
-        if not isinstance(test_cases, list):
-            raise TypeError('TestStats is expecting a list of TestCase')
+    def __init__(self, test_cases=None):
+        test_cases = test_cases or []
+        if not hasattr(test_cases, '__iter__'):
+            raise TypeError('expected an iterable')
 
         # Store test cases per partition internally
-        self.test_cases_bypart = dict()
+        self._test_cases_bypart = {}
         for t in test_cases:
             partition = t.executor.check.current_partition
             partname = partition.fullname if partition else 'None'
 
-            tclist = self.test_cases_bypart.setdefault(partname, [])
+            tclist = self._test_cases_bypart.setdefault(partname, [])
             tclist.append(t)
 
     def __repr__(self):
@@ -27,18 +28,18 @@ class TestStats:
         num_fails = 0
         if partition:
             num_fails += len([
-                t for t in self.test_cases_bypart[partition] if t.failed()
+                t for t in self._test_cases_bypart[partition] if t.failed()
             ])
         else:
             # count all failures
-            for tclist in self.test_cases_bypart.values():
+            for tclist in self._test_cases_bypart.values():
                 num_fails += len([t for t in tclist if t.failed()])
 
         return num_fails
 
     def num_failures_stage(self, stage):
         num_fails = 0
-        for tclist in self.test_cases_bypart.values():
+        for tclist in self._test_cases_bypart.values():
             num_fails += len([t for t in tclist if t.failed_stage == stage])
 
         return num_fails
@@ -46,10 +47,10 @@ class TestStats:
     def num_cases(self, partition=None):
         num_cases = 0
         if partition:
-            num_cases += len(self.test_cases_bypart[partition])
+            num_cases += len(self._test_cases_bypart[partition])
         else:
             # count all failures
-            for tclist in self.test_cases_bypart.values():
+            for tclist in self._test_cases_bypart.values():
                 num_cases += len(tclist)
 
         return num_cases
@@ -58,7 +59,7 @@ class TestStats:
         line_width = 78
         report = line_width * '=' + '\n'
         report += 'SUMMARY OF FAILURES\n'
-        for partname, tclist in self.test_cases_bypart.items():
+        for partname, tclist in self._test_cases_bypart.items():
             for tf in [t for t in tclist if t.failed()]:
                 check = tf.executor.check
                 environ_name = (check.current_environ.name
@@ -77,7 +78,9 @@ class TestStats:
                 report += '  * Reason: '
                 if tf.exc_info:
                     etype, value, stacktrace = tf.exc_info
-                    if isinstance(value, ReframeError):
+                    if isinstance(value, SanityError):
+                        report += 'sanity error: %s\n' % value
+                    elif isinstance(value, ReframeError):
                         report += 'caught framework exception: %s\n' % value
                     elif isinstance(value, KeyboardInterrupt):
                         report += 'cancelled by user\n'

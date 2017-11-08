@@ -1,0 +1,20 @@
+{% extends "!layout.html" %}
+<!-- {% block sidebartitle %}
+    {{ super() }}
+{% endblock %}
+ -->
+
+
+{% block menu %}
+    {{ super() }}
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+{% endblock %}
+
+

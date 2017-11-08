@@ -35,7 +35,7 @@ class _ArgumentHolder:
         # Create forward descriptors to all public members of _holder
         for m in self._holder.__dict__.keys():
             if m[0] != '_':
-                setattr(self.__class__, m, ForwardField(self._holder, m))
+                setattr(type(self), m, ForwardField(self._holder, m))
 
     def _attr_from_flag(self, *flags):
         if not flags:

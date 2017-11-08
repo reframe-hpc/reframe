@@ -51,7 +51,7 @@ def repr(obj, indent=4, max_depth=2):
     repr_fmt = '%(module_name)s.%(class_name)s(%(attr_repr)s)@0x%(addr)x'
     ret = repr_fmt % {
         'module_name': obj.__module__,
-        'class_name': obj.__class__.__name__,
+        'class_name': type(obj).__name__,
         'attr_repr': ',\n'.join(attr_list),
         'addr': id(obj)
     }

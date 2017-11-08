@@ -3,55 +3,59 @@ import shutil
 import stat
 import tempfile
 import unittest
+import warnings
 
 from reframe.core.pipeline import RegressionTest
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ReframeError, ReframeDeprecationWarning
+from reframe.core.systems import System, SystemPartition
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
-from reframe.core.systems import System, SystemPartition
 from reframe.utility.functions import standard_threshold
 from reframe.utility.parsers import *
+from unittests.fixtures import get_setup_config
 
 
 class StatefulParserTest(unittest.TestCase):
     def setUp(self):
-        self.system = System('daint')
-        self.system.partitions.append(SystemPartition('gpu', self.system))
+        # Ignore deprecation warnings
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
+        self.system, self.partition, self.environ = get_setup_config()
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
         self.test = RegressionTest('test_performance',
                                    'unittests/resources',
                                    resources=self.resources,
                                    system=self.system)
-        self.test.current_system = self.system
-        self.test.current_partition = self.system.partition('gpu')
-        self.test.stagedir = self.test.prefix
-        self.perf_file   = tempfile.NamedTemporaryFile(mode='wt', delete=False)
+
+        # Mock up an already set up test
+        self.test.setup(self.partition, self.environ)
+
+        self.perf_file = tempfile.NamedTemporaryFile(mode='wt', delete=False)
         self.output_file = tempfile.NamedTemporaryFile(mode='wt', delete=False)
         self.test.perf_parser   = StatefulParser(callback=standard_threshold)
         self.test.sanity_parser = StatefulParser()
         self.test.reference = {
-            'daint' : {
-                'value' : (2.0, -0.1, 0.1),
+            'testsys': {
+                'value': (2.0, -0.1, 0.1),
             },
         }
 
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'performance = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'performance = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
         self.test.sanity_patterns = {
-            self.output_file.name : {
-                '(?P<result>result = success)' : [
+            self.output_file.name: {
+                '(?P<result>result = success)': [
                     ('result', str, self.test.sanity_parser.match)
                 ],
-                '\e' : self.test.sanity_parser.match_eof
+                '\e': self.test.sanity_parser.match_eof
             }
         }
 
@@ -61,22 +65,23 @@ class StatefulParserTest(unittest.TestCase):
         os.remove(self.perf_file.name)
         os.remove(self.output_file.name)
         shutil.rmtree(self.resourcesdir)
+        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def _add_parser_region(self):
         self.test.perf_patterns[self.perf_file.name].update({
-            '(?P<switch>== ENABLE ==)' : [
+            '(?P<switch>== ENABLE ==)': [
                 ('switch', str, self.test.perf_parser.on)
             ],
-            '(?P<switch>== DISABLE ==)' : [
+            '(?P<switch>== DISABLE ==)': [
                 ('switch', str, self.test.perf_parser.off)
             ]}
         )
 
         self.test.sanity_patterns[self.output_file.name].update({
-            '(?P<switch>== ENABLE ==)' : [
+            '(?P<switch>== ENABLE ==)': [
                 ('switch', str, self.test.sanity_parser.on)
             ],
-            '(?P<switch>== DISABLE ==)' : [
+            '(?P<switch>== DISABLE ==)': [
                 ('switch', str, self.test.sanity_parser.off)
             ]}
         )
@@ -234,11 +239,11 @@ class TestSingleOccurrenceParser(TestStatefulParserPerformance):
             callback=standard_threshold, nth_occurrence=3)
 
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'performance = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'performance = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -284,11 +289,11 @@ class TestCounterParser(TestStatefulParserSanity):
         super().setUp()
         self.test.sanity_parser = CounterParser(num_matches=3)
         self.test.sanity_patterns = {
-            self.output_file.name : {
-                '(?P<nid>nid\d+)' : [
+            self.output_file.name: {
+                '(?P<nid>nid\d+)': [
                     ('nid', str, self.test.sanity_parser.match)
                 ],
-                '\e' : self.test.sanity_parser.match_eof
+                '\e': self.test.sanity_parser.match_eof
             }
         }
 
@@ -337,11 +342,11 @@ class TestCounterParserExactMatch(TestStatefulParserSanity):
         super().setUp()
         self.test.sanity_parser = CounterParser(num_matches=3, exact=True)
         self.test.sanity_patterns = {
-            self.output_file.name : {
-                '(?P<nid>nid\d+)' : [
+            self.output_file.name: {
+                '(?P<nid>nid\d+)': [
                     ('nid', str, self.test.sanity_parser.match)
                 ],
-                '\e' : self.test.sanity_parser.match_eof
+                '\e': self.test.sanity_parser.match_eof
             }
         }
 
@@ -393,11 +398,11 @@ class TestCounterParserLastOccurrence(TestStatefulParserPerformance):
         self.test.perf_parser = CounterParser(callback=standard_threshold,
                                               num_matches=-1)
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'performance = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'performance = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -443,11 +448,11 @@ class TestUniqueOccurrencesParser(TestStatefulParserSanity):
         super().setUp()
         self.test.sanity_parser = UniqueOccurrencesParser(num_matches=3)
         self.test.sanity_patterns = {
-            self.output_file.name : {
-                '(?P<nid>nid\d+)' : [
+            self.output_file.name: {
+                '(?P<nid>nid\d+)': [
                     ('nid', str, self.test.sanity_parser.match)
                 ],
-                '\e' : self.test.sanity_parser.match_eof
+                '\e': self.test.sanity_parser.match_eof
             }
         }
 
@@ -495,11 +500,11 @@ class TestMinParser(TestStatefulParserPerformance):
         super().setUp()
         self.test.perf_parser = MinParser(callback=standard_threshold)
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'performance = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'performance = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -550,11 +555,11 @@ class TestMaxParser(TestStatefulParserPerformance):
         super().setUp()
         self.test.perf_parser = MaxParser(callback=standard_threshold)
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'performance = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'performance = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -607,11 +612,11 @@ class TestSumParser(TestStatefulParserPerformance):
             callback=lambda v, r, **kwargs: v == 10
         )
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'val = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'val = (?P<value>\S+)': [
                     ('value', int, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -661,11 +666,11 @@ class TestAverageParser(TestStatefulParserPerformance):
         super().setUp()
         self.test.perf_parser = AverageParser(callback=standard_threshold)
         self.test.perf_patterns = {
-            self.perf_file.name : {
-                'val = (?P<value>\S+)' : [
+            self.perf_file.name: {
+                'val = (?P<value>\S+)': [
                     ('value', float, self.test.perf_parser.match)
                 ],
-                '\e' : self.test.perf_parser.match_eof
+                '\e': self.test.perf_parser.match_eof
             }
         }
 
@@ -711,3 +716,34 @@ class TestAverageParser(TestStatefulParserPerformance):
             return False
 
         return True
+
+
+class DeprecationWarningParserTest(unittest.TestCase):
+    def assert_deprecation_warning(self, parser_cls, *args, **kwargs):
+        with self.assertWarns(ReframeDeprecationWarning):
+            fixture = parser_cls(*args, **kwargs)
+
+    def test_statefulparser_deprecation(self):
+        self.assert_deprecation_warning(StatefulParser)
+
+    def test_counterparser_deprecation(self):
+        self.assert_deprecation_warning(CounterParser, num_matches=1)
+
+    def test_uniqueoccurencesparser_deprecation(self):
+        self.assert_deprecation_warning(UniqueOccurrencesParser, num_matches=1)
+
+    def test_singleoccurenceparser_deprecation(self):
+        self.assert_deprecation_warning(SingleOccurrenceParser,
+                                        nth_occurrence=1)
+
+    def test_minparser_deprecation(self):
+        self.assert_deprecation_warning(MinParser)
+
+    def test_maxparser_deprecation(self):
+        self.assert_deprecation_warning(MaxParser)
+
+    def test_sumparser_deprecation(self):
+        self.assert_deprecation_warning(SumParser)
+
+    def test_averageparser_deprecation(self):
+        self.assert_deprecation_warning(AverageParser)

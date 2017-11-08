@@ -5,6 +5,8 @@
 import re
 import sys
 
+import reframe.utility.sanity as sn
+
 from reframe.core.pipeline import RunOnlyRegressionTest
 from reframe.core.environments import *
 from reframe.core.exceptions import ReframeError
@@ -14,10 +16,8 @@ class BaseFrontendCheck(RunOnlyRegressionTest):
     def __init__(self, name, **kwargs):
         super().__init__(name, os.path.dirname(__file__), **kwargs)
         self.local = True
-        self.executable = 'echo hello'
-        self.sanity_patterns = {
-            '-' : {'hello' : []}
-        }
+        self.executable = 'echo hello && echo perf: 10'
+        self.sanity_patterns = sn.assert_found('hello', self.stdout)
         self.tags = {self.name}
         self.maintainers = ['VK']
 
@@ -45,6 +45,18 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         raise ReframeError('Setup failure')
 
 
+class BadSetupCheckEarlyNonLocal(BaseFrontendCheck):
+    def __init__(self, **kwargs):
+        super().__init__(type(self).__name__, **kwargs)
+
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.local = False
+
+    def setup(self, system, environ, **job_opts):
+        raise ReframeError('Setup failure')
+
+
 class NoSystemCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
@@ -62,9 +74,7 @@ class SanityFailureCheck(BaseFrontendCheck):
         super().__init__(type(self).__name__, **kwargs)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sanity_patterns = {
-            '-' : {'foo' : []}
-        }
+        self.sanity_patterns = sn.assert_found('foo', self.stdout)
 
 
 class PerformanceFailureCheck(BaseFrontendCheck):
@@ -73,19 +83,13 @@ class PerformanceFailureCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.perf_patterns = {
-            '-' : {
-                '(?P<match>\S+)' : [
-                    ('match', str,
-                     lambda reference, value, **kwargs: value == reference)
-                ]
-            }
+            'perf': sn.extractsingle('perf: (\d+)', self.stdout, 1, int)
         }
         self.reference = {
-            '*' : {
-                'match' : 'foo'
+            '*': {
+                'perf': (20, -0.1, 0.1)
             }
         }
-        self.strict_check = False
 
 
 class CustomPerformanceFailureCheck(BaseFrontendCheck):
@@ -142,6 +146,7 @@ class SleepCheck(BaseFrontendCheck):
     def __init__(self, sleep_time, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
         self.name += str(id(self))
+        self.sourcesdir = None
         self.sleep_time = sleep_time
         self.executable = 'python3'
         self.executable_opts = [
@@ -153,8 +158,9 @@ class SleepCheck(BaseFrontendCheck):
 
     def setup(self, system, environ, **job_opts):
         super().setup(system, environ, **job_opts)
-        print_timestamp = "python3 -c \"from datetime import datetime; " \
-                          "print(datetime.today().strftime('%s.%f'))\""
+        print_timestamp = (
+            "python3 -c \"from datetime import datetime; "
+            "print(datetime.today().strftime('%s.%f'), flush=True)\"")
         self.job.pre_run  = [print_timestamp]
         self.job.post_run = [print_timestamp]
 
@@ -162,6 +168,7 @@ class SleepCheck(BaseFrontendCheck):
 def _get_checks(**kwargs):
     return [BadSetupCheck(**kwargs),
             BadSetupCheckEarly(**kwargs),
+            BadSetupCheckEarlyNonLocal(**kwargs),
             NoSystemCheck(**kwargs),
             NoPrgEnvCheck(**kwargs),
             SanityFailureCheck(**kwargs),

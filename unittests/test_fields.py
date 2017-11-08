@@ -1,6 +1,7 @@
 import unittest
+import warnings
 
-from reframe.core.exceptions import FieldError
+from reframe.core.exceptions import FieldError, ReframeDeprecationWarning
 from reframe.core.fields import *
 
 
@@ -10,14 +11,17 @@ class TestFields(unittest.TestCase):
             cow = CopyOnWriteField('cow')
 
         tester = FieldTester()
-        var = [1, 2, 3]
+        var = [1, [2, 4], 3]
 
-        # set copy-on-write field
+        # Set copy-on-write field
         tester.cow = var
 
-        # modify original variable
-        var.append(4)
-        self.assertEqual(tester.cow, [1, 2, 3])
+        # Verify that the lists are different
+        self.assertIsNot(var, tester.cow)
+
+        # Make sure we have a deep copy
+        var[1].append(5)
+        self.assertEqual(tester.cow, [1, [2, 4], 3])
 
     def test_readonly_field(self):
         class FieldTester:
@@ -300,8 +304,8 @@ class TestFields(unittest.TestCase):
                 self.field = value
 
         user_dict = {
-            'foo'   : 1,
-            'bar'   : 2,
+            'foo': 1,
+            'bar': 2,
             'foobar': 3
         }
 
@@ -313,6 +317,7 @@ class TestFields(unittest.TestCase):
                           globals(), locals())
 
     def test_sanity_field(self):
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
         class FieldTester:
             field = SanityPatternField('field')
             field_maybe_none = SanityPatternField('field_maybe_none',
@@ -348,6 +353,7 @@ class TestFields(unittest.TestCase):
                                         '\e': 34
                                 },
                           }""", globals(), locals())
+        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def test_timer_field(self):
         class FieldTester:
@@ -392,10 +398,8 @@ class TestFields(unittest.TestCase):
         sandbox.environ = environ
         sandbox.system  = system
 
-        sandbox.system.name  = 'foo'
-        sandbox.environ.name = 'foo'
-        self.assertEqual(environ.name, 'myenv')
-        self.assertEqual(system.name, 'mysystem')
+        self.assertIsNot(system, sandbox.system)
+        self.assertIsNot(environ, sandbox.environ)
 
     def test_proxy_field(self):
         class Target:
@@ -418,33 +422,153 @@ class TestFields(unittest.TestCase):
         self.assertEqual(3, t.a)
         self.assertEqual(4, t.b)
 
+    def test_any_field(self):
+        class FieldTester:
+            value = AnyField('field', [(IntegerField,), (TypedListField, int)],
+                             allow_none=True)
+
+            def __init__(self, value):
+                self.value = value
+
+        tester = FieldTester(1)
+        tester.value = 2
+        tester.value = [1, 2]
+        tester.value = None
+        self.assertRaises(FieldError, exec, 'tester.value = 1.2',
+                          globals(), locals())
+        self.assertRaises(FieldError, exec, 'tester.value = {1, 2}',
+                          globals(), locals())
+
     def test_settings(self):
         from reframe.settings import settings
 
-        self.assertRaises(FieldError, exec, "settings.version = '3.0'",
+        self.assertRaises(AttributeError, exec, "settings.version = '3.0'",
                           globals(), locals())
 
 
 class TestScopedDict(unittest.TestCase):
     def test_construction(self):
+        d = {
+            'a': {'k1': 3, 'k2': 4},
+            'b': {'k3': 5}
+        }
         namespace_dict = ScopedDict()
-        namespace_dict = ScopedDict({
-            'a' : {'k1' : 3, 'k2' : 4},
-            'b' : {'k3' : 5}
-        })
+        namespace_dict = ScopedDict(d)
+
+        # Change local dict and verify that the stored values are not affected
+        d['a']['k1'] = 10
+        d['b']['k3'] = 10
+        self.assertEqual(3, namespace_dict['a:k1'])
+        self.assertEqual(5, namespace_dict['b:k3'])
+        del d['b']
+        self.assertIn('b:k3', namespace_dict)
 
         self.assertRaises(TypeError, ScopedDict, 1)
-        self.assertRaises(TypeError, ScopedDict, {'a' : 1, 'b' : 2})
+        self.assertRaises(TypeError, ScopedDict, {'a': 1, 'b': 2})
         self.assertRaises(TypeError, ScopedDict, [('a', 1), ('b', 2)])
-        self.assertRaises(TypeError, ScopedDict, {'a' : {1 : 'k1'},
-                                                  'b' : {2 : 'k2'}})
+        self.assertRaises(TypeError, ScopedDict, {'a': {1: 'k1'},
+                                                  'b': {2: 'k2'}})
+
+    def test_contains(self):
+        scoped_dict = ScopedDict({
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
+            'a:b:c': {'k2': 5, 'k3': 6},
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
+        })
+
+        # Test simple lookup
+        self.assertIn('a:k1', scoped_dict)
+        self.assertIn('a:k2', scoped_dict)
+        self.assertIn('a:k3', scoped_dict)
+        self.assertIn('a:k4', scoped_dict)
+
+        self.assertIn('a:b:k1', scoped_dict)
+        self.assertIn('a:b:k2', scoped_dict)
+        self.assertIn('a:b:k3', scoped_dict)
+        self.assertIn('a:b:k4', scoped_dict)
+
+        self.assertIn('a:b:c:k1', scoped_dict)
+        self.assertIn('a:b:c:k1', scoped_dict)
+        self.assertIn('a:b:c:k1', scoped_dict)
+        self.assertIn('a:b:c:k1', scoped_dict)
+
+        # Test global scope
+        self.assertIn('k1', scoped_dict)
+        self.assertNotIn('k2', scoped_dict)
+        self.assertIn('k3', scoped_dict)
+        self.assertIn('k4', scoped_dict)
+
+        self.assertIn(':k1', scoped_dict)
+        self.assertNotIn(':k2', scoped_dict)
+        self.assertIn(':k3', scoped_dict)
+        self.assertIn(':k4', scoped_dict)
+
+        self.assertIn('*:k1', scoped_dict)
+        self.assertNotIn('*:k2', scoped_dict)
+        self.assertIn('*:k3', scoped_dict)
+        self.assertIn('*:k4', scoped_dict)
+
+        # Try to get full scopes as keys
+        self.assertNotIn('a', scoped_dict)
+        self.assertNotIn('a:b', scoped_dict)
+        self.assertNotIn('a:b:c', scoped_dict)
+        self.assertNotIn('a:b:c:d', scoped_dict)
+        self.assertNotIn('*', scoped_dict)
+        self.assertNotIn('', scoped_dict)
+
+    def test_iter_keys(self):
+        scoped_dict = ScopedDict({
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
+            'a:b:c': {'k2': 5, 'k3': 6},
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
+        })
+
+        expected_keys = [
+            'a:k1', 'a:k2',
+            'a:b:k1', 'a:b:k3',
+            'a:b:c:k2', 'a:b:c:k3',
+            '*:k1', '*:k3', '*:k4'
+        ]
+        self.assertEqual(sorted(expected_keys),
+                         sorted(k for k in scoped_dict.keys()))
+
+    def test_iter_items(self):
+        scoped_dict = ScopedDict({
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
+            'a:b:c': {'k2': 5, 'k3': 6},
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
+        })
+
+        expected_items = [
+            ('a:k1', 1), ('a:k2', 2),
+            ('a:b:k1', 3), ('a:b:k3', 4),
+            ('a:b:c:k2', 5), ('a:b:c:k3', 6),
+            ('*:k1', 7), ('*:k3', 9), ('*:k4', 10)
+        ]
+        self.assertEqual(sorted(expected_items),
+                         sorted(item for item in scoped_dict.items()))
+
+    def test_iter_values(self):
+        scoped_dict = ScopedDict({
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
+            'a:b:c': {'k2': 5, 'k3': 6},
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
+        })
+
+        expected_values = [1, 2, 3, 4, 5, 6, 7, 9, 10]
+        self.assertEqual(expected_values,
+                         sorted(v for v in scoped_dict.values()))
 
     def test_key_resolution(self):
         scoped_dict = ScopedDict({
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
         self.assertEqual(1, scoped_dict['a:k1'])
@@ -506,17 +630,17 @@ class TestScopedDict(unittest.TestCase):
 
     def test_setitem(self):
         scoped_dict = ScopedDict({
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
         scoped_dict['a:k2'] = 20
         scoped_dict['c:k2'] = 30
-        scoped_dict[':k4']  = 40
+        scoped_dict[':k4'] = 40
         scoped_dict['*:k5'] = 50
-        scoped_dict['k6']   = 60
+        scoped_dict['k6'] = 60
         self.assertEqual(20, scoped_dict['a:k2'])
         self.assertEqual(30, scoped_dict['c:k2'])
         self.assertEqual(40, scoped_dict[':k4'])
@@ -525,10 +649,10 @@ class TestScopedDict(unittest.TestCase):
 
     def test_delitem(self):
         scoped_dict = ScopedDict({
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
         # delete key
@@ -549,24 +673,22 @@ class TestScopedDict(unittest.TestCase):
             KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
         )
 
-    def test_addscopes(self):
+    def test_update(self):
         scoped_dict = ScopedDict({
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
-        scoped_dict_alt = ScopedDict()
-        scoped_dict_alt.add_scopes({
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+        scoped_dict_alt = ScopedDict({'a': {'k1': 3, 'k2': 5}})
+        scoped_dict_alt.update({
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
         self.assertEqual(scoped_dict, scoped_dict_alt)
-        self.assertRaises(KeyError, scoped_dict.add_scopes,
-                          {'a': {'k1': 1}})
 
     def test_scoped_dict_field(self):
         class FieldTester:
@@ -578,10 +700,10 @@ class TestScopedDict(unittest.TestCase):
 
         # Test valid assignments
         tester.field = {
-            'a'    : {'k1': 1, 'k2': 2},
-            'a:b'  : {'k1': 3, 'k3': 4},
+            'a': {'k1': 1, 'k2': 2},
+            'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
-            '*'    : {'k1': 7, 'k3': 9, 'k4': 10}
+            '*': {'k1': 7, 'k3': 9, 'k4': 10}
         }
         tester.field_maybe_none = None
 
@@ -600,3 +722,16 @@ class TestScopedDict(unittest.TestCase):
                           """tester.field = {'a': {1: 'k1'},
                                              'b': {2: 'k2'}}""",
                           globals(), locals())
+
+        # Test assigning a ScopedDict already
+        tester.field = ScopedDict({})
+
+
+class TestDeprecationOfFields(unittest.TestCase):
+    def test_sanityfield_set_deprecation(self):
+        class FieldTester:
+            sanity = SanityPatternField('sanity')
+
+        fixture = FieldTester()
+        with self.assertWarns(ReframeDeprecationWarning):
+            fixture.sanity = {}

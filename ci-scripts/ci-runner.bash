@@ -179,13 +179,6 @@ if [ $CI_EXITCODE -eq 0 ]; then
     swap_files reframe/settings.public.py reframe/settings.py
 fi
 
-# FIXME: Temporary workaround for the PE upgrade on Daint
-if [[ $(hostname) == daint* ]]; then
-    # Do not test modfied tests on Daint
-    exit $CI_EXITCODE
-fi
-
-
 # Find modified or added user checks
 userchecks=( $(git log --name-status --oneline --no-merges -1 | \
                grep -e '^[AM][[:space:]]*checks/.*\.py$' | \

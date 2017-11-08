@@ -9,20 +9,19 @@ class CudaCheck(RegressionTest):
                          os.path.dirname(__file__), **kwargs)
 
         # Uncomment and adjust for your site
-        # self.valid_systems = [ 'sys1', 'sys2' ]
+        # self.valid_systems = ['sys1', 'sys2']
 
         # Uncomment and set the valid prog. environments for your site
-        # self.valid_prog_environs = [ 'PrgEnv-cray', 'PrgEnv-gnu' ]
+        # self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
         # Uncomment and adjust to load CUDA
-        # self.modules = [ 'cudatoolkit' ]
+        # self.modules = ['cudatoolkit']
 
         self.num_gpus_per_node = 1
 
         # Uncomment and set the maintainers and/or tags
-        # self.maintainers = [ 'me' ]
-        # self.tags = { 'example' }
-
+        # self.maintainers = ['me']
+        # self.tags = {'example'}
 
     def compile(self):
         # Set nvcc flags
@@ -36,8 +35,8 @@ class MatrixmulCublasCheck(CudaCheck):
         self.descr = 'Implements matrix multiplication using CUBLAS'
         self.sourcepath = 'matrixmulcublas.cu'
         self.sanity_patterns = {
-            '-' : {
-                'Comparing CUBLAS Matrix Multiply with CPU results: PASS' : []
+            '-': {
+                'Comparing CUBLAS Matrix Multiply with CPU results: PASS': []
             }
         }
 
@@ -48,7 +47,7 @@ class BandwidthCheck(CudaCheck):
         self.descr = 'CUDA bandwidthTest compile and run'
         self.sourcepath = 'bandwidthTest.cu'
         self.sanity_patterns = {
-            '-' : { 'Result = PASS' : [] }
+            '-': {'Result = PASS': []}
         }
 
 
@@ -58,7 +57,7 @@ class DeviceQueryCheck(CudaCheck):
         self.descr = 'Queries the properties of the CUDA devices'
         self.sourcepath = 'devicequery.cu'
         self.sanity_patterns = {
-            '-' : { 'Result = PASS' : [] }
+            '-': {'Result = PASS': []}
         }
 
 
@@ -68,7 +67,7 @@ class ConcurrentKernelsCheck(CudaCheck):
         self.descr = 'Use of streams for concurrent execution'
         self.sourcepath = 'concurrentkernels.cu'
         self.sanity_patterns = {
-            '-' : { 'Test passed' : [] }
+            '-': {'Test passed': []}
         }
 
 
@@ -81,16 +80,16 @@ class SimpleMPICheck(CudaCheck):
         self.num_tasks = 2
         self.num_tasks_per_node = 2
         self.sanity_patterns = {
-            '-' : { 'Result = PASS' : [] }
+            '-': {'Result = PASS': []}
         }
 
         # Uncomment for Cray systems
-        # self.variables = { 'CRAY_CUDA_MPS' : '1' }
+        # self.variables = {'CRAY_CUDA_MPS': '1'}
 
 
 def _get_checks(**kwargs):
-    return [ BandwidthCheck(**kwargs),
-             ConcurrentKernelsCheck(**kwargs),
-             DeviceQueryCheck(**kwargs),
-             MatrixmulCublasCheck(**kwargs),
-             SimpleMPICheck(**kwargs) ]
+    return [BandwidthCheck(**kwargs),
+            ConcurrentKernelsCheck(**kwargs),
+            DeviceQueryCheck(**kwargs),
+            MatrixmulCublasCheck(**kwargs),
+            SimpleMPICheck(**kwargs)]
