@@ -23,32 +23,37 @@ class Module:
             raise ModuleError('no module name specified')
 
         name_parts = name.split('/')
-        self.name = name_parts[0]
+        self._name = name_parts[0]
         if len(name_parts) > 1:
-            self.version = name_parts[1]
+            self._version = name_parts[1]
         else:
-            self.version = None
+            self._version = None
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def version(self):
+        return self._version
 
     def __eq__(self, other):
-        if other is not None and self.name == other.name:
-            if not self.version or not other.version:
-                return True
-            else:
-                return self.version == other.version
+        if not isinstance(other, type(self)):
+            return NotImplemented
 
-        return False
+        if self._version is None or other._version is None:
+            return self._name == other._name
 
-    def __neq__(self, other):
-        return not self.__eq__(other)
+        return self._name == other._name and self._version == other._version
 
     def __repr__(self):
         return debug.repr(self)
 
     def __str__(self):
-        if self.version:
-            return '%s/%s' % (self.name, self.version)
+        if self._version:
+            return '%s/%s' % (self._name, self._version)
         else:
-            return self.name
+            return self._name
 
 
 def module_equal(rhs, lhs):

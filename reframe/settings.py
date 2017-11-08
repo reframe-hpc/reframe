@@ -5,26 +5,24 @@
 import os
 from datetime import datetime
 
-from reframe.core.fields import ReadOnlyField
-
 
 class RegressionSettings:
-    version     = ReadOnlyField('2.6.1')
-    module_name = ReadOnlyField('reframe')
-    job_state_poll_intervals = ReadOnlyField([1, 2, 3])
-    job_init_poll_intervals  = ReadOnlyField([1])
-    job_init_poll_max_tries  = ReadOnlyField(30)
-    job_submit_timeout       = ReadOnlyField(60)
-
-    prefix_apps = ReadOnlyField('/apps/common/regression/resources')
-    checks_path = ReadOnlyField(['checks/'])
-    checks_path_recurse = ReadOnlyField(True)
-
-    site_configuration = ReadOnlyField({
+    _version = '2.7'
+    _module_name = 'reframe'
+    _job_state_poll_intervals = [1, 2, 3]
+    _job_init_poll_intervals  = [1]
+    _job_init_poll_max_tries  = 30
+    _job_submit_timeout = 60
+    _checks_path = ['checks/']
+    _checks_path_recurse = True
+    _site_configuration = {
         'systems': {
-            # Generic system used for cli unit tests
+            # Generic system used also in unit tests
             'generic': {
                 'descr': 'Generic example system',
+
+                # Adjust to your system's hostname
+                'hostnames': ['localhost'],
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -39,26 +37,6 @@ class RegressionSettings:
 
         'environments': {
             '*': {
-                'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray'],
-                },
-
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                },
-
-                'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-intel'],
-                },
-
-                'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi'],
-                },
-
                 'builtin': {
                     'type': 'ProgEnvironment',
                     'cc':  'cc',
@@ -74,9 +52,9 @@ class RegressionSettings:
                 }
             }
         }
-    })
+    }
 
-    logging_config = {
+    _logging_config = {
         'level': 'DEBUG',
         'handlers': {
             'reframe.log': {
@@ -98,6 +76,46 @@ class RegressionSettings:
             }
         }
     }
+
+    @property
+    def version(self):
+        return self._version
+
+    @property
+    def module_name(self):
+        return self._module_name
+
+    @property
+    def job_state_poll_intervals(self):
+        return self._job_state_poll_intervals
+
+    @property
+    def job_init_poll_intervals(self):
+        return self._job_init_poll_intervals
+
+    @property
+    def job_init_poll_max_tries(self):
+        return self._job_init_poll_max_tries
+
+    @property
+    def job_submit_timeout(self):
+        return self._job_submit_timeout
+
+    @property
+    def checks_path(self):
+        return self._checks_path
+
+    @property
+    def checks_path_recurse(self):
+        return self._checks_path_recurse
+
+    @property
+    def site_configuration(self):
+        return self._site_configuration
+
+    @property
+    def logging_config(self):
+        return self._logging_config
 
 
 settings = RegressionSettings()

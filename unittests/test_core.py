@@ -81,7 +81,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertEnvironmentVariable(name='_fookey3b', value='foovalue1')
         self.assertEnvironmentVariable(name='_fookey4b', value='foovalue2')
         self.assertModulesLoaded(self.environ.modules)
-        self.assertTrue(self.environ.loaded)
+        self.assertTrue(self.environ.is_loaded)
 
         self.environ.unload()
         self.assertEqual(self.environ_save, EnvironmentSnapshot())
@@ -135,8 +135,8 @@ class TestEnvironment(unittest.TestCase):
 
         self.environ.load()
         swap_environments(self.environ, self.environ_other)
-        self.assertFalse(self.environ.loaded)
-        self.assertTrue(self.environ_other.loaded)
+        self.assertFalse(self.environ.is_loaded)
+        self.assertTrue(self.environ_other.is_loaded)
 
 
 class TestProgEnvironment(unittest.TestCase):

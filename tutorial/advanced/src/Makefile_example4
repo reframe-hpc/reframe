@@ -1,0 +1,16 @@
+EXECUTABLE := advanced_example4
+
+CPPFLAGS = -DCUDA_HOME=\"$(CUDA_HOME)\"
+
+.SUFFIXES: .o .c
+
+OBJS := advanced_example4.o
+
+$(EXECUTABLE): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+$(OBJS): advanced_example4.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $(LDFLAGS) -o $@ $^
+
+clean:
+	/bin/rm -f $(OBJS) $(EXECUTABLE)

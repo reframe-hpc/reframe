@@ -11,16 +11,16 @@ class CPMDCheck(RunOnlyRegressionTest):
         self.descr = 'CPMD check (C4H6 metadynamics)'
 
         # Uncomment and adjust for your site
-        # self.valid_systems = [ 'sys1', 'sys2' ]
+        # self.valid_systems = ['sys1', 'sys2']
 
         # Uncomment and set the valid prog. environments for your site
-        # self.valid_prog_environs = [ 'PrgEnv-intel' ]
+        # self.valid_prog_environs = ['PrgEnv-intel']
 
         # Uncomment and adjust to load the CPMD module
-        # self.modules = [ 'CPMD' ]
+        # self.modules = ['CPMD']
 
         self.executable = 'cpmd.x'
-        self.executable_opts = [ 'ana_c4h6.in' ]
+        self.executable_opts = ['ana_c4h6.in']
 
         # Uncomment and adjust for your site
         # self.num_tasks = 16
@@ -28,10 +28,10 @@ class CPMDCheck(RunOnlyRegressionTest):
         # self.use_multithreading = True
 
         self.sanity_patterns = {
-            '-' : {
-                'CLASSICAL ENERGY\s+-(?P<result>\d+\.?\d*)' : [
+            '-': {
+                'CLASSICAL ENERGY\s+-(?P<result>\d+\.?\d*)': [
                     ('result', float,
-                     lambda value, **kwargs: \
+                     lambda value, **kwargs:
                          standard_threshold(value, (25.812675, -1e-2, 1e-2)))
                 ]
             }
@@ -39,11 +39,11 @@ class CPMDCheck(RunOnlyRegressionTest):
 
         self.parser = StatefulParser(standard_threshold)
         self.perf_patterns = {
-            '-' : {
-                '(?P<perf_section>TIMING)' : [
+            '-': {
+                '(?P<perf_section>TIMING)': [
                     ('perf_section', str, self.parser.on)
                 ],
-                '^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)' : [
+                '^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)': [
                     ('perf', float, self.parser.match)
                 ]
             }
@@ -51,21 +51,21 @@ class CPMDCheck(RunOnlyRegressionTest):
 
         self.reference = {
             # Uncomment and adjust the references for your systems/partitions
-            # 'sys1' : {
-            #     'perf' : (233.04, None, 0.15)
+            # 'sys1': {
+            #     'perf': (233.04, None, 0.15)
             # },
-            # 'sys2' : {
-            #     'perf' : (332.20, None, 0.15)
+            # 'sys2': {
+            #     'perf': (332.20, None, 0.15)
             # },
-            '*' : {
-                'perf_section' : None,
+            '*': {
+                'perf_section': None,
             }
         }
 
         # Uncomment and set the maintainers and/or tags
-        # self.maintainers = [ 'me' ]
-        # self.tags = { 'example' }
+        # self.maintainers = ['me']
+        # self.tags = {'example'}
 
 
 def _get_checks(**kwargs):
-    return [ CPMDCheck(**kwargs) ]
+    return [CPMDCheck(**kwargs)]

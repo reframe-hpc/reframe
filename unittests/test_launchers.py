@@ -84,9 +84,7 @@ class TestLocalLauncher(_TestLauncher):
         self.launcher = LocalLauncher(None)
 
     def test_launcher(self):
-        self.assertRaises(NotImplementedError,
-                          exec, 'self.launcher_command',
-                          globals(), locals())
+        self.assertEqual('', self.launcher_command)
 
     @property
     def expected_shell_script_patt(self):
@@ -95,16 +93,14 @@ class TestLocalLauncher(_TestLauncher):
 
 class TestAbstractLauncher(_TestLauncher):
     def setUp(self):
-        super().setUp()
-        self.launcher = JobLauncher(None)
-
-    def test_launcher(self):
-        # This is implicitly tested in test_launcher_emit_command().
         pass
 
+    def test_launcher(self):
+        # ABCs do not allow at all instantiation of abstract classes
+        self.assertRaises(TypeError, JobLauncher, None)
+
     def test_launcher_emit_command(self):
-        self.assertRaises(NotImplementedError,
-                          super().test_launcher_emit_command)
+        pass
 
 
 class TestVisitLauncherNativeSlurm(_TestLauncher):
@@ -115,7 +111,7 @@ class TestVisitLauncherNativeSlurm(_TestLauncher):
                             job_script_builder=self.builder,
                             num_tasks=5,
                             num_tasks_per_node=2,
-                            launcher=NativeSlurmLauncher)
+                            launcher_type=NativeSlurmLauncher)
         self.launcher = VisitLauncher(self.job)
         self.expected_launcher_patt = '^[ \t]*visit[ \t]+-np[ \t]+5[ \t]+' \
                                       '-nn[ \t]+3[ \t]+-l[ \t]+srun[ \t]*$'

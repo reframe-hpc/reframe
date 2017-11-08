@@ -19,10 +19,10 @@ class OpenACCFortranCheck(RegressionTest):
         self.num_gpus_per_node = 1
 
         self.sanity_patterns = {
-            '-' : {
-                'final result:\s+(?P<result>\d+\.?\d*)' : [
+            '-': {
+                'final result:\s+(?P<result>\d+\.?\d*)': [
                     ('result', float,
-                     lambda value, **kwargs: \
+                     lambda value, **kwargs:
                          standard_threshold(value, (1., -1e-5, 1e-5)))
                 ],
             }
@@ -35,15 +35,14 @@ class OpenACCFortranCheck(RegressionTest):
         # self.maintainers = [ 'me' ]
         # self.tags = { 'example' }
 
-
-    def setup(self, system, environ, **job_opts):
+    def setup(self, partition, environ, **job_opts):
         if environ.name == 'PrgEnv-cray':
             environ.fflags = '-hacc -hnoomp'
         elif environ.name == 'PrgEnv-pgi':
             environ.fflags = '-acc -ta=tesla:cuda8.0'
 
-        super().setup(system, environ, **job_opts)
+        super().setup(partition, environ, **job_opts)
 
 
 def _get_checks(**kwargs):
-    return [ OpenACCFortranCheck(**kwargs) ]
+    return [OpenACCFortranCheck(**kwargs)]

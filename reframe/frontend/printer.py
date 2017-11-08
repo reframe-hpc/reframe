@@ -1,3 +1,4 @@
+import abc
 import datetime
 import sys
 import reframe.core.debug as debug
@@ -5,12 +6,19 @@ import reframe.core.debug as debug
 from reframe.core.logging import LoggerAdapter, load_from_dict, getlogger
 
 
-class Colorizer:
+class Colorizer(abc.ABC):
     def __repr__(self):
         return debug.repr(self)
 
+    @abc.abstractmethod
     def colorize(string, foreground, background):
-        raise NotImplementedError('attempt to call an abstract method')
+        """Colorize a string.
+
+        Keyword arguments:
+        string -- the string to be colorized
+        foreground -- the foreground color
+        background -- the background color
+        """
 
 
 class AnsiColorizer(Colorizer):

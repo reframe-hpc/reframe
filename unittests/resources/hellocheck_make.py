@@ -18,7 +18,7 @@ class HelloMakeTest(RegressionTest):
         self.keep_files = ['hello_cpp']
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = {
-            '-' : {'Hello, World\!' : []}
+            '-': {'Hello, World\!': []}
         }
         self.maintainers = ['VK']
 

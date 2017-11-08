@@ -138,8 +138,8 @@ def main():
         '--skip-performance-check', action='store_true',
         help='Skip performance checking')
     run_options.add_argument(
-        '--relax-performance-check', action='store_true',
-        help='Relax performance checking if applicable')
+        '--strict', action='store_true',
+        help='Force strict performance checking')
     run_options.add_argument(
         '--skip-system-check', action='store_true',
         help='Skip system check')
@@ -197,13 +197,10 @@ def main():
             sysname, sep, partname = options.system.partition(':')
             system = site_config.systems[sysname]
             if partname:
-                # Remove all partitions except partname
-                system.partitions = [
-                    p for p in filter(
-                        lambda p: p if p.name == partname else None,
-                        system.partitions
-                    )
-                ]
+                # Disable all partitions except partname
+                for p in system.partitions:
+                    if p.name != partname:
+                        p.disable()
 
             if not system.partitions:
                 raise KeyError(options.system)
@@ -223,7 +220,6 @@ def main():
 
     if options.mode:
         try:
-            mode_key = '%s:%s' % (system.name, options.mode)
             mode_args = site_config.modes[options.mode]
 
             # Parse the mode's options and reparse the command-line
@@ -287,7 +283,7 @@ def main():
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
-    printer.info('Reframe version: ' + settings.version)
+    printer.info('Reframe version: '  + settings.version)
     printer.info('Launched by user: ' + os.environ['USER'])
     printer.info('Launched on host: ' + socket.gethostname())
 
@@ -383,8 +379,7 @@ def main():
 
             exec_policy.skip_system_check = options.skip_system_check
             exec_policy.force_local = options.force_local
-            exec_policy.relax_performance_check = (
-                options.relax_performance_check)
+            exec_policy.strict_check = options.strict
             exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
@@ -397,7 +392,7 @@ def main():
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
 
-            runner = Runner(exec_policy)
+            runner = Runner(exec_policy, printer)
             try:
                 runner.runall(checks_matched, system)
             finally:

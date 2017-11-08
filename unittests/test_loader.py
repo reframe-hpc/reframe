@@ -1,8 +1,10 @@
 import copy
 import os
 import unittest
+import warnings
 
-from reframe.core.exceptions import ReframeError, ConfigurationError
+from reframe.core.exceptions import (ReframeDeprecationWarning,
+                                     ReframeError, ConfigurationError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -58,7 +60,7 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
                           self.config.load_from_dict, site_config)
 
     def test_load_failure_no_systems(self):
-        site_config = {'environments' : {}}
+        site_config = {'environments': {}}
         self.assertRaises(ConfigurationError,
                           self.config.load_from_dict, site_config)
 
@@ -124,6 +126,7 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
 class TestRegressionCheckLoader(unittest.TestCase):
     def setUp(self):
+        warnings.simplefilter('ignore', ReframeDeprecationWarning)
         self.loader = RegressionCheckLoader(['.'])
         self.loader_with_path = RegressionCheckLoader(
             ['unittests/resources', 'unittests/foobar'])
@@ -133,6 +136,9 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
         self.system = System('foo')
         self.resources = ResourcesManager()
+
+    def tearDown(self):
+        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def test_load_file_relative(self):
         checks = self.loader.load_from_file(
@@ -155,12 +161,12 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources', recurse=True,
             system=self.system, resources=self.resources
         )
-        self.assertEqual(11, len(checks))
+        self.assertEqual(12, len(checks))
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all(system=self.system,
                                                 resources=self.resources)
-        self.assertEqual(10, len(checks))
+        self.assertEqual(11, len(checks))
 
     def test_load_all_with_prefix(self):
         checks = self.loader_with_prefix.load_all(system=self.system,

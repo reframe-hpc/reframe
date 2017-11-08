@@ -3,8 +3,11 @@
 # sanity patterns output
 #
 
+import abc
+import sys
 import reframe.core.debug as debug
 
+from reframe.core.exceptions import user_deprecation_warning
 from reframe.utility.functions import always_true
 
 
@@ -13,28 +16,35 @@ class StatefulParser:
 
     def __init__(self, callback=None):
         """Create a basic StatefulParser
-
         callback -- callable to be called when matching criteria are met
         (default None, which is equivalent to reframe.utility.always_true)"""
-        self.is_on = False
-        self.callback = callback or always_true
+
+        user_deprecation_warning('Use of parsers is deprecated. Please refer to the '
+                                 'ReFrame tutorial for the new syntax.'),
+
+        self._is_on = False
+        self._callback = callback or always_true
 
     def __repr__(self):
         return debug.repr(self)
 
+    @property
+    def is_on(self):
+        return self._is_on
+
     def on(self, **kwargs):
         """Switch on the parser"""
-        self.is_on = True
+        self._is_on = True
         return True
 
     def off(self, **kwargs):
         """Switch off the parser"""
-        self.is_on = False
+        self._is_on = False
         return True
 
     def match(self, value, reference, **kwargs):
         """To be called when a match is found"""
-        if self.is_on:
+        if self._is_on:
             return self._match(value, reference, **kwargs)
         else:
             return False
@@ -48,11 +58,11 @@ class StatefulParser:
         """The actual state changing function.
 
         It is only called when the parser is on."""
-        return self.callback(value, reference, **kwargs)
+        return self._callback(value, reference, **kwargs)
 
     def clear(self, **kwargs):
         """Clear the parser state."""
-        self.is_on = False
+        self._is_on = False
 
 
 class SingleOccurrenceParser(StatefulParser):
@@ -60,19 +70,23 @@ class SingleOccurrenceParser(StatefulParser):
 
     def __init__(self, nth_occurrence, callback=None):
         super().__init__(callback)
-        self.count = 0
-        self.nth_occurrence = nth_occurrence
+        self._count = 0
+        self._nth_occurrence = nth_occurrence
+
+    @property
+    def count(self):
+        return self._count
 
     def _match(self, value, reference, **kwargs):
-        self.count += 1
-        if self.count == self.nth_occurrence:
+        self._count += 1
+        if self._count == self._nth_occurrence:
             return super()._match(value, reference, **kwargs)
         else:
             return False
 
     def clear(self, **kwargs):
         super().clear()
-        self.count = 0
+        self._count = 0
 
 
 class CounterParser(StatefulParser):
@@ -87,34 +101,42 @@ class CounterParser(StatefulParser):
         (default None, which is equivalent to reframe.utility.always_true)"""
 
         super().__init__(callback)
-        self.count = 0
-        self.last_match = None
-        self.num_matches = num_matches
-        self.exact = exact
+        self._count = 0
+        self._last_match = None
+        self._num_matches = num_matches
+        self._exact = exact
+
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def last_match(self):
+        return self._last_match
 
     def _match(self, value, reference, **kwargs):
-        self.count += 1
-        if self.num_matches < 0:
-            self.last_match = (value, reference)
+        self._count += 1
+        if self._num_matches < 0:
+            self._last_match = (value, reference)
             return True
         else:
-            return (self.count == self.num_matches and
-                    self.callback(value, reference, **kwargs))
+            return (self._count == self._num_matches and
+                    self._callback(value, reference, **kwargs))
 
     def match_eof(self, **kwargs):
-        if self.num_matches < 0:
-            retvalue = (self.callback(*self.last_match, **kwargs)
-                        if self.last_match is not None else True)
+        if self._num_matches < 0:
+            retvalue = (self._callback(*self._last_match, **kwargs)
+                        if self._last_match is not None else True)
         else:
-            retvalue = self.count == self.num_matches if self.exact else True
+            retvalue = self._count == self._num_matches if self._exact else True
 
         super().match_eof()
         return retvalue
 
     def clear(self, **kwargs):
         super().clear()
-        self.count = 0
-        self.last_match = None
+        self._count = 0
+        self._last_match = None
 
 
 class UniqueOccurrencesParser(StatefulParser):
@@ -123,20 +145,24 @@ class UniqueOccurrencesParser(StatefulParser):
 
     def __init__(self, num_matches, callback=None):
         super().__init__(callback)
-        self.num_matches = num_matches
-        self.matched = set()
+        self._num_matches = num_matches
+        self._matched = set()
+
+    @property
+    def matched(self):
+        return self._matched
 
     def _match(self, value, reference, **kwargs):
-        self.matched.add((value, reference))
+        self._matched.add((value, reference))
         return True
 
     def match_eof(self, **kwargs):
         retvalue = True
-        if len(self.matched) != self.num_matches:
+        if len(self._matched) != self._num_matches:
             retvalue = False
 
-        for match in self.matched:
-            if not self.callback(*match, **kwargs):
+        for match in self._matched:
+            if not self._callback(*match, **kwargs):
                 retvalue = False
 
         super().match_eof()
@@ -144,82 +170,96 @@ class UniqueOccurrencesParser(StatefulParser):
 
     def clear(self, **kwargs):
         super().clear()
-        self.matched.clear()
+        self._matched.clear()
 
 
-class ReductionParser(StatefulParser):
+class ReductionParser(StatefulParser, abc.ABC):
     """Abstact parser for implementing reduction operations"""
 
     def __init__(self, callback=None):
         super().__init__(callback)
-        self.value = None
-        self.reference = None
+        self._value = None
+        self._reference = None
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def reference(self):
+        return self._reference
 
     def _match(self, value, reference, **kwargs):
-        if self.value is None:
-            self.value = value
+        if self._value is None:
+            self._value = value
         else:
             self._apply_operator(value)
 
-        self.reference = reference
+        self._reference = reference
         return True
 
+    @abc.abstractmethod
     def _apply_operator(self, value):
-        """The reduction operator
+        """The reduction operator.
 
-        To be implemented by subclasses"""
-        raise NotImplementedError('attempt to call an abstract method')
+        Keyword arguments
+        value -- the value to be reduced.
+        """
 
     def match_eof(self, **kwargs):
-        if self.value is None:
+        if self._value is None:
             return True
 
-        retvalue = self.callback(self.value, self.reference, **kwargs)
+        retvalue = self._callback(self._value, self._reference, **kwargs)
         super().match_eof()
         return retvalue
 
     def clear(self, **kwargs):
         super().clear()
-        self.value = None
-        self.reference = None
+        self._value = None
+        self._reference = None
 
 
 class MaxParser(ReductionParser):
     def _apply_operator(self, value):
-        self.value = max([self.value, value])
+        self._value = max([self._value, value])
 
 
 class MinParser(ReductionParser):
     def _apply_operator(self, value):
-        self.value = min([self.value, value])
+        self._value = min([self._value, value])
 
 
 class SumParser(ReductionParser):
     def _apply_operator(self, value):
-        self.value += value
+        self._value += value
 
 
 class AverageParser(ReductionParser):
     def __init__(self, callback=None):
         super().__init__(callback)
-        self.count = 0
+        self._count = 0
+
+    @property
+    def count(self):
+        return self._count
 
     def _match(self, value, reference, **kwargs):
-        self.count += 1
+        self._count += 1
         return super()._match(value, reference, **kwargs)
 
     def _apply_operator(self, value):
-        self.value += value
+        self._value += value
 
     def match_eof(self, **kwargs):
-        if self.value is None:
+        if self._value is None:
             return True
 
-        retvalue = self.callback(self.value / self.count,
-                                 self.reference, **kwargs)
+        retvalue = self._callback(self._value / self._count,
+                                  self._reference, **kwargs)
         super().match_eof()
         return retvalue
 
     def clear(self, **kwargs):
         super().clear()
-        self.count = 0
+        self._count = 0
