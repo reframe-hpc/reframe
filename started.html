@@ -1,0 +1,365 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting Started &mdash; ReFrame 2.7 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/>
+        <link rel="next" title="Configuring ReFrame for Your Site" href="configure.html"/>
+        <link rel="prev" title="Welcome to ReFrame" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#optional">Optional</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-the-framework">Getting the Framework</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-unit-tests">Running the Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#where-to-go-from-here">Where to Go from Here</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="configure.html" class="btn btn-neutral float-right" title="Configuring ReFrame for Your Site" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Python 3.5 or higher. Python 2 is not supported.</li>
+<li>A functional Tcl <a class="reference external" href="http://modules.sourceforge.net/">modules</a> software management environment with Python bindings. The following need to be present or functional:<ul>
+<li><code class="docutils literal"><span class="pre">MODULESHOME</span></code> variable must be set.</li>
+<li><code class="docutils literal"><span class="pre">modulecmd</span> <span class="pre">python</span></code> must be supported.</li>
+</ul>
+</li>
+</ul>
+<div class="section" id="optional">
+<h3>Optional<a class="headerlink" href="#optional" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The <a class="reference external" href="https://pypi.python.org/pypi/nose">nose</a> Python module must be installed if you want to run the unit tests of the framework.</li>
+<li>If you want to use the framework for launching tests on a cluster, a functional job submission management system is required. Currently only <a class="reference external" href="https://www.schedmd.com/">Slurm</a> is supported with either a native Slurm job launcher or the Cray ALPS launcher.<ul>
+<li>In the case of Slurm, job accounting storage (<code class="docutils literal"><span class="pre">sacct</span></code> command) is required.</li>
+</ul>
+</li>
+</ul>
+<p>You are advised to run the <a class="reference external" href="#running-the-unit-tests">unit tests</a> of the framework after installing it on a new system to make sure that everything works fine.</p>
+</div>
+</div>
+<div class="section" id="getting-the-framework">
+<h2>Getting the Framework<a class="headerlink" href="#getting-the-framework" title="Permalink to this headline">¶</a></h2>
+<p>To get the latest stable version of the framework, you can just clone it from the <a class="reference external" href="https://github.com/eth-cscs/reframe">github</a> project page:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">eth</span><span class="o">-</span><span class="n">cscs</span><span class="o">/</span><span class="n">reframe</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>Alternatively, you can pick a previous stable version by downloading it from the previous <a class="reference external" href="https://github.com/eth-cscs/reframe/releases">releases</a> section.</p>
+</div>
+<div class="section" id="running-the-unit-tests">
+<h2>Running the Unit Tests<a class="headerlink" href="#running-the-unit-tests" title="Permalink to this headline">¶</a></h2>
+<p>After you have downloaded the framework, it is important to run the unit tests of to make sure that everything is set up correctly:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">test_reframe</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">v</span>
+</pre></div>
+</div>
+<p>The output should look like the following:</p>
+<div class="code bash highlight-default"><div class="highlight"><pre><span></span><span class="n">test_check_failure</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_check_sanity_failure</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_check_submit_success</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">SKIP</span><span class="p">:</span> <span class="n">job</span> <span class="n">submission</span> <span class="ow">not</span> <span class="n">supported</span>
+<span class="n">test_check_success</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_checkpath_recursion</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_custom_performance_check_failure</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_cli</span><span class="o">.</span><span class="n">TestFrontend</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="o">...</span>
+<span class="n">test_copytree</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestOSTools</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_grep</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestOSTools</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_inpath</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestOSTools</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_subdirs</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestOSTools</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_always_true</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestUtilityFunctions</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+<span class="n">test_standard_threshold</span> <span class="p">(</span><span class="n">unittests</span><span class="o">.</span><span class="n">test_utility</span><span class="o">.</span><span class="n">TestUtilityFunctions</span><span class="p">)</span> <span class="o">...</span> <span class="n">ok</span>
+
+<span class="o">----------------------------------------------------------------------</span>
+<span class="n">Ran</span> <span class="mi">235</span> <span class="n">tests</span> <span class="ow">in</span> <span class="mf">33.842</span><span class="n">s</span>
+
+<span class="n">OK</span> <span class="p">(</span><span class="n">SKIP</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You will notice in the output that all the job submission related tests have been skipped. The test suite detects if the current system has a job submission system and is configured for ReFrame (see <a class="reference external" href="configure.html">Configuring ReFrame for your site</a>) and it will skip all the unsupported unit tests. As soon as you configure ReFrame for your system, you can rerun the test suite to check that job submission unit tests pass as well. Note here that some unit tests may still be skipped depending on the configured job submission system. For example, the Slurm+ALPS tests will also be skipped on a system configured with native SLURM.</p>
+</div>
+<div class="section" id="where-to-go-from-here">
+<h2>Where to Go from Here<a class="headerlink" href="#where-to-go-from-here" title="Permalink to this headline">¶</a></h2>
+<p>The next step from here is to setup and configure ReFrame for your site, so that ReFrame can automatically recognize it and submit jobs. Please refer to the <a class="reference external" href="configure.html">“Configuring Reframe For Your Site”</a> section on how to do that.</p>
+<p>Before starting implementing a regression test, you should go through the <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, so as to understand the mechanism that ReFrame uses to run the regression tests. This section will let you follow easily the <a class="reference external" href="tutorial.html">“ReFrame Tutorial”</a> as well as understand the more advanced examples in the <a class="reference external" href="advanced.html">“Customizing Further A Regression Test”</a> section.</p>
+<p>To learn how to invoke the ReFrame command-line interface for running your tests, please refer to the <a class="reference external" href="running.html">“Running ReFrame”</a> section.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="configure.html" class="btn btn-neutral float-right" title="Configuring ReFrame for Your Site" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

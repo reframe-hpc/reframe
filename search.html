@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to ReFrame &mdash; ReFrame 2.7 documentation</title>
+  <title>Search &mdash; ReFrame 2.7 documentation</title>
   
 
   
@@ -38,9 +38,8 @@
               href="about.html"/>
         <link rel="index" title="Index"
               href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="#"/>
-        <link rel="next" title="Getting Started" href="started.html"/> 
+        <link rel="search" title="Search" href="#"/>
+    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -60,7 +59,7 @@
     
 
           
-            <a href="#" class="icon icon-home"> ReFrame
+            <a href="index.html" class="icon icon-home"> ReFrame
           
 
           
@@ -77,7 +76,7 @@
 
           
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="#" method="get">
     <input type="text" name="q" placeholder="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -132,7 +131,7 @@
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">ReFrame</a>
+          <a href="index.html">ReFrame</a>
         
       </nav>
 
@@ -143,65 +142,32 @@
           <div role="navigation" aria-label="breadcrumbs navigation">
   <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
   <ul class="wy-breadcrumbs">
-    <li><a href="#">Docs</a> &raquo;</li>
+    <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li>Welcome to ReFrame</li>
+    <li>Search</li>
       <li class="wy-breadcrumbs-aside">
-        
-          
-            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
-          
-            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
-            <!-- <a href="Section_commands.html#comm">Commands</a> -->
         
       </li>
   </ul>
   <hr/>
   
-    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
-      
-        <a href="started.html" class="btn btn-neutral float-right" title="Getting Started" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-    </div>
-  
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-reframe">
-<h1>Welcome to ReFrame<a class="headerlink" href="#welcome-to-reframe" title="Permalink to this headline">¶</a></h1>
-<p>ReFrame is a new framework for writing regression tests for HPC systems.
-The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
-This allows users to write easily portable regression tests, focusing only on the functionality.</p>
-<p>Regression tests in ReFrame are simple Python classes that specify the basic parameters of the test.
-The framework will load the test and will send it down a well-defined pipeline that will take care of its execution.
-The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.</p>
-<p>Reframe also offers a high-level and flexible abstraction for writing sanity and performance checks for your regression tests, without having to care about the details of parsing output files, searching for patterns and testing against reference values for different systems.</p>
-<p>Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
-Users can create their own test hierarchies or test factories for generating multiple tests at the same time and they can also customize them in a simple and expressive way.</p>
-<p>For versions 2.6.1 and older, please refer to <a class="reference external" href="_old/index.html">this documentation</a>.</p>
-</div>
-<div class="section" id="use-cases">
-<h1>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h1>
-<p>The ReFrame framework has been in production at <a class="reference external" href="http://www.cscs.ch">CSCS</a> since the upgrade of the <a class="reference external" href="http://www.cscs.ch/computers/piz_daint/index.html">Piz Daint</a> system in early December 2016.</p>
-<p><a class="reference external" href="usecases.html">Read the full story</a>…</p>
-</div>
-<div class="section" id="latest-release">
-<h1>Latest Release<a class="headerlink" href="#latest-release" title="Permalink to this headline">¶</a></h1>
-<p>Reframe is being actively developed at <a class="reference external" href="http://www.cscs.ch/">CSCS</a>.
-You can always find the latest release <a class="reference external" href="https://github.com/eth-cscs/reframe/releases/latest">here</a>.</p>
-</div>
-<div class="section" id="publications">
-<h1>Publications<a class="headerlink" href="#publications" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><em>ReFrame: A regression framework for checking the health of large HPC
-systems</em> [<a class="reference external" href="_static/files/reframe-cug17-slides.pdf">slides</a>]</li>
-</ul>
-<div class="toctree-wrapper compound">
-</div>
-</div>
+  <noscript>
+  <div id="fallback" class="admonition warning">
+    <p class="last">
+      Please activate JavaScript to enable the search
+      functionality.
+    </p>
+  </div>
+  </noscript>
 
+  
+  <div id="search-results">
+  
+  </div>
 
            </div>
            <div class="articleComments">
@@ -210,13 +176,6 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
           </div>
           
 <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="started.html" class="btn btn-neutral float-right" title="Getting Started" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-    </div>
   
 
   <hr/>
@@ -294,6 +253,7 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/searchtools.js"></script>
 
   
 
@@ -309,7 +269,14 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
           SphinxRtdTheme.StickyNav.enable();
       });
   </script>
+  
+  <script type="text/javascript">
+    jQuery(function() { Search.loadIndex("searchindex.js"); });
+  </script>
+  
+  <script type="text/javascript" id="searchindexloader"></script>
    
+
 
 </body>
 </html>
