@@ -9,9 +9,11 @@ import shutil
 import subprocess
 
 from reframe.core.exceptions import *
+from reframe.core.logging import getlogger
 
 
 def run_command(cmd, check=False, timeout=None):
+    getlogger().debug('executing OS command: ' + cmd)
     try:
         return subprocess.run(shlex.split(cmd),
                               stdout=subprocess.PIPE,
@@ -57,6 +59,7 @@ def run_command_async(cmd,
                       stderr=subprocess.PIPE,
                       bufsize=1,
                       **popen_args):
+    getlogger().debug('executing OS command asynchronously: ' + cmd)
     return subprocess.Popen(args=shlex.split(cmd),
                             stdout=stdout,
                             stderr=stderr,

@@ -21,6 +21,7 @@ from reframe.core.exceptions import (ReframeError,
                                      JobResourcesError)
 from reframe.core.fields import TypedField, TypedListField
 from reframe.core.launchers import LocalLauncher
+from reframe.core.logging import getlogger
 from reframe.settings import settings
 
 
@@ -177,6 +178,7 @@ class Job(abc.ABC):
 
     def submit(self, cmd, workdir='.'):
         # Build the submission script and submit it
+        getlogger().debug('emitting job script: %s' % self._script_filename)
         self.emit_preamble(self._script_builder)
         self._script_builder.verbatim('cd %s' % workdir)
         self.launcher.emit_run_command(cmd, self._script_builder)
@@ -283,7 +285,8 @@ class LocalJob(Job):
         except (ProcessLookupError, PermissionError):
             # The process group may already be dead or assigned to a different
             # group, so ignore this error
-            pass
+            getlogger().debug(
+                'pid %s already dead or assigned elsewhere' % self._jobid)
 
     def _term_all(self):
         """Send SIGTERM to all the processes of the spawned job."""
@@ -315,6 +318,8 @@ class LocalJob(Job):
         except (ProcessLookupError, PermissionError):
             # Ignore also EPERM errors in case this process id is assigned
             # elsewhere and we cannot query its status
+            getlogger().debug(
+                'pid %s already dead or assigned elsewhere' % self._jobid)
             return
 
     def cancel(self):
@@ -366,6 +371,7 @@ class LocalJob(Job):
             else:
                 self._state = LOCAL_JOB_SUCCESS
         except (_TimeoutExpired, subprocess.TimeoutExpired):
+            getlogger().debug('job timed out')
             self._state = LOCAL_JOB_TIMEOUT
         finally:
             # Cleanup all the processes of this job
@@ -611,11 +617,13 @@ class SlurmJob(Job):
                 '(?P<exitcode>\d+)\:(?P<signal>\d+)',
                 completed.stdout, re.MULTILINE)
             if not state_match:
+                getlogger().debug('job state not matched (stdout follows)\n%s' %
+                                  completed.stdout)
                 self._job_init_poll_num_tries += 1
                 time.sleep(next(intervals))
 
         if not state_match:
-            raise ReframeError('Querying initial job state timed out')
+            raise ReframeError('querying initial job state timed out')
 
         assert self._jobid == state_match.group('jobid')
 
@@ -636,6 +644,7 @@ class SlurmJob(Job):
             '^(?P<jobid>\d+)\|(?P<state>\S+)\|'
             '(?P<reason>\w+)(\W+(?P<reason_details>.*))?',
             completed.stdout, re.MULTILINE)
+
         # If squeue does not return any job info (state_match is empty),
         # it means normally that the job has finished meanwhile. So we
         # can exit this function.
@@ -643,7 +652,8 @@ class SlurmJob(Job):
             return
 
         assert self._jobid == state_match.group('jobid')
-        # Assure that the job is still in a pending state
+
+        # Ensure that the job is still in a pending state
         state  = SlurmJobState(state_match.group('state'))
         reason = state_match.group('reason')
         if state in self._pending_states and reason in self._cancel_reasons:
@@ -653,6 +663,7 @@ class SlurmJob(Job):
             reason_details = state_match.group('reason_details')
             if reason_details:
                 reason_msg += ', ' + reason_details
+
             raise JobResourcesError(reason_msg)
 
     def wait(self):
@@ -673,6 +684,7 @@ class SlurmJob(Job):
         """Cancel job execution.
 
         This call waits until the job has finished."""
+        getlogger().debug('cancelling job (id=%s)' % self._jobid)
         if self._jobid == -1:
             return
 
@@ -684,10 +696,11 @@ class SlurmJob(Job):
     def finished(self):
         try:
             self._update_state()
-        # We postpone exception handling: we ignore the exception at this point
-        # and mark the job as unfinished in order to deal with it later
-        except ReframeError:
+        except ReframeError as e:
+            # We postpone exception handling: we ignore the exception at this
+            # point and mark the job as unfinished in order to deal with it
+            # later
+            getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
             return self._state in self._completion_states
-

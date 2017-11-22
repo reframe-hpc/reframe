@@ -60,7 +60,7 @@ class RegressionSettings:
             'reframe.log': {
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
-                          '%(check_name)s: %(message)s',
+                          '%(testcase_name)s: %(message)s',
                 'append': False,
             },
 

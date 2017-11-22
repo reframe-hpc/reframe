@@ -158,8 +158,18 @@ class Logger(logging.Logger):
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
         # Setup dynamic fields of the check
-        if self.check and self.check.job:
-            extra['check_jobid'] = self.check.job.jobid
+        if self.check:
+            testcase_name = self.check.name
+            if self.check.job:
+                extra['check_jobid'] = self.check.job.jobid
+
+            if self.check.current_partition:
+                testcase_name += '@%s' % self.check.current_partition.fullname
+
+            if self.check.current_environ:
+                testcase_name += ' using %s' % self.check.current_environ.name
+
+            extra['testcase_name'] = testcase_name
 
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info,
                                     func, extra, sinfo)
@@ -200,7 +210,8 @@ class LoggerAdapter(logging.LoggerAdapter):
             logger,
             {
                 'check_name': check.name if check else 'reframe',
-                'check_jobid': '-1'
+                'check_jobid': '-1',
+                'testcase_name': check.name if check else 'reframe'
             }
         )
         if self.logger:
@@ -226,20 +237,52 @@ class LoggerAdapter(logging.LoggerAdapter):
 null_logger = LoggerAdapter()
 
 _logger = None
-_frontend_logger = null_logger
+_context_logger = null_logger
+
+
+class _LoggingContext:
+    def __init__(self, check=None, level=DEBUG):
+        global _context_logger
+
+        self._level = level
+        self._orig_logger = _context_logger
+        if check is not None:
+            _context_logger = LoggerAdapter(_logger, check)
+
+    def __enter__(self):
+        return _context_logger
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        global _context_logger
+
+        # Log any exceptions thrown with the current context logger
+        if exc_type is not None:
+            msg = 'caught {0}: {1}'
+            exc_fullname = '%s.%s' % (exc_type.__module__, exc_type.__name__)
+            getlogger().log(self._level, msg.format(exc_fullname, exc_value))
+
+        # Restore context logger
+        _context_logger = self._orig_logger
+
+        # Propagate any exception thrown
+        return exc_type is None
+
+
+def logging_context(check=None, exc_log_level=DEBUG):
+    return _LoggingContext(check, exc_log_level)
 
 
 def configure_logging(config):
     global _logger
-    global _frontend_logger
+    global _context_logger
 
     if config is None:
         _logger = None
-        _frontend_logger = null_logger
+        _context_logger = null_logger
         return
 
     _logger = load_from_dict(config)
-    _frontend_logger = LoggerAdapter(_logger)
+    _context_logger = LoggerAdapter(_logger)
 
 
 def save_log_files(dest):
@@ -249,10 +292,5 @@ def save_log_files(dest):
             shutil.copy(hdlr.baseFilename, dest, follow_symlinks=True)
 
 
-def getlogger(logger_kind, *args, **kwargs):
-    if logger_kind  == 'frontend':
-        return _frontend_logger
-    elif logger_kind == 'check':
-        return LoggerAdapter(_logger, *args, **kwargs)
-    else:
-        raise ReframeError('unknown kind of logger: %s' % logger_kind)
+def getlogger():
+    return _context_logger
