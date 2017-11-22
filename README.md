@@ -15,3 +15,29 @@ Users can create their own test hierarchies, create test factories for generatin
 ## Documentation
 
 The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
+
+### Manually generate the documentation
+
+In order to generate the documentation yourself, these are the necessary steps:
+
+1. Install [pandoc](https://pandoc.org).
+2. Install the Python requirements (you can do that from within a virtual environment):
+   ```
+   pip install -r docs/requirements.txt
+   ```
+
+Generate the documentation:
+```
+make -C docs
+```
+
+And view it by opening `docs/html/index.html`.
+
+If you want to view also the old documentation, you should first do the following:
+
+```
+cd docs/html
+python -m http.server # or python -m SimpleHTTPServer for Python 2
+```
+
+You can can now view all the documentation (new and old) by opening `localhost:8000` in your browser.

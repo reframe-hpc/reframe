@@ -131,8 +131,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         # Job limit per partition
         self._max_jobs = {}
 
-        self._logger = getlogger('frontend')
-
     def _compile_run_testcase(self, testcase):
         try:
             executor = testcase.executor
@@ -206,7 +204,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         partname  = executor.check.current_partition.fullname
         envname   = executor.check.current_environ.name
         msg = '%s on %s using %s' % (checkname, partname, envname)
-        self._logger.debug('%s %s' % (status.lower(), msg))
         self.printer.status(status, msg)
 
     def run_check(self, check, partition, environ):
@@ -229,8 +226,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             partname = partition.fullname
             if self._running_cases_counts[partname] >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
-                self._logger.debug('reached job limit (%s) for partition %s' %
-                                   (partition.max_jobs, partname))
+                getlogger().debug('reached job limit (%s) for partition %s' %
+                                  (partition.max_jobs, partname))
                 self._update_running_counts()
 
             if self._running_cases_counts[partname] < partition.max_jobs:
@@ -264,10 +261,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
 
     def _update_running_counts(self):
         """Update the counts of running checks per partition."""
+        getlogger().debug('updating counts for running test cases')
         freed_slots = {}
         for rc in self._running_cases:
-            check = rc.testcase.executor.check
-            if not rc.zombie and check.poll():
+            executor = rc.testcase.executor
+            check = executor.check
+            if not rc.zombie and executor.poll():
                 # Tests without a job descriptor are considered finished
                 rc.zombie = True
                 partname = check.current_partition.fullname
@@ -276,9 +275,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                 freed_slots[partname] += 1
 
         for p, ns in freed_slots.items():
-            self._logger.debug('freed %s slot(s) on partition %s' % (ns, p))
+            getlogger().debug('freed %s slot(s) on partition %s' % (ns, p))
 
     def _reschedule(self, ready_testcase, load_env=True):
+        getlogger().debug('scheduling test case for running')
         testcase = ready_testcase.testcase
         executor = testcase.executor
         partname = executor.check.current_partition.fullname
@@ -303,8 +303,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             ])
 
             if num_schedule_jobs:
-                self._logger.debug('rescheduling %s job(s) on %s' %
-                                   (num_schedule_jobs, partname))
+                getlogger().debug('rescheduling %s job(s) on %s' %
+                                  (num_schedule_jobs, partname))
 
             for i in range(num_schedule_jobs):
                 ready_case = self._ready_cases[partname].pop()
@@ -318,9 +318,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                 testcase = running.testcase
                 executor = testcase.executor
                 running_check = executor.check
-                if running_check.poll():
+                if executor.poll():
                     try:
-                        running_check.wait()
+                        executor.wait()
                         return running
                     except (KeyboardInterrupt, ReframeFatalError, AssertionError):
                         # These errors should be propagated as-is

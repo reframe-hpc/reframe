@@ -17,7 +17,6 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import ReframeFatalError, SanityError
 from reframe.core.fields import *
 from reframe.core.launchers import *
-from reframe.core.logging import getlogger, LoggerAdapter, null_logger
 from reframe.core.schedulers import *
 from reframe.core.shell import BashScriptBuilder
 from reframe.core.systems import System, SystemPartition
@@ -421,7 +420,6 @@ class RegressionTest:
     _stagedir          = StringField('_stagedir', allow_none=True)
     _stdout            = StringField('_stdout', allow_none=True)
     _stderr            = StringField('_stderr', allow_none=True)
-    _logger            = TypedField('_logger', LoggerAdapter)
     _perf_logfile      = StringField('_perf_logfile', allow_none=True)
     _current_system    = TypedField('_current_system', System)
     _current_partition = TypedField('_current_partition', SystemPartition,
@@ -501,11 +499,8 @@ class RegressionTest:
         # Compilation task output
         self._compile_task = None
 
-        # Check-specific logging
-        self._logger = null_logger
-
         # Performance logging
-        self._perf_logger = null_logger
+        self._perf_logger = logging.null_logger
         self._perf_logfile = None
 
     # Export read-only views to interesting fields
@@ -556,7 +551,7 @@ class RegressionTest:
 
         You can use this logger to log information for your test.
         """
-        return self._logger
+        return logging.getlogger()
 
     @property
     def prefix(self):
@@ -647,7 +642,6 @@ class RegressionTest:
     def _setup_environ(self, environ):
         """Setup the current environment and load it."""
 
-        self._logger.debug('setting up the environment')
         self._current_environ = environ
 
         # Add user modules and variables to the environment
@@ -658,17 +652,15 @@ class RegressionTest:
             self._current_environ.set_variable(k, v)
 
         # First load the local environment of the partition
-        self._logger.debug('loading environment for partition %s' %
-                           self._current_partition.fullname)
+        self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
-        self._logger.debug('loading environment %s' %
-                           self._current_environ.name)
+        self.logger.debug("loading test's environment")
         self._current_environ.load()
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
-        self._logger.debug('setting up paths')
+        self.logger.debug('setting up paths')
 
         self._stagedir = self._resources.stagedir(
             self._sanitize_basename(self._current_partition.name),
@@ -686,8 +678,8 @@ class RegressionTest:
     def _setup_job(self, **job_opts):
         """Setup the job related to this check."""
 
-        self._logger.debug('setting up the job descriptor')
-        self._logger.debug(
+        self.logger.debug('setting up the job descriptor')
+        self.logger.debug(
             'job scheduler backend: %s' %
             ('local' if self.is_local() else self._current_partition.scheduler))
 
@@ -765,7 +757,7 @@ class RegressionTest:
 
     # FIXME: This is a temporary solution to address issue #157
     def _setup_perf_logging(self):
-        self._logger.debug('setting up performance logging')
+        self.logger.debug('setting up performance logging')
         self._perf_logfile = os.path.join(
             self._resources.logdir(self._current_partition.name),
             self.name + '.log'
@@ -783,7 +775,7 @@ class RegressionTest:
             }
         }
 
-        self._perf_logger = LoggerAdapter(
+        self._perf_logger = logging.LoggerAdapter(
             logger=logging.load_from_dict(perf_logging_config),
             check=self
         )
@@ -798,10 +790,6 @@ class RegressionTest:
             ``job_opts`` to the base class method.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         """
-        # Logging prevents deep copy, so we initialize the check's logger late
-        # during the check's setup phase
-        self._logger = getlogger('check', check=self)
-
         self._current_partition = partition
         self._setup_environ(environ)
         self._setup_paths()
@@ -810,19 +798,19 @@ class RegressionTest:
             self._setup_perf_logging()
 
     def _copy_to_stagedir(self, path):
-        self._logger.debug('copying %s to stage directory (%s)' %
-                           (path, self._stagedir))
-        self._logger.debug('symlinking files: %s' % self.readonly_files)
+        self.logger.debug('copying %s to stage directory (%s)' %
+                          (path, self._stagedir))
+        self.logger.debug('symlinking files: %s' % self.readonly_files)
         os_ext.copytree_virtual(path, self._stagedir, self.readonly_files)
 
     def prebuild(self):
         for cmd in self.prebuild_cmd:
-            self._logger.debug('executing prebuild command: %s' % cmd)
+            self.logger.debug('executing prebuild commands')
             os_ext.run_command(cmd, check=True)
 
     def postbuild(self):
         for cmd in self.postbuild_cmd:
-            self._logger.debug('executing postbuild command: %s' % cmd)
+            self.logger.debug('executing postbuild commands')
             os_ext.run_command(cmd, check=True)
 
     def compile(self, **compile_opts):
@@ -863,20 +851,19 @@ class RegressionTest:
         os.chdir(self._stagedir)
         try:
             self.prebuild()
-            self._logger.debug('compilation started')
             self._compile_task = self._current_environ.compile(
                 sourcepath=target_sourcepath,
                 executable=os.path.join(self._stagedir, self.executable),
                 **compile_opts)
-            self._logger.debug('compilation stdout:\n%s' %
-                               self._compile_task.stdout)
-            self._logger.debug('compilation stderr:\n%s' %
-                               self._compile_task.stderr)
+            self.logger.debug('compilation stdout:\n%s' %
+                              self._compile_task.stdout)
+            self.logger.debug('compilation stderr:\n%s' %
+                              self._compile_task.stderr)
             self.postbuild()
         finally:
             # Always restore working directory
             os.chdir(wd_save)
-            self._logger.debug('compilation finished')
+            self.logger.debug('compilation finished')
 
     def run(self):
         """The run phase of the regression test pipeline.
@@ -893,7 +880,7 @@ class RegressionTest:
 
         msg = ('spawned job (%s=%s)' %
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
-        self._logger.debug(msg)
+        self.logger.debug(msg)
 
     def poll(self):
         """Poll the test's state.
@@ -916,7 +903,7 @@ class RegressionTest:
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         """
         self._job.wait()
-        self._logger.debug('spawned job finished')
+        self.logger.debug('spawned job finished')
 
     def check_sanity(self):
         """The sanity checking phase of the regression test pipeline.
@@ -991,7 +978,7 @@ class RegressionTest:
 
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
-        self._logger.debug('copying interesting files to output directory')
+        self.logger.debug('copying interesting files to output directory')
         shutil.copy(self._stdout, self.outputdir)
         shutil.copy(self._stderr, self.outputdir)
         if self._job:
@@ -1013,17 +1000,17 @@ class RegressionTest:
         """
         aliased = os.path.samefile(self._stagedir, self.outputdir)
         if aliased:
-            self._logger.debug('skipping copy to output dir '
-                               'since they alias each other')
+            self.logger.debug('skipping copy to output dir '
+                              'since they alias each other')
         else:
             self._copy_to_outputdir()
 
         if remove_files:
-            self._logger.debug('removing stage directory')
+            self.logger.debug('removing stage directory')
             shutil.rmtree(self._stagedir)
 
         if unload_env:
-            self._logger.debug("unloading test's environment")
+            self.logger.debug("unloading test's environment")
             self._current_environ.unload()
             self._current_partition.local_env.unload()
 
@@ -1127,7 +1114,7 @@ class RegressionTest:
                 # Restore the handler
                 patterns['\e'] = eof_handler
 
-        self._logger.debug('output scan info:\n' + scan_info.scan_report())
+        self.logger.debug('output scan info:\n' + scan_info.scan_report())
         return ret
 
     def __str__(self):

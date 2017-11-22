@@ -429,7 +429,7 @@ _logging_config = {
         'reframe.log' : {
             'level'     : 'DEBUG',
             'format'    : '[%(asctime)s] %(levelname)s: '
-                          '%(check_name)s: %(message)s',
+                          '%(testcase_name)s: %(message)s',
             'append'    : False,
         },
 
@@ -465,11 +465,15 @@ The configurable properties of a log record handler are the following:
 
 * `level` (default: `'debug'`): The lowest level of log records that this handler can process.
 * `format` (default: `'%(message)s'`): Format string for the printout of the log record.
-   ReFrame supports all the [format strings](https://docs.python.org/3.6/library/logging.html#logrecord-attributes) from Python's logging library and provides two additional ones:
+   ReFrame supports all the [format strings](https://docs.python.org/3.6/library/logging.html#logrecord-attributes) from Python's logging library and provides the following additional ones:
      - `check_name`: Prints the name of the regression test on behalf of which ReFrame is currently executing.
        If ReFrame is not in the context of regression test, `reframe` will be printed.
      - `check_jobid`: Prints the job or process id of the job or process associated with currently executing regression test.
        If a job or process is not yet created, `-1` will be printed.
+     - `testcase_name`: Print the name of the test case that is currently executing.
+        Test case is essentially a tuple consisting of the test name, the current system and partition and the current programming envrinoment.
+        This format string prints out like `<test-name>@<partition> using <environ>`.
+
 * `datefmt` (default: `'%FT%T'`) The format that will be used for outputting timestamps (i.e., the `%(asctime)s` field).
   Acceptable formats must conform to standard library's [time.strftime()](https://docs.python.org/3.6/library/time.html#time.strftime) function.
 * `append` (default: `False`) Controls whether ReFrame should append to this file or not.
