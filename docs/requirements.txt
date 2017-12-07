@@ -25,6 +25,7 @@ sphinx-bootstrap-theme>=0.5.3
 sphinx-fakeinv>=1.0.0
 sphinx-rtd-theme>=0.2.4
 sphinxcontrib-websupport>=1.0.1
+sphinxcontrib-versioning>=2.2.1
 tornado>=4.5.2
 urllib3>=1.22
 watchdog>=0.8.3

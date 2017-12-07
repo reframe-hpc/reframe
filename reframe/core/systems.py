@@ -12,7 +12,6 @@ class SystemPartition:
 
     _name      = NonWhitespaceField('_name')
     _descr     = StringField('_descr')
-    _scheduler = NonWhitespaceField('_scheduler', allow_none=True)
     _access    = TypedListField('_access', str)
     _environs  = TypedListField('_environs', Environment)
     _resources = TypedDictField('_resources', str, (list, str))
@@ -21,11 +20,13 @@ class SystemPartition:
     # maximum concurrent jobs
     _max_jobs  = IntegerField('_max_jobs')
 
-    def __init__(self, name, descr=None, scheduler=None, access=[],
-                 environs=[], resources={}, local_env=None, max_jobs=1):
+    def __init__(self, name, descr=None, scheduler=None, launcher=None,
+                 access=[], environs=[], resources={}, local_env=None,
+                 max_jobs=1):
         self._name  = name
         self._descr = descr or name
         self._scheduler = scheduler
+        self._launcher  = launcher
         self._access    = list(access)
         self._environs  = list(environs)
         self._resources = dict(resources)
@@ -95,14 +96,28 @@ class SystemPartition:
 
     @property
     def scheduler(self):
-        """The backend scheduler of this partition.
+        """The type of the backend scheduler of this partition.
 
-        This is the name of the scheduler defined in the
-        `partition configuration <configure.html#partition-configuration>`__.
+        :returns: a subclass of :class:`reframe.core.schedulers.Job`.
 
-        :type: `str`
+        .. note::
+           .. versionchanged:: 2.8
+
+           Prior versions returned a string representing the scheduler and job
+           launcher combination.
         """
         return self._scheduler
+
+    @property
+    def launcher(self):
+        """The type of the backend launcher of this partition.
+
+        :returns: a subclass of :class:`reframe.core.launchers.JobLauncher`.
+
+        .. note::
+           .. versionadded:: 2.8
+        """
+        return self._launcher
 
     # Instantiate managed resource `name` with `value`.
     def get_resource(self, name, value):
@@ -129,6 +144,7 @@ class SystemPartition:
 
         return (self._name      == other.name and
                 self._scheduler == other._scheduler and
+                self._launcher  == other._launcher and
                 self._access    == other._access and
                 self._environs  == other._environs and
                 self._resources == other._resources and
@@ -147,6 +163,7 @@ class System:
     _descr = StringField('_descr')
     _hostnames  = TypedListField('_hostnames', str)
     _partitions = TypedListField('_partitions', SystemPartition)
+    _modules_system = AlphanumericField('_modules_system', allow_none=True)
 
     prefix = StringField('prefix')
     stagedir  = StringField('stagedir', allow_none=True)
@@ -164,11 +181,12 @@ class System:
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
                  prefix='.', stagedir=None, outputdir=None, logdir=None,
-                 resourcesdir='.'):
+                 resourcesdir='.', modules_system=None):
         self._name  = name
         self._descr = descr or name
         self._hostnames  = list(hostnames)
         self._partitions = list(partitions)
+        self._modules_system = modules_system
         self.prefix = prefix
         self.stagedir = stagedir
         self.outputdir = outputdir
@@ -187,6 +205,10 @@ class System:
     @property
     def hostnames(self):
         return self._hostnames
+
+    @property
+    def modules_system(self):
+        return self._modules_system
 
     @property
     def name(self):

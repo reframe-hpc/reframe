@@ -1,21 +1,21 @@
 # Getting Started
 
 ## Requirements
+
 * Python 3.5 or higher.
   Python 2 is not supported.
-* A functional Tcl [modules](http://modules.sourceforge.net/) software management environment with Python bindings.
-  The following need to be present or functional:
-    - `MODULESHOME` variable must be set.
-    - `modulecmd python` must be supported.
+
+> _Changed in version 2.8:_ A functional TCL modules system is no more required.
+> ReFrame can now operate without a modules system at all.
+
 
 ### Optional
 
-* The [nose](https://pypi.python.org/pypi/nose) Python module must be installed if you want to run the unit tests of the framework.
-* If you want to use the framework for launching tests on a cluster, a functional job submission management system is required.
-  Currently only [Slurm](https://www.schedmd.com/) is supported with either a native Slurm job launcher or the Cray ALPS launcher.
-    * In the case of Slurm, job accounting storage (`sacct` command) is required.
+* For running the unit tests of the framework, the [nose](https://pypi.python.org/pypi/nose) Python module is needed.
+
 
 You are advised to run the [unit tests](#running-the-unit-tests) of the framework after installing it on a new system to make sure that everything works fine.
+
 
 ## Getting the Framework
 
@@ -61,7 +61,6 @@ You will notice in the output that all the job submission related tests have bee
 The test suite detects if the current system has a job submission system and is configured for ReFrame (see [Configuring ReFrame for your site](configure.html)) and it will skip all the unsupported unit tests.
 As soon as you configure ReFrame for your system, you can rerun the test suite to check that job submission unit tests pass as well.
 Note here that some unit tests may still be skipped depending on the configured job submission system.
-For example, the Slurm+ALPS tests will also be skipped on a system configured with native SLURM.
 
 
 ## Where to Go from Here

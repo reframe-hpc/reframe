@@ -7,7 +7,7 @@ import reframe.core.logging as logging
 import reframe.utility.os as os_ext
 
 from reframe.core.exceptions import ModuleError
-from reframe.core.modules import module_force_load, module_unload
+from reframe.core.modules import get_modules_system
 from reframe.core.logging import getlogger
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
@@ -16,6 +16,7 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.loader import (RegressionCheckLoader,
                                      SiteConfiguration,
                                      autodetect_system)
+from reframe.core.modules import init_modules_system
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
@@ -218,6 +219,9 @@ def main():
             list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
+    # Init modules system
+    init_modules_system(system.modules_system)
+
     if options.mode:
         try:
             mode_args = site_config.modes[options.mode]
@@ -353,10 +357,10 @@ def main():
         # Act on checks
 
         # Unload regression's module and load user-specified modules
-        module_unload(settings.module_name)
+        get_modules_system().unload_module(settings.module_name)
         for m in options.user_modules:
             try:
-                module_force_load(m)
+                get_modules_system().load_module(m, force=True)
             except ModuleError:
                 printer.info("Could not load module `%s': Skipping..." % m)
 

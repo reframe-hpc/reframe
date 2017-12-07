@@ -66,11 +66,9 @@ At this phase, all these directories are created.
 ### Prepare a job for the test
 At this point a _job descriptor_ will be created for the test. A job descriptor in ReFrame is an abstraction of the job scheduler's functionality relevant to the regression framework.
 It is responsible for submitting a job in a job queue and waiting for its completion.
-Currently, the ReFrame framework supports three job scheduler backends:
+ReFrame supports two job scheduler backends that can be combined with several different parallel program launchers.
+For a complete list of the job scheduler/parallel launchers combinations, please refer to ["Partition Configuration"](configure.html#partition-configuration).
 
-* __local__, which is basically a *pseudo-scheduler* that just spawns local OS processes,
-* __nativeslurm__, which is the native [Slurm](https://slurm.schedmd.com) job scheduler and
-* __slurm+alps__, which uses [Slurm](https://slurm.schedmd.com) for job submission, but uses [Cray's ALPS](http://docs.cray.com/books/S-2529-116//S-2529-116.pdf) for launching MPI processes on the compute nodes.
 
 ## 2. The Compilation Phase
 
