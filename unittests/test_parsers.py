@@ -12,7 +12,7 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
 from reframe.utility.functions import standard_threshold
 from reframe.utility.parsers import *
-from unittests.fixtures import get_setup_config
+from unittests.fixtures import get_test_config
 
 
 class StatefulParserTest(unittest.TestCase):
@@ -20,7 +20,7 @@ class StatefulParserTest(unittest.TestCase):
         # Ignore deprecation warnings
         warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
-        self.system, self.partition, self.environ = get_setup_config()
+        self.system, self.partition, self.environ = get_test_config()
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
         self.test = RegressionTest('test_performance',

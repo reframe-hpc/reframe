@@ -34,7 +34,7 @@ An example listing of checks is the following that lists all the tests found und
 The ouput looks like:
 ```
 Command line: ./bin/reframe -c tutorial/ -l
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint103
 Reframe paths
@@ -90,7 +90,7 @@ To run the regression tests you should specify the _run_ action though the `-r` 
 The output of the regression run looks like the following:
 ```
 Command line: ./bin/reframe -c tutorial/example1.py -r
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint103
 Reframe paths
@@ -218,7 +218,7 @@ For example, you can select only the `example7_check` from the tutorial as follo
 
 ```
 Command line: ./bin/reframe -c tutorial/ -n example7_check -l
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint103
 Reframe paths
@@ -239,7 +239,7 @@ Similarly, you can exclude this test by passing the `-x example7_check` option:
 
 ```
 Command line: ./bin/reframe -c tutorial/ -x example7_check -l
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint103
 Reframe paths
@@ -357,7 +357,7 @@ This is useful if you want to check the directories that ReFrame will create.
 ```
 ```
 Command line: ./bin/reframe --prefix /foo -t foo -l
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint103
 Reframe paths
@@ -429,7 +429,7 @@ _logging_config = {
         'reframe.log' : {
             'level'     : 'DEBUG',
             'format'    : '[%(asctime)s] %(levelname)s: '
-                          '%(check_name)s: %(message)s',
+                          '%(testcase_name)s: %(message)s',
             'append'    : False,
         },
 
@@ -465,11 +465,15 @@ The configurable properties of a log record handler are the following:
 
 * `level` (default: `'debug'`): The lowest level of log records that this handler can process.
 * `format` (default: `'%(message)s'`): Format string for the printout of the log record.
-   ReFrame supports all the [format strings](https://docs.python.org/3.6/library/logging.html#logrecord-attributes) from Python's logging library and provides two additional ones:
+   ReFrame supports all the [format strings](https://docs.python.org/3.6/library/logging.html#logrecord-attributes) from Python's logging library and provides the following additional ones:
      - `check_name`: Prints the name of the regression test on behalf of which ReFrame is currently executing.
        If ReFrame is not in the context of regression test, `reframe` will be printed.
      - `check_jobid`: Prints the job or process id of the job or process associated with currently executing regression test.
        If a job or process is not yet created, `-1` will be printed.
+     - `testcase_name`: Print the name of the test case that is currently executing.
+        Test case is essentially a tuple consisting of the test name, the current system and partition and the current programming envrinoment.
+        This format string prints out like `<test-name>@<partition> using <environ>`.
+
 * `datefmt` (default: `'%FT%T'`) The format that will be used for outputting timestamps (i.e., the `%(asctime)s` field).
   Acceptable formats must conform to standard library's [time.strftime()](https://docs.python.org/3.6/library/time.html#time.strftime) function.
 * `append` (default: `False`) Controls whether ReFrame should append to this file or not.
@@ -483,15 +487,14 @@ The configurable properties of a log record handler are the following:
 
 ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
 For each performance test, a log file of the form `<test-name>.log` is created under the ReFrame's [log directory](#configuring-reframe-directories) where the test's performance is recorded.
-The default format used for this file is `'[%(asctime)s] %(check_name)s (jobid=%(check_jobid)s): %(message)s'` and ReFrame always appends to this file.
+The default format used for this file is `'[%(asctime)s] %(testcase_name)s (jobid=%(check_jobid)s): %(message)s'` and ReFrame always appends to this file.
 Currently, it is not possible for users to configure performance logging.
 
 The resulting log file looks like the following:
 ```
-[2017-10-21T00:48:42] example7_check (jobid=4073910): value: 49.253851, reference: (50.0, -0.1, 0.1)
-[2017-10-24T21:19:21] example7_check (jobid=4163846): value: 49.690761, reference: (50.0, -0.1, 0.1)
-[2017-10-24T21:19:33] example7_check (jobid=4163852): value: 50.037254, reference: (50.0, -0.1, 0.1)
-[2017-10-24T21:20:00] example7_check (jobid=4163856): value: 49.622199, reference: (50.0, -0.1, 0.1)
+[2017-12-01T15:31:20] example7_check@daint:gpu using PrgEnv-cray (jobid=649790): value: 47.797996, reference: (50.0, -0.1, 0.1)
+[2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-gnu (jobid=649791): value: 49.048228, reference: (50.0, -0.1, 0.1)
+[2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-pgi (jobid=649792): value: 48.575334, reference: (50.0, -0.1, 0.1)
 ```
 
 The interpretation of the performance values depends on the individual tests.
@@ -516,7 +519,7 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 ```
 ommand line: ./reframe.py -c tutorial/ --exec-policy=async -r
-Reframe version: 2.6.1
+Reframe version: 2.7
 Launched by user: karakasv
 Launched on host: daint104
 Reframe paths

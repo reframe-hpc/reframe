@@ -21,6 +21,7 @@ The following example shows a minimal configuration for the [Piz Daint](http://w
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
+                'modules_system': 'tmod',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -88,6 +89,8 @@ The valid attributes of a system are the following:
 
 * `descr`: A detailed description of the system (default is the system name).
 * `hostnames`: This is a list of hostname patterns that will be used by ReFrame when it tries to [auto-detect](#system-auto-detection) the current system (default `[]`).
+* `modules_system`: _(New in version 2.8)_ The modules system that should be used for loading environment modules on this system.
+   The only available modules system backend is currently `tmod`, which corresponds to the [TCL implementation](http://modules.sourceforge.net/) of the environment modules (default `None`).
 * `prefix`: Default regression prefix for this system (default `.`).
 * `stagedir`: Default stage directory for this system (default `None`).
 * `outputdir`: Default output directory for this system (default `None`).
@@ -109,16 +112,33 @@ The partitions of a system are defined similarly to systems as a set of key/valu
 The available partition attributes are the following:
 
 * `descr`: A detailed description of the partition (default is the partition name).
-* `scheduler`: The job scheduler to use for launching jobs on this partition.
-   Available values are the following:
-     * `local` (**default**): Jobs on this partition will be launched locally as OS processes.
-     When a job is launched with this scheduler, ReFrame will create a wrapper shell script for running the check on the local machine.
-     * `nativeslurm`: Jobs on this partition will be launched using Slurm and the `srun` command for creating MPI processes.
-     * `slurm+alps`: Jobs on this partition will be launched using Slurm and the `aprun` command for creating MPI processes.
+
+* `scheduler`: _(Changed in version 2.8)_ The job scheduler and parallel program launcher combination that is used on this partition to launch jobs.
+   The syntax of this attribute is `<scheduler>+<launcher>`.
+   The available values for the job scheduler are the following:
+       - `slurm`: Jobs on this partition will be launched using [Slurm](https://www.schedmd.com/).
+       - `local`: Jobs on this partition will be launched locally as OS processes.
+
+     The available values for the parallel program launchers are the following:
+     - `srun`: Programs on this partition will be launched using a bare `srun` command *without* any job allocation options passed to it.
+        This launcher may only be used with the `slurm` scheduler.
+     - `srunalloc`: Programs on this partition will be launched using the `srun` command *with* job allocation options passed automatically to it.
+        This launcher may also be used with the `local` scheduler.
+     - `alps`: Programs on this partition will be launched using the `aprun` command.
+     - `mpirun`: Programs on this partition will be launched using the `mpirun` command.
+     - `mpiexec`: Programs on this partition will be launched using the `mpiexec` command.
+     - `local`: Programs on this partition will be launched as-is without using any parallel program launcher.
+
+     There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:
+     - `nativeslurm`: This is equivalent to `slurm+srun`.
+     - `local`: This is equivalent to `local+local`.
+
 * `access`: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default `[]`).
+
 * `environs`: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default `[]`).
   The environment names must be resolved inside the `environments` section of the `_site_configuration` dictionary (see [Environments Configuration](#environments-configuration) for more information).
 * `modules`: A list of modules to be loaded before running a regression test on that partition (default `[]`).
+
 * `variables`: A set of environment variables to be set before running a regression test on that partition (default `{}`).
   Environment variables can be set as follows (notice that both the variable name and its value are strings):
 
@@ -128,9 +148,11 @@ The available partition attributes are the following:
     'OTHER': 'foo'
 }
 ```
+
 * `max_jobs`: The maximum number of concurrent regression tests that may be active (not completed) on this partition.
    This option is relevant only when Reframe executes with the [asynchronous execution policy](running.html#asynchronous-execution-of-regression-checks).
-* `resources`: A set of custom resource specifications and how these can be requested from the partition's scheduler (default `{}`).
+
+* `resources`: _(Changed in version 2.8)_ A set of custom resource specifications and how these can be requested from the partition's scheduler (default `{}`).
   This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition's job scheduler.
   The option strings can contain "references" to the resource being required using the syntax `{resource_name}`.
   In such cases, the `{resource_name}` will be replaced by the value of that resource defined in the regression test that is being run.
@@ -144,10 +166,18 @@ The available partition attributes are the following:
 }
 ```
 
-When ReFrame will run a test that defines `self.num_gpus_per_node = 8`, the generated job script will have the following line in its preamble:
+A regression test then may request this resource as follows:
+
+```python
+self.extra_resources = {'num_gpus_per_node': '8'}
+```
+
+and the generated job script will have the following line in its preamble:
 ```bash
 #SBATCH --gres=gpu:8
 ```
+
+Refer to the [reference guide](reference.html#reframe.core.pipeline.RegressionTest.extra_resources) for more information on the use of the `extra_resources` regression test attribute.
 
 ## Environments Configuration
 

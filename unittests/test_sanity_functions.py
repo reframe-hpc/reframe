@@ -560,7 +560,7 @@ class TestPatternMatchingFunctions(unittest.TestCase):
         self.assertEqual(s, _format(s, 'bacon'))
         self.assertEqual('There is egg and spam.', _format(s, 'egg', 'spam'))
         self.assertEqual('There is egg and bacon.',
-                          _format(s, 'egg', 'bacon', 'spam'))
+                         _format(s, 'egg', 'bacon', 'spam'))
 
         s = 'no placeholders'
         self.assertEqual(s, _format(s))

@@ -20,3 +20,7 @@ Reference Guide
 .. automodule:: reframe.core.launchers
    :members:
    :show-inheritance:
+
+.. automodule:: reframe.core.launchers.registry
+   :members:
+   :show-inheritance:

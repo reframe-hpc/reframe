@@ -14,7 +14,7 @@ Reframe also offers a high-level and flexible abstraction for writing sanity and
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
 Users can create their own test hierarchies or test factories for generating multiple tests at the same time and they can also customize them in a simple and expressive way.
 
-For versions 2.6.1 and older, please refer to `this documentation <_old/index.html>`__.
+For versions 2.6.1 and older, please refer to `this documentation </_old/index.html>`__.
 
 Use Cases
 =========
