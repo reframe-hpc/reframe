@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; ReFrame 2.7 documentation</title>
+  <title>Index &mdash; ReFrame 2.8 documentation</title>
   
 
   
@@ -33,6 +33,8 @@
   
 
   
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -40,7 +42,7 @@
         <link rel="index" title="Index"
               href="#"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/> 
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -70,7 +72,7 @@
             
             
               <div class="version">
-                2.7
+                2.8
               </div>
             
           
@@ -118,6 +120,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -141,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -303,15 +307,13 @@
 </li>
       <li><a href="reference.html#reframe.core.pipeline.RegressionTest.exclusive_access">exclusive_access (reframe.core.pipeline.RegressionTest attribute)</a>
 </li>
-      <li><a href="reference.html#reframe.core.launchers.JobLauncher.executable">executable (reframe.core.launchers.JobLauncher attribute)</a>
-
-      <ul>
-        <li><a href="reference.html#reframe.core.pipeline.RegressionTest.executable">(reframe.core.pipeline.RegressionTest attribute)</a>
+      <li><a href="reference.html#reframe.core.pipeline.RegressionTest.executable">executable (reframe.core.pipeline.RegressionTest attribute)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#reframe.core.pipeline.RegressionTest.executable_opts">executable_opts (reframe.core.pipeline.RegressionTest attribute)</a>
+</li>
+      <li><a href="reference.html#reframe.core.pipeline.RegressionTest.extra_resources">extra_resources (reframe.core.pipeline.RegressionTest attribute)</a>
 </li>
       <li><a href="sanity_functions_reference.html#reframe.utility.sanity.extractall">extractall() (in module reframe.utility.sanity)</a>
 </li>
@@ -335,8 +337,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sanity_functions_reference.html#reframe.utility.sanity.finditer">finditer() (in module reframe.utility.sanity)</a>
 </li>
-      <li><a href="reference.html#reframe.core.launchers.JobLauncher.fixed_options">fixed_options (reframe.core.launchers.JobLauncher attribute)</a>
-</li>
       <li><a href="reference.html#reframe.core.environments.ProgEnvironment.ftn">ftn (reframe.core.environments.ProgEnvironment attribute)</a>
 </li>
       <li><a href="reference.html#reframe.core.systems.SystemPartition.fullname">fullname (reframe.core.systems.SystemPartition attribute)</a>
@@ -352,6 +352,8 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="sanity_functions_reference.html#reframe.utility.sanity.getitem">getitem() (in module reframe.utility.sanity)</a>
+</li>
+      <li><a href="reference.html#reframe.core.launchers.registry.getlauncher">getlauncher() (in module reframe.core.launchers.registry)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -383,14 +385,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#reframe.core.schedulers.Job">Job (class in reframe.core.schedulers)</a>
 </li>
-      <li><a href="reference.html#reframe.core.launchers.JobLauncher.job">job (reframe.core.launchers.JobLauncher attribute)</a>
-
-      <ul>
-        <li><a href="reference.html#reframe.core.pipeline.RegressionTest.job">(reframe.core.pipeline.RegressionTest attribute)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#reframe.core.pipeline.RegressionTest.job">job (reframe.core.pipeline.RegressionTest attribute)</a>
+</li>
       <li><a href="reference.html#reframe.core.launchers.JobLauncher">JobLauncher (class in reframe.core.launchers)</a>
 </li>
   </ul></td>
@@ -408,13 +406,17 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="reference.html#reframe.core.schedulers.Job.launcher">launcher (reframe.core.schedulers.Job attribute)</a>
+
+      <ul>
+        <li><a href="reference.html#reframe.core.systems.SystemPartition.launcher">(reframe.core.systems.SystemPartition attribute)</a>
 </li>
+      </ul></li>
       <li><a href="reference.html#reframe.core.launchers.LauncherWrapper">LauncherWrapper (class in reframe.core.launchers)</a>
-</li>
-      <li><a href="reference.html#reframe.core.environments.ProgEnvironment.ldflags">ldflags (reframe.core.environments.ProgEnvironment attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#reframe.core.environments.ProgEnvironment.ldflags">ldflags (reframe.core.environments.ProgEnvironment attribute)</a>
+</li>
       <li><a href="sanity_functions_reference.html#reframe.utility.sanity.len">len() (in module reframe.utility.sanity)</a>
 </li>
       <li><a href="reference.html#reframe.core.pipeline.RegressionTest.local">local (reframe.core.pipeline.RegressionTest attribute)</a>
@@ -535,6 +537,8 @@
 </li>
       <li><a href="reference.html#module-reframe.core.launchers">reframe.core.launchers (module)</a>
 </li>
+      <li><a href="reference.html#module-reframe.core.launchers.registry">reframe.core.launchers.registry (module)</a>
+</li>
       <li><a href="reference.html#module-reframe.core.pipeline">reframe.core.pipeline (module)</a>
 </li>
       <li><a href="reference.html#module-reframe.core.systems">reframe.core.systems (module)</a>
@@ -543,6 +547,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="reference.html#reframe.core.launchers.registry.register_launcher">register_launcher() (in module reframe.core.launchers.registry)</a>
+</li>
       <li><a href="reference.html#reframe.core.pipeline.RegressionTest">RegressionTest (class in reframe.core.pipeline)</a>
 </li>
       <li><a href="reference.html#reframe.core.systems.System.resourcesdir">resourcesdir (reframe.core.systems.System attribute)</a>
@@ -641,8 +647,6 @@
         <li><a href="reference.html#reframe.core.pipeline.RegressionTest.variables">(reframe.core.pipeline.RegressionTest attribute)</a>
 </li>
       </ul></li>
-      <li><a href="reference.html#reframe.core.launchers.VisitLauncher">VisitLauncher (class in reframe.core.launchers)</a>
-</li>
   </ul></td>
 </tr></table>
 
@@ -718,7 +722,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -735,6 +739,23 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/index.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/genindex.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -742,7 +763,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.7',
+            VERSION:'2.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

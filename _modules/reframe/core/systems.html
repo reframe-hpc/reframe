@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.systems &mdash; ReFrame 2.7 documentation</title>
+  <title>reframe.core.systems &mdash; ReFrame 2.8 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -70,7 +72,7 @@
             
             
               <div class="version">
-                2.7
+                2.8
               </div>
             
           
@@ -118,6 +120,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -141,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
@@ -179,7 +183,6 @@
 
     <span class="n">_name</span>      <span class="o">=</span> <span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">)</span>
     <span class="n">_descr</span>     <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
-    <span class="n">_scheduler</span> <span class="o">=</span> <span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;_scheduler&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">_access</span>    <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_access&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">_environs</span>  <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_environs&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">)</span>
     <span class="n">_resources</span> <span class="o">=</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;_resources&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
@@ -188,11 +191,13 @@
     <span class="c1"># maximum concurrent jobs</span>
     <span class="n">_max_jobs</span>  <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;_max_jobs&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">access</span><span class="o">=</span><span class="p">[],</span>
-                 <span class="n">environs</span><span class="o">=</span><span class="p">[],</span> <span class="n">resources</span><span class="o">=</span><span class="p">{},</span> <span class="n">local_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">launcher</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">access</span><span class="o">=</span><span class="p">[],</span> <span class="n">environs</span><span class="o">=</span><span class="p">[],</span> <span class="n">resources</span><span class="o">=</span><span class="p">{},</span> <span class="n">local_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">max_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>  <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_descr</span> <span class="o">=</span> <span class="n">descr</span> <span class="ow">or</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">=</span> <span class="n">scheduler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_launcher</span>  <span class="o">=</span> <span class="n">launcher</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_access</span>    <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">access</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">environs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
@@ -262,14 +267,28 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The backend scheduler of this partition.</span>
+        <span class="sd">&quot;&quot;&quot;The type of the backend scheduler of this partition.</span>
 
-<span class="sd">        This is the name of the scheduler defined in the</span>
-<span class="sd">        `partition configuration &lt;configure.html#partition-configuration&gt;`__.</span>
+<span class="sd">        :returns: a subclass of :class:`reframe.core.schedulers.Job`.</span>
 
-<span class="sd">        :type: `str`</span>
+<span class="sd">        .. note::</span>
+<span class="sd">           .. versionchanged:: 2.8</span>
+
+<span class="sd">           Prior versions returned a string representing the scheduler and job</span>
+<span class="sd">           launcher combination.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">launcher</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The type of the backend launcher of this partition.</span>
+
+<span class="sd">        :returns: a subclass of :class:`reframe.core.launchers.JobLauncher`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">           .. versionadded:: 2.8</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_launcher</span>
 
     <span class="c1"># Instantiate managed resource `name` with `value`.</span>
     <span class="k">def</span> <span class="nf">get_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
@@ -296,6 +315,7 @@
 
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span>      <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_scheduler</span> <span class="ow">and</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_launcher</span>  <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_launcher</span> <span class="ow">and</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_access</span>    <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_access</span> <span class="ow">and</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span>  <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_environs</span> <span class="ow">and</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_resources</span> <span class="ow">and</span>
@@ -314,6 +334,7 @@
     <span class="n">_descr</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
     <span class="n">_hostnames</span>  <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_hostnames&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">_partitions</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_partitions&#39;</span><span class="p">,</span> <span class="n">SystemPartition</span><span class="p">)</span>
+    <span class="n">_modules_system</span> <span class="o">=</span> <span class="n">AlphanumericField</span><span class="p">(</span><span class="s1">&#39;_modules_system&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;prefix&#39;</span><span class="p">)</span>
     <span class="n">stagedir</span>  <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -331,11 +352,12 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">partitions</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">stagedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">resourcesdir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
+                 <span class="n">resourcesdir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">modules_system</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>  <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_descr</span> <span class="o">=</span> <span class="n">descr</span> <span class="ow">or</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hostnames</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hostnames</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">partitions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_modules_system</span> <span class="o">=</span> <span class="n">modules_system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stagedir</span> <span class="o">=</span> <span class="n">stagedir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="n">outputdir</span>
@@ -354,6 +376,10 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">hostnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hostnames</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">modules_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules_system</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -450,7 +476,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -467,6 +493,23 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="../../../master/_modules/reframe/core/systems.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -474,7 +517,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.7',
+            VERSION:'2.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
