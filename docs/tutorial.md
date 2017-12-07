@@ -117,7 +117,7 @@ def _get_checks(**kwargs):
 ```
 
 A regression test written in ReFrame is essentially a Python class that must eventually derive from `reframe.core.pipeline.RegressionTest`.
-In order to make the test available to the framework, every file defining regression tests must define the special function `_get_checks()`, which it should return a list of instantiated regression tests.
+In order to make the test available to the framework, every file defining regression tests must define the special function `_get_checks()`, which should return a list of instantiated regression tests.
 This method will be called by the framework upon loading your file, in order to retrieve the regression tests defined.
 The framework will pass some special arguments to the `_get_checks()` function through the `kwargs` parameter, which are needed for the correct initialization of the regression test.
 
@@ -131,7 +131,7 @@ class SerialTest(RegressionTest):
 
 The `__init__()` method is the constructor of your test.
 It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
-The first statement in the `SerialTest` constructor calls the constructor of the base class, passing it as arguments the name of the regression test (`example1_check` here), the prefix of the test (the directory that the regression test file resides) and any other arguments passed to the `SerialTest`'s constructor.
+The first statement in the `SerialTest` constructor calls the constructor of the base class, passing as arguments the name of the regression test (`example1_check` here), the path to the test directory and any other arguments passed to the `SerialTest`'s constructor.
 You can consider these first three lines and especially the way you should call the constructor of the base class, as boilerplate code.
 As you will see, it remains the same across all our examples, except, of course, for the check name.
 
@@ -181,7 +181,7 @@ The exact compiler that is going to be used depends on the programming environme
 For example, given our configuration, if it is run with `PrgEnv-cray`, the Cray C compiler will be used, if it is run with `PrgEnv-gnu`, the GCC compiler will be used etc.
 A user can associate compilers with programming environments in the ReFrame's [settings file](configure.html#the-configuration-file).
 
-The next line in our first regression test specifies a list of options to be used for running the generated executable:
+The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):
 
 ```python
         self.executable_opts = ['1024', '100']
@@ -241,7 +241,7 @@ Here we will only show you how to run a specific tutorial test:
 If everything is configured correctly for your system, you should get an output similar to the following:
 
 ```
-Reframe version: X.X.X
+Reframe version: 2.7
 Launched by user: <your-username>
 Launched on host: daint104
 Reframe paths
@@ -336,7 +336,7 @@ def _get_checks(**kwargs):
     return [OpenMPTestIfElse(**kwargs)]
 ```
 
-There are two new things introduced with this example:
+This example introduces two new concepts:
 
 1. We need to set the `OMP_NUM_THREADS` environment variable, in order to specify the number of threads to use with our program.
 2. We need to specify different flags for the different compilers provided by the programming environments we are testing.
@@ -670,8 +670,8 @@ The first thing we do is to extract the norm printed in the standard output.
 ```
 
 The `extractsingle()` sanity function extracts some information from a single occurrence (by default the first) of a pattern in a filename.
-In our case, this function will extract the `norm` [group](https://docs.python.org/3.6/library/re.html#regular-expression-syntax) from the match of the regular expression `r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)'` in standard output, it will convert it to float and it will return it.
-Unnamed groups in regular expressions are also supported, which you can reference them by their group number.
+In our case, this function will extract the `norm` [capturing group](https://docs.python.org/3.6/library/re.html#regular-expression-syntax) from the match of the regular expression `r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)'` in standard output, it will convert it to float and it will return it.
+Unnamed capturing groups in regular expressions are also supported, which you can reference by their group number.
 For example, we could have written the same statement as follows:
 
 ```python
@@ -679,9 +679,9 @@ For example, we could have written the same statement as follows:
             r'The L2 norm of the resulting vector is:\s+(\S+)',
             self.stdout, 1, float)
 ```
-Notice that we replaced the `'norm'` argument with `1`, which is the group number.
+Notice that we replaced the `'norm'` argument with `1`, which is the capturing group number.
 
-> NOTE: In regular expressions, group `0` is always the whole match.
+> NOTE: In regular expressions, capturing group `0` corresponds always to the whole match.
 > In sanity functions dealing with regular expressions, this will yield the whole line that matched.
 
 A useful counterpart of `extractsingle()` is the `extractall()` function, which instead of a single occurrence, returns a list of all the occurrences found.
@@ -780,7 +780,7 @@ Let's have a closer look at each of them:
 
 The `perf_patterns` attribute is a dictionary, whose keys are _performance variables_ (i.e., arbitrary names assigned to the performance values we are looking for), and its values are _sanity expressions_ that specify how to obtain these performance values from the output.
 A sanity expression is a Python expression that uses the result of one or more _sanity functions_.
-In our example, we name the performance value we are looking for simply as `perf` and we extract its value by converting to float the regex group named `Gflops` from the line that was matched in the standard output.
+In our example, we name the performance value we are looking for simply as `perf` and we extract its value by converting to float the regex capturing group named `Gflops` from the line that was matched in the standard output.
 
 Each of the performance variables defined in `perf_patterns` must be resolved in the `reference` dictionary of reference values.
 When the framework obtains a performance value from the output of the test it searches for a reference value in the `reference` dictionary, and then it checks whether the user supplied tolerance is respected.

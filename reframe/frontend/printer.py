@@ -56,7 +56,7 @@ class PrettyPrinter:
         self.colorize = True
         self.line_width = 78
         self.status_width = 10
-        self._logger = getlogger('frontend')
+        self._logger = getlogger()
 
     def __repr__(self):
         return debug.repr(self)

@@ -1,46 +1,119 @@
+import abc
 import os
 import re
+import shutil
+import tempfile
+import time
 import unittest
+import reframe.utility.os as os_ext
 
 from datetime import datetime
-from tempfile import NamedTemporaryFile
-
 from reframe.core.environments import Environment
-from reframe.core.launchers import *
-from reframe.core.modules import module_path_add
-from reframe.core.schedulers import *
+from reframe.core.exceptions import ReframeError
+from reframe.core.launchers.local import LocalLauncher
+from reframe.core.schedulers.registry import getscheduler
 from reframe.core.shell import BashScriptBuilder
-from reframe.frontend.loader import autodetect_system, SiteConfiguration
 from reframe.settings import settings
 
-from unittests.fixtures import (
-    force_remove_file, system_with_scheduler, TEST_MODULES, TEST_RESOURCES
-)
+from unittests.fixtures import TEST_RESOURCES, partition_with_scheduler
 
 
 class _TestJob(unittest.TestCase):
     def setUp(self):
-        module_path_add([TEST_MODULES])
-        self.site_config = SiteConfiguration()
-        self.site_config.load_from_dict(settings.site_configuration)
-
-        self.stdout_f = NamedTemporaryFile(
-            dir='.', suffix='.out', delete=False)
-        self.stderr_f = NamedTemporaryFile(
-            dir='.', suffix='.err', delete=False)
-        self.script_f = NamedTemporaryFile(dir='.', suffix='.sh', delete=False)
-
-        # Close all files and let whoever interested to open them. Otherwise a
-        # local job may fail with a 'Text file busy' error
-        self.stdout_f.close()
-        self.stderr_f.close()
-        self.script_f.close()
+        self.workdir = tempfile.mkdtemp(dir='unittests')
+        self.testjob = self.job_type(
+            name='testjob',
+            command='hostname',
+            launcher=self.launcher,
+            environs=[Environment(name='foo', modules=['testmod_foo'])],
+            workdir=self.workdir,
+            script_filename=os_ext.mkstemp_path(
+                dir=self.workdir, suffix='.sh'),
+            stdout=os_ext.mkstemp_path(dir=self.workdir, suffix='.out'),
+            stderr=os_ext.mkstemp_path(dir=self.workdir, suffix='.err'),
+        )
+        self.builder = BashScriptBuilder()
+        self.testjob.pre_run  = ['echo prerun']
+        self.testjob.post_run = ['echo postrun']
 
     def tearDown(self):
-        force_remove_file(self.stdout_f.name)
-        force_remove_file(self.stderr_f.name)
-        force_remove_file(self.script_f.name)
+        shutil.rmtree(self.workdir)
 
+    @property
+    @abc.abstractmethod
+    def job_type(self):
+        """Return a concrete job class."""
+
+    @property
+    @abc.abstractmethod
+    def launcher(self):
+        """Return a launcher to use for this test."""
+
+    @abc.abstractmethod
+    def assertScriptSanity(self, script_file):
+        """Assert the sanity of the produced script file."""
+        with open(self.testjob.script_filename) as fp:
+            matches = re.findall(r'echo prerun|echo postrun|hostname',
+                                 fp.read())
+            self.assertEqual(['echo prerun', 'hostname', 'echo postrun'],
+                             matches)
+
+    def test_prepare(self):
+        self.testjob.prepare(self.builder)
+        self.assertScriptSanity(self.testjob.script_filename)
+
+    def test_submit(self):
+        self.testjob.prepare(self.builder)
+        self.testjob.submit()
+        self.assertIsNotNone(self.testjob.jobid)
+        self.testjob.wait()
+        self.assertEqual(0, self.testjob.exitcode)
+
+    def test_submit_timelimit(self, check_elapsed_time=True):
+        self.testjob._command = 'sleep 10'
+        self.testjob._time_limit = (0, 0, 2)
+        self.testjob.prepare(self.builder)
+        t_job = datetime.now()
+        self.testjob.submit()
+        self.assertIsNotNone(self.testjob.jobid)
+        self.testjob.wait()
+        t_job = datetime.now() - t_job
+        if check_elapsed_time:
+            self.assertGreaterEqual(t_job.total_seconds(), 2)
+            self.assertLess(t_job.total_seconds(), 3)
+
+        with open(self.testjob.stdout) as fp:
+            self.assertIsNone(re.search('postrun', fp.read()))
+
+    def test_cancel(self):
+        self.testjob._command = 'sleep 3'
+        self.testjob.prepare(self.builder)
+        t_job = datetime.now()
+        self.testjob.submit()
+        self.testjob.cancel()
+        t_job = datetime.now() - t_job
+        self.assertTrue(self.testjob.finished())
+        self.assertLess(t_job.total_seconds(), 3)
+
+    def test_cancel_before_submit(self):
+        self.testjob._command = 'sleep 3'
+        self.testjob.prepare(self.builder)
+        self.assertRaises(ReframeError, self.testjob.cancel)
+
+    def test_wait_before_submit(self):
+        self.testjob._command = 'sleep 3'
+        self.testjob.prepare(self.builder)
+        self.assertRaises(ReframeError, self.testjob.wait)
+
+    def test_poll(self):
+        self.testjob._command = 'sleep 1'
+        self.testjob.prepare(self.builder)
+        self.testjob.submit()
+        self.assertFalse(self.testjob.finished())
+        self.testjob.wait()
+
+
+class TestLocalJob(_TestJob):
     def assertProcessDied(self, pid):
         try:
             os.kill(pid, 0)
@@ -48,179 +121,19 @@ class _TestJob(unittest.TestCase):
         except (ProcessLookupError, PermissionError):
             pass
 
+    @property
+    def job_type(self):
+        return getscheduler('local')
 
-class TestSlurmJob(_TestJob):
-    def setUp(self):
-        super().setUp()
+    @property
+    def launcher(self):
+        return LocalLauncher()
 
-        self.num_tasks = 4
-        self.num_tasks_per_node = 2
-        self.testjob = SlurmJob(
-            job_name='testjob',
-            job_environ_list=[
-                Environment(name='foo', modules=['testmod_foo'])
-            ],
-            job_script_builder=BashScriptBuilder(login=True),
-            script_filename=self.script_f.name,
-            num_tasks=self.num_tasks,
-            num_tasks_per_node=self.num_tasks_per_node,
-            stdout=self.stdout_f.name,
-            stderr=self.stderr_f.name,
-            launcher_type=NativeSlurmLauncher
-        )
-        self.testjob.pre_run  = ['echo prerun', 'echo prerun']
-        self.testjob.post_run = ['echo postrun']
+    def test_submit_timelimit(self):
+        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
-    def setup_job(self, scheduler):
-        partition = system_with_scheduler(scheduler)
-        self.testjob.options += partition.access
-
-    def _test_submission(self, ignore_lines=None):
-        self.testjob.submit('hostname')
-        self.testjob.wait()
-        self.assertEqual(self.testjob.state, SLURM_JOB_COMPLETED)
-        self.assertEqual(self.testjob.exitcode, 0)
-
-        # Check if job has run on the correct number of nodes
-        nodes = set()
-        num_tasks   = 0
-        num_prerun  = 0
-        num_postrun = 0
-        before_run = True
-        with open(self.testjob.stdout) as f:
-            for line in f:
-                if ignore_lines and re.search(ignore_lines, line):
-                    continue
-
-                if before_run and re.search('^prerun', line):
-                    num_prerun += 1
-                elif not before_run and re.search('^postrun', line):
-                    num_postrun += 1
-                else:
-                    # The rest of the lines must be from the job
-                    nodes.add(line)
-                    num_tasks += 1
-                    before_run = False
-
-        self.assertEqual(2, num_prerun)
-        self.assertEqual(1, num_postrun)
-        self.assertEqual(num_tasks, self.num_tasks)
-        self.assertEqual(len(nodes), self.num_tasks / self.num_tasks_per_node)
-
-    def _test_state_poll(self):
-        t_sleep = datetime.now()
-        self.testjob.submit('sleep 3')
-        self.testjob.wait()
-        t_sleep = datetime.now() - t_sleep
-
-        self.assertEqual(self.testjob.state, SLURM_JOB_COMPLETED)
-        self.assertEqual(self.testjob.exitcode, 0)
-        self.assertGreaterEqual(t_sleep.total_seconds(), 3)
-
-    @unittest.skipIf(not system_with_scheduler(None),
-                     'job submission not supported')
-    def test_cancel(self):
-        self.setup_job(None)
-        self.testjob.submit('sleep 5')
-        self.testjob.cancel()
-
-        # Cancel waits for job to finish
-        self.assertTrue(self.testjob.finished())
-        self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
-
-    def test_cancel_before_submit(self):
-        self.testjob.cancel()
-
-    @unittest.skipIf(not system_with_scheduler('nativeslurm'),
-                     'native SLURM not supported')
-    def test_submit_slurm(self):
-        self.setup_job('nativeslurm')
-        self._test_submission()
-
-    @unittest.skipIf(not system_with_scheduler('nativeslurm'),
-                     'native SLURM not supported')
-    def test_state_poll_slurm(self):
-        self.setup_job('nativeslurm')
-        self._test_state_poll()
-
-    @unittest.skipIf(not system_with_scheduler('slurm+alps'),
-                     'SLURM+ALPS not supported')
-    def test_submit_alps(self):
-        from reframe.launchers import AlpsLauncher
-
-        self.setup_job('slurm+alps')
-        self.testjob.launcher = AlpsLauncher(self.testjob)
-        self._test_submission(ignore_lines='^Application (\d+) resources\:')
-
-    @unittest.skipIf(not system_with_scheduler('slurm+alps'),
-                     'SLURM+ALPS not supported')
-    def test_state_poll_alps(self):
-        from reframe.launchers import AlpsLauncher
-
-        self.setup_job('slurm+alps')
-        self.testjob.launcher = AlpsLauncher(self.testjob)
-        self._test_state_poll()
-
-
-class TestLocalJob(_TestJob):
-    def setUp(self):
-        super().setUp()
-        self.testjob = LocalJob(job_name='localjob',
-                                job_environ_list=[],
-                                job_script_builder=BashScriptBuilder(),
-                                stdout=self.stdout_f.name,
-                                stderr=self.stderr_f.name,
-                                script_filename=self.script_f.name)
-
-    def test_submission(self):
-        self.testjob.submit('sleep 1 && echo hello')
-        t_wait = datetime.now()
-        self.testjob.wait()
-        t_wait = datetime.now() - t_wait
-
-        self.assertGreaterEqual(t_wait.total_seconds(), 1)
-        self.assertEqual(self.testjob.state, LOCAL_JOB_SUCCESS)
-        self.assertEqual(self.testjob.exitcode, 0)
-        with open(self.testjob.stdout) as f:
-            self.assertEqual(f.read(), 'hello\n')
-
-        # Double wait; job state must not change
-        self.testjob.wait()
-        self.assertEqual(self.testjob.state, LOCAL_JOB_SUCCESS)
-
-    def test_submission_timelimit(self):
-        self.testjob._time_limit = (0, 0, 2)
-
-        t_job = datetime.now()
-        self.testjob.submit('echo before && sleep 10 && echo after')
-        self.testjob.wait()
-        t_job = datetime.now() - t_job
-
+        super().test_submit_timelimit()
         self.assertEqual(self.testjob.state, LOCAL_JOB_TIMEOUT)
-        self.assertNotEqual(self.testjob.exitcode, 0)
-        with open(self.testjob.stdout) as f:
-            self.assertEqual(f.read(), 'before\n')
-
-        self.assertGreaterEqual(t_job.total_seconds(), 2)
-        self.assertLess(t_job.total_seconds(), 10)
-
-        # Double wait; job state must not change
-        self.testjob.wait()
-        self.assertEqual(self.testjob.state, LOCAL_JOB_TIMEOUT)
-
-    def test_cancel(self):
-        t_job = datetime.now()
-        self.testjob.submit('sleep 5')
-        self.testjob.cancel()
-        t_job = datetime.now() - t_job
-
-        # Cancel waits for the job to finish
-        self.assertTrue(self.testjob.finished())
-        self.assertLess(t_job.total_seconds(), 5)
-        self.assertEqual(self.testjob.state, LOCAL_JOB_FAILURE)
-
-    def test_cancel_before_submit(self):
-        self.testjob.cancel()
 
     def test_cancel_with_grace(self):
         # This test emulates a spawned process that ignores the SIGTERM signal
@@ -234,12 +147,16 @@ class TestLocalJob(_TestJob):
         # killed immediately after the grace period of 2 seconds expires.
         #
         # We also check that the additional spawned process is also killed.
+        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
+        self.testjob._command = 'sleep 5 &'
         self.testjob._time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
         self.testjob.pre_run = ['trap -- "" TERM']
         self.testjob.post_run = ['echo $!', 'wait']
-        self.testjob.submit('sleep 5 &')
+
+        self.testjob.prepare(self.builder)
+        self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
         # signal handler for SIGTERM
@@ -273,10 +190,15 @@ class TestLocalJob(_TestJob):
         #  spawned sleep will ignore it. We need to make sure that our
         #  implementation grants the sleep process a grace period and then
         #  kills it.
+        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
-        prog = os.path.join(TEST_RESOURCES, 'src', 'sleep_deeply.sh')
+        self.testjob.pre_run = []
+        self.testjob.port_run = []
+        self.testjob._command = os.path.join(TEST_RESOURCES,
+                                             'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
-        self.testjob.submit(prog)
+        self.testjob.prepare(self.builder)
+        self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
         # signal handler for SIGTERM
@@ -296,3 +218,87 @@ class TestLocalJob(_TestJob):
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
+
+
+class TestSlurmJob(_TestJob):
+    import reframe.core.schedulers.slurm as slurm
+
+    @property
+    def job_type(self):
+        return getscheduler('slurm')
+
+    @property
+    def launcher(self):
+        return LocalLauncher()
+
+    def setup_from_sysconfig(self):
+        partition = partition_with_scheduler('slurm')
+        self.testjob.options += partition.access
+
+    def test_prepare(self):
+        # Mock up a job submission
+        self.testjob._time_limit = (0, 5, 0)
+        self.testjob._num_tasks = 16
+        self.testjob._num_tasks_per_node = 2
+        self.testjob._num_tasks_per_core = 1
+        self.testjob._num_tasks_per_socket = 1
+        self.testjob._num_cpus_per_task = 18
+        self.testjob._use_smt = True
+        self.testjob._sched_nodelist = 'nid000[00-17]'
+        self.testjob._sched_exclude_nodelist = 'nid00016'
+        self.testjob._sched_partition = 'foo'
+        self.testjob._sched_reservation = 'bar'
+        self.testjob._sched_account = 'spam'
+        self.testjob._sched_exclusive_access = True
+        super().test_prepare()
+        expected_directives = set([
+            '#SBATCH --job-name="testjob"',
+            '#SBATCH --time=0:5:0',
+            '#SBATCH --output=%s' % self.testjob.stdout,
+            '#SBATCH --error=%s' % self.testjob.stderr,
+            '#SBATCH --ntasks=%s' % self.testjob.num_tasks,
+            '#SBATCH --ntasks-per-node=%s' % self.testjob.num_tasks_per_node,
+            '#SBATCH --ntasks-per-core=%s' % self.testjob.num_tasks_per_core,
+            ('#SBATCH --ntasks-per-socket=%s' %
+             self.testjob.num_tasks_per_socket),
+            '#SBATCH --cpus-per-task=%s' % self.testjob.num_cpus_per_task,
+            '#SBATCH --hint=multithread',
+            '#SBATCH --nodelist=%s' % self.testjob.sched_nodelist,
+            '#SBATCH --exclude=%s' % self.testjob.sched_exclude_nodelist,
+            '#SBATCH --partition=%s' % self.testjob.sched_partition,
+            '#SBATCH --reservation=%s' % self.testjob.sched_reservation,
+            '#SBATCH --account=%s' % self.testjob.sched_account,
+            '#SBATCH --exclusive'
+        ])
+        with open(self.testjob.script_filename) as fp:
+            found_directives = set(re.findall(r'^\#SBATCH .*', fp.read(),
+                                              re.MULTILINE))
+
+        self.assertEqual(expected_directives, found_directives)
+
+    @unittest.skipIf(not partition_with_scheduler('slurm'),
+                     'Slurm scheduler not supported')
+    def test_submit(self):
+        self.setup_from_sysconfig()
+        super().test_submit()
+
+    @unittest.skipIf(not partition_with_scheduler('slurm'),
+                     'Slurm scheduler not supported')
+    def test_submit_timelimit(self):
+        # Skip this test for Slurm, since we the minimum time limit is 1min
+        self.skipTest("Slurm's minimum time limit is 60s")
+
+    @unittest.skipIf(not partition_with_scheduler('slurm'),
+                     'Slurm scheduler not supported')
+    def test_cancel(self):
+        from reframe.core.schedulers.slurm import SLURM_JOB_CANCELLED
+
+        self.setup_from_sysconfig()
+        super().test_cancel()
+        self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
+
+    @unittest.skipIf(not partition_with_scheduler('slurm'),
+                     'Slurm scheduler not supported')
+    def test_poll(self):
+        self.setup_from_sysconfig()
+        super().test_poll()

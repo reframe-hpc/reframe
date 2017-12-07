@@ -6,6 +6,15 @@ from reframe.core.fields import *
 
 
 class TestFields(unittest.TestCase):
+    def test_not_set_attribute(self):
+        class FieldTester:
+            var = Field('var')
+
+        c = FieldTester()
+        self.assertRaises(AttributeError, exec, "a = c.var",
+                          globals(), locals())
+        self.assertRaises(AttributeError, getattr, c, 'var')
+
     def test_copy_on_write_field(self):
         class FieldTester:
             cow = CopyOnWriteField('cow')
@@ -23,12 +32,13 @@ class TestFields(unittest.TestCase):
         var[1].append(5)
         self.assertEqual(tester.cow, [1, [2, 4], 3])
 
-    def test_readonly_field(self):
+    def test_constant_field(self):
         class FieldTester:
-            ro = ReadOnlyField('foo')
+            ro = ConstantField('foo')
 
         tester = FieldTester()
         self.assertEqual(tester.ro, 'foo')
+        self.assertEqual(FieldTester.ro, 'foo')
         self.assertRaises(FieldError, exec, "tester.ro = 'bar'",
                           globals(), locals())
 
@@ -318,6 +328,7 @@ class TestFields(unittest.TestCase):
 
     def test_sanity_field(self):
         warnings.simplefilter('ignore', ReframeDeprecationWarning)
+
         class FieldTester:
             field = SanityPatternField('field')
             field_maybe_none = SanityPatternField('field_maybe_none',

@@ -23,7 +23,11 @@ class Field:
         return debug.repr(self)
 
     def __get__(self, obj, objtype):
-        return obj.__dict__[self._name]
+        try:
+            return obj.__dict__[self._name]
+        except KeyError:
+            raise AttributeError("%s object has no attribute '%s'" %
+                                 (objtype.__name__, self._name))
 
     def __set__(self, obj, value):
         obj.__dict__[self._name] = value
@@ -281,11 +285,16 @@ class CopyOnWriteField(Field):
         super().__set__(obj, copy.deepcopy(value))
 
 
-class ReadOnlyField(Field):
-    """Holds a read-only field. Attempts to set it will raise an exception"""
+class ConstantField(Field):
+    """Holds a constant.
+
+    Attempt to set it will raise an exception.
+
+    :arg value: the value of this field.
+    """
 
     def __init__(self, value):
-        super().__init__('_readonly_')
+        super().__init__('__readonly')
         self._value = value
 
     def __get__(self, obj, objtype):

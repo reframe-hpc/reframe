@@ -7,28 +7,26 @@ import warnings
 
 import reframe.settings as settings
 import reframe.utility.sanity as sn
+import unittests.fixtures as fixtures
 
 from reframe.core.exceptions import (ReframeDeprecationWarning,
                                      ReframeError, CompilationError)
 from reframe.core.pipeline import *
-from reframe.core.modules import *
+from reframe.core.modules import get_modules_system
 from reframe.frontend.loader import *
 from reframe.frontend.resources import ResourcesManager
 from reframe.utility.functions import standard_threshold
 
-from unittests.fixtures import TEST_MODULES, get_setup_config
-from unittests.fixtures import system_with_scheduler
 
-
-class TestRegression(unittest.TestCase):
+class TestRegressionTest(unittest.TestCase):
     def setUp(self):
         # Ignore deprecation warnings
         warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
-        module_path_add([TEST_MODULES])
+        get_modules_system().searchpath_add(fixtures.TEST_MODULES)
 
         # Load a system configuration
-        self.system, self.partition, self.progenv = get_setup_config()
+        self.system, self.partition, self.progenv = fixtures.get_test_config()
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader    = RegressionCheckLoader(['unittests/resources'])
         self.resources = ResourcesManager(prefix=self.resourcesdir)
@@ -38,7 +36,7 @@ class TestRegression(unittest.TestCase):
         warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def setup_from_site(self):
-        self.partition = system_with_scheduler(None)
+        self.partition = fixtures.partition_with_scheduler(None)
 
         # pick the first environment of partition
         if self.partition.environs:
@@ -76,7 +74,7 @@ class TestRegression(unittest.TestCase):
 
         test.setup(self.partition, self.progenv)
         for m in test.modules:
-            self.assertTrue(module_present(m))
+            self.assertTrue(get_modules_system().is_module_loaded(m))
 
         for k, v in test.variables.items():
             self.assertEqual(os.environ[k], v)
@@ -96,7 +94,7 @@ class TestRegression(unittest.TestCase):
         for f in self.keep_files_list(test, compile_only):
             self.assertTrue(os.path.exists(f))
 
-    @unittest.skipIf(not system_with_scheduler(None),
+    @unittest.skipIf(not fixtures.partition_with_scheduler(None),
                      'job submission not supported')
     def test_hellocheck(self):
         self.setup_from_site()
@@ -109,7 +107,7 @@ class TestRegression(unittest.TestCase):
         test.valid_prog_environs = [self.progenv.name]
         self._run_test(test)
 
-    @unittest.skipIf(not system_with_scheduler(None),
+    @unittest.skipIf(not fixtures.partition_with_scheduler(None),
                      'job submission not supported')
     def test_hellocheck_new_sanity(self):
         self.setup_from_site()
@@ -127,7 +125,7 @@ class TestRegression(unittest.TestCase):
         test.valid_prog_environs = [self.progenv.name]
         self._run_test(test)
 
-    @unittest.skipIf(not system_with_scheduler(None),
+    @unittest.skipIf(not fixtures.partition_with_scheduler(None),
                      'job submission not supported')
     def test_hellocheck_make(self):
         self.setup_from_site()
@@ -315,7 +313,7 @@ class TestRegressionOutputScan(unittest.TestCase):
         warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
         # Load test site configuration
-        self.system, self.partition, self.progenv = get_setup_config()
+        self.system, self.partition, self.progenv = fixtures.get_test_config()
 
         # Set up RegressionTest instance
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
@@ -870,7 +868,7 @@ class TestNewSanityPatterns(unittest.TestCase):
         warnings.simplefilter('ignore', ReframeDeprecationWarning)
 
         # Load test site configuration
-        self.system, self.partition, self.progenv = get_setup_config()
+        self.system, self.partition, self.progenv = fixtures.get_test_config()
 
         # Set up RegressionTest instance
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')

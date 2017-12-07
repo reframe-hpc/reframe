@@ -15,6 +15,8 @@ from reframe.core.environments import Environment, ProgEnvironment
 from reframe.core.exceptions import ConfigurationError, ReframeError
 from reframe.core.systems import System, SystemPartition
 from reframe.core.fields import ScopedDict, ScopedDictField
+from reframe.core.schedulers.registry import getscheduler
+from reframe.core.launchers.registry import getlauncher
 from reframe.settings import settings
 
 
@@ -162,6 +164,22 @@ class SiteConfiguration:
     def modes(self):
         return self._modes
 
+    def get_schedsystem_config(self, descr):
+        # Handle the special shortcuts first
+        if descr == 'nativeslurm':
+            return getscheduler('slurm'), getlauncher('srun')
+
+        if descr == 'local':
+            return getscheduler('local'), getlauncher('local')
+
+        try:
+            sched_descr, launcher_descr = descr.split('+')
+        except ValueError as e:
+            raise ConfigurationError(
+                'invalid syntax for the scheduling system') from e
+
+        return getscheduler(sched_descr), getlauncher(launcher_descr)
+
     def load_from_dict(self, site_config):
         if not isinstance(site_config, collections.abc.Mapping):
             raise ConfigurationError('site configuration is not a dict')
@@ -235,6 +253,7 @@ class SiteConfiguration:
             sys_outputdir = config.get('outputdir', None)
             sys_logdir    = config.get('logdir', None)
             sys_resourcesdir = config.get('resourcesdir', '.')
+            sys_modules_system = config.get('modules_system', None)
 
             # Expand variables
             if sys_prefix:
@@ -259,7 +278,8 @@ class SiteConfiguration:
                             stagedir=sys_stagedir,
                             outputdir=sys_outputdir,
                             logdir=sys_logdir,
-                            resourcesdir=sys_resourcesdir)
+                            resourcesdir=sys_resourcesdir,
+                            modules_system=sys_modules_system)
             for part_name, partconfig in config.get('partitions', {}).items():
                 if not isinstance(partconfig, collections.abc.Mapping):
                     raise ConfigurationError(
@@ -268,7 +288,9 @@ class SiteConfiguration:
                     )
 
                 part_descr = partconfig.get('descr', part_name)
-                part_scheduler = partconfig.get('scheduler', 'local')
+                part_scheduler, part_launcher = self.get_schedsystem_config(
+                    partconfig.get('scheduler', 'local+local')
+                )
                 part_local_env = Environment(
                     name='__rfm_env_%s' % part_name,
                     modules=partconfig.get('modules', []),
@@ -284,6 +306,7 @@ class SiteConfiguration:
                 system.add_partition(SystemPartition(name=part_name,
                                                      descr=part_descr,
                                                      scheduler=part_scheduler,
+                                                     launcher=part_launcher,
                                                      access=part_access,
                                                      environs=part_environs,
                                                      resources=part_resources,

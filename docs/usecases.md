@@ -35,17 +35,17 @@ A bit of this effect can be seen in the following Table where the total amount o
 We also present a snapshot of the first public release of ReFrame ([v2.2](https://github.com/eth-cscs/reframe/releases/tag/v2.2)).
 
 
-Maintenance Burden        | Shell-Script Based | ReFrame (v2.2) | ReFrame (v2.7) |
---------------------------|--------------------|----------------|----------------|
-Total tests               |   179              |  122           |  172           |
-Total size of tests       | 14635 loc          | 2985 loc       | 4493 loc       |
-Avg. test file size       |   179 loc          |   93 loc       |   87 loc       |
-Avg. effective test size  |   179 loc          |   25 loc       |   25 loc       |
+Maintenance Burden        | Shell-Script Based | ReFrame (May 2017) | ReFrame (Nov 2017) |
+--------------------------|--------------------|--------------------|--------------------|
+Total tests               |   179              |  122               |  172               |
+Total size of tests       | 14635 loc          | 2985 loc           | 4493 loc           |
+Avg. test file size       |   179 loc          |   93 loc           |   87 loc           |
+Avg. effective test size  |   179 loc          |   25 loc           |   25 loc           |
 
 The difference in the total amount of regression test code is dramatic.
 From the 15K lines of code of the old shell script based regression testing suite, ReFrame tests use only 3K lines of code (first release) achieving a higher coverage.
 
-> NOTE: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts does not account for this.
+> NOTE: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.
 
 Each regression test file in ReFrame is 80&ndash;90 loc on average.
 However, eash regression test file may contain or generate more than one related tests, thus leading to the effective decrease of the line count per test to only 25 loc.

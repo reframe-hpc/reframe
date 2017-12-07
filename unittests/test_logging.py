@@ -95,22 +95,22 @@ class TestLogger(unittest.TestCase):
 
 class TestLoggerConfiguration(unittest.TestCase):
     def setUp(self):
-
-        self.logfile = 'reframe.log'
+        tmpfd, self.logfile = tempfile.mkstemp(dir='.')
+        os.close(tmpfd)
         self.logging_config = {
             'level': 'INFO',
             'handlers': {
                 self.logfile: {
                     'level': 'WARNING',
-                    'format': '[%(asctime)s] %(levelname)s: %(message)s',
+                    'format': '[%(asctime)s] %(levelname)s: '
+                              '%(check_name)s: %(message)s',
                     'datefmt': '%F',
                     'append': True,
                 }
             }
         }
-        self.logger = None
         self.check = RegressionTest(
-            'random_check', '.', System('foosys'), ResourcesManager()
+            'random_check', '.', System('gagsys'), ResourcesManager()
         )
 
     def tearDown(self):
@@ -118,7 +118,7 @@ class TestLoggerConfiguration(unittest.TestCase):
             os.remove(self.logfile)
 
     def found_in_logfile(self, string):
-        for handler in self.logger.handlers:
+        for handler in getlogger().logger.handlers:
             handler.flush()
             handler.close()
 
@@ -128,46 +128,44 @@ class TestLoggerConfiguration(unittest.TestCase):
 
         return found
 
-    def set_logger(self):
-        from reframe.core.logging import load_from_dict
-        self.logger = load_from_dict(self.logging_config)
-
     def close_handlers(self):
-        for h in self.logger.handlers:
+        for h in getlogger().logger.handlers:
             h.close()
 
     def flush_handlers(self):
-        for h in self.logger.handlers:
+        for h in getlogger().logger.handlers:
             h.flush()
 
     def test_valid_level(self):
-        self.set_logger()
-        self.assertEqual(INFO, self.logger.getEffectiveLevel())
+        configure_logging(self.logging_config)
+        self.assertEqual(INFO, getlogger().getEffectiveLevel())
 
     def test_no_handlers(self):
         del self.logging_config['handlers']
-        self.assertRaises(ConfigurationError, self.set_logger)
+        self.assertRaises(ConfigurationError,
+                          configure_logging, self.logging_config)
 
     def test_empty_handlers(self):
         self.logging_config['handlers'] = {}
-        self.assertRaises(ConfigurationError, self.set_logger)
+        self.assertRaises(ConfigurationError,
+                          configure_logging, self.logging_config)
 
     def test_handler_level(self):
-        self.set_logger()
-        self.logger.info('foo')
-        self.logger.warning('bar')
+        configure_logging(self.logging_config)
+        getlogger().info('foo')
+        getlogger().warning('bar')
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
     def test_handler_append(self):
-        self.set_logger()
-        self.logger.warning('foo')
+        configure_logging(self.logging_config)
+        getlogger().warning('foo')
         self.close_handlers()
 
         # Reload logger
-        self.set_logger()
-        self.logger.warning('bar')
+        configure_logging(self.logging_config)
+        getlogger().warning('bar')
 
         self.assertTrue(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
@@ -185,22 +183,21 @@ class TestLoggerConfiguration(unittest.TestCase):
             }
         }
 
-        self.set_logger()
-        self.logger.warning('foo')
+        configure_logging(self.logging_config)
+        getlogger().warning('foo')
         self.close_handlers()
 
         # Reload logger
-        self.set_logger()
-        self.logger.warning('bar')
+        configure_logging(self.logging_config)
+        getlogger().warning('bar')
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
-    # FIXME: this test is not robust
+    # FIXME: this test is not so robust
     def test_date_format(self):
-        self.set_logger()
-        self.logger.warning('foo')
-        self.flush_handlers()
+        configure_logging(self.logging_config)
+        getlogger().warning('foo')
         self.assertTrue(self.found_in_logfile(datetime.now().strftime('%F')))
 
     def test_stream_handler_stdout(self):
@@ -210,10 +207,10 @@ class TestLoggerConfiguration(unittest.TestCase):
                 '&1': {},
             }
         }
-        self.set_logger()
-
-        self.assertEqual(len(self.logger.handlers), 1)
-        handler = self.logger.handlers[0]
+        configure_logging(self.logging_config)
+        raw_logger = getlogger().logger
+        self.assertEqual(len(raw_logger.handlers), 1)
+        handler = raw_logger.handlers[0]
 
         self.assertTrue(isinstance(handler, StreamHandler))
         self.assertEqual(handler.stream, sys.stdout)
@@ -225,10 +222,11 @@ class TestLoggerConfiguration(unittest.TestCase):
                 '&2': {},
             }
         }
-        self.set_logger()
 
-        self.assertEqual(len(self.logger.handlers), 1)
-        handler = self.logger.handlers[0]
+        configure_logging(self.logging_config)
+        raw_logger = getlogger().logger
+        self.assertEqual(len(raw_logger.handlers), 1)
+        handler = raw_logger.handlers[0]
 
         self.assertTrue(isinstance(handler, StreamHandler))
         self.assertEqual(handler.stream, sys.stderr)
@@ -241,8 +239,8 @@ class TestLoggerConfiguration(unittest.TestCase):
                 self.logfile: {},
             }
         }
-        self.set_logger()
-        self.assertEqual(len(self.logger.handlers), 2)
+        configure_logging(self.logging_config)
+        self.assertEqual(len(getlogger().logger.handlers), 2)
 
     def test_global_noconfig(self):
         # This is to test the case when no configuration is set, but since the
@@ -250,14 +248,39 @@ class TestLoggerConfiguration(unittest.TestCase):
         # 'no-config' state by passing `None` to `configure_logging()`
 
         configure_logging(None)
-        frontend_logger = getlogger('frontend')
-        check_logger = getlogger('check', self.check)
-        self.assertEqual(None, frontend_logger.logger)
-        self.assertEqual(None, check_logger.logger)
+        self.assertIs(getlogger(), null_logger)
 
     def test_global_config(self):
         configure_logging(self.logging_config)
-        frontend_logger = getlogger('frontend')
-        check_logger = getlogger('check', self.check)
-        self.assertNotEqual(None, frontend_logger.logger)
-        self.assertNotEqual(None, check_logger.logger)
+        self.assertIsNot(getlogger(), null_logger)
+
+    def test_logging_context(self):
+        configure_logging(self.logging_config)
+        with logging_context() as logger:
+            self.assertIs(logger, getlogger())
+            self.assertIsNot(logger, null_logger)
+            getlogger().error('error from context')
+
+        self.assertTrue(self.found_in_logfile('reframe'))
+        self.assertTrue(self.found_in_logfile('error from context'))
+
+    def test_logging_context_check(self):
+        configure_logging(self.logging_config)
+        with logging_context(check=self.check):
+            getlogger().error('error from context')
+
+        self.assertTrue(self.found_in_logfile('random_check'))
+        self.assertTrue(self.found_in_logfile('error from context'))
+
+    def test_logging_context_error(self):
+        configure_logging(self.logging_config)
+        try:
+            with logging_context(exc_log_level=ERROR):
+                raise ReframeError('error from context')
+
+            self.fail('logging_context did not propagate the exception')
+        except ReframeError:
+            pass
+
+        self.assertTrue(self.found_in_logfile('reframe'))
+        self.assertTrue(self.found_in_logfile('error from context'))
