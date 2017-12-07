@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.7 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.8 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
         <link rel="next" title="Sanity Functions Reference" href="sanity_functions_reference.html"/>
         <link rel="prev" title="About ReFrame" href="about.html"/> 
 
@@ -71,7 +73,7 @@
             
             
               <div class="version">
-                2.7
+                2.8
               </div>
             
           
@@ -119,6 +121,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -142,7 +146,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -445,12 +449,61 @@ with.</p>
 </table>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.extra_resources">
+<code class="descname">extra_resources</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extra resources for this test.</p>
+<p>This field is for specifying custom resources needed by this test.
+These resources are defined in the <a class="reference internal" href="configure.html"><span class="doc">configuration</span></a>
+of a system partition.
+For example, assume that <code class="docutils literal"><span class="pre">num_accels</span></code> is defined as follows in the
+configuration file:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;--gres=gpu:</span><span class="si">{num_accels}</span><span class="s1">&#39;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A regression test then may define <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="reframe.core.pipeline.RegressionTest.extra_resources"><code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code></a> as follows in
+order to get two accelerator devices:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The framework will then pass the option <code class="docutils literal"><span class="pre">--gres=gpu:2</span></code> to the backend
+scheduler.</p>
+<p>If the resource name specified in this variable does not match a resource
+name in the partition configuration, it will be simply ignored.
+The <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.num_gpus_per_node" title="reframe.core.pipeline.RegressionTest.num_gpus_per_node"><code class="xref py py-attr docutils literal"><span class="pre">num_gpus_per_node</span></code></a> attribute translates internally to the
+<code class="docutils literal"><span class="pre">num_gpus_per_node</span></code> resource, so that setting <code class="docutils literal"><span class="pre">self.num_gpus_per_node</span> <span class="pre">=</span>
+<span class="pre">2</span></code> is equivalent to the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary with <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
 <dl class="method">
 <dt id="reframe.core.pipeline.RegressionTest.is_local">
 <code class="descname">is_local</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.is_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.is_local" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if the test will execute locally.</p>
 <p>A test executes locally if the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.local" title="reframe.core.pipeline.RegressionTest.local"><code class="xref py py-attr docutils literal"><span class="pre">local</span></code></a> attribute is set or if the
-current partition’s scheduler is the <code class="docutils literal"><span class="pre">local</span></code> one.</p>
+current partition’s scheduler does not support job submission.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1308,7 +1361,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 
 <span class="target" id="module-reframe.core.systems"></span><dl class="class">
 <dt id="reframe.core.systems.System">
-<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">System</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>hostnames=[]</em>, <em>partitions=[]</em>, <em>prefix='.'</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>logdir=None</em>, <em>resourcesdir='.'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">System</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>hostnames=[]</em>, <em>partitions=[]</em>, <em>prefix='.'</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>logdir=None</em>, <em>resourcesdir='.'</em>, <em>modules_system=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>A representation of a system inside ReFrame.</p>
 <dl class="attribute">
@@ -1373,7 +1426,7 @@ See <a class="reference external" href="configure.html#system-configuration">her
 
 <dl class="class">
 <dt id="reframe.core.systems.SystemPartition">
-<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">SystemPartition</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>scheduler=None</em>, <em>access=[]</em>, <em>environs=[]</em>, <em>resources={}</em>, <em>local_env=None</em>, <em>max_jobs=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#SystemPartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.SystemPartition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">SystemPartition</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>scheduler=None</em>, <em>launcher=None</em>, <em>access=[]</em>, <em>environs=[]</em>, <em>resources={}</em>, <em>local_env=None</em>, <em>max_jobs=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#SystemPartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.SystemPartition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>A representation of a system partition inside ReFrame.</p>
 <dl class="attribute">
@@ -1399,6 +1452,26 @@ See <a class="reference external" href="configure.html#system-configuration">her
 </dd></dl>
 
 <dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.launcher">
+<code class="descname">launcher</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.launcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the backend launcher of this partition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a subclass of <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="reframe.core.systems.SystemPartition.name">
 <code class="descname">name</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>The name of this partition.</p>
@@ -1415,31 +1488,42 @@ See <a class="reference external" href="configure.html#system-configuration">her
 <dl class="attribute">
 <dt id="reframe.core.systems.SystemPartition.scheduler">
 <code class="descname">scheduler</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.scheduler" title="Permalink to this definition">¶</a></dt>
-<dd><p>The backend scheduler of this partition.</p>
-<p>This is the name of the scheduler defined in the
-<a class="reference external" href="configure.html#partition-configuration">partition configuration</a>.</p>
+<dd><p>The type of the backend scheduler of this partition.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><cite>str</cite></td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a subclass of <a class="reference internal" href="#reframe.core.schedulers.Job" title="reframe.core.schedulers.Job"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.schedulers.Job</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.8.</span></p>
+</div>
+<p class="last">Prior versions returned a string representing the scheduler and job
+launcher combination.</p>
+</div>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="reframe.core.schedulers.Job">
-<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>job_name</em>, <em>job_environ_list</em>, <em>job_script_builder</em>, <em>launcher_type</em>, <em>num_tasks</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>sched_options=[]</em>, <em>launcher_options=[]</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>command</em>, <em>launcher</em>, <em>environs=[]</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job descriptor.</p>
-<p>Users may not create jobs directly.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an abstract class.
+Users may not create jobs directly.</p>
+</div>
 <dl class="attribute">
 <dt id="reframe.core.schedulers.Job.launcher">
 <code class="descname">launcher</code><a class="headerlink" href="#reframe.core.schedulers.Job.launcher" title="Permalink to this definition">¶</a></dt>
-<dd><p>The job launcher used to launch this job.</p>
+<dd><p>The parallel program launcher that will be used to launch the parallel
+executable of this job.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1506,77 +1590,27 @@ actual job launch command.</p>
 
 <span class="target" id="module-reframe.core.launchers"></span><dl class="class">
 <dt id="reframe.core.launchers.JobLauncher">
-<em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">JobLauncher</code><span class="sig-paren">(</span><em>job</em>, <em>options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#JobLauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.JobLauncher" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">JobLauncher</code><span class="sig-paren">(</span><em>options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#JobLauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.JobLauncher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job launcher.</p>
 <p>A job launcher is the executable that actually launches a distributed
 program to multiple nodes, e.g., <code class="docutils literal"><span class="pre">mpirun</span></code>, <code class="docutils literal"><span class="pre">srun</span></code> etc.</p>
-<p>This is an abstract class.
-Users may not instantiate this class directly.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>job</strong> (<a class="reference internal" href="#reframe.core.schedulers.Job" title="reframe.core.schedulers.Job"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.schedulers.Job</span></code></a>) – The job descriptor to associate with this launcher.
-The launcher may need the job descriptor in order to obtain information
-for the job submission.
-Users needing to create a launcher inside a <code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code>
-should always pass <code class="docutils literal"><span class="pre">self.job</span></code> to this argument.</li>
-<li><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>) – Options to be passed to the launcher invocation.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="reframe.core.launchers.JobLauncher.executable">
-<code class="descname">executable</code><a class="headerlink" href="#reframe.core.launchers.JobLauncher.executable" title="Permalink to this definition">¶</a></dt>
-<dd><p>The executable name of this launcher.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="reframe.core.launchers.JobLauncher.fixed_options">
-<code class="descname">fixed_options</code><a class="headerlink" href="#reframe.core.launchers.JobLauncher.fixed_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>Options to be always passed to this job launcher’s executable.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
-</tr>
-<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="reframe.core.launchers.JobLauncher.job">
-<code class="descname">job</code><a class="headerlink" href="#reframe.core.launchers.JobLauncher.job" title="Permalink to this definition">¶</a></dt>
-<dd><p>The job descriptor associated with this launcher.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.schedulers.Job" title="reframe.core.schedulers.Job"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.schedulers.Job</span></code></a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an abstract class.
+Regression tests may not instantiate this class directly.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.8: </span>Job launchers do not get a reference to a job during their
+initialization.</p>
+</div>
+</div>
 <dl class="attribute">
 <dt id="reframe.core.launchers.JobLauncher.options">
 <code class="descname">options</code><a class="headerlink" href="#reframe.core.launchers.JobLauncher.options" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of options to be passed to the job launcher</p>
+<dd><p>List of options to be passed to the job launcher invocation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1597,8 +1631,23 @@ should always pass <code class="docutils literal"><span class="pre">self.job</sp
 <dd><p>Bases: <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a></p>
 <p>Wrap a launcher object so as to modify its invocation.</p>
 <p>This is useful for parallel debuggers.
-For example, to launch a regression test using the DDT debugger, you can do
-the following:</p>
+For example, to launch a regression test using the <a class="reference external" href="https://www.allinea.com/products/ddt/">DDT</a> debugger, you can do the
+following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span> <span class="o">=</span> <span class="n">LauncherWrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span><span class="p">,</span> <span class="s1">&#39;ddt&#39;</span><span class="p">,</span>
+                                        <span class="p">[</span><span class="s1">&#39;--offline&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>If the current system partition uses native Slurm for job submission, this
+setup will generate the following command in the submission script:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ddt</span> <span class="o">--</span><span class="n">offline</span> <span class="n">srun</span> <span class="o">&lt;</span><span class="n">test_executable</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>If the current partition uses <code class="docutils literal"><span class="pre">mpirun</span></code> instead, it will generate</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ddt</span> <span class="o">--</span><span class="n">offline</span> <span class="n">mpirun</span> <span class="o">-</span><span class="n">np</span> <span class="o">&lt;</span><span class="n">num_tasks</span><span class="o">&gt;</span> <span class="o">...</span> <span class="o">&lt;</span><span class="n">test_executable</span><span class="o">&gt;</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1614,12 +1663,69 @@ the following:</p>
 </table>
 </dd></dl>
 
-<dl class="class">
-<dt id="reframe.core.launchers.VisitLauncher">
-<em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">VisitLauncher</code><span class="sig-paren">(</span><em>job</em>, <em>options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#VisitLauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.VisitLauncher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a></p>
-<p>ReFrame launcher for the <a class="reference external" href="https://visit.llnl.gov/">VisIt</a> visualization
-software.</p>
+<span class="target" id="module-reframe.core.launchers.registry"></span><dl class="function">
+<dt id="reframe.core.launchers.registry.getlauncher">
+<code class="descclassname">reframe.core.launchers.registry.</code><code class="descname">getlauncher</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers/registry.html#getlauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.registry.getlauncher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get launcher by its registered name.</p>
+<p>The available names are those specified in the
+<a class="reference internal" href="configure.html"><span class="doc">configuration file</span></a>.</p>
+<p>This method may become handy in very special situations, e.g., testing an
+application that needs to replace the system partition launcher or if a
+different launcher must be used for a different programming environment.</p>
+<p>For example, if you want to replace the current partition’s launcher with
+the local one, here is how you can achieve it:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span> <span class="o">=</span> <span class="n">getlauncher</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)()</span>
+</pre></div>
+</div>
+<p>Note that this method returns a launcher class type and not an instance of
+that class.
+You have to instantiate it explicitly before assigning it to the
+<code class="xref py py-attr docutils literal"><span class="pre">launcher</span></code> attribute of the job.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> – The name of the launcher to retrieve.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The class of the launcher requested, which is a subclass of
+<a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="reframe.core.launchers.registry.register_launcher">
+<code class="descclassname">reframe.core.launchers.registry.</code><code class="descname">register_launcher</code><span class="sig-paren">(</span><em>name</em>, <em>local=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers/registry.html#register_launcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.registry.register_launcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class decorator for registering new job launchers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> – The registration name of this launcher</li>
+<li><strong>local</strong> – <code class="xref py py-class docutils literal"><span class="pre">True</span></code> if launcher may only submit local jobs,
+<code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p class="last">This method is only relevant to developers of new job launchers.</p>
+</div>
 </dd></dl>
 
 </div>
@@ -1684,7 +1790,7 @@ software.</p>
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -1701,6 +1807,23 @@ software.</p>
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/reference.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/reference.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -1708,7 +1831,7 @@ software.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.7',
+            VERSION:'2.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.7 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.8 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -70,7 +72,7 @@
             
             
               <div class="version">
-                2.7
+                2.8
               </div>
             
           
@@ -118,6 +120,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -141,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
@@ -172,20 +176,21 @@
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
+<span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.core.logging</span> <span class="k">as</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">reframe.settings</span> <span class="k">as</span> <span class="nn">settings</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.os</span> <span class="k">as</span> <span class="nn">os_ext</span>
 
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">ReframeFatalError</span><span class="p">,</span> <span class="n">SanityError</span>
-<span class="kn">from</span> <span class="nn">reframe.core.fields</span> <span class="k">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">reframe.core.launchers</span> <span class="k">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">reframe.core.logging</span> <span class="k">import</span> <span class="n">getlogger</span><span class="p">,</span> <span class="n">LoggerAdapter</span><span class="p">,</span> <span class="n">null_logger</span>
-<span class="kn">from</span> <span class="nn">reframe.core.schedulers</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">ReframeError</span><span class="p">,</span> <span class="n">SanityError</span>
+<span class="kn">from</span> <span class="nn">reframe.core.schedulers</span> <span class="k">import</span> <span class="n">Job</span>
+<span class="kn">from</span> <span class="nn">reframe.core.schedulers.registry</span> <span class="k">import</span> <span class="n">getscheduler</span>
+<span class="kn">from</span> <span class="nn">reframe.core.launchers.registry</span> <span class="k">import</span> <span class="n">getlauncher</span>
 <span class="kn">from</span> <span class="nn">reframe.core.shell</span> <span class="k">import</span> <span class="n">BashScriptBuilder</span>
 <span class="kn">from</span> <span class="nn">reframe.core.systems</span> <span class="k">import</span> <span class="n">System</span><span class="p">,</span> <span class="n">SystemPartition</span>
 <span class="kn">from</span> <span class="nn">reframe.frontend.resources</span> <span class="k">import</span> <span class="n">ResourcesManager</span>
@@ -315,26 +320,26 @@
     <span class="c1">#: The name of the test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: Alphanumeric string.</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">AlphanumericField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AlphanumericField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
 
     <span class="c1">#: List of programming environmets supported by this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_prog_environs&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_prog_environs&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of systems supported by this test.</span>
     <span class="c1">#: The general syntax for systems is ``&lt;sysname&gt;[:&lt;partname]``.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`.</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">valid_systems</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_systems&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">valid_systems</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_systems&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: A detailed description of the test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
     <span class="c1">#: :default: ``self.name``</span>
-    <span class="n">descr</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;descr&#39;</span><span class="p">)</span>
+    <span class="n">descr</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;descr&#39;</span><span class="p">)</span>
 
     <span class="c1">#: The path to the source file or source directory of the test.</span>
     <span class="c1">#:</span>
@@ -349,7 +354,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
     <span class="c1">#: :default: ``&#39;&#39;``</span>
-    <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcepath&#39;</span><span class="p">)</span>
+    <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcepath&#39;</span><span class="p">)</span>
 
     <span class="c1">#: List of shell commands to be executed before compiling.</span>
     <span class="c1">#:</span>
@@ -358,7 +363,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">prebuild_cmd</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;prebuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">prebuild_cmd</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;prebuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of shell commands to be executed after a successful compilation.</span>
     <span class="c1">#:</span>
@@ -367,19 +372,19 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">postbuild_cmd</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;postbuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">postbuild_cmd</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;postbuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: The name of the executable to be launched during the run phase.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
     <span class="c1">#: :default: ``os.path.join(&#39;.&#39;, self.name)``</span>
-    <span class="n">executable</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;executable&#39;</span><span class="p">)</span>
+    <span class="n">executable</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;executable&#39;</span><span class="p">)</span>
 
     <span class="c1">#: List of options to be passed to the :attr:`executable`.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">executable_opts</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;executable_opts&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">executable_opts</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;executable_opts&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of files to be kept after the test finishes.</span>
     <span class="c1">#:</span>
@@ -395,7 +400,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">keep_files</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;keep_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">keep_files</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;keep_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of files or directories (relative to the :attr:`sourcesdir`) that</span>
     <span class="c1">#: will be symlinked in the stage directory and not copied.</span>
@@ -405,7 +410,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">readonly_files</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;readonly_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">readonly_files</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;readonly_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: Set of tags associated with this test.</span>
     <span class="c1">#:</span>
@@ -413,7 +418,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`set` of :class:`str`</span>
     <span class="c1">#: :default: an empty set</span>
-    <span class="n">tags</span> <span class="o">=</span> <span class="n">TypedSetField</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">tags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedSetField</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of people responsible for this test.</span>
     <span class="c1">#:</span>
@@ -421,7 +426,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">maintainers</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;maintainers&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">maintainers</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;maintainers&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: Mark this test as a strict performance test.</span>
     <span class="c1">#:</span>
@@ -431,13 +436,13 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: boolean</span>
     <span class="c1">#: :default: :class:`True`</span>
-    <span class="n">strict_check</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;strict_check&#39;</span><span class="p">)</span>
+    <span class="n">strict_check</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;strict_check&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks required by this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer</span>
     <span class="c1">#: :default: ``1``</span>
-    <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks&#39;</span><span class="p">)</span>
+    <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks per node required by this test.</span>
     <span class="c1">#:</span>
@@ -445,13 +450,14 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_node&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_node&#39;</span><span class="p">,</span>
+                                             <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Number of GPUs per node required by this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer</span>
     <span class="c1">#: :default: ``0``</span>
-    <span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">)</span>
+    <span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Number of CPUs per task required by this test.</span>
     <span class="c1">#:</span>
@@ -459,7 +465,8 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">num_cpus_per_task</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_cpus_per_task&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">num_cpus_per_task</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_cpus_per_task&#39;</span><span class="p">,</span>
+                                            <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks per core required by this test.</span>
     <span class="c1">#:</span>
@@ -467,7 +474,8 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">num_tasks_per_core</span>  <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_core&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">num_tasks_per_core</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_core&#39;</span><span class="p">,</span>
+                                              <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks per socket required by this test.</span>
     <span class="c1">#:</span>
@@ -475,8 +483,8 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: integer or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">num_tasks_per_socket</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_socket&#39;</span><span class="p">,</span>
-                                        <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">num_tasks_per_socket</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_socket&#39;</span><span class="p">,</span>
+                                               <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Specify whether this tests needs simultaneous multithreading enabled.</span>
     <span class="c1">#:</span>
@@ -484,19 +492,20 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: boolean or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">use_multithreading</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;use_multithreading&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">use_multithreading</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;use_multithreading&#39;</span><span class="p">,</span>
+                                             <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Specify whether this test needs exclusive access to nodes.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: boolean</span>
     <span class="c1">#: :default: :class:`False`</span>
-    <span class="n">exclusive_access</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;exclusive_access&#39;</span><span class="p">)</span>
+    <span class="n">exclusive_access</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;exclusive_access&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Always execute this test locally.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: boolean</span>
     <span class="c1">#: :default: :class:`False`</span>
-    <span class="n">local</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+    <span class="n">local</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
 
     <span class="c1">#: The directory containing the test’s resources.</span>
     <span class="c1">#:</span>
@@ -504,7 +513,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="c1">#: :default: ``os.path.join(self.prefix, &#39;src&#39;)``</span>
-    <span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcesdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcesdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># FIXME: The new syntax accepts only tuples of numbers as references.</span>
     <span class="c1"># However we do not yet enforce this, in order to support also the old</span>
@@ -518,7 +527,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: A scoped dictionary with system names as scopes or :class:`None`</span>
     <span class="c1">#: :default: ``{}``</span>
-    <span class="n">reference</span> <span class="o">=</span> <span class="n">ScopedDictField</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">ScopedDictField</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 
     <span class="c1">#: Patterns for verifying the sanity of this test.</span>
     <span class="c1">#:</span>
@@ -530,9 +539,9 @@
     <span class="c1">#: :type: A deferrable expression (i.e., the result of a :doc:`sanity</span>
     <span class="c1">#:     function &lt;/sanity_functions_reference&gt;`) or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">AnyField</span><span class="p">(</span>
-        <span class="s1">&#39;sanity_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">TypedField</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
-                            <span class="p">(</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AnyField</span><span class="p">(</span>
+        <span class="s1">&#39;sanity_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
+                            <span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 
     <span class="c1"># FIXME: Here we first check for the new syntax. The other way around</span>
@@ -551,9 +560,9 @@
     <span class="c1">#:     &lt;/sanity_functions_reference&gt;`) as values.</span>
     <span class="c1">#:     :class:`None` is also allowed.</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">perf_patterns</span> <span class="o">=</span> <span class="n">AnyField</span><span class="p">(</span>
-        <span class="s1">&#39;perf_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">TypedDictField</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
-                          <span class="p">(</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
+    <span class="n">perf_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AnyField</span><span class="p">(</span>
+        <span class="s1">&#39;perf_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
+                          <span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span>
 
     <span class="c1">#: List of modules to be loaded before running this test.</span>
@@ -562,7 +571,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">modules</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: Environment variables to be set before running this test.</span>
     <span class="c1">#:</span>
@@ -570,7 +579,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: dictionary with :class:`str` keys/values</span>
     <span class="c1">#: :default: ``{}``</span>
-    <span class="n">variables</span> <span class="o">=</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: Time limit for this test.</span>
     <span class="c1">#:</span>
@@ -579,24 +588,63 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: a three-tuple with the above properties.</span>
     <span class="c1">#: :default: ``(0, 10, 0)``</span>
-    <span class="n">time_limit</span> <span class="o">=</span> <span class="n">TimerField</span><span class="p">(</span><span class="s1">&#39;time_limit&#39;</span><span class="p">)</span>
+    <span class="n">time_limit</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TimerField</span><span class="p">(</span><span class="s1">&#39;time_limit&#39;</span><span class="p">)</span>
 
-    <span class="n">resources</span> <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;resouces&#39;</span><span class="p">,</span> <span class="n">ResourcesManager</span><span class="p">)</span>
+    <span class="c1">#: Extra resources for this test.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: This field is for specifying custom resources needed by this test.</span>
+    <span class="c1">#: These resources are defined in the :doc:`configuration &lt;/configure&gt;`</span>
+    <span class="c1">#: of a system partition.</span>
+    <span class="c1">#: For example, assume that ``num_accels`` is defined as follows in the</span>
+    <span class="c1">#: configuration file:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: ::</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:     &#39;resources&#39;: {</span>
+    <span class="c1">#:         &#39;num_accels&#39;: [</span>
+    <span class="c1">#:             &#39;--gres=gpu:{num_accels}&#39;</span>
+    <span class="c1">#:         ]</span>
+    <span class="c1">#:     }</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: A regression test then may define :attr:`extra_resources` as follows in</span>
+    <span class="c1">#: order to get two accelerator devices:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: ::</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:     self.extra_resources = {&#39;num_accels&#39;: 2}</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: The framework will then pass the option ``--gres=gpu:2`` to the backend</span>
+    <span class="c1">#: scheduler.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: If the resource name specified in this variable does not match a resource</span>
+    <span class="c1">#: name in the partition configuration, it will be simply ignored.</span>
+    <span class="c1">#: The :attr:`num_gpus_per_node` attribute translates internally to the</span>
+    <span class="c1">#: ``num_gpus_per_node`` resource, so that setting ``self.num_gpus_per_node =</span>
+    <span class="c1">#: 2`` is equivalent to the following:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: ::</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:     self.extra_resources = {&#39;num_gpus_per_node&#39;: 2}</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: dictionary with :class:`str` keys/values</span>
+    <span class="c1">#: :default: ``{}``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:    .. versionadded:: 2.8</span>
+    <span class="n">extra_resources</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;extra_resources&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1"># Private properties</span>
-    <span class="n">_prefix</span>            <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
-    <span class="n">_stagedir</span>          <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_stdout</span>            <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stdout&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_stderr</span>            <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stderr&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_logger</span>            <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_logger&#39;</span><span class="p">,</span> <span class="n">LoggerAdapter</span><span class="p">)</span>
-    <span class="n">_perf_logfile</span>      <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_perf_logfile&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_current_system</span>    <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_system&#39;</span><span class="p">,</span> <span class="n">System</span><span class="p">)</span>
-    <span class="n">_current_partition</span> <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_partition&#39;</span><span class="p">,</span> <span class="n">SystemPartition</span><span class="p">,</span>
-                                    <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_current_environ</span> <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_environ&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span>
-                                  <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_job</span> <span class="o">=</span> <span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_job&#39;</span><span class="p">,</span> <span class="n">Job</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_job_resources</span> <span class="o">=</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;_job_resources&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">_prefix</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
+    <span class="n">_stagedir</span>          <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_stdout</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stdout&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_stderr</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stderr&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_perf_logfile</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_perf_logfile&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_current_system</span>    <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_system&#39;</span><span class="p">,</span> <span class="n">System</span><span class="p">)</span>
+    <span class="n">_current_partition</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_partition&#39;</span><span class="p">,</span>
+                                           <span class="n">SystemPartition</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_current_environ</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_environ&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span>
+                                         <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_job</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_job&#39;</span><span class="p">,</span> <span class="n">Job</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="n">resources</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span>  <span class="o">=</span> <span class="n">name</span>
@@ -656,23 +704,19 @@
 
         <span class="c1"># Associated job</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span>           <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job_resources</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_launcher_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Dynamic paths of the regression check; will be set in setup()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span> <span class="o">=</span> <span class="n">resources</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span>  <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span>    <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span>    <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span> <span class="o">=</span> <span class="n">resources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Compilation task output</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Check-specific logging</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">null_logger</span>
-
         <span class="c1"># Performance logging</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span> <span class="o">=</span> <span class="n">null_logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">null_logger</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logfile</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># Export read-only views to interesting fields</span>
@@ -723,7 +767,7 @@
 
 <span class="sd">        You can use this logger to log information for your test.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span>
+        <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">getlogger</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -798,12 +842,12 @@
         <span class="sd">&quot;&quot;&quot;Check if the test will execute locally.</span>
 
 <span class="sd">        A test executes locally if the :attr:`local` attribute is set or if the</span>
-<span class="sd">        current partition&#39;s scheduler is the ``local`` one.</span>
+<span class="sd">        current partition&#39;s scheduler does not support job submission.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">local</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">local</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">==</span> <span class="s1">&#39;local&#39;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">local</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">is_local</span></div>
 
     <span class="k">def</span> <span class="nf">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a basename safe to be used as path component</span>
@@ -814,7 +858,6 @@
     <span class="k">def</span> <span class="nf">_setup_environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">environ</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Setup the current environment and load it.&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up the environment&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span> <span class="o">=</span> <span class="n">environ</span>
 
         <span class="c1"># Add user modules and variables to the environment</span>
@@ -825,24 +868,22 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">set_variable</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
 
         <span class="c1"># First load the local environment of the partition</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;loading environment for partition </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;loading environment for the current partition&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;loading environment </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                           <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;loading test&#39;s environment&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_setup_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Setup the check&#39;s dynamic paths.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up paths&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up paths&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span><span class="o">.</span><span class="n">stagedir</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">stagedir</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span><span class="o">.</span><span class="n">outputdir</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">outputdir</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -853,28 +894,24 @@
     <span class="k">def</span> <span class="nf">_setup_job</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Setup the job related to this check.&quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up the job descriptor&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s1">&#39;job scheduler backend: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-            <span class="p">(</span><span class="s1">&#39;local&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">()</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up the job descriptor&#39;</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;job scheduler backend: </span><span class="si">{0}</span><span class="s1">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;local&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span> <span class="k">else</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">registered_name</span><span class="p">))</span>
 
         <span class="c1"># num_gpus_per_node is a managed resource</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_job_resources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">,</span>
-                                           <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span><span class="p">)</span>
 
-        <span class="c1"># If check is local, use the LocalLauncher, otherwise try to infer the</span>
-        <span class="c1"># launcher from the system info</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_launcher_type</span> <span class="o">=</span> <span class="n">LocalLauncher</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">==</span> <span class="s1">&#39;nativeslurm&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_launcher_type</span> <span class="o">=</span> <span class="n">NativeSlurmLauncher</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">==</span> <span class="s1">&#39;slurm+alps&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_launcher_type</span> <span class="o">=</span> <span class="n">AlpsLauncher</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local</span><span class="p">:</span>
+            <span class="n">scheduler_type</span> <span class="o">=</span> <span class="n">getscheduler</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
+            <span class="n">launcher_type</span>  <span class="o">=</span> <span class="n">getlauncher</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Oops</span>
-            <span class="k">raise</span> <span class="n">ReframeFatalError</span><span class="p">(</span><span class="s1">&#39;Oops: unsupported launcher: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span><span class="p">)</span>
+            <span class="n">scheduler_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">scheduler</span>
+            <span class="n">launcher_type</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">launcher</span>
 
         <span class="n">job_name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
@@ -884,57 +921,45 @@
         <span class="p">)</span>
         <span class="n">job_script_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="n">job_name</span> <span class="o">+</span> <span class="s1">&#39;.sh&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span> <span class="o">=</span> <span class="n">LocalJob</span><span class="p">(</span>
-                <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span>
-                <span class="n">job_environ_list</span><span class="o">=</span><span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span>
-                <span class="p">],</span>
-                <span class="n">job_script_builder</span><span class="o">=</span><span class="n">BashScriptBuilder</span><span class="p">(),</span>
-                <span class="n">script_filename</span><span class="o">=</span><span class="n">job_script_filename</span><span class="p">,</span>
-                <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span>
-                <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span>
-                <span class="n">time_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_limit</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span> <span class="o">=</span> <span class="n">SlurmJob</span><span class="p">(</span>
-                <span class="n">job_name</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span>
-                <span class="n">job_environ_list</span><span class="o">=</span><span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span>
-                <span class="p">],</span>
-                <span class="n">job_script_builder</span><span class="o">=</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-                <span class="n">script_filename</span><span class="o">=</span><span class="n">job_script_filename</span><span class="p">,</span>
-                <span class="n">num_tasks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span><span class="p">,</span>
-                <span class="n">num_tasks_per_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_node</span><span class="p">,</span>
-                <span class="n">num_cpus_per_task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_cpus_per_task</span><span class="p">,</span>
-                <span class="n">num_tasks_per_core</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_core</span><span class="p">,</span>
-                <span class="n">num_tasks_per_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_socket</span><span class="p">,</span>
-                <span class="n">use_smt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_multithreading</span><span class="p">,</span>
-                <span class="n">exclusive_access</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exclusive_access</span><span class="p">,</span>
-                <span class="n">launcher_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_launcher_type</span><span class="p">,</span>
-                <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span>
-                <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span>
-                <span class="n">time_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_limit</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span> <span class="o">=</span> <span class="n">scheduler_type</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">job_name</span><span class="p">,</span>
+            <span class="n">command</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span><span class="p">),</span>
+            <span class="n">launcher</span><span class="o">=</span><span class="n">launcher_type</span><span class="p">(),</span>
+            <span class="n">environs</span><span class="o">=</span><span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span>
+            <span class="p">],</span>
+            <span class="n">workdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span>
+            <span class="n">num_tasks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span><span class="p">,</span>
+            <span class="n">num_tasks_per_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_node</span><span class="p">,</span>
+            <span class="n">num_tasks_per_core</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_core</span><span class="p">,</span>
+            <span class="n">num_tasks_per_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_socket</span><span class="p">,</span>
+            <span class="n">num_cpus_per_task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_cpus_per_task</span><span class="p">,</span>
+            <span class="n">use_smt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_multithreading</span><span class="p">,</span>
+            <span class="n">time_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">time_limit</span><span class="p">,</span>
+            <span class="n">script_filename</span><span class="o">=</span><span class="n">job_script_filename</span><span class="p">,</span>
+            <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span>
+            <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span>
+            <span class="n">sched_exclusive_access</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exclusive_access</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">job_opts</span>
+        <span class="p">)</span>
 
-            <span class="c1"># Get job options from managed resources and prepend them to</span>
-            <span class="c1"># job_opts. We want any user supplied options to be able to</span>
-            <span class="c1"># override those set by the framework.</span>
-            <span class="n">resources_opts</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">resources_opts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">get_resource</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+        <span class="c1"># Get job options from managed resources and prepend them to</span>
+        <span class="c1"># job_opts. We want any user supplied options to be able to</span>
+        <span class="c1"># override those set by the framework.</span>
+        <span class="n">resources_opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">resources_opts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">get_resource</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">access</span> <span class="o">+</span>
-                                 <span class="n">resources_opts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">access</span> <span class="o">+</span>
+                             <span class="n">resources_opts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
 
     <span class="c1"># FIXME: This is a temporary solution to address issue #157</span>
     <span class="k">def</span> <span class="nf">_setup_perf_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up performance logging&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up performance logging&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span><span class="o">.</span><span class="n">logdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">logdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.log&#39;</span>
         <span class="p">)</span>
 
@@ -943,14 +968,14 @@
             <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logfile</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(check_name)s</span><span class="s1"> &#39;</span>
+                    <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(testcase_name)s</span><span class="s1"> &#39;</span>
                               <span class="s1">&#39;(jobid=</span><span class="si">%(check_jobid)s</span><span class="s1">): </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">}</span>
         <span class="p">}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span> <span class="o">=</span> <span class="n">LoggerAdapter</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">LoggerAdapter</span><span class="p">(</span>
             <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">load_from_dict</span><span class="p">(</span><span class="n">perf_logging_config</span><span class="p">),</span>
             <span class="n">check</span><span class="o">=</span><span class="bp">self</span>
         <span class="p">)</span>
@@ -965,10 +990,6 @@
 <span class="sd">            ``job_opts`` to the base class method.</span>
 <span class="sd">        :raises reframe.core.exceptions.ReframeError: In case of errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Logging prevents deep copy, so we initialize the check&#39;s logger late</span>
-        <span class="c1"># during the check&#39;s setup phase</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">getlogger</span><span class="p">(</span><span class="s1">&#39;check&#39;</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span> <span class="o">=</span> <span class="n">partition</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_setup_environ</span><span class="p">(</span><span class="n">environ</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_setup_paths</span><span class="p">()</span>
@@ -977,19 +998,19 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_setup_perf_logging</span><span class="p">()</span></div>
 
     <span class="k">def</span> <span class="nf">_copy_to_stagedir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;copying </span><span class="si">%s</span><span class="s1"> to stage directory (</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
-                           <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;symlinking files: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;copying </span><span class="si">%s</span><span class="s1"> to stage directory (</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;symlinking files: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
         <span class="n">os_ext</span><span class="o">.</span><span class="n">copytree_virtual</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">prebuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prebuild_cmd</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing prebuild command: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing prebuild commands&#39;</span><span class="p">)</span>
             <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">postbuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postbuild_cmd</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing postbuild command: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing postbuild commands&#39;</span><span class="p">)</span>
             <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RegressionTest.compile"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">compile_opts</span><span class="p">):</span>
@@ -1030,20 +1051,19 @@
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prebuild</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation started&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
                 <span class="n">sourcepath</span><span class="o">=</span><span class="n">target_sourcepath</span><span class="p">,</span>
                 <span class="n">executable</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">),</span>
                 <span class="o">**</span><span class="n">compile_opts</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stdout:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stderr:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stdout:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stderr:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">postbuild</span><span class="p">()</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="c1"># Always restore working directory</span>
             <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">wd_save</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation finished&#39;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation finished&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.run"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The run phase of the regression test pipeline.</span>
@@ -1054,13 +1074,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_system</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;no system or system partition is set&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">cmd</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span><span class="p">)),</span>
-                         <span class="n">workdir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
 
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;spawned job (</span><span class="si">%s</span><span class="s1">=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
                <span class="p">(</span><span class="s1">&#39;pid&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;jobid&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">jobid</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.poll"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.poll">[docs]</a>    <span class="k">def</span> <span class="nf">poll</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Poll the test&#39;s state.</span>
@@ -1083,7 +1102,7 @@
 <span class="sd">        :raises reframe.core.exceptions.ReframeError: In case of errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;spawned job finished&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;spawned job finished&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.check_sanity"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_sanity">[docs]</a>    <span class="k">def</span> <span class="nf">check_sanity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The sanity checking phase of the regression test pipeline.</span>
@@ -1158,7 +1177,7 @@
 
     <span class="k">def</span> <span class="nf">_copy_to_outputdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Copy checks interesting files to the output directory.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;copying interesting files to output directory&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;copying interesting files to output directory&#39;</span><span class="p">)</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span><span class="p">)</span>
         <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="p">:</span>
@@ -1180,17 +1199,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">aliased</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">samefile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">aliased</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;skipping copy to output dir &#39;</span>
-                               <span class="s1">&#39;since they alias each other&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;skipping copy to output dir &#39;</span>
+                              <span class="s1">&#39;since they alias each other&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_outputdir</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">remove_files</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;removing stage directory&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;removing stage directory&#39;</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">unload_env</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;unloading test&#39;s environment&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;unloading test&#39;s environment&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span></div>
 
@@ -1294,7 +1313,7 @@
                 <span class="c1"># Restore the handler</span>
                 <span class="n">patterns</span><span class="p">[</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eof_handler</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;output scan info:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">scan_info</span><span class="o">.</span><span class="n">scan_report</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;output scan info:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">scan_info</span><span class="o">.</span><span class="n">scan_report</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">ret</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1428,7 +1447,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -1445,6 +1464,23 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="../../../master/_modules/reframe/core/pipeline.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -1452,7 +1488,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.7',
+            VERSION:'2.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

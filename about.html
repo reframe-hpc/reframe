@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>About ReFrame &mdash; ReFrame 2.7 documentation</title>
+  <title>About ReFrame &mdash; ReFrame 2.8 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
         <link rel="next" title="Reference Guide" href="reference.html"/>
         <link rel="prev" title="Use Cases" href="usecases.html"/> 
 
@@ -71,7 +73,7 @@
             
             
               <div class="version">
-                2.7
+                2.8
               </div>
             
           
@@ -109,7 +111,7 @@
 <li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">About ReFrame</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#what-is-reframe">What Is ReFrame?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#reframe-s-goals">ReFrame’s Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reframe-s-goals">ReFrame's Goals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#why-reframe">Why ReFrame?</a></li>
 </ul>
 </li>
@@ -124,6 +126,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -147,7 +151,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -178,29 +182,40 @@
            <div itemprop="articleBody">
             
   <div class="section" id="about-reframe">
-<h1>About ReFrame<a class="headerlink" href="#about-reframe" title="Permalink to this headline">¶</a></h1>
+<span id="about-reframe"></span><h1>About ReFrame<a class="headerlink" href="#about-reframe" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="what-is-reframe">
-<h2>What Is ReFrame?<a class="headerlink" href="#what-is-reframe" title="Permalink to this headline">¶</a></h2>
-<p>ReFrame is a framework developed by CSCS to facilitate the writing of regression tests that check the sanity of HPC systems. Its main goal is to allow users to write their own regression tests without having to deal with all the details of setting up the environment for the test, quering the status of their job, managing the output of the job and looking for sanity and/or performance results. Users should be concerned only about the logical requirements of their tests. This allows users’ regression checks to be maintained and adapted to new systems easily.</p>
-<p>The user describes his test in a simple Python class and the framework takes care of all the details of the low-level interaction with the system. The framework is structured in such a way that with a basic knowledge of Python and minimal coding a user can write a regression test, which will be able to run out-of-the-box on a variety of systems and programming environments.</p>
-<p>Writing regression tests in a high-level language, such as Python, allows users to take advantage of the language’s higher expressiveness and bigger capabilities compared to classical shell scripting, which is the norm in HPC testing. This could lead to a more manageable code base of regression tests with significanly reduced maintenance costs.</p>
+<span id="what-is-reframe"></span><h2>What Is ReFrame?<a class="headerlink" href="#what-is-reframe" title="Permalink to this headline">¶</a></h2>
+<p>ReFrame is a framework developed by CSCS to facilitate the writing of regression tests that check the sanity of HPC systems.
+Its main goal is to allow users to write their own regression tests without having to deal with all the details of setting up the environment for the test, quering the status of their job, managing the output of the job and looking for sanity and/or performance results.
+Users should be concerned only about the logical requirements of their tests.
+This allows users' regression checks to be maintained and adapted to new systems easily.</p>
+<p>The user describes his test in a simple Python class and the framework takes care of all the details of the low-level interaction with the system.
+The framework is structured in such a way that with a basic knowledge of Python and minimal coding a user can write a regression test, which will be able to run out-of-the-box on a variety of systems and programming environments.</p>
+<p>Writing regression tests in a high-level language, such as Python, allows users to take advantage of the language's higher expressiveness and bigger capabilities compared to classical shell scripting, which is the norm in HPC testing.
+This could lead to a more manageable code base of regression tests with significanly reduced maintenance costs.</p>
 </div>
 <div class="section" id="reframe-s-goals">
-<h2>ReFrame’s Goals<a class="headerlink" href="#reframe-s-goals" title="Permalink to this headline">¶</a></h2>
+<span id="reframe-s-goals"></span><h2>ReFrame's Goals<a class="headerlink" href="#reframe-s-goals" title="Permalink to this headline">¶</a></h2>
 <p>When designing the framework we have set three major goals:</p>
-<dl class="docutils">
-<dt>Productivity</dt>
-<dd>The writer of a regression test should focus only on the logical structure and requirements of the test and should not need to deal with any of the low level details of interacting with the system, e.g., how the environment of the test is loaded, how the associated job is created and has its status checked, how the output parsing is performed etc.</dd>
-<dt>Portability</dt>
-<dd>Configuring the framework to support new systems and system configurations should be easy and should not affect the existing tests. Also, adding support of a new system in a regression test should require minimal adjustments.</dd>
-<dt>Robustness and ease of use</dt>
-<dd>The new framework must be stable enough and easy to use by non-advanced users. When the system needs to be returned to users outside normal working hours the personnel in charge should be able to run the regression suite and verify the sanity of the system with a minimal involvement.</dd>
-</dl>
+<p>Productivity
+: The writer of a regression test should focus only on the logical structure and requirements of the test and should not need to deal with any of the low level details of interacting with the system, e.g., how the environment of the test is loaded, how the associated job is created and has its status checked, how the output parsing is performed etc.</p>
+<p>Portability
+:  Configuring the framework to support new systems and system configurations should be easy and should not affect the existing tests.
+Also, adding support of a new system in a regression test should require minimal adjustments.</p>
+<p>Robustness and ease of use
+:  The new framework must be stable enough and easy to use by non-advanced users.
+When the system needs to be returned to users outside normal working hours the personnel in charge should be able to run the regression suite and verify the sanity of the system with a minimal involvement.</p>
 </div>
 <div class="section" id="why-reframe">
-<h2>Why ReFrame?<a class="headerlink" href="#why-reframe" title="Permalink to this headline">¶</a></h2>
-<p>HPC systems are highly complex systems in all levels of integration; from the physical infrastructure up to the software stack provided to the users. A small change in any of these levels could have an impact on the stability or the performance of the system perceived by the end users. It is of crucial importance, therefore, not only to make sure that the system is in a sane condition after every maintenance before handing it off to users, but also to monitor its performance during production, so that possible problems are detected early enough and the quality of service is not compromised.</p>
-<p>Regression testing can provide a reliable way to ensure the stability and the performance requirements of the system, provided that sufficient tests exist that cover a wide aspect of the system’s operations from both the operators’ and users’ point of view. However, given the complexity of HPC systems, writing and maintaining regression tests can be a very time consuming task. A small change in system configuration or deployment may require adapting hundreds of regression tests at the same time. Similarly, porting a test to a different system may require significant effort if the new system’s configuration is substantially different than that of the system that it was originally written for.</p>
+<span id="why-reframe"></span><h2>Why ReFrame?<a class="headerlink" href="#why-reframe" title="Permalink to this headline">¶</a></h2>
+<p>HPC systems are highly complex systems in all levels of integration;
+from the physical infrastructure up to the software stack provided to the users.
+A small change in any of these levels could have an impact on the stability or the performance of the system perceived by the end users.
+It is of crucial importance, therefore, not only to make sure that the system is in a sane condition after every maintenance before handing it off to users, but also to monitor its performance during production, so that possible problems are detected early enough and the quality of service is not compromised.</p>
+<p>Regression testing can provide a reliable way to ensure the stability and the performance requirements of the system, provided that sufficient tests exist that cover a wide aspect of the system's operations from both the operators' and users' point of view.
+However, given the complexity of HPC systems, writing and maintaining regression tests can be a very time consuming task.
+A small change in system configuration or deployment may require adapting hundreds of regression tests at the same time.
+Similarly, porting a test to a different system may require significant effort if the new system's configuration is substantially different than that of the system that it was originally written for.</p>
 <p>ReFrame was designed to help HPC support teams to easily write tests that</p>
 <ul class="simple">
 <li>monitor the impact of changes to the system that would affect negativelly the users,</li>
@@ -276,7 +291,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -293,6 +308,23 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/about.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/about.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -300,7 +332,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.7',
+            VERSION:'2.8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
