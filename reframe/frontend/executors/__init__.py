@@ -7,6 +7,7 @@ from reframe.core.exceptions import (
     ReframeFatalError, ReframeError, SanityError
 )
 from reframe.core.fields import StringField, TypedField
+from reframe.core.logging import logging_context
 from reframe.core.pipeline import RegressionTest
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
@@ -85,25 +86,42 @@ class RegressionTestExecutor:
 
     def setup(self, partition, environ, **job_opts):
         self._current_stage = 'setup'
-        self._check.setup(partition, environ, **job_opts)
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering setup stage')
+            self._check.setup(partition, environ, **job_opts)
 
     def compile(self):
         self._current_stage = 'compile'
-        self._check.compile()
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering compilation stage')
+            self._check.compile()
 
     def run(self):
         self._current_stage = 'run'
-        self._check.run()
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering running stage')
+            self._check.run()
 
     def wait(self):
         self._current_stage = 'wait'
-        self._check.wait()
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering waiting stage')
+            self._check.wait()
+
+    def poll(self):
+        with logging_context(check=self._check) as logger:
+            logger.debug('polling check')
+            ret = self._check.poll()
+            return ret
 
     def check_sanity(self):
         # check_sanity() may be overriden by the user tests; we log this phase
         # here then
         self._current_stage = 'sanity'
-        ret = self._check.check_sanity()
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering sanity checking stage')
+            ret = self._check.check_sanity()
+
         return ret
 
     def check_performance(self):
@@ -114,7 +132,9 @@ class RegressionTestExecutor:
             # FIXME: the logic has become a bit ugly here in order to support
             # both sanity syntaxes. It should be simplified again as soon as
             # the old syntax is dropped.
-            ret = self._check.check_performance()
+            with logging_context(check=self._check) as logger:
+                logger.debug('entering performance checking stage')
+                ret = self._check.check_performance()
         except SanityError:
             # This is to handle the new sanity systax
             if self._check.strict_check:
@@ -126,7 +146,10 @@ class RegressionTestExecutor:
 
     def cleanup(self, remove_files=False, unload_env=True):
         self._current_stage = 'cleanup'
-        self._check.cleanup(remove_files, unload_env)
+        with logging_context(check=self._check) as logger:
+            logger.debug('entering cleanup stage')
+            self._check.cleanup(remove_files, unload_env)
+
         self._current_stage = 'completed'
 
 

@@ -1,139 +1,205 @@
-import re
+import abc
 import unittest
 
-from reframe.core.launchers import *
-from reframe.core.schedulers import *
+import reframe.core.launchers as launchers
+
+from reframe.core.launchers.registry import getlauncher
+from reframe.core.schedulers import Job
+from reframe.core.schedulers.local import LocalJob
 from reframe.core.shell import BashScriptBuilder
 
 
-# The classes that inherit from _TestLauncher only test the launcher commands;
-# nothing is actually launched (this is done in test_schedulers.py).
-class _TestLauncher(unittest.TestCase):
+class FakeJob(Job):
+    def submit(self):
+        pass
+
+    def wait(self):
+        pass
+
+    def cancel(self):
+        pass
+
+    def finished(self):
+        pass
+
+
+class _TestLauncher(abc.ABC, unittest.TestCase):
+    """Base class for launcher tests."""
+
     def setUp(self):
         self.builder = BashScriptBuilder()
-        # Pattern to match: must include only horizontal spaces [ \t]
-        # (\h in perl; in python \h might be introduced in future)
-        self.expected_launcher_patt = None
-        self.launcher_options  = ['--foo']
-        self.target_executable = 'hostname'
+        self.job = FakeJob(name='fake_job',
+                           command='ls -l',
+                           launcher=self.launcher,
+                           num_tasks=4,
+                           num_tasks_per_node=2,
+                           num_tasks_per_core=1,
+                           num_tasks_per_socket=1,
+                           num_cpus_per_task=2,
+                           use_smt=True,
+                           time_limit=(0, 10, 0),
+                           script_filename='fake_script',
+                           stdout='fake_stdout',
+                           stderr='fake_stderr',
+                           sched_account='fake_account',
+                           sched_partition='fake_partition',
+                           sched_reservation='fake_reservation',
+                           sched_nodelist="mynode",
+                           sched_exclude_nodelist='fake_exclude_nodelist',
+                           sched_exclusive_access='fake_exclude_access',
+                           sched_options=['fake_options'])
+
+        self.minimal_job = FakeJob(name='fake_job',
+                                   command='ls -l',
+                                   launcher=self.launcher)
 
     @property
-    def launcher_command(self):
-        return ' '.join([self.launcher.executable] +
-                        self.launcher.fixed_options)
+    @abc.abstractmethod
+    def launcher(self):
+        """The launcher to be tested."""
 
     @property
-    def expected_shell_script_patt(self):
-        return '^[ \t]*%s[ \t]+--foo[ \t]+hostname[ \t]*$' % \
-               self.launcher_command
+    @abc.abstractmethod
+    def expected_command(self):
+        """The command expected to be emitted by the launcher."""
 
-    def test_launcher(self):
-        self.assertIsNotNone(self.launcher)
-        self.assertIsNotNone(
-            # No MULTILINE mode here; a launcher must not contain new lines.
-            re.search(self.expected_launcher_patt,
-                      self.launcher_command)
-        )
+    @property
+    @abc.abstractmethod
+    def expected_minimal_command(self):
+        """The command expected to be emitted by the launcher."""
 
-    def test_launcher_emit_command(self):
-        self.launcher.options = self.launcher_options
-        self.launcher.emit_run_command(self.target_executable, self.builder)
-        shell_script_text = self.builder.finalise()
-        self.assertIsNotNone(self.launcher)
-        self.assertIsNotNone(
-            re.search(self.expected_shell_script_patt, shell_script_text,
-                      re.MULTILINE)
-        )
+    def test_emit_command(self):
+        emitted_command = self.launcher.emit_run_command(self.job,
+                                                         self.builder)
+        self.assertEqual(self.expected_command, emitted_command)
+
+    def test_emit_minimal_command(self):
+        emitted_command = self.launcher.emit_run_command(self.minimal_job,
+                                                         self.builder)
+        self.assertEqual(self.expected_minimal_command, emitted_command)
 
 
-class TestNativeSlurmLauncher(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.launcher = NativeSlurmLauncher(None)
-        self.expected_launcher_patt = '^[ \t]*srun[ \t]*$'
+class TestSrunLauncher(_TestLauncher):
+    @property
+    def launcher(self):
+        return getlauncher('srun')(options=['--foo'])
 
+    @property
+    def expected_command(self):
+        return 'srun --foo ls -l'
+
+    @property
+    def expected_minimal_command(self):
+        return 'srun --foo ls -l'
+
+
+class TestSrunallocLauncher(_TestLauncher):
+
+    @property
+    def launcher(self):
+        return getlauncher('srunalloc')(options=['--foo'])
+
+    @property
+    def expected_command(self):
+        return ('srun '
+                 '--job-name=fake_job '
+                '--time=0:10:0 '
+                '--output=fake_stdout '
+                '--error=fake_stderr '
+                '--ntasks=4 '
+                '--ntasks-per-node=2 '
+                '--ntasks-per-core=1 '
+                '--ntasks-per-socket=1 '
+                '--cpus-per-task=2 '
+                '--partition=fake_partition '
+                '--exclusive '
+                '--hint=multithread '
+                '--partition=fake_partition '
+                '--account=fake_account '
+                '--nodelist=mynode '
+                '--exclude=fake_exclude_nodelist '
+                '--foo '
+                'ls -l')
+
+    @property
+    def expected_minimal_command(self):
+        return ('srun '
+                '--job-name=fake_job '
+                '--time=0:10:0 '
+                '--output=fake_job.out '
+                '--error=fake_job.err '
+                '--ntasks=1 '
+                '--foo '
+                'ls -l')
 
 class TestAlpsLauncher(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.launcher = AlpsLauncher(None)
-        self.expected_launcher_patt = '^[ \t]*aprun[ \t]+-B[ \t]*$'
+    @property
+    def launcher(self):
+        return getlauncher('alps')(options=['--foo'])
+
+    @property
+    def expected_command(self):
+        return 'aprun -B --foo ls -l'
+
+    @property
+    def expected_minimal_command(self):
+        return 'aprun -B --foo ls -l'
+
+
+class TestMpirunLauncher(_TestLauncher):
+    @property
+    def launcher(self):
+        return getlauncher('mpirun')(options=['--foo'])
+
+    @property
+    def expected_command(self):
+        return 'mpirun -np 4 --foo ls -l'
+
+    @property
+    def expected_minimal_command(self):
+        return 'mpirun -np 1 --foo ls -l'
+
+
+class TestMpiexecLauncher(_TestLauncher):
+    @property
+    def launcher(self):
+        return getlauncher('mpiexec')(options=['--foo'])
+
+    @property
+    def expected_command(self):
+        return 'mpiexec -n 4 --foo ls -l'
+
+    @property
+    def expected_minimal_command(self):
+        return 'mpiexec -n 1 --foo ls -l'
 
 
 class TestLauncherWrapperAlps(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.launcher = LauncherWrapper(AlpsLauncher(None),
-                                        'ddt', '-o foo.out'.split())
-        self.expected_launcher_patt = '^[ \t]*ddt[ \t]+-o[ \t]+foo.out' \
-                                      '[ \t]+aprun[ \t]+-B[ \t]*$'
+    @property
+    def launcher(self):
+        return launchers.LauncherWrapper(
+            getlauncher('alps')(options=['--foo']),
+            'ddt', ['--offline']
+        )
 
+    @property
+    def expected_command(self):
+        return 'ddt --offline aprun -B --foo ls -l'
 
-class TestLauncherWrapperNativeSlurm(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.launcher = LauncherWrapper(NativeSlurmLauncher(None),
-                                        'ddt', '-o foo.out'.split())
-        self.expected_launcher_patt = '^[ \t]*ddt[ \t]+-o[ \t]+foo.out' \
-                                      '[ \t]+srun[ \t]*$'
+    @property
+    def expected_minimal_command(self):
+        return 'ddt --offline aprun -B --foo ls -l'
 
 
 class TestLocalLauncher(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.launcher = LocalLauncher(None)
-
-    def test_launcher(self):
-        self.assertEqual('', self.launcher_command)
+    @property
+    def launcher(self):
+        return getlauncher('local')(['--foo'])
 
     @property
-    def expected_shell_script_patt(self):
-        return '^[ \t]*hostname[ \t]*$'
-
-
-class TestAbstractLauncher(_TestLauncher):
-    def setUp(self):
-        pass
-
-    def test_launcher(self):
-        # ABCs do not allow at all instantiation of abstract classes
-        self.assertRaises(TypeError, JobLauncher, None)
-
-    def test_launcher_emit_command(self):
-        pass
-
-
-class TestVisitLauncherNativeSlurm(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.job = SlurmJob(job_name='visittest',
-                            job_environ_list=[],
-                            job_script_builder=self.builder,
-                            num_tasks=5,
-                            num_tasks_per_node=2,
-                            launcher_type=NativeSlurmLauncher)
-        self.launcher = VisitLauncher(self.job)
-        self.expected_launcher_patt = '^[ \t]*visit[ \t]+-np[ \t]+5[ \t]+' \
-                                      '-nn[ \t]+3[ \t]+-l[ \t]+srun[ \t]*$'
-        self.launcher_options  = ['-o data.nc']
-        self.target_executable = ''
+    def expected_command(self):
+        return 'ls -l'
 
     @property
-    def expected_shell_script_patt(self):
-        return '^[ \t]*%s[ \t]+-o[ \t]+data.nc[ \t]*$' % self.launcher_command
-
-
-class TestVisitLauncherLocal(_TestLauncher):
-    def setUp(self):
-        super().setUp()
-        self.job = LocalJob(job_name='visittest',
-                            job_environ_list=[],
-                            job_script_builder=self.builder)
-        self.launcher = VisitLauncher(self.job)
-        self.expected_launcher_patt = '^[ \t]*visit[ \t]*$'
-        self.launcher_options  = ['-o data.nc']
-        self.target_executable = ''
-
-    @property
-    def expected_shell_script_patt(self):
-        return '^[ \t]*%s[ \t]+-o[ \t]+data.nc[ \t]*$' % self.launcher_command
+    def expected_minimal_command(self):
+        return 'ls -l'

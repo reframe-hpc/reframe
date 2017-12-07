@@ -2,22 +2,21 @@
 #
 
 # You can set these variables from the command line.
+BUILD_CMD   = build
+DOCS        = docs
+DOCS_ALL    = _build/_allversions
+MASTER      = master
 PYTHON      = python
 SPHINXOPTS  =
 SPHINXBUILD =  -msphinx
 SPHINXPROJ  = ReFrame
+SPHINX_VERS = sphinx-versioning
 SOURCEDIR   = .
 BUILDDIR    = $(VERSION)
 PANDOC      = pandoc
 PANDOCOPTS  = --columns 1000
 RM          = /bin/rm -rf
-
-ifeq ($(finstring "darwin", $(OSTYPE)), "darwin")
-SYMLINK_DIR=ln -sfh
-else
-# Assume a GNU/Linux system here
-SYMLINK_DIR=ln -sfn
-endif
+TAG_VERS    = '^v\d+(\.\d+)*[a-z]*'
 
 MDS = about.md \
 	advanced.md \
@@ -58,24 +57,29 @@ TARGET_DOCS := \
 	coverage
 
 all: $(RSTS)
+	@$(SPHINX_VERS) -l conf.py build docs/ html/
+	@rsync -az old/ html/_old/
+	@./link_old_docs.sh
+
+latest: $(RSTS)
 	@make html
 	@touch html/.nojekyll
-	@echo 'Linking to old documentation pages'
-	@cd html && $(SYMLINK_DIR) ../old _old && cd - > /dev/null
+	@rsync -az old/ html/_old/
 
 %.rst: %.md
 	$(PANDOC) $(PANDOCOPTS) --from=markdown --to=rst --output=$(@) $(@:.rst=.md)
 
 clean:
 	@echo 'Removing md files'
-	-$(RM) $(RSTS) doctrees
+	-$(RM) $(RSTS)
 
 distclean: clean
 	@echo 'Removing directories'
-	-$(RM) $(TARGET_DOCS)
+	-$(RM) $(TARGET_DOCS) doctrees
 
 $(TARGET_DOCS): Makefile
 	@$(PYTHON) $(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 
-.PHONY: clean Makefile
+
+.PHONY: all distclean clean latest Makefile

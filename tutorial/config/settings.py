@@ -9,11 +9,9 @@ from datetime import datetime
 
 
 class RegressionSettings:
-    _version = '2.7'
+    _version = '2.8'
     _module_name = 'reframe'
-    _job_state_poll_intervals = [1, 2, 3]
-    _job_init_poll_intervals  = [1]
-    _job_init_poll_max_tries  = 30
+    _job_poll_intervals = [1, 2, 3]
     _job_submit_timeout = 60
     _checks_path = ['checks/']
     _checks_path_recurse = True
@@ -113,16 +111,8 @@ class RegressionSettings:
         return self._module_name
 
     @property
-    def job_state_poll_intervals(self):
-        return self._job_state_poll_intervals
-
-    @property
-    def job_init_poll_intervals(self):
-        return self._job_init_poll_intervals
-
-    @property
-    def job_init_poll_max_tries(self):
-        return self._job_init_poll_max_tries
+    def job_poll_intervals(self):
+        return self._job_poll_intervals
 
     @property
     def job_submit_timeout(self):

@@ -3,13 +3,17 @@
 #
 import os
 
+from reframe.core.schedulers.registry import getscheduler
 from reframe.frontend.loader import autodetect_system, SiteConfiguration
+from reframe.core.modules import (get_modules_system,
+                                  init_modules_system, NoModImpl)
 from reframe.settings import settings
 
-TEST_RESOURCES = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                              'resources')
-TEST_MODULES = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                            'modules')
+
+TEST_RESOURCES = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'resources')
+TEST_MODULES = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'modules')
 TEST_SITE_CONFIG = {
     'systems': {
         'testsys': {
@@ -74,7 +78,18 @@ TEST_SITE_CONFIG = {
 }
 
 
-def get_setup_config():
+def init_native_modules_system():
+    init_modules_system(HOST.modules_system if HOST else None)
+
+
+# Guess current system and initialize its modules system
+_site_config = SiteConfiguration()
+_site_config.load_from_dict(settings.site_configuration)
+HOST = autodetect_system(_site_config)
+init_native_modules_system()
+
+
+def get_test_config():
     """Get a regression tests setup configuration.
 
     Returns a tuple of system, partition and environment that you can pass to
@@ -83,9 +98,9 @@ def get_setup_config():
     site_config = SiteConfiguration()
     site_config.load_from_dict(TEST_SITE_CONFIG)
 
-    system    = site_config.systems['testsys']
+    system = site_config.systems['testsys']
     partition = system.partition('gpu')
-    environ   = partition.environment('builtin-gcc')
+    environ = partition.environment('builtin-gcc')
     return (system, partition, environ)
 
 
@@ -96,35 +111,32 @@ def force_remove_file(filename):
         pass
 
 
-def guess_system():
-    site_config = SiteConfiguration()
-    site_config.load_from_dict(settings.site_configuration)
-    return autodetect_system(site_config)
-
-
 # FIXME: This may conflict in the unlikely situation that a user defines a
 # system named `kesch` with a partition named `pn`.
-def system_with_scheduler(sched_type, skip_partitions=['kesch:pn']):
-    """Retrieve a partition from the current system with a specific scheduler.
+def partition_with_scheduler(name, skip_partitions=['kesch:pn']):
+    """Retrieve a partition from the current system whose registered name is
+    ``name``.
 
-    If `sched_type` is `None`, the first partition with a non-local scheduler
-    will be returned.
+    If ``name`` is :class:`None`, any partition with a non-local scheduler will
+    be returned.
+    Partitions specified in ``skip_partitions`` will be skipped from searching.
+    """
 
-    Partitions in `skip_partitions` will be skipped from searching.  Items of
-    `skip_partitions` are of the form `<system>:<partname>`."""
-    system = guess_system()
-    if not system:
+    if HOST is None:
         return None
 
-    for p in system.partitions:
-        canon_name = '%s:%s' % (system.name, p)
-        if canon_name in skip_partitions:
+    for p in HOST.partitions:
+        if p.fullname in skip_partitions:
             continue
 
-        if sched_type is None and p.scheduler != 'local':
+        if name is None and not p.scheduler.is_local:
             return p
 
-        if p.scheduler == sched_type:
+        if p.scheduler.registered_name == name:
             return p
 
     return None
+
+
+def has_sane_modules_system():
+    return not isinstance(get_modules_system().backend, NoModImpl)

@@ -7,11 +7,14 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 
-from reframe.core.exceptions import *
+from reframe.core.exceptions import CommandError, ReframeError
+from reframe.core.logging import getlogger
 
 
 def run_command(cmd, check=False, timeout=None):
+    getlogger().debug('executing OS command: ' + cmd)
     try:
         return subprocess.run(shlex.split(cmd),
                               stdout=subprocess.PIPE,
@@ -57,6 +60,7 @@ def run_command_async(cmd,
                       stderr=subprocess.PIPE,
                       bufsize=1,
                       **popen_args):
+    getlogger().debug('executing OS command asynchronously: ' + cmd)
     return subprocess.Popen(args=shlex.split(cmd),
                             stdout=stdout,
                             stderr=stderr,
@@ -177,3 +181,9 @@ def samefile(path1, path2):
         return os.path.samefile(path1, path2)
 
     return follow_link(path1) == follow_link(path2)
+
+
+def mkstemp_path(*args, **kwargs):
+    fd, path = tempfile.mkstemp(*args, **kwargs)
+    os.close(fd)
+    return path

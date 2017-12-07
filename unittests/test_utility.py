@@ -4,6 +4,7 @@ import stat
 import tempfile
 import unittest
 
+import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 
 from reframe.core.environments import EnvironmentSnapshot
@@ -239,3 +240,38 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertTrue(always_true(0, None))
         self.assertTrue(always_true(230, 321.))
         self.assertTrue(always_true('foo', 232, foo=12, bar='h'))
+
+
+class TestDebugRepr(unittest.TestCase):
+    def test_builtin_types(self):
+        # builtin types must use the default repr()
+        self.assertEqual(repr(1), debug.repr(1))
+        self.assertEqual(repr(1.2), debug.repr(1.2))
+        self.assertEqual(repr([1, 2, 3]), debug.repr([1, 2, 3]))
+        self.assertEqual(repr({1, 2, 3}), debug.repr({1, 2, 3}))
+        self.assertEqual(repr({1, 2, 3}), debug.repr({1, 2, 3}))
+        self.assertEqual(repr({'a': 1, 'b': {2, 3}}),
+                         debug.repr({'a': 1, 'b': {2, 3}}))
+
+    def test_obj_repr(self):
+        class C:
+            def __repr__(self):
+                return debug.repr(self)
+
+        class D:
+            def __repr__(self):
+                return debug.repr(self)
+
+        c = C()
+        c._a = -1
+        c.a = 1
+        c.b = {1, 2, 3}
+        c.d = D()
+        c.d.a = 2
+        c.d.b = 3
+
+        rep = repr(c)
+        self.assertIn('unittests.test_utility', rep)
+        self.assertIn('_a=%r' % c._a, rep)
+        self.assertIn('b=%r' % c.b, rep)
+        self.assertIn('D(...)', rep)
