@@ -1,0 +1,891 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Running ReFrame &mdash; ReFrame 2.8 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
+        <link rel="next" title="Use Cases" href="usecases.html"/>
+        <link rel="prev" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Running ReFrame</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#supported-actions">Supported Actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#listing-of-the-regression-tests">Listing of the regression tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#execution-of-the-regression-tests">Execution of the regression tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#discovery-of-regression-tests">Discovery of Regression Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filtering-of-regression-tests">Filtering of Regression Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-programming-environment">Selecting tests by programming environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-tags">Selecting tests by tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-name">Selecting tests by name</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#controlling-the-execution-of-regression-tests">Controlling the Execution of Regression Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-reframe-directories">Configuring ReFrame Directories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-logging">Configuring logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-logging">Performance Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#asynchronous-execution-of-regression-checks">Asynchronous Execution of Regression Checks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Running ReFrame</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="usecases.html" class="btn btn-neutral float-right" title="Use Cases" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="deferrables.html" class="btn btn-neutral" title="Understanding the Mechanism of Sanity Functions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="running-reframe">
+<span id="running-reframe"></span><h1>Running ReFrame<a class="headerlink" href="#running-reframe" title="Permalink to this headline">¶</a></h1>
+<p>Before getting into any details, the simplest way to invoke ReFrame is the following:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/checks -R --run
+</pre></div>
+</div>
+<p>This will search recursively for test files in <code class="docutils literal"><span class="pre">/path/to/checks</span></code> and will start running them on the current system.</p>
+<p>ReFrame's front-end goes through three phases:</p>
+<ol class="simple">
+<li>Load tests</li>
+<li>Filter tests</li>
+<li>Act on tests</li>
+</ol>
+<p>In the following, we will elaborate on these phases and the key command-line options controlling them.
+A detailed listing of all the command-line options grouped by phase is given by <code class="docutils literal"><span class="pre">./bin/reframe</span> <span class="pre">-h</span></code>.</p>
+<div class="section" id="supported-actions">
+<span id="supported-actions"></span><h2>Supported Actions<a class="headerlink" href="#supported-actions" title="Permalink to this headline">¶</a></h2>
+<p>Even though an action is the last phase that the front-end goes through, we are listing it first since an action is always required.
+Currently there are only two available actions:</p>
+<ol class="simple">
+<li>Listing of the selected checks</li>
+<li>Execution of the selected checks</li>
+</ol>
+<div class="section" id="listing-of-the-regression-tests">
+<span id="listing-of-the-regression-tests"></span><h3>Listing of the regression tests<a class="headerlink" href="#listing-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
+<p>To retrieve a listing of the selected checks, you must specify the <code class="docutils literal"><span class="pre">-l</span></code> or <code class="docutils literal"><span class="pre">--list</span></code> options.
+An example listing of checks is the following that lists all the tests found under the <code class="docutils literal"><span class="pre">tutorial/</span></code> folder:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial -l
+</pre></div>
+</div>
+<p>The ouput looks like:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Command</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">-</span><span class="n">l</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint103</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span>
+    <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;tutorial/&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">logs</span>
+<span class="n">List</span> <span class="n">of</span> <span class="n">matched</span> <span class="n">checks</span>
+<span class="o">======================</span>
+  <span class="o">*</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example2a_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenMP</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example2b_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenMP</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example3_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">MPI</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example4_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenACC</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example5_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">Cuda</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example6_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="k">with</span> <span class="n">L2</span> <span class="n">norm</span> <span class="n">check</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example7_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">Cuda</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_serial_check</span> <span class="p">(</span><span class="n">Serial</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_openmp_check</span> <span class="p">(</span><span class="n">OpenMP</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_mpi_check</span> <span class="p">(</span><span class="n">MPI</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_openacc_check</span> <span class="p">(</span><span class="n">OpenACC</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_cuda_check</span> <span class="p">(</span><span class="n">Cuda</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+<span class="n">Found</span> <span class="mi">13</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
+Note that this listing may also contain checks that are not supported by the current system.
+These checks will be just skipped if you try to run them.</p>
+</div>
+<div class="section" id="execution-of-the-regression-tests">
+<span id="execution-of-the-regression-tests"></span><h3>Execution of the regression tests<a class="headerlink" href="#execution-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
+<p>To run the regression tests you should specify the <em>run</em> action though the <code class="docutils literal"><span class="pre">-r</span></code> or <code class="docutils literal"><span class="pre">--run</span></code> options.</p>
+<blockquote>
+<div>NOTE: The listing action takes precedence over the execution, meaning that if you specify both <code class="docutils literal"><span class="pre">-l</span> <span class="pre">-r</span></code>, only the listing action will be performed.</div></blockquote>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+</pre></div>
+</div>
+<p>The output of the regression run looks like the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Command</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span><span class="n">example1</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">r</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint103</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span>
+    <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;tutorial/example1.py&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">logs</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Running</span> <span class="mi">1</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Started</span> <span class="n">on</span> <span class="n">Tue</span> <span class="n">Oct</span> <span class="mi">24</span> <span class="mi">18</span><span class="p">:</span><span class="mi">13</span><span class="p">:</span><span class="mi">33</span> <span class="mi">2017</span>
+
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">started</span> <span class="n">processing</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">finished</span> <span class="n">processing</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+
+<span class="p">[</span>  <span class="n">PASSED</span>  <span class="p">]</span> <span class="n">Ran</span> <span class="mi">12</span> <span class="n">test</span> <span class="n">case</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kn">from</span> <span class="mi">1</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="n">failure</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Finished</span> <span class="n">on</span> <span class="n">Tue</span> <span class="n">Oct</span> <span class="mi">24</span> <span class="mi">18</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">06</span> <span class="mi">2017</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="discovery-of-regression-tests">
+<span id="discovery-of-regression-tests"></span><h2>Discovery of Regression Tests<a class="headerlink" href="#discovery-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<p>When ReFrame is invoked, it tries to locate regression tests in a predefined path.
+By default, this path is the <code class="docutils literal"><span class="pre">&lt;reframe-install-dir&gt;/checks</span></code>.
+You can also retrieve this path as follows:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -l <span class="p">|</span> grep <span class="s1">&#39;Check search path&#39;</span>
+</pre></div>
+</div>
+<p>If the path line is prefixed with <code class="docutils literal"><span class="pre">(R)</span></code>, every directory in that path will be searched recursively for regression tests.</p>
+<p>As described extensively in the <a class="reference external" href="tutorial.html">&quot;ReFrame Tutorial&quot;</a>, regression tests in ReFrame are essentially Python source files that provide a special function, which returns the actual regression test instances.
+A single source file may also provide multiple regression tests.
+ReFrame loads the python source files and tries to call this special function;
+if this function cannot be found, the source file will be ignored.
+At the end of this phase, the front-end will have instantiated all the tests found in the path.</p>
+<p>You can override the default search path for tests by specifying the <code class="docutils literal"><span class="pre">-c</span></code> or <code class="docutils literal"><span class="pre">--checkpath</span></code> options.
+We have already done that already when listing all the tutorial tests:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial/ -l
+</pre></div>
+</div>
+<p>ReFrame the does not search recursively into directories specified with the <code class="docutils literal"><span class="pre">-c</span></code> option, unless you explicitly specify the <code class="docutils literal"><span class="pre">-R</span></code> or <code class="docutils literal"><span class="pre">--recurse</span></code> options.</p>
+<p>The <code class="docutils literal"><span class="pre">-c</span></code> option completely overrides the default path.
+Currently, there is no option to prepend or append to the default regression path.
+However, you can build your own check path by specifying multiple times the <code class="docutils literal"><span class="pre">-c</span></code> option.
+The <code class="docutils literal"><span class="pre">-c</span></code>option accepts also regular files.
+This is very useful when you are implementing new regression tests, since it allows you to run only your test:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/my/new/test.py -r
+</pre></div>
+</div>
+</div>
+<div class="section" id="filtering-of-regression-tests">
+<span id="filtering-of-regression-tests"></span><h2>Filtering of Regression Tests<a class="headerlink" href="#filtering-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<p>At this phase you can select which regression tests should be run or listed.
+There are several ways to select regression tests, which we describe in more detail here:</p>
+<div class="section" id="selecting-tests-by-programming-environment">
+<span id="selecting-tests-by-programming-environment"></span><h3>Selecting tests by programming environment<a class="headerlink" href="#selecting-tests-by-programming-environment" title="Permalink to this headline">¶</a></h3>
+<p>To select tests by the programming environment, use the <code class="docutils literal"><span class="pre">-p</span></code> or <code class="docutils literal"><span class="pre">--prgenv</span></code> options:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -p PrgEnv-gnu -l
+</pre></div>
+</div>
+<p>This will select all the checks that support the <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment.</p>
+<p>You can also specify multiple times the <code class="docutils literal"><span class="pre">-p</span></code> option, in which case a test will be selected if it support all the programming environments specified in the command line.
+For example the following will select all the checks that can run with both <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code> and <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -p PrgEnv-gnu -p PrgEnv-cray -l
+</pre></div>
+</div>
+<p>If you are going to run a set of tests selected by programming environment, they will run only for the selected programming environment(s).</p>
+</div>
+<div class="section" id="selecting-tests-by-tags">
+<span id="selecting-tests-by-tags"></span><h3>Selecting tests by tags<a class="headerlink" href="#selecting-tests-by-tags" title="Permalink to this headline">¶</a></h3>
+<p>As we have seen in the <a class="reference external" href="tutorial.html">&quot;ReFrame tutorial&quot;</a>, every regression test may be associated with a set of tags.
+Using the <code class="docutils literal"><span class="pre">-t</span></code> or <code class="docutils literal"><span class="pre">--tag</span></code> option you can select the regression tests associated with a specific tag.
+For example the following will list all the tests that have a <code class="docutils literal"><span class="pre">maintenance</span></code> tag:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -t maintenance -l
+</pre></div>
+</div>
+<p>Similarly to the <code class="docutils literal"><span class="pre">-p</span></code> option, you can chain multiple <code class="docutils literal"><span class="pre">-t</span></code> options together, in which case a regression test will be selected if it is associated with all the tags specified in the command line.
+The list of tags associated with a check can be viewed in the listing output when specifying the <code class="docutils literal"><span class="pre">-l</span></code> option.</p>
+</div>
+<div class="section" id="selecting-tests-by-name">
+<span id="selecting-tests-by-name"></span><h3>Selecting tests by name<a class="headerlink" href="#selecting-tests-by-name" title="Permalink to this headline">¶</a></h3>
+<p>It is possible to select or exclude tests by name through the <code class="docutils literal"><span class="pre">--name</span></code> or <code class="docutils literal"><span class="pre">-n</span></code> and <code class="docutils literal"><span class="pre">--exclude</span></code> or <code class="docutils literal"><span class="pre">-x</span></code> options.
+For example, you can select only the <code class="docutils literal"><span class="pre">example7_check</span></code> from the tutorial as follows:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial n example7_check -l
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Command</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">-</span><span class="n">n</span> <span class="n">example7_check</span> <span class="o">-</span><span class="n">l</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint103</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span>
+    <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;tutorial/&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">logs</span>
+<span class="n">List</span> <span class="n">of</span> <span class="n">matched</span> <span class="n">checks</span>
+<span class="o">======================</span>
+  <span class="o">*</span> <span class="n">example7_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">Cuda</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+<span class="n">Found</span> <span class="mi">1</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Similarly, you can exclude this test by passing the <code class="docutils literal"><span class="pre">-x</span> <span class="pre">example7_check</span></code> option:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Command</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">-</span><span class="n">x</span> <span class="n">example7_check</span> <span class="o">-</span><span class="n">l</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint103</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span>
+    <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;tutorial/&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">logs</span>
+<span class="n">List</span> <span class="n">of</span> <span class="n">matched</span> <span class="n">checks</span>
+<span class="o">======================</span>
+  <span class="o">*</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example2a_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenMP</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example2b_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenMP</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example3_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">MPI</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example4_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">OpenACC</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example5_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">Cuda</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example6_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="k">with</span> <span class="n">L2</span> <span class="n">norm</span> <span class="n">check</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_serial_check</span> <span class="p">(</span><span class="n">Serial</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_openmp_check</span> <span class="p">(</span><span class="n">OpenMP</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_mpi_check</span> <span class="p">(</span><span class="n">MPI</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_openacc_check</span> <span class="p">(</span><span class="n">OpenACC</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+  <span class="o">*</span> <span class="n">example8_cuda_check</span> <span class="p">(</span><span class="n">Cuda</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="p">[</span><span class="n">tutorial</span><span class="p">],</span> <span class="n">maintainers</span><span class="p">:</span> <span class="p">[</span><span class="n">you</span><span class="o">-</span><span class="n">can</span><span class="o">-</span><span class="nb">type</span><span class="o">-</span><span class="n">your</span><span class="o">-</span><span class="n">email</span><span class="o">-</span><span class="n">here</span><span class="p">]</span>
+<span class="n">Found</span> <span class="mi">12</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="controlling-the-execution-of-regression-tests">
+<span id="controlling-the-execution-of-regression-tests"></span><h2>Controlling the Execution of Regression Tests<a class="headerlink" href="#controlling-the-execution-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<p>There are several options for controlling the execution of regression tests.
+Keep in mind that these options will affect all the tests that will run with the current invocation.
+They are summarized below:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">-A</span> <span class="pre">ACCOUNT</span></code>, <code class="docutils literal"><span class="pre">--account</span> <span class="pre">ACCOUNT</span></code>: Submit regression test jobs using <code class="docutils literal"><span class="pre">ACCOUNT</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">-P</span> <span class="pre">PART</span></code>, <code class="docutils literal"><span class="pre">--partition</span> <span class="pre">PART</span></code>: Submit regression test jobs in the <em>scheduler partition</em> <code class="docutils literal"><span class="pre">PART</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--reservation</span> <span class="pre">RES</span></code>: Submit regression test jobs in reservation <code class="docutils literal"><span class="pre">RES</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--nodelist</span> <span class="pre">NODELIST</span></code>: Run regression test jobs on the nodes specified in <code class="docutils literal"><span class="pre">NODELIST</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--exclude-nodes</span> <span class="pre">NODELIST</span></code>: Do not run the regression test jobs on any of the nodes specified in <code class="docutils literal"><span class="pre">NODELIST</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--job-option</span> <span class="pre">OPT</span></code>: Pass option <code class="docutils literal"><span class="pre">OPT</span></code> directly to the back-end job scheduler.
+This option <em>must</em> be used with care, since you may break the submission mechanism.
+All of the above job submission related options could be expressed with this option.
+For example, the <code class="docutils literal"><span class="pre">-n</span> <span class="pre">NODELIST</span></code> is equivalent to <code class="docutils literal"><span class="pre">--job-option='--nodelist=NODELIST'</span></code> for a Slurm job scheduler.
+If you pass an option that is already defined by the framework, the framework will <em>not</em> explicitly override it; this is up to scheduler.
+All extra options defined from the command line are appended to the automatically generated options in the generated batch script file.
+So if you redefine one of them, e.g., <code class="docutils literal"><span class="pre">--output</span></code> for the Slurm scheduler, it is up the job scheduler on how to interpret multiple definitions of the same options.
+In this example, Slurm's policy is that later definitions of options override previous ones.
+So, in this case, way you would override the standard output for all the submitted jobs!</li>
+<li><code class="docutils literal"><span class="pre">--force-local</span></code>: Force the local execution of the selected tests. No jobs will be submitted.</li>
+<li><code class="docutils literal"><span class="pre">--skip-sanity-check</span></code>: Skip sanity checking phase.</li>
+<li><code class="docutils literal"><span class="pre">--skip-performance-check</span></code>: Skip performance verification phase.</li>
+<li><code class="docutils literal"><span class="pre">--strict</span></code>: Force strict performance checking.
+Some tests may set their <code class="docutils literal"><span class="pre">strict_check</span></code> attribute to <code class="docutils literal"><span class="pre">False</span></code> (see <a class="reference external" href="reference.html">&quot;Reference Guide&quot;</a>) in order to just let their performance recorded but not yield an error.
+This option overrides this behavior and forces all tests to be strict.</li>
+<li><code class="docutils literal"><span class="pre">--skip-system-check</span></code>: Skips the system check and run the selected tests even if they do not support the current system.
+This option is sometimes useful when you need to quickly verify if a regression test supports a new system.</li>
+<li><code class="docutils literal"><span class="pre">--skip-prgenv-check</span></code>: Skips programming environment check and run the selected tests for even if they do not support a programming environment.
+This option is useful when you need to quickly verify if a regression check supports another programming environment.
+For example, if you know that a tests supports only <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code> and you need to check if it also works with <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>, you can test is as follows:</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuring-reframe-directories">
+<span id="configuring-reframe-directories"></span><h2>Configuring ReFrame Directories<a class="headerlink" href="#configuring-reframe-directories" title="Permalink to this headline">¶</a></h2>
+<p>ReFrame uses three basic directories during the execution of tests:</p>
+<ol class="simple">
+<li>The stage directory<ul>
+<li>Each regression test is executed in a &quot;sandbox&quot;;
+all of its resources (source files, resources) are copied over to a stage directory and executed from there.
+This will also be the working directory for the test.</li>
+</ul>
+</li>
+<li>The output directory<ul>
+<li>After a regression test finishes some important files will be copied from the stage directory to the output directory.
+By default these are the standard output, standard error and the generated job script file.
+A regression test may also specify to keep additional files.</li>
+</ul>
+</li>
+<li>The log directory<ul>
+<li>This is where the performance log files of the individual performance tests are placed (see <a class="reference external" href="#logging">Logging</a> for more information)</li>
+</ul>
+</li>
+</ol>
+<p>By default, all these directories are placed under a common prefix, which defaults to <code class="docutils literal"><span class="pre">.</span></code>.
+The rest of the directories are organized as follows:</p>
+<ul class="simple">
+<li>Stage directory: <code class="docutils literal"><span class="pre">${prefix}/stage/&lt;timestamp&gt;</span></code></li>
+<li>Output directory: <code class="docutils literal"><span class="pre">${prefix}/output/&lt;timestamp&gt;</span></code></li>
+<li>Performance log directory: <code class="docutils literal"><span class="pre">${prefix}/logs</span></code></li>
+</ul>
+<p>You can optionally append a timestamp directory component to the above paths (except the logs directory), by using the <code class="docutils literal"><span class="pre">--timestamp</span></code> option.
+This options takes an optional argument to specify the timestamp format.
+The default <a class="reference external" href="http://man7.org/linux/man-pages/man3/strftime.3.html">time format</a> is <code class="docutils literal"><span class="pre">%FT%T</span></code>, which results into timestamps of the form <code class="docutils literal"><span class="pre">2017-10-24T21:10:29</span></code>.</p>
+<p>You can override either the default global prefix or any of the default individual directories using the corresponding options.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">--prefix</span> <span class="pre">DIR</span></code>: set prefix to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--output</span> <span class="pre">DIR</span></code>: set output directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--stage</span> <span class="pre">DIR</span></code>: set stage directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">--logdir</span> <span class="pre">DIR</span></code>: set performance log directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
+</ul>
+<p>The stage and output directories are created only when you run a regression test.
+However you can view the directories that will be created even when you do a listing of the available checks with the <code class="docutils literal"><span class="pre">-l</span></code> option.
+This is useful if you want to check the directories that ReFrame will create.</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --prefix /foo -l
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Command</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">--</span><span class="n">prefix</span> <span class="o">/</span><span class="n">foo</span> <span class="o">-</span><span class="n">t</span> <span class="n">foo</span> <span class="o">-</span><span class="n">l</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint103</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span>
+<span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;checks/&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">foo</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">foo</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">foo</span><span class="o">/</span><span class="n">logs</span>
+<span class="n">List</span> <span class="n">of</span> <span class="n">matched</span> <span class="n">checks</span>
+<span class="o">======================</span>
+<span class="n">Found</span> <span class="mi">0</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>You can also define different default directories per system by specifying them in the <a class="reference external" href="configure.html#the-configuration-file">site configuration</a> settings file.
+The command line options, though, take always precedence over any default directory.</p>
+</div>
+<div class="section" id="logging">
+<span id="logging"></span><h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<p>From version 2.4 onward, ReFrame supports logging of its actions.
+ReFrame creates two files inside the current working directory every time it is run:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">reframe.out</span></code>: This file stores the output of a run as it was printed in the standard output.</li>
+<li><code class="docutils literal"><span class="pre">reframe.log</span></code>: This file stores more detailed of information on ReFrame's actions.</li>
+</ul>
+<p>By default, the output in <code class="docutils literal"><span class="pre">reframe.log</span></code> looks like the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">info</span><span class="p">:</span> <span class="n">reframe</span><span class="p">:</span> <span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">started</span> <span class="n">processing</span> <span class="n">example7_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">mult</span>
+<span class="n">iplication</span> <span class="n">example</span> <span class="k">with</span> <span class="n">Cuda</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">info</span><span class="p">:</span> <span class="n">reframe</span><span class="p">:</span> <span class="p">[</span>   <span class="n">SKIP</span>   <span class="p">]</span> <span class="n">skipping</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">info</span><span class="p">:</span> <span class="n">reframe</span><span class="p">:</span> <span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example7_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">setting</span> <span class="n">up</span> <span class="n">the</span> <span class="n">environment</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">loading</span> <span class="n">environment</span> <span class="k">for</span> <span class="n">partition</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">loading</span> <span class="n">environment</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">setting</span> <span class="n">up</span> <span class="n">paths</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">setting</span> <span class="n">up</span> <span class="n">the</span> <span class="n">job</span> <span class="n">descriptor</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">job</span> <span class="n">scheduler</span> <span class="n">backend</span><span class="p">:</span> <span class="n">nativeslurm</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">setting</span> <span class="n">up</span> <span class="n">performance</span> <span class="n">logging</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">05</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">compilation</span> <span class="n">started</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">06</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">compilation</span> <span class="n">stdout</span><span class="p">:</span>
+
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">06</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">compilation</span> <span class="n">stderr</span><span class="p">:</span>
+<span class="n">nvcc</span> <span class="n">warning</span> <span class="p">:</span> <span class="n">The</span> <span class="s1">&#39;compute_20&#39;</span><span class="p">,</span> <span class="s1">&#39;sm_20&#39;</span><span class="p">,</span> <span class="ow">and</span> <span class="s1">&#39;sm_21&#39;</span> <span class="n">architectures</span> <span class="n">are</span> <span class="n">deprecated</span><span class="p">,</span> <span class="ow">and</span> <span class="n">may</span> <span class="n">be</span> <span class="n">removed</span>
+<span class="ow">in</span> <span class="n">a</span> <span class="n">future</span> <span class="n">release</span> <span class="p">(</span><span class="n">Use</span> <span class="o">-</span><span class="n">Wno</span><span class="o">-</span><span class="n">deprecated</span><span class="o">-</span><span class="n">gpu</span><span class="o">-</span><span class="n">targets</span> <span class="n">to</span> <span class="n">suppress</span> <span class="n">warning</span><span class="p">)</span><span class="o">.</span>
+
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">06</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">compilation</span> <span class="n">finished</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">09</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">spawned</span> <span class="n">job</span> <span class="p">(</span><span class="n">jobid</span><span class="o">=</span><span class="mi">4163846</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">21</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">spawned</span> <span class="n">job</span> <span class="n">finished</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">21</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">copying</span> <span class="n">interesting</span> <span class="n">files</span> <span class="n">to</span> <span class="n">output</span> <span class="n">directory</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">21</span><span class="p">]</span> <span class="n">debug</span><span class="p">:</span> <span class="n">example7_check</span><span class="p">:</span> <span class="n">removing</span> <span class="n">stage</span> <span class="n">directory</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">21</span><span class="p">]</span> <span class="n">info</span><span class="p">:</span> <span class="n">reframe</span><span class="p">:</span> <span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example7_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+</pre></div>
+</div>
+<p>Each line starts with a timestamp, the level of the message (<code class="docutils literal"><span class="pre">info</span></code>, <code class="docutils literal"><span class="pre">debug</span></code> etc.), the context in which the framework is currently executing (either <code class="docutils literal"><span class="pre">reframe</span></code> or the name of the current test and, finally, the actual message.</p>
+<p>Every time ReFrame is run, both <code class="docutils literal"><span class="pre">reframe.out</span></code> and <code class="docutils literal"><span class="pre">reframe.log</span></code> files will be rewritten.
+However, you can ask ReFrame to copy them to the output directory before exiting by passing it the <code class="docutils literal"><span class="pre">--save-log-files</span></code> option.</p>
+<div class="section" id="configuring-logging">
+<span id="configuring-logging"></span><h3>Configuring logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
+<p>You can configure several aspects of logging in ReFrame and even how the output will look like.
+ReFrame's logging mechanism is built upon Python's <a class="reference external" href="https://docs.python.org/3.6/library/logging.html">logging</a> framework adding extra logging levels and more formatting capabilities.</p>
+<p>Logging in ReFrame is configured by the <code class="docutils literal"><span class="pre">_logging_config</span></code> variable in the <code class="docutils literal"><span class="pre">reframe/settings.py</span></code> file.
+The default configuration looks as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">_logging_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;reframe.log&#39;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(levelname)s</span><span class="s1">: &#39;</span>
+                          <span class="s1">&#39;</span><span class="si">%(testcase_name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;append&#39;</span>    <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">},</span>
+
+        <span class="c1"># Output handling</span>
+        <span class="s1">&#39;&amp;1&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;reframe.out&#39;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;append&#39;</span>    <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Note that this configuration dictionary is not the same as the one used by Python's logging framework.
+It is a simplified version adapted to the needs of ReFrame.</p>
+<p>The <code class="docutils literal"><span class="pre">_logging_config</span></code> dictionary has two main key entries:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'INFO'</span></code>): This is the lowest level of messages that will be passed down to the different log record handlers.
+Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
+ReFrame defines the following logging levels with a decreasing severity: <code class="docutils literal"><span class="pre">CRITICAL</span></code>, <code class="docutils literal"><span class="pre">ERROR</span></code>, <code class="docutils literal"><span class="pre">WARNING</span></code>, <code class="docutils literal"><span class="pre">INFO</span></code>, <code class="docutils literal"><span class="pre">VERBOSE</span></code> and <code class="docutils literal"><span class="pre">DEBUG</span></code>.
+Note that the level name is <em>not</em> case sensitive in ReFrame.</li>
+<li><code class="docutils literal"><span class="pre">handlers</span></code>: A dictionary defining the properties of the handlers that are attached to ReFrame's logging mechanism.
+The key is either a filename or a special character combination denoting standard output (<code class="docutils literal"><span class="pre">&amp;1</span></code>) or standard error (<code class="docutils literal"><span class="pre">&amp;2</span></code>).
+You can attach as many handlers as you like.
+The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.</li>
+</ul>
+<p>The configurable properties of a log record handler are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'debug'</span></code>): The lowest level of log records that this handler can process.</li>
+<li><code class="docutils literal"><span class="pre">format</span></code> (default: <code class="docutils literal"><span class="pre">'%(message)s'</span></code>): Format string for the printout of the log record.
+ReFrame supports all the <a class="reference external" href="https://docs.python.org/3.6/library/logging.html#logrecord-attributes">format strings</a> from Python's logging library and provides the following additional ones:<ul>
+<li><code class="docutils literal"><span class="pre">check_name</span></code>: Prints the name of the regression test on behalf of which ReFrame is currently executing.
+If ReFrame is not in the context of regression test, <code class="docutils literal"><span class="pre">reframe</span></code> will be printed.</li>
+<li><code class="docutils literal"><span class="pre">check_jobid</span></code>: Prints the job or process id of the job or process associated with currently executing regression test.
+If a job or process is not yet created, <code class="docutils literal"><span class="pre">-1</span></code> will be printed.</li>
+<li><code class="docutils literal"><span class="pre">testcase_name</span></code>: Print the name of the test case that is currently executing.
+Test case is essentially a tuple consisting of the test name, the current system and partition and the current programming envrinoment.
+This format string prints out like <code class="docutils literal"><span class="pre">&lt;test-name&gt;&#64;&lt;partition&gt;</span> <span class="pre">using</span> <span class="pre">&lt;environ&gt;</span></code>.</li>
+</ul>
+</li>
+<li><code class="docutils literal"><span class="pre">datefmt</span></code> (default: <code class="docutils literal"><span class="pre">'%FT%T'</span></code>) The format that will be used for outputting timestamps (i.e., the <code class="docutils literal"><span class="pre">%(asctime)s</span></code> field).
+Acceptable formats must conform to standard library's <a class="reference external" href="https://docs.python.org/3.6/library/time.html#time.strftime">time.strftime()</a> function.</li>
+<li><code class="docutils literal"><span class="pre">append</span></code> (default: <code class="docutils literal"><span class="pre">False</span></code>) Controls whether ReFrame should append to this file or not.
+This is ignored for the standard output/error handlers.</li>
+<li><code class="docutils literal"><span class="pre">timestamp</span></code> (default: <code class="docutils literal"><span class="pre">None</span></code>): Append a timestamp to this log filename.
+This property may accept any date format as the <code class="docutils literal"><span class="pre">datefmt</span></code> property.
+If set for a <code class="docutils literal"><span class="pre">filename.log</span></code> handler entry, the resulting log file name will be <code class="docutils literal"><span class="pre">filename_&lt;timestamp&gt;.log</span></code>.
+This property is ignored for the standard output/error handlers.</li>
+</ul>
+</div>
+<div class="section" id="performance-logging">
+<span id="performance-logging"></span><h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
+<p>ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
+For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame's <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test's performance is recorded.
+The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(testcase_name)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
+Currently, it is not possible for users to configure performance logging.</p>
+<p>The resulting log file looks like the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">01</span><span class="n">T15</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span> <span class="n">example7_check</span><span class="nd">@daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span> <span class="p">(</span><span class="n">jobid</span><span class="o">=</span><span class="mi">649790</span><span class="p">):</span> <span class="n">value</span><span class="p">:</span> <span class="mf">47.797996</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="p">(</span><span class="mf">50.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">01</span><span class="n">T15</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">24</span><span class="p">]</span> <span class="n">example7_check</span><span class="nd">@daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span> <span class="p">(</span><span class="n">jobid</span><span class="o">=</span><span class="mi">649791</span><span class="p">):</span> <span class="n">value</span><span class="p">:</span> <span class="mf">49.048228</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="p">(</span><span class="mf">50.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">12</span><span class="o">-</span><span class="mi">01</span><span class="n">T15</span><span class="p">:</span><span class="mi">31</span><span class="p">:</span><span class="mi">24</span><span class="p">]</span> <span class="n">example7_check</span><span class="nd">@daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span> <span class="p">(</span><span class="n">jobid</span><span class="o">=</span><span class="mi">649792</span><span class="p">):</span> <span class="n">value</span><span class="p">:</span> <span class="mf">48.575334</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="p">(</span><span class="mf">50.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The interpretation of the performance values depends on the individual tests.
+The above output is from the CUDA performance test we presented in the <a class="reference external" href="tutorial.html#writing-a-performance-test">tutorial</a>, so the value refers to the achieved Gflop/s.
+The reference value is a three-element tuple of the form <code class="docutils literal"><span class="pre">(&lt;reference&gt;,</span> <span class="pre">&lt;lower-threshold&gt;,</span> <span class="pre">&lt;upper-threshold&gt;)</span></code>, where the <code class="docutils literal"><span class="pre">lower-threshold</span></code> and <code class="docutils literal"><span class="pre">upper-threshold</span></code> are the acceptable tolerance thresholds expressed in percentages. For example, the performance check shown above has a reference value of 50 Gflop/s ± 10%.</p>
+</div>
+</div>
+<div class="section" id="asynchronous-execution-of-regression-checks">
+<span id="asynchronous-execution-of-regression-checks"></span><h2>Asynchronous Execution of Regression Checks<a class="headerlink" href="#asynchronous-execution-of-regression-checks" title="Permalink to this headline">¶</a></h2>
+<p>From version <a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.4">2.4</a>, ReFrame supports asynchronous execution of regression tests.
+This execution policy can be enabled by passing the option <code class="docutils literal"><span class="pre">--exec-policy=async</span></code> to the command line.
+The default execution policy is <code class="docutils literal"><span class="pre">serial</span></code> which enforces a sequential execution of the selected regression tests.
+The asynchronous execution policy parallelizes only the <a class="reference external" href="pipeline.html#the-run-phase">running phase</a> of the tests.
+The rest of the phases remain sequential.</p>
+<p>A limit of concurrent jobs (pending and running) may be <a class="reference external" href="configure.html#partition-configuration">configured</a> for each virtual system partition.
+As soon as the concurrency limit of a partition is reached, ReFrame will hold the execution of new regression tests until a slot is released in that partition.</p>
+<p>When executing in asynchronous mode, ReFrame's output differs from the sequential execution.
+The final result of the tests will be printed at the end and additional messages may be printed to indicate that a test is held.
+Here is an example output of ReFrame using asynchronous execution policy:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ommand</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="n">reframe</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">--</span><span class="n">exec</span><span class="o">-</span><span class="n">policy</span><span class="o">=</span><span class="k">async</span> <span class="o">-</span><span class="n">r</span>
+<span class="n">Reframe</span> <span class="n">version</span><span class="p">:</span> <span class="mf">2.7</span>
+<span class="n">Launched</span> <span class="n">by</span> <span class="n">user</span><span class="p">:</span> <span class="n">karakasv</span>
+<span class="n">Launched</span> <span class="n">on</span> <span class="n">host</span><span class="p">:</span> <span class="n">daint104</span>
+<span class="n">Reframe</span> <span class="n">paths</span>
+<span class="o">=============</span>
+    <span class="n">Check</span> <span class="n">prefix</span>      <span class="p">:</span>
+    <span class="n">Check</span> <span class="n">search</span> <span class="n">path</span> <span class="p">:</span> <span class="s1">&#39;tutorial/&#39;</span>
+    <span class="n">Stage</span> <span class="nb">dir</span> <span class="n">prefix</span>  <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">stage</span><span class="o">/</span>
+    <span class="n">Output</span> <span class="nb">dir</span> <span class="n">prefix</span> <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">output</span><span class="o">/</span>
+    <span class="n">Logging</span> <span class="nb">dir</span>       <span class="p">:</span> <span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">karakasv</span><span class="o">/</span><span class="n">Devel</span><span class="o">/</span><span class="n">reframe</span><span class="o">/</span><span class="n">logs</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Running</span> <span class="mi">13</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Started</span> <span class="n">on</span> <span class="n">Sun</span> <span class="n">Nov</span>  <span class="mi">5</span> <span class="mi">19</span><span class="p">:</span><span class="mi">37</span><span class="p">:</span><span class="mi">09</span> <span class="mi">2017</span>
+
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">started</span> <span class="n">processing</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">finished</span> <span class="n">processing</span> <span class="n">example1_check</span> <span class="p">(</span><span class="n">Simple</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span> <span class="n">example</span><span class="p">)</span>
+
+<span class="o">...</span>
+
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">started</span> <span class="n">processing</span> <span class="n">example8_cuda_check</span> <span class="p">(</span><span class="n">Cuda</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+<span class="p">[</span>   <span class="n">SKIP</span>   <span class="p">]</span> <span class="n">skipping</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>   <span class="n">SKIP</span>   <span class="p">]</span> <span class="n">skipping</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span> <span class="k">for</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span>
+<span class="p">[</span> <span class="n">RUN</span>      <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>   <span class="n">SKIP</span>   <span class="p">]</span> <span class="n">skipping</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span>
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">finished</span> <span class="n">processing</span> <span class="n">example8_cuda_check</span> <span class="p">(</span><span class="n">Cuda</span> <span class="n">matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">multiplication</span><span class="p">)</span>
+
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">waiting</span> <span class="k">for</span> <span class="n">spawned</span> <span class="n">checks</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">login</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">intel</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example1_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">mc</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="o">...</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example8_openacc_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example8_openacc_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="p">[</span>       <span class="n">OK</span> <span class="p">]</span> <span class="n">example8_cuda_check</span> <span class="n">on</span> <span class="n">daint</span><span class="p">:</span><span class="n">gpu</span> <span class="n">using</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">pgi</span>
+<span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="nb">all</span> <span class="n">spawned</span> <span class="n">checks</span> <span class="n">finished</span>
+<span class="p">[</span>  <span class="n">PASSED</span>  <span class="p">]</span> <span class="n">Ran</span> <span class="mi">97</span> <span class="n">test</span> <span class="n">case</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kn">from</span> <span class="mi">13</span> <span class="n">check</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="n">failure</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+<span class="p">[</span><span class="o">==========</span><span class="p">]</span> <span class="n">Finished</span> <span class="n">on</span> <span class="n">Sun</span> <span class="n">Nov</span>  <span class="mi">5</span> <span class="mi">19</span><span class="p">:</span><span class="mi">42</span><span class="p">:</span><span class="mi">23</span> <span class="mi">2017</span>
+</pre></div>
+</div>
+<p>The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
+For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="usecases.html" class="btn btn-neutral float-right" title="Use Cases" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="deferrables.html" class="btn btn-neutral" title="Understanding the Mechanism of Sanity Functions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../v2.7/running.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="running.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

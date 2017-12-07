@@ -2,32 +2,30 @@
 # Utilities for manipulating the modules subsystem
 #
 
+import abc
 import os
-import subprocess
 import re
-import reframe
-import reframe.core.debug as debug
 import reframe.utility.os as os_ext
+import subprocess
 
-from reframe.core.exceptions import ModuleError
+from reframe.core.exceptions import ModuleError, ReframeError
 
 
 class Module:
     """Module wrapper.
 
-    We basically need it for defining operators for use in standard Python
-    algorithms."""
+    This class represents internally a module. Concrete module system
+    implementation should deal only with that.
+    """
 
     def __init__(self, name):
         if not name:
             raise ModuleError('no module name specified')
 
-        name_parts = name.split('/')
-        self._name = name_parts[0]
-        if len(name_parts) > 1:
-            self._version = name_parts[1]
-        else:
-            self._version = None
+        try:
+            self._name, self._version = name.split('/', maxsplit=1)
+        except ValueError:
+            self._name, self._version = name, None
 
     @property
     def name(self):
@@ -37,120 +35,334 @@ class Module:
     def version(self):
         return self._version
 
+    @property
+    def fullname(self):
+        if self.version is not None:
+            return '/'.join((self.name, self.version))
+        else:
+            return self.name
+
+    def __hash__(self):
+        # Here we hash only over the name of the module, because foo/1.2 and
+        # simply foo compare equal. In case of hash conflicts (e.g., foo/1.2
+        # and foo/1.3), the equality operator will resolve it.
+        return hash(self.name)
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        if self._version is None or other._version is None:
-            return self._name == other._name
-
-        return self._name == other._name and self._version == other._version
+        if not self.version or not other.version:
+            return self.name == other.name
+        else:
+            return self.name == other.name and self.version == other.version
 
     def __repr__(self):
-        return debug.repr(self)
+        return '%s(%s)' % (type(self).__name__, self.fullname)
 
     def __str__(self):
-        if self._version:
-            return '%s/%s' % (self._name, self._version)
-        else:
-            return self._name
+        return self.fullname
 
 
-def module_equal(rhs, lhs):
-    return Module(rhs) == Module(lhs)
+class ModulesSystem:
+    """Implements the frontend of the module systems."""
+
+    def __init__(self, backend):
+        self._backend = backend
+
+    @property
+    def backend(self):
+        return(self._backend)
+
+    def loaded_modules(self):
+        """Return a list of loaded modules.
+
+        This method returns a list of strings.
+        """
+        return [str(m) for m in self._backend.loaded_modules()]
+
+    def conflicted_modules(self, name):
+        """Return the list of conflicted modules.
+
+        This method returns a list of strings.
+        """
+        return [str(m) for m in self._backend.conflicted_modules(Module(name))]
+
+    def load_module(self, name, force=False):
+        """Load the module `name'.
+
+        If ``force`` is set, forces the loading,
+        unloading first any conflicting modules currently loaded.
+
+        Returns the list of unloaded modules as strings."""
+        module = Module(name)
+
+        loaded_modules = self._backend.loaded_modules()
+        if module in loaded_modules:
+            # Do not try to load the module if it is already present
+            return []
+
+        # Get the list of the modules that need to be unloaded
+        unload_list = set()
+        if force:
+            conflict_list = self._backend.conflicted_modules(module)
+            unload_list = set(loaded_modules) & set(conflict_list)
+
+        for m in unload_list:
+            self._backend.unload_module(m)
+
+        self._backend.load_module(module)
+        return [str(m) for m in unload_list]
+
+    def unload_module(self, name):
+        """Unload module ``name``."""
+        self._backend.unload_module(Module(name))
+
+    def is_module_loaded(self, name):
+        """Check presence of module ``name``."""
+        return self._backend.is_module_loaded(Module(name))
+
+    @property
+    def name(self):
+        """Return the name of this module system."""
+        return self._backend.name()
+
+    @property
+    def version(self):
+        """Return the version of this module system."""
+        return self._backend.version()
+
+    def unload_all(self):
+        """Unload all loaded modules."""
+        return self._backend.unload_all()
+
+    @property
+    def searchpath(self):
+        """The module system search path as a list of directories."""
+        return self._backend.searchpath()
+
+    def searchpath_add(self, *dirs):
+        """Add ``dirs`` to the module system search path."""
+        return self._backend.searchpath_add(*dirs)
+
+    def searchpath_remove(self, *dirs):
+        """Remove ``dirs`` from the module system search path."""
+        return self._backend.searchpath_remove(*dirs)
+
+    def __str__(self):
+        return str(self._backend)
 
 
-def module_list():
-    try:
-        # LOADEDMODULES may be defined but empty
-        return [m for m in os.environ['LOADEDMODULES'].split(':') if m]
-    except KeyError:
+class ModulesSystemImpl(abc.ABC):
+    """Abstract base class for module systems."""
+
+    @abc.abstractmethod
+    def loaded_modules(self):
+        """Return a list of loaded modules.
+
+        This method returns a list of Module instances.
+        """
+
+    @abc.abstractmethod
+    def conflicted_modules(self, module):
+        """Return the list of conflicted modules.
+
+        This method returns a list of Module instances.
+        """
+
+    @abc.abstractmethod
+    def load_module(self, module):
+        """Load the module `name'.
+
+        If ``force`` is set, forces the loading,
+        unloading first any conflicting modules currently loaded.
+
+        Returns the unloaded modules as a list of module instances."""
+
+    @abc.abstractmethod
+    def unload_module(self, module):
+        """Unload module ``module``."""
+
+    @abc.abstractmethod
+    def is_module_loaded(self, module):
+        """Check presence of module ``module``."""
+
+    @abc.abstractmethod
+    def name(self):
+        """Return the name of this module system."""
+
+    @abc.abstractmethod
+    def version(self):
+        """Return the version of this module system."""
+
+    @abc.abstractmethod
+    def unload_all(self):
+        """Unload all loaded modules."""
+
+    @abc.abstractmethod
+    def searchpath(self):
+        """The module system search path as a list of directories."""
+
+    @abc.abstractmethod
+    def searchpath_add(self, *dirs):
+        """Add ``dirs`` to the module system search path."""
+
+    @abc.abstractmethod
+    def searchpath_remove(self, *dirs):
+        """Remove ``dirs`` from the module system search path."""
+
+    def __repr__(self):
+        return type(self).__name__ + '()'
+
+    def __str__(self):
+        return self.name() + ' ' + self.version()
+
+
+class TModImpl(ModulesSystemImpl):
+    """Module system for TMod (Tcl)."""
+
+    def __init__(self):
+        # Try to figure out if we are indeed using the TCL version
+        try:
+            completed = os_ext.run_command('modulecmd -V')
+        except OSError as e:
+            raise ReframeError(
+                'could not find a sane Tmod installation: %s' % e)
+
+        version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
+                                  re.MULTILINE)
+        tcl_version_match = re.search(r'^TCL_VERSION=(\S+)', completed.stdout,
+                                      re.MULTILINE)
+
+        if version_match is None or tcl_version_match is None:
+            raise ReframeError('could not find a sane Tmod installation')
+
+        self._version = version_match.group(1)
+        self._command = 'modulecmd python'
+        try:
+            # Try the Python bindings now
+            completed = os_ext.run_command(self._command)
+        except OSError as e:
+            raise ReframeError(
+                'could not get the Python bindings for Tmod: ' % e)
+
+        if re.search(r'Unknown shell type', completed.stderr):
+            raise ReframeError(
+                'Python is not supported by this Tmod installation')
+
+    def name(self):
+        return 'tmod'
+
+    def version(self):
+        return self._version
+
+    def _run_module_command(self, *args):
+        command = [self._command, *args]
+        return os_ext.run_command(' '.join(command))
+
+    def _exec_module_command(self, *args):
+        completed = self._run_module_command(*args)
+        exec(completed.stdout)
+
+    def loaded_modules(self):
+        try:
+            # LOADEDMODULES may be defined but empty
+            return [Module(m)
+                    for m in os.environ['LOADEDMODULES'].split(':') if m]
+        except KeyError:
+            return []
+
+    def conflicted_modules(self, module):
+        conflict_list = []
+        completed = self._run_module_command('show', str(module))
+        return [Module(m.group(1))
+                for m in re.finditer(r'^conflict\s+(\S+)',
+                                     completed.stderr, re.MULTILINE)]
+
+    def is_module_loaded(self, module):
+        return module in self.loaded_modules()
+
+    def load_module(self, module):
+        self._exec_module_command('load', str(module))
+        if not self.is_module_loaded(module):
+            raise ModuleError('could not load module %s' % module)
+
+    def unload_module(self, module):
+        self._exec_module_command('unload', str(module))
+        if self.is_module_loaded(module):
+            raise ModuleError('could not unload module %s' % module)
+
+    def unload_all(self):
+        self._exec_module_command('purge')
+
+    def searchpath(self):
+        return os.environ['MODULEPATH'].split(':')
+
+    def searchpath_add(self, *dirs):
+        self._exec_module_command('use', *dirs)
+
+    def searchpath_remove(self, *dirs):
+        self._exec_module_command('unuse', *dirs)
+
+
+class NoModImpl(ModulesSystemImpl):
+    """A convenience class that implements a no-op a modules system."""
+
+    def loaded_modules(self):
         return []
 
-
-def module_conflict_list(name):
-    """Return the list of conflicted packages"""
-    conflict_list = []
-    completed = os_ext.run_command(
-        cmd='%s show %s' % (reframe.MODULECMD_PYTHON, name))
-
-    # Search for lines starting with 'conflict'
-    for line in completed.stderr.split('\n'):
-        match = re.search('^conflict\s+(?P<module_name>\S+)', line)
-        if match:
-            conflict_list.append(match.group('module_name'))
-
-    return conflict_list
-
-
-def module_present(name):
-    for m in module_list():
-        if module_equal(m, name):
-            return True
-
-    return False
-
-
-def module_load(name):
-    completed = os_ext.run_command(
-        cmd='%s load %s' % (reframe.MODULECMD_PYTHON, name))
-    exec(completed.stdout)
-
-    if not module_present(name):
-        raise ModuleError('Could not load module %s' % name)
-
-
-def module_force_load(name):
-    """Forces the loading of package `name', unloading first any conflicting
-    currently loaded modules.
-
-    Returns the a list of unloaded packages
-    """
-    # Do not try to load the module if it is already present
-    if module_present(name):
+    def conflicted_modules(self, module):
         return []
 
-    # Discard the version information of the loaded modules
-    loaded_modules = set([m.split('/')[0] for m in module_list()])
-    conflict_list  = set(module_conflict_list(name))
-    unload_list    = loaded_modules & conflict_list
-    for m in unload_list:
-        module_unload(m)
+    def load_module(self, module):
+        pass
 
-    module_load(name)
-    return list(unload_list)
+    def unload_module(self, module):
+        pass
 
+    def is_module_loaded(self, module):
+        #
+        # Always return `True`, since this pseudo modules system effectively
+        # assumes that everything needed is loaded.
+        #
+        return True
 
-def module_unload(name):
-    completed = os_ext.run_command(
-        cmd='%s unload %s' % (reframe.MODULECMD_PYTHON, name))
-    exec(completed.stdout)
+    def name(self):
+        return 'nomod'
 
-    if module_present(name):
-        raise ModuleError('Could not unload module %s' % name)
+    def version(self):
+        return '1.0'
 
+    def unload_all(self):
+        pass
 
-def module_purge():
-    completed = os_ext.run_command(
-        cmd='%s purge' % reframe.MODULECMD_PYTHON)
-    exec(completed.stdout)
+    def searchpath(self):
+        return []
 
+    def searchpath_add(self, *dirs):
+        pass
 
-def module_path_add(dirs):
-    """
-    Adds list of dirs to module path
-    """
-    args = ' '.join(dirs)
-    completed = os_ext.run_command(
-        cmd='%s use %s' % (reframe.MODULECMD_PYTHON, args))
-    exec(completed.stdout)
+    def searchpath_remove(self, *dirs):
+        pass
 
 
-def module_path_remove(dirs):
-    """
-    Removes list of dirs from module path
-    """
-    args = ' '.join(dirs)
-    completed = os_ext.run_command(
-        cmd='%s unuse %s' % (reframe.MODULECMD_PYTHON, args))
-    exec(completed.stdout)
+# The module system used by the framework
+_modules_system = None
+
+
+def init_modules_system(modules_kind=None):
+    global _modules_system
+
+    if modules_kind is None:
+        _modules_system = ModulesSystem(NoModImpl())
+    elif modules_kind == 'tmod':
+        _modules_system = ModulesSystem(TModImpl())
+    else:
+        raise ReframeError('unknown module system')
+
+
+def get_modules_system():
+    if _modules_system is None:
+        raise ReframeError('no modules system is configured')
+
+    return _modules_system

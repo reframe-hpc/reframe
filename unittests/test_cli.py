@@ -9,13 +9,14 @@ import tempfile
 
 import reframe.utility.os as os_ext
 import reframe.core.logging as logging
+import unittests.fixtures as fixtures
 
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 from reframe.core.environments import EnvironmentSnapshot
+from reframe.core.modules import init_modules_system
 from reframe.frontend.loader import SiteConfiguration, autodetect_system
 from reframe.settings import settings
-from unittests.fixtures import guess_system, system_with_scheduler
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -24,9 +25,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
     captured_stdout = StringIO()
     captured_stderr = StringIO()
     sys.argv = argv
-
     exitcode = None
-    print(' '.join(argv))
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:
@@ -34,9 +33,11 @@ def run_command_inline(argv, funct, *args, **kwargs):
             except SystemExit as e:
                 exitcode = e.code
             finally:
-                # restore environment and command-line arguments
+                # restore environment, command-line arguments, and the native
+                # modules system
                 environ_save.load()
                 sys.argv = argv_save
+                fixtures.init_native_modules_system()
 
     return (exitcode,
             captured_stdout.getvalue(),
@@ -115,7 +116,6 @@ class TestFrontend(unittest.TestCase):
 
     def _stage_exists(self, check_name, partitions, environs):
         stagedir = os.path.join(self.prefix, 'stage')
-
         for p in partitions:
             for e in environs:
                 path = os.path.join(stagedir, p, check_name, e)
@@ -147,12 +147,13 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
 
-    @unittest.skipIf(not system_with_scheduler(None),
+    @unittest.skipIf(not fixtures.partition_with_scheduler(None),
                      'job submission not supported')
     def test_check_submit_success(self):
         # This test will run on the auto-detected system
-        system = guess_system()
-        partition = system_with_scheduler(None)
+        system = fixtures.HOST
+        partition = fixtures.partition_with_scheduler(None)
+        init_modules_system(system.modules_system)
 
         self.local = False
         self.system = partition.fullname

@@ -45,15 +45,13 @@ def repr(obj, indent=4, max_depth=2):
     if _depth[tid] == max_depth:
         attr_list = ['...']
     else:
-        attr_list = ['%s%s=%r' % (indent_width * ' ', attr, val)
+        attr_list = ['{0}={1}'.format(attr, val)
                      for attr, val in sorted(obj.__dict__.items())]
 
-    repr_fmt = '%(module_name)s.%(class_name)s(%(attr_repr)s)@0x%(addr)x'
-    ret = repr_fmt % {
-        'module_name': obj.__module__,
-        'class_name': type(obj).__name__,
-        'attr_repr': ',\n'.join(attr_list),
-        'addr': id(obj)
-    }
+    repr_fmt = '{module_name}.{class_name}({attr_repr})@0x{addr:x}'
+    ret = repr_fmt.format(module_name=obj.__module__,
+                          class_name=type(obj).__name__,
+                          attr_repr=', '.join(attr_list),
+                          addr=id(obj))
     _decrease_indent()
     return ret

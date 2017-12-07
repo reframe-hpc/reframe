@@ -109,10 +109,6 @@ class JobSubmissionError(CommandError):
     pass
 
 
-class JobResourcesError(ReframeError):
-    pass
-
-
 class ReframeDeprecationWarning(DeprecationWarning):
     """Warning for deprecated features of the ReFrame framework."""
 
