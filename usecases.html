@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Use Cases &mdash; ReFrame 2.8 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
+        <link rel="next" title="About ReFrame" href="about.html"/>
+        <link rel="prev" title="Running ReFrame" href="running.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running ReFrame</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Use cases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reframe-usage-at-cscs">ReFrame Usage at CSCS</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Use Cases</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="about.html" class="btn btn-neutral float-right" title="About ReFrame" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="running.html" class="btn btn-neutral" title="Running ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="use-cases">
+<span id="use-cases"></span><h1>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="reframe-usage-at-cscs">
+<span id="reframe-usage-at-cscs"></span><h2>ReFrame Usage at CSCS<a class="headerlink" href="#reframe-usage-at-cscs" title="Permalink to this headline">¶</a></h2>
+<p>The ReFrame framework has been in production at <a class="reference external" href="http://www.cscs.ch">CSCS</a> since December 2016.
+We use it to test not only <a class="reference external" href="http://www.cscs.ch/computers/piz_daint/index.html">Piz Daint</a>, but almost all our systems that we provide to users.</p>
+<p>We have two large sets of regression tests:</p>
+<ul class="simple">
+<li>production tests and</li>
+<li>maintenance tests.</li>
+</ul>
+<p>Tags are used to mark these categories and a regression test may belong to both of them.
+Production tests are run daily to monitor the sanity of the system and its performance.
+All performance tests log their performance values.
+The performance over time of certain applications are monitored graphically using <a class="reference external" href="https://grafana.com/">Grafana</a>.</p>
+<p>The total set of our regression tests comprises 172 individual tests, from which 153 are marked as production tests.
+Some of them are eligible to run on both the multicore and hybrid partitions of the system, whereas others are meant to run only on the login nodes.
+Depending on the test, multiple programming environments might be tried.
+In total, 448 test cases are run from the 153 regression tests on all the system partitions.
+The following Table summarizes the production regression tests.</p>
+<p>The set of maintenance regression tests is much more limited to decrease the downtime of the system.
+The regression suite runs at the beginning of the maintenance session and just before returning the machine to the users, so that we can ensure that the user experience is at least at the level before the system was taken down.
+The maintenance set of tests comprises application performance tests, some GPU library performance checks, Slurm checks and some POSIX filesystem checks.</p>
+<p>The porting of the regression suite to the <a class="reference external" href="http://www.meteosvizzera.admin.ch/home.html?tab=overview">MeteoSwiss</a> production system <a class="reference external" href="http://www.cscs.ch/computers/kesch_escha_meteoswiss/index.html">Piz Kesch</a>, using ReFrame was almost trivial.
+The new system entry was added in the framework's configuration file describing the different partitions together with a new redefined <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment to use different compiler wrappers.
+Porting the regression tests of interest was also a straightforward process.
+In most of the cases, adding just the corresponding system partitions to the <code class="docutils literal"><span class="pre">valid_systems</span></code> variables and adjusting accordingly the <code class="docutils literal"><span class="pre">valid_prog_environs</span></code> was enough.</p>
+<p>ReFrame really focuses on abstracting away all the gory details from the regression test description, hence letting the user to concentrate solely on the logic of his test.
+A bit of this effect can be seen in the following Table where the total amount of lines of code (loc) of the regression tests written in the previous shell script-based solution and ReFrame is shown.
+We also present a snapshot of the first public release of ReFrame (<a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.2">v2.2</a>).</p>
+<p>Maintenance Burden        | Shell-Script Based | ReFrame (May 2017) | ReFrame (Nov 2017) |
+--------------------------|--------------------|--------------------|--------------------|
+Total tests               |   179              |  122               |  172               |
+Total size of tests       | 14635 loc          | 2985 loc           | 4493 loc           |
+Avg. test file size       |   179 loc          |   93 loc           |   87 loc           |
+Avg. effective test size  |   179 loc          |   25 loc           |   25 loc           |</p>
+<p>The difference in the total amount of regression test code is dramatic.
+From the 15K lines of code of the old shell script based regression testing suite, ReFrame tests use only 3K lines of code (first release) achieving a higher coverage.</p>
+<blockquote>
+<div>NOTE: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.</div></blockquote>
+<p>Each regression test file in ReFrame is 80<p>–</p>
+90 loc on average.
+However, eash regression test file may contain or generate more than one related tests, thus leading to the effective decrease of the line count per test to only 25 loc.</p>
+<p>Separating the logical description of a regression test from all the unnecessary implementation details contributes significantly in the ease of writing and maintaining new regression tests with ReFrame.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="about.html" class="btn btn-neutral float-right" title="About ReFrame" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="running.html" class="btn btn-neutral" title="Running ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/usecases.html">v2.7</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/usecases.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

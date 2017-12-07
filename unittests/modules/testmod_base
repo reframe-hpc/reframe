@@ -1,8 +1,0 @@
-#%Module
-proc ModulesHelp { } {
-    Helper module for ReFrame unit tests
-}
-
-module-whatis { Helper module for ReFrame unit tests }
-
-setenv TESTMOD_BASE "BASE"
