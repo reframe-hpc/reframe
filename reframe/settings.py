@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 class RegressionSettings:
-    _version = '2.8'
+    _version = '2.8.1'
     _module_name = 'reframe'
     _job_poll_intervals = [1, 2, 3]
     _job_submit_timeout = 60

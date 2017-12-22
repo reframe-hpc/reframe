@@ -6,7 +6,8 @@ import reframe.core.schedulers as sched
 import reframe.utility.os as os_ext
 
 from datetime import datetime
-from reframe.core.exceptions import JobSubmissionError, ReframeError
+from reframe.core.exceptions import (JobSubmissionError,
+                                     JobBlockedError, ReframeError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 from reframe.settings import settings
@@ -131,6 +132,7 @@ class SlurmJob(sched.Job):
             return
 
         self._state = SlurmJobState(state_match.group('state'))
+        self._cancel_if_blocked()
         if self._state in self._completion_states:
             self._exitcode = int(state_match.group('exitcode'))
 
@@ -138,16 +140,18 @@ class SlurmJob(sched.Job):
         if self._is_cancelling or self._state not in self._pending_states:
             return
 
-        completed = os_ext.run_command('squeue -j %s -o %%r' % self._jobid,
+        completed = os_ext.run_command('squeue -h -j %s -o %%r' % self._jobid,
                                        check=True)
-
-        # Get the reason description by removing the header from the result
-        try:
-            reason_descr = completed.stdout.split('\n')[1]
-        except IndexError:
+        if not completed.stdout:
             # Can't retrieve job's state. Perhaps it has finished already and
             # does not show up in the output of squeue
             return
+
+        self._check_and_cancel(completed.stdout)
+
+    def _check_and_cancel(self, reason_descr):
+        """Check if blocking reason ``reason_descr`` is unrecoverable and cancel the
+        job in this case."""
 
         # The reason description may have two parts as follows:
         # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
@@ -164,7 +168,7 @@ class SlurmJob(sched.Job):
             if reason_details is not None:
                 reason_msg += ', ' + reason_details
 
-            raise ReframeError(reason_msg)
+            raise JobBlockedError(reason_msg)
 
     def wait(self):
         if self._jobid is None:
@@ -176,16 +180,11 @@ class SlurmJob(sched.Job):
 
         intervals = itertools.cycle(settings.job_poll_intervals)
         self._update_state()
-        self._cancel_if_blocked()
         while self._state not in self._completion_states:
             time.sleep(next(intervals))
             self._update_state()
-            self._cancel_if_blocked()
 
     def cancel(self):
-        """Cancel job execution.
-
-        This call waits until the job has finished."""
         getlogger().debug('cancelling job (id=%s)' % self._jobid)
         if self._jobid is None:
             raise ReframeError('no job is spawned yet')
@@ -193,11 +192,13 @@ class SlurmJob(sched.Job):
         os_ext.run_command('scancel %s' % self._jobid,
                            check=True, timeout=settings.job_submit_timeout)
         self._is_cancelling = True
-        self.wait()
 
     def finished(self):
         try:
             self._update_state()
+        except JobBlockedError:
+            # Job blocked forever; reraise the exception to notify our caller
+            raise
         except ReframeError as e:
             # We ignore these exceptions at this point and we simply mark the
             # job as unfinished.
@@ -205,3 +206,57 @@ class SlurmJob(sched.Job):
             return False
         else:
             return self._state in self._completion_states
+
+
+@register_scheduler('squeue')
+class SqueueJob(SlurmJob):
+    """A Slurm job that uses squeue to query its state."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.submit_time = None
+        self.squeue_delay = 2
+        self._cancelled = False
+
+    def submit(self):
+        super().submit()
+        self.submit_time = datetime.now()
+
+    def _update_state(self):
+        time_from_submit = datetime.now() - self.submit_time
+        rem_wait = self.squeue_delay - time_from_submit.total_seconds()
+        if rem_wait > 0:
+            time.sleep(rem_wait)
+
+        # We don't run the command with check=True, because if the job has
+        # finished already, squeue might return an error about an invalid job id.
+        completed = os_ext.run_command('squeue -h -j %s -O state,exit_code,reason' %
+                                       self._jobid)
+        output = completed.stdout.strip()
+        if not output:
+            # Assume that job has finished
+            self._state = (SLURM_JOB_CANCELLED if self._cancelled
+                           else SLURM_JOB_COMPLETED)
+
+            # Set exit code manually, if not set already by the polling
+            if self._exitcode is None:
+                self._exitcode = 0
+
+            return
+
+        # There is no reliable way to get the exit code, so we always capture
+        # it, just in case we are lucky enough and get its actual value while
+        # the job has finished but is still showing up in the queue (e.g., when
+        # it is 'COMPLETING')
+        state, exitcode, reason = output.split(maxsplit=2)
+        self._state = SlurmJobState(state)
+        self._exitcode = int(exitcode)
+        if not self._is_cancelling and self._state in self._pending_states:
+            self._check_and_cancel(reason)
+
+    def cancel(self):
+        # There is no reliable way to get the state of the job after it has
+        # finished, so we explicitly mark it as cancelled here. The
+        # _update_state() will make sure to return the approriate state.
+        super().cancel()
+        self._cancelled = True

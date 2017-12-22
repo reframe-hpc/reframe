@@ -211,7 +211,8 @@ class LoggerAdapter(logging.LoggerAdapter):
             {
                 'check_name': check.name if check else 'reframe',
                 'check_jobid': '-1',
-                'testcase_name': check.name if check else 'reframe'
+                'testcase_name': check.name if check else 'reframe',
+                'version': settings.version,
             }
         )
         if self.logger:
@@ -240,7 +241,7 @@ _logger = None
 _context_logger = null_logger
 
 
-class _LoggingContext:
+class logging_context:
     def __init__(self, check=None, level=DEBUG):
         global _context_logger
 
@@ -263,13 +264,6 @@ class _LoggingContext:
 
         # Restore context logger
         _context_logger = self._orig_logger
-
-        # Propagate any exception thrown
-        return exc_type is None
-
-
-def logging_context(check=None, exc_log_level=DEBUG):
-    return _LoggingContext(check, exc_log_level)
 
 
 def configure_logging(config):

@@ -2,8 +2,7 @@ import abc
 import datetime
 import sys
 import reframe.core.debug as debug
-
-from reframe.core.logging import LoggerAdapter, load_from_dict, getlogger
+import reframe.core.logging as logging
 
 
 class Colorizer(abc.ABC):
@@ -56,7 +55,7 @@ class PrettyPrinter:
         self.colorize = True
         self.line_width = 78
         self.status_width = 10
-        self._logger = getlogger()
+        self._logger = logging.getlogger()
 
     def __repr__(self):
         return debug.repr(self)
@@ -71,7 +70,7 @@ class PrettyPrinter:
 
         self.info('[%s] %s' % (line, msg))
 
-    def status(self, status, message='', just=None):
+    def status(self, status, message='', just=None, level=logging.INFO):
         if just == 'center':
             status = status.center(self.status_width - 2)
         elif just == 'right':
@@ -88,7 +87,7 @@ class PrettyPrinter:
             else:
                 status = AnsiColorizer.colorize(status, AnsiColorizer.green)
 
-        self.info('[ %s ] %s' % (status, message))
+        self._logger.log(level, '[ %s ] %s' % (status, message))
 
     def result(self, check, partition, environ, success):
         if success:

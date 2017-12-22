@@ -1,18 +1,16 @@
 """Sanity deferrable functions.
 
-This module provides functions to be used with the ``sanity_patterns`` and
-``perf_patterns``.
+This module provides functions to be used with the :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` and
+:attr`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>`.
 The key characteristic of these functions is that they are not executed the
 time they are called.  Instead they are evaluated at a later point by the
-framework (inside the :func:`RegressionTest.check_sanity()` and
-:func:`RegressionTest.check_performance()` methods).
+framework (inside the :func:`check_sanity <reframe.core.pipeline.RegressionTest.check_sanity>` and :func:`check_performance <reframe.core.pipeline.RegressionTest.check_performance>` methods).
 Any sanity function may be evaluated either explicitly or implicitly.
 
 Explicit evaluation of sanity functions
 ---------------------------------------
 
-Sanity functions may be evaluated at any time by calling the
-:func:`reframe.core.deferrable.evaluate()`. on their return value.
+Sanity functions may be evaluated at any time by calling the :func:`evaluate <reframe.core.deferrable.evaluate>` on their return value.
 
 
 Implicit evaluation of sanity functions
@@ -21,7 +19,7 @@ Implicit evaluation of sanity functions
 Sanity functions may also be evaluated implicitly in the following situations:
 
 - When you try to get their truthy value by either explicitly or implicitly
-  calling :class:`bool() <python:bool>` on their return value.
+  calling :func:`bool <python:bool>` on their return value.
   This implies that when you include the result of a sanity function in an
   :keyword:`if` statement or when you apply the :keyword:`and`, :keyword:`or`
   or :keyword:`not` operators, this will trigger their immediate evaluation.
@@ -29,7 +27,7 @@ Sanity functions may also be evaluated implicitly in the following situations:
   This implies that including the result of a sanity function in a
   :keyword:`for` statement will trigger its evaluation immediately.
 - When you try to explicitly or implicitly get its string representation by
-  calling :class:`str() <python:str>` on its result.
+  calling :func:`str <python:str>` on its result.
   This implies that printing the return value of a sanity function will
   automatically trigger its evaluation.
 
@@ -39,13 +37,13 @@ This module provides three categories of sanity functions:
    These functions simply delegate their execution to the actual built-ins.
 2. Assertion functions.
    These functions are used to assert certain conditions and they either return
-   ``True`` or raise :class:`reframe.core.exceptions.SanityError` with a
+   ``True`` or raise :class:`SanityError <reframe.core.exceptions.SanityError>` with a
    message describing the error.
    Users may provide their own formatted messages through the ``msg``
    argument.
-   For example, in the following call to :func:`assert_eq()` the ``{0}`` and
+   For example, in the following call to :func:`assert_eq` the ``{0}`` and
    ``{1}`` placeholders will obtain the actual arguments passed to the
-   assertion funciton.
+   assertion function.
    ::
 
         assert_eq(a, 1, msg="{0} is not equal to {1}")
@@ -54,14 +52,15 @@ This module provides three categories of sanity functions:
    arguments of the assert function (except the ``msg`` argument), no argument
    substitution will be performed in the user message.
 3. Utility functions.
-   The are functions that you will normally use when defining
-   ``sanity_patterns`` and ``perf_patterns``.
+   The are functions that you will normally use when defining :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` and :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>`.
    They include, but are not limited to, functions to iterate over regex
    matches in a file, extracting and converting values from regex matches,
    computing statistical information on series of data etc.
 
 """
 import builtins
+import glob as pyglob
+import itertools
 import re
 import types
 
@@ -122,6 +121,13 @@ def all(iterable):
 def any(iterable):
     """Replacement for the built-in :func:`any() <python:any>` function."""
     return builtins.any(iterable)
+
+
+@deferrable
+def chain(*iterables):
+    """Replacement for the :func:`itertools.chain() <python:itertools.chain>`
+    function."""
+    return itertools.chain(*iterables)
 
 
 @deferrable
@@ -393,7 +399,7 @@ def assert_le(a, b, msg=None):
 
 
 @deferrable
-def assert_found(patt, filename, msg=None):
+def assert_found(patt, filename, msg=None, encoding='utf-8'):
     """Assert that regex pattern ``patt`` is found in the file ``filename``.
 
     :arg patt: The regex pattern to search.
@@ -403,10 +409,11 @@ def assert_found(patt, filename, msg=None):
     :arg filename: The name of the file to examine.
         Any :class:`OSError` raised while processing the file will be
         propagated as a :class:`reframe.core.exceptions.SanityError`.
+    :arg encoding: The name of the encoding used to decode the file.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
     """
-    num_matches = count(finditer(patt, filename))
+    num_matches = count(finditer(patt, filename, encoding))
     try:
         evaluate(assert_true(num_matches))
     except SanityError:
@@ -417,7 +424,7 @@ def assert_found(patt, filename, msg=None):
 
 
 @deferrable
-def assert_not_found(patt, filename, msg=None):
+def assert_not_found(patt, filename, msg=None, encoding='utf-8'):
     """Assert that regex pattern ``patt`` is not found in the file
     ``filename``.
 
@@ -425,10 +432,9 @@ def assert_not_found(patt, filename, msg=None):
 
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails.
-
     """
     try:
-        evaluate(assert_found(patt, filename, msg))
+        evaluate(assert_found(patt, filename, msg, encoding))
     except SanityError:
         return True
     else:
@@ -511,15 +517,15 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
 # Pattern matching functions
 
 @deferrable
-def finditer(patt, filename):
+def finditer(patt, filename, encoding='utf-8'):
     """Get an iterator over the matches of the regex ``patt`` in ``filename``.
 
     This function is equivalent to :func:`findall()` except that it returns
-    a generator object, instead of a list, which you can use to iterate over
+    a generator object instead of a list, which you can use to iterate over
     the raw matches.
     """
     try:
-        with open(filename, 'rt') as fp:
+        with open(filename, 'rt', encoding=encoding) as fp:
             yield from re.finditer(patt, fp.read(), re.MULTILINE)
     except OSError as e:
         # Re-raise it as sanity error
@@ -527,7 +533,7 @@ def finditer(patt, filename):
 
 
 @deferrable
-def findall(patt, filename):
+def findall(patt, filename, encoding='utf-8'):
     """Get all matches of regex ``patt`` in ``filename``.
 
     :arg patt: The regex pattern to search.
@@ -535,16 +541,17 @@ def findall(patt, filename):
         <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`_
         is accepted.
     :arg filename: The name of the file to examine.
+    :arg encoding: The name of the encoding used to decode the file.
     :returns: A list of raw `regex match objects
         <https://docs.python.org/3.6/library/re.html#match-objects>`_.
     :raises reframe.core.exceptions.SanityError: In case an :class:`OSError` is
         raised while processing ``filename``.
     """
-    return list(evaluate(x) for x in finditer(patt, filename))
+    return list(evaluate(x) for x in finditer(patt, filename, encoding))
 
 
 @deferrable
-def extractiter(patt, filename, tag=0, conv=None):
+def extractiter(patt, filename, tag=0, conv=None, encoding='utf-8'):
     """Get an iterator over the values extracted from the capturing group
     ``tag`` of a matching regex ``patt`` in the file ``filename``.
 
@@ -552,7 +559,7 @@ def extractiter(patt, filename, tag=0, conv=None):
     a generator object, instead of a list, which you can use to iterate over
     the extracted values.
     """
-    for m in finditer(patt, filename):
+    for m in finditer(patt, filename, encoding):
         try:
             val = m.group(tag)
         except (IndexError, KeyError):
@@ -578,7 +585,7 @@ def extractiter(patt, filename, tag=0, conv=None):
 
 
 @deferrable
-def extractall(patt, filename, tag=0, conv=None):
+def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
     """Extract all values from the capturing group ``tag`` of a matching regex
     ``patt`` in the file ``filename``.
 
@@ -587,6 +594,7 @@ def extractall(patt, filename, tag=0, conv=None):
         <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`_
         is accepted.
     :arg filename: The name of the file to examine.
+    :arg encoding: The name of the encoding used to decode the file.
     :arg tag: The regex capturing group to be extracted.
         Group ``0`` refers always to the whole match.
         Since the file is processed line by line, this means that group ``0``
@@ -597,11 +605,12 @@ def extractall(patt, filename, tag=0, conv=None):
     :returns: A list of the extracted values from the matched regex.
     :raises reframe.core.exceptions.SanityError: In case of errors.
     """
-    return list(evaluate(x) for x in extractiter(patt, filename, tag, conv))
+    return list(evaluate(x)
+                for x in extractiter(patt, filename, tag, conv, encoding))
 
 
 @deferrable
-def extractsingle(patt, filename, tag=0, conv=None, item=0):
+def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     """Extract a single value from the capturing group ``tag`` of a matching regex
     ``patt`` in the file ``filename``.
 
@@ -611,6 +620,7 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0):
 
     :arg patt: as in :func:`extractall`.
     :arg filename: as in :func:`extractall`.
+    :arg encoding: as in :func:`extractall`.
     :arg tag: as in :func:`extractall`.
     :arg conv: as in :func:`extractall`.
     :arg item: the specific element to extract.
@@ -621,7 +631,7 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0):
         # Explicitly evaluate the expression here, so as to force any exception
         # to be thrown in this context and not during the evaluation of an
         # expression containing this one.
-        return evaluate(extractall(patt, filename, tag, conv)[item])
+        return evaluate(extractall(patt, filename, tag, conv, encoding)[item])
     except IndexError:
         raise SanityError("not enough matches of pattern `%s' in file `%s' "
                           "so as to extract item `%s'" % (patt, filename, item))
@@ -681,3 +691,15 @@ def count(iterable):
             pass
 
         return ret
+
+
+@deferrable
+def glob(pathname, *, recursive=False):
+    """Replacement for the :func:`glob.glob() <python:glob.glob>` function."""
+    return pyglob.glob(pathname, recursive=recursive)
+
+
+@deferrable
+def iglob(pathname, recursive=False):
+    """Replacement for the :func:`glob.iglob() <python:glob.iglob>` function."""
+    return pyglob.iglob(pathname, recursive=recursive)

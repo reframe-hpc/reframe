@@ -797,7 +797,8 @@ class RegressionTest:
             'handlers': {
                 self._perf_logfile: {
                     'level': 'DEBUG',
-                    'format': '[%(asctime)s] %(testcase_name)s '
+                    'format': '[%(asctime)s] reframe %(version)s: '
+                              '%(testcase_name)s '
                               '(jobid=%(check_jobid)s): %(message)s',
                     'append': True,
                 }
@@ -857,6 +858,7 @@ class RegressionTest:
 
         # if self.sourcepath refers to a directory, stage it first
         target_sourcepath = os.path.join(self.sourcesdir, self.sourcepath)
+        self.logger.debug('source path: %s' % target_sourcepath)
         if os.path.isdir(target_sourcepath):
             self._copy_to_stagedir(target_sourcepath)
             self._current_environ.include_search_path.append(self._stagedir)
@@ -876,9 +878,7 @@ class RegressionTest:
         # everywhere in the compilation process. This is done to ensure that
         # any other files (besides the executable) generated during the the
         # compilation will remain in the stage directory
-        wd_save = os.getcwd()
-        os.chdir(self._stagedir)
-        try:
+        with os_ext.change_dir(self._stagedir):
             self.prebuild()
             self._compile_task = self._current_environ.compile(
                 sourcepath=target_sourcepath,
@@ -889,10 +889,8 @@ class RegressionTest:
             self.logger.debug('compilation stderr:\n%s' %
                               self._compile_task.stderr)
             self.postbuild()
-        finally:
-            # Always restore working directory
-            os.chdir(wd_save)
-            self.logger.debug('compilation finished')
+
+        self.logger.debug('compilation finished')
 
     def run(self):
         """The run phase of the regression test pipeline.
@@ -949,16 +947,12 @@ class RegressionTest:
                                     self.sanity_info)
 
     def _check_sanity_new(self):
-        wd_save = os.getcwd()
-        os.chdir(self._stagedir)
-        try:
+        with os_ext.change_dir(self._stagedir):
             ret = evaluate(self.sanity_patterns)
             if not ret:
                 raise SanityError('sanity failure')
 
             return ret
-        finally:
-            os.chdir(wd_save)
 
     def check_performance(self):
         """The performance checking phase of the regression test pipeline.
@@ -981,9 +975,7 @@ class RegressionTest:
                                     self.perf_info)
 
     def _check_performance_new(self):
-        wd_save = os.getcwd()
-        os.chdir(self._stagedir)
-        try:
+        with os_ext.change_dir(self._stagedir):
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
@@ -999,8 +991,6 @@ class RegressionTest:
                         (tag, self._current_partition.fullname)
                     )
                 evaluate(assert_reference(value, ref, low_thres, high_thres))
-        finally:
-            os.chdir(wd_save)
 
         return True
 

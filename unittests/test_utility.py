@@ -134,6 +134,7 @@ class TestOSTools(unittest.TestCase):
             '/foo', os.path.join(prefix, 'broken')))
         self.assertTrue(os_ext.samefile(os.path.join(prefix, 'broken'),
                                         os.path.join(prefix, 'broken1')))
+        shutil.rmtree(prefix)
 
 
 class TestCopyTree(unittest.TestCase):
@@ -275,3 +276,26 @@ class TestDebugRepr(unittest.TestCase):
         self.assertIn('_a=%r' % c._a, rep)
         self.assertIn('b=%r' % c.b, rep)
         self.assertIn('D(...)', rep)
+
+
+class TestChangeDirCtxManager(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.wd_save = os.getcwd()
+
+    def test_change_dir_working(self):
+        with os_ext.change_dir(self.temp_dir):
+            self.assertTrue(os.getcwd(), self.temp_dir)
+        self.assertEqual(os.getcwd(), self.wd_save)
+
+    def test_exception_propagation(self):
+        try:
+            with os_ext.change_dir(self.temp_dir):
+                raise RuntimeError 
+        except RuntimeError:
+            self.assertEqual(os.getcwd(), self.wd_save)
+        else:
+            self.fail('exception not propagated by the ctx manager')
+
+    def tearDown(self):
+        os.rmdir(self.temp_dir)

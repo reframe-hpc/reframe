@@ -1,13 +1,13 @@
 import abc
 import sys
 import reframe.core.debug as debug
+import reframe.core.logging as logging
 
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (
     ReframeFatalError, ReframeError, SanityError
 )
 from reframe.core.fields import StringField, TypedField
-from reframe.core.logging import logging_context
 from reframe.core.pipeline import RegressionTest
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
@@ -86,30 +86,30 @@ class RegressionTestExecutor:
 
     def setup(self, partition, environ, **job_opts):
         self._current_stage = 'setup'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering setup stage')
             self._check.setup(partition, environ, **job_opts)
 
     def compile(self):
         self._current_stage = 'compile'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering compilation stage')
             self._check.compile()
 
     def run(self):
         self._current_stage = 'run'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering running stage')
             self._check.run()
 
     def wait(self):
         self._current_stage = 'wait'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering waiting stage')
             self._check.wait()
 
     def poll(self):
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('polling check')
             ret = self._check.poll()
             return ret
@@ -118,7 +118,7 @@ class RegressionTestExecutor:
         # check_sanity() may be overriden by the user tests; we log this phase
         # here then
         self._current_stage = 'sanity'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering sanity checking stage')
             ret = self._check.check_sanity()
 
@@ -132,7 +132,7 @@ class RegressionTestExecutor:
             # FIXME: the logic has become a bit ugly here in order to support
             # both sanity syntaxes. It should be simplified again as soon as
             # the old syntax is dropped.
-            with logging_context(check=self._check) as logger:
+            with logging.logging_context(check=self._check) as logger:
                 logger.debug('entering performance checking stage')
                 ret = self._check.check_performance()
         except SanityError:
@@ -146,7 +146,7 @@ class RegressionTestExecutor:
 
     def cleanup(self, remove_files=False, unload_env=True):
         self._current_stage = 'cleanup'
-        with logging_context(check=self._check) as logger:
+        with logging.logging_context(check=self._check) as logger:
             logger.debug('entering cleanup stage')
             self._check.cleanup(remove_files, unload_env)
 
@@ -219,7 +219,8 @@ class Runner:
                 if not self._partition_supported(c, p):
                     self._printer.status('SKIP',
                                          'skipping %s' % p.fullname,
-                                         just='center')
+                                         just='center',
+                                         level=logging.VERBOSE)
                     continue
 
                 self._policy.enter_partition(c, p)
@@ -228,7 +229,8 @@ class Runner:
                         self._printer.status('SKIP',
                                              'skipping %s for %s' %
                                              (e.name, p.fullname),
-                                             just='center')
+                                             just='center',
+                                             level=logging.VERBOSE)
                         continue
 
                     self._sandbox.system  = p

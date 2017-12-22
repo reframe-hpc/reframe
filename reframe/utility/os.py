@@ -187,3 +187,17 @@ def mkstemp_path(*args, **kwargs):
     fd, path = tempfile.mkstemp(*args, **kwargs)
     os.close(fd)
     return path
+
+
+class change_dir:
+    """Context manager which changes the current working directory to the
+       provided one."""
+    def __init__(self, dir_name):
+        self._wd_save = os.getcwd()
+        self._dir_name = dir_name
+
+    def __enter__(self):
+        os.chdir(self._dir_name)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        os.chdir(self._wd_save)

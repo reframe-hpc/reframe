@@ -178,6 +178,20 @@ class EnvironmentSnapshot(Environment):
         raise RuntimeError('cannot unload an environment snapshot')
 
 
+class save_environment:
+    """A context manager for saving and restoring the current environment."""
+
+    def __init__(self):
+        self.environ_save = EnvironmentSnapshot()
+
+    def __enter__(self):
+        return self.environ_save
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Restore the environment and propagate any exception thrown
+        self.environ_save.load()
+
+
 class ProgEnvironment(Environment):
     """A class representing a programming environment.
 
