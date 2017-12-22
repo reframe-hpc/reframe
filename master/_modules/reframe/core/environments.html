@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.environments &mdash; ReFrame 2.8 documentation</title>
+  <title>reframe.core.environments &mdash; ReFrame 2.8.1 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.8 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.8.1 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8
+                2.8.1
               </div>
             
           
@@ -145,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
@@ -347,6 +347,20 @@
 
     <span class="k">def</span> <span class="nf">unload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot unload an environment snapshot&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="save_environment"><a class="viewcode-back" href="../../../reference.html#reframe.core.environments.save_environment">[docs]</a><span class="k">class</span> <span class="nc">save_environment</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A context manager for saving and restoring the current environment.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">environ_save</span> <span class="o">=</span> <span class="n">EnvironmentSnapshot</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">environ_save</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="c1"># Restore the environment and propagate any exception thrown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">environ_save</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="ProgEnvironment"><a class="viewcode-back" href="../../../reference.html#reframe.core.environments.ProgEnvironment">[docs]</a><span class="k">class</span> <span class="nc">ProgEnvironment</span><span class="p">(</span><span class="n">Environment</span><span class="p">):</span>
@@ -629,6 +643,7 @@
         <dl>
             <dt>Tags</dt>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
+            <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -643,7 +658,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.8',
+            VERSION:'2.8.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

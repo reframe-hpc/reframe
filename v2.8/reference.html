@@ -1,0 +1,1863 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Reference Guide &mdash; ReFrame 2.8 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
+        <link rel="next" title="Sanity Functions Reference" href="sanity_functions_reference.html"/>
+        <link rel="prev" title="About ReFrame" href="about.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About ReFrame</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Reference Guide</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="sanity_functions_reference.html" class="btn btn-neutral float-right" title="Sanity Functions Reference" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="about.html" class="btn btn-neutral" title="About ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-reframe.core.pipeline">
+<span id="reference-guide"></span><h1>Reference Guide<a class="headerlink" href="#module-reframe.core.pipeline" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="reframe.core.pipeline.CompileOnlyRegressionTest">
+<em class="property">class </em><code class="descclassname">reframe.core.pipeline.</code><code class="descname">CompileOnlyRegressionTest</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest</span></code></a></p>
+<p>Base class for compile-only regression tests.</p>
+<p>These tests are by default local and will skip the run phase of the
+regression test pipeline.</p>
+<p>The standard output and standard error of the test will be set to those of
+the compilation stage.</p>
+<dl class="method">
+<dt id="reframe.core.pipeline.CompileOnlyRegressionTest.compile">
+<code class="descname">compile</code><span class="sig-paren">(</span><em>**compile_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.compile" title="Permalink to this definition">¶</a></dt>
+<dd><p>The compilation stage of the regression test pipeline.</p>
+<p>The standard output and standard error of this stage will be used as
+the standard output and error of the test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.CompileOnlyRegressionTest.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The run stage of the regression test pipeline.</p>
+<p>Implemented as no-op.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.CompileOnlyRegressionTest.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>partition</em>, <em>environ</em>, <em>**job_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>The setup stage of the regression test pipeline.</p>
+<p>Similar to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">RegressionTest.setup()</span></code></a>, except that no job
+descriptor is set up for this test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.CompileOnlyRegressionTest.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for this test to finish.</p>
+<p>Implemented as no-op</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.pipeline.RegressionTest">
+<em class="property">class </em><code class="descclassname">reframe.core.pipeline.</code><code class="descname">RegressionTest</code><span class="sig-paren">(</span><em>name</em>, <em>prefix</em>, <em>system</em>, <em>resources</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Base class for regression tests.</p>
+<p>All regression tests must eventually inherit from this class.
+This class provides the implementation of the pipeline phases that the
+regression test goes through during its lifetime.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> – The name of the test.
+This is the only argument that the users may specify freely.</li>
+<li><strong>prefix</strong> – The directory prefix of the test.
+You should initialize this to the directory containing the file that
+defines the regression test.
+You can achieve this by always passing <code class="docutils literal"><span class="pre">os.path.dirname(__file__)</span></code>.</li>
+<li><strong>system</strong> – The system that this regression test will run on.
+The framework takes care of initializing and passing correctly this
+argument.</li>
+<li><strong>resources</strong> – An object managing the framework’s resources.
+The framework takes care of initializing and passing correctly this
+argument.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Concrete regression test subclasses should call the base constructor as
+follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyTest</span><span class="p">(</span><span class="n">RegressionTest</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">my_test_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;mytest&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.check_performance">
+<code class="descname">check_performance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.check_performance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.check_performance" title="Permalink to this definition">¶</a></dt>
+<dd><p>The performance checking phase of the regression test pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">True</span></code> on success, <code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise, if the
+old <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.perf_patterns" title="reframe.core.pipeline.RegressionTest.perf_patterns"><code class="xref py py-attr docutils literal"><span class="pre">perf_patterns</span></code></a> syntax is used.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>reframe.core.exceptions.SanityError</strong> – If the new syntax is used
+and the performance check fails.</li>
+<li><strong>reframe.core.exceptions.ReframeError</strong> – In case of other errors.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.check_sanity">
+<code class="descname">check_sanity</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.check_sanity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.check_sanity" title="Permalink to this definition">¶</a></dt>
+<dd><p>The sanity checking phase of the regression test pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">True</span></code> on success, <code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise, if the
+old <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sanity_patterns" title="reframe.core.pipeline.RegressionTest.sanity_patterns"><code class="xref py py-attr docutils literal"><span class="pre">sanity_patterns</span></code></a> syntax is used.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>reframe.core.exceptions.SanityError</strong> – If the new syntax is used
+and the sanity check fails.</li>
+<li><strong>reframe.core.exceptions.ReframeError</strong> – In case of other errors.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.cleanup">
+<code class="descname">cleanup</code><span class="sig-paren">(</span><em>remove_files=False</em>, <em>unload_env=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.cleanup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.cleanup" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cleanup phase of the regression test pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>remove_files</strong> – If <code class="xref py py-class docutils literal"><span class="pre">True</span></code>, the stage directory associated
+with this test will be removed.</li>
+<li><strong>unload_env</strong> – If <code class="xref py py-class docutils literal"><span class="pre">True</span></code>, the environment that was used to run
+this test will be unloaded.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.compile">
+<code class="descname">compile</code><span class="sig-paren">(</span><em>**compile_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.compile" title="Permalink to this definition">¶</a></dt>
+<dd><p>The compilation phase of the regression test pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>compile_opts</strong> – Extra options to be passed to the programming
+environment for compiling the source code of the test.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.ReframeError</strong> – In case of errors.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.current_environ">
+<code class="descname">current_environ</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.current_environ" title="Permalink to this definition">¶</a></dt>
+<dd><p>The programming environment that the regression test is currently executing
+with.</p>
+<p>This is set by the framework during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.environments.Environment" title="reframe.core.environments.Environment"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.environments.Environment</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.current_partition">
+<code class="descname">current_partition</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.current_partition" title="Permalink to this definition">¶</a></dt>
+<dd><p>The system partition the regression test is currently executing on.</p>
+<p>This is set by the framework during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.systems.SystemPartition" title="reframe.core.systems.SystemPartition"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.systems.SystemPartition</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.current_system">
+<code class="descname">current_system</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.current_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>The system the regression test is currently executing on.</p>
+<p>This is set by the framework during the initialization phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.systems.System" title="reframe.core.systems.System"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.systems.System</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.descr">
+<code class="descname">descr</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>A detailed description of the test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">self.name</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.exclusive_access">
+<code class="descname">exclusive_access</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.exclusive_access" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify whether this test needs exclusive access to nodes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">boolean</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">False</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.executable">
+<code class="descname">executable</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the executable to be launched during the run phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">os.path.join('.',</span> <span class="pre">self.name)</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.executable_opts">
+<code class="descname">executable_opts</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.executable_opts" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of options to be passed to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.executable" title="reframe.core.pipeline.RegressionTest.executable"><code class="xref py py-attr docutils literal"><span class="pre">executable</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.extra_resources">
+<code class="descname">extra_resources</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extra resources for this test.</p>
+<p>This field is for specifying custom resources needed by this test.
+These resources are defined in the <a class="reference internal" href="configure.html"><span class="doc">configuration</span></a>
+of a system partition.
+For example, assume that <code class="docutils literal"><span class="pre">num_accels</span></code> is defined as follows in the
+configuration file:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;--gres=gpu:</span><span class="si">{num_accels}</span><span class="s1">&#39;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A regression test then may define <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="reframe.core.pipeline.RegressionTest.extra_resources"><code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code></a> as follows in
+order to get two accelerator devices:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The framework will then pass the option <code class="docutils literal"><span class="pre">--gres=gpu:2</span></code> to the backend
+scheduler.</p>
+<p>If the resource name specified in this variable does not match a resource
+name in the partition configuration, it will be simply ignored.
+The <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.num_gpus_per_node" title="reframe.core.pipeline.RegressionTest.num_gpus_per_node"><code class="xref py py-attr docutils literal"><span class="pre">num_gpus_per_node</span></code></a> attribute translates internally to the
+<code class="docutils literal"><span class="pre">num_gpus_per_node</span></code> resource, so that setting <code class="docutils literal"><span class="pre">self.num_gpus_per_node</span> <span class="pre">=</span>
+<span class="pre">2</span></code> is equivalent to the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary with <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.is_local">
+<code class="descname">is_local</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.is_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.is_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the test will execute locally.</p>
+<p>A test executes locally if the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.local" title="reframe.core.pipeline.RegressionTest.local"><code class="xref py py-attr docutils literal"><span class="pre">local</span></code></a> attribute is set or if the
+current partition’s scheduler does not support job submission.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.job">
+<code class="descname">job</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.job" title="Permalink to this definition">¶</a></dt>
+<dd><p>The job descriptor associated with this test.</p>
+<p>This is set by the framework during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.schedulers.Job" title="reframe.core.schedulers.Job"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.schedulers.Job</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.keep_files">
+<code class="descname">keep_files</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.keep_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of files to be kept after the test finishes.</p>
+<p>By default, the framework saves the standard output, the standard error
+and the generated shell script that was used to run this test.</p>
+<p>These files will be copied over to the framework’s output directory
+during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.cleanup" title="reframe.core.pipeline.RegressionTest.cleanup"><code class="xref py py-func docutils literal"><span class="pre">cleanup()</span></code></a> phase.</p>
+<p>Directories are also accepted in this field.</p>
+<p>Relative path names are resolved against the stage directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.local">
+<code class="descname">local</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Always execute this test locally.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">boolean</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">False</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.logger">
+<code class="descname">logger</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>A logger associated with the this test.</p>
+<p>You can use this logger to log information for your test.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.maintainers">
+<code class="descname">maintainers</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.maintainers" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of people responsible for this test.</p>
+<p>When the test fails, this contact list will be printed out.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.modules">
+<code class="descname">modules</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of modules to be loaded before running this test.</p>
+<p>These modules will be loaded during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.name">
+<code class="descname">name</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">Alphanumeric string.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_cpus_per_task">
+<code class="descname">num_cpus_per_task</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_cpus_per_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of CPUs per task required by this test.</p>
+<p>Ignored if <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_gpus_per_node">
+<code class="descname">num_gpus_per_node</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_gpus_per_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of GPUs per node required by this test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">0</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_tasks">
+<code class="descname">num_tasks</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of tasks required by this test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">1</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_tasks_per_core">
+<code class="descname">num_tasks_per_core</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks_per_core" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of tasks per core required by this test.</p>
+<p>Ignored if <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_tasks_per_node">
+<code class="descname">num_tasks_per_node</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks_per_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of tasks per node required by this test.</p>
+<p>Ignored if <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.num_tasks_per_socket">
+<code class="descname">num_tasks_per_socket</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks_per_socket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of tasks per socket required by this test.</p>
+<p>Ignored if <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.perf_patterns">
+<code class="descname">perf_patterns</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.perf_patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patterns for verifying the performance of this test.</p>
+<p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
+examples.</p>
+<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, no performance checking will be performed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">A dictionary with keys of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> and deferrable
+expressions (i.e., the result of a <a class="reference internal" href="sanity_functions_reference.html"><span class="doc">sanity function</span></a>) as values.
+<code class="xref py py-class docutils literal"><span class="pre">None</span></code> is also allowed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.poll">
+<code class="descname">poll</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.poll"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.poll" title="Permalink to this definition">¶</a></dt>
+<dd><p>Poll the test’s state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">True</span></code> if the associated job has finished, <code class="xref py py-class docutils literal"><span class="pre">False</span></code>
+otherwise.<p>If no job descriptor is yet associated with this test,
+<code class="xref py py-class docutils literal"><span class="pre">True</span></code> is returned.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.ReframeError</strong> – In case of errors.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.postbuild_cmd">
+<code class="descname">postbuild_cmd</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.postbuild_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to be executed after a successful compilation.</p>
+<p>These commands are executed during the compilation phase and from inside
+the stage directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.prebuild_cmd">
+<code class="descname">prebuild_cmd</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.prebuild_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to be executed before compiling.</p>
+<p>These commands are executed during the compilation phase and from
+inside the stage directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.prefix">
+<code class="descname">prefix</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>The prefix directory of the test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.readonly_files">
+<code class="descname">readonly_files</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.readonly_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of files or directories (relative to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>) that
+will be symlinked in the stage directory and not copied.</p>
+<p>You can use this variable to avoid copying very large files to the stage
+directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.reference">
+<code class="descname">reference</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>The set of reference values for this test.</p>
+<p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
+examples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">A scoped dictionary with system names as scopes or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The run phase of the regression test pipeline.</p>
+<p>This call is non-blocking.
+It simply submits the job associated with this test and returns.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.sanity_patterns">
+<code class="descname">sanity_patterns</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sanity_patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patterns for verifying the sanity of this test.</p>
+<p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
+examples.</p>
+<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, no sanity checking will be performed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">A deferrable expression (i.e., the result of a <a class="reference internal" href="sanity_functions_reference.html"><span class="doc">sanity
+function</span></a>) or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>partition</em>, <em>environ</em>, <em>**job_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>The setup phase of the regression test pipeline.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>partition</strong> – The system partition to set up this test for.</li>
+<li><strong>environ</strong> – The environment to set up this test for.</li>
+<li><strong>job_opts</strong> – Options to be passed through to the backend scheduler.
+When overriding this method users should always pass through
+<code class="docutils literal"><span class="pre">job_opts</span></code> to the base class method.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><strong>reframe.core.exceptions.ReframeError</strong> – In case of errors.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.sourcepath">
+<code class="descname">sourcepath</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="Permalink to this definition">¶</a></dt>
+<dd><p>The path to the source file or source directory of the test.</p>
+<p>If not absolute, it is resolved against the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>
+directory.</p>
+<p>If it refers to a regular file, this file will be compiled (its language
+will be automatically recognized) and the produced executable will be
+placed in the test’s stage directory.
+If it refers to a directory, this will be copied to the test’s stage
+directory and <code class="docutils literal"><span class="pre">make</span></code> will be invoked in that.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">''</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.sourcesdir">
+<code class="descname">sourcesdir</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directory containing the test’s resources.</p>
+<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, the test has no resources.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">os.path.join(self.prefix,</span> <span class="pre">'src')</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.stagedir">
+<code class="descname">stagedir</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.stagedir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The stage directory of the test.</p>
+<p>This is set during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.stderr">
+<code class="descname">stderr</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.stderr" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the file containing the standard error of the test.</p>
+<p>This is set during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<p>This attribute is evaluated lazily, so it can by used inside sanity
+expressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.stdout">
+<code class="descname">stdout</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.stdout" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the file containing the standard output of the test.</p>
+<p>This is set during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<p>This attribute is evaluated lazily, so it can by used inside sanity
+expressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.strict_check">
+<code class="descname">strict_check</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.strict_check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mark this test as a strict performance test.</p>
+<p>If a test is marked as non-strict, the performance checking phase will
+always succeed, unless the <code class="docutils literal"><span class="pre">--strict</span></code> command-line option is passed
+when invoking ReFrame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">boolean</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">True</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.tags">
+<code class="descname">tags</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set of tags associated with this test.</p>
+<p>This test can be selected from the frontend using any of these tags.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">set</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body">an empty set</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.time_limit">
+<code class="descname">time_limit</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.time_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time limit for this test.</p>
+<p>Time limit is specified as a three-tuple in the form <code class="docutils literal"><span class="pre">(hh,</span> <span class="pre">mm,</span> <span class="pre">ss)</span></code>,
+with <code class="docutils literal"><span class="pre">hh</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code>, <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">mm</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code> and <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">ss</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">a three-tuple with the above properties.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">(0,</span> <span class="pre">10,</span> <span class="pre">0)</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.use_multithreading">
+<code class="descname">use_multithreading</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.use_multithreading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specify whether this tests needs simultaneous multithreading enabled.</p>
+<p>Ignored if <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">boolean or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.valid_prog_environs">
+<code class="descname">valid_prog_environs</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.valid_prog_environs" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of programming environmets supported by this test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.valid_systems">
+<code class="descname">valid_systems</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.valid_systems" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of systems supported by this test.
+The general syntax for systems is <code class="docutils literal"><span class="pre">&lt;sysname&gt;[:&lt;partname]</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.variables">
+<code class="descname">variables</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Environment variables to be set before running this test.</p>
+<p>These variables will be set during the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup()</span></code></a> phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary with <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for this test to finish.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.ReframeError</strong> – In case of errors.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.pipeline.RunOnlyRegressionTest">
+<em class="property">class </em><code class="descclassname">reframe.core.pipeline.</code><code class="descname">RunOnlyRegressionTest</code><span class="sig-paren">(</span><em>name</em>, <em>prefix</em>, <em>system</em>, <em>resources</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RunOnlyRegressionTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RunOnlyRegressionTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest</span></code></a></p>
+<p>Base class for run-only regression tests.</p>
+<dl class="method">
+<dt id="reframe.core.pipeline.RunOnlyRegressionTest.compile">
+<code class="descname">compile</code><span class="sig-paren">(</span><em>**compile_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RunOnlyRegressionTest.compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RunOnlyRegressionTest.compile" title="Permalink to this definition">¶</a></dt>
+<dd><p>The compilation phase of the regression test pipeline.</p>
+<p>This is a no-op for this type of test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.pipeline.RunOnlyRegressionTest.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RunOnlyRegressionTest.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RunOnlyRegressionTest.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>The run phase of the regression test pipeline.</p>
+<p>The resources of the test are copied to the stage directory and the
+rest of execution is delegated to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.run" title="reframe.core.pipeline.RegressionTest.run"><code class="xref py py-func docutils literal"><span class="pre">RegressionTest.run()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-reframe.core.environments"></span><dl class="class">
+<dt id="reframe.core.environments.Environment">
+<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">Environment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#Environment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.Environment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>This class abstracts away an environment to run regression tests.</p>
+<p>It is simply a collection of modules to be loaded and environment variables
+to be set when this environment is loaded by the framework.
+Users may not create or modify directly environments.</p>
+<dl class="attribute">
+<dt id="reframe.core.environments.Environment.is_loaded">
+<code class="descname">is_loaded</code><a class="headerlink" href="#reframe.core.environments.Environment.is_loaded" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal"><span class="pre">True</span></code> if this environment is loaded,
+<code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.Environment.modules">
+<code class="descname">modules</code><a class="headerlink" href="#reframe.core.environments.Environment.modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>The modules associated with this environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.Environment.name">
+<code class="descname">name</code><a class="headerlink" href="#reframe.core.environments.Environment.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.Environment.variables">
+<code class="descname">variables</code><a class="headerlink" href="#reframe.core.environments.Environment.variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>The environment variables associated with this environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.environments.ProgEnvironment">
+<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">ProgEnvironment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>cc='cc'</em>, <em>cxx='CC'</em>, <em>ftn='ftn'</em>, <em>cppflags=None</em>, <em>cflags=None</em>, <em>cxxflags=None</em>, <em>fflags=None</em>, <em>ldflags=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#ProgEnvironment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.ProgEnvironment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.environments.Environment" title="reframe.core.environments.Environment"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.environments.Environment</span></code></a></p>
+<p>A class representing a programming environment.</p>
+<p>This type of environment adds also attributes for setting the compiler and
+compilation flags.</p>
+<p>If compilation flags are set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> (the default, if not set
+otherwise in ReFrame’s <a class="reference external" href="configure.html#environments-configuration">configuration</a>), they are not passed to the
+<code class="docutils literal"><span class="pre">make</span></code> invocation.</p>
+<p>If you want to disable completely the propagation of the compilation flags
+to the <code class="docutils literal"><span class="pre">make</span></code> invocation, even if they are set, you should set the
+<a class="reference internal" href="#reframe.core.environments.ProgEnvironment.propagate" title="reframe.core.environments.ProgEnvironment.propagate"><code class="xref py py-attr docutils literal"><span class="pre">propagate</span></code></a> attribute to <code class="xref py py-class docutils literal"><span class="pre">False</span></code>.</p>
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.cc">
+<code class="descname">cc</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C compiler of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.cflags">
+<code class="descname">cflags</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.cflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C compiler flags of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.cppflags">
+<code class="descname">cppflags</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.cppflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The preprocessor flags of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.cxx">
+<code class="descname">cxx</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.cxx" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C++ compiler of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.cxxflags">
+<code class="descname">cxxflags</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.cxxflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C++ compiler flags of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.fflags">
+<code class="descname">fflags</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.fflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Fortran compiler flags of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.ftn">
+<code class="descname">ftn</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.ftn" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Fortran compiler of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.include_search_path">
+<code class="descname">include_search_path</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.include_search_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>The include search path of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.ldflags">
+<code class="descname">ldflags</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.ldflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The linker flags of this programming environment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.environments.ProgEnvironment.propagate">
+<code class="descname">propagate</code><a class="headerlink" href="#reframe.core.environments.ProgEnvironment.propagate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagate the compilation flags to the <code class="docutils literal"><span class="pre">make</span></code> invocation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">True</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-reframe.core.systems"></span><dl class="class">
+<dt id="reframe.core.systems.System">
+<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">System</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>hostnames=[]</em>, <em>partitions=[]</em>, <em>prefix='.'</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>logdir=None</em>, <em>resourcesdir='.'</em>, <em>modules_system=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>A representation of a system inside ReFrame.</p>
+<dl class="attribute">
+<dt id="reframe.core.systems.System.descr">
+<code class="descname">descr</code><a class="headerlink" href="#reframe.core.systems.System.descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>The description of this system.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.System.name">
+<code class="descname">name</code><a class="headerlink" href="#reframe.core.systems.System.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this system.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.systems.System.partition">
+<code class="descname">partition</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System.partition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System.partition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get system partition with <code class="docutils literal"><span class="pre">name</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the requested <a class="reference internal" href="#reframe.core.systems.SystemPartition" title="reframe.core.systems.SystemPartition"><code class="xref py py-class docutils literal"><span class="pre">SystemPartition</span></code></a>, or <code class="xref py py-class docutils literal"><span class="pre">None</span></code> if
+not found.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.System.partitions">
+<code class="descname">partitions</code><a class="headerlink" href="#reframe.core.systems.System.partitions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all the active partitions of this system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of <a class="reference internal" href="#reframe.core.systems.SystemPartition" title="reframe.core.systems.SystemPartition"><code class="xref py py-class docutils literal"><span class="pre">SystemPartition</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.System.resourcesdir">
+<code class="descname">resourcesdir</code><a class="headerlink" href="#reframe.core.systems.System.resourcesdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global resources directory for this system</p>
+<p>You may use this directory for storing large resource files of your
+regression tests.
+See <a class="reference external" href="configure.html#system-configuration">here</a> on how to configure this.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.systems.SystemPartition">
+<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">SystemPartition</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>scheduler=None</em>, <em>launcher=None</em>, <em>access=[]</em>, <em>environs=[]</em>, <em>resources={}</em>, <em>local_env=None</em>, <em>max_jobs=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#SystemPartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.SystemPartition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>A representation of a system partition inside ReFrame.</p>
+<dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.descr">
+<code class="descname">descr</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>A detailed description of this partition.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.fullname">
+<code class="descname">fullname</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.fullname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the fully-qualified name of this partition.</p>
+<p>The fully-qualified name is of the form
+<code class="docutils literal"><span class="pre">&lt;parent-system-name&gt;:&lt;partition-name&gt;</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><cite>str</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.launcher">
+<code class="descname">launcher</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.launcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the backend launcher of this partition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a subclass of <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.name">
+<code class="descname">name</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of this partition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><cite>str</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.systems.SystemPartition.scheduler">
+<code class="descname">scheduler</code><a class="headerlink" href="#reframe.core.systems.SystemPartition.scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type of the backend scheduler of this partition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a subclass of <a class="reference internal" href="#reframe.core.schedulers.Job" title="reframe.core.schedulers.Job"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.schedulers.Job</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.8.</span></p>
+</div>
+<p class="last">Prior versions returned a string representing the scheduler and job
+launcher combination.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.schedulers.Job">
+<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>command</em>, <em>launcher</em>, <em>environs=[]</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
+<p>A job descriptor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an abstract class.
+Users may not create jobs directly.</p>
+</div>
+<dl class="attribute">
+<dt id="reframe.core.schedulers.Job.launcher">
+<code class="descname">launcher</code><a class="headerlink" href="#reframe.core.schedulers.Job.launcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parallel program launcher that will be used to launch the parallel
+executable of this job.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.schedulers.Job.options">
+<code class="descname">options</code><a class="headerlink" href="#reframe.core.schedulers.Job.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Options to be passed to the backend job scheduler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.schedulers.Job.post_run">
+<code class="descname">post_run</code><a class="headerlink" href="#reframe.core.schedulers.Job.post_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to execute after launching this job.</p>
+<p>See <a class="reference internal" href="#reframe.core.schedulers.Job.pre_run" title="reframe.core.schedulers.Job.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> for a more detailed description of the semantics.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.schedulers.Job.pre_run">
+<code class="descname">pre_run</code><a class="headerlink" href="#reframe.core.schedulers.Job.pre_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to execute before launching this job.</p>
+<p>These commands do not execute in the context of ReFrame.
+Instead, they are emitted in the generated job script just before the
+actual job launch command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-reframe.core.launchers"></span><dl class="class">
+<dt id="reframe.core.launchers.JobLauncher">
+<em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">JobLauncher</code><span class="sig-paren">(</span><em>options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#JobLauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.JobLauncher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
+<p>A job launcher.</p>
+<p>A job launcher is the executable that actually launches a distributed
+program to multiple nodes, e.g., <code class="docutils literal"><span class="pre">mpirun</span></code>, <code class="docutils literal"><span class="pre">srun</span></code> etc.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is an abstract class.
+Regression tests may not instantiate this class directly.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.8: </span>Job launchers do not get a reference to a job during their
+initialization.</p>
+</div>
+</div>
+<dl class="attribute">
+<dt id="reframe.core.launchers.JobLauncher.options">
+<code class="descname">options</code><a class="headerlink" href="#reframe.core.launchers.JobLauncher.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of options to be passed to the job launcher invocation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.launchers.LauncherWrapper">
+<em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">LauncherWrapper</code><span class="sig-paren">(</span><em>target_launcher</em>, <em>wrapper_command</em>, <em>wrapper_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#LauncherWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.LauncherWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a></p>
+<p>Wrap a launcher object so as to modify its invocation.</p>
+<p>This is useful for parallel debuggers.
+For example, to launch a regression test using the <a class="reference external" href="https://www.allinea.com/products/ddt/">DDT</a> debugger, you can do the
+following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span> <span class="o">=</span> <span class="n">LauncherWrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span><span class="p">,</span> <span class="s1">&#39;ddt&#39;</span><span class="p">,</span>
+                                        <span class="p">[</span><span class="s1">&#39;--offline&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>If the current system partition uses native Slurm for job submission, this
+setup will generate the following command in the submission script:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ddt</span> <span class="o">--</span><span class="n">offline</span> <span class="n">srun</span> <span class="o">&lt;</span><span class="n">test_executable</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>If the current partition uses <code class="docutils literal"><span class="pre">mpirun</span></code> instead, it will generate</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ddt</span> <span class="o">--</span><span class="n">offline</span> <span class="n">mpirun</span> <span class="o">-</span><span class="n">np</span> <span class="o">&lt;</span><span class="n">num_tasks</span><span class="o">&gt;</span> <span class="o">...</span> <span class="o">&lt;</span><span class="n">test_executable</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target_launcher</strong> – The launcher to wrap.</li>
+<li><strong>wrapper_command</strong> – The wrapper command.</li>
+<li><strong>wrapper_options</strong> – List of options to pass to the wrapper command.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-reframe.core.launchers.registry"></span><dl class="function">
+<dt id="reframe.core.launchers.registry.getlauncher">
+<code class="descclassname">reframe.core.launchers.registry.</code><code class="descname">getlauncher</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers/registry.html#getlauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.registry.getlauncher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get launcher by its registered name.</p>
+<p>The available names are those specified in the
+<a class="reference internal" href="configure.html"><span class="doc">configuration file</span></a>.</p>
+<p>This method may become handy in very special situations, e.g., testing an
+application that needs to replace the system partition launcher or if a
+different launcher must be used for a different programming environment.</p>
+<p>For example, if you want to replace the current partition’s launcher with
+the local one, here is how you can achieve it:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span> <span class="o">=</span> <span class="n">getlauncher</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)()</span>
+</pre></div>
+</div>
+<p>Note that this method returns a launcher class type and not an instance of
+that class.
+You have to instantiate it explicitly before assigning it to the
+<code class="xref py py-attr docutils literal"><span class="pre">launcher</span></code> attribute of the job.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> – The name of the launcher to retrieve.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The class of the launcher requested, which is a subclass of
+<a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="reframe.core.launchers.registry.register_launcher">
+<code class="descclassname">reframe.core.launchers.registry.</code><code class="descname">register_launcher</code><span class="sig-paren">(</span><em>name</em>, <em>local=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers/registry.html#register_launcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.registry.register_launcher" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class decorator for registering new job launchers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> – The registration name of this launcher</li>
+<li><strong>local</strong> – <code class="xref py py-class docutils literal"><span class="pre">True</span></code> if launcher may only submit local jobs,
+<code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.8.</span></p>
+</div>
+<p class="last">This method is only relevant to developers of new job launchers.</p>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="sanity_functions_reference.html" class="btn btn-neutral float-right" title="Sanity Functions Reference" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="about.html" class="btn btn-neutral" title="About ReFrame" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: v2.8
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../v2.7/reference.html">v2.7</a></dd>
+            <dd><a href="reference.html">v2.8</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="../master/reference.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

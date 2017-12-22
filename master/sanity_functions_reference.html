@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Sanity Functions Reference &mdash; ReFrame 2.8 documentation</title>
+  <title>Sanity Functions Reference &mdash; ReFrame 2.8.1 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.8 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.8.1 documentation" href="index.html"/>
         <link rel="prev" title="Reference Guide" href="reference.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8
+                2.8.1
               </div>
             
           
@@ -149,7 +149,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -180,24 +180,22 @@
   <div class="section" id="module-reframe.utility.sanity">
 <span id="sanity-functions-reference"></span><h1>Sanity Functions Reference<a class="headerlink" href="#module-reframe.utility.sanity" title="Permalink to this headline">¶</a></h1>
 <p>Sanity deferrable functions.</p>
-<p>This module provides functions to be used with the <code class="docutils literal"><span class="pre">sanity_patterns</span></code> and
-<code class="docutils literal"><span class="pre">perf_patterns</span></code>.
+<p>This module provides functions to be used with the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sanity_patterns" title="reframe.core.pipeline.RegressionTest.sanity_patterns"><code class="xref py py-attr docutils literal"><span class="pre">sanity_patterns</span></code></a> and
+:attr`perf_patterns &lt;reframe.core.pipeline.RegressionTest.perf_patterns&gt;`.
 The key characteristic of these functions is that they are not executed the
 time they are called.  Instead they are evaluated at a later point by the
-framework (inside the <code class="xref py py-func docutils literal"><span class="pre">RegressionTest.check_sanity()</span></code> and
-<code class="xref py py-func docutils literal"><span class="pre">RegressionTest.check_performance()</span></code> methods).
+framework (inside the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.check_sanity" title="reframe.core.pipeline.RegressionTest.check_sanity"><code class="xref py py-func docutils literal"><span class="pre">check_sanity</span></code></a> and <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.check_performance" title="reframe.core.pipeline.RegressionTest.check_performance"><code class="xref py py-func docutils literal"><span class="pre">check_performance</span></code></a> methods).
 Any sanity function may be evaluated either explicitly or implicitly.</p>
 <div class="section" id="explicit-evaluation-of-sanity-functions">
 <h2>Explicit evaluation of sanity functions<a class="headerlink" href="#explicit-evaluation-of-sanity-functions" title="Permalink to this headline">¶</a></h2>
-<p>Sanity functions may be evaluated at any time by calling the
-<code class="xref py py-func docutils literal"><span class="pre">reframe.core.deferrable.evaluate()</span></code>. on their return value.</p>
+<p>Sanity functions may be evaluated at any time by calling the <code class="xref py py-func docutils literal"><span class="pre">evaluate</span></code> on their return value.</p>
 </div>
 <div class="section" id="implicit-evaluation-of-sanity-functions">
 <h2>Implicit evaluation of sanity functions<a class="headerlink" href="#implicit-evaluation-of-sanity-functions" title="Permalink to this headline">¶</a></h2>
 <p>Sanity functions may also be evaluated implicitly in the following situations:</p>
 <ul class="simple">
 <li>When you try to get their truthy value by either explicitly or implicitly
-calling <a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">bool()</span></code></a> on their return value.
+calling <code class="xref py py-func docutils literal"><span class="pre">bool</span></code> on their return value.
 This implies that when you include the result of a sanity function in an
 <a class="reference external" href="https://docs.python.org/3/reference/compound_stmts.html#if" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">if</span></code></a> statement or when you apply the <a class="reference external" href="https://docs.python.org/3/reference/expressions.html#and" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">and</span></code></a>, <a class="reference external" href="https://docs.python.org/3/reference/expressions.html#or" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">or</span></code></a>
 or <a class="reference external" href="https://docs.python.org/3/reference/expressions.html#not" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">not</span></code></a> operators, this will trigger their immediate evaluation.</li>
@@ -205,7 +203,7 @@ or <a class="reference external" href="https://docs.python.org/3/reference/expre
 This implies that including the result of a sanity function in a
 <a class="reference external" href="https://docs.python.org/3/reference/compound_stmts.html#for" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">for</span></code></a> statement will trigger its evaluation immediately.</li>
 <li>When you try to explicitly or implicitly get its string representation by
-calling <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str()</span></code></a> on its result.
+calling <code class="xref py py-func docutils literal"><span class="pre">str</span></code> on its result.
 This implies that printing the return value of a sanity function will
 automatically trigger its evaluation.</li>
 </ul>
@@ -216,13 +214,13 @@ These functions simply delegate their execution to the actual built-ins.</p>
 </li>
 <li><p class="first">Assertion functions.
 These functions are used to assert certain conditions and they either return
-<code class="docutils literal"><span class="pre">True</span></code> or raise <code class="xref py py-class docutils literal"><span class="pre">reframe.core.exceptions.SanityError</span></code> with a
+<code class="docutils literal"><span class="pre">True</span></code> or raise <code class="xref py py-class docutils literal"><span class="pre">SanityError</span></code> with a
 message describing the error.
 Users may provide their own formatted messages through the <code class="docutils literal"><span class="pre">msg</span></code>
 argument.
 For example, in the following call to <a class="reference internal" href="#reframe.utility.sanity.assert_eq" title="reframe.utility.sanity.assert_eq"><code class="xref py py-func docutils literal"><span class="pre">assert_eq()</span></code></a> the <code class="docutils literal"><span class="pre">{0}</span></code> and
 <code class="docutils literal"><span class="pre">{1}</span></code> placeholders will obtain the actual arguments passed to the
-assertion funciton.</p>
+assertion function.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">assert_eq</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{0}</span><span class="s2"> is not equal to </span><span class="si">{1}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -231,8 +229,7 @@ arguments of the assert function (except the <code class="docutils literal"><spa
 substitution will be performed in the user message.</p>
 </li>
 <li><p class="first">Utility functions.
-The are functions that you will normally use when defining
-<code class="docutils literal"><span class="pre">sanity_patterns</span></code> and <code class="docutils literal"><span class="pre">perf_patterns</span></code>.
+The are functions that you will normally use when defining <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sanity_patterns" title="reframe.core.pipeline.RegressionTest.sanity_patterns"><code class="xref py py-attr docutils literal"><span class="pre">sanity_patterns</span></code></a> and <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.perf_patterns" title="reframe.core.pipeline.RegressionTest.perf_patterns"><code class="xref py py-attr docutils literal"><span class="pre">perf_patterns</span></code></a>.
 They include, but are not limited to, functions to iterate over regex
 matches in a file, extracting and converting values from regex matches,
 computing statistical information on series of data etc.</p>
@@ -329,7 +326,7 @@ computing statistical information on series of data etc.</p>
 
 <dl class="function">
 <dt id="reframe.utility.sanity.assert_found">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">assert_found</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>msg=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#assert_found"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.assert_found" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">assert_found</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>msg=None</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#assert_found"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.assert_found" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assert that regex pattern <code class="docutils literal"><span class="pre">patt</span></code> is found in the file <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -342,6 +339,7 @@ is accepted.</li>
 <li><strong>filename</strong> – The name of the file to examine.
 Any <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">OSError</span></code></a> raised while processing the file will be
 propagated as a <code class="xref py py-class docutils literal"><span class="pre">reframe.core.exceptions.SanityError</span></code>.</li>
+<li><strong>encoding</strong> – The name of the encoding used to decode the file.</li>
 </ul>
 </td>
 </tr>
@@ -453,7 +451,7 @@ propagated as a <code class="xref py py-class docutils literal"><span class="pre
 
 <dl class="function">
 <dt id="reframe.utility.sanity.assert_not_found">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">assert_not_found</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>msg=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#assert_not_found"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.assert_not_found" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">assert_not_found</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>msg=None</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#assert_not_found"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.assert_not_found" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assert that regex pattern <code class="docutils literal"><span class="pre">patt</span></code> is not found in the file
 <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <p>This is the inverse of <a class="reference internal" href="#reframe.utility.sanity.assert_found" title="reframe.utility.sanity.assert_found"><code class="xref py py-func docutils literal"><span class="pre">assert_found()</span></code></a>.</p>
@@ -539,6 +537,13 @@ lower and upper thresholds do not have appropriate values.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="reframe.utility.sanity.chain">
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">chain</code><span class="sig-paren">(</span><em>*iterables</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#chain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.chain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replacement for the <a class="reference external" href="https://docs.python.org/3/library/itertools.html#itertools.chain" title="(in Python v3.6)"><code class="xref py py-func docutils literal"><span class="pre">itertools.chain()</span></code></a>
+function.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="reframe.utility.sanity.contains">
 <code class="descclassname">reframe.utility.sanity.</code><code class="descname">contains</code><span class="sig-paren">(</span><em>seq</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#contains"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.contains" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deferrable version of the <a class="reference external" href="https://docs.python.org/3/reference/expressions.html#in" title="(in Python v3.6)"><code class="xref std std-keyword docutils literal"><span class="pre">in</span></code></a> operator.</p>
@@ -570,7 +575,7 @@ generators.</p>
 
 <dl class="function">
 <dt id="reframe.utility.sanity.extractall">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractall</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractall" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractall</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractall" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract all values from the capturing group <code class="docutils literal"><span class="pre">tag</span></code> of a matching regex
 <code class="docutils literal"><span class="pre">patt</span></code> in the file <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -583,6 +588,7 @@ Any standard Python <a class="reference external" href="https://docs.python.org/
 is accepted.</p>
 </li>
 <li><strong>filename</strong> – The name of the file to examine.</li>
+<li><strong>encoding</strong> – The name of the encoding used to decode the file.</li>
 <li><strong>tag</strong> – The regex capturing group to be extracted.
 Group <code class="docutils literal"><span class="pre">0</span></code> refers always to the whole match.
 Since the file is processed line by line, this means that group <code class="docutils literal"><span class="pre">0</span></code>
@@ -605,7 +611,7 @@ returning them.</li>
 
 <dl class="function">
 <dt id="reframe.utility.sanity.extractiter">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractiter</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractiter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractiter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractiter</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractiter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractiter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get an iterator over the values extracted from the capturing group
 <code class="docutils literal"><span class="pre">tag</span></code> of a matching regex <code class="docutils literal"><span class="pre">patt</span></code> in the file <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <p>This function is equivalent to <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a> except that it returns
@@ -615,7 +621,7 @@ the extracted values.</p>
 
 <dl class="function">
 <dt id="reframe.utility.sanity.extractsingle">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractsingle</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em>, <em>item=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractsingle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractsingle" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">extractsingle</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>tag=0</em>, <em>conv=None</em>, <em>item=0</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#extractsingle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.extractsingle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract a single value from the capturing group <code class="docutils literal"><span class="pre">tag</span></code> of a matching regex
 <code class="docutils literal"><span class="pre">patt</span></code> in the file <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <p>This function is equivalent to <code class="docutils literal"><span class="pre">extractall(patt,</span> <span class="pre">filename,</span> <span class="pre">tag,</span>
@@ -628,6 +634,7 @@ bounds.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>patt</strong> – as in <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a>.</li>
 <li><strong>filename</strong> – as in <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a>.</li>
+<li><strong>encoding</strong> – as in <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a>.</li>
 <li><strong>tag</strong> – as in <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a>.</li>
 <li><strong>conv</strong> – as in <a class="reference internal" href="#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall()</span></code></a>.</li>
 <li><strong>item</strong> – the specific element to extract.</li>
@@ -653,7 +660,7 @@ bounds.</p>
 
 <dl class="function">
 <dt id="reframe.utility.sanity.findall">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">findall</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#findall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.findall" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">findall</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#findall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.findall" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get all matches of regex <code class="docutils literal"><span class="pre">patt</span></code> in <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -665,6 +672,7 @@ Any standard Python <a class="reference external" href="https://docs.python.org/
 is accepted.</p>
 </li>
 <li><strong>filename</strong> – The name of the file to examine.</li>
+<li><strong>encoding</strong> – The name of the encoding used to decode the file.</li>
 </ul>
 </td>
 </tr>
@@ -681,10 +689,10 @@ raised while processing <code class="docutils literal"><span class="pre">filenam
 
 <dl class="function">
 <dt id="reframe.utility.sanity.finditer">
-<code class="descclassname">reframe.utility.sanity.</code><code class="descname">finditer</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#finditer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.finditer" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">finditer</code><span class="sig-paren">(</span><em>patt</em>, <em>filename</em>, <em>encoding='utf-8'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#finditer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.finditer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get an iterator over the matches of the regex <code class="docutils literal"><span class="pre">patt</span></code> in <code class="docutils literal"><span class="pre">filename</span></code>.</p>
 <p>This function is equivalent to <a class="reference internal" href="#reframe.utility.sanity.findall" title="reframe.utility.sanity.findall"><code class="xref py py-func docutils literal"><span class="pre">findall()</span></code></a> except that it returns
-a generator object, instead of a list, which you can use to iterate over
+a generator object instead of a list, which you can use to iterate over
 the raw matches.</p>
 </dd></dl>
 
@@ -712,10 +720,22 @@ retrieved from <code class="docutils literal"><span class="pre">container</span>
 </dd></dl>
 
 <dl class="function">
+<dt id="reframe.utility.sanity.glob">
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">glob</code><span class="sig-paren">(</span><em>pathname</em>, <em>*</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#glob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replacement for the <a class="reference external" href="https://docs.python.org/3/library/glob.html#glob.glob" title="(in Python v3.6)"><code class="xref py py-func docutils literal"><span class="pre">glob.glob()</span></code></a> function.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="reframe.utility.sanity.hasattr">
 <code class="descclassname">reframe.utility.sanity.</code><code class="descname">hasattr</code><span class="sig-paren">(</span><em>obj</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#hasattr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.hasattr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Replacement for the built-in
 <a class="reference external" href="https://docs.python.org/3/library/functions.html#hasattr" title="(in Python v3.6)"><code class="xref py py-func docutils literal"><span class="pre">hasattr()</span></code></a> function.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="reframe.utility.sanity.iglob">
+<code class="descclassname">reframe.utility.sanity.</code><code class="descname">iglob</code><span class="sig-paren">(</span><em>pathname</em>, <em>recursive=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/utility/sanity.html#iglob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.utility.sanity.iglob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replacement for the <a class="reference external" href="https://docs.python.org/3/library/glob.html#glob.iglob" title="(in Python v3.6)"><code class="xref py py-func docutils literal"><span class="pre">glob.iglob()</span></code></a> function.</p>
 </dd></dl>
 
 <dl class="function">
@@ -926,6 +946,7 @@ The following function definition is equivalent to the above:</p>
         <dl>
             <dt>Tags</dt>
             <dd><a href="../v2.7/sanity_functions_reference.html">v2.7</a></dd>
+            <dd><a href="../v2.8/sanity_functions_reference.html">v2.8</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -940,7 +961,7 @@ The following function definition is equivalent to the above:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.8',
+            VERSION:'2.8.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
