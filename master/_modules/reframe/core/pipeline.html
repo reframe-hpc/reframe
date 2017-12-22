@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.8 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.8.1 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.8 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.8.1 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8
+                2.8.1
               </div>
             
           
@@ -145,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
@@ -968,7 +968,8 @@
             <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logfile</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-                    <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(testcase_name)s</span><span class="s1"> &#39;</span>
+                    <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] reframe </span><span class="si">%(version)s</span><span class="s1">: &#39;</span>
+                              <span class="s1">&#39;</span><span class="si">%(testcase_name)s</span><span class="s1"> &#39;</span>
                               <span class="s1">&#39;(jobid=</span><span class="si">%(check_jobid)s</span><span class="s1">): </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="p">}</span>
@@ -1028,6 +1029,7 @@
 
         <span class="c1"># if self.sourcepath refers to a directory, stage it first</span>
         <span class="n">target_sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;source path: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">target_sourcepath</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">target_sourcepath</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">target_sourcepath</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">include_search_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
@@ -1047,9 +1049,7 @@
         <span class="c1"># everywhere in the compilation process. This is done to ensure that</span>
         <span class="c1"># any other files (besides the executable) generated during the the</span>
         <span class="c1"># compilation will remain in the stage directory</span>
-        <span class="n">wd_save</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prebuild</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
                 <span class="n">sourcepath</span><span class="o">=</span><span class="n">target_sourcepath</span><span class="p">,</span>
@@ -1060,10 +1060,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stderr:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
                               <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">postbuild</span><span class="p">()</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="c1"># Always restore working directory</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">wd_save</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation finished&#39;</span><span class="p">)</span></div>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation finished&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.run"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The run phase of the regression test pipeline.</span>
@@ -1120,16 +1118,12 @@
                                     <span class="bp">self</span><span class="o">.</span><span class="n">sanity_info</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_check_sanity_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">wd_save</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity failure&#39;</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">ret</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">wd_save</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RegressionTest.check_performance"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_performance">[docs]</a>    <span class="k">def</span> <span class="nf">check_performance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The performance checking phase of the regression test pipeline.</span>
@@ -1152,9 +1146,7 @@
                                     <span class="bp">self</span><span class="o">.</span><span class="n">perf_info</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_check_performance_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">wd_save</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
@@ -1170,8 +1162,6 @@
                         <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
                     <span class="p">)</span>
                 <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_reference</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">))</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">wd_save</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="kc">True</span>
 
@@ -1474,6 +1464,7 @@
         <dl>
             <dt>Tags</dt>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
+            <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -1488,7 +1479,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.8',
+            VERSION:'2.8.1',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
