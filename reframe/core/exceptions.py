@@ -109,6 +109,10 @@ class JobSubmissionError(CommandError):
     pass
 
 
+class JobBlockedError(ReframeError):
+    """Thrown by job schedulers when a job is blocked indefinitely."""
+
+
 class ReframeDeprecationWarning(DeprecationWarning):
     """Warning for deprecated features of the ReFrame framework."""
 

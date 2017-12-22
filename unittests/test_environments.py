@@ -61,7 +61,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertEqual(self.environ.variables['_fookey1'], 'value3')
         self.assertEqual(self.environ.variables['_fookey2'], 'value2')
 
-    def test_environment_snapshot(self):
+    def test_environ_snapshot(self):
         self.assertRaises(RuntimeError,
                           self.environ_save.add_module, 'testmod_foo')
         self.assertRaises(RuntimeError, self.environ_save.set_variable,
@@ -71,6 +71,17 @@ class TestEnvironment(unittest.TestCase):
         self.environ_other.load()
         self.environ_save.load()
         self.assertEqual(self.environ_save, renv.EnvironmentSnapshot())
+
+    def test_environ_snapshot_context_mgr(self):
+        with renv.save_environment() as env:
+            self.assertIsInstance(env, renv.EnvironmentSnapshot)
+            del os.environ['_fookey1']
+            os.environ['_fookey1b'] = 'FOOVALUEX'
+            os.environ['_fookey3'] = 'foovalue3'
+
+        self.assertEqual('origfoo', os.environ['_fookey1'])
+        self.assertEqual('foovalue1', os.environ['_fookey1b'])
+        self.assertNotIn('_fookey3', os.environ)
 
     def test_load_restore(self):
         self.environ.load()

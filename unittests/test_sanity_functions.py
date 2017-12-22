@@ -1,10 +1,13 @@
 import builtins
+import itertools
 import os
 import unittest
 
 from tempfile import NamedTemporaryFile
 from reframe.core.deferrable import deferrable, evaluate, make_deferrable
+from reframe.core.environments import save_environment
 from reframe.utility.sanity import *
+from unittests.fixtures import TEST_RESOURCES
 
 
 class TestDeferredBuiltins(unittest.TestCase):
@@ -58,6 +61,14 @@ class TestDeferredBuiltins(unittest.TestCase):
         expr = any(l)
         l[2] = 0
         self.assertFalse(expr)
+
+    def test_chain(self):
+        list1 = ['A', 'B', 'C']
+        list2 = ['D', 'E', 'F']
+        chain1 = evaluate(chain(make_deferrable(list1), list2))
+        chain2 = itertools.chain(list1, list2)
+        self.assertTrue(builtins.all(
+            (a == b for a, b in builtins.zip(chain1, chain2))))
 
     def test_enumerate(self):
         de = enumerate(make_deferrable([1, 2]), start=1)
@@ -152,6 +163,9 @@ class TestDeferredBuiltins(unittest.TestCase):
 
 
 class TestAsserts(unittest.TestCase):
+    def setUp(self):
+        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
+
     def test_assert_true(self):
         self.assertTrue(assert_true(True))
         self.assertTrue(assert_true(1))
@@ -394,6 +408,11 @@ class TestAsserts(unittest.TestCase):
                           assert_found('foo: \d+', tempfile))
         os.remove(tempfile)
 
+    def test_assert_found_encoding(self):
+        self.assertTrue(
+            assert_found('Odyssey', self.utf16_file, encoding='utf-16')
+        )
+
     def test_assert_not_found(self):
         tempfile = self._write_tempfile()
         self.assertTrue(assert_not_found('foo: \d+', tempfile))
@@ -403,6 +422,11 @@ class TestAsserts(unittest.TestCase):
         self.assertRaises(SanityError, evaluate,
                           assert_not_found('Step: \d+', tempfile))
         os.remove(tempfile)
+
+    def test_assert_not_found_encoding(self):
+        self.assertTrue(
+            assert_not_found('Iliad', self.utf16_file, encoding='utf-16')
+        )
 
 
 class TestUtilityFunctions(unittest.TestCase):
@@ -448,10 +472,21 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(0, count(range(0)))
         self.assertEqual(0, count(myrange(0)))
 
+    def test_glob(self):
+        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        self.assertTrue(glob(filepatt))
+        self.assertTrue(glob(make_deferrable(filepatt)))
+
+    def test_iglob(self):
+        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        self.assertTrue(count(iglob(filepatt)))
+        self.assertTrue(count(iglob(make_deferrable(filepatt))))
+
 
 class TestPatternMatchingFunctions(unittest.TestCase):
     def setUp(self):
         self.tempfile = None
+        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
         with NamedTemporaryFile('wt', delete=False) as fp:
             self.tempfile = fp.name
             fp.write('Step: 1\n')
@@ -463,13 +498,13 @@ class TestPatternMatchingFunctions(unittest.TestCase):
 
     def test_findall(self):
         res = evaluate(findall('Step: \d+', self.tempfile))
-        self.assertEqual(3, builtins.len(list(res)))
+        self.assertEqual(3, builtins.len(res))
 
         res = evaluate(findall('Step:.*', self.tempfile))
-        self.assertEqual(3, builtins.len(list(res)))
+        self.assertEqual(3, builtins.len(res))
 
         res = evaluate(findall('Step: [12]', self.tempfile))
-        self.assertEqual(2, builtins.len(list(res)))
+        self.assertEqual(2, builtins.len(res))
 
         # Check the matches
         for expected, match in builtins.zip(['Step: 1', 'Step: 2'], res):
@@ -480,6 +515,12 @@ class TestPatternMatchingFunctions(unittest.TestCase):
         for step, match in builtins.enumerate(res, start=1):
             self.assertEqual(step, builtins.int(match.group(1)))
             self.assertEqual(step, builtins.int(match.group('no')))
+
+    def test_findall_encoding(self):
+        res = evaluate(
+            findall(r'Odyssey', self.utf16_file, encoding='utf-16')
+        )
+        self.assertEqual(1, len(res))
 
     def test_findall_error(self):
         self.assertRaises(SanityError, evaluate,
@@ -501,6 +542,12 @@ class TestPatternMatchingFunctions(unittest.TestCase):
                                   self.tempfile, 'no', builtins.int))
         for expected, v in builtins.enumerate(res, start=1):
             self.assertEqual(expected, v)
+
+    def test_extractall_encoding(self):
+        res = evaluate(
+            extractall(r'Odyssey', self.utf16_file, encoding='utf-16')
+        )
+        self.assertEqual(1, len(res))
 
     def test_extractall_error(self):
         self.assertRaises(SanityError, evaluate,
@@ -551,6 +598,12 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             SanityError, evaluate,
             extractsingle('Step: (\d+)', self.tempfile, 1, builtins.int, 100)
         )
+
+    def test_extractsingle_encoding(self):
+        res = evaluate(
+            extractsingle(r'Odyssey', self.utf16_file, encoding='utf-16')
+        )
+        self.assertNotEqual(-1, res.find('Odyssey'))
 
     def test_safe_format(self):
         from reframe.utility.sanity import _format

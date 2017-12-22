@@ -86,14 +86,15 @@ class _TestJob(unittest.TestCase):
             self.assertIsNone(re.search('postrun', fp.read()))
 
     def test_cancel(self):
-        self.testjob._command = 'sleep 3'
+        self.testjob._command = 'sleep 30'
         self.testjob.prepare(self.builder)
         t_job = datetime.now()
         self.testjob.submit()
         self.testjob.cancel()
+        self.testjob.wait()
         t_job = datetime.now() - t_job
         self.assertTrue(self.testjob.finished())
-        self.assertLess(t_job.total_seconds(), 3)
+        self.assertLess(t_job.total_seconds(), 30)
 
     def test_cancel_before_submit(self):
         self.testjob._command = 'sleep 3'
@@ -106,7 +107,7 @@ class _TestJob(unittest.TestCase):
         self.assertRaises(ReframeError, self.testjob.wait)
 
     def test_poll(self):
-        self.testjob._command = 'sleep 1'
+        self.testjob._command = 'sleep 2'
         self.testjob.prepare(self.builder)
         self.testjob.submit()
         self.assertFalse(self.testjob.finished())
@@ -302,3 +303,9 @@ class TestSlurmJob(_TestJob):
     def test_poll(self):
         self.setup_from_sysconfig()
         super().test_poll()
+
+
+class TestSqueueJob(TestSlurmJob):
+    @property
+    def job_type(self):
+        return getscheduler('squeue')

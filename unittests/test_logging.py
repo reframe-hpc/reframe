@@ -275,7 +275,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_logging_context_error(self):
         configure_logging(self.logging_config)
         try:
-            with logging_context(exc_log_level=ERROR):
+            with logging_context(level=ERROR):
                 raise ReframeError('error from context')
 
             self.fail('logging_context did not propagate the exception')
