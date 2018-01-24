@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Use Cases &mdash; ReFrame 2.7 documentation</title>
+  <title>Use Cases &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
         <link rel="next" title="About ReFrame" href="about.html"/>
         <link rel="prev" title="Running ReFrame" href="running.html"/> 
 
@@ -71,7 +73,7 @@
             
             
               <div class="version">
-                2.7
+                2.9
               </div>
             
           
@@ -122,6 +124,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -145,7 +149,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -179,29 +183,44 @@
 <h1>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="reframe-usage-at-cscs">
 <h2>ReFrame Usage at CSCS<a class="headerlink" href="#reframe-usage-at-cscs" title="Permalink to this headline">¶</a></h2>
-<p>The ReFrame framework has been in production at <a class="reference external" href="http://www.cscs.ch">CSCS</a> since December 2016. We use it to test not only <a class="reference external" href="http://www.cscs.ch/computers/piz_daint/index.html">Piz Daint</a>, but almost all our systems that we provide to users.</p>
+<p>The ReFrame framework has been in production at <a class="reference external" href="http://www.cscs.ch">CSCS</a> since December 2016.
+We use it to test not only <a class="reference external" href="http://www.cscs.ch/computers/piz_daint/index.html">Piz Daint</a>, but almost all our systems that we provide to users.</p>
 <p>We have two large sets of regression tests:</p>
 <ul class="simple">
 <li>production tests and</li>
 <li>maintenance tests.</li>
 </ul>
-<p>Tags are used to mark these categories and a regression test may belong to both of them. Production tests are run daily to monitor the sanity of the system and its performance. All performance tests log their performance values. The performance over time of certain applications are monitored graphically using <a class="reference external" href="https://grafana.com/">Grafana</a>.</p>
-<p>The total set of our regression tests comprises 172 individual tests, from which 153 are marked as production tests. Some of them are eligible to run on both the multicore and hybrid partitions of the system, whereas others are meant to run only on the login nodes. Depending on the test, multiple programming environments might be tried. In total, 448 test cases are run from the 153 regression tests on all the system partitions. The following Table summarizes the production regression tests.</p>
-<p>The set of maintenance regression tests is much more limited to decrease the downtime of the system. The regression suite runs at the beginning of the maintenance session and just before returning the machine to the users, so that we can ensure that the user experience is at least at the level before the system was taken down. The maintenance set of tests comprises application performance tests, some GPU library performance checks, Slurm checks and some POSIX filesystem checks.</p>
-<p>The porting of the regression suite to the <a class="reference external" href="http://www.meteosvizzera.admin.ch/home.html?tab=overview">MeteoSwiss</a> production system <a class="reference external" href="http://www.cscs.ch/computers/kesch_escha_meteoswiss/index.html">Piz Kesch</a>, using ReFrame was almost trivial. The new system entry was added in the framework’s configuration file describing the different partitions together with a new redefined <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment to use different compiler wrappers. Porting the regression tests of interest was also a straightforward process. In most of the cases, adding just the corresponding system partitions to the <code class="docutils literal"><span class="pre">valid_systems</span></code> variables and adjusting accordingly the <code class="docutils literal"><span class="pre">valid_prog_environs</span></code> was enough.</p>
-<p>ReFrame really focuses on abstracting away all the gory details from the regression test description, hence letting the user to concentrate solely on the logic of his test. A bit of this effect can be seen in the following Table where the total amount of lines of code (loc) of the regression tests written in the previous shell script-based solution and ReFrame is shown. We also present a snapshot of the first public release of ReFrame (<a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.2">v2.2</a>).</p>
+<p>Tags are used to mark these categories and a regression test may belong to both of them.
+Production tests are run daily to monitor the sanity of the system and its performance.
+All performance tests log their performance values.
+The performance over time of certain applications are monitored graphically using <a class="reference external" href="https://grafana.com/">Grafana</a>.</p>
+<p>The total set of our regression tests comprises 172 individual tests, from which 153 are marked as production tests.
+Some of them are eligible to run on both the multicore and hybrid partitions of the system, whereas others are meant to run only on the login nodes.
+Depending on the test, multiple programming environments might be tried.
+In total, 448 test cases are run from the 153 regression tests on all the system partitions.
+The following Table summarizes the production regression tests.</p>
+<p>The set of maintenance regression tests is much more limited to decrease the downtime of the system.
+The regression suite runs at the beginning of the maintenance session and just before returning the machine to the users, so that we can ensure that the user experience is at least at the level before the system was taken down.
+The maintenance set of tests comprises application performance tests, some GPU library performance checks, Slurm checks and some POSIX filesystem checks.</p>
+<p>The porting of the regression suite to the <a class="reference external" href="http://www.meteosvizzera.admin.ch/home.html?tab=overview">MeteoSwiss</a> production system <a class="reference external" href="http://www.cscs.ch/computers/kesch_escha_meteoswiss/index.html">Piz Kesch</a>, using ReFrame was almost trivial.
+The new system entry was added in the framework’s configuration file describing the different partitions together with a new redefined <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment to use different compiler wrappers.
+Porting the regression tests of interest was also a straightforward process.
+In most of the cases, adding just the corresponding system partitions to the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_systems" title="reframe.core.pipeline.RegressionTest.valid_systems"><code class="xref py py-attr docutils literal"><span class="pre">valid_systems</span></code></a> variables and adjusting accordingly the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_prog_environs" title="reframe.core.pipeline.RegressionTest.valid_prog_environs"><code class="xref py py-attr docutils literal"><span class="pre">valid_prog_environs</span></code></a> was enough.</p>
+<p>ReFrame really focuses on abstracting away all the gory details from the regression test description, hence letting the user to concentrate solely on the logic of his test.
+A bit of this effect can be seen in the following Table where the total amount of lines of code (loc) of the regression tests written in the previous shell script-based solution and ReFrame is shown.
+We also present a snapshot of the first public release of ReFrame (<a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.2">v2.2</a>).</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="33%" />
-<col width="26%" />
-<col width="21%" />
-<col width="21%" />
+<col width="30%" />
+<col width="23%" />
+<col width="23%" />
+<col width="24%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Maintenance Burden</th>
 <th class="head">Shell-Script Based</th>
-<th class="head">ReFrame (v2.2)</th>
-<th class="head">ReFrame (v2.7)</th>
+<th class="head">ReFrame (May 2017)</th>
+<th class="head">ReFrame (Nov 2017)</th>
 </tr>
 </thead>
 <tbody valign="top">
@@ -227,10 +246,14 @@
 </tr>
 </tbody>
 </table>
-<p>The difference in the total amount of regression test code is dramatic. From the 15K lines of code of the old shell script based regression testing suite, ReFrame tests use only 3K lines of code (first release) achieving a higher coverage.</p>
-<blockquote>
-<div>NOTE: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts does not account for this.</div></blockquote>
-<p>Each regression test file in ReFrame is 80–90 loc on average. However, eash regression test file may contain or generate more than one related tests, thus leading to the effective decrease of the line count per test to only 25 loc.</p>
+<p>The difference in the total amount of regression test code is dramatic.
+From the 15K lines of code of the old shell script based regression testing suite, ReFrame tests use only 3K lines of code (first release) achieving a higher coverage.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.</p>
+</div>
+<p>Each regression test file in ReFrame is 80–90 loc on average.
+However, each regression test file may contain or generate more than one related tests, thus leading to the effective decrease of the line count per test to only 25 loc.</p>
 <p>Separating the logical description of a regression test from all the unnecessary implementation details contributes significantly in the ease of writing and maintaining new regression tests with ReFrame.</p>
 </div>
 </div>
@@ -295,7 +318,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -312,6 +335,25 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/usecases.html">v2.7</a></dd>
+            <dd><a href="v2.8/usecases.html">v2.8</a></dd>
+            <dd><a href="v2.8.1/usecases.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/usecases.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -319,7 +361,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.7',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

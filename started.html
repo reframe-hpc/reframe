@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Getting Started &mdash; ReFrame 2.7 documentation</title>
+  <title>Getting Started &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
         <link rel="next" title="Configuring ReFrame for Your Site" href="configure.html"/>
         <link rel="prev" title="Welcome to ReFrame" href="index.html"/> 
 
@@ -71,7 +73,7 @@
             
             
               <div class="version">
-                2.7
+                2.9
               </div>
             
           
@@ -128,6 +130,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -151,7 +155,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
@@ -185,22 +189,20 @@
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Python 3.5 or higher. Python 2 is not supported.</li>
-<li>A functional Tcl <a class="reference external" href="http://modules.sourceforge.net/">modules</a> software management environment with Python bindings. The following need to be present or functional:<ul>
-<li><code class="docutils literal"><span class="pre">MODULESHOME</span></code> variable must be set.</li>
-<li><code class="docutils literal"><span class="pre">modulecmd</span> <span class="pre">python</span></code> must be supported.</li>
-</ul>
+<ul>
+<li><p class="first">Python 3.5 or higher. Python 2 is not supported.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.8: </span>A functional TCL modules system is no more required. ReFrame can now operate without a modules system at all.</p>
+</div>
+</div>
 </li>
 </ul>
 <div class="section" id="optional">
 <h3>Optional<a class="headerlink" href="#optional" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>The <a class="reference external" href="https://pypi.python.org/pypi/nose">nose</a> Python module must be installed if you want to run the unit tests of the framework.</li>
-<li>If you want to use the framework for launching tests on a cluster, a functional job submission management system is required. Currently only <a class="reference external" href="https://www.schedmd.com/">Slurm</a> is supported with either a native Slurm job launcher or the Cray ALPS launcher.<ul>
-<li>In the case of Slurm, job accounting storage (<code class="docutils literal"><span class="pre">sacct</span></code> command) is required.</li>
-</ul>
-</li>
+<li>For running the unit tests of the framework, the <a class="reference external" href="https://pypi.python.org/pypi/nose">nose</a> Python module is needed.</li>
 </ul>
 <p>You are advised to run the <a class="reference external" href="#running-the-unit-tests">unit tests</a> of the framework after installing it on a new system to make sure that everything works fine.</p>
 </div>
@@ -240,12 +242,17 @@
 <span class="n">OK</span> <span class="p">(</span><span class="n">SKIP</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>You will notice in the output that all the job submission related tests have been skipped. The test suite detects if the current system has a job submission system and is configured for ReFrame (see <a class="reference external" href="configure.html">Configuring ReFrame for your site</a>) and it will skip all the unsupported unit tests. As soon as you configure ReFrame for your system, you can rerun the test suite to check that job submission unit tests pass as well. Note here that some unit tests may still be skipped depending on the configured job submission system. For example, the Slurm+ALPS tests will also be skipped on a system configured with native SLURM.</p>
+<p>You will notice in the output that all the job submission related tests have been skipped.
+The test suite detects if the current system has a job submission system and is configured for ReFrame (see <a class="reference external" href="configure.html">Configuring ReFrame for your site</a>) and it will skip all the unsupported unit tests.
+As soon as you configure ReFrame for your system, you can rerun the test suite to check that job submission unit tests pass as well.
+Note here that some unit tests may still be skipped depending on the configured job submission system.</p>
 </div>
 <div class="section" id="where-to-go-from-here">
 <h2>Where to Go from Here<a class="headerlink" href="#where-to-go-from-here" title="Permalink to this headline">¶</a></h2>
-<p>The next step from here is to setup and configure ReFrame for your site, so that ReFrame can automatically recognize it and submit jobs. Please refer to the <a class="reference external" href="configure.html">“Configuring Reframe For Your Site”</a> section on how to do that.</p>
-<p>Before starting implementing a regression test, you should go through the <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, so as to understand the mechanism that ReFrame uses to run the regression tests. This section will let you follow easily the <a class="reference external" href="tutorial.html">“ReFrame Tutorial”</a> as well as understand the more advanced examples in the <a class="reference external" href="advanced.html">“Customizing Further A Regression Test”</a> section.</p>
+<p>The next step from here is to setup and configure ReFrame for your site, so that ReFrame can automatically recognize it and submit jobs.
+Please refer to the <a class="reference external" href="configure.html">“Configuring ReFrame For Your Site”</a> section on how to do that.</p>
+<p>Before starting implementing a regression test, you should go through the <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, so as to understand the mechanism that ReFrame uses to run the regression tests.
+This section will let you follow easily the <a class="reference external" href="tutorial.html">“ReFrame Tutorial”</a> as well as understand the more advanced examples in the <a class="reference external" href="advanced.html">“Customizing Further A Regression Test”</a> section.</p>
 <p>To learn how to invoke the ReFrame command-line interface for running your tests, please refer to the <a class="reference external" href="running.html">“Running ReFrame”</a> section.</p>
 </div>
 </div>
@@ -310,7 +317,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -327,6 +334,25 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="v2.7/started.html">v2.7</a></dd>
+            <dd><a href="v2.8/started.html">v2.8</a></dd>
+            <dd><a href="v2.8.1/started.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="master/started.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -334,7 +360,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.7',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

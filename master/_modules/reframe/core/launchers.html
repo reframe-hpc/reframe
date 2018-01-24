@@ -1,0 +1,382 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>reframe.core.launchers &mdash; ReFrame 2.9 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="../../../about.html"/>
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../running.html">Running ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>reframe.core.launchers</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for reframe.core.launchers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">abc</span>
+
+<span class="kn">from</span> <span class="nn">reframe.core.fields</span> <span class="k">import</span> <span class="n">StringField</span><span class="p">,</span> <span class="n">TypedListField</span>
+
+
+<div class="viewcode-block" id="JobLauncher"><a class="viewcode-back" href="../../../reference.html#reframe.core.launchers.JobLauncher">[docs]</a><span class="k">class</span> <span class="nc">JobLauncher</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A job launcher.</span>
+
+<span class="sd">    A job launcher is the executable that actually launches a distributed</span>
+<span class="sd">    program to multiple nodes, e.g., ``mpirun``, ``srun`` etc.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       This is an abstract class.</span>
+<span class="sd">       Regression tests may not instantiate this class directly.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       .. versionchanged:: 2.8</span>
+<span class="sd">          Job launchers do not get a reference to a job during their</span>
+<span class="sd">          initialization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: List of options to be passed to the job launcher invocation.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :default: ``[]``</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span>
+        <span class="c1"># The launcher command.</span>
+        <span class="c1">#</span>
+        <span class="c1"># :arg job: A :class:`reframe.core.schedulers.Job` that may be used by</span>
+        <span class="c1">#     this launcher to properly emit its options.</span>
+        <span class="c1">#     Subclasses may override this method and emit options according the</span>
+        <span class="c1">#     num of tasks associated to the job etc.</span>
+        <span class="c1"># :returns: a list of command line arguments (including the launcher</span>
+        <span class="c1">#     executable).</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">emit_run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">builder</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">builder</span><span class="o">.</span><span class="n">verbatim</span><span class="p">(</span>
+            <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">job</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">+</span> <span class="p">[</span><span class="n">job</span><span class="o">.</span><span class="n">command</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="LauncherWrapper"><a class="viewcode-back" href="../../../reference.html#reframe.core.launchers.LauncherWrapper">[docs]</a><span class="k">class</span> <span class="nc">LauncherWrapper</span><span class="p">(</span><span class="n">JobLauncher</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrap a launcher object so as to modify its invocation.</span>
+
+<span class="sd">    This is useful for parallel debuggers.</span>
+<span class="sd">    For example, to launch a regression test using the `DDT</span>
+<span class="sd">    &lt;https://www.allinea.com/products/ddt/&gt;`_ debugger, you can do the</span>
+<span class="sd">    following:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        def setup(self, partition, environ, **job_opts):</span>
+<span class="sd">            super().setup(partition, environ, **job_opts)</span>
+<span class="sd">            self.job.launcher = LauncherWrapper(self.job.launcher, &#39;ddt&#39;,</span>
+<span class="sd">                                                [&#39;--offline&#39;])</span>
+
+<span class="sd">    If the current system partition uses native Slurm for job submission, this</span>
+<span class="sd">    setup will generate the following command in the submission script:</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        ddt --offline srun &lt;test_executable&gt;</span>
+
+<span class="sd">    If the current partition uses ``mpirun`` instead, it will generate</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        ddt --offline mpirun -np &lt;num_tasks&gt; ... &lt;test_executable&gt;</span>
+
+<span class="sd">    :arg target_launcher: The launcher to wrap.</span>
+<span class="sd">    :arg wrapper_command: The wrapper command.</span>
+<span class="sd">    :arg wrapper_options: List of options to pass to the wrapper command.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_launcher</span><span class="p">,</span> <span class="n">wrapper_command</span><span class="p">,</span> <span class="n">wrapper_options</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">target_launcher</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_launcher</span> <span class="o">=</span> <span class="n">target_launcher</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wrapper_command</span> <span class="o">=</span> <span class="p">[</span><span class="n">wrapper_command</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">wrapper_options</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapper_command</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_launcher</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="n">job</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
+            <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
+            <dd><a href="../../../../v2.8.1/index.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="launchers.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

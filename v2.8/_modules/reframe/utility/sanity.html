@@ -1,0 +1,978 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>reframe.utility.sanity &mdash; ReFrame 2.8 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="../../../about.html"/>
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="ReFrame 2.8 documentation" href="../../../index.html"/>
+        <link rel="up" title="Module code" href="../../index.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="../../../index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.8
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configure.html">Configuring ReFrame For Your Site</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../running.html">Running ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.8</div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      
+    <li>reframe.utility.sanity</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for reframe.utility.sanity</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Sanity deferrable functions.</span>
+
+<span class="sd">This module provides functions to be used with the ``sanity_patterns`` and</span>
+<span class="sd">``perf_patterns``.</span>
+<span class="sd">The key characteristic of these functions is that they are not executed the</span>
+<span class="sd">time they are called.  Instead they are evaluated at a later point by the</span>
+<span class="sd">framework (inside the :func:`RegressionTest.check_sanity()` and</span>
+<span class="sd">:func:`RegressionTest.check_performance()` methods).</span>
+<span class="sd">Any sanity function may be evaluated either explicitly or implicitly.</span>
+
+<span class="sd">Explicit evaluation of sanity functions</span>
+<span class="sd">---------------------------------------</span>
+
+<span class="sd">Sanity functions may be evaluated at any time by calling the</span>
+<span class="sd">:func:`reframe.core.deferrable.evaluate()`. on their return value.</span>
+
+
+<span class="sd">Implicit evaluation of sanity functions</span>
+<span class="sd">---------------------------------------</span>
+
+<span class="sd">Sanity functions may also be evaluated implicitly in the following situations:</span>
+
+<span class="sd">- When you try to get their truthy value by either explicitly or implicitly</span>
+<span class="sd">  calling :class:`bool() &lt;python:bool&gt;` on their return value.</span>
+<span class="sd">  This implies that when you include the result of a sanity function in an</span>
+<span class="sd">  :keyword:`if` statement or when you apply the :keyword:`and`, :keyword:`or`</span>
+<span class="sd">  or :keyword:`not` operators, this will trigger their immediate evaluation.</span>
+<span class="sd">- When you try to iterate over their result.</span>
+<span class="sd">  This implies that including the result of a sanity function in a</span>
+<span class="sd">  :keyword:`for` statement will trigger its evaluation immediately.</span>
+<span class="sd">- When you try to explicitly or implicitly get its string representation by</span>
+<span class="sd">  calling :class:`str() &lt;python:str&gt;` on its result.</span>
+<span class="sd">  This implies that printing the return value of a sanity function will</span>
+<span class="sd">  automatically trigger its evaluation.</span>
+
+<span class="sd">This module provides three categories of sanity functions:</span>
+
+<span class="sd">1. Deferrable replacements of certain Python built-in functions.</span>
+<span class="sd">   These functions simply delegate their execution to the actual built-ins.</span>
+<span class="sd">2. Assertion functions.</span>
+<span class="sd">   These functions are used to assert certain conditions and they either return</span>
+<span class="sd">   ``True`` or raise :class:`reframe.core.exceptions.SanityError` with a</span>
+<span class="sd">   message describing the error.</span>
+<span class="sd">   Users may provide their own formatted messages through the ``msg``</span>
+<span class="sd">   argument.</span>
+<span class="sd">   For example, in the following call to :func:`assert_eq()` the ``{0}`` and</span>
+<span class="sd">   ``{1}`` placeholders will obtain the actual arguments passed to the</span>
+<span class="sd">   assertion funciton.</span>
+<span class="sd">   ::</span>
+
+<span class="sd">        assert_eq(a, 1, msg=&quot;{0} is not equal to {1}&quot;)</span>
+
+<span class="sd">   If in the user provided message more placeholders are used than the</span>
+<span class="sd">   arguments of the assert function (except the ``msg`` argument), no argument</span>
+<span class="sd">   substitution will be performed in the user message.</span>
+<span class="sd">3. Utility functions.</span>
+<span class="sd">   The are functions that you will normally use when defining</span>
+<span class="sd">   ``sanity_patterns`` and ``perf_patterns``.</span>
+<span class="sd">   They include, but are not limited to, functions to iterate over regex</span>
+<span class="sd">   matches in a file, extracting and converting values from regex matches,</span>
+<span class="sd">   computing statistical information on series of data etc.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">builtins</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">types</span>
+
+<span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">evaluate</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">SanityError</span>
+
+
+<span class="k">def</span> <span class="nf">_format</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Safely format string ``s``.</span>
+
+<span class="sd">    Returns ``s.format(*args, **kwargs)`` if no exception is thrown, otherwise</span>
+<span class="sd">    ``s``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+
+<span class="c1"># Create an alias decorator</span>
+<span class="n">sanity_function</span> <span class="o">=</span> <span class="n">deferrable</span>
+<span class="sd">&quot;&quot;&quot;:decorator: Sanity function decorator.</span>
+
+<span class="sd">Decorate any function to be used in sanity and/or performance patterns with</span>
+<span class="sd">this decorator:</span>
+<span class="sd">::</span>
+
+<span class="sd">    @sanity_function</span>
+<span class="sd">    def myfunc(*args):</span>
+<span class="sd">        do_sth()</span>
+
+<span class="sd">This decorator is an alias to the :func:`reframe.core.deferrable.deferrable`</span>
+<span class="sd">decorator.</span>
+<span class="sd">The following function definition is equivalent to the above:</span>
+<span class="sd">::</span>
+
+<span class="sd">    @deferrable</span>
+<span class="sd">    def myfunc(*args):</span>
+<span class="sd">        do_sth()</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Deferrable versions of selected builtins</span>
+
+<div class="viewcode-block" id="abs"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.abs">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">abs</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`abs() &lt;python:abs&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="all"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.all">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`all() &lt;python:all&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="any"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.any">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">any</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`any() &lt;python:any&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="enumerate"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.enumerate">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`enumerate() &lt;python:enumerate&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="filter"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.filter">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`filter() &lt;python:filter&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="n">iterable</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="getattr"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.getattr">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`getattr() &lt;python:getattr&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hasattr"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.hasattr">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`hasattr() &lt;python:hasattr&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="len"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.len">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`len() &lt;python:len&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="map"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.map">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`map() &lt;python:map&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="n">iterables</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="max"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.max">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">max</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`max() &lt;python:max&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="min"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.min">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">min</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`min() &lt;python:min&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="reversed"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.reversed">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">reversed</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`reversed() &lt;python:reversed&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">reversed</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="round"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.round">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">round</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`round() &lt;python:round&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="setattr"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.setattr">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`setattr() &lt;python:setattr&gt;` function.&quot;&quot;&quot;</span>
+    <span class="n">builtins</span><span class="o">.</span><span class="n">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sorted"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.sorted">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">sorted</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in</span>
+<span class="sd">    :func:`sorted() &lt;python:sorted&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">sorted</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sum"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.sum">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">sum</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`sum() &lt;python:sum&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="zip"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.zip">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">zip</span><span class="p">(</span><span class="o">*</span><span class="n">iterables</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`zip() &lt;python:zip&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="o">*</span><span class="n">iterables</span><span class="p">)</span></div>
+
+
+<span class="c1"># Alternatives for non-overridable operators</span>
+
+<div class="viewcode-block" id="and_"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.and_">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">and_</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deferrable version of the :keyword:`and` operator.</span>
+
+<span class="sd">    :returns: ``a and b``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="or_"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.or_">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">or_</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deferrable version of the :keyword:`or` operator.</span>
+
+<span class="sd">    :returns: ``a or b``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="not_"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.not_">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">not_</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deferrable version of the :keyword:`not` operator.</span>
+
+<span class="sd">    :returns: ``not a``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">a</span></div>
+
+
+<div class="viewcode-block" id="contains"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.contains">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">contains</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deferrable version of the :keyword:`in` operator.</span>
+
+<span class="sd">    :returns: ``key in seq``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">seq</span></div>
+
+
+<span class="c1"># Deferrable assert functions</span>
+
+<div class="viewcode-block" id="assert_true"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_true">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_true</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``x`` is evaluated to ``True``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">builtins</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not True&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_false"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_false">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_false</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``x`` is evaluated to ``False``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">builtins</span><span class="o">.</span><span class="n">bool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not False&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_eq"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_eq">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_eq</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a == b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> != </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_ne"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_ne">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_ne</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a != b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> == </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_in"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_in">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_in</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``item`` is in ``container``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not in </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">container</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_not_in"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_not_in">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_not_in</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``item`` is not in ``container``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">container</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is in </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">container</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_gt"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_gt">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_gt</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a &gt; b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> &lt;= </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_ge"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_ge">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_ge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a &gt;= b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> &lt; </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_lt"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_lt">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_lt</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a &lt; b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;=</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> &gt;= </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_le"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_le">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_le</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``a &lt;= b``.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> &gt; </span><span class="si">{1}</span><span class="s1">&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_found"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_found">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that regex pattern ``patt`` is found in the file ``filename``.</span>
+
+<span class="sd">    :arg patt: The regex pattern to search.</span>
+<span class="sd">        Any standard Python `regular expression</span>
+<span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#regular-expression-syntax&gt;`_</span>
+<span class="sd">        is accepted.</span>
+<span class="sd">    :arg filename: The name of the file to examine.</span>
+<span class="sd">        Any :class:`OSError` raised while processing the file will be</span>
+<span class="sd">        propagated as a :class:`reframe.core.exceptions.SanityError`.</span>
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_matches</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_true</span><span class="p">(</span><span class="n">num_matches</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s2">&quot;pattern `</span><span class="si">{0}</span><span class="s2">&#39; not found in `</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="assert_not_found"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_not_found">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_not_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that regex pattern ``patt`` is not found in the file</span>
+<span class="sd">    ``filename``.</span>
+
+<span class="sd">    This is the inverse of :func:`assert_found()`.</span>
+
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s2">&quot;pattern `</span><span class="si">{0}</span><span class="s2">&#39; found in `</span><span class="si">{1}</span><span class="s2">&#39;&quot;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="assert_bounded"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_bounded">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_bounded</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that ``lower &lt;= val &lt;= upper``.</span>
+
+<span class="sd">    :arg val: The value to check.</span>
+<span class="sd">    :arg lower: The lower bound. If ``None``, it defaults to ``-inf``.</span>
+<span class="sd">    :arg upper: The upper bound. If ``None``, it defaults to ``inf``.</span>
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lower</span> <span class="o">=</span> <span class="n">builtins</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">upper</span> <span class="o">=</span> <span class="n">builtins</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">lower</span> <span class="ow">and</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="n">upper</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">error_msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="ow">or</span> <span class="s1">&#39;value </span><span class="si">{0}</span><span class="s1"> not within bounds </span><span class="si">{1}</span><span class="s1">..</span><span class="si">{2}</span><span class="s1">&#39;</span>
+    <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="assert_reference"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_reference">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">assert_reference</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">lower_thres</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper_thres</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assert that value ``val`` respects the reference value ``ref``.</span>
+
+<span class="sd">    :arg val: The value to check.</span>
+<span class="sd">    :arg ref: The reference value.</span>
+<span class="sd">    :arg lower_thres: The lower threshold value expressed as a negative decimal</span>
+<span class="sd">        fraction of the reference value.  Must be in [-1, 0]. If ``None``, no</span>
+<span class="sd">        lower thresholds is applied.</span>
+<span class="sd">    :arg upper_thres: The upper threshold value expressed as a decimal fraction</span>
+<span class="sd">        of the reference value.  Must be in [0, 1]. If ``None``, no upper</span>
+<span class="sd">        thresholds is applied.</span>
+<span class="sd">    :returns: ``True`` on success.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails or if the</span>
+<span class="sd">        lower and upper thresholds do not have appropriate values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lower_thres</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">lower_thres</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid low threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">lower_thres</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">upper_thres</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">upper_thres</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid high threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">upper_thres</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">calc_bound</span><span class="p">(</span><span class="n">thres</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">thres</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Inverse threshold if ref &lt; 0</span>
+        <span class="k">if</span> <span class="n">ref</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">thres</span> <span class="o">=</span> <span class="o">-</span><span class="n">thres</span>
+
+        <span class="k">return</span> <span class="n">ref</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">thres</span><span class="p">)</span>
+
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">calc_bound</span><span class="p">(</span><span class="n">lower_thres</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">)</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">calc_bound</span><span class="p">(</span><span class="n">upper_thres</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is beyond reference value </span><span class="si">{1}</span><span class="s1"> (l=</span><span class="si">{2}</span><span class="s1">, u=</span><span class="si">{3}</span><span class="s1">)&#39;</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="n">_format</span><span class="p">(</span><span class="n">error_msg</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<span class="c1"># Pattern matching functions</span>
+
+<div class="viewcode-block" id="finditer"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.finditer">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get an iterator over the matches of the regex ``patt`` in ``filename``.</span>
+
+<span class="sd">    This function is equivalent to :func:`findall()` except that it returns</span>
+<span class="sd">    a generator object, instead of a list, which you can use to iterate over</span>
+<span class="sd">    the raw matches.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="c1"># Re-raise it as sanity error</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="findall"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.findall">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">findall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get all matches of regex ``patt`` in ``filename``.</span>
+
+<span class="sd">    :arg patt: The regex pattern to search.</span>
+<span class="sd">        Any standard Python `regular expression</span>
+<span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#regular-expression-syntax&gt;`_</span>
+<span class="sd">        is accepted.</span>
+<span class="sd">    :arg filename: The name of the file to examine.</span>
+<span class="sd">    :returns: A list of raw `regex match objects</span>
+<span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#match-objects&gt;`_.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: In case an :class:`OSError` is</span>
+<span class="sd">        raised while processing ``filename``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="extractiter"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractiter">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get an iterator over the values extracted from the capturing group</span>
+<span class="sd">    ``tag`` of a matching regex ``patt`` in the file ``filename``.</span>
+
+<span class="sd">    This function is equivalent to :func:`extractall` except that it returns</span>
+<span class="sd">    a generator object, instead of a list, which you can use to iterate over</span>
+<span class="sd">    the extracted values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span>
+                <span class="s2">&quot;no such group in pattern `</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">conv</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">conv</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">fn_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;unknown&gt;&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Assume conv is standard function</span>
+                <span class="n">fn_name</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Assume conv is callable object</span>
+                    <span class="n">fn_name</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s2">&quot;could not convert value `</span><span class="si">%s</span><span class="s2">&#39; using `</span><span class="si">%s</span><span class="s2">()&#39;&quot;</span> <span class="o">%</span>
+                              <span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">fn_name</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="extractall"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractall">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract all values from the capturing group ``tag`` of a matching regex</span>
+<span class="sd">    ``patt`` in the file ``filename``.</span>
+
+<span class="sd">    :arg patt: The regex pattern to search.</span>
+<span class="sd">        Any standard Python `regular expression</span>
+<span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#regular-expression-syntax&gt;`_</span>
+<span class="sd">        is accepted.</span>
+<span class="sd">    :arg filename: The name of the file to examine.</span>
+<span class="sd">    :arg tag: The regex capturing group to be extracted.</span>
+<span class="sd">        Group ``0`` refers always to the whole match.</span>
+<span class="sd">        Since the file is processed line by line, this means that group ``0``</span>
+<span class="sd">        returns the whole line that was matched.</span>
+<span class="sd">    :arg conv: A callable that takes a single argument and returns a new value.</span>
+<span class="sd">        If provided, it will be used to convert the extracted values before</span>
+<span class="sd">        returning them.</span>
+<span class="sd">    :returns: A list of the extracted values from the matched regex.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: In case of errors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="extractsingle"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractsingle">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">extractsingle</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract a single value from the capturing group ``tag`` of a matching regex</span>
+<span class="sd">    ``patt`` in the file ``filename``.</span>
+
+<span class="sd">    This function is equivalent to ``extractall(patt, filename, tag,</span>
+<span class="sd">    conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out of</span>
+<span class="sd">    bounds.</span>
+
+<span class="sd">    :arg patt: as in :func:`extractall`.</span>
+<span class="sd">    :arg filename: as in :func:`extractall`.</span>
+<span class="sd">    :arg tag: as in :func:`extractall`.</span>
+<span class="sd">    :arg conv: as in :func:`extractall`.</span>
+<span class="sd">    :arg item: the specific element to extract.</span>
+<span class="sd">    :returns: The extracted value.</span>
+<span class="sd">    :raises reframe.core.exceptions.SanityError: In case of errors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Explicitly evaluate the expression here, so as to force any exception</span>
+        <span class="c1"># to be thrown in this context and not during the evaluation of an</span>
+        <span class="c1"># expression containing this one.</span>
+        <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">)[</span><span class="n">item</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s2">&quot;not enough matches of pattern `</span><span class="si">%s</span><span class="s2">&#39; in file `</span><span class="si">%s</span><span class="s2">&#39; &quot;</span>
+                          <span class="s2">&quot;so as to extract item `</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span></div>
+
+
+<span class="c1"># Numeric functions</span>
+
+<div class="viewcode-block" id="avg"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.avg">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">avg</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the average of all the elements of ``iterable``.&quot;&quot;&quot;</span>
+
+    <span class="c1"># We walk over the iterable manually in case this is a generator</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">num_vals</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">num_vals</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">builtins</span><span class="o">.</span><span class="n">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">val</span>
+
+    <span class="k">if</span> <span class="n">num_vals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;attempt to get average on an empty container&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">total</span> <span class="o">/</span> <span class="n">num_vals</span></div>
+
+
+<span class="c1"># Other utility functions</span>
+
+<div class="viewcode-block" id="getitem"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.getitem">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">getitem</span><span class="p">(</span><span class="n">container</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get ``item`` from ``container``.</span>
+
+<span class="sd">    ``container`` may refer to any container that can be indexed.</span>
+
+<span class="sd">    :raises reframe.core.exceptions.SanityError: In case ``item`` cannot be</span>
+<span class="sd">        retrieved from ``container``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">container</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;key not found: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;index out of bounds: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="count"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.count">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the element count of ``iterable``.</span>
+
+<span class="sd">    This is similar to the built-in :func:`len() &lt;python:len&gt;`, except that it</span>
+<span class="sd">    can also handle any argument that supports iteration, including</span>
+<span class="sd">    generators.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="c1"># Try to determine length by iterating over the iterable</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ret</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">builtins</span><span class="o">.</span><span class="n">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">ret</span></div>
+</pre></div>
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: v2.8
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
+            <dd><a href="sanity.html">v2.8</a></dd>
+            <dd><a href="../../../../v2.8.1/index.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="../../../../master/index.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'2.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,602 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.9 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.png"/>
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+  
+
+  
+        <link rel="author" title="About these documents"
+              href="about.html"/>
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
+        <link rel="next" title="The Regression Test Pipeline" href="pipeline.html"/>
+        <link rel="prev" title="Getting Started" href="started.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+
+          
+            <a href="index.html" class="icon icon-home"> ReFrame
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+    
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuring ReFrame For Your Site</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-configuration-file">The Configuration File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-configuration">System Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-configuration">Partition Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#environments-configuration">Environments Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-auto-detection">System Auto-Detection</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Customizing Further A Regression Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About ReFrame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
+</ul>
+
+            
+          
+    <hr>
+    <p class="caption">
+      <span class="caption-text">Useful Links</span>
+    </p>
+    <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
+    </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ReFrame</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Configuring ReFrame for Your Site</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="https://github.com/eth-cscs/reframe" class="fa fa-github"> View on GitHub</a>
+          
+            <!-- <a href="https://eth-cscs.github.io/reframe">ReFrame</a> -->
+            <!-- <a href="Section_commands.html#comm">Commands</a> -->
+        
+      </li>
+  </ul>
+  <hr/>
+  
+    <div class="rst-footer-buttons" style="margin-bottom: 1em" role="navigation" aria-label="footer navigation">
+      
+        <a href="pipeline.html" class="btn btn-neutral float-right" title="The Regression Test Pipeline" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="started.html" class="btn btn-neutral" title="Getting Started" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="configuring-reframe-for-your-site">
+<h1>Configuring ReFrame for Your Site<a class="headerlink" href="#configuring-reframe-for-your-site" title="Permalink to this headline">¶</a></h1>
+<p>ReFrame provides an easy and flexible way to configure new systems and new programming environments.
+By default, it ships with a generic local system configured.
+This should be enough to let you run ReFrame on a local computer as soon as the basic <a class="reference external" href="started.html#requirements">software requirements</a> are met.</p>
+<p>As soon as a new system with its programming environments is configured, adapting an existing regression test could be as easy as just adding the system’s name in the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_systems" title="reframe.core.pipeline.RegressionTest.valid_systems"><code class="xref py py-attr docutils literal"><span class="pre">valid_systems</span></code></a> list and its associated programming environments in the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_prog_environs" title="reframe.core.pipeline.RegressionTest.valid_prog_environs"><code class="xref py py-attr docutils literal"><span class="pre">valid_prog_environs</span></code></a> list.</p>
+<div class="section" id="the-configuration-file">
+<h2>The Configuration File<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>The configuration of systems and programming environments is performed by a special Python dictionary called <code class="docutils literal"><span class="pre">_site_configuration</span></code> defined inside the file <code class="docutils literal"><span class="pre">&lt;install-dir&gt;/reframe/settings.py</span></code>.</p>
+<p>The <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary should define two entries, <code class="docutils literal"><span class="pre">systems</span></code> and <code class="docutils literal"><span class="pre">environments</span></code>.
+The former defines the systems that ReFrame may recognize, whereas the latter defines the available programming environments.</p>
+<p>The following example shows a minimal configuration for the <a class="reference external" href="https://www.cscs.ch/computers/piz-daint/">Piz Daint</a> supercomputer at CSCS:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">_site_configuration</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;systems&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;daint&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;descr&#39;</span><span class="p">:</span> <span class="s1">&#39;Piz Daint&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;hostnames&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;daint&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;modules_system&#39;</span><span class="p">:</span> <span class="s1">&#39;tmod&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;partitions&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;scheduler&#39;</span><span class="p">:</span> <span class="s1">&#39;local&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[],</span>
+                    <span class="s1">&#39;access&#39;</span><span class="p">:</span>  <span class="p">[],</span>
+                    <span class="s1">&#39;environs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;descr&#39;</span><span class="p">:</span> <span class="s1">&#39;Login nodes&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;max_jobs&#39;</span><span class="p">:</span> <span class="mi">4</span>
+                <span class="p">},</span>
+
+                <span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;scheduler&#39;</span><span class="p">:</span> <span class="s1">&#39;nativeslurm&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;daint-gpu&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;access&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;--constraint=gpu&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;environs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;descr&#39;</span><span class="p">:</span> <span class="s1">&#39;Hybrid nodes (Haswell/P100)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;max_jobs&#39;</span><span class="p">:</span> <span class="mi">100</span>
+                <span class="p">},</span>
+
+                <span class="s1">&#39;mc&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;scheduler&#39;</span><span class="p">:</span> <span class="s1">&#39;nativeslurm&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;daint-mc&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;access&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;--constraint=mc&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;environs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
+                                 <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">],</span>
+                    <span class="s1">&#39;descr&#39;</span><span class="p">:</span> <span class="s1">&#39;Multicore nodes (Broadwell)&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;max_jobs&#39;</span><span class="p">:</span> <span class="mi">100</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+
+    <span class="s1">&#39;environments&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ProgEnvironment&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">],</span>
+            <span class="p">},</span>
+
+            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ProgEnvironment&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">],</span>
+            <span class="p">},</span>
+
+            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ProgEnvironment&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">],</span>
+            <span class="p">},</span>
+
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ProgEnvironment&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="system-configuration">
+<h2>System Configuration<a class="headerlink" href="#system-configuration" title="Permalink to this headline">¶</a></h2>
+<p>The list of supported systems is defined as a set of key/value pairs under key <code class="docutils literal"><span class="pre">systems</span></code>.
+Each system is a key/value pair, with the key being the name of the system and the value being another set of key/value pairs defining its attributes.
+The valid attributes of a system are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">descr</span></code>: A detailed description of the system (default is the system name).</li>
+<li><code class="docutils literal"><span class="pre">hostnames</span></code>: This is a list of hostname patterns that will be used by ReFrame when it tries to <a class="reference external" href="#system-auto-detection">auto-detect</a> the current system (default <code class="docutils literal"><span class="pre">[]</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">modules_system</span></code>: The modules system that should be used for loading environment modules on this system.
+The only available modules system backend is currently <code class="docutils literal"><span class="pre">tmod</span></code>, which corresponds to the <a class="reference external" href="http://modules.sourceforge.net/">TCL implementation</a> of the environment modules (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">prefix</span></code>: Default regression prefix for this system (default <code class="docutils literal"><span class="pre">.</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">stagedir</span></code>: Default stage directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">outputdir</span></code>: Default output directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">logdir</span></code>: Default performance logging directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">resourcesdir</span></code>: Default directory for storing large resources (e.g., input data files, etc.) needed by regression tests for this system (default <code class="docutils literal"><span class="pre">.</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">partitions</span></code>: A set of key/value pairs defining the partitions of this system and their properties (default <code class="docutils literal"><span class="pre">{}</span></code>).
+Partition configuration is discussed in the <a class="reference external" href="#partition-configuration">next section</a>.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8: </span>The <code class="docutils literal"><span class="pre">modules_system</span></code> key was introduced for specifying custom modules systems for different systems.</p>
+</div>
+</div>
+<p>For a more detailed description of the <code class="docutils literal"><span class="pre">prefix</span></code>, <code class="docutils literal"><span class="pre">stagedir</span></code>, <code class="docutils literal"><span class="pre">outputdir</span></code> and <code class="docutils literal"><span class="pre">logdir</span></code> directories, please refer to the <a class="reference external" href="running.html#configuring-reframe-directories">“Running ReFrame”</a> section.</p>
+</div>
+<div class="section" id="partition-configuration">
+<h2>Partition Configuration<a class="headerlink" href="#partition-configuration" title="Permalink to this headline">¶</a></h2>
+<p>From the ReFrame’s point of view, each system consists of a set of logical partitions.
+These partitions need not necessarily correspond to real scheduler partitions.
+For example, Piz Daint on the above example is split in <em>virtual partitions</em> using Slurm constraints.
+Other systems may be indeed split into real scheduler partitions.</p>
+<p>The partitions of a system are defined similarly to systems as a set of key/value pairs with the key being the partition name and the value being another set of key/value pairs defining the partition’s attributes.
+The available partition attributes are the following:</p>
+<ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">descr</span></code>: A detailed description of the partition (default is the partition name).</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">scheduler</span></code>: The job scheduler and parallel program launcher combination that is used on this partition to launch jobs.
+The syntax of this attribute is <code class="docutils literal"><span class="pre">&lt;scheduler&gt;+&lt;launcher&gt;</span></code>. The available values for the job scheduler are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">slurm</span></code>: Jobs on this partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>.
+This scheduler relies on job accounting (<code class="docutils literal"><span class="pre">sacct</span></code> command) in order to reliably query the job status.</li>
+<li><code class="docutils literal"><span class="pre">squeue</span></code>: Jobs on this partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>, but no job accounting is required.
+The job status is obtained using the <code class="docutils literal"><span class="pre">squeue</span></code> command.
+This scheduler is less reliable than the one based on the <code class="docutils literal"><span class="pre">sacct</span></code> command, but the framework does its best to query the job state as reliably as possible.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: Jobs on this partition will be launched locally as OS processes.</li>
+</ul>
+<p>The available values for the parallel program launchers are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">srun</span></code>: Programs on this partition will be launched using a bare <code class="docutils literal"><span class="pre">srun</span></code> command <em>without</em> any job allocation options passed to it.
+This launcher may only be used with the <code class="docutils literal"><span class="pre">slurm</span></code> scheduler.</li>
+<li><code class="docutils literal"><span class="pre">srunalloc</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">srun</span></code> command <em>with</em> job allocation options passed automatically to it.
+This launcher may also be used with the <code class="docutils literal"><span class="pre">local</span></code> scheduler.</li>
+<li><code class="docutils literal"><span class="pre">alps</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">aprun</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">mpirun</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">mpirun</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">mpiexec</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">mpiexec</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: Programs on this partition will be launched as-is without using any parallel program launcher.</li>
+</ul>
+<p>There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">nativeslurm</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">slurm+srun</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">local+local</span></code>.</li>
+</ul>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">access</span></code>: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default <code class="docutils literal"><span class="pre">[]</span></code>).</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">environs</span></code>: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default <code class="docutils literal"><span class="pre">[]</span></code>).
+The environment names must be resolved inside the <code class="docutils literal"><span class="pre">environments</span></code> section of the <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary (see <a class="reference external" href="#environments-configuration">Environments Configuration</a> for more information).</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">modules</span></code>: A list of modules to be loaded before running a regression test on that partition (default <code class="docutils literal"><span class="pre">[]</span></code>).</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">variables</span></code>: A set of environment variables to be set before running a regression test on that partition (default <code class="docutils literal"><span class="pre">{}</span></code>).
+Environment variables can be set as follows (notice that both the variable name and its value are strings):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;variables&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;MYVAR&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;OTHER&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">max_jobs</span></code>: The maximum number of concurrent regression tests that may be active (not completed) on this partition.
+This option is relevant only when ReFrame executes with the <a class="reference external" href="running.html#asynchronous-execution-of-regression-checks">asynchronous execution policy</a>.</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">resources</span></code>: A set of custom resource specifications and how these can be requested from the partition’s scheduler (default <code class="docutils literal"><span class="pre">{}</span></code>).</p>
+<p>This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition’s job scheduler.
+The option strings can contain <em>placeholders</em> of the form <code class="docutils literal"><span class="pre">{placeholder_name}</span></code>.
+These placeholders may be replaced with concrete values by a regression tests through the <code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code> attribute.</p>
+<p>For example, one could define a <code class="docutils literal"><span class="pre">gpu</span></code> resource for a multi-GPU system that uses Slurm as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;--gres=gpu:{num_gpus_per_node}&#39;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A regression test then may request this resource as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="s1">&#39;8&#39;</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>And the generated job script will have the following line in its preamble:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --gres=gpu:8</span>
+</pre></div>
+</div>
+<p>A resource specification may also start with <code class="docutils literal"><span class="pre">#PREFIX</span></code>, in which case <code class="docutils literal"><span class="pre">#PREFIX</span></code> will replace the standard job script prefix of the backend scheduler of this partition.
+This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
+An example is the <a class="reference external" href="https://www.cray.com/datawarp">DataWarp</a> functionality of Slurm which is supported by the <code class="docutils literal"><span class="pre">#DW</span></code> prefix.
+One could then define DataWarp related resources as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;#DW jobdw capacity={capacity} access_mode={mode} type=scratch&#39;</span>
+        <span class="s1">&#39;#DW stage_out source={out_src} destination={out_dst} type={stage_filetype}&#39;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A regression test that wants to make use of that resource, it can set its <code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code> as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;capacity&#39;</span><span class="p">:</span> <span class="s1">&#39;100GB&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;striped&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;out_src&#39;</span><span class="p">:</span> <span class="s1">&#39;$DW_JOB_STRIPED/name&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;out_dst&#39;</span><span class="p">:</span> <span class="s1">&#39;/my/file&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;stage_filetype&#39;</span><span class="p">:</span> <span class="s1">&#39;file&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.8: </span>A new syntax for the <code class="docutils literal"><span class="pre">scheduler</span></code> values was introduced as well as more parallel program launchers.
+The old values for the <code class="docutils literal"><span class="pre">scheduler</span></code> key will continue to be supported.</p>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.8.1: </span>The <code class="docutils literal"><span class="pre">squeue</span></code> backend scheduler was added.</p>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.9: </span>Better support for custom job resources.</p>
+</div>
+</div>
+</div>
+<div class="section" id="environments-configuration">
+<h2>Environments Configuration<a class="headerlink" href="#environments-configuration" title="Permalink to this headline">¶</a></h2>
+<p>The environments available for testing in different systems are defined under the <code class="docutils literal"><span class="pre">environments</span></code> key of the top-level <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary.
+The <code class="docutils literal"><span class="pre">environments</span></code> key is associated to a special dictionary that defines scopes for looking up an environment. The <code class="docutils literal"><span class="pre">*</span></code> denotes the global scope and all environments defined there can be used by any system.
+Instead of <code class="docutils literal"><span class="pre">*</span></code>, you can define scopes for specific systems or specific partitions by using the name of the system or partition.
+For example, an entry <code class="docutils literal"><span class="pre">daint</span></code> will define a scope for a system called <code class="docutils literal"><span class="pre">daint</span></code>, whereas an entry <code class="docutils literal"><span class="pre">daint:gpu</span></code> will define a scope for a virtual partition named <code class="docutils literal"><span class="pre">gpu</span></code> on the system <code class="docutils literal"><span class="pre">daint</span></code>.
+When an environment name is used in the <code class="docutils literal"><span class="pre">environs</span></code> list of a system partition (see <a class="reference external" href="#partition-configuration">Partition Configuration</a>), it is first looked up in the entry of that partition, e.g., <code class="docutils literal"><span class="pre">daint:gpu</span></code>.
+If no such entry exists, it is looked up in the entry of the system, e.g., <code class="docutils literal"><span class="pre">daint</span></code>.
+If not found there, it is looked up in the global scope denoted by the <code class="docutils literal"><span class="pre">*</span></code> key.
+If it cannot be found even there, an error will be issued.
+This look up mechanism allows you to redefine an environment for a specific system or partition.
+In the following example, we redefine <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> for a system named <code class="docutils literal"><span class="pre">foo</span></code>, so that whenever <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> is used on that system, the module <code class="docutils literal"><span class="pre">openmpi</span></code> will also be loaded and the compiler variables should point to the MPI wrappers.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ProgEnvironment&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span> <span class="s1">&#39;openmpi&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;cc&#39;</span><span class="p">:</span>  <span class="s1">&#39;mpicc&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cxx&#39;</span><span class="p">:</span> <span class="s1">&#39;mpicxx&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ftn&#39;</span><span class="p">:</span> <span class="s1">&#39;mpif90&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>An environment is also defined as a set of key/value pairs with the key being its name and the value being a dictionary of its attributes.
+The possible attributes of an environment are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">type</span></code>: The type of the environment to create. There are two available environment types (note that names are case sensitive):<ul>
+<li><code class="docutils literal"><span class="pre">'Environment'</span></code>: A simple environment.</li>
+<li><code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code>: A programming environment.</li>
+</ul>
+</li>
+<li><code class="docutils literal"><span class="pre">modules</span></code>: A list of modules to be loaded when this environment is used (default <code class="docutils literal"><span class="pre">[]</span></code>, valid for all environment types)</li>
+<li><code class="docutils literal"><span class="pre">variables</span></code>: A set of variables to be set when this environment is used (default <code class="docutils literal"><span class="pre">{}</span></code>, valid for all environment types)</li>
+<li><code class="docutils literal"><span class="pre">cc</span></code>: The C compiler (default <code class="docutils literal"><span class="pre">'cc'</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">cxx</span></code>: The C++ compiler (default <code class="docutils literal"><span class="pre">'CC'</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">ftn</span></code>: The Fortran compiler (default <code class="docutils literal"><span class="pre">'ftn'</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">cppflags</span></code>: The default preprocessor flags (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">cflags</span></code>: The default C compiler flags (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">cxxflags</span></code>: The default C++ compiler flags (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">fflags</span></code>: The default Fortran compiler flags (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+<li><code class="docutils literal"><span class="pre">ldflags</span></code>: The default linker flags (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, valid for <code class="docutils literal"><span class="pre">'ProgEnvironment'</span></code> only).</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When defining programming environment flags, <code class="xref py py-class docutils literal"><span class="pre">None</span></code> is treated differently from <code class="docutils literal"><span class="pre">''</span></code> for regression tests that are compiled through a Makefile.
+If a flags variable is not <code class="xref py py-class docutils literal"><span class="pre">None</span></code> it will be passed to the Makefile, which may affect the compilation process.</p>
+</div>
+</div>
+<div class="section" id="system-auto-detection">
+<h2>System Auto-Detection<a class="headerlink" href="#system-auto-detection" title="Permalink to this headline">¶</a></h2>
+<p>When the ReFrame is launched, it tries to auto-detect the current system based on its site configuration. The auto-detection process is as follows:</p>
+<p>ReFrame first tries to obtain the hostname from <code class="docutils literal"><span class="pre">/etc/xthostname</span></code>, which provides the unqualified <em>machine name</em> in Cray systems.
+If this cannot be found the hostname will be obtained from the standard <code class="docutils literal"><span class="pre">hostname</span></code> command. Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the <code class="docutils literal"><span class="pre">hostnames</span></code> attribute of <a class="reference external" href="#system-configuration">system configuration</a>.
+The detection process stops at the first match found, and the system it belongs to is considered as the current system.
+If the system cannot be auto-detected, ReFrame will fail with an error message.
+You can override completely the auto-detection process by specifying a system or a system partition with the <code class="docutils literal"><span class="pre">--system</span></code> option (e.g., <code class="docutils literal"><span class="pre">--system</span> <span class="pre">daint</span></code> or <code class="docutils literal"><span class="pre">--system</span> <span class="pre">daint:gpu</span></code>).</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pipeline.html" class="btn btn-neutral float-right" title="The Regression Test Pipeline" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="started.html" class="btn btn-neutral" title="Getting Started" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, CSCS.
+    </p>
+
+    <style type="text/css">
+      .cscs_group:after {
+        content:"";
+        display: table;
+        clear: both;
+      }
+      .cscs_left {
+        float: left;
+        width: 50%;
+      }
+      .cscs_right {
+        float: right;
+        width: 50%;
+    }
+      @media screen and (max-width: 768px) {
+        .cscs_left,
+        .cscs_right {
+          float: none;
+          width: auto;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+    <p>
+      <div class="cscs_group">
+        <div class="cscs_left">
+          <strong>CSCS</strong><br />
+          <strong>Swiss National Supercomputing Centre</strong><br />
+          Via Trevano 131<br />
+          6900 Lugano<br />
+          Switzerland
+        </div>
+        <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
+          <a href="http://www.cscs.ch" target="_blank">
+            <img id="cscs-cscs-logo" src="_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+          </a>
+        </div>
+      </div>
+    </p>
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+  </div>
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../v2.7/configure.html">v2.7</a></dd>
+            <dd><a href="../v2.8/configure.html">v2.8</a></dd>
+            <dd><a href="../v2.8.1/configure.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="configure.html">master</a></dd>
+        </dl>
+    </div>
+</div>
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

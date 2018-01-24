@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.utility.sanity &mdash; ReFrame 2.7 documentation</title>
+  <title>reframe.utility.sanity &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -32,6 +32,8 @@
   
 
   
+    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+  
 
   
         <link rel="author" title="About these documents"
@@ -39,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.7 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -70,7 +72,7 @@
             
             
               <div class="version">
-                2.7
+                2.9
               </div>
             
           
@@ -118,6 +120,8 @@
       <span class="caption-text">Useful Links</span>
     </p>
     <ul>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/reframe" target="_blank">Get ReFrame</a></li>
+      <li class="toctree-l1"><a class="reference internal" href="https://github.com/eth-cscs/production" target="_blank">CSCS Easybuild recipes</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.cscs.ch" target="_blank">CSCS</a></li>
       <li class="toctree-l1"><a class="reference internal" href="http://www.ethz.ch" target="_blank">ETH Zurich</a></li>
     </ul>
@@ -141,7 +145,7 @@
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="breadcrumbs navigation">
-  <div style="text-align: center; margin-bottom: -1.5em; display: block">ReFrame 2.7</div>
+  <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
     <li><a href="../../../index.html">Docs</a> &raquo;</li>
       
@@ -167,19 +171,17 @@
   <h1>Source code for reframe.utility.sanity</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Sanity deferrable functions.</span>
 
-<span class="sd">This module provides functions to be used with the ``sanity_patterns`` and</span>
-<span class="sd">``perf_patterns``.</span>
+<span class="sd">This module provides functions to be used with the :attr:`sanity_patterns &lt;reframe.core.pipeline.RegressionTest.sanity_patterns&gt;` and</span>
+<span class="sd">:attr`perf_patterns &lt;reframe.core.pipeline.RegressionTest.perf_patterns&gt;`.</span>
 <span class="sd">The key characteristic of these functions is that they are not executed the</span>
 <span class="sd">time they are called.  Instead they are evaluated at a later point by the</span>
-<span class="sd">framework (inside the :func:`RegressionTest.check_sanity()` and</span>
-<span class="sd">:func:`RegressionTest.check_performance()` methods).</span>
+<span class="sd">framework (inside the :func:`check_sanity &lt;reframe.core.pipeline.RegressionTest.check_sanity&gt;` and :func:`check_performance &lt;reframe.core.pipeline.RegressionTest.check_performance&gt;` methods).</span>
 <span class="sd">Any sanity function may be evaluated either explicitly or implicitly.</span>
 
 <span class="sd">Explicit evaluation of sanity functions</span>
 <span class="sd">---------------------------------------</span>
 
-<span class="sd">Sanity functions may be evaluated at any time by calling the</span>
-<span class="sd">:func:`reframe.core.deferrable.evaluate()`. on their return value.</span>
+<span class="sd">Sanity functions may be evaluated at any time by calling the :func:`evaluate &lt;reframe.core.deferrable.evaluate&gt;` on their return value.</span>
 
 
 <span class="sd">Implicit evaluation of sanity functions</span>
@@ -188,7 +190,7 @@
 <span class="sd">Sanity functions may also be evaluated implicitly in the following situations:</span>
 
 <span class="sd">- When you try to get their truthy value by either explicitly or implicitly</span>
-<span class="sd">  calling :class:`bool() &lt;python:bool&gt;` on their return value.</span>
+<span class="sd">  calling :func:`bool &lt;python:bool&gt;` on their return value.</span>
 <span class="sd">  This implies that when you include the result of a sanity function in an</span>
 <span class="sd">  :keyword:`if` statement or when you apply the :keyword:`and`, :keyword:`or`</span>
 <span class="sd">  or :keyword:`not` operators, this will trigger their immediate evaluation.</span>
@@ -196,7 +198,7 @@
 <span class="sd">  This implies that including the result of a sanity function in a</span>
 <span class="sd">  :keyword:`for` statement will trigger its evaluation immediately.</span>
 <span class="sd">- When you try to explicitly or implicitly get its string representation by</span>
-<span class="sd">  calling :class:`str() &lt;python:str&gt;` on its result.</span>
+<span class="sd">  calling :func:`str &lt;python:str&gt;` on its result.</span>
 <span class="sd">  This implies that printing the return value of a sanity function will</span>
 <span class="sd">  automatically trigger its evaluation.</span>
 
@@ -206,13 +208,13 @@
 <span class="sd">   These functions simply delegate their execution to the actual built-ins.</span>
 <span class="sd">2. Assertion functions.</span>
 <span class="sd">   These functions are used to assert certain conditions and they either return</span>
-<span class="sd">   ``True`` or raise :class:`reframe.core.exceptions.SanityError` with a</span>
+<span class="sd">   :class:`True` or raise :class:`reframe.core.exceptions.SanityError` with a</span>
 <span class="sd">   message describing the error.</span>
 <span class="sd">   Users may provide their own formatted messages through the ``msg``</span>
 <span class="sd">   argument.</span>
-<span class="sd">   For example, in the following call to :func:`assert_eq()` the ``{0}`` and</span>
+<span class="sd">   For example, in the following call to :func:`assert_eq` the ``{0}`` and</span>
 <span class="sd">   ``{1}`` placeholders will obtain the actual arguments passed to the</span>
-<span class="sd">   assertion funciton.</span>
+<span class="sd">   assertion function.</span>
 <span class="sd">   ::</span>
 
 <span class="sd">        assert_eq(a, 1, msg=&quot;{0} is not equal to {1}&quot;)</span>
@@ -221,14 +223,15 @@
 <span class="sd">   arguments of the assert function (except the ``msg`` argument), no argument</span>
 <span class="sd">   substitution will be performed in the user message.</span>
 <span class="sd">3. Utility functions.</span>
-<span class="sd">   The are functions that you will normally use when defining</span>
-<span class="sd">   ``sanity_patterns`` and ``perf_patterns``.</span>
+<span class="sd">   The are functions that you will normally use when defining :attr:`sanity_patterns &lt;reframe.core.pipeline.RegressionTest.sanity_patterns&gt;` and :attr:`perf_patterns &lt;reframe.core.pipeline.RegressionTest.perf_patterns&gt;`.</span>
 <span class="sd">   They include, but are not limited to, functions to iterate over regex</span>
 <span class="sd">   matches in a file, extracting and converting values from regex matches,</span>
 <span class="sd">   computing statistical information on series of data etc.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">builtins</span>
+<span class="kn">import</span> <span class="nn">glob</span> <span class="k">as</span> <span class="nn">pyglob</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">types</span>
 
@@ -289,6 +292,13 @@
 <span class="k">def</span> <span class="nf">any</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Replacement for the built-in :func:`any() &lt;python:any&gt;` function.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="chain"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.chain">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">chain</span><span class="p">(</span><span class="o">*</span><span class="n">iterables</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the :func:`itertools.chain() &lt;python:itertools.chain&gt;`</span>
+<span class="sd">    function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">iterables</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="enumerate"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.enumerate">[docs]</a><span class="nd">@deferrable</span>
@@ -560,7 +570,7 @@
 
 
 <div class="viewcode-block" id="assert_found"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_found">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Assert that regex pattern ``patt`` is found in the file ``filename``.</span>
 
 <span class="sd">    :arg patt: The regex pattern to search.</span>
@@ -570,10 +580,11 @@
 <span class="sd">    :arg filename: The name of the file to examine.</span>
 <span class="sd">        Any :class:`OSError` raised while processing the file will be</span>
 <span class="sd">        propagated as a :class:`reframe.core.exceptions.SanityError`.</span>
+<span class="sd">    :arg encoding: The name of the encoding used to decode the file.</span>
 <span class="sd">    :returns: ``True`` on success.</span>
 <span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">num_matches</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="n">num_matches</span> <span class="o">=</span> <span class="n">count</span><span class="p">(</span><span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="p">))</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_true</span><span class="p">(</span><span class="n">num_matches</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
@@ -584,7 +595,7 @@
 
 
 <div class="viewcode-block" id="assert_not_found"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.assert_not_found">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">assert_not_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">assert_not_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Assert that regex pattern ``patt`` is not found in the file</span>
 <span class="sd">    ``filename``.</span>
 
@@ -592,10 +603,9 @@
 
 <span class="sd">    :returns: ``True`` on success.</span>
 <span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="p">))</span>
+        <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_found</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">encoding</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">else</span><span class="p">:</span>
@@ -678,15 +688,15 @@
 <span class="c1"># Pattern matching functions</span>
 
 <div class="viewcode-block" id="finditer"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.finditer">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get an iterator over the matches of the regex ``patt`` in ``filename``.</span>
 
 <span class="sd">    This function is equivalent to :func:`findall()` except that it returns</span>
-<span class="sd">    a generator object, instead of a list, which you can use to iterate over</span>
+<span class="sd">    a generator object instead of a list, which you can use to iterate over</span>
 <span class="sd">    the raw matches.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
             <span class="k">yield from</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="c1"># Re-raise it as sanity error</span>
@@ -694,7 +704,7 @@
 
 
 <div class="viewcode-block" id="findall"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.findall">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">findall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">findall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get all matches of regex ``patt`` in ``filename``.</span>
 
 <span class="sd">    :arg patt: The regex pattern to search.</span>
@@ -702,16 +712,17 @@
 <span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#regular-expression-syntax&gt;`_</span>
 <span class="sd">        is accepted.</span>
 <span class="sd">    :arg filename: The name of the file to examine.</span>
+<span class="sd">    :arg encoding: The name of the encoding used to decode the file.</span>
 <span class="sd">    :returns: A list of raw `regex match objects</span>
 <span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#match-objects&gt;`_.</span>
 <span class="sd">    :raises reframe.core.exceptions.SanityError: In case an :class:`OSError` is</span>
 <span class="sd">        raised while processing ``filename``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="extractiter"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractiter">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get an iterator over the values extracted from the capturing group</span>
 <span class="sd">    ``tag`` of a matching regex ``patt`` in the file ``filename``.</span>
 
@@ -719,7 +730,7 @@
 <span class="sd">    a generator object, instead of a list, which you can use to iterate over</span>
 <span class="sd">    the extracted values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">encoding</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
@@ -745,7 +756,7 @@
 
 
 <div class="viewcode-block" id="extractall"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractall">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extract all values from the capturing group ``tag`` of a matching regex</span>
 <span class="sd">    ``patt`` in the file ``filename``.</span>
 
@@ -754,6 +765,7 @@
 <span class="sd">        &lt;https://docs.python.org/3.6/library/re.html#regular-expression-syntax&gt;`_</span>
 <span class="sd">        is accepted.</span>
 <span class="sd">    :arg filename: The name of the file to examine.</span>
+<span class="sd">    :arg encoding: The name of the encoding used to decode the file.</span>
 <span class="sd">    :arg tag: The regex capturing group to be extracted.</span>
 <span class="sd">        Group ``0`` refers always to the whole match.</span>
 <span class="sd">        Since the file is processed line by line, this means that group ``0``</span>
@@ -764,11 +776,12 @@
 <span class="sd">    :returns: A list of the extracted values from the matched regex.</span>
 <span class="sd">    :raises reframe.core.exceptions.SanityError: In case of errors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">extractiter</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">,</span> <span class="n">encoding</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="extractsingle"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.extractsingle">[docs]</a><span class="nd">@deferrable</span>
-<span class="k">def</span> <span class="nf">extractsingle</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">extractsingle</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">conv</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Extract a single value from the capturing group ``tag`` of a matching regex</span>
 <span class="sd">    ``patt`` in the file ``filename``.</span>
 
@@ -778,6 +791,7 @@
 
 <span class="sd">    :arg patt: as in :func:`extractall`.</span>
 <span class="sd">    :arg filename: as in :func:`extractall`.</span>
+<span class="sd">    :arg encoding: as in :func:`extractall`.</span>
 <span class="sd">    :arg tag: as in :func:`extractall`.</span>
 <span class="sd">    :arg conv: as in :func:`extractall`.</span>
 <span class="sd">    :arg item: the specific element to extract.</span>
@@ -788,7 +802,7 @@
         <span class="c1"># Explicitly evaluate the expression here, so as to force any exception</span>
         <span class="c1"># to be thrown in this context and not during the evaluation of an</span>
         <span class="c1"># expression containing this one.</span>
-        <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">)[</span><span class="n">item</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">extractall</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)[</span><span class="n">item</span><span class="p">])</span>
     <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s2">&quot;not enough matches of pattern `</span><span class="si">%s</span><span class="s2">&#39; in file `</span><span class="si">%s</span><span class="s2">&#39; &quot;</span>
                           <span class="s2">&quot;so as to extract item `</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span></div>
@@ -848,6 +862,18 @@
             <span class="k">pass</span>
 
         <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="glob"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.glob">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the :func:`glob.glob() &lt;python:glob.glob&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pyglob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">recursive</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="iglob"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.iglob">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">iglob</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replacement for the :func:`glob.iglob() &lt;python:glob.iglob&gt;` function.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pyglob</span><span class="o">.</span><span class="n">iglob</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">recursive</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -900,7 +926,7 @@
         </div>
         <div  class="cscs_right" style="margin-left: auto; margin-right: auto;">
           <a href="http://www.cscs.ch" target="_blank">
-            <img id="cscs-cscs-logo" src="../../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
+            <img id="cscs-cscs-logo" src="../../../_static/img/logo_cscs.png" style="background-color: transparent; margin-top: 5px;">
           </a>
         </div>
       </div>
@@ -917,6 +943,25 @@
 
   </div>
   
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+        <span class="fa fa-book"> Other Versions</span>
+        v: master
+        <span class="fa fa-caret-down"></span>
+    </span>
+    <div class="rst-other-versions">
+        <dl>
+            <dt>Tags</dt>
+            <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
+            <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
+            <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
+        </dl>
+        <dl>
+            <dt>Branches</dt>
+            <dd><a href="../../../master/_modules/reframe/utility/sanity.html">master</a></dd>
+        </dl>
+    </div>
+</div>
 
 
   
@@ -924,7 +969,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.7',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
