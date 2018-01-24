@@ -47,8 +47,8 @@ class _TestLauncher(abc.ABC, unittest.TestCase):
                            sched_nodelist="mynode",
                            sched_exclude_nodelist='fake_exclude_nodelist',
                            sched_exclusive_access='fake_exclude_access',
-                           sched_options=['fake_options'])
-
+                           sched_options=['--fake'])
+        self.job.options += ['--gres=gpu:4', '#DW jobdw anything']
         self.minimal_job = FakeJob(name='fake_job',
                                    command='ls -l',
                                    launcher=self.launcher)
@@ -102,7 +102,7 @@ class TestSrunallocLauncher(_TestLauncher):
     @property
     def expected_command(self):
         return ('srun '
-                 '--job-name=fake_job '
+                '--job-name=fake_job '
                 '--time=0:10:0 '
                 '--output=fake_stdout '
                 '--error=fake_stderr '
@@ -118,6 +118,8 @@ class TestSrunallocLauncher(_TestLauncher):
                 '--account=fake_account '
                 '--nodelist=mynode '
                 '--exclude=fake_exclude_nodelist '
+                '--fake '
+                '--gres=gpu:4 '
                 '--foo '
                 'ls -l')
 
@@ -131,6 +133,7 @@ class TestSrunallocLauncher(_TestLauncher):
                 '--ntasks=1 '
                 '--foo '
                 'ls -l')
+
 
 class TestAlpsLauncher(_TestLauncher):
     @property

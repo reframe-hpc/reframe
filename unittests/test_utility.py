@@ -8,10 +8,8 @@ import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 
 from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.exceptions import ReframeError, CommandError
-from reframe.core.modules import *
-from reframe.utility.functions import *
-
+from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
+                                     SpawnedProcessTimeout)
 from unittests.fixtures import TEST_MODULES
 
 
@@ -22,14 +20,14 @@ class TestOSTools(unittest.TestCase):
         self.assertEqual(completed.stdout, 'foobar\n')
 
     def test_command_error(self):
-        self.assertRaises(CommandError, os_ext.run_command,
+        self.assertRaises(SpawnedProcessError, os_ext.run_command,
                           'false', 'check=True')
 
     def test_command_timeout(self):
         try:
             os_ext.run_command('sleep 3', timeout=2)
             self.fail('Expected timeout')
-        except CommandError as e:
+        except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
 
     def test_command_async(self):
@@ -193,22 +191,22 @@ class TestCopyTree(unittest.TestCase):
 
     def test_virtual_copy_inexistent_links(self):
         file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ReframeError, os_ext.copytree_virtual,
+        self.assertRaises(ValueError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
     def test_virtual_copy_absolute_paths(self):
         file_links = [os.path.join(self.prefix, 'bar'),
                       'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ReframeError, os_ext.copytree_virtual,
+        self.assertRaises(ValueError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
     def test_virtual_copy_irrelevenant_paths(self):
         file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ReframeError, os_ext.copytree_virtual,
+        self.assertRaises(ValueError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
         file_links = [os.path.dirname(self.prefix), 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ReframeError, os_ext.copytree_virtual,
+        self.assertRaises(ValueError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
     def test_virtual_copy_linkself(self):
@@ -219,28 +217,6 @@ class TestCopyTree(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.prefix)
         shutil.rmtree(self.target)
-
-
-class TestUtilityFunctions(unittest.TestCase):
-    def test_standard_threshold(self):
-        self.assertTrue(standard_threshold(0.9, (1.0, -0.2, 0.2)))
-        self.assertTrue(standard_threshold(0.9, (1.0, None, 0.2)))
-        self.assertTrue(standard_threshold(0.9, (1.0, -0.2, None)))
-        self.assertTrue(standard_threshold(0.9, (1.0, None, None)))
-
-        self.assertFalse(standard_threshold(0.5, (1.0, -0.2, 0.2)))
-        self.assertFalse(standard_threshold(0.5, (1.0, -0.2, None)))
-        self.assertFalse(standard_threshold(1.5, (1.0, -0.2, 0.2)))
-        self.assertFalse(standard_threshold(1.5, (1.0, None, 0.2)))
-
-        self.assertRaises(ReframeError, standard_threshold, 0.9, 1.0)
-        self.assertRaises(ReframeError, standard_threshold, 0.9, (1.0,))
-        self.assertRaises(ReframeError, standard_threshold, 0.9, (1.0, None))
-
-    def test_always_true(self):
-        self.assertTrue(always_true(0, None))
-        self.assertTrue(always_true(230, 321.))
-        self.assertTrue(always_true('foo', 232, foo=12, bar='h'))
 
 
 class TestDebugRepr(unittest.TestCase):
@@ -291,7 +267,7 @@ class TestChangeDirCtxManager(unittest.TestCase):
     def test_exception_propagation(self):
         try:
             with os_ext.change_dir(self.temp_dir):
-                raise RuntimeError 
+                raise RuntimeError
         except RuntimeError:
             self.assertEqual(os.getcwd(), self.wd_save)
         else:

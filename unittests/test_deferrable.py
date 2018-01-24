@@ -1,6 +1,6 @@
 import unittest
 
-from reframe.core.deferrable import *
+from reframe.core.deferrable import deferrable, evaluate, make_deferrable
 
 
 class TestDeferredUtilities(unittest.TestCase):

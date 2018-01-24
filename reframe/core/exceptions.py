@@ -3,76 +3,81 @@
 #
 
 import inspect
+import traceback
 import warnings
 
 import reframe.core.debug as debug
 
 
 class ReframeError(Exception):
-    """Base exception for regression errors."""
+    """Base exception for soft errors.
 
-    def __init__(self, msg=''):
-        self._message = msg
-
-    def __repr__(self):
-        return debug.repr(self)
+    Soft errors may be treated by simply printing the exception's message and
+    trying to continue execution if possible.
+    """
 
     def __str__(self):
-        return self._message
+        ret = super().__str__()
+        if self.__cause__ is not None:
+            ret += ': ' + str(self.__cause__)
 
-    @property
-    def message(self):
-        return self._message
-
-
-class ReframeFatalError(ReframeError):
-    pass
+        return ret
 
 
-class FieldError(ReframeError):
-    pass
+class ReframeFatalError(BaseException):
+    """A fatal framework error.
+
+    Execution must be aborted.
+    """
+
+    def __str__(self):
+        ret = super().__str__()
+        if self.__cause__ is not None:
+            ret += ': ' + str(self.__cause__)
+
+        return ret
 
 
-class ModuleError(ReframeError):
-    pass
+class ConfigError(ReframeError):
+    """Raised when a configuration error occurs."""
 
 
-class ConfigurationError(ReframeError):
-    pass
+class EnvironError(ReframeError):
+    """Raised when an error related to an environment occurs."""
 
 
 class SanityError(ReframeError):
-    """Exception raised to denote an error in sanity or performance checking."""
+    """Raised to denote an error in sanity or performance checking."""
 
 
-class CommandError(ReframeError):
-    def __init__(self, command, stdout, stderr, exitcode, timeout=0):
-        if not isinstance(command, str):
-            self._command = ' '.join(command)
-        else:
-            self._command  = command
+class PipelineError(ReframeError):
+    """Raised when a condition prevents the regression test pipeline to continue
+    and the error may not be described by another more specific exception.
+    """
 
-        if timeout:
-            super().__init__(
-                "Command `%s' timed out after %d s" % (self._command, timeout))
 
-        else:
-            super().__init__(
-                "Command `%s' failed with exit code: %d" %
-                (self._command, exitcode))
+class SpawnedProcessError(ReframeError):
+    """Raised when a spawned OS command has failed."""
 
-        self._stdout   = stdout
-        self._stderr   = stderr
+    def __init__(self, command, stdout, stderr, exitcode):
+        super().__init__(command, stdout, stderr, exitcode)
+        self._command = command
+        self._stdout = stdout
+        self._stderr = stderr
         self._exitcode = exitcode
-        self._timeout  = timeout
 
     def __str__(self):
-        return ('\n' +
-                super().__str__() +
-                '\n=== STDOUT ===\n' +
-                self._stdout +
-                '\n=== STDERR ===\n' +
-                self._stderr)
+        lines = ["Command '{0}' failed with exit code {1}:".format(
+            self._command, self._exitcode)]
+        lines.append('=== STDOUT ===')
+        if self._stdout:
+            lines.append(self._stdout)
+
+        lines.append('=== STDERR ===')
+        if self._stderr:
+            lines.append(self._stderr)
+
+        return '\n'.join(lines)
 
     @property
     def command(self):
@@ -90,27 +95,61 @@ class CommandError(ReframeError):
     def exitcode(self):
         return self._exitcode
 
+
+class SpawnedProcessTimeout(SpawnedProcessError):
+    """Raised when a spawned OS command has timed out."""
+
+    def __init__(self, command, stdout, stderr, timeout):
+        super().__init__(command, stdout, stderr, None)
+        self._timeout = timeout
+
+        # Reset the args to match the real ones passed to this exception
+        self.args = command, stdout, stderr, timeout
+
+    def __str__(self):
+        lines = ["Command '{0}' timed out after {1}s:".format(self._command,
+                                                              self._timeout)]
+        lines.append('=== STDOUT ===')
+        if self._stdout:
+            lines.append(self._stdout)
+
+        lines.append('=== STDERR ===')
+        if self._stderr:
+            lines.append(self._stderr)
+
+        return '\n'.join(lines)
+
     @property
     def timeout(self):
         return self._timeout
 
 
-class CompilationError(CommandError):
-    def __init__(self, command, stdout, stderr, exitcode, environ):
-        super().__init__(command, stdout, stderr, exitcode)
-        self._environ = environ
+class CompilationError(SpawnedProcessError):
+    """Raised by compilation commands"""
+
+
+class JobError(ReframeError):
+    """Job related errors."""
+
+    def __init__(self, *args, jobid=None):
+        super().__init__(*args)
+        self._jobid = jobid
 
     @property
-    def environ():
-        return self._environ
+    def jobid(self):
+        return self._jobid
+
+    def __str__(self):
+        prefix = '(jobid=%s)' % self._jobid
+        msg = super().__str__()
+        if self.args:
+            return prefix + ' ' + msg
+        else:
+            return prefix + msg
 
 
-class JobSubmissionError(CommandError):
-    pass
-
-
-class JobBlockedError(ReframeError):
-    """Thrown by job schedulers when a job is blocked indefinitely."""
+class JobBlockedError(JobError):
+    """Raised by job schedulers when a job is blocked indefinitely."""
 
 
 class ReframeDeprecationWarning(DeprecationWarning):
@@ -118,6 +157,53 @@ class ReframeDeprecationWarning(DeprecationWarning):
 
 
 warnings.filterwarnings('default', category=ReframeDeprecationWarning)
+
+
+def user_frame(tb):
+    if not inspect.istraceback(tb):
+        raise ValueError('could not retrieve frame: argument not a traceback')
+
+    for finfo in reversed(inspect.getinnerframes(tb)):
+        module = inspect.getmodule(finfo.frame)
+        if module is None:
+            continue
+
+        if not module.__name__.startswith('reframe'):
+            return finfo
+
+    return None
+
+
+def format_exception(exc_type, exc_value, tb):
+    def format_user_frame(frame):
+        return '%s:%s: %s\n%s' % (frame.filename, frame.lineno,
+                                  exc_value, ''.join(frame.code_context))
+
+    if exc_type is None:
+        return ''
+
+    if isinstance(exc_value, SanityError):
+        return 'sanity error: %s' % exc_value
+
+    if isinstance(exc_value, ReframeFatalError):
+        exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
+        return 'fatal error: %s\n%s' % (exc_value, exc_str)
+
+    if isinstance(exc_value, ReframeError):
+        return 'caught framework exception: %s' % exc_value
+
+    if isinstance(exc_value, KeyboardInterrupt):
+        return 'cancelled by user'
+
+    frame = user_frame(tb)
+    if isinstance(exc_value, TypeError) and frame is not None:
+        return 'type error: ' + format_user_frame(frame)
+
+    if isinstance(exc_value, ValueError) and frame is not None:
+        return 'value error: ' + format_user_frame(frame)
+
+    exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
+    return 'unexpected error: %s\n%s' % (exc_value, exc_str)
 
 
 def user_deprecation_warning(message):

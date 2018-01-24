@@ -340,12 +340,12 @@ ReFrame uses three basic directories during the execution of tests:
 1. The stage directory
 
   * Each regression test is executed in a "sandbox";
-    all of its resources (source files, resources) are copied over to a stage directory and executed from there.
+    all of its resources (source files, resources) are copied over to a stage directory (if the directory preexists, it will be wiped out) and executed from there.
     This will also be the working directory for the test.
 
 2. The output directory
 
-  * After a regression test finishes some important files will be copied from the stage directory to the output directory.
+  * After a regression test finishes some important files will be copied from the stage directory to the output directory (if the directory preexists, it will be wiped out).
     By default these are the standard output, standard error and the generated job script file.
     A regression test may also specify to keep additional files.
 

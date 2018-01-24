@@ -4,7 +4,7 @@ import unittest
 import reframe.core.modules as modules
 
 from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.exceptions import ModuleError, ReframeError
+from reframe.core.exceptions import ConfigError, EnvironError
 from unittests.fixtures import TEST_MODULES, has_sane_modules_system
 
 
@@ -24,7 +24,7 @@ class _TestModulesSystem(unittest.TestCase):
         self.assertNotIn(TEST_MODULES, self.modules_system.searchpath)
 
     def test_module_load(self):
-        self.assertRaises(ModuleError, self.modules_system.load_module, 'foo')
+        self.assertRaises(EnvironError, self.modules_system.load_module, 'foo')
         self.assertFalse(self.modules_system.is_module_loaded('foo'))
         self.assertNotIn('foo', self.modules_system.loaded_modules())
 
@@ -71,7 +71,7 @@ class TestTModModulesSystem(_TestModulesSystem):
     def setUp(self):
         try:
             modules.init_modules_system('tmod')
-        except ReframeError:
+        except ConfigError:
             self.skipTest('tmod not supported')
         else:
             super().setUp()
@@ -81,7 +81,7 @@ class TestNoModModulesSystem(_TestModulesSystem):
     def setUp(self):
         try:
             modules.init_modules_system()
-        except ReframeError:
+        except ConfigError:
             self.skipTest('nomod not supported')
         else:
             super().setUp()
@@ -110,6 +110,12 @@ class TestNoModModulesSystem(_TestModulesSystem):
 class TestModule(unittest.TestCase):
     def setUp(self):
         self.module = modules.Module('foo/1.2')
+
+    def test_invalid_initialization(self):
+        self.assertRaises(ValueError, modules.Module, '')
+        self.assertRaises(ValueError, modules.Module, ' ')
+        self.assertRaises(TypeError, modules.Module, None)
+        self.assertRaises(TypeError, modules.Module, 23)
 
     def test_name_version(self):
         self.assertEqual(self.module.name, 'foo')

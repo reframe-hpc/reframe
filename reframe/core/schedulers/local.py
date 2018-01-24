@@ -8,7 +8,7 @@ import reframe.core.schedulers as sched
 import reframe.utility.os as os_ext
 
 from datetime import datetime
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import JobError, ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
@@ -109,7 +109,7 @@ class LocalJob(sched.Job):
         This function waits for the spawned process tree to finish.
         """
         if self._jobid is None:
-            raise ReframeError('no job is spawned yet')
+            raise JobError('cannot cancel a non spawned job', jobid=None)
 
         self._term_all()
 
@@ -128,7 +128,7 @@ class LocalJob(sched.Job):
         cleared, unless any of them has called `setsid()`.
         """
         if self._jobid is None:
-            raise ReframeError('no job is spawned yet')
+            raise JobError('cannot wait a non spawned job', jobid=None)
 
         if self._state is not None:
             # Job has been already waited for

@@ -1,15 +1,16 @@
 import collections.abc
 import logging
 import numbers
-import os
 import logging.handlers
+import os
 import sys
 import shutil
+
+import reframe
 import reframe.core.debug as debug
 
 from datetime import datetime
 
-from reframe.core.exceptions import ConfigurationError, ReframeError
 from reframe.settings import settings
 
 # Reframe's log levels
@@ -50,7 +51,7 @@ def _check_level(level):
     elif isinstance(level, str):
         norm_level = level.lower()
         if norm_level not in _log_level_values:
-            raise ReframeError('logger level %s not available' % level)
+            raise ValueError('logger level %s not available' % level)
         else:
             ret = _log_level_values[norm_level]
     else:
@@ -87,14 +88,10 @@ class NullHandler(Handler, logging.NullHandler):
 
 def load_from_dict(logging_config):
     if not isinstance(logging_config, collections.abc.Mapping):
-        raise ConfigurationError('logging configuration is not a dict')
+        raise TypeError('logging configuration is not a dict')
 
     level = logging_config.get('level', 'info').lower()
     handlers_dict = logging_config.get('handlers', None)
-
-    # if not handlers_dict:
-    #     raise ConfigurationError('no entry for handlers was found')
-
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
 
@@ -107,13 +104,11 @@ def load_from_dict(logging_config):
 def _extract_handlers(handlers_dict):
     handlers = []
     if not handlers_dict:
-        raise ConfigurationError('no handlers are defined for logger')
+        raise ValueError('no handlers are defined for logger')
 
     for filename, handler_config in handlers_dict.items():
         if not isinstance(handler_config, collections.abc.Mapping):
-            raise ConfigurationError(
-                'handler %s is not a dictionary' % filename
-            )
+            raise TypeError('handler %s is not a dictionary' % filename)
 
         level = handler_config.get('level', 'debug').lower()
         fmt   = handler_config.get('format', '%(message)s')
@@ -212,7 +207,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_name': check.name if check else 'reframe',
                 'check_jobid': '-1',
                 'testcase_name': check.name if check else 'reframe',
-                'version': settings.version,
+                'version': reframe.VERSION,
             }
         )
         if self.logger:
