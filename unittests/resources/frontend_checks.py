@@ -2,14 +2,11 @@
 # Special checks for testing the front-end
 #
 
-import re
-import sys
-
+import os
 import reframe.utility.sanity as sn
 
 from reframe.core.pipeline import RunOnlyRegressionTest
-from reframe.core.environments import *
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ReframeError, SanityError
 
 
 class BaseFrontendCheck(RunOnlyRegressionTest):
@@ -102,7 +99,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         self.strict_check = False
 
     def check_performance(self):
-        return False
+        raise SanityError('performance failure')
 
 
 class KeyboardInterruptCheck(BaseFrontendCheck):
@@ -152,7 +149,7 @@ class SleepCheck(BaseFrontendCheck):
         self.executable_opts = [
             '-c "from time import sleep; sleep(%s)"' % sleep_time
         ]
-        self.sanity_patterns = None
+        self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
@@ -173,4 +170,4 @@ def _get_checks(**kwargs):
             NoPrgEnvCheck(**kwargs),
             SanityFailureCheck(**kwargs),
             PerformanceFailureCheck(**kwargs),
-            CustomPerformanceFailureCheck(**kwargs), ]
+            CustomPerformanceFailureCheck(**kwargs)]

@@ -3,7 +3,7 @@ import time
 import sys
 import reframe.core.debug as debug
 
-from reframe.core.exceptions import ReframeFatalError
+from reframe.core.exceptions import JobBlockedError, ReframeFatalError
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy,
                                         RegressionTestExecutor,
@@ -45,12 +45,10 @@ class SerialExecutionPolicy(ExecutionPolicy):
             executor.run()
             executor.wait()
             if not self.skip_sanity_check:
-                if not executor.check_sanity():
-                    testcase.fail()
+                executor.check_sanity()
 
             if not self.skip_performance_check:
-                if not executor.check_performance():
-                    testcase.fail()
+                executor.check_performance()
 
             if testcase.failed():
                 remove_stage_files = False
@@ -65,7 +63,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
         except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
-        except:
+        except BaseException:
             testcase.fail(sys.exc_info())
         finally:
             self._test_cases.append(testcase)
@@ -139,7 +137,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
-        except:
+        except BaseException:
             testcase.fail(sys.exc_info())
         finally:
             if testcase.valid():
@@ -154,12 +152,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             testcase = ready_testcase.testcase
             executor = testcase.executor
             if not self.skip_sanity_check:
-                if not executor.check_sanity():
-                    testcase.fail()
+                executor.check_sanity()
 
             if not self.skip_performance_check:
-                if not executor.check_performance():
-                    testcase.fail()
+                executor.check_performance()
 
             if testcase.failed():
                 remove_stage_files = False
@@ -173,7 +169,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
         except (KeyboardInterrupt, ReframeFatalError, AssertionError):
             testcase.fail(sys.exc_info())
             raise
-        except:
+        except BaseException:
             testcase.fail(sys.exc_info())
         finally:
             partname = executor.check.current_partition.fullname
@@ -243,7 +239,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                 testcase.fail(sys.exc_info())
             self._failall()
             raise
-        except:
+        except BaseException:
             # Here we are sure that test case has failed during setup, since
             # _compile_and_run() handles already non-fatal exceptions. Though
             # we check again the testcase, just in case.
@@ -326,7 +322,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
                         # These errors should be propagated as-is
                         testcase.fail(sys.exc_info())
                         raise
-                    except:
+                    except BaseException:
                         testcase.fail(sys.exc_info())
                         raise WaitError(running, sys.exc_info())
                     finally:
@@ -362,7 +358,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy):
             except (KeyboardInterrupt, ReframeFatalError, AssertionError):
                 self._failall()
                 raise
-            except WaitError:
+            except (WaitError, JobBlockedError):
                 pass
             finally:
                 self.environ_snapshot.load()

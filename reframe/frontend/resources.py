@@ -3,6 +3,7 @@
 #
 
 import os
+import shutil
 import reframe.core.debug as debug
 
 from datetime import datetime
@@ -39,8 +40,11 @@ class ResourcesManager:
     def __repr__(self):
         return debug.repr(self)
 
-    def _makedir(self, *dirs):
+    def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
+        if wipeout:
+            shutil.rmtree(ret, True)
+
         os.makedirs(ret, exist_ok=True)
         return ret
 
@@ -60,11 +64,11 @@ class ResourcesManager:
     def stage_prefix(self):
         return self._stage_prefix
 
-    def stagedir(self, *dirs):
-        return self._makedir(self._stage_prefix, *dirs)
+    def stagedir(self, *dirs, wipeout=True):
+        return self._makedir(self._stage_prefix, *dirs, wipeout=wipeout)
 
-    def outputdir(self, *dirs):
-        return self._makedir(self._output_prefix, *dirs)
+    def outputdir(self, *dirs, wipeout=True):
+        return self._makedir(self._output_prefix, *dirs, wipeout=wipeout)
 
-    def logdir(self, *dirs):
-        return self._makedir(self._log_prefix, *dirs)
+    def logdir(self, *dirs, wipeout=False):
+        return self._makedir(self._log_prefix, *dirs, wipeout=wipeout)

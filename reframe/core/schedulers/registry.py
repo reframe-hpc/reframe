@@ -1,5 +1,6 @@
 import reframe.core.fields as fields
 
+from reframe.core.exceptions import ConfigError
 
 # Name registry for job schedulers
 _SCHEDULERS = {}
@@ -10,8 +11,8 @@ def register_scheduler(name, local=False):
 
     def _register_scheduler(cls):
         if name in _SCHEDULERS:
-            raise ReframeError(
-                "a scheduler is already registered with name '%s'" % name)
+            raise ValueError("a scheduler is already "
+                             "registered with name `%s'" % name)
 
         cls.is_local = fields.ConstantField(bool(local))
         cls.registered_name = fields.ConstantField(name)
@@ -25,7 +26,7 @@ def getscheduler(name):
     try:
         return _SCHEDULERS[name]
     except KeyError:
-        raise ConfigurationError("no such scheduler: '%s'" % name)
+        raise ConfigError("no such scheduler: '%s'" % name)
 
 
 # Import the schedulers modules to trigger their registration

@@ -81,5 +81,10 @@ class SrunAllocationLauncher(JobLauncher):
         if job.sched_exclude_nodelist:
             ret += ['--exclude=%s' % str(job.sched_exclude_nodelist)]
 
-        return ret
+        for opt in job.options:
+            if opt.startswith('#'):
+                continue
 
+            ret.append(opt)
+
+        return ret

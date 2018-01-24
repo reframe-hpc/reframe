@@ -57,47 +57,38 @@ class TestStats:
 
     def failure_report(self):
         line_width = 78
-        report = line_width * '=' + '\n'
-        report += 'SUMMARY OF FAILURES\n'
+        report = [line_width * '=']
+        report.append('SUMMARY OF FAILURES')
         for partname, tclist in self._test_cases_bypart.items():
-            for tf in [t for t in tclist if t.failed()]:
+            for tf in (t for t in tclist if t.failed()):
                 check = tf.executor.check
                 environ_name = (check.current_environ.name
                                 if check.current_environ else 'None')
-                report += line_width * '-' + '\n'
-                report += 'FAILURE INFO for %s\n' % check.name
-                report += '  * System partition: %s\n' % partname
-                report += '  * Environment: %s\n' % environ_name
-                report += '  * Stage directory: %s\n' % check.stagedir
+                report.append(line_width * '-')
+                report.append('FAILURE INFO for %s' % check.name)
+                report.append('  * System partition: %s' % partname)
+                report.append('  * Environment: %s' % environ_name)
+                report.append('  * Stage directory: %s' % check.stagedir)
 
                 job_type = 'local' if check.is_local() else 'batch job'
                 jobid = check.job.jobid if check.job else -1
-                report += '  * Job type: %s (id=%s)\n' % (job_type, jobid)
-                report += '  * Maintainers: %s\n' % check.maintainers
-                report += '  * Failing phase: %s\n' % tf.failed_stage
-                report += '  * Reason: '
-                if tf.exc_info:
-                    etype, value, stacktrace = tf.exc_info
-                    if isinstance(value, SanityError):
-                        report += 'sanity error: %s\n' % value
-                    elif isinstance(value, ReframeError):
-                        report += 'caught framework exception: %s\n' % value
-                    elif isinstance(value, KeyboardInterrupt):
-                        report += 'cancelled by user\n'
-                    else:
-                        report += ('caught unexpected exception: %s (%s)\n' %
-                                   (etype.__name__, value))
-                        report += ''.join(
-                            traceback.format_exception(*tf.exc_info))
+                report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
+                report.append('  * Maintainers: %s' % check.maintainers)
+                report.append('  * Failing phase: %s' % tf.failed_stage)
+                reason = '  * Reason: '
+                if tf.exc_info is not None:
+                    from reframe.core.exceptions import format_exception
+
+                    reason += format_exception(*tf.exc_info)
+                    report.append(reason)
+
                 elif tf.failed_stage == 'sanity':
-                    report += ('Sanity check failure\n' +
-                               check.sanity_info.failure_report())
+                    report.append('Sanity check failure')
                 elif tf.failed_stage == 'performance':
-                    report += ('Performance check failure\n' +
-                               check.perf_info.failure_report())
+                    report.append('Performance check failure')
                 else:
                     # This shouldn't happen...
-                    report += 'Unknown error.'
+                    report.append('Unknown error.')
 
-        report += line_width * '-' + '\n'
-        return report
+        report.append(line_width * '-')
+        return '\n'.join(report)

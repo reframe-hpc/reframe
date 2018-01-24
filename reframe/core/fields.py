@@ -10,24 +10,26 @@ import re
 import reframe.core.debug as debug
 
 from collections import UserDict
-from reframe.core.exceptions import FieldError, user_deprecation_warning
+from reframe.core.exceptions import user_deprecation_warning
 
 
 class Field:
-    """Base class for fields"""
+    """Base class for attribute validators."""
 
     def __init__(self, fieldname):
         self._name = fieldname
 
-    def __repr__(self):
-        return debug.repr(self)
-
     def __get__(self, obj, objtype):
+        if obj is None:
+            return self
+
         try:
             return obj.__dict__[self._name]
         except KeyError:
+            # We raise an AttributeError to emulate the standard attribute
+            # access.
             raise AttributeError("%s object has no attribute '%s'" %
-                                 (objtype.__name__, self._name))
+                                 (objtype.__name__, self._name)) from None
 
     def __set__(self, obj, value):
         obj.__dict__[self._name] = value
@@ -41,7 +43,10 @@ class ForwardField:
         self._attr = attr
 
     def __get__(self, obj, objtype):
-        return self._target.__dict__[self._attr]
+        if obj is None:
+            return self
+
+        return getattr(self._target, self._attr)
 
     def __set__(self, obj, value):
         self._target.__dict__[self._attr] = value
@@ -61,12 +66,12 @@ class AnyField(Field):
             try:
                 f.__set__(obj, value)
                 break
-            except FieldError:
+            except (TypeError, ValueError):
                 pass
         else:
             # All field set attemps have failed
             # FIXME: This is not a very informative message.
-            raise FieldError('attempt to set a field of different type.')
+            raise TypeError('attempt to set a field of different type.')
 
 
 class TypedField(Field):
@@ -80,9 +85,9 @@ class TypedField(Field):
     def __set__(self, obj, value):
         if ((value is not None or not self._allow_none) and
             not isinstance(value, self._fieldtype)):
-            raise FieldError('attempt to set a field of different type. '
-                             'Required: %s, got: %s' %
-                             (self._fieldtype, type(value).__name__))
+            raise TypeError('attempt to set a field of different type. '
+                            'Required: %s, Found: %s' %
+                            (self._fieldtype.__name__, type(value).__name__))
 
         super().__set__(obj, value)
 
@@ -108,9 +113,9 @@ class AggregateTypeField(Field):
 
     def __set__(self, obj, value):
         if not self._check_type_ext(value):
-            raise FieldError('attempt to set an aggregate field '
-                             'of different type. Required typespec: %s' %
-                             str(self._typespec))
+            raise TypeError('attempt to set an aggregate field '
+                            'of different type. Required typespec: %s' %
+                            self._format_typespec(self._typespec))
 
         super().__set__(obj, value)
 
@@ -130,12 +135,53 @@ class AggregateTypeField(Field):
             return (typespec, False)
 
         if len(typespec) != 2:
-            raise FieldError('invalid typespec: %s' % str(typespec))
+            raise ValueError('invalid typespec: %s' % str(typespec))
 
         if typespec[1] is not None:
             return (typespec, False)
         else:
             return (typespec[0], True)
+
+    def _format_typespec(self, typespec):
+        # Extract the type information and check if None is allowed
+        typespec, allow_none = self._extract_typeinfo(typespec)
+        if not isinstance(typespec, tuple):
+            return typespec.__name__
+
+        if len(typespec) != 2:
+            raise ValueError('invalid typespec: %s' % str(typespec))
+
+        container_type, element_type = typespec
+        if issubclass(container_type, collections.abc.Sequence):
+            if isinstance(element_type, tuple) and len(element_type) == 1:
+                # non-uniformly typed container
+                elem_types = element_type[0]
+                ret = '%s[' % container_type.__name__
+                ret += ','.join(self._format_typespec(t) for t in elem_types)
+                return ret + ']'
+            else:
+                # uniformly typed container
+                return '%s[%s]' % (
+                    container_type.__name__,
+                    self._format_typespec(element_type))
+        elif issubclass(container_type, collections.abc.Set):
+            return '%s[%s]' % (container_type.__name__,
+                               self._format_typespec(element_type))
+
+        elif issubclass(container_type, collections.abc.Mapping):
+            if len(element_type) != 2:
+                raise ValueError('invalid mapping typespec: %s' %
+                                 str(element_type))
+
+            key_type, value_type = element_type
+            return '%s[%s,%s]' % (
+                container_type.__name__,
+                self._format_typespec(key_type),
+                self._format_typespec(value_type))
+        else:
+            return ''
+
+        return ''
 
     def _check_type(self, value, typespec):
         # Extract the type information and check if None is allowed
@@ -149,7 +195,7 @@ class AggregateTypeField(Field):
                     if typespec == callable else isinstance(value, typespec))
 
         if len(typespec) != 2:
-            raise FieldError('invalid typespec: %s' % str(typespec))
+            raise ValueError('invalid typespec: %s' % str(typespec))
 
         container_type, element_type = typespec
         if not isinstance(value, container_type):
@@ -178,7 +224,7 @@ class AggregateTypeField(Field):
 
         elif issubclass(container_type, collections.abc.Mapping):
             if len(element_type) != 2:
-                raise FieldError('invalid mapping typespec: %s' %
+                raise ValueError('invalid mapping typespec: %s' %
                                  str(element_type))
 
             key_type, value_type = element_type
@@ -202,12 +248,12 @@ class AlphanumericField(TypedField):
     def __set__(self, obj, value):
         if value is not None:
             if not isinstance(value, str):
-                raise FieldError('attempt to set an alphanumeric field '
-                                 'with a non-string value')
+                raise TypeError('attempt to set an alphanumeric field '
+                                'with a non-string value')
 
             # Check if the string is properly formatted
             if not re.fullmatch('\w+', value, re.ASCII):
-                raise FieldError('Attempt to set an alphanumeric field '
+                raise ValueError('Attempt to set an alphanumeric field '
                                  'with a non-alphanumeric value')
 
         super().__set__(obj, value)
@@ -222,11 +268,11 @@ class NonWhitespaceField(TypedField):
     def __set__(self, obj, value):
         if value is not None:
             if not isinstance(value, str):
-                raise FieldError('Attempt to set a string field '
-                                 'with a non-string value')
+                raise TypeError('Attempt to set a string field '
+                                'with a non-string value')
 
             if not re.fullmatch('\S+', value, re.ASCII):
-                raise FieldError('Attempt to set a non-whitespace field '
+                raise ValueError('Attempt to set a non-whitespace field '
                                  'with a string containing whitespace')
 
         super().__set__(obj, value)
@@ -288,9 +334,11 @@ class CopyOnWriteField(Field):
 class ConstantField(Field):
     """Holds a constant.
 
-    Attempt to set it will raise an exception.
+    Attempt to set it will raise an exception. This field may be accessed also
+    from the class and will return the same constant value.
 
     :arg value: the value of this field.
+
     """
 
     def __init__(self, value):
@@ -301,68 +349,7 @@ class ConstantField(Field):
         return self._value
 
     def __set__(self, obj, value):
-        raise FieldError('attempt to set a read-only variable')
-
-
-class SanityPatternField(AggregateTypeField):
-    """Stores a sanity or performance patterns field.
-
-    This is a special dictionary that allows a special entry for calling a
-    callback function when eof is matched
-    """
-
-    def __init__(self, fieldname, allow_none=False):
-        # The type of the outer dictionary
-        self._outer_typespec = (dict, (str, object))
-
-        # The type of the inner dictionary, excluding the special '\e' entries
-        self._inner_typespec = (dict, (
-            str, (list, (tuple, ((str, callable, callable),))))
-        )
-        super().__init__(fieldname, self._inner_typespec, allow_none)
-
-    def __set__(self, obj, value):
-        if value is None and self._allow_none:
-            # Call directly Field's __set__() method; no need for further type
-            # checking
-            Field.__set__(self, obj, value)
-            return
-
-        user_deprecation_warning(
-            'This syntax for sanity and performance checking is deprecated. '
-            'Please have a look in the ReFrame tutorial.'
-        )
-
-        # Check first the outer dictionary
-        if not self._check_type(value, self._outer_typespec):
-            raise FieldError('attempt to set a sanity pattern field '
-                             'with an invalid dictionary object')
-
-        # For the inner dictionary, we need special treatment for the '\e'
-        # character
-        for k, v in value.items():
-            # Check the special entry '\e' first
-            eof_handler = None
-            if '\e' in v.keys():
-                eof_handler = v['\e']
-                if not callable(eof_handler):
-                    raise FieldError("special key '\e' does not "
-                                     "refer to a callable")
-
-                # Remove the value temporarily
-                del v['\e']
-
-            try:
-                if not self._check_type(v, self._inner_typespec):
-                    raise FieldError('attempt to set a sanity pattern field'
-                                     'with an invalid dictionary object')
-            finally:
-                # Restore '\e'
-                if eof_handler is not None:
-                    v['\e'] = eof_handler
-
-        # All type checking is done; just set the value
-        Field.__set__(self, obj, value)
+        raise ValueError('attempt to set a read-only variable')
 
 
 class TimerField(AggregateTypeField):
@@ -373,17 +360,19 @@ class TimerField(AggregateTypeField):
 
     def __set__(self, obj, value):
         if not self._check_type_ext(value):
-            raise FieldError('attempt to set a timer field with a wrong type')
+            raise TypeError('attempt to set a timer field '
+                            'with a wrong type')
 
         if value is not None:
             # Check also the values for minutes and seconds
             h, m, s = value
             if h < 0 or m < 0 or s < 0:
-                raise FieldError('timer field must have non-negative values')
+                raise ValueError('timer field must have '
+                                 'non-negative values')
 
             if m > 59 or s > 59:
-                raise FieldError('minutes and seconds in a timer field '
-                                 'must not exceed 59')
+                raise ValueError('minutes and seconds in a timer '
+                                 'field must not exceed 59')
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)
@@ -526,6 +515,7 @@ class ScopedDictField(AggregateTypeField):
         super().__init__(
             fieldname, (dict, (str, (dict, (str, valuetype)))), allow_none
         )
+        self._valuetype = valuetype
 
     def __set__(self, obj, value):
         if isinstance(value, ScopedDict):
@@ -534,10 +524,27 @@ class ScopedDictField(AggregateTypeField):
         else:
             # Try to convert value to a ScopedDict
             if not self._check_type_ext(value):
-                raise FieldError('attempt to set a ScopedDict '
-                                 'of different type. Required typespec: %s' %
-                                 str(self._typespec))
+                raise TypeError(
+                    'attempt to set a ScopedDict with values '
+                    'of different type. Required typespec: %s' %
+                    self._format_typespec(self._valuetype))
 
-            # Call Field's __set__() method, type checking is already performed
+            # Call Field's __set__() method, validation is already performed
             Field.__set__(self, obj,
                           ScopedDict(value) if value is not None else value)
+
+
+class DeprecatedField(Field):
+    """Field wrapper for deprecating fields."""
+
+    def __init__(self, target_field, message):
+        self._target_field = target_field
+        self._message = message
+
+    def __set__(self, obj, value):
+        user_deprecation_warning(self._message)
+        self._target_field.__set__(obj, value)
+
+    def __get__(self, obj, objtype):
+        user_deprecation_warning(self._message)
+        return self._target_field.__get__(obj, objtype)

@@ -15,7 +15,11 @@ In this example, we show how ReFrame can leverage Makefiles to build executables
 Compiling a regression test through a Makefile is very straightforward with ReFrame.
 If the :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` attribute refers to a directory, then ReFrame will automatically invoke ``make`` there.
 
-.. note:: More specifically, ReFrame constructs the final target source path as ``os.path.join(self.sourcesdir, self.sourcepath)``
+.. note:: More specifically, ReFrame will compile the source files found in the directory that is constructed as ``os.path.join(self.sourcesdir, self.sourcepath)`` (given that :attr:`sourcesdir` is defined, as it is usually the case).
+
+If :attr:`sourcesdir` is not defined, ReFrame assumes that the user will make sure that the source files will be in the stagedir (:attr:`_stagedir`) at the moment of compilation (more information on the stagedir directory is found in `"Running ReFrame" <running.html#configuring-reframe-directories>`__ section).
+The user may for instance generate the source files or copy them from a git repository by the means of some commands defined in :attr:`prebuild_cmd`.
+Thus, ReFrame will in this case compile the sources files found in the directory that is constructed as ``os.path.join(self._stagedir, self.sourcepath)``.
 
 By default, :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` is the empty string and :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` is set ``src/``.
 As a result, by not specifying a :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` at all, ReFrame will try to invoke ``make`` inside the ``src/`` directory of the test.
@@ -135,13 +139,15 @@ Here is the full regression test (``tutorial/advanced/advanced_example2.py``):
                         'RunOnlyRegressionTest')
           self.valid_systems = ['*']
           self.valid_prog_environs = ['*']
+          self.sourcesdir = None
+
           lower = 90
           upper = 100
-          self.executable = 'echo $((RANDOM%({1}+1-{0})+{0}))'.format(
+          self.executable = 'echo "Random: $((RANDOM%({1}+1-{0})+{0}))"'.format(
               lower, upper)
           self.sanity_patterns = sn.assert_bounded(sn.extractsingle(
-              r'(?P<number>\S+)', self.stdout, 'number', float), lower, upper)
-
+              r'Random: (?P<number>\S+)', self.stdout, 'number', float),
+              lower, upper)
           self.maintainers = ['put-your-name-here']
           self.tags = {'tutorial'}
 
@@ -152,6 +158,8 @@ Here is the full regression test (``tutorial/advanced/advanced_example2.py``):
 There is nothing special for this test compared to those presented `earlier <tutorial.html>`__ except that it derives from the :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>`.
 A thing to note about run-only regression tests is that the copying of their resources to the stage directory is performed at the beginning of the run phase.
 For standard regression tests, this happens at the beginning of the compilation phase, instead.
+Furthermore, in this particular test the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` consists only of standard Bash shell commands.
+For this reason, we can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` informing ReFrame that the test does not have any resources.
 
 Implementing a Compile-Only Regression Test
 -------------------------------------------
@@ -348,3 +356,114 @@ The sanity condition for this test verifies that associated job has been cancele
 .. code-block:: python
 
   self.sanity_patterns = sn.assert_found('CANCELLED.*TIME LIMIT', self.stderr)
+
+Applying a sanity function iteratively
+--------------------------------------
+
+It is often the case that a common sanity pattern has to be applied many times.
+In this example we will demonstrate how the above situation can be easily tackled using the :mod:`sanity <reframe.utility.sanity>` functions offered by ReFrame.
+Specifically, we would like to execute the following shell script and check that its output is correct:
+
+.. code-block:: bash
+
+  #!/usr/bin/env bash
+
+  for i in {1..100}
+  do
+      echo Random: $((RANDOM%($UPPER+1-$LOWER)+$LOWER))
+  done
+
+The above script simply prints 100 random integers between the limits given by the variables ``LOWER`` and ``UPPER``.
+For this example the above limits are exported as environment variables by the ``limits.sh`` script as follows:
+
+.. code-block:: bash
+
+  #!/usr/bin/env bash
+
+  export LOWER=90
+  export UPPER=100
+
+In the corresponding regression test we want to check that all the random numbers printed lie between 90 and 100 ensuring that the script executed correctly.
+Hence, a common sanity check has to be applied to all the printed random numbers.
+In ReFrame this can achieved by the use of :func:`map <reframe.utility.sanity.map>` sanity function accepting a function and an iterable as arguments.
+Through :func:`map <reframe.utility.sanity.map>` the given function will be applied to all the members of the iterable object.
+Note that since :func:`map <reframe.utility.sanity.map>` is a sanity function, its execution will be deferred.
+The contents of the ReFrame regression test contained in ``advanced_example6.py`` are the following:
+
+.. code-block:: python
+
+  import os
+
+  import reframe.utility.sanity as sn
+  from reframe.core.pipeline import RunOnlyRegressionTest
+
+
+  class DeferredIterationTest(RunOnlyRegressionTest):
+      def __init__(self, **kwargs):
+          super().__init__('deferred_iteration_check',
+                         os.path.dirname(__file__), **kwargs)
+
+          self.descr = ('ReFrame tutorial demonstrating the use of deferred '
+                        'iteration via the `map` sanity function.')
+
+          self.valid_systems = ['*']
+          self.valid_prog_environs = ['*']
+
+          self.executable = './advanced_example6.sh'
+          numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
+                                  'number', float)
+
+          self.sanity_patterns = sn.and_(
+              sn.assert_eq(sn.count(numbers), 100),
+              sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
+
+          self.maintainers = ['put-your-name-here']
+          self.tags = {'tutorial'}
+
+      def setup(self, partition, environ, **job_opts):
+          super().setup(partition, environ, **job_opts)
+          self.job.pre_run = ['source %s/limits.sh' % self.stagedir]
+
+
+  def _get_checks(**kwargs):
+      return [DeferredIterationTest(**kwargs)]
+
+First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
+
+.. code-block:: python
+
+  numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
+                          'number', float)
+
+The ``numbers`` variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
+In order to check that the extracted numbers lie within the specified limits, we make use of the :func:`map <reframe.utility.sanity.map>` sanity function, which will apply the :func:`assert_bounded <reframe.utility.sanity.assert_bounded>` to all the elements of ``numbers``.
+Additionally, our requirement is that all the numbers satisfy the above constraint and we therefore use :func:`all <reframe.utility.sanity.all>`.
+
+There is still a small complication that needs to be addressed.
+The :func:`all <reframe.utility.sanity.all>` function returns ``True`` for empty iterables, which is not what we want.
+So we must ensure that all the numbers are extracted as well.
+To achieve this, we make use of :func:`count <reframe.utility.sanity.count>` to get the number of elements contained in ``numbers`` combined with :func:`assert_eq <reframe.utility.sanity.assert_eq>` to check that the number is indeed 100.
+Finally, both of the above conditions have to be satisfied for the program execution to be considered successful, hence the use of the :func:`and_ <reframe.utility.sanity.and_>` function.
+Note that the ``and`` operator is not deferrable and will trigger the evaluation of any deferrable argument passed to it.
+
+The full syntax for the :attr:`sanity_patterns` is the following:
+
+.. code-block:: python
+
+  self.sanity_patterns = sn.and_(
+      sn.assert_eq(sn.count(numbers), 100),
+      sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
+
+Note that the environment variables ``LOWER`` and ``UPPER`` have to be exported before execution of the ``advanced_example6.sh`` script.
+Within ReFrame it is possible to define commands that will be run before execution of the actual :attr:`executable <reframe.core.pipeline.RegressionTest.executable>`.
+To achieve this, the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method has to be overriden to access the :attr:`pre_run <reframe.core.schedulers.Job.pre_run>` field of the corresponding job.
+In this particular case, the setup implementation is written as:
+
+.. code-block:: python
+
+  def setup(self, partition, environ, **job_opts):
+      super().setup(partition, environ, **job_opts)
+      self.job.pre_run = ['source %s/limits.sh' % self.stagedir]
+
+The :attr:`pre_run <reframe.core.schedulers.Job.pre_run>` attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
+In this case, we make sure that the ``limits.sh`` file is sourced before executing the ``advanced_example6.sh`` script.

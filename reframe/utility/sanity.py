@@ -37,7 +37,7 @@ This module provides three categories of sanity functions:
    These functions simply delegate their execution to the actual built-ins.
 2. Assertion functions.
    These functions are used to assert certain conditions and they either return
-   ``True`` or raise :class:`SanityError <reframe.core.exceptions.SanityError>` with a
+   :class:`True` or raise :class:`reframe.core.exceptions.SanityError` with a
    message describing the error.
    Users may provide their own formatted messages through the ``msg``
    argument.
