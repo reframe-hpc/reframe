@@ -170,40 +170,72 @@ The available partition attributes are the following:
   This option is relevant only when ReFrame executes with the `asynchronous execution policy <running.html#asynchronous-execution-of-regression-checks>`__.
 
 * ``resources``: A set of custom resource specifications and how these can be requested from the partition's scheduler (default ``{}``).
+
   This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition's job scheduler.
-  The option strings can contain "references" to the resource being required using the syntax ``{resource_name}``.
-  In such cases, the ``{resource_name}`` will be replaced by the value of that resource defined in the regression test that is being run. For example, one could define a :attr:`num_gpus_per_node reframe.core.pipeline.RegressionTest.num_gpus_per_node` resource for a multi-GPU system that uses Slurm as follows:
+  The option strings can contain *placeholders* of the form ``{placeholder_name}``.
+  These placeholders may be replaced with concrete values by a regression tests through the :attr:`extra_resources` attribute.
+
+  For example, one could define a ``gpu`` resource for a multi-GPU system that uses Slurm as follows:
 
   .. code-block:: python
 
-    'resources' : {
-        'num_gpus_per_node' : [
-        '--gres=gpu:{num_gpus_per_node}'
-        ]
+    'resources': {
+        'gpu': ['--gres=gpu:{num_gpus_per_node}']
     }
 
   A regression test then may request this resource as follows:
 
   .. code-block:: python
 
-    self.extra_resources = {'num_gpus_per_node': '8'}
+    self.extra_resources = {'gpu': {'num_gpus_per_node': '8'}}
 
-  and the generated job script will have the following line in its preamble:
+  And the generated job script will have the following line in its preamble:
 
   .. code-block:: bash
 
     #SBATCH --gres=gpu:8
 
-  Refer to the `reference guide <reference.html#reframe.core.pipeline.RegressionTest.extra_resources>`__ for more information on the use of the ``extra_resources`` regression test attribute.
+  A resource specification may also start with ``#PREFIX``, in which case ``#PREFIX`` will replace the standard job script prefix of the backend scheduler of this partition.
+  This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
+  An example is the `DataWarp <https://www.cray.com/datawarp>`__ functionality of Slurm which is supported by the ``#DW`` prefix.
+  One could then define DataWarp related resources as follows:
+
+  .. code-block:: python
+
+   'resources': {
+       'datawarp': [
+           '#DW jobdw capacity={capacity} access_mode={mode} type=scratch'
+           '#DW stage_out source={out_src} destination={out_dst} type={stage_filetype}'
+       ]
+   }
+
+  A regression test that wants to make use of that resource, it can set its :attr:`extra_resources` as follows:
+
+  .. code-block:: python
+
+    self.extra_resources = {
+        'datawarp': {
+            'capacity': '100GB',
+            'mode': 'striped',
+            'out_src': '$DW_JOB_STRIPED/name',
+            'out_dst': '/my/file',
+            'stage_filetype': 'file'
+        }
+    }
+
+.. note::
+  .. versionchanged:: 2.8
+     A new syntax for the ``scheduler`` values was introduced as well as more parallel program launchers.
+     The old values for the ``scheduler`` key will continue to be supported.
 
 .. note::
   .. versionadded:: 2.8.1
      The ``squeue`` backend scheduler was added.
 
 .. note::
-  .. versionchanged:: 2.8
-     A new syntax for the ``scheduler`` values was introduced as well as more parallel program launchers.
-     The old values for the ``scheduler`` key will continue to be supported.
+   .. versionchanged:: 2.9
+      Better support for custom job resources.
+
 
 Environments Configuration
 --------------------------

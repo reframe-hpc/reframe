@@ -1,7 +1,7 @@
-import re
+import os
+import reframe.utility.sanity as sn
 
 from reframe.core.pipeline import RegressionTest
-from reframe.core.environments import *
 
 
 class HelloMakeTest(RegressionTest):
@@ -17,9 +17,7 @@ class HelloMakeTest(RegressionTest):
         self.executable = './hello_cpp'
         self.keep_files = ['hello_cpp']
         self.tags = {'foo', 'bar'}
-        self.sanity_patterns = {
-            '-': {'Hello, World\!': []}
-        }
+        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']
 
     def compile(self):

@@ -3,14 +3,13 @@ import logging
 import tempfile
 import unittest
 import sys
+import reframe.core.logging as rlog
 
 from contextlib import contextmanager
 from datetime import datetime
 from io import StringIO
 from unittest.mock import patch
-
-from reframe.core.exceptions import ReframeError, ConfigurationError
-from reframe.core.logging import *
+from reframe.core.exceptions import ReframeError, ConfigError
 from reframe.core.pipeline import RegressionTest
 from reframe.core.systems import System
 from reframe.frontend.resources import ResourcesManager
@@ -21,8 +20,8 @@ class TestLogger(unittest.TestCase):
         tmpfd, self.logfile = tempfile.mkstemp()
         os.close(tmpfd)
 
-        self.logger  = Logger('reframe')
-        self.handler = RotatingFileHandler(self.logfile)
+        self.logger  = rlog.Logger('reframe')
+        self.handler = rlog.RotatingFileHandler(self.logfile)
         self.formatter = logging.Formatter(
             fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
             datefmt='%FT%T')
@@ -31,10 +30,10 @@ class TestLogger(unittest.TestCase):
         self.logger.addHandler(self.handler)
 
         # Use the logger adapter that defines check_name
-        self.logger_without_check = LoggerAdapter(self.logger)
+        self.logger_without_check = rlog.LoggerAdapter(self.logger)
 
         # Logger adapter with an associated check
-        self.logger_with_check = LoggerAdapter(
+        self.logger_with_check = rlog.LoggerAdapter(
             self.logger, RegressionTest(
                 'random_check', '.', System('foosys'), ResourcesManager()
             )
@@ -51,8 +50,8 @@ class TestLogger(unittest.TestCase):
         return found
 
     def test_invalid_loglevel(self):
-        self.assertRaises(ReframeError, self.logger.setLevel, 'level')
-        self.assertRaises(ReframeError, Logger, 'logger', 'level')
+        self.assertRaises(ValueError, self.logger.setLevel, 'level')
+        self.assertRaises(ValueError, rlog.Logger, 'logger', 'level')
 
     def test_custom_loglevels(self):
         self.logger_without_check.info('foo')
@@ -74,7 +73,7 @@ class TestLogger(unittest.TestCase):
 
     def test_custom_handler_levels(self):
         self.handler.setLevel('verbose')
-        self.handler.setLevel(VERBOSE)
+        self.handler.setLevel(rlog.VERBOSE)
 
         self.logger_with_check.debug('foo')
         self.logger_with_check.verbose('bar')
@@ -84,7 +83,7 @@ class TestLogger(unittest.TestCase):
 
     def test_logger_levels(self):
         self.logger_with_check.setLevel('verbose')
-        self.logger_with_check.setLevel(VERBOSE)
+        self.logger_with_check.setLevel(rlog.VERBOSE)
 
         self.logger_with_check.debug('bar')
         self.logger_with_check.verbose('foo')
@@ -118,7 +117,7 @@ class TestLoggerConfiguration(unittest.TestCase):
             os.remove(self.logfile)
 
     def found_in_logfile(self, string):
-        for handler in getlogger().logger.handlers:
+        for handler in rlog.getlogger().logger.handlers:
             handler.flush()
             handler.close()
 
@@ -129,43 +128,43 @@ class TestLoggerConfiguration(unittest.TestCase):
         return found
 
     def close_handlers(self):
-        for h in getlogger().logger.handlers:
+        for h in rlog.getlogger().logger.handlers:
             h.close()
 
     def flush_handlers(self):
-        for h in getlogger().logger.handlers:
+        for h in rlog.getlogger().logger.handlers:
             h.flush()
 
     def test_valid_level(self):
-        configure_logging(self.logging_config)
-        self.assertEqual(INFO, getlogger().getEffectiveLevel())
+        rlog.configure_logging(self.logging_config)
+        self.assertEqual(rlog.INFO, rlog.getlogger().getEffectiveLevel())
 
     def test_no_handlers(self):
         del self.logging_config['handlers']
-        self.assertRaises(ConfigurationError,
-                          configure_logging, self.logging_config)
+        self.assertRaises(ValueError, rlog.configure_logging,
+                          self.logging_config)
 
     def test_empty_handlers(self):
         self.logging_config['handlers'] = {}
-        self.assertRaises(ConfigurationError,
-                          configure_logging, self.logging_config)
+        self.assertRaises(ValueError, rlog.configure_logging,
+                          self.logging_config)
 
     def test_handler_level(self):
-        configure_logging(self.logging_config)
-        getlogger().info('foo')
-        getlogger().warning('bar')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().info('foo')
+        rlog.getlogger().warning('bar')
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
     def test_handler_append(self):
-        configure_logging(self.logging_config)
-        getlogger().warning('foo')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('foo')
         self.close_handlers()
 
         # Reload logger
-        configure_logging(self.logging_config)
-        getlogger().warning('bar')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('bar')
 
         self.assertTrue(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
@@ -183,21 +182,21 @@ class TestLoggerConfiguration(unittest.TestCase):
             }
         }
 
-        configure_logging(self.logging_config)
-        getlogger().warning('foo')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('foo')
         self.close_handlers()
 
         # Reload logger
-        configure_logging(self.logging_config)
-        getlogger().warning('bar')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('bar')
 
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
     # FIXME: this test is not so robust
     def test_date_format(self):
-        configure_logging(self.logging_config)
-        getlogger().warning('foo')
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('foo')
         self.assertTrue(self.found_in_logfile(datetime.now().strftime('%F')))
 
     def test_stream_handler_stdout(self):
@@ -207,12 +206,12 @@ class TestLoggerConfiguration(unittest.TestCase):
                 '&1': {},
             }
         }
-        configure_logging(self.logging_config)
-        raw_logger = getlogger().logger
+        rlog.configure_logging(self.logging_config)
+        raw_logger = rlog.getlogger().logger
         self.assertEqual(len(raw_logger.handlers), 1)
         handler = raw_logger.handlers[0]
 
-        self.assertTrue(isinstance(handler, StreamHandler))
+        self.assertTrue(isinstance(handler, rlog.StreamHandler))
         self.assertEqual(handler.stream, sys.stdout)
 
     def test_stream_handler_stderr(self):
@@ -223,12 +222,12 @@ class TestLoggerConfiguration(unittest.TestCase):
             }
         }
 
-        configure_logging(self.logging_config)
-        raw_logger = getlogger().logger
+        rlog.configure_logging(self.logging_config)
+        raw_logger = rlog.getlogger().logger
         self.assertEqual(len(raw_logger.handlers), 1)
         handler = raw_logger.handlers[0]
 
-        self.assertTrue(isinstance(handler, StreamHandler))
+        self.assertTrue(isinstance(handler, rlog.StreamHandler))
         self.assertEqual(handler.stream, sys.stderr)
 
     def test_multiple_handlers(self):
@@ -239,43 +238,43 @@ class TestLoggerConfiguration(unittest.TestCase):
                 self.logfile: {},
             }
         }
-        configure_logging(self.logging_config)
-        self.assertEqual(len(getlogger().logger.handlers), 2)
+        rlog.configure_logging(self.logging_config)
+        self.assertEqual(len(rlog.getlogger().logger.handlers), 2)
 
     def test_global_noconfig(self):
         # This is to test the case when no configuration is set, but since the
         # order the unit tests are invoked is arbitrary, we emulate the
         # 'no-config' state by passing `None` to `configure_logging()`
 
-        configure_logging(None)
-        self.assertIs(getlogger(), null_logger)
+        rlog.configure_logging(None)
+        self.assertIs(rlog.getlogger(), rlog.null_logger)
 
     def test_global_config(self):
-        configure_logging(self.logging_config)
-        self.assertIsNot(getlogger(), null_logger)
+        rlog.configure_logging(self.logging_config)
+        self.assertIsNot(rlog.getlogger(), rlog.null_logger)
 
     def test_logging_context(self):
-        configure_logging(self.logging_config)
-        with logging_context() as logger:
-            self.assertIs(logger, getlogger())
-            self.assertIsNot(logger, null_logger)
-            getlogger().error('error from context')
+        rlog.configure_logging(self.logging_config)
+        with rlog.logging_context() as logger:
+            self.assertIs(logger, rlog.getlogger())
+            self.assertIsNot(logger, rlog.null_logger)
+            rlog.getlogger().error('error from context')
 
         self.assertTrue(self.found_in_logfile('reframe'))
         self.assertTrue(self.found_in_logfile('error from context'))
 
     def test_logging_context_check(self):
-        configure_logging(self.logging_config)
-        with logging_context(check=self.check):
-            getlogger().error('error from context')
+        rlog.configure_logging(self.logging_config)
+        with rlog.logging_context(check=self.check):
+            rlog.getlogger().error('error from context')
 
         self.assertTrue(self.found_in_logfile('random_check'))
         self.assertTrue(self.found_in_logfile('error from context'))
 
     def test_logging_context_error(self):
-        configure_logging(self.logging_config)
+        rlog.configure_logging(self.logging_config)
         try:
-            with logging_context(level=ERROR):
+            with rlog.logging_context(level=rlog.ERROR):
                 raise ReframeError('error from context')
 
             self.fail('logging_context did not propagate the exception')

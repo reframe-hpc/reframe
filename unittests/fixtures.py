@@ -34,9 +34,11 @@ TEST_SITE_CONFIG = {
                     'scheduler': 'nativeslurm',
                     'modules': [],
                     'resources': {
-                        'num_gpus_per_node': [
-                            '--gres=gpu:{num_gpus_per_node}'
-                        ],
+                        'gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        'datawarp': [
+                            '#DW jobdw capacity={capacity}',
+                            '#DW stage_in source={stagein_src}'
+                        ]
                     },
                     'access': [],
                     'environs': ['PrgEnv-gnu', 'builtin-gcc'],

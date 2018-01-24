@@ -1,10 +1,8 @@
 import copy
 import os
 import unittest
-import warnings
 
-from reframe.core.exceptions import (ReframeDeprecationWarning,
-                                     ReframeError, ConfigurationError)
+from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -39,56 +37,61 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
         # Check that the PrgEnv-gnu of the gpu partition is resolved to the
         # default one
-        env_gpu = system.partition('gpu').environment('PrgEnv-gnu')
+        part = system.partition('gpu')
+        env_gpu = part.environment('PrgEnv-gnu')
         self.assertEqual('cc', env_gpu.cc)
         self.assertEqual('CC', env_gpu.cxx)
         self.assertEqual('ftn', env_gpu.ftn)
 
         # Check resource instantiation
         self.assertEqual(['--gres=gpu:16'],
-                         system.partition('gpu').get_resource(
-                             'num_gpus_per_node', '16'))
+                         part.get_resource('gpu', num_gpus_per_node=16))
+        self.assertEqual(['#DW jobdw capacity=100GB',
+                          '#DW stage_in source=/foo'],
+                         part.get_resource('datawarp',
+                                           capacity='100GB',
+                                           stagein_src='/foo'))
 
     def test_load_failure_empty_dict(self):
         site_config = {}
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           self.config.load_from_dict, site_config)
 
     def test_load_failure_no_environments(self):
         site_config = {'systems': {}}
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           self.config.load_from_dict, site_config)
 
     def test_load_failure_no_systems(self):
         site_config = {'environments': {}}
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ValueError,
                           self.config.load_from_dict, site_config)
 
     def test_load_failure_environments_no_scoped_dict(self):
         self.site_config['environments'] = {
             'testsys': 'PrgEnv-gnu'
         }
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(TypeError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_partitions_nodict(self):
         self.site_config['systems']['testsys']['partitions'] = ['gpu']
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ConfigError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_systems_nodict(self):
         self.site_config['systems']['testsys'] = ['gpu']
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(TypeError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_partitions_nodict(self):
         self.site_config['systems']['testsys']['partitions']['login'] = 'foo'
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(TypeError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_partconfig_nodict(self):
         self.site_config['systems']['testsys']['partitions']['login'] = 'foo'
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(TypeError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_unresolved_environment(self):
@@ -100,16 +103,12 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
                 }
             }
         }
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ConfigError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_envconfig_nodict(self):
-        self.site_config['environments'] = {
-            '*': {
-                'PrgEnv-gnu': 'foo'
-            }
-        }
-        self.assertRaises(ConfigurationError,
+        self.site_config['environments']['*']['PrgEnv-gnu'] = 'foo'
+        self.assertRaises(TypeError,
                           self.config.load_from_dict, self.site_config)
 
     def test_load_failure_envconfig_notype(self):
@@ -120,13 +119,12 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
                 }
             }
         }
-        self.assertRaises(ConfigurationError,
+        self.assertRaises(ConfigError,
                           self.config.load_from_dict, self.site_config)
 
 
 class TestRegressionCheckLoader(unittest.TestCase):
     def setUp(self):
-        warnings.simplefilter('ignore', ReframeDeprecationWarning)
         self.loader = RegressionCheckLoader(['.'])
         self.loader_with_path = RegressionCheckLoader(
             ['unittests/resources', 'unittests/foobar'])
@@ -136,9 +134,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
         self.system = System('foo')
         self.resources = ResourcesManager()
-
-    def tearDown(self):
-        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def test_load_file_relative(self):
         checks = self.loader.load_from_file(
@@ -174,5 +169,5 @@ class TestRegressionCheckLoader(unittest.TestCase):
         self.assertEqual(1, len(checks))
 
     def test_load_error(self):
-        self.assertRaises(ReframeError, self.loader.load_from_file,
+        self.assertRaises(OSError, self.loader.load_from_file,
                           'unittests/resources/foo.py')

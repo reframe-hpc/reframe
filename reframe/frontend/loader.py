@@ -12,7 +12,7 @@ import reframe.utility.os as os_ext
 
 from importlib.machinery import SourceFileLoader
 from reframe.core.environments import Environment, ProgEnvironment
-from reframe.core.exceptions import ConfigurationError, ReframeError
+from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.systems import System, SystemPartition
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.schedulers.registry import getscheduler
@@ -99,16 +99,11 @@ class RegressionCheckLoader:
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
-        try:
-            if not self._validate_source(filename):
-                return []
+        if not self._validate_source(filename):
+            return []
 
-            loader = SourceFileLoader(module_name, filename)
-            return self.load_from_module(loader.load_module(), **check_args)
-        except OSError as e:
-            raise ReframeError(
-                "Could not load module `%s' from file `%s': %s" %
-                (module_name, filename, e.strerror))
+        loader = SourceFileLoader(module_name, filename)
+        return self.load_from_module(loader.load_module(), **check_args)
 
     def load_from_dir(self, dirname, recurse=False, **check_args):
         checks = []
@@ -175,31 +170,31 @@ class SiteConfiguration:
         try:
             sched_descr, launcher_descr = descr.split('+')
         except ValueError as e:
-            raise ConfigurationError(
-                'invalid syntax for the scheduling system') from e
+            raise ValueError('invalid syntax for the '
+                             'scheduling system: %s' % descr) from None
 
         return getscheduler(sched_descr), getlauncher(launcher_descr)
 
     def load_from_dict(self, site_config):
         if not isinstance(site_config, collections.abc.Mapping):
-            raise ConfigurationError('site configuration is not a dict')
+            raise TypeError('site configuration is not a dict')
 
         sysconfig = site_config.get('systems', None)
         envconfig = site_config.get('environments', None)
         modes = site_config.get('modes', {})
 
         if not sysconfig:
-            raise ConfigurationError('no entry for systems was found')
+            raise ValueError('no entry for systems was found')
 
         if not envconfig:
-            raise ConfigurationError('no entry for environments was found')
+            raise ValueError('no entry for environments was found')
 
         # Convert envconfig to a ScopedDict
         try:
             envconfig = ScopedDict(envconfig)
         except TypeError:
-            raise ConfigurationError('environments configuration '
-                                     'is not properly formatted')
+            raise TypeError('environments configuration '
+                            'is not a scoped dictionary') from None
 
         # Convert modes to a `ScopedDict`; note that `modes` will implicitly
         # converted to a scoped dict here, since `self._models` is a
@@ -207,40 +202,37 @@ class SiteConfiguration:
         try:
             self._modes = modes
         except TypeError:
-            raise ConfigurationError('modes configuration '
-                                     'is not properly formatted')
+            raise TypeError('modes configuration '
+                            'is not a scoped dictionary') from None
 
         def create_env(system, partition, name):
             # Create an environment instance
             try:
-                config  = envconfig['%s:%s:%s' % (system, partition, name)]
+                config = envconfig['%s:%s:%s' % (system, partition, name)]
             except KeyError as e:
-                raise ConfigurationError(
+                raise ConfigError(
                     "could not find a definition for `%s'" % name
-                )
+                ) from None
 
             if not isinstance(config, collections.abc.Mapping):
-                raise ConfigurationError(
-                    "config for `%s' is not a dictionary" % name
-                )
+                raise TypeError("config for `%s' is not a dictionary" % name)
 
             try:
                 envtype = globals()[config['type']]
                 return envtype(name, **config)
             except KeyError:
-                raise ConfigurationError("no type specified for `%s'" % name)
+                raise ConfigError("no type specified for environment `%s'" %
+                                  name) from None
 
         # Populate the systems directory
         for sys_name, config in sysconfig.items():
             if not isinstance(config, dict):
-                raise ConfigurationError(
-                    'system configuration is not a dictionary'
-                )
+                raise TypeError('system configuration is not a dictionary')
 
             if not isinstance(config['partitions'], collections.abc.Mapping):
-                raise ConfigurationError('partitions must be a dictionary')
+                raise TypeError('partitions must be a dictionary')
 
-            sys_descr     = config.get('descr', sys_name)
+            sys_descr = config.get('descr', sys_name)
             sys_hostnames = config.get('hostnames', [])
 
             # The System's constructor provides also reasonable defaults, but
@@ -248,10 +240,10 @@ class SiteConfiguration:
             # the configuration, we should set default values here. The stage,
             # output and log directories default to None, since they are
             # going to be set dynamically by the ResourcesManager
-            sys_prefix    = config.get('prefix', '.')
-            sys_stagedir  = config.get('stagedir', None)
+            sys_prefix = config.get('prefix', '.')
+            sys_stagedir = config.get('stagedir', None)
             sys_outputdir = config.get('outputdir', None)
-            sys_logdir    = config.get('logdir', None)
+            sys_logdir = config.get('logdir', None)
             sys_resourcesdir = config.get('resourcesdir', '.')
             sys_modules_system = config.get('modules_system', None)
 
@@ -282,10 +274,8 @@ class SiteConfiguration:
                             modules_system=sys_modules_system)
             for part_name, partconfig in config.get('partitions', {}).items():
                 if not isinstance(partconfig, collections.abc.Mapping):
-                    raise ConfigurationError(
-                        "partition `%s' not configured "
-                        "as a dictionary" % part_name
-                    )
+                    raise TypeError("partition `%s' not configured "
+                                    "as a dictionary" % part_name)
 
                 part_descr = partconfig.get('descr', part_name)
                 part_scheduler, part_launcher = self.get_schedsystem_config(
