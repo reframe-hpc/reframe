@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.launchers.registry &mdash; ReFrame 2.8.1 documentation</title>
+  <title>reframe.core.launchers.registry &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../../search.html"/>
-    <link rel="top" title="ReFrame 2.8.1 documentation" href="../../../../index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="../../../../index.html"/>
         <link rel="up" title="reframe.core.launchers" href="../launchers.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8.1
+                2.9
               </div>
             
           
@@ -173,6 +173,8 @@
   <h1>Source code for reframe.core.launchers.registry</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">ConfigError</span>
+
 
 <span class="c1"># Name registry for job launchers</span>
 <span class="n">_LAUNCHERS</span> <span class="o">=</span> <span class="p">{}</span>
@@ -184,16 +186,19 @@
 <span class="sd">    :arg name: The registration name of this launcher</span>
 <span class="sd">    :arg local: :class:`True` if launcher may only submit local jobs,</span>
 <span class="sd">        :class:`False` otherwise.</span>
+<span class="sd">    :raises ValueError: if a job launcher is already registered with</span>
+<span class="sd">        the same name.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">       .. versionadded:: 2.8</span>
 
 <span class="sd">       This method is only relevant to developers of new job launchers.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">_register_launcher</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_LAUNCHERS</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span>
-                <span class="s2">&quot;a job launcher is already registered with name &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;a job launcher is already &quot;</span>
+                             <span class="s2">&quot;registered with name &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 
         <span class="bp">cls</span><span class="o">.</span><span class="n">is_local</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">ConstantField</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">local</span><span class="p">))</span>
         <span class="bp">cls</span><span class="o">.</span><span class="n">registered_name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">ConstantField</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
@@ -231,14 +236,17 @@
 <span class="sd">    :arg name: The name of the launcher to retrieve.</span>
 <span class="sd">    :returns: The class of the launcher requested, which is a subclass of</span>
 <span class="sd">        :class:`reframe.core.launchers.JobLauncher`.</span>
+<span class="sd">    :raises reframe.core.exceptions.ConfigError: if no launcher is</span>
+<span class="sd">        registered with that name.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">       .. versionadded:: 2.8</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_LAUNCHERS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">(</span><span class="s2">&quot;no such job launcher: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="s2">&quot;no such job launcher: &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span></div>
 
 
 <span class="c1"># Import the launchers modules to trigger their registration</span>
@@ -324,6 +332,7 @@
             <dt>Tags</dt>
             <dd><a href="../../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../../v2.8/index.html">v2.8</a></dd>
+            <dd><a href="../../../../../v2.8.1/index.html">v2.8.1</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -338,7 +347,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'2.8.1',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

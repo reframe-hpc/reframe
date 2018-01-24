@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.8.1 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.8.1 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
         <link rel="next" title="Sanity Functions Reference" href="sanity_functions_reference.html"/>
         <link rel="prev" title="About ReFrame" href="about.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.8.1
+                2.9
               </div>
             
           
@@ -264,16 +264,8 @@ follows:</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">True</span></code> on success, <code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise, if the
-old <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.perf_patterns" title="reframe.core.pipeline.RegressionTest.perf_patterns"><code class="xref py py-attr docutils literal"><span class="pre">perf_patterns</span></code></a> syntax is used.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><strong>reframe.core.exceptions.SanityError</strong> – If the new syntax is used
-and the performance check fails.</li>
-<li><strong>reframe.core.exceptions.ReframeError</strong> – In case of other errors.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.SanityError</strong> – If the performance check
+fails.</td>
 </tr>
 </tbody>
 </table>
@@ -287,16 +279,7 @@ and the performance check fails.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><code class="xref py py-class docutils literal"><span class="pre">True</span></code> on success, <code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise, if the
-old <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sanity_patterns" title="reframe.core.pipeline.RegressionTest.sanity_patterns"><code class="xref py py-attr docutils literal"><span class="pre">sanity_patterns</span></code></a> syntax is used.</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><strong>reframe.core.exceptions.SanityError</strong> – If the new syntax is used
-and the sanity check fails.</li>
-<li><strong>reframe.core.exceptions.ReframeError</strong> – In case of other errors.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.SanityError</strong> – If the sanity check fails.</td>
 </tr>
 </tbody>
 </table>
@@ -441,7 +424,7 @@ with.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -456,35 +439,53 @@ with.</p>
 <p>This field is for specifying custom resources needed by this test.
 These resources are defined in the <a class="reference internal" href="configure.html"><span class="doc">configuration</span></a>
 of a system partition.
-For example, assume that <code class="docutils literal"><span class="pre">num_accels</span></code> is defined as follows in the
-configuration file:</p>
+For example, assume that two additional resources, named <code class="docutils literal"><span class="pre">gpu</span></code> and
+<code class="docutils literal"><span class="pre">datawarp</span></code>, are defined in the configuration file as follows:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="s1">&#39;--gres=gpu:</span><span class="si">{num_accels}</span><span class="s1">&#39;</span>
+    <span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;--gres=gpu:</span><span class="si">{num_gpus_per_node}</span><span class="s1">&#39;</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;#DW jobdw capacity=</span><span class="si">{capacity}</span><span class="s1">&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;#DW stage_in source=</span><span class="si">{stagein_src}</span><span class="s1">&#39;</span>
     <span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>A regression test then may define <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="reframe.core.pipeline.RegressionTest.extra_resources"><code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code></a> as follows in
-order to get two accelerator devices:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_accels&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<p>A regression test then may instantiate the above resources by setting the
+<a class="reference internal" href="#reframe.core.pipeline.RegressionTest.extra_resources" title="reframe.core.pipeline.RegressionTest.extra_resources"><code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code></a> attribute as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;capacity&#39;</span><span class="p">:</span> <span class="s1">&#39;100GB&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;stagein_src&#39;</span><span class="p">:</span> <span class="s1">&#39;/foo&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
-<p>The framework will then pass the option <code class="docutils literal"><span class="pre">--gres=gpu:2</span></code> to the backend
-scheduler.</p>
+<p>The generated batch script (for Slurm) will then contain the following
+lines:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --gres=gpu:2</span>
+<span class="c1">#DW jobdw capacity=100GB</span>
+<span class="c1">#DW stage_in source=/foo</span>
+</pre></div>
+</div>
+<p>Notice that if the resource specified in the configuration uses an
+alternative directive prefix (in this case <code class="docutils literal"><span class="pre">#DW</span></code>), this will replace
+the standard prefix of the backend scheduler (in this case <code class="docutils literal"><span class="pre">#SBATCH</span></code>)</p>
 <p>If the resource name specified in this variable does not match a resource
 name in the partition configuration, it will be simply ignored.
 The <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.num_gpus_per_node" title="reframe.core.pipeline.RegressionTest.num_gpus_per_node"><code class="xref py py-attr docutils literal"><span class="pre">num_gpus_per_node</span></code></a> attribute translates internally to the
-<code class="docutils literal"><span class="pre">num_gpus_per_node</span></code> resource, so that setting <code class="docutils literal"><span class="pre">self.num_gpus_per_node</span> <span class="pre">=</span>
-<span class="pre">2</span></code> is equivalent to the following:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<code class="docutils literal"><span class="pre">_rfm_gpu</span></code> resource, so that setting
+<code class="docutils literal"><span class="pre">self.num_gpus_per_node</span> <span class="pre">=</span> <span class="pre">2</span></code> is equivalent to the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;_rfm_gpu&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}}</span>
 </pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary with <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">dict[str,</span> <span class="pre">dict[str,</span> <span class="pre">object]]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
 </tr>
@@ -492,9 +493,14 @@ The <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.nu
 </table>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<div class="last versionadded">
+<div class="versionadded">
 <p><span class="versionmodified">New in version 2.8.</span></p>
 </div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.9.</span></p>
+</div>
+<p class="last">A new more powerful syntax was introduced
+that allows also custom job script directive prefixes.</p>
 </div>
 </dd></dl>
 
@@ -535,7 +541,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -575,7 +581,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -592,7 +598,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -623,7 +629,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -639,7 +645,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">0</span></code></td>
 </tr>
@@ -651,16 +657,31 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <dt id="reframe.core.pipeline.RegressionTest.num_tasks">
 <code class="descname">num_tasks</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of tasks required by this test.</p>
+<p>If the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>, ReFrame will try to use all
+the available nodes of a reservation. A reservation <em>must</em> be specified
+through the <cite>–reservation</cite> command-line option, otherwise the
+regression test will fail during submission. ReFrame will try to run the
+test on all the nodes of the reservation that satisfy the selection
+criteria of the current
+<a class="reference external" href="configure.html#partition-configuration">virtual partition</a>
+(i.e., constraints and/or partitions).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">1</span></code></td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.9: </span>Added support for running the test using all the nodes of the
+specified reservation if the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>.</p>
+</div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -672,7 +693,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -689,7 +710,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -706,7 +727,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integral or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -759,12 +780,12 @@ otherwise.<p>If no job descriptor is yet associated with this test,
 <code class="descname">postbuild_cmd</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.postbuild_cmd" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of shell commands to be executed after a successful compilation.</p>
 <p>These commands are executed during the compilation phase and from inside
-the stage directory.</p>
+the stage directory. <strong>Each entry in the list spawns a new shell.</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -777,12 +798,12 @@ the stage directory.</p>
 <code class="descname">prebuild_cmd</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.prebuild_cmd" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of shell commands to be executed before compiling.</p>
 <p>These commands are executed during the compilation phase and from
-inside the stage directory.</p>
+inside the stage directory. <strong>Each entry in the list spawns a new shell.</strong></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -815,7 +836,7 @@ directory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -852,10 +873,10 @@ It simply submits the job associated with this test and returns.</p>
 <dl class="attribute">
 <dt id="reframe.core.pipeline.RegressionTest.sanity_patterns">
 <code class="descname">sanity_patterns</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sanity_patterns" title="Permalink to this definition">¶</a></dt>
-<dd><p>Patterns for verifying the sanity of this test.</p>
-<p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
+<dd><p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
 examples.</p>
-<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, no sanity checking will be performed.</p>
+<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, a sanity error will be raised during sanity
+checking.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -867,6 +888,18 @@ function</span></a>) or <code class="xref py py-class docutils literal"><span cl
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.9: </span>The default behaviour has changed and it is now considered a
+sanity failure if this attribute is set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+<p>If a test doesn’t care about its output, this must be stated
+explicitly as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;.*&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1010,7 +1043,7 @@ when invoking ReFrame.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">set</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">set[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body">an empty set</td>
 </tr>
@@ -1028,7 +1061,7 @@ with <code class="docutils literal"><span class="pre">hh</span> <span class="pre
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">a three-tuple with the above properties.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">tuple[int]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">(0,</span> <span class="pre">10,</span> <span class="pre">0)</span></code></td>
 </tr>
@@ -1061,7 +1094,7 @@ with <code class="docutils literal"><span class="pre">hh</span> <span class="pre
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1078,7 +1111,7 @@ The general syntax for systems is <code class="docutils literal"><span class="pr
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1095,7 +1128,7 @@ The general syntax for systems is <code class="docutils literal"><span class="pr
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary with <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">dict[str,</span> <span class="pre">str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
 </tr>
@@ -1699,6 +1732,9 @@ You have to instantiate it explicitly before assigning it to the
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The class of the launcher requested, which is a subclass of
 <a class="reference internal" href="#reframe.core.launchers.JobLauncher" title="reframe.core.launchers.JobLauncher"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.launchers.JobLauncher</span></code></a>.</td>
 </tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><strong>reframe.core.exceptions.ConfigError</strong> – if no launcher is
+registered with that name.</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition note">
@@ -1717,11 +1753,15 @@ You have to instantiate it explicitly before assigning it to the
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>name</strong> – The registration name of this launcher</li>
 <li><strong>local</strong> – <code class="xref py py-class docutils literal"><span class="pre">True</span></code> if launcher may only submit local jobs,
 <code class="xref py py-class docutils literal"><span class="pre">False</span></code> otherwise.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.6)"><strong>ValueError</strong></a> – if a job launcher is already registered with
+the same name.</p>
 </td>
 </tr>
 </tbody>
@@ -1825,6 +1865,7 @@ You have to instantiate it explicitly before assigning it to the
             <dt>Tags</dt>
             <dd><a href="../v2.7/reference.html">v2.7</a></dd>
             <dd><a href="../v2.8/reference.html">v2.8</a></dd>
+            <dd><a href="../v2.8.1/reference.html">v2.8.1</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -1839,7 +1880,7 @@ You have to instantiate it explicitly before assigning it to the
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.8.1',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

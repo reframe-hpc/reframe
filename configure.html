@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.8.1 documentation</title>
+  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.8.1 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
         <link rel="next" title="The Regression Test Pipeline" href="pipeline.html"/>
         <link rel="prev" title="Getting Started" href="started.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.8.1
+                2.9
               </div>
             
           
@@ -345,28 +345,57 @@ Environment variables can be set as follows (notice that both the variable name 
 <li><p class="first"><code class="docutils literal"><span class="pre">max_jobs</span></code>: The maximum number of concurrent regression tests that may be active (not completed) on this partition.
 This option is relevant only when ReFrame executes with the <a class="reference external" href="running.html#asynchronous-execution-of-regression-checks">asynchronous execution policy</a>.</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">resources</span></code>: A set of custom resource specifications and how these can be requested from the partition’s scheduler (default <code class="docutils literal"><span class="pre">{}</span></code>).
-This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition’s job scheduler.
-The option strings can contain “references” to the resource being required using the syntax <code class="docutils literal"><span class="pre">{resource_name}</span></code>.
-In such cases, the <code class="docutils literal"><span class="pre">{resource_name}</span></code> will be replaced by the value of that resource defined in the regression test that is being run. For example, one could define a <code class="xref py py-attr docutils literal"><span class="pre">num_gpus_per_node</span> <span class="pre">reframe.core.pipeline.RegressionTest.num_gpus_per_node</span></code> resource for a multi-GPU system that uses Slurm as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span> <span class="p">:</span> <span class="p">{</span>
-    <span class="s1">&#39;num_gpus_per_node&#39;</span> <span class="p">:</span> <span class="p">[</span>
-    <span class="s1">&#39;--gres=gpu:{num_gpus_per_node}&#39;</span>
-    <span class="p">]</span>
+<li><p class="first"><code class="docutils literal"><span class="pre">resources</span></code>: A set of custom resource specifications and how these can be requested from the partition’s scheduler (default <code class="docutils literal"><span class="pre">{}</span></code>).</p>
+<p>This variable is a set of key/value pairs with the key being the resource name and the value being a list of options to be passed to the partition’s job scheduler.
+The option strings can contain <em>placeholders</em> of the form <code class="docutils literal"><span class="pre">{placeholder_name}</span></code>.
+These placeholders may be replaced with concrete values by a regression tests through the <code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code> attribute.</p>
+<p>For example, one could define a <code class="docutils literal"><span class="pre">gpu</span></code> resource for a multi-GPU system that uses Slurm as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;--gres=gpu:{num_gpus_per_node}&#39;</span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>A regression test then may request this resource as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="s1">&#39;8&#39;</span><span class="p">}</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;gpu&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="s1">&#39;8&#39;</span><span class="p">}}</span>
 </pre></div>
 </div>
-<p>and the generated job script will have the following line in its preamble:</p>
+<p>And the generated job script will have the following line in its preamble:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span><span class="c1">#SBATCH --gres=gpu:8</span>
 </pre></div>
 </div>
-<p>Refer to the <a class="reference external" href="reference.html#reframe.core.pipeline.RegressionTest.extra_resources">reference guide</a> for more information on the use of the <code class="docutils literal"><span class="pre">extra_resources</span></code> regression test attribute.</p>
+<p>A resource specification may also start with <code class="docutils literal"><span class="pre">#PREFIX</span></code>, in which case <code class="docutils literal"><span class="pre">#PREFIX</span></code> will replace the standard job script prefix of the backend scheduler of this partition.
+This is useful in cases of job schedulers like Slurm, that allow alternative prefixes for certain features.
+An example is the <a class="reference external" href="https://www.cray.com/datawarp">DataWarp</a> functionality of Slurm which is supported by the <code class="docutils literal"><span class="pre">#DW</span></code> prefix.
+One could then define DataWarp related resources as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="s1">&#39;resources&#39;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;#DW jobdw capacity={capacity} access_mode={mode} type=scratch&#39;</span>
+        <span class="s1">&#39;#DW stage_out source={out_src} destination={out_dst} type={stage_filetype}&#39;</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A regression test that wants to make use of that resource, it can set its <code class="xref py py-attr docutils literal"><span class="pre">extra_resources</span></code> as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;datawarp&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;capacity&#39;</span><span class="p">:</span> <span class="s1">&#39;100GB&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;mode&#39;</span><span class="p">:</span> <span class="s1">&#39;striped&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;out_src&#39;</span><span class="p">:</span> <span class="s1">&#39;$DW_JOB_STRIPED/name&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;out_dst&#39;</span><span class="p">:</span> <span class="s1">&#39;/my/file&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;stage_filetype&#39;</span><span class="p">:</span> <span class="s1">&#39;file&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </li>
 </ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.8: </span>A new syntax for the <code class="docutils literal"><span class="pre">scheduler</span></code> values was introduced as well as more parallel program launchers.
+The old values for the <code class="docutils literal"><span class="pre">scheduler</span></code> key will continue to be supported.</p>
+</div>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <div class="last versionadded">
@@ -376,8 +405,7 @@ In such cases, the <code class="docutils literal"><span class="pre">{resource_na
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <div class="last versionchanged">
-<p><span class="versionmodified">Changed in version 2.8: </span>A new syntax for the <code class="docutils literal"><span class="pre">scheduler</span></code> values was introduced as well as more parallel program launchers.
-The old values for the <code class="docutils literal"><span class="pre">scheduler</span></code> key will continue to be supported.</p>
+<p><span class="versionmodified">Changed in version 2.9: </span>Better support for custom job resources.</p>
 </div>
 </div>
 </div>
@@ -528,6 +556,7 @@ You can override completely the auto-detection process by specifying a system or
             <dt>Tags</dt>
             <dd><a href="v2.7/configure.html">v2.7</a></dd>
             <dd><a href="v2.8/configure.html">v2.8</a></dd>
+            <dd><a href="v2.8.1/configure.html">v2.8.1</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -542,7 +571,7 @@ You can override completely the auto-detection process by specifying a system or
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.8.1',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

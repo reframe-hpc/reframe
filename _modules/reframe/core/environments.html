@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.environments &mdash; ReFrame 2.8.1 documentation</title>
+  <title>reframe.core.environments &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.8.1 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8.1
+                2.9
               </div>
             
           
@@ -174,11 +174,11 @@
 <span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.os</span> <span class="k">as</span> <span class="nn">os_ext</span>
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
+<span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="p">(</span><span class="n">ReframeError</span><span class="p">,</span>
-                                     <span class="n">CommandError</span><span class="p">,</span>
+
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="p">(</span><span class="n">EnvironError</span><span class="p">,</span> <span class="n">SpawnedProcessError</span><span class="p">,</span>
                                      <span class="n">CompilationError</span><span class="p">)</span>
-<span class="kn">from</span> <span class="nn">reframe.core.fields</span> <span class="k">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">reframe.core.modules</span> <span class="k">import</span> <span class="n">get_modules_system</span>
 
 
@@ -189,9 +189,9 @@
 <span class="sd">    to be set when this environment is loaded by the framework.</span>
 <span class="sd">    Users may not create or modify directly environments.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">name</span>      <span class="o">=</span> <span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="n">modules</span>   <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="n">variables</span> <span class="o">=</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">modules</span><span class="o">=</span><span class="p">[],</span> <span class="n">variables</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
@@ -335,10 +335,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_conflicted</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="nf">add_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;environment snapshot is read-only&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">EnvironError</span><span class="p">(</span><span class="s1">&#39;environment snapshot is read-only&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">set_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;environment snapshot is read-only&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">EnvironError</span><span class="p">(</span><span class="s1">&#39;environment snapshot is read-only&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
@@ -346,7 +346,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">unload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot unload an environment snapshot&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">EnvironError</span><span class="p">(</span><span class="s1">&#39;cannot unload an environment snapshot&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="save_environment"><a class="viewcode-back" href="../../../reference.html#reframe.core.environments.save_environment">[docs]</a><span class="k">class</span> <span class="nc">save_environment</span><span class="p">:</span>
@@ -382,54 +382,54 @@
     <span class="c1">#: The C compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
-    <span class="n">cc</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">)</span>
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">)</span>
 
     <span class="c1">#: The C++ compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">cxx</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cxx</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The Fortran compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">ftn</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ftn</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The preprocessor flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">cppflags</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cppflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The C compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">cflags</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The C++ compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">cxxflags</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cxxflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The Fortran compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">fflags</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The linker flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">ldflags</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ldflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The include search path of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">include_search_path</span> <span class="o">=</span> <span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">include_search_path</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: Propagate the compilation flags to the ``make`` invocation.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`bool`</span>
     <span class="c1">#: :default: :class:`True`</span>
-    <span class="n">propagate</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">)</span>
+    <span class="n">propagate</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">,</span>
@@ -509,7 +509,7 @@
             <span class="n">compiler</span> <span class="o">=</span> <span class="s1">&#39;nvcc&#39;</span>
             <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cxxflags</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;Unknown language&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">EnvironError</span><span class="p">(</span><span class="s1">&#39;Unknown language: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">lang</span><span class="p">)</span>
 
         <span class="c1"># Append include search path</span>
         <span class="n">flags</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;-I&#39;</span> <span class="o">+</span> <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">include_search_path</span><span class="p">]</span>
@@ -518,12 +518,12 @@
                                          <span class="n">ldflags</span><span class="p">,</span> <span class="n">options</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">CommandError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">except</span> <span class="n">SpawnedProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Re-raise as compilation error</span>
             <span class="k">raise</span> <span class="n">CompilationError</span><span class="p">(</span><span class="n">command</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">command</span><span class="p">,</span>
                                    <span class="n">stdout</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
                                    <span class="n">stderr</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
-                                   <span class="n">exitcode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">exitcode</span><span class="p">,</span>
-                                   <span class="n">environ</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+                                   <span class="n">exitcode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">exitcode</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">None</span>
 
     <span class="k">def</span> <span class="nf">_compile_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_dir</span><span class="p">,</span> <span class="n">makefile</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">makefile</span><span class="p">:</span>
@@ -558,12 +558,12 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">CommandError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">except</span> <span class="n">SpawnedProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># Re-raise as compilation error</span>
             <span class="k">raise</span> <span class="n">CompilationError</span><span class="p">(</span><span class="n">command</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">command</span><span class="p">,</span>
                                    <span class="n">stdout</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
                                    <span class="n">stderr</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
-                                   <span class="n">exitcode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">exitcode</span><span class="p">,</span>
-                                   <span class="n">environ</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span></div>
+                                   <span class="n">exitcode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">exitcode</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">None</span></div>
 </pre></div>
 
            </div>
@@ -644,6 +644,7 @@
             <dt>Tags</dt>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
+            <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -658,7 +659,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.8.1',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

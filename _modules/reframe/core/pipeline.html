@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.8.1 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.9 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.8.1 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.9 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.8.1
+                2.9
               </div>
             
           
@@ -187,7 +187,7 @@
 
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">ReframeError</span><span class="p">,</span> <span class="n">SanityError</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers.registry</span> <span class="k">import</span> <span class="n">getscheduler</span>
 <span class="kn">from</span> <span class="nn">reframe.core.launchers.registry</span> <span class="k">import</span> <span class="n">getlauncher</span>
@@ -195,97 +195,6 @@
 <span class="kn">from</span> <span class="nn">reframe.core.systems</span> <span class="k">import</span> <span class="n">System</span><span class="p">,</span> <span class="n">SystemPartition</span>
 <span class="kn">from</span> <span class="nn">reframe.frontend.resources</span> <span class="k">import</span> <span class="n">ResourcesManager</span>
 <span class="kn">from</span> <span class="nn">reframe.utility.sanity</span> <span class="k">import</span> <span class="n">assert_reference</span>
-
-
-<span class="c1"># Holds information for the output scanning algorithm.</span>
-<span class="k">class</span> <span class="nc">_OutputScanInfo</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">debug</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">set_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patterns</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="p">{})</span>
-        <span class="k">for</span> <span class="n">patt</span> <span class="ow">in</span> <span class="n">patterns</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">patt</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">add_match_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">patt</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">def</span> <span class="nf">add_match_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">action_result</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">patt</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">action_result</span><span class="p">))</span>
-
-    <span class="k">def</span> <span class="nf">add_match_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">eof_result</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eof_result</span>
-
-    <span class="c1"># Routines for querying matches</span>
-    <span class="k">def</span> <span class="nf">matched_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">patt</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">matched_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">tinfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="n">patt</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">tinfo</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">tag</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">tinfo</span>
-        <span class="k">return</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">matched_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">[</span><span class="n">path</span><span class="p">][</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span>
-
-    <span class="c1"># Routines for producing formatted reports</span>
-    <span class="k">def</span> <span class="nf">failure_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_paths</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">patterns</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">full_paths</span><span class="p">:</span>
-                <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">patt</span><span class="p">,</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">patt</span> <span class="o">==</span> <span class="s1">&#39;\e&#39;</span><span class="p">:</span>
-                    <span class="c1"># taglist here is actually the result of the eof test</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">&#39;: eof action failed</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span>
-                    <span class="k">continue</span>
-
-                <span class="k">if</span> <span class="n">taglist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;`</span><span class="si">%s</span><span class="s2">&#39;: pattern `</span><span class="si">%s</span><span class="s2">&#39; was not matched</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span>
-                            <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">))</span>
-                    <span class="k">continue</span>
-
-                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">:</span>
-                    <span class="n">tag</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">t</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
-                        <span class="n">ret</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">: pattern `</span><span class="si">%s</span><span class="s2">&#39;: &quot;</span>
-                                <span class="s2">&quot;action for tag `</span><span class="si">%s</span><span class="s2">&#39; failed &quot;</span>
-                                <span class="s2">&quot;(value: </span><span class="si">%s</span><span class="s2">, reference: </span><span class="si">%s</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span>
-                                <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">ret</span>
-
-    <span class="k">def</span> <span class="nf">scan_report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">patterns</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">path</span>
-            <span class="k">for</span> <span class="n">patt</span><span class="p">,</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">patt</span> <span class="o">==</span> <span class="s1">&#39;\e&#39;</span><span class="p">:</span>
-                    <span class="c1"># Here taglist refers to the action taken at eof</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;  action at end of file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                            <span class="s1">&#39;success&#39;</span> <span class="k">if</span> <span class="n">taglist</span> <span class="k">else</span> <span class="s1">&#39;fail&#39;</span><span class="p">)</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-                    <span class="k">continue</span>
-
-                <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;  pattern: &#39;</span><span class="si">%s</span><span class="s2">&#39;: &quot;</span> <span class="o">%</span> <span class="n">patt</span>
-                <span class="k">if</span> <span class="n">taglist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39;not matched</span><span class="se">\n</span><span class="s1">&#39;</span>
-                    <span class="k">continue</span>
-
-                <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39;matched</span><span class="se">\n</span><span class="s1">&#39;</span>
-                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">:</span>
-                    <span class="n">tag</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">t</span>
-                    <span class="n">ret</span> <span class="o">+=</span> <span class="p">(</span><span class="s2">&quot;    tag: &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2"> (value: </span><span class="si">%s</span><span class="s2">, reference: </span><span class="si">%s</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span>
-                            <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span> <span class="k">if</span> <span class="n">res</span> <span class="k">else</span> <span class="s1">&#39;fail&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">ret</span>
-
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanned_patterns</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="RegressionTest"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest">[docs]</a><span class="k">class</span> <span class="nc">RegressionTest</span><span class="p">:</span>
@@ -324,14 +233,14 @@
 
     <span class="c1">#: List of programming environmets supported by this test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_prog_environs&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of systems supported by this test.</span>
     <span class="c1">#: The general syntax for systems is ``&lt;sysname&gt;[:&lt;partname]``.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`.</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">valid_systems</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_systems&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -359,18 +268,18 @@
     <span class="c1">#: List of shell commands to be executed before compiling.</span>
     <span class="c1">#:</span>
     <span class="c1">#: These commands are executed during the compilation phase and from</span>
-    <span class="c1">#: inside the stage directory.</span>
+    <span class="c1">#: inside the stage directory. **Each entry in the list spawns a new shell.**</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">prebuild_cmd</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;prebuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of shell commands to be executed after a successful compilation.</span>
     <span class="c1">#:</span>
     <span class="c1">#: These commands are executed during the compilation phase and from inside</span>
-    <span class="c1">#: the stage directory.</span>
+    <span class="c1">#: the stage directory. **Each entry in the list spawns a new shell.**</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">postbuild_cmd</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;postbuild_cmd&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -382,7 +291,7 @@
 
     <span class="c1">#: List of options to be passed to the :attr:`executable`.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">executable_opts</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;executable_opts&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -398,7 +307,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: Relative path names are resolved against the stage directory.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">keep_files</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;keep_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -408,7 +317,7 @@
     <span class="c1">#: You can use this variable to avoid copying very large files to the stage</span>
     <span class="c1">#: directory.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">readonly_files</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;readonly_files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -416,7 +325,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: This test can be selected from the frontend using any of these tags.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`set` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`set[str]`</span>
     <span class="c1">#: :default: an empty set</span>
     <span class="n">tags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedSetField</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -424,7 +333,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: When the test fails, this contact list will be printed out.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">maintainers</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;maintainers&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -440,22 +349,36 @@
 
     <span class="c1">#: Number of tasks required by this test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer</span>
+    <span class="c1">#: If the number of tasks is set to ``0``, ReFrame will try to use all</span>
+    <span class="c1">#: the available nodes of a reservation. A reservation *must* be specified</span>
+    <span class="c1">#: through the `--reservation` command-line option, otherwise the</span>
+    <span class="c1">#: regression test will fail during submission. ReFrame will try to run the</span>
+    <span class="c1">#: test on all the nodes of the reservation that satisfy the selection</span>
+    <span class="c1">#: criteria of the current</span>
+    <span class="c1">#: `virtual partition &lt;configure.html#partition-configuration&gt;`__</span>
+    <span class="c1">#: (i.e., constraints and/or partitions).</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: integral</span>
     <span class="c1">#: :default: ``1``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:     .. versionchanged:: 2.9</span>
+    <span class="c1">#:        Added support for running the test using all the nodes of the</span>
+    <span class="c1">#:        specified reservation if the number of tasks is set to ``0``.</span>
     <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks&#39;</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks per node required by this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: Ignored if :class:`None`.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer or :class:`None`</span>
+    <span class="c1">#: :type: integral or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
     <span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_node&#39;</span><span class="p">,</span>
                                              <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Number of GPUs per node required by this test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer</span>
+    <span class="c1">#: :type: integral</span>
     <span class="c1">#: :default: ``0``</span>
     <span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">)</span>
 
@@ -463,7 +386,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: Ignored if :class:`None`.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer or :class:`None`</span>
+    <span class="c1">#: :type: integral or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
     <span class="n">num_cpus_per_task</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_cpus_per_task&#39;</span><span class="p">,</span>
                                             <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -472,7 +395,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: Ignored if :class:`None`.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer or :class:`None`</span>
+    <span class="c1">#: :type: integral or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
     <span class="n">num_tasks_per_core</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_core&#39;</span><span class="p">,</span>
                                               <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -481,7 +404,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: Ignored if :class:`None`.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: integer or :class:`None`</span>
+    <span class="c1">#: :type: integral or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
     <span class="n">num_tasks_per_socket</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;num_tasks_per_socket&#39;</span><span class="p">,</span>
                                                <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -515,11 +438,6 @@
     <span class="c1">#: :default: ``os.path.join(self.prefix, &#39;src&#39;)``</span>
     <span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcesdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="c1"># FIXME: The new syntax accepts only tuples of numbers as references.</span>
-    <span class="c1"># However we do not yet enforce this, in order to support also the old</span>
-    <span class="c1"># syntax, which relies on this less strict check, in order to enable more</span>
-    <span class="c1"># advanced parsing.</span>
-
     <span class="c1">#: The set of reference values for this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: Refer to the :doc:`ReFrame Tutorial &lt;/tutorial&gt;` for concrete usage</span>
@@ -527,26 +445,35 @@
     <span class="c1">#:</span>
     <span class="c1">#: :type: A scoped dictionary with system names as scopes or :class:`None`</span>
     <span class="c1">#: :default: ``{}``</span>
-    <span class="n">reference</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">ScopedDictField</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">ScopedDictField</span><span class="p">(</span><span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">object</span><span class="p">))</span>
+    <span class="c1"># FIXME: There is not way currently to express tuples of `float`s or</span>
+    <span class="c1"># `None`s, so we just use the very generic `object`</span>
 
-    <span class="c1">#: Patterns for verifying the sanity of this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: Refer to the :doc:`ReFrame Tutorial &lt;/tutorial&gt;` for concrete usage</span>
     <span class="c1">#: examples.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: If set to :class:`None`, no sanity checking will be performed.</span>
+    <span class="c1">#: If set to :class:`None`, a sanity error will be raised during sanity</span>
+    <span class="c1">#: checking.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: A deferrable expression (i.e., the result of a :doc:`sanity</span>
     <span class="c1">#:     function &lt;/sanity_functions_reference&gt;`) or :class:`None`</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AnyField</span><span class="p">(</span>
-        <span class="s1">&#39;sanity_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
-                            <span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span>
-
-    <span class="c1"># FIXME: Here we first check for the new syntax. The other way around</span>
-    <span class="c1"># crashes, but since the old syntax will be soon deprecated, we accept this</span>
-    <span class="c1"># workaround</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:    .. versionchanged:: 2.9</span>
+    <span class="c1">#:       The default behaviour has changed and it is now considered a</span>
+    <span class="c1">#:       sanity failure if this attribute is set to :class:`None`.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:       If a test doesn&#39;t care about its output, this must be stated</span>
+    <span class="c1">#:       explicitly as follows:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:       ::</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:           self.sanity_patterns = sn.assert_found(r&#39;.*&#39;, self.stdout)</span>
+    <span class="c1">#:</span>
+    <span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span>
+        <span class="s1">&#39;sanity_patterns&#39;</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: Patterns for verifying the performance of this test.</span>
     <span class="c1">#:</span>
@@ -560,16 +487,14 @@
     <span class="c1">#:     &lt;/sanity_functions_reference&gt;`) as values.</span>
     <span class="c1">#:     :class:`None` is also allowed.</span>
     <span class="c1">#: :default: :class:`None`</span>
-    <span class="n">perf_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AnyField</span><span class="p">(</span>
-        <span class="s1">&#39;perf_patterns&#39;</span><span class="p">,</span> <span class="p">[(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">),</span>
-                          <span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">SanityPatternField</span><span class="p">,)],</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span>
-    <span class="p">)</span>
+    <span class="n">perf_patterns</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span>
+        <span class="s1">&#39;perf_patterns&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: List of modules to be loaded before running this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: These modules will be loaded during the :func:`setup` phase.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">modules</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -577,7 +502,7 @@
     <span class="c1">#:</span>
     <span class="c1">#: These variables will be set during the :func:`setup` phase.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: dictionary with :class:`str` keys/values</span>
+    <span class="c1">#: :type: :class:`dict[str, str]`</span>
     <span class="c1">#: :default: ``{}``</span>
     <span class="n">variables</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -586,7 +511,7 @@
     <span class="c1">#: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,</span>
     <span class="c1">#: with ``hh &gt;= 0``, ``0 &lt;= mm &lt;= 59`` and ``0 &lt;= ss &lt;= 59``.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: a three-tuple with the above properties.</span>
+    <span class="c1">#: :type: :class:`tuple[int]`</span>
     <span class="c1">#: :default: ``(0, 10, 0)``</span>
     <span class="n">time_limit</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TimerField</span><span class="p">(</span><span class="s1">&#39;time_limit&#39;</span><span class="p">)</span>
 
@@ -595,51 +520,77 @@
     <span class="c1">#: This field is for specifying custom resources needed by this test.</span>
     <span class="c1">#: These resources are defined in the :doc:`configuration &lt;/configure&gt;`</span>
     <span class="c1">#: of a system partition.</span>
-    <span class="c1">#: For example, assume that ``num_accels`` is defined as follows in the</span>
-    <span class="c1">#: configuration file:</span>
+    <span class="c1">#: For example, assume that two additional resources, named ``gpu`` and</span>
+    <span class="c1">#: ``datawarp``, are defined in the configuration file as follows:</span>
     <span class="c1">#:</span>
     <span class="c1">#: ::</span>
     <span class="c1">#:</span>
     <span class="c1">#:     &#39;resources&#39;: {</span>
-    <span class="c1">#:         &#39;num_accels&#39;: [</span>
-    <span class="c1">#:             &#39;--gres=gpu:{num_accels}&#39;</span>
+    <span class="c1">#:         &#39;gpu&#39;: [</span>
+    <span class="c1">#:             &#39;--gres=gpu:{num_gpus_per_node}&#39;</span>
+    <span class="c1">#:         ],</span>
+    <span class="c1">#:         &#39;datawarp&#39;: [</span>
+    <span class="c1">#:             &#39;#DW jobdw capacity={capacity}&#39;,</span>
+    <span class="c1">#:             &#39;#DW stage_in source={stagein_src}&#39;</span>
     <span class="c1">#:         ]</span>
     <span class="c1">#:     }</span>
     <span class="c1">#:</span>
-    <span class="c1">#: A regression test then may define :attr:`extra_resources` as follows in</span>
-    <span class="c1">#: order to get two accelerator devices:</span>
+    <span class="c1">#: A regression test then may instantiate the above resources by setting the</span>
+    <span class="c1">#: :attr:`extra_resources` attribute as follows:</span>
     <span class="c1">#:</span>
     <span class="c1">#: ::</span>
     <span class="c1">#:</span>
-    <span class="c1">#:     self.extra_resources = {&#39;num_accels&#39;: 2}</span>
+    <span class="c1">#:     self.extra_resources = {</span>
+    <span class="c1">#:         &#39;gpu&#39;: {&#39;num_gpus_per_node&#39;: 2}</span>
+    <span class="c1">#:         &#39;datawarp&#39;: {</span>
+    <span class="c1">#:             &#39;capacity&#39;: &#39;100GB&#39;,</span>
+    <span class="c1">#:             &#39;stagein_src&#39;: &#39;/foo&#39;</span>
+    <span class="c1">#:         }</span>
+    <span class="c1">#:     }</span>
     <span class="c1">#:</span>
-    <span class="c1">#: The framework will then pass the option ``--gres=gpu:2`` to the backend</span>
-    <span class="c1">#: scheduler.</span>
+    <span class="c1">#: The generated batch script (for Slurm) will then contain the following</span>
+    <span class="c1">#: lines:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: ::</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:     #SBATCH --gres=gpu:2</span>
+    <span class="c1">#:     #DW jobdw capacity=100GB</span>
+    <span class="c1">#:     #DW stage_in source=/foo</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: Notice that if the resource specified in the configuration uses an</span>
+    <span class="c1">#: alternative directive prefix (in this case ``#DW``), this will replace</span>
+    <span class="c1">#: the standard prefix of the backend scheduler (in this case ``#SBATCH``)</span>
     <span class="c1">#:</span>
     <span class="c1">#: If the resource name specified in this variable does not match a resource</span>
     <span class="c1">#: name in the partition configuration, it will be simply ignored.</span>
     <span class="c1">#: The :attr:`num_gpus_per_node` attribute translates internally to the</span>
-    <span class="c1">#: ``num_gpus_per_node`` resource, so that setting ``self.num_gpus_per_node =</span>
-    <span class="c1">#: 2`` is equivalent to the following:</span>
+    <span class="c1">#: ``_rfm_gpu`` resource, so that setting</span>
+    <span class="c1">#: ``self.num_gpus_per_node = 2`` is equivalent to the following:</span>
     <span class="c1">#:</span>
     <span class="c1">#: ::</span>
     <span class="c1">#:</span>
-    <span class="c1">#:     self.extra_resources = {&#39;num_gpus_per_node&#39;: 2}</span>
+    <span class="c1">#:     self.extra_resources = {&#39;_rfm_gpu&#39;: {&#39;num_gpus_per_node&#39;: 2}}</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: dictionary with :class:`str` keys/values</span>
+    <span class="c1">#: :type: :class:`dict[str, dict[str, object]]`</span>
     <span class="c1">#: :default: ``{}``</span>
     <span class="c1">#:</span>
     <span class="c1">#: .. note::</span>
     <span class="c1">#:    .. versionadded:: 2.8</span>
-    <span class="n">extra_resources</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span> <span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;extra_resources&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="c1">#:    .. versionchanged:: 2.9</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:    A new more powerful syntax was introduced</span>
+    <span class="c1">#:    that allows also custom job script directive prefixes.</span>
+    <span class="c1">#:</span>
+    <span class="n">extra_resources</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AggregateTypeField</span><span class="p">(</span>
+        <span class="s1">&#39;extra_resources&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">)))))</span>
 
     <span class="c1"># Private properties</span>
-    <span class="n">_prefix</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
-    <span class="n">_stagedir</span>          <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_stdout</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stdout&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_stderr</span>            <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stderr&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_perf_logfile</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_perf_logfile&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_current_system</span>    <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_system&#39;</span><span class="p">,</span> <span class="n">System</span><span class="p">)</span>
+    <span class="n">_prefix</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
+    <span class="n">_stagedir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_stdout</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stdout&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_stderr</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stderr&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_perf_logfile</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_perf_logfile&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_current_system</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_system&#39;</span><span class="p">,</span> <span class="n">System</span><span class="p">)</span>
     <span class="n">_current_partition</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_partition&#39;</span><span class="p">,</span>
                                            <span class="n">SystemPartition</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">_current_environ</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_environ&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span>
@@ -683,11 +634,9 @@
 
         <span class="c1"># Output patterns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sanity_info</span> <span class="o">=</span> <span class="n">_OutputScanInfo</span><span class="p">()</span>
 
         <span class="c1"># Performance patterns: None -&gt; no performance checking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">perf_info</span> <span class="o">=</span> <span class="n">_OutputScanInfo</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="c1"># Environment setup</span>
@@ -877,17 +826,21 @@
     <span class="k">def</span> <span class="nf">_setup_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Setup the check&#39;s dynamic paths.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;setting up paths&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">stagedir</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">stagedir</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">outputdir</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resources_mgr</span><span class="o">.</span><span class="n">outputdir</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">name</span><span class="p">),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sanitize_basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;failed to set up paths&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.out&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.err&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
@@ -903,8 +856,9 @@
 
         <span class="c1"># num_gpus_per_node is a managed resource</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">,</span>
-                                            <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
+                <span class="s1">&#39;_rfm_gpu&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;num_gpus_per_node&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span><span class="p">}</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local</span><span class="p">:</span>
             <span class="n">scheduler_type</span> <span class="o">=</span> <span class="n">getscheduler</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
@@ -950,7 +904,7 @@
         <span class="n">resources_opts</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_resources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">resources_opts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">get_resource</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">get_resource</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="o">**</span><span class="n">v</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">access</span> <span class="o">+</span>
                              <span class="n">resources_opts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
@@ -1002,17 +956,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;copying </span><span class="si">%s</span><span class="s1"> to stage directory (</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
                           <span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;symlinking files: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
-        <span class="n">os_ext</span><span class="o">.</span><span class="n">copytree_virtual</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os_ext</span><span class="o">.</span><span class="n">copytree_virtual</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;virtual copying of files failed&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 
     <span class="k">def</span> <span class="nf">prebuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prebuild_cmd</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing prebuild commands&#39;</span><span class="p">)</span>
-            <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">postbuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">postbuild_cmd</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing postbuild commands&#39;</span><span class="p">)</span>
-            <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">os_ext</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RegressionTest.compile"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.compile">[docs]</a>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">compile_opts</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The compilation phase of the regression test pipeline.</span>
@@ -1022,23 +979,26 @@
 <span class="sd">        :raises reframe.core.exceptions.ReframeError: In case of errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;no programming environment set&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;no programming environment set&#39;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;sourcesdir is not set&#39;</span><span class="p">)</span>
-
-        <span class="c1"># if self.sourcepath refers to a directory, stage it first</span>
-        <span class="n">target_sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;source path: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">target_sourcepath</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">target_sourcepath</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">target_sourcepath</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">include_search_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
-            <span class="n">target_sourcepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span>
-            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
+        <span class="c1"># Determine the full source path for the compilation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">:</span>
+            <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
+            <span class="c1"># if sourcepath refers to a directory, stage it first</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">)</span>
+                <span class="n">sourcepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">)</span>
+            <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
 
-        <span class="c1"># Add the the correct source directory to the include path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;sourcepath: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sourcepath</span><span class="p">)</span>
+
+        <span class="c1"># Add the the correct sourcepath directory to the include path</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">):</span>
+            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">include_search_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">includedir</span><span class="p">)</span>
 
         <span class="c1"># Remove source and executable from compile_opts</span>
@@ -1052,7 +1012,7 @@
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prebuild</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-                <span class="n">sourcepath</span><span class="o">=</span><span class="n">target_sourcepath</span><span class="p">,</span>
+                <span class="n">sourcepath</span><span class="o">=</span><span class="n">sourcepath</span><span class="p">,</span>
                 <span class="n">executable</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">),</span>
                 <span class="o">**</span><span class="n">compile_opts</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stdout:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
@@ -1070,11 +1030,14 @@
 <span class="sd">        It simply submits the job associated with this test and returns.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_system</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;no system or system partition is set&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;no system or system partition is set&#39;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;failed to prepare job&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
-
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;spawned job (</span><span class="si">%s</span><span class="s1">=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
                <span class="p">(</span><span class="s1">&#39;pid&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;jobid&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">jobid</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
@@ -1105,47 +1068,25 @@
 <div class="viewcode-block" id="RegressionTest.check_sanity"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_sanity">[docs]</a>    <span class="k">def</span> <span class="nf">check_sanity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The sanity checking phase of the regression test pipeline.</span>
 
-<span class="sd">        :returns: :class:`True` on success, :class:`False` otherwise, if the</span>
-<span class="sd">            old :attr:`sanity_patterns` syntax is used.</span>
-<span class="sd">        :raises reframe.core.exceptions.SanityError: If the new syntax is used</span>
-<span class="sd">            and the sanity check fails.</span>
-<span class="sd">        :raises reframe.core.exceptions.ReframeError: In case of other errors.</span>
+<span class="sd">        :raises reframe.core.exceptions.SanityError: If the sanity check fails.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_sanity_new</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity_patterns not set&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_patterns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">sanity_info</span><span class="p">)</span></div>
-
-    <span class="k">def</span> <span class="nf">_check_sanity_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity failure&#39;</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">ret</span>
+                <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity failure&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.check_performance"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_performance">[docs]</a>    <span class="k">def</span> <span class="nf">check_performance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The performance checking phase of the regression test pipeline.</span>
 
-<span class="sd">        :returns: :class:`True` on success, :class:`False` otherwise, if the</span>
-<span class="sd">            old :attr:`perf_patterns` syntax is used.</span>
-<span class="sd">        :raises reframe.core.exceptions.SanityError: If the new syntax is used</span>
-<span class="sd">            and the performance check fails.</span>
-<span class="sd">        :raises reframe.core.exceptions.ReframeError: In case of other errors.</span>
+<span class="sd">        :raises reframe.core.exceptions.SanityError: If the performance check</span>
+<span class="sd">            fails.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
 
-        <span class="c1"># Check if we have the new syntax</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_performance_new</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_patterns</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">perf_info</span><span class="p">)</span></div>
-
-    <span class="k">def</span> <span class="nf">_check_performance_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
@@ -1161,9 +1102,7 @@
                         <span class="s2">&quot;tag `</span><span class="si">%s</span><span class="s2">&#39; not resolved in references for `</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span>
                         <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
                     <span class="p">)</span>
-                <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_reference</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="kc">True</span>
+                <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_reference</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">_copy_to_outputdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Copy checks interesting files to the output directory.&quot;&quot;&quot;</span>
@@ -1202,109 +1141,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;unloading test&#39;s environment&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span></div>
-
-    <span class="k">def</span> <span class="nf">_match_patterns_infile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">scan_info</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">_resolve_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">reference</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span>
-                    <span class="s2">&quot;tag `</span><span class="si">%s</span><span class="s2">&#39; could not be resolved &quot;</span>
-                    <span class="s2">&quot;in perf. references for `</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span>
-                    <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">)</span>
-                <span class="p">)</span>
-
-        <span class="n">matched_patt</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">found_tags</span>   <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">patt</span><span class="p">,</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                    <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">patt</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
-                        <span class="k">continue</span>
-
-                    <span class="n">matched_patt</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">patt</span><span class="p">)</span>
-                    <span class="n">scan_info</span><span class="o">.</span><span class="n">add_match_pattern</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">td</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">:</span>
-                        <span class="n">tag</span><span class="p">,</span> <span class="n">conv</span><span class="p">,</span> <span class="n">action</span> <span class="o">=</span> <span class="n">td</span>
-                        <span class="n">val</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
-                        <span class="n">ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">_resolve_tag</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
-                               <span class="k">if</span> <span class="n">reference</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
-                        <span class="n">res</span> <span class="o">=</span> <span class="n">action</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">val</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
-                                     <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">found_tags</span><span class="p">:</span>
-                            <span class="c1"># At least one match is sufficient</span>
-                            <span class="k">continue</span>
-
-                        <span class="n">scan_info</span><span class="o">.</span><span class="n">add_match_tag</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">patt</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
-                            <span class="n">found_tags</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ReframeError</span><span class="p">(</span><span class="s1">&#39;Caught </span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">file</span><span class="p">:</span>
-                <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="p">(</span><span class="n">matched_patt</span><span class="p">,</span> <span class="n">found_tags</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_match_patterns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multi_patterns</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">scan_info</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">multi_patterns</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
-
-        <span class="k">for</span> <span class="n">file_patt</span><span class="p">,</span> <span class="n">patterns</span> <span class="ow">in</span> <span class="n">multi_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">file_patt</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span> <span class="ow">or</span> <span class="n">file_patt</span> <span class="o">==</span> <span class="s1">&#39;&amp;1&#39;</span><span class="p">:</span>
-                <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="n">file_patt</span> <span class="o">==</span> <span class="s1">&#39;&amp;2&#39;</span><span class="p">:</span>
-                <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="n">file_patt</span><span class="p">))</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">files</span><span class="p">:</span>
-                <span class="c1"># No output files found</span>
-                <span class="k">return</span> <span class="kc">False</span>
-
-            <span class="c1"># Check if an eof handler is present and temporarily remove it from</span>
-            <span class="c1"># patterns</span>
-            <span class="k">if</span> <span class="s1">&#39;\e&#39;</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">eof_handler</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">[</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span>
-                <span class="k">del</span> <span class="n">patterns</span><span class="p">[</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">eof_handler</span> <span class="o">=</span> <span class="kc">None</span>
-
-            <span class="n">required_patterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="n">required_tags</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">td</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="n">patterns</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">td</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">]</span>
-            <span class="p">)</span>
-
-            <span class="n">ret</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-                <span class="n">scan_info</span><span class="o">.</span><span class="n">set_patterns</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">required_patterns</span><span class="p">)</span>
-                <span class="n">matched_patt</span><span class="p">,</span> <span class="n">found_tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_patterns_infile</span><span class="p">(</span>
-                    <span class="n">filename</span><span class="p">,</span> <span class="n">patterns</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">scan_info</span>
-                <span class="p">)</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">matched_patt</span> <span class="o">!=</span> <span class="n">required_patterns</span> <span class="ow">or</span>
-                    <span class="n">found_tags</span>   <span class="o">!=</span> <span class="n">required_tags</span><span class="p">):</span>
-                    <span class="n">ret</span> <span class="o">=</span> <span class="kc">False</span>
-
-                <span class="c1"># We need eof_handler to be called anyway that&#39;s why we do not</span>
-                <span class="c1"># combine this check with the above and we delay the breaking</span>
-                <span class="c1"># out of the loop here</span>
-                <span class="k">if</span> <span class="n">eof_handler</span><span class="p">:</span>
-                    <span class="n">eof_result</span> <span class="o">=</span> <span class="n">eof_handler</span><span class="p">(</span><span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span><span class="p">)</span>
-                    <span class="n">scan_info</span><span class="o">.</span><span class="n">add_match_eof</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">eof_result</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">eof_result</span><span class="p">:</span>
-                        <span class="n">ret</span> <span class="o">=</span> <span class="kc">False</span>
-
-            <span class="k">if</span> <span class="n">eof_handler</span><span class="p">:</span>
-                <span class="c1"># Restore the handler</span>
-                <span class="n">patterns</span><span class="p">[</span><span class="s1">&#39;\e&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eof_handler</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;output scan info:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">scan_info</span><span class="o">.</span><span class="n">scan_report</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">ret</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> (</span><span class="si">%s</span><span class="s1">)</span><span class="se">\n</span><span class="s1">&#39;</span>
@@ -1368,11 +1204,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="o">**</span><span class="n">compile_opts</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span></div>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;could not write stdout/stderr&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span></div>
 
 <div class="viewcode-block" id="CompileOnlyRegressionTest.run"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.CompileOnlyRegressionTest.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The run stage of the regression test pipeline.</span>
@@ -1465,6 +1304,7 @@
             <dt>Tags</dt>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
+            <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -1479,7 +1319,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.8.1',
+            VERSION:'2.9',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
