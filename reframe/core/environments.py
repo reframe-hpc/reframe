@@ -3,11 +3,11 @@ import shutil
 import subprocess
 import reframe.utility.os as os_ext
 import reframe.core.debug as debug
+import reframe.core.fields as fields
 
-from reframe.core.exceptions import (ReframeError,
-                                     CommandError,
+
+from reframe.core.exceptions import (EnvironError, SpawnedProcessError,
                                      CompilationError)
-from reframe.core.fields import *
 from reframe.core.modules import get_modules_system
 
 
@@ -18,9 +18,9 @@ class Environment:
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
     """
-    name      = NonWhitespaceField('name')
-    modules   = TypedListField('modules', str)
-    variables = TypedDictField('variables', str, str)
+    name = fields.NonWhitespaceField('name')
+    modules = fields.TypedListField('modules', str)
+    variables = fields.TypedDictField('variables', str, str)
 
     def __init__(self, name, modules=[], variables={}, **kwargs):
         self._name = name
@@ -164,10 +164,10 @@ class EnvironmentSnapshot(Environment):
         self._conflicted = []
 
     def add_module(self, name):
-        raise RuntimeError('environment snapshot is read-only')
+        raise EnvironError('environment snapshot is read-only')
 
     def set_variable(self, name, value):
-        raise RuntimeError('environment snapshot is read-only')
+        raise EnvironError('environment snapshot is read-only')
 
     def load(self):
         os.environ.clear()
@@ -175,7 +175,7 @@ class EnvironmentSnapshot(Environment):
         self._loaded = True
 
     def unload(self):
-        raise RuntimeError('cannot unload an environment snapshot')
+        raise EnvironError('cannot unload an environment snapshot')
 
 
 class save_environment:
@@ -211,54 +211,54 @@ class ProgEnvironment(Environment):
     #: The C compiler of this programming environment.
     #:
     #: :type: :class:`str`
-    cc = StringField('cc')
+    cc = fields.StringField('cc')
 
     #: The C++ compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cxx = StringField('cxx', allow_none=True)
+    cxx = fields.StringField('cxx', allow_none=True)
 
     #: The Fortran compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    ftn = StringField('ftn', allow_none=True)
+    ftn = fields.StringField('ftn', allow_none=True)
 
     #: The preprocessor flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cppflags = StringField('cppflags', allow_none=True)
+    cppflags = fields.StringField('cppflags', allow_none=True)
 
     #: The C compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cflags = StringField('cflags', allow_none=True)
+    cflags = fields.StringField('cflags', allow_none=True)
 
     #: The C++ compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cxxflags = StringField('cxxflags', allow_none=True)
+    cxxflags = fields.StringField('cxxflags', allow_none=True)
 
     #: The Fortran compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    fflags = StringField('fflags', allow_none=True)
+    fflags = fields.StringField('fflags', allow_none=True)
 
     #: The linker flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    ldflags = StringField('ldflags', allow_none=True)
+    ldflags = fields.StringField('ldflags', allow_none=True)
 
     #: The include search path of this programming environment.
     #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
-    include_search_path = TypedListField('include_search_path', str)
+    include_search_path = fields.TypedListField('include_search_path', str)
 
     #: Propagate the compilation flags to the ``make`` invocation.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    propagate = BooleanField('propagate')
+    propagate = fields.BooleanField('propagate')
 
     def __init__(self,
                  name,
@@ -338,7 +338,7 @@ class ProgEnvironment(Environment):
             compiler = 'nvcc'
             flags.append(cxxflags)
         else:
-            raise ReframeError('Unknown language')
+            raise EnvironError('Unknown language: %s' % lang)
 
         # Append include search path
         flags += ['-I' + d for d in self.include_search_path]
@@ -347,12 +347,12 @@ class ProgEnvironment(Environment):
                                          ldflags, options))
         try:
             return os_ext.run_command(cmd, check=True)
-        except CommandError as e:
+        except SpawnedProcessError as e:
+            # Re-raise as compilation error
             raise CompilationError(command=e.command,
                                    stdout=e.stdout,
                                    stderr=e.stderr,
-                                   exitcode=e.exitcode,
-                                   environ=self)
+                                   exitcode=e.exitcode) from None
 
     def _compile_dir(self, source_dir, makefile, options):
         if makefile:
@@ -387,9 +387,9 @@ class ProgEnvironment(Environment):
 
         try:
             return os_ext.run_command(cmd, check=True)
-        except CommandError as e:
+        except SpawnedProcessError as e:
+            # Re-raise as compilation error
             raise CompilationError(command=e.command,
                                    stdout=e.stdout,
                                    stderr=e.stderr,
-                                   exitcode=e.exitcode,
-                                   environ=self)
+                                   exitcode=e.exitcode) from None

@@ -1,24 +1,23 @@
 import copy
 import reframe.core.debug as debug
+import reframe.core.fields as fields
 import reframe.utility.os as os_ext
 
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ReframeError
-from reframe.core.fields import *
 
 
 class SystemPartition:
     """A representation of a system partition inside ReFrame."""
 
-    _name      = NonWhitespaceField('_name')
-    _descr     = StringField('_descr')
-    _access    = TypedListField('_access', str)
-    _environs  = TypedListField('_environs', Environment)
-    _resources = TypedDictField('_resources', str, (list, str))
-    _local_env = TypedField('_local_env', Environment, allow_none=True)
+    _name      = fields.NonWhitespaceField('_name')
+    _descr     = fields.StringField('_descr')
+    _access    = fields.TypedListField('_access', str)
+    _environs  = fields.TypedListField('_environs', Environment)
+    _resources = fields.TypedDictField('_resources', str, (list, str))
+    _local_env = fields.TypedField('_local_env', Environment, allow_none=True)
 
     # maximum concurrent jobs
-    _max_jobs  = IntegerField('_max_jobs')
+    _max_jobs  = fields.IntegerField('_max_jobs')
 
     def __init__(self, name, descr=None, scheduler=None, launcher=None,
                  access=[], environs=[], resources={}, local_env=None,
@@ -120,12 +119,11 @@ class SystemPartition:
         return self._launcher
 
     # Instantiate managed resource `name` with `value`.
-    def get_resource(self, name, value):
+    def get_resource(self, name, **values):
         ret = []
         for r in self._resources.get(name, []):
             try:
-                args = {name: value}
-                ret.append(r.format(**args))
+                ret.append(r.format(**values))
             except KeyError:
                 pass
 
@@ -159,16 +157,17 @@ class SystemPartition:
 
 class System:
     """A representation of a system inside ReFrame."""
-    _name  = NonWhitespaceField('_name')
-    _descr = StringField('_descr')
-    _hostnames  = TypedListField('_hostnames', str)
-    _partitions = TypedListField('_partitions', SystemPartition)
-    _modules_system = AlphanumericField('_modules_system', allow_none=True)
+    _name  = fields.NonWhitespaceField('_name')
+    _descr = fields.StringField('_descr')
+    _hostnames  = fields.TypedListField('_hostnames', str)
+    _partitions = fields.TypedListField('_partitions', SystemPartition)
+    _modules_system = fields.AlphanumericField('_modules_system',
+                                               allow_none=True)
 
-    prefix = StringField('prefix')
-    stagedir  = StringField('stagedir', allow_none=True)
-    outputdir = StringField('outputdir', allow_none=True)
-    logdir = StringField('logdir', allow_none=True)
+    prefix = fields.StringField('prefix')
+    stagedir  = fields.StringField('stagedir', allow_none=True)
+    outputdir = fields.StringField('outputdir', allow_none=True)
+    logdir = fields.StringField('logdir', allow_none=True)
 
     #: Global resources directory for this system
     #:
@@ -177,7 +176,7 @@ class System:
     #: See `here <configure.html#system-configuration>`__ on how to configure this.
     #:
     #: :type: :class:`str`
-    resourcesdir = StringField('resourcesdir')
+    resourcesdir = fields.StringField('resourcesdir')
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
                  prefix='.', stagedir=None, outputdir=None, logdir=None,

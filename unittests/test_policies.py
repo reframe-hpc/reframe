@@ -1,12 +1,13 @@
 import shutil
 import tempfile
 import unittest
-import warnings
 
-from reframe.core.exceptions import ReframeDeprecationWarning
-from reframe.frontend.executors import *
-from reframe.frontend.executors.policies import *
-from reframe.frontend.loader import *
+import reframe.frontend.executors as executors
+import reframe.frontend.executors.policies as policies
+
+
+from reframe.core.modules import init_modules_system
+from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
 from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
@@ -20,7 +21,7 @@ from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
 # but not all of these tests are deterministic. Non-deterministic tests may
 # not lead to a test failure, but only to a test skip.
 
-class DebugAsynchronousExecutionPolicy(AsynchronousExecutionPolicy):
+class DebugAsynchronousExecutionPolicy(policies.AsynchronousExecutionPolicy):
     def __init__(self):
         super().__init__()
         self.keep_stage_files = True
@@ -43,9 +44,6 @@ class DebugAsynchronousExecutionPolicy(AsynchronousExecutionPolicy):
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
-        # Ignore deprecation warnings
-        warnings.simplefilter('ignore', ReframeDeprecationWarning)
-
         # Load a system configuration
         self.site_config = SiteConfiguration()
         self.site_config.load_from_dict(settings.site_configuration)
@@ -54,14 +52,16 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.resources = ResourcesManager(prefix=self.resourcesdir)
         self.loader = RegressionCheckLoader(['unittests/resources'])
 
+        # Init modules system
+        init_modules_system(self.system.modules_system)
+
         # Setup the runner
-        self.runner = Runner(SerialExecutionPolicy())
+        self.runner = executors.Runner(policies.SerialExecutionPolicy())
         self.checks = self.loader.load_all(system=self.system,
                                            resources=self.resources)
 
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
-        warnings.simplefilter('default', ReframeDeprecationWarning)
 
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
@@ -149,7 +149,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):
         super().setUp()
         self.debug_policy = DebugAsynchronousExecutionPolicy()
-        self.runner       = Runner(self.debug_policy)
+        self.runner = executors.Runner(self.debug_policy)
 
     def set_max_jobs(self, value):
         for p in self.system.partitions:

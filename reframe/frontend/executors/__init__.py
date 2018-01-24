@@ -1,5 +1,6 @@
 import abc
 import sys
+
 import reframe.core.debug as debug
 import reframe.core.logging as logging
 
@@ -115,34 +116,20 @@ class RegressionTestExecutor:
             return ret
 
     def check_sanity(self):
-        # check_sanity() may be overriden by the user tests; we log this phase
-        # here then
         self._current_stage = 'sanity'
         with logging.logging_context(check=self._check) as logger:
             logger.debug('entering sanity checking stage')
-            ret = self._check.check_sanity()
-
-        return ret
+            self._check.check_sanity()
 
     def check_performance(self):
-        # check_performance() may be overriden by the user tests; we log this
-        # phase here then
         self._current_stage = 'performance'
-        try:
-            # FIXME: the logic has become a bit ugly here in order to support
-            # both sanity syntaxes. It should be simplified again as soon as
-            # the old syntax is dropped.
-            with logging.logging_context(check=self._check) as logger:
-                logger.debug('entering performance checking stage')
-                ret = self._check.check_performance()
-        except SanityError:
-            # This is to handle the new sanity systax
-            if self._check.strict_check:
-                raise
-            else:
-                return True
-        else:
-            return True if not self._check.strict_check else ret
+        with logging.logging_context(check=self._check) as logger:
+            logger.debug('entering performance checking stage')
+            try:
+                self._check.check_performance()
+            except SanityError:
+                if self._check.strict_check:
+                    raise
 
     def cleanup(self, remove_files=False, unload_env=True):
         self._current_stage = 'cleanup'

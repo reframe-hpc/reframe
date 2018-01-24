@@ -8,7 +8,7 @@ import re
 import reframe.utility.os as os_ext
 import subprocess
 
-from reframe.core.exceptions import ModuleError, ReframeError
+from reframe.core.exceptions import ConfigError, EnvironError
 
 
 class Module:
@@ -19,8 +19,12 @@ class Module:
     """
 
     def __init__(self, name):
+        if not isinstance(name, str):
+            raise TypeError('module name not a string')
+
+        name = name.strip()
         if not name:
-            raise ModuleError('no module name specified')
+            raise ValueError('module name cannot be empty')
 
         try:
             self._name, self._version = name.split('/', maxsplit=1)
@@ -96,7 +100,6 @@ class ModulesSystem:
 
         Returns the list of unloaded modules as strings."""
         module = Module(name)
-
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -226,8 +229,8 @@ class TModImpl(ModulesSystemImpl):
         try:
             completed = os_ext.run_command('modulecmd -V')
         except OSError as e:
-            raise ReframeError(
-                'could not find a sane Tmod installation: %s' % e)
+            raise ConfigError(
+                'could not find a sane Tmod installation: %s' % e) from e
 
         version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
                                   re.MULTILINE)
@@ -235,7 +238,7 @@ class TModImpl(ModulesSystemImpl):
                                       re.MULTILINE)
 
         if version_match is None or tcl_version_match is None:
-            raise ReframeError('could not find a sane Tmod installation')
+            raise ConfigError('could not find a sane Tmod installation')
 
         self._version = version_match.group(1)
         self._command = 'modulecmd python'
@@ -243,11 +246,11 @@ class TModImpl(ModulesSystemImpl):
             # Try the Python bindings now
             completed = os_ext.run_command(self._command)
         except OSError as e:
-            raise ReframeError(
-                'could not get the Python bindings for Tmod: ' % e)
+            raise ConfigError(
+                'could not get the Python bindings for Tmod: ' % e) from e
 
         if re.search(r'Unknown shell type', completed.stderr):
-            raise ReframeError(
+            raise ConfigError(
                 'Python is not supported by this Tmod installation')
 
     def name(self):
@@ -285,12 +288,12 @@ class TModImpl(ModulesSystemImpl):
     def load_module(self, module):
         self._exec_module_command('load', str(module))
         if not self.is_module_loaded(module):
-            raise ModuleError('could not load module %s' % module)
+            raise EnvironError('could not load module %s' % module)
 
     def unload_module(self, module):
         self._exec_module_command('unload', str(module))
         if self.is_module_loaded(module):
-            raise ModuleError('could not unload module %s' % module)
+            raise EnvironError('could not unload module %s' % module)
 
     def unload_all(self):
         self._exec_module_command('purge')
@@ -358,11 +361,11 @@ def init_modules_system(modules_kind=None):
     elif modules_kind == 'tmod':
         _modules_system = ModulesSystem(TModImpl())
     else:
-        raise ReframeError('unknown module system')
+        raise ConfigError('unknown module system')
 
 
 def get_modules_system():
     if _modules_system is None:
-        raise ReframeError('no modules system is configured')
+        raise ConfigError('no modules system is configured')
 
     return _modules_system

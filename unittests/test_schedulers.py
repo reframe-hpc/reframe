@@ -9,9 +9,11 @@ import reframe.utility.os as os_ext
 
 from datetime import datetime
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ReframeError, JobError
 from reframe.core.launchers.local import LocalLauncher
+from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
+from reframe.core.schedulers.slurm import SlurmNode
 from reframe.core.shell import BashScriptBuilder
 from reframe.settings import settings
 
@@ -251,6 +253,9 @@ class TestSlurmJob(_TestJob):
         self.testjob._sched_reservation = 'bar'
         self.testjob._sched_account = 'spam'
         self.testjob._sched_exclusive_access = True
+        self.testjob.options = ['--gres=gpu:4',
+                                '#DW jobdw capacity=100GB',
+                                '#DW stage_in source=/foo']
         super().test_prepare()
         expected_directives = set([
             '#SBATCH --job-name="testjob"',
@@ -269,10 +274,14 @@ class TestSlurmJob(_TestJob):
             '#SBATCH --partition=%s' % self.testjob.sched_partition,
             '#SBATCH --reservation=%s' % self.testjob.sched_reservation,
             '#SBATCH --account=%s' % self.testjob.sched_account,
-            '#SBATCH --exclusive'
+            '#SBATCH --exclusive',
+            # Custom options and directives
+            '#SBATCH --gres=gpu:4',
+            '#DW jobdw capacity=100GB',
+            '#DW stage_in source=/foo'
         ])
         with open(self.testjob.script_filename) as fp:
-            found_directives = set(re.findall(r'^\#SBATCH .*', fp.read(),
+            found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
         self.assertEqual(expected_directives, found_directives)
@@ -305,7 +314,164 @@ class TestSlurmJob(_TestJob):
         super().test_poll()
 
 
+class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
+    import reframe.core.schedulers.slurm as slurm
+
+    def create_dummy_nodes(obj):
+        node_descriptions = ['NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+                             'NodeHostName=nid00001 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=MAINT+DRAIN '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p1,p2 '
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ '
+                             'failed [reframe_user@01 Jan 2018]',
+                             'NodeName=nid00002 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f2,f3 ActiveFeatures=f2,f3 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00002 '
+                             'NodeHostName=nid00002 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=MAINT+DRAIN '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p2,p3'
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ '
+                             'failed [reframe_user@01 Jan 2018]',
+                             'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f1,f3 ActiveFeatures=f1,f3 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
+                             'NodeHostName=nid00003 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=MAINT+DRAIN '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p1,p3 '
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ '
+                             'failed [reframe_user@01 Jan 2018]']
+        return [SlurmNode(desc) for desc in node_descriptions]
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp(dir='unittests')
+        slurm_scheduler = getscheduler('slurm')
+        self.testjob = slurm_scheduler(
+            name='testjob',
+            command='hostname',
+            launcher=getlauncher('local')(),
+            environs=[Environment(name='foo')],
+            workdir=self.workdir,
+            script_filename=os.path.join(self.workdir, 'testjob.sh'),
+            stdout=os.path.join(self.workdir, 'testjob.out'),
+            stderr=os.path.join(self.workdir, 'testjob.err')
+        )
+        self.builder = BashScriptBuilder()
+        # monkey patch `_get_reservation_nodes` to simulate extraction of
+        # slurm nodes through the use of `scontrol show`
+        self.testjob._get_reservation_nodes = self.create_dummy_nodes
+        self.testjob._num_tasks_per_node = 4
+        self.testjob._num_tasks = 0
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def test_valid_constraint(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 8)
+
+    def test_valid_multiple_constraints(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1 f3']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob._sched_partition = 'p2'
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 8)
+
+    def test_valid_multiple_partitions(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-p p1 p2']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_constraint_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_not_valid_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob._sched_partition = 'Invalid'
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_not_valid_constraint(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['--constraint=invalid']
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_noreservation(self):
+        self.testjob._num_tasks = 0
+        self.assertRaises(JobError, self.prepare_job)
+
+    def prepare_job(self):
+        self.testjob.prepare(self.builder)
+
+
 class TestSqueueJob(TestSlurmJob):
     @property
     def job_type(self):
         return getscheduler('squeue')
+
+
+class TestSlurmNode(unittest.TestCase):
+    def setUp(self):
+        node_description = ('NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
+                            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+                            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+                            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+                            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                            'Sockets=1 Boards=1 State=MAINT+DRAIN '
+                            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                            'MCS_label=N/A Partitions=p1,p2 '
+                            'BootTime=01 Jan 2018 '
+                            'SlurmdStartTime=01 Jan 2018 '
+                            'CfgTRES=cpu=24,mem=32220M '
+                            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                            'LowestJoules=100000000 ConsumedJoules=0 '
+                            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                            'ExtSensorsTemp=n/s Reason=Foo/ '
+                            'failed [reframe_user@01 Jan 2018]')
+        self.node = SlurmNode(node_description)
+
+    def test_attributes(self):
+        self.assertEqual(self.node.name, 'nid00001')
+        self.assertEqual(self.node.partitions,
+                         {'p1', 'p2'})
+        self.assertEqual(self.node.active_features,
+                         {'f1', 'f2'})

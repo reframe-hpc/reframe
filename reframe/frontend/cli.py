@@ -3,10 +3,12 @@ import socket
 import sys
 import traceback
 
+import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
 
-from reframe.core.exceptions import ModuleError
+from reframe.core.exceptions import (EnvironError, ReframeError,
+                                     ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
 from reframe.core.logging import getlogger
 from reframe.frontend.argparse import ArgumentParser
@@ -173,7 +175,7 @@ def main():
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
     misc_options.add_argument('-V', '--version', action='version',
-                              version=settings.version)
+                              version=reframe.VERSION)
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -183,7 +185,11 @@ def main():
     options = argparser.parse_args()
 
     # Configure logging
-    logging.configure_logging(settings.logging_config)
+    try:
+        logging.configure_logging(settings.logging_config)
+    except Exception as e:
+        print('could not configure logging:', e, file=sys.stderr)
+        sys.exit(1)
 
     # Setup printer
     printer = PrettyPrinter()
@@ -191,7 +197,11 @@ def main():
 
     # Load site configuration
     site_config = SiteConfiguration()
-    site_config.load_from_dict(settings.site_configuration)
+    try:
+        site_config.load_from_dict(settings.site_configuration)
+    except Exception as e:
+        print('could not load site configuration:', e, file=sys.stderr)
+        sys.exit(1)
 
     if options.system:
         try:
@@ -287,7 +297,7 @@ def main():
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
-    printer.info('Reframe version: '  + settings.version)
+    printer.info('Reframe version: '  + reframe.VERSION)
     printer.info('Launched by user: ' + os.environ['USER'])
     printer.info('Launched on host: ' + socket.gethostname())
 
@@ -303,7 +313,10 @@ def main():
     printer.info('    Logging dir       : %s' % resources.log_prefix)
     try:
         # Locate and load checks
-        checks_found = loader.load_all(system=system, resources=resources)
+        try:
+            checks_found = loader.load_all(system=system, resources=resources)
+        except OSError as e:
+            raise ReframeError from e
 
         # Filter checks by name
         checks_matched = filter(
@@ -357,11 +370,13 @@ def main():
         # Act on checks
 
         # Unload regression's module and load user-specified modules
-        get_modules_system().unload_module(settings.module_name)
+        if settings.reframe_module:
+            get_modules_system().unload_module(settings.reframe_module)
+
         for m in options.user_modules:
             try:
                 get_modules_system().load_module(m, force=True)
-            except ModuleError:
+            except EnvironError:
                 printer.info("Could not load module `%s': Skipping..." % m)
 
         success = True
@@ -395,7 +410,6 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-
             runner = Runner(exec_policy, printer)
             try:
                 runner.runall(checks_matched, system)
@@ -409,6 +423,7 @@ def main():
             printer.info('No action specified. Exiting...')
             printer.info("Try `%s -h' for a list of available actions." %
                          argparser.prog)
+            sys.exit(1)
 
         if not success:
             sys.exit(1)
@@ -417,16 +432,14 @@ def main():
 
     except KeyboardInterrupt:
         sys.exit(1)
-    except OSError as e:
-        printer.error("`%s': %s" % (e.filename, e.strerror))
-        sys.exit(1)
-    except Exception as e:
-        printer.error('fatal error: %s\n' % e)
-        traceback.print_exc()
+    except (Exception, ReframeFatalError):
+        printer.error(format_exception(*sys.exc_info()))
         sys.exit(1)
     finally:
         try:
             if options.save_log_files:
                 logging.save_log_files(resources.output_prefix)
+
         except OSError as e:
-            printer.error("`%s': %s" % (e.filename, e.strerror))
+            printer.error(str(e))
+            sys.exit(1)

@@ -9,31 +9,30 @@ import shutil
 import subprocess
 import tempfile
 
-from reframe.core.exceptions import CommandError, ReframeError
+from reframe.core.exceptions import SpawnedProcessError, SpawnedProcessTimeout
 from reframe.core.logging import getlogger
 
 
-def run_command(cmd, check=False, timeout=None):
+def run_command(cmd, check=False, timeout=None, shell=False):
     getlogger().debug('executing OS command: ' + cmd)
+    if not shell:
+        cmd = shlex.split(cmd)
+
     try:
-        return subprocess.run(shlex.split(cmd),
+        return subprocess.run(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
+                              shell=shell,
                               universal_newlines=True,
                               timeout=timeout,
                               check=check)
     except subprocess.CalledProcessError as e:
-        raise CommandError(command=e.cmd,
-                           stdout=e.stdout,
-                           stderr=e.stderr,
-                           exitcode=e.returncode)
+        raise SpawnedProcessError(e.cmd, e.stdout, e.stderr,
+                                  e.returncode) from None
 
     except subprocess.TimeoutExpired as e:
-        raise CommandError(command=e.cmd,
-                           stdout=e.stdout,
-                           stderr=e.stderr,
-                           exitcode=None,
-                           timeout=e.timeout)
+        raise SpawnedProcessTimeout(
+            e.cmd, e.stdout, e.stderr, e.timeout) from None
 
 
 def grep_command_output(cmd, pattern, where='stdout'):
@@ -100,24 +99,22 @@ def copytree_virtual(src, dst, file_links=[],
     dst = os.path.abspath(dst)
 
     # 1. Check that the link targets are valid
-    # 2. Convert link targes to absolute paths
+    # 2. Convert link targets to absolute paths
     # 3. Store them in a set for quick look up inside the ignore function
     link_targets = set()
     for f in file_links:
         if os.path.isabs(f):
-            raise ReframeError(
-                "copytree_virtual() failed: `%s': "
-                "absolute paths not allowed in file_links" % f)
+            raise ValueError("copytree_virtual() failed: `%s': "
+                             "absolute paths not allowed in file_links" % f)
 
         target = os.path.join(src, f)
         if not os.path.exists(target):
-            raise ReframeError(
-                "copytree_virtual() failed: `%s' does not exist" % target)
+            raise ValueError("copytree_virtual() failed: `%s' "
+                             "does not exist" % target)
 
         if os.path.commonpath([src, target]) != src:
-            raise ReframeError(
-                "copytree_virtual() failed: "
-                "`%s' not under `%s'" % (target, src))
+            raise ValueError("copytree_virtual() failed: "
+                             "`%s' not under `%s'" % (target, src))
 
         link_targets.add(os.path.abspath(target))
 

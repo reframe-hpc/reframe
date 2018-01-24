@@ -8,9 +8,8 @@ import logging
 from datetime import datetime
 
 
-class RegressionSettings:
-    _version = '2.8'
-    _module_name = 'reframe'
+class ReframeSettings:
+    _reframe_module = 'reframe'
     _job_poll_intervals = [1, 2, 3]
     _job_submit_timeout = 60
     _checks_path = ['checks/']
@@ -107,8 +106,8 @@ class RegressionSettings:
         return self._version
 
     @property
-    def module_name(self):
-        return self._module_name
+    def reframe_module(self):
+        return self._reframe_module
 
     @property
     def job_poll_intervals(self):
@@ -135,4 +134,4 @@ class RegressionSettings:
         return self._logging_config
 
 
-settings = RegressionSettings()
+settings = ReframeSettings()
