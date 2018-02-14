@@ -12,17 +12,16 @@ Leveraging Makefiles
 We have already shown how you can compile a single source file associated with your regression test.
 In this example, we show how ReFrame can leverage Makefiles to build executables.
 
-Compiling a regression test through a Makefile is very straightforward with ReFrame.
-If the :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` attribute refers to a directory, then ReFrame will automatically invoke ``make`` there.
+Compiling a regression test through a Makefile is straightforward with ReFrame.
+If the :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` attribute refers to a directory, then ReFrame will automatically invoke ``make`` in that directory.
+More specifically, ReFrame first copies the :attr:`sourcesdir` to the stage directory at the beginning of the compilation phase and then constructs the path ``os.path.join('{STAGEDIR}', self.sourcepath)`` to determine the actual compilation path.
+If this is a directory, it will invoke ``make`` in it.
 
-.. note:: More specifically, ReFrame will compile the source files found in the directory that is constructed as ``os.path.join(self.sourcesdir, self.sourcepath)`` (given that :attr:`sourcesdir` is defined, as it is usually the case).
+.. note::
+   The :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` attribute must be a relative path refering to a subdirectory of :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>`, i.e., relative paths starting with ``..`` will be rejected.
 
-If :attr:`sourcesdir` is not defined, ReFrame assumes that the user will make sure that the source files will be in the stagedir (:attr:`_stagedir`) at the moment of compilation (more information on the stagedir directory is found in `"Running ReFrame" <running.html#configuring-reframe-directories>`__ section).
-The user may for instance generate the source files or copy them from a git repository by the means of some commands defined in :attr:`prebuild_cmd`.
-Thus, ReFrame will in this case compile the sources files found in the directory that is constructed as ``os.path.join(self._stagedir, self.sourcepath)``.
-
-By default, :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` is the empty string and :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` is set ``src/``.
-As a result, by not specifying a :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` at all, ReFrame will try to invoke ``make`` inside the ``src/`` directory of the test.
+By default, :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` is the empty string and :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` is set to ``'src/'``.
+As a result, by not specifying a :attr:`sourcepath <reframe.core.pipeline.RegressionTest.sourcepath>` at all, ReFrame will eventually compile the files found in the ``src/`` directory.
 This is exactly what our first example here does.
 
 For completeness, here are the contents of ``Makefile`` provided:
@@ -115,6 +114,39 @@ In this case, you can pass the custom Makefile name as an argument to the compil
 
   super().compile(makefile='Makefile_custom')
 
+
+Retrieving the source code from a Git repository
+================================================
+
+It might be the case that a regression test needs to clone its source code from a remote repository.
+This can be achieved in two ways with ReFrame.
+One way is to set the :attr:`sourcesdir` attribute to :class:`None` and explicitly clone or checkout a repository using the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>`:
+
+.. code-block:: python
+
+   self.sourcesdir = None
+   self.prebuild_cmd = ['git clone https://github.com/me/myrepo .']
+
+
+By setting :attr:`sourcesdir` to :class:`None`, you are telling ReFrame that you are going to provide the source files in the stage directory.
+The working directory of the :attr:`prebuild_cmd` and :attr:`postbuild_cmd` commands will be the stage directory of the test.
+
+
+An alternative way to retrieve specifically a Git repository is to assign its URL directly to the :attr:`sourcesdir` attribute:
+
+.. code-block:: python
+
+   self.sourcesdir = 'https://github.com/me/myrepo'
+
+ReFrame will attempt to clone this repository inside the stage directory by executing ``git clone <repo> .`` and will then procede with the compilation as described above.
+
+
+.. note::
+   ReFrame recognizes only URLs in the :attr:`sourcesdir` attribute and requires passwordless access to the repository.
+   This means that the SCP-style repository specification will not be accepted.
+   You will have to specify it as URL using the ``ssh://`` protocol (see `Git documentation page <https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a>`__).
+
+
 Implementing a Run-Only Regression Test
 ---------------------------------------
 
@@ -155,8 +187,8 @@ Here is the full regression test (``tutorial/advanced/advanced_example2.py``):
   def _get_checks(**kwargs):
       return [RunOnlyTest(**kwargs)]
 
-There is nothing special for this test compared to those presented `earlier <tutorial.html>`__ except that it derives from the :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>`.
-A thing to note about run-only regression tests is that the copying of their resources to the stage directory is performed at the beginning of the run phase.
+There is nothing special for this test compared to those presented `earlier <tutorial.html>`__ except that it derives from the :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` and that it does not contain any resources (``self.sourcesdir = None``).
+Note that run-only regression tests may also have resources, as for instance a precompiled executable or some input data. The copying of these resources to the stage directory is performed at the beginning of the run phase.
 For standard regression tests, this happens at the beginning of the compilation phase, instead.
 Furthermore, in this particular test the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` consists only of standard Bash shell commands.
 For this reason, we can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` informing ReFrame that the test does not have any resources.
@@ -409,6 +441,7 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
           self.valid_systems = ['*']
           self.valid_prog_environs = ['*']
 
+          self.pre_run = ['source limits.sh']
           self.executable = './advanced_example6.sh'
           numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
                                   'number', float)
@@ -419,10 +452,6 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
 
           self.maintainers = ['put-your-name-here']
           self.tags = {'tutorial'}
-
-      def setup(self, partition, environ, **job_opts):
-          super().setup(partition, environ, **job_opts)
-          self.job.pre_run = ['source %s/limits.sh' % self.stagedir]
 
 
   def _get_checks(**kwargs):
@@ -456,14 +485,6 @@ The full syntax for the :attr:`sanity_patterns` is the following:
 
 Note that the environment variables ``LOWER`` and ``UPPER`` have to be exported before execution of the ``advanced_example6.sh`` script.
 Within ReFrame it is possible to define commands that will be run before execution of the actual :attr:`executable <reframe.core.pipeline.RegressionTest.executable>`.
-To achieve this, the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method has to be overriden to access the :attr:`pre_run <reframe.core.schedulers.Job.pre_run>` field of the corresponding job.
-In this particular case, the setup implementation is written as:
-
-.. code-block:: python
-
-  def setup(self, partition, environ, **job_opts):
-      super().setup(partition, environ, **job_opts)
-      self.job.pre_run = ['source %s/limits.sh' % self.stagedir]
-
-The :attr:`pre_run <reframe.core.schedulers.Job.pre_run>` attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
+To achieve this, you can use the :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` attribute of the :class:`RegressionTest`.
+The :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
 In this case, we make sure that the ``limits.sh`` file is sourced before executing the ``advanced_example6.sh`` script.

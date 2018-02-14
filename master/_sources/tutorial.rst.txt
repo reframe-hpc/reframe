@@ -23,6 +23,7 @@ The site configuration that we used for this tutorial is the following:
            'daint': {
                'descr': 'Piz Daint',
                'hostnames': ['daint'],
+               'modules_system': 'tmod',
                'partitions': {
                    'login': {
                        'scheduler': 'local',
