@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.9 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.10 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
         <link rel="next" title="Sanity Functions Reference" href="sanity_functions_reference.html"/>
         <link rel="prev" title="About ReFrame" href="about.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.9
+                2.10
               </div>
             
           
@@ -505,6 +505,24 @@ that allows also custom job script directive prefixes.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.info">
+<code class="descname">info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide live information of a running test.</p>
+<p>This method is used by the front-end to print the status message during
+the test’s execution.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a string with an informational message containing the test
+name, the current partition and the current programming environment
+that the test is currently executing on.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="reframe.core.pipeline.RegressionTest.is_local">
 <code class="descname">is_local</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.is_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.is_local" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check if the test will execute locally.</p>
@@ -776,6 +794,29 @@ otherwise.<p>If no job descriptor is yet associated with this test,
 </dd></dl>
 
 <dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.post_run">
+<code class="descname">post_run</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.post_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to execute after launching this job.</p>
+<p>See <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.pre_run" title="reframe.core.pipeline.RegressionTest.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> for a more detailed description of the semantics.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.10.</span></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="reframe.core.pipeline.RegressionTest.postbuild_cmd">
 <code class="descname">postbuild_cmd</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.postbuild_cmd" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of shell commands to be executed after a successful compilation.</p>
@@ -791,6 +832,31 @@ the stage directory. <strong>Each entry in the list spawns a new shell.</strong>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.pre_run">
+<code class="descname">pre_run</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.pre_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of shell commands to execute before launching this job.</p>
+<p>These commands do not execute in the context of ReFrame.
+Instead, they are emitted in the generated job script just before the
+actual job launch command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.10.</span></p>
+</div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -930,13 +996,12 @@ When overriding this method users should always pass through
 <dt id="reframe.core.pipeline.RegressionTest.sourcepath">
 <code class="descname">sourcepath</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="Permalink to this definition">¶</a></dt>
 <dd><p>The path to the source file or source directory of the test.</p>
-<p>If not absolute, it is resolved against the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>
-directory.</p>
+<p>It must be a path relative to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>, pointing to a
+subfolder or a file contained in <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>. This applies also
+in the case where <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a> is a Git repository.</p>
 <p>If it refers to a regular file, this file will be compiled (its language
-will be automatically recognized) and the produced executable will be
-placed in the test’s stage directory.
-If it refers to a directory, this will be copied to the test’s stage
-directory and <code class="docutils literal"><span class="pre">make</span></code> will be invoked in that.</p>
+will be automatically recognized).
+If it refers to a directory, <code class="docutils literal"><span class="pre">make</span></code> will be invoked in that directory.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -953,17 +1018,33 @@ directory and <code class="docutils literal"><span class="pre">make</span></code
 <dt id="reframe.core.pipeline.RegressionTest.sourcesdir">
 <code class="descname">sourcesdir</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="Permalink to this definition">¶</a></dt>
 <dd><p>The directory containing the test’s resources.</p>
-<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, the test has no resources.</p>
+<p>This directory may be specified with an absolute path or with a path
+relative to the location of the test. Its contents will always be copied
+to the stage directory of the test.</p>
+<p>This attribute may also accept a URL, in which case ReFrame will treat it
+as a Git repository and will try to clone its contents in the stage
+directory of the test.</p>
+<p>If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, the test has no resources an no action is taken.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
-<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">os.path.join(self.prefix,</span> <span class="pre">'src')</span></code></td>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">'src'</span></code></td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.9: </span>Allow <code class="xref py py-class docutils literal"><span class="pre">None</span></code> values to be set also in regression tests
+with a compilation phase</p>
+</div>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.10: </span>Support for Git repositories was added.</p>
+</div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -1551,7 +1632,7 @@ launcher combination.</p>
 
 <dl class="class">
 <dt id="reframe.core.schedulers.Job">
-<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>command</em>, <em>launcher</em>, <em>environs=[]</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>command</em>, <em>launcher</em>, <em>environs=[]</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>pre_run=[]</em>, <em>post_run=[]</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job descriptor.</p>
 <div class="admonition note">
@@ -1594,7 +1675,6 @@ executable of this job.</p>
 <dt id="reframe.core.schedulers.Job.post_run">
 <code class="descname">post_run</code><a class="headerlink" href="#reframe.core.schedulers.Job.post_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of shell commands to execute after launching this job.</p>
-<p>See <a class="reference internal" href="#reframe.core.schedulers.Job.pre_run" title="reframe.core.schedulers.Job.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> for a more detailed description of the semantics.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1605,15 +1685,19 @@ executable of this job.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last deprecated">
+<p><span class="versionmodified">Deprecated since version 2.10: </span>Please use the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.post_run" title="reframe.core.pipeline.RegressionTest.post_run"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.post_run</span></code></a>
+field instead.</p>
+</div>
+</div>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="reframe.core.schedulers.Job.pre_run">
 <code class="descname">pre_run</code><a class="headerlink" href="#reframe.core.schedulers.Job.pre_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of shell commands to execute before launching this job.</p>
-<p>These commands do not execute in the context of ReFrame.
-Instead, they are emitted in the generated job script just before the
-actual job launch command.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1624,6 +1708,13 @@ actual job launch command.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last deprecated">
+<p><span class="versionmodified">Deprecated since version 2.10: </span>Please use the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.pre_run" title="reframe.core.pipeline.RegressionTest.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.pre_run</span></code></a>
+field instead.</p>
+</div>
+</div>
 </dd></dl>
 
 </dd></dl>
@@ -1866,6 +1957,7 @@ the same name.</p>
             <dd><a href="v2.7/reference.html">v2.7</a></dd>
             <dd><a href="v2.8/reference.html">v2.8</a></dd>
             <dd><a href="v2.8.1/reference.html">v2.8.1</a></dd>
+            <dd><a href="v2.9/reference.html">v2.9</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -1880,7 +1972,7 @@ the same name.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.9',
+            VERSION:'2.10',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

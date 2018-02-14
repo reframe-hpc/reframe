@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Customizing Further a Regression Test &mdash; ReFrame 2.9 documentation</title>
+  <title>Customizing Further a Regression Test &mdash; ReFrame 2.10 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.9 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
         <link rel="next" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html"/>
         <link rel="prev" title="ReFrame Tutorial" href="tutorial.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.9
+                2.10
               </div>
             
           
@@ -106,7 +106,10 @@
 <li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">ReFrame Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Customizing Further A Regression Test</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#leveraging-makefiles">Leveraging Makefiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#leveraging-makefiles">Leveraging Makefiles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#retrieving-the-source-code-from-a-git-repository">Retrieving the source code from a Git repository</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#implementing-a-run-only-regression-test">Implementing a Run-Only Regression Test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#implementing-a-compile-only-regression-test">Implementing a Compile-Only Regression Test</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#leveraging-environment-variables">Leveraging Environment Variables</a></li>
@@ -193,17 +196,16 @@ The corresponding scripts as well as the source code of the examples discussed h
 <h2>Leveraging Makefiles<a class="headerlink" href="#leveraging-makefiles" title="Permalink to this headline">¶</a></h2>
 <p>We have already shown how you can compile a single source file associated with your regression test.
 In this example, we show how ReFrame can leverage Makefiles to build executables.</p>
-<p>Compiling a regression test through a Makefile is very straightforward with ReFrame.
-If the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> attribute refers to a directory, then ReFrame will automatically invoke <code class="docutils literal"><span class="pre">make</span></code> there.</p>
+<p>Compiling a regression test through a Makefile is straightforward with ReFrame.
+If the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> attribute refers to a directory, then ReFrame will automatically invoke <code class="docutils literal"><span class="pre">make</span></code> in that directory.
+More specifically, ReFrame first copies the <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> to the stage directory at the beginning of the compilation phase and then constructs the path <code class="docutils literal"><span class="pre">os.path.join('{STAGEDIR}',</span> <span class="pre">self.sourcepath)</span></code> to determine the actual compilation path.
+If this is a directory, it will invoke <code class="docutils literal"><span class="pre">make</span></code> in it.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">More specifically, ReFrame will compile the source files found in the directory that is constructed as <code class="docutils literal"><span class="pre">os.path.join(self.sourcesdir,</span> <span class="pre">self.sourcepath)</span></code> (given that <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> is defined, as it is usually the case).</p>
+<p class="last">The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> attribute must be a relative path refering to a subdirectory of <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>, i.e., relative paths starting with <code class="docutils literal"><span class="pre">..</span></code> will be rejected.</p>
 </div>
-<p>If <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> is not defined, ReFrame assumes that the user will make sure that the source files will be in the stagedir (<code class="xref py py-attr docutils literal"><span class="pre">_stagedir</span></code>) at the moment of compilation (more information on the stagedir directory is found in <a class="reference external" href="running.html#configuring-reframe-directories">“Running ReFrame”</a> section).
-The user may for instance generate the source files or copy them from a git repository by the means of some commands defined in <code class="xref py py-attr docutils literal"><span class="pre">prebuild_cmd</span></code>.
-Thus, ReFrame will in this case compile the sources files found in the directory that is constructed as <code class="docutils literal"><span class="pre">os.path.join(self._stagedir,</span> <span class="pre">self.sourcepath)</span></code>.</p>
-<p>By default, <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> is the empty string and <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a> is set <code class="docutils literal"><span class="pre">src/</span></code>.
-As a result, by not specifying a <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> at all, ReFrame will try to invoke <code class="docutils literal"><span class="pre">make</span></code> inside the <code class="docutils literal"><span class="pre">src/</span></code> directory of the test.
+<p>By default, <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> is the empty string and <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a> is set to <code class="docutils literal"><span class="pre">'src/'</span></code>.
+As a result, by not specifying a <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> at all, ReFrame will eventually compile the files found in the <code class="docutils literal"><span class="pre">src/</span></code> directory.
 This is exactly what our first example here does.</p>
 <p>For completeness, here are the contents of <code class="docutils literal"><span class="pre">Makefile</span></code> provided:</p>
 <div class="highlight-makefile"><div class="highlight"><pre><span></span><span class="nv">EXECUTABLE</span> <span class="o">:=</span> advanced_example1
@@ -281,6 +283,29 @@ In this case, you can pass the custom Makefile name as an argument to the compil
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">makefile</span><span class="o">=</span><span class="s1">&#39;Makefile_custom&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<div class="section" id="retrieving-the-source-code-from-a-git-repository">
+<h3>Retrieving the source code from a Git repository<a class="headerlink" href="#retrieving-the-source-code-from-a-git-repository" title="Permalink to this headline">¶</a></h3>
+<p>It might be the case that a regression test needs to clone its source code from a remote repository.
+This can be achieved in two ways with ReFrame.
+One way is to set the <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> attribute to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and explicitly clone or checkout a repository using the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.prebuild_cmd" title="reframe.core.pipeline.RegressionTest.prebuild_cmd"><code class="xref py py-attr docutils literal"><span class="pre">prebuild_cmd</span></code></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">prebuild_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;git clone https://github.com/me/myrepo .&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>By setting <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, you are telling ReFrame that you are going to provide the source files in the stage directory.
+The working directory of the <code class="xref py py-attr docutils literal"><span class="pre">prebuild_cmd</span></code> and <code class="xref py py-attr docutils literal"><span class="pre">postbuild_cmd</span></code> commands will be the stage directory of the test.</p>
+<p>An alternative way to retrieve specifically a Git repository is to assign its URL directly to the <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="s1">&#39;https://github.com/me/myrepo&#39;</span>
+</pre></div>
+</div>
+<p>ReFrame will attempt to clone this repository inside the stage directory by executing <code class="docutils literal"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">&lt;repo&gt;</span> <span class="pre">.</span></code> and will then procede with the compilation as described above.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">ReFrame recognizes only URLs in the <code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code> attribute and requires passwordless access to the repository.
+This means that the SCP-style repository specification will not be accepted.
+You will have to specify it as URL using the <code class="docutils literal"><span class="pre">ssh://</span></code> protocol (see <a class="reference external" href="https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a">Git documentation page</a>).</p>
+</div>
+</div>
 </div>
 <div class="section" id="implementing-a-run-only-regression-test">
 <h2>Implementing a Run-Only Regression Test<a class="headerlink" href="#implementing-a-run-only-regression-test" title="Permalink to this headline">¶</a></h2>
@@ -319,8 +344,8 @@ Here is the full regression test (<code class="docutils literal"><span class="pr
     <span class="k">return</span> <span class="p">[</span><span class="n">RunOnlyTest</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)]</span>
 </pre></div>
 </div>
-<p>There is nothing special for this test compared to those presented <a class="reference external" href="tutorial.html">earlier</a> except that it derives from the <a class="reference internal" href="reference.html#reframe.core.pipeline.RunOnlyRegressionTest" title="reframe.core.pipeline.RunOnlyRegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RunOnlyRegressionTest</span></code></a>.
-A thing to note about run-only regression tests is that the copying of their resources to the stage directory is performed at the beginning of the run phase.
+<p>There is nothing special for this test compared to those presented <a class="reference external" href="tutorial.html">earlier</a> except that it derives from the <a class="reference internal" href="reference.html#reframe.core.pipeline.RunOnlyRegressionTest" title="reframe.core.pipeline.RunOnlyRegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RunOnlyRegressionTest</span></code></a> and that it does not contain any resources (<code class="docutils literal"><span class="pre">self.sourcesdir</span> <span class="pre">=</span> <span class="pre">None</span></code>).
+Note that run-only regression tests may also have resources, as for instance a precompiled executable or some input data. The copying of these resources to the stage directory is performed at the beginning of the run phase.
 For standard regression tests, this happens at the beginning of the compilation phase, instead.
 Furthermore, in this particular test the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.executable" title="reframe.core.pipeline.RegressionTest.executable"><code class="xref py py-attr docutils literal"><span class="pre">executable</span></code></a> consists only of standard Bash shell commands.
 For this reason, we can set <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a> to <code class="docutils literal"><span class="pre">None</span></code> informing ReFrame that the test does not have any resources.</p>
@@ -542,6 +567,7 @@ The contents of the ReFrame regression test contained in <code class="docutils l
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_run</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;source limits.sh&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;./advanced_example6.sh&#39;</span>
         <span class="n">numbers</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Random: (?P&lt;number&gt;\S+)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
                                 <span class="s1">&#39;number&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
@@ -552,10 +578,6 @@ The contents of the ReFrame regression test contained in <code class="docutils l
 
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;put-your-name-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
-
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">pre_run</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;source </span><span class="si">%s</span><span class="s1">/limits.sh&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">stagedir</span><span class="p">]</span>
 
 
 <span class="k">def</span> <span class="nf">_get_checks</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -584,14 +606,8 @@ Note that the <code class="docutils literal"><span class="pre">and</span></code>
 </div>
 <p>Note that the environment variables <code class="docutils literal"><span class="pre">LOWER</span></code> and <code class="docutils literal"><span class="pre">UPPER</span></code> have to be exported before execution of the <code class="docutils literal"><span class="pre">advanced_example6.sh</span></code> script.
 Within ReFrame it is possible to define commands that will be run before execution of the actual <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.executable" title="reframe.core.pipeline.RegressionTest.executable"><code class="xref py py-attr docutils literal"><span class="pre">executable</span></code></a>.
-To achieve this, the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup</span></code></a> method has to be overriden to access the <a class="reference internal" href="reference.html#reframe.core.schedulers.Job.pre_run" title="reframe.core.schedulers.Job.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> field of the corresponding job.
-In this particular case, the setup implementation is written as:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">pre_run</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;source </span><span class="si">%s</span><span class="s1">/limits.sh&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">stagedir</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>The <a class="reference internal" href="reference.html#reframe.core.schedulers.Job.pre_run" title="reframe.core.schedulers.Job.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
+To achieve this, you can use the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.pre_run" title="reframe.core.pipeline.RegressionTest.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> attribute of the <code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code>.
+The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.pre_run" title="reframe.core.pipeline.RegressionTest.pre_run"><code class="xref py py-attr docutils literal"><span class="pre">pre_run</span></code></a> attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
 In this case, we make sure that the <code class="docutils literal"><span class="pre">limits.sh</span></code> file is sourced before executing the <code class="docutils literal"><span class="pre">advanced_example6.sh</span></code> script.</p>
 </div>
 </div>
@@ -685,6 +701,7 @@ In this case, we make sure that the <code class="docutils literal"><span class="
             <dd><a href="v2.7/advanced.html">v2.7</a></dd>
             <dd><a href="v2.8/advanced.html">v2.8</a></dd>
             <dd><a href="v2.8.1/advanced.html">v2.8.1</a></dd>
+            <dd><a href="v2.9/advanced.html">v2.9</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -699,7 +716,7 @@ In this case, we make sure that the <code class="docutils literal"><span class="
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.9',
+            VERSION:'2.10',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

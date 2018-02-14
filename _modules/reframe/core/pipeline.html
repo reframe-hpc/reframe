@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.9 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.10 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.9 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.10 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.9
+                2.10
               </div>
             
           
@@ -187,7 +187,7 @@
 
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span><span class="p">,</span> <span class="n">ReframeError</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers.registry</span> <span class="k">import</span> <span class="n">getscheduler</span>
 <span class="kn">from</span> <span class="nn">reframe.core.launchers.registry</span> <span class="k">import</span> <span class="n">getlauncher</span>
@@ -252,18 +252,41 @@
 
     <span class="c1">#: The path to the source file or source directory of the test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: If not absolute, it is resolved against the :attr:`sourcesdir`</span>
-    <span class="c1">#: directory.</span>
+    <span class="c1">#: It must be a path relative to the :attr:`sourcesdir`, pointing to a</span>
+    <span class="c1">#: subfolder or a file contained in :attr:`sourcesdir`. This applies also</span>
+    <span class="c1">#: in the case where :attr:`sourcesdir` is a Git repository.</span>
     <span class="c1">#:</span>
     <span class="c1">#: If it refers to a regular file, this file will be compiled (its language</span>
-    <span class="c1">#: will be automatically recognized) and the produced executable will be</span>
-    <span class="c1">#: placed in the test’s stage directory.</span>
-    <span class="c1">#: If it refers to a directory, this will be copied to the test’s stage</span>
-    <span class="c1">#: directory and ``make`` will be invoked in that.</span>
+    <span class="c1">#: will be automatically recognized).</span>
+    <span class="c1">#: If it refers to a directory, ``make`` will be invoked in that directory.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
     <span class="c1">#: :default: ``&#39;&#39;``</span>
     <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcepath&#39;</span><span class="p">)</span>
+
+    <span class="c1">#: The directory containing the test&#39;s resources.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: This directory may be specified with an absolute path or with a path</span>
+    <span class="c1">#: relative to the location of the test. Its contents will always be copied</span>
+    <span class="c1">#: to the stage directory of the test.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: This attribute may also accept a URL, in which case ReFrame will treat it</span>
+    <span class="c1">#: as a Git repository and will try to clone its contents in the stage</span>
+    <span class="c1">#: directory of the test.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: If set to :class:`None`, the test has no resources an no action is taken.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: :class:`str` or :class:`None`</span>
+    <span class="c1">#: :default: ``&#39;src&#39;``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:     .. versionchanged:: 2.9</span>
+    <span class="c1">#:        Allow :class:`None` values to be set also in regression tests</span>
+    <span class="c1">#:        with a compilation phase</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:     .. versionchanged:: 2.10</span>
+    <span class="c1">#:        Support for Git repositories was added.</span>
+    <span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcesdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: List of shell commands to be executed before compiling.</span>
     <span class="c1">#:</span>
@@ -294,6 +317,30 @@
     <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">executable_opts</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;executable_opts&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="c1">#: List of shell commands to execute before launching this job.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: These commands do not execute in the context of ReFrame.</span>
+    <span class="c1">#: Instead, they are emitted in the generated job script just before the</span>
+    <span class="c1">#: actual job launch command.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :default: ``[]``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:    .. versionadded:: 2.10</span>
+    <span class="n">pre_run</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;pre_run&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+
+    <span class="c1">#: List of shell commands to execute after launching this job.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: See :attr:`pre_run` for a more detailed description of the semantics.</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :default: ``[]``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:    .. versionadded:: 2.10</span>
+    <span class="n">post_run</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;post_run&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of files to be kept after the test finishes.</span>
     <span class="c1">#:</span>
@@ -429,14 +476,6 @@
     <span class="c1">#: :type: boolean</span>
     <span class="c1">#: :default: :class:`False`</span>
     <span class="n">local</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)</span>
-
-    <span class="c1">#: The directory containing the test’s resources.</span>
-    <span class="c1">#:</span>
-    <span class="c1">#: If set to :class:`None`, the test has no resources.</span>
-    <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="c1">#: :default: ``os.path.join(self.prefix, &#39;src&#39;)``</span>
-    <span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;sourcesdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1">#: The set of reference values for this test.</span>
     <span class="c1">#:</span>
@@ -607,6 +646,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">postbuild_cmd</span>   <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable</span>      <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_run</span>         <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_run</span>        <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keep_files</span>      <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">readonly_files</span>  <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span>            <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -630,7 +671,7 @@
 
         <span class="c1"># Static directories of the regression check</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span> <span class="s1">&#39;src&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="s1">&#39;src&#39;</span>
 
         <span class="c1"># Output patterns</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="kc">None</span>
@@ -767,6 +808,25 @@
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">debug</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
+<div class="viewcode-block" id="RegressionTest.info"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.info">[docs]</a>    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Provide live information of a running test.</span>
+
+<span class="sd">        This method is used by the front-end to print the status message during</span>
+<span class="sd">        the test&#39;s execution.</span>
+
+<span class="sd">        :returns: a string with an informational message containing the test</span>
+<span class="sd">            name, the current partition and the current programming environment</span>
+<span class="sd">            that the test is currently executing on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_partition</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39; on </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_partition</span><span class="o">.</span><span class="n">fullname</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39; using </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">return</span> <span class="n">ret</span></div>
+
     <span class="k">def</span> <span class="nf">supports_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition_name</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
@@ -781,7 +841,7 @@
 
         <span class="k">return</span> <span class="n">partition_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span>
 
-    <span class="k">def</span> <span class="nf">supports_progenv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">supports_environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_name</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
 
@@ -894,6 +954,8 @@
             <span class="n">script_filename</span><span class="o">=</span><span class="n">job_script_filename</span><span class="p">,</span>
             <span class="n">stdout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span><span class="p">,</span>
             <span class="n">stderr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span><span class="p">,</span>
+            <span class="n">pre_run</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_run</span><span class="p">,</span>
+            <span class="n">post_run</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">post_run</span><span class="p">,</span>
             <span class="n">sched_exclusive_access</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">exclusive_access</span><span class="p">,</span>
             <span class="o">**</span><span class="n">job_opts</span>
         <span class="p">)</span>
@@ -923,7 +985,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logfile</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] reframe </span><span class="si">%(version)s</span><span class="s1">: &#39;</span>
-                              <span class="s1">&#39;</span><span class="si">%(testcase_name)s</span><span class="s1"> &#39;</span>
+                              <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1"> &#39;</span>
                               <span class="s1">&#39;(jobid=</span><span class="si">%(check_jobid)s</span><span class="s1">): </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
                     <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
                 <span class="p">}</span>
@@ -961,6 +1023,11 @@
         <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;virtual copying of files failed&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 
+    <span class="k">def</span> <span class="nf">_clone_to_stagedir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;cloning URL </span><span class="si">%s</span><span class="s1"> to stage directory (</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">))</span>
+        <span class="n">os_ext</span><span class="o">.</span><span class="n">git_clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">prebuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">prebuild_cmd</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;executing prebuild commands&#39;</span><span class="p">)</span>
@@ -981,25 +1048,37 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;no programming environment set&#39;</span><span class="p">)</span>
 
-        <span class="c1"># Determine the full source path for the compilation</span>
+        <span class="c1"># Copy the check&#39;s resources to the stage directory</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">:</span>
-            <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
-            <span class="c1"># if sourcepath refers to a directory, stage it first</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">)</span>
-                <span class="n">sourcepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">commonpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">commonpath</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span>
+                                                 <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">commonpath</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;sourcepath: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">sourcepath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">commonpath</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;sourcepath (`</span><span class="si">%s</span><span class="s2">&#39;) seems to be a subdirectory of &quot;</span>
+                    <span class="s2">&quot;sourcesdir (`</span><span class="si">%s</span><span class="s2">&#39;), but it will be interpreted &quot;</span>
+                    <span class="s2">&quot;as relative to it.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">))</span>
 
-        <span class="c1"># Add the the correct sourcepath directory to the include path</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">sourcepath</span><span class="p">):</span>
-            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">is_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_clone_to_stagedir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">include_search_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">includedir</span><span class="p">)</span>
+        <span class="c1"># Verify the sourcepath and determine the sourcepath in the stagedir</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;..&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span>
+                <span class="s1">&#39;self.sourcepath is an absolute path or does not point to a &#39;</span>
+                <span class="s1">&#39;subfolder or a file contained in self.sourcesdir: &#39;</span> <span class="o">+</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span>
+            <span class="p">)</span>
+
+        <span class="n">staged_sourcepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Staged sourcepath: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">staged_sourcepath</span><span class="p">)</span>
 
         <span class="c1"># Remove source and executable from compile_opts</span>
         <span class="n">compile_opts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -1011,8 +1090,14 @@
         <span class="c1"># compilation will remain in the stage directory</span>
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">prebuild</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">staged_sourcepath</span><span class="p">):</span>
+                <span class="n">includedir</span> <span class="o">=</span> <span class="n">staged_sourcepath</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">includedir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">staged_sourcepath</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">include_search_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">includedir</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_compile_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-                <span class="n">sourcepath</span><span class="o">=</span><span class="n">sourcepath</span><span class="p">,</span>
+                <span class="n">sourcepath</span><span class="o">=</span><span class="n">staged_sourcepath</span><span class="p">,</span>
                 <span class="n">executable</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">),</span>
                 <span class="o">**</span><span class="n">compile_opts</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;compilation stdout:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
@@ -1065,6 +1150,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;spawned job finished&#39;</span><span class="p">)</span></div>
 
+    <span class="k">def</span> <span class="nf">sanity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_sanity</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">performance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_performance</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_check</span><span class="p">:</span>
+                <span class="k">raise</span>
+
 <div class="viewcode-block" id="RegressionTest.check_sanity"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_sanity">[docs]</a>    <span class="k">def</span> <span class="nf">check_sanity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The sanity checking phase of the regression test pipeline.</span>
 
@@ -1074,8 +1169,8 @@
             <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity_patterns not set&#39;</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;sanity failure&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="RegressionTest.check_performance"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.check_performance">[docs]</a>    <span class="k">def</span> <span class="nf">check_performance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1165,8 +1260,11 @@
 <span class="sd">        rest of execution is delegated to the :func:`RegressionTest.run()`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">,</span>
-                                                <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">is_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_clone_to_stagedir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_copy_to_stagedir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span><span class="p">))</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div></div>
 
@@ -1305,6 +1403,7 @@
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
+            <dd><a href="../../../v2.9/index.html">v2.9</a></dd>
         </dl>
         <dl>
             <dt>Branches</dt>
@@ -1319,7 +1418,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.9',
+            VERSION:'2.10',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
