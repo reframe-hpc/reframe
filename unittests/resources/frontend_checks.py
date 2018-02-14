@@ -140,9 +140,11 @@ class SystemExitCheck(BaseFrontendCheck):
 
 
 class SleepCheck(BaseFrontendCheck):
+    _next_id = 0
+
     def __init__(self, sleep_time, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-        self.name += str(id(self))
+        self.name = '%s_%s' % (self.name, SleepCheck._next_id)
         self.sourcesdir = None
         self.sleep_time = sleep_time
         self.executable = 'python3'
@@ -152,14 +154,15 @@ class SleepCheck(BaseFrontendCheck):
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
+        SleepCheck._next_id += 1
 
     def setup(self, system, environ, **job_opts):
         super().setup(system, environ, **job_opts)
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
             "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.job.pre_run  = [print_timestamp]
-        self.job.post_run = [print_timestamp]
+        self.job._pre_run  = [print_timestamp]
+        self.job._post_run = [print_timestamp]
 
 
 def _get_checks(**kwargs):

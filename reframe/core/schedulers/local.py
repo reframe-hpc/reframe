@@ -108,9 +108,7 @@ class LocalJob(sched.Job):
 
         This function waits for the spawned process tree to finish.
         """
-        if self._jobid is None:
-            raise JobError('cannot cancel a non spawned job', jobid=None)
-
+        super().cancel()
         self._term_all()
 
         # Set the time limit to the grace period and let wait() do the final
@@ -127,9 +125,7 @@ class LocalJob(sched.Job):
         Upon return, the whole process tree of the spawned job process will be
         cleared, unless any of them has called `setsid()`.
         """
-        if self._jobid is None:
-            raise JobError('cannot wait a non spawned job', jobid=None)
-
+        super().wait()
         if self._state is not None:
             # Job has been already waited for
             return
@@ -161,6 +157,7 @@ class LocalJob(sched.Job):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         """
+        super().finished()
         self._proc.poll()
         if self._proc.returncode is None:
             return False

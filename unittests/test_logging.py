@@ -1,5 +1,6 @@
 import os
 import logging
+import logging.handlers
 import tempfile
 import unittest
 import sys
@@ -21,7 +22,7 @@ class TestLogger(unittest.TestCase):
         os.close(tmpfd)
 
         self.logger  = rlog.Logger('reframe')
-        self.handler = rlog.RotatingFileHandler(self.logfile)
+        self.handler = logging.handlers.RotatingFileHandler(self.logfile)
         self.formatter = logging.Formatter(
             fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
             datefmt='%FT%T')
@@ -70,6 +71,16 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(self.found_in_logfile('info'))
         self.assertTrue(self.found_in_logfile('verbose'))
         self.assertTrue(self.found_in_logfile('random_check'))
+
+    def test_handler_types(self):
+        self.assertTrue(issubclass(logging.Handler, rlog.Handler))
+        self.assertTrue(issubclass(logging.StreamHandler, rlog.Handler))
+        self.assertTrue(issubclass(logging.FileHandler, rlog.Handler))
+        self.assertTrue(issubclass(logging.handlers.RotatingFileHandler,
+                                   rlog.Handler))
+
+        # Try to instantiate rlog.Handler
+        self.assertRaises(TypeError, rlog.Handler)
 
     def test_custom_handler_levels(self):
         self.handler.setLevel('verbose')
@@ -211,7 +222,7 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertEqual(len(raw_logger.handlers), 1)
         handler = raw_logger.handlers[0]
 
-        self.assertTrue(isinstance(handler, rlog.StreamHandler))
+        self.assertIsInstance(handler, logging.StreamHandler)
         self.assertEqual(handler.stream, sys.stdout)
 
     def test_stream_handler_stderr(self):
@@ -227,7 +238,7 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertEqual(len(raw_logger.handlers), 1)
         handler = raw_logger.handlers[0]
 
-        self.assertTrue(isinstance(handler, rlog.StreamHandler))
+        self.assertIsInstance(handler, logging.StreamHandler)
         self.assertEqual(handler.stream, sys.stderr)
 
     def test_multiple_handlers(self):
@@ -268,8 +279,12 @@ class TestLoggerConfiguration(unittest.TestCase):
         with rlog.logging_context(check=self.check):
             rlog.getlogger().error('error from context')
 
-        self.assertTrue(self.found_in_logfile('random_check'))
-        self.assertTrue(self.found_in_logfile('error from context'))
+        rlog.getlogger().error('error outside context')
+
+        self.assertTrue(
+            self.found_in_logfile('random_check: error from context'))
+        self.assertTrue(
+            self.found_in_logfile('reframe: error outside context'))
 
     def test_logging_context_error(self):
         rlog.configure_logging(self.logging_config)

@@ -341,10 +341,8 @@ def main():
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             checks_matched = filter(
-                lambda c: c
-                if sum([c.supports_progenv(p)
-                        for p in options.prgenv]) == len(options.prgenv)
-                else None,
+                lambda c: c if all(c.supports_environ(e)
+                                   for e in options.prgenv) else None,
                 checks_matched
             )
 

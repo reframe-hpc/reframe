@@ -149,8 +149,7 @@ class SlurmJob(sched.Job):
                                 completed.stdout)
         if not jobid_match:
             raise JobError(
-                'could not retrieve the job id of the submitted job',
-                jobid=None)
+                'could not retrieve the job id of the submitted job')
 
         self._jobid = int(jobid_match.group('jobid'))
 
@@ -248,8 +247,7 @@ class SlurmJob(sched.Job):
             raise JobBlockedError(reason_msg, jobid=self._jobid)
 
     def wait(self):
-        if self._jobid is None:
-            raise JobError('cannot wait a non spawned job', jobid=None)
+        super().wait()
 
         # Quickly return in case we have finished already
         if self._state in self._completion_states:
@@ -262,15 +260,14 @@ class SlurmJob(sched.Job):
             self._update_state()
 
     def cancel(self):
-        if self._jobid is None:
-            raise JobError('cannot cancel a non spawned job', jobid=None)
-
+        super().cancel()
         getlogger().debug('cancelling job (id=%s)' % self._jobid)
         self._run_command('scancel %s' % self._jobid,
                           settings.job_submit_timeout)
         self._is_cancelling = True
 
     def finished(self):
+        super().finished()
         try:
             self._update_state()
         except JobBlockedError:

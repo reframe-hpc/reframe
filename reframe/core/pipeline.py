@@ -16,7 +16,7 @@ import reframe.utility.os as os_ext
 
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
-from reframe.core.exceptions import PipelineError, SanityError
+from reframe.core.exceptions import PipelineError, SanityError, ReframeError
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.launchers.registry import getlauncher
@@ -81,18 +81,41 @@ class RegressionTest:
 
     #: The path to the source file or source directory of the test.
     #:
-    #: If not absolute, it is resolved against the :attr:`sourcesdir`
-    #: directory.
+    #: It must be a path relative to the :attr:`sourcesdir`, pointing to a
+    #: subfolder or a file contained in :attr:`sourcesdir`. This applies also
+    #: in the case where :attr:`sourcesdir` is a Git repository.
     #:
     #: If it refers to a regular file, this file will be compiled (its language
-    #: will be automatically recognized) and the produced executable will be
-    #: placed in the test’s stage directory.
-    #: If it refers to a directory, this will be copied to the test’s stage
-    #: directory and ``make`` will be invoked in that.
+    #: will be automatically recognized).
+    #: If it refers to a directory, ``make`` will be invoked in that directory.
     #:
     #: :type: :class:`str`
     #: :default: ``''``
     sourcepath = fields.StringField('sourcepath')
+
+    #: The directory containing the test's resources.
+    #:
+    #: This directory may be specified with an absolute path or with a path
+    #: relative to the location of the test. Its contents will always be copied
+    #: to the stage directory of the test.
+    #:
+    #: This attribute may also accept a URL, in which case ReFrame will treat it
+    #: as a Git repository and will try to clone its contents in the stage
+    #: directory of the test.
+    #:
+    #: If set to :class:`None`, the test has no resources an no action is taken.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: ``'src'``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 2.9
+    #:        Allow :class:`None` values to be set also in regression tests
+    #:        with a compilation phase
+    #:
+    #:     .. versionchanged:: 2.10
+    #:        Support for Git repositories was added.
+    sourcesdir = fields.StringField('sourcesdir', allow_none=True)
 
     #: List of shell commands to be executed before compiling.
     #:
@@ -123,6 +146,30 @@ class RegressionTest:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
     executable_opts = fields.TypedListField('executable_opts', str)
+
+    #: List of shell commands to execute before launching this job.
+    #:
+    #: These commands do not execute in the context of ReFrame.
+    #: Instead, they are emitted in the generated job script just before the
+    #: actual job launch command.
+    #:
+    #: :type: :class:`list` of :class:`str`
+    #: :default: ``[]``
+    #:
+    #: .. note::
+    #:    .. versionadded:: 2.10
+    pre_run = fields.TypedListField('pre_run', str)
+
+    #: List of shell commands to execute after launching this job.
+    #:
+    #: See :attr:`pre_run` for a more detailed description of the semantics.
+    #:
+    #: :type: :class:`list` of :class:`str`
+    #: :default: ``[]``
+    #:
+    #: .. note::
+    #:    .. versionadded:: 2.10
+    post_run = fields.TypedListField('post_run', str)
 
     #: List of files to be kept after the test finishes.
     #:
@@ -258,14 +305,6 @@ class RegressionTest:
     #: :type: boolean
     #: :default: :class:`False`
     local = fields.BooleanField('local')
-
-    #: The directory containing the test’s resources.
-    #:
-    #: If set to :class:`None`, the test has no resources.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    #: :default: ``os.path.join(self.prefix, 'src')``
-    sourcesdir = fields.StringField('sourcesdir', allow_none=True)
 
     #: The set of reference values for this test.
     #:
@@ -436,6 +475,8 @@ class RegressionTest:
         self.postbuild_cmd   = []
         self.executable      = os.path.join('.', self.name)
         self.executable_opts = []
+        self.pre_run         = []
+        self.post_run        = []
         self.keep_files      = []
         self.readonly_files  = []
         self.tags            = set()
@@ -459,7 +500,7 @@ class RegressionTest:
 
         # Static directories of the regression check
         self._prefix = os.path.abspath(prefix)
-        self.sourcesdir = os.path.join(self._prefix, 'src')
+        self.sourcesdir = 'src'
 
         # Output patterns
         self.sanity_patterns = None
@@ -596,6 +637,25 @@ class RegressionTest:
     def __repr__(self):
         return debug.repr(self)
 
+    def info(self):
+        """Provide live information of a running test.
+
+        This method is used by the front-end to print the status message during
+        the test's execution.
+
+        :returns: a string with an informational message containing the test
+            name, the current partition and the current programming environment
+            that the test is currently executing on.
+        """
+        ret = self.name
+        if self.current_partition:
+            ret += ' on %s' % self.current_partition.fullname
+
+        if self.current_environ:
+            ret += ' using %s' % self.current_environ.name
+
+        return ret
+
     def supports_system(self, partition_name):
         if '*' in self.valid_systems:
             return True
@@ -610,7 +670,7 @@ class RegressionTest:
 
         return partition_name in self.valid_systems
 
-    def supports_progenv(self, env_name):
+    def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
             return True
 
@@ -723,6 +783,8 @@ class RegressionTest:
             script_filename=job_script_filename,
             stdout=self._stdout,
             stderr=self._stderr,
+            pre_run=self.pre_run,
+            post_run=self.post_run,
             sched_exclusive_access=self.exclusive_access,
             **job_opts
         )
@@ -752,7 +814,7 @@ class RegressionTest:
                 self._perf_logfile: {
                     'level': 'DEBUG',
                     'format': '[%(asctime)s] reframe %(version)s: '
-                              '%(testcase_name)s '
+                              '%(check_info)s '
                               '(jobid=%(check_jobid)s): %(message)s',
                     'append': True,
                 }
@@ -790,6 +852,11 @@ class RegressionTest:
         except (OSError, ValueError, TypeError) as e:
             raise PipelineError('virtual copying of files failed') from e
 
+    def _clone_to_stagedir(self, url):
+        self.logger.debug('cloning URL %s to stage directory (%s)' %
+                          (url, self._stagedir))
+        os_ext.git_clone(self.sourcesdir, self._stagedir)
+
     def prebuild(self):
         for cmd in self.prebuild_cmd:
             self.logger.debug('executing prebuild commands')
@@ -810,25 +877,37 @@ class RegressionTest:
         if not self._current_environ:
             raise PipelineError('no programming environment set')
 
-        # Determine the full source path for the compilation
+        # Copy the check's resources to the stage directory
         if self.sourcesdir:
-            sourcepath = os.path.join(self.sourcesdir, self.sourcepath)
-            # if sourcepath refers to a directory, stage it first
-            if os.path.isdir(sourcepath):
-                self._copy_to_stagedir(sourcepath)
-                sourcepath = self._stagedir
-        else:
-            sourcepath = os.path.join(self._stagedir, self.sourcepath)
+            try:
+                commonpath = os.path.commonpath([self.sourcesdir,
+                                                 self.sourcepath])
+            except ValueError:
+                commonpath = None
 
-        self.logger.debug('sourcepath: %s' % sourcepath)
+            if commonpath:
+                self.logger.warn(
+                    "sourcepath (`%s') seems to be a subdirectory of "
+                    "sourcesdir (`%s'), but it will be interpreted "
+                    "as relative to it." % (self.sourcepath, self.sourcesdir))
 
-        # Add the the correct sourcepath directory to the include path
-        if self.sourcesdir and not os.path.isdir(sourcepath):
-            includedir = os.path.abspath(self.sourcesdir)
-        else:
-            includedir = os.path.abspath(self._stagedir)
+            if os_ext.is_url(self.sourcesdir):
+                self._clone_to_stagedir(self.sourcesdir)
+            else:
+                self._copy_to_stagedir(os.path.join(self._prefix,
+                                                    self.sourcesdir))
 
-        self._current_environ.include_search_path.append(includedir)
+        # Verify the sourcepath and determine the sourcepath in the stagedir
+        if (os.path.isabs(self.sourcepath) or
+            os.path.normpath(self.sourcepath).startswith('..')):
+            raise PipelineError(
+                'self.sourcepath is an absolute path or does not point to a '
+                'subfolder or a file contained in self.sourcesdir: ' +
+                self.sourcepath
+            )
+
+        staged_sourcepath = os.path.join(self._stagedir, self.sourcepath)
+        self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
 
         # Remove source and executable from compile_opts
         compile_opts.pop('source', None)
@@ -840,8 +919,14 @@ class RegressionTest:
         # compilation will remain in the stage directory
         with os_ext.change_dir(self._stagedir):
             self.prebuild()
+            if os.path.isdir(staged_sourcepath):
+                includedir = staged_sourcepath
+            else:
+                includedir = os.path.dirname(staged_sourcepath)
+
+            self._current_environ.include_search_path.append(includedir)
             self._compile_task = self._current_environ.compile(
-                sourcepath=sourcepath,
+                sourcepath=staged_sourcepath,
                 executable=os.path.join(self._stagedir, self.executable),
                 **compile_opts)
             self.logger.debug('compilation stdout:\n%s' %
@@ -894,6 +979,16 @@ class RegressionTest:
         self._job.wait()
         self.logger.debug('spawned job finished')
 
+    def sanity(self):
+        self.check_sanity()
+
+    def performance(self):
+        try:
+            self.check_performance()
+        except SanityError:
+            if self.strict_check:
+                raise
+
     def check_sanity(self):
         """The sanity checking phase of the regression test pipeline.
 
@@ -903,8 +998,8 @@ class RegressionTest:
             raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
-            ret = evaluate(self.sanity_patterns)
-            if not ret:
+            success = evaluate(self.sanity_patterns)
+            if not success:
                 raise SanityError('sanity failure')
 
     def check_performance(self):
@@ -994,8 +1089,11 @@ class RunOnlyRegressionTest(RegressionTest):
         rest of execution is delegated to the :func:`RegressionTest.run()`.
         """
         if self.sourcesdir:
-            self._copy_to_stagedir(os.path.join(self.sourcesdir,
-                                                self.sourcepath))
+            if os_ext.is_url(self.sourcesdir):
+                self._clone_to_stagedir(self.sourcesdir)
+            else:
+                self._copy_to_stagedir(os.path.join(self._prefix,
+                                                    self.sourcesdir))
 
         super().run()
 

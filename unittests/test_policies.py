@@ -5,7 +5,6 @@ import unittest
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 
-
 from reframe.core.modules import init_modules_system
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -13,33 +12,6 @@ from reframe.settings import settings
 from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
                                                  SleepCheck,
                                                  SystemExitCheck)
-
-
-# In order to reliably test the AsynchronousExecutionPolicy we need to
-# monitor its internal state. That is why we subclass it, adding some
-# variables for monitoring. We also test the observed behaviour,
-# but not all of these tests are deterministic. Non-deterministic tests may
-# not lead to a test failure, but only to a test skip.
-
-class DebugAsynchronousExecutionPolicy(policies.AsynchronousExecutionPolicy):
-    def __init__(self):
-        super().__init__()
-        self.keep_stage_files = True
-        self.checks = []
-        # Storage for monitoring of the number of active cases
-        # (active case := running cases from the perspective of the policy)
-        self.num_active_cases = []
-
-    def exit_environ(self, c, p, e):
-        super().exit_environ(c, p, e)
-        self.checks.append(c)
-
-    # We overwrite _reschedule, because all jobs are submitted from here and
-    # the running_cases_counts are updated at submission.
-    def _reschedule(self, ready_testcase, load_env=True):
-        super()._reschedule(ready_testcase, load_env)
-        self.num_active_cases.append(
-            self._running_cases_counts['generic:login'])
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -145,23 +117,65 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(1, stats.num_failures())
 
 
+class TaskEventMonitor(executors.TaskEventListener):
+    """Event listener for monitoring the execution of the asynchronous execution
+    policy.
+
+    We need to make sure two things for the async policy:
+
+    1. The number of running tasks never exceed the max job size per partition.
+    2. Given a set of regression tests with a reasonably long runtime, the
+       execution policy must be able to reach the maximum concurrency. By
+       reasonably long runtime, we mean that that the regression tests must run
+       enough time, so as to allow the policy to execute all the tests until
+       their "run" phase, before the first submitted test finishes.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # timeline of num_tasks
+        self.num_tasks = [0]
+        self.tasks = []
+
+    def on_task_run(self, task):
+        super().on_task_run(task)
+        last = self.num_tasks[-1]
+        self.num_tasks.append(last + 1)
+        self.tasks.append(task)
+
+    def on_task_exit(self, task):
+        last = self.num_tasks[-1]
+        self.num_tasks.append(last - 1)
+
+    def on_task_success(self, task):
+        pass
+
+    def on_task_failure(self, task):
+        pass
+
+
 class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):
         super().setUp()
-        self.debug_policy = DebugAsynchronousExecutionPolicy()
-        self.runner = executors.Runner(self.debug_policy)
+        self.runner = executors.Runner(policies.AsynchronousExecutionPolicy())
+        self.runner.policy.keep_stage_files = True
+        self.monitor = TaskEventMonitor()
+        self.runner.policy.task_listeners.append(self.monitor)
 
     def set_max_jobs(self, value):
         for p in self.system.partitions:
             p._max_jobs = value
 
-    def read_timestamps_sorted(self):
+    def read_timestamps(self, tasks):
+        """Read the timestamps and sort them to permit simple
+        concurrency tests."""
         from reframe.core.deferrable import evaluate
 
         self.begin_stamps = []
-        self.end_stamps   = []
-        for c in self.debug_policy.checks:
-            with open(evaluate(c.stdout), 'r') as f:
+        self.end_stamps = []
+        for t in tasks:
+            with open(evaluate(t.check.stdout), 'r') as f:
                 self.begin_stamps.append(float(f.readline().strip()))
                 self.end_stamps.append(float(f.readline().strip()))
 
@@ -174,26 +188,26 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
             SleepCheck(0.5, system=self.system, resources=self.resources),
             SleepCheck(0.5, system=self.system, resources=self.resources)
         ]
-        num_checks = len(checks)
-        self.set_max_jobs(num_checks)
+        self.set_max_jobs(len(checks))
         self.runner.runall(checks, self.system)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(num_checks, self.runner.stats.num_cases())
+        self.assertEqual(len(checks), self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
 
-        # Ensure that all tests were simultaneously active.
-        self.assertEqual(len(self.debug_policy.num_active_cases), num_checks)
-        self.assertEqual(self.debug_policy.num_active_cases[-1], num_checks)
+        # Ensure that maximum concurrency was reached as fast as possible
+        self.assertEqual(len(checks), max(self.monitor.num_tasks))
+        self.assertEqual(len(checks), self.monitor.num_tasks[len(checks)])
 
-        # Read the timestamps sorted to permit simple concurrency tests.
-        self.read_timestamps_sorted()
+        self.read_timestamps(self.monitor.tasks)
 
         # Warn if not all tests were run in parallel; the corresponding strict
         # check would be:
-        # self.assertTrue(self.begin_stamps[-1] <= self.end_stamps[0])
+        #
+        #     self.assertTrue(self.begin_stamps[-1] <= self.end_stamps[0])
+        #
         if self.begin_stamps[-1] > self.end_stamps[0]:
-            self.skipTest('the system seems too loaded.')
+            self.skipTest('the system seems too much loaded.')
 
     def test_concurrency_limited(self):
         # The number of checks must be <= 2*max_jobs.
@@ -204,30 +218,26 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
             SleepCheck(0.5, system=self.system, resources=self.resources),
             SleepCheck(0.5, system=self.system, resources=self.resources)
         ]
-
-        num_checks = len(checks)
-        max_jobs   = num_checks - 2
+        max_jobs = len(checks) - 2
         self.set_max_jobs(max_jobs)
         self.runner.runall(checks, self.system)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(num_checks, self.runner.stats.num_cases())
+        self.assertEqual(len(checks), self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
 
-        # Ensure that #max_jobs tests were simultaneously active.
-        self.assertEqual(len(self.debug_policy.num_active_cases), num_checks)
-        self.assertEqual(self.debug_policy.num_active_cases[max_jobs-1],
-                         max_jobs)
+        # Ensure that maximum concurrency was reached as fast as possible
+        self.assertEqual(max_jobs, max(self.monitor.num_tasks))
+        self.assertEqual(max_jobs, self.monitor.num_tasks[max_jobs])
 
-        # Read the timestamps sorted to permit simple concurrency tests.
-        self.read_timestamps_sorted()
+        self.read_timestamps(self.monitor.tasks)
 
         # Ensure that the jobs after the first #max_jobs were each run after
         # one of the previous #max_jobs jobs had finished
         # (e.g. begin[max_jobs] > end[0]).
         # Note: we may ensure this strictly as we may ensure serial behaviour.
-        begin_after_end = [b > e for b, e in zip(self.begin_stamps[max_jobs:],
-                                                 self.end_stamps[:-max_jobs])]
+        begin_after_end = (b > e for b, e in zip(self.begin_stamps[max_jobs:],
+                                                 self.end_stamps[:-max_jobs]))
         self.assertTrue(all(begin_after_end))
 
         # NOTE: to ensure that these remaining jobs were also run
@@ -256,20 +266,19 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runner.runall(checks, self.system)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(num_checks, self.runner.stats.num_cases())
+        self.assertEqual(len(checks), self.runner.stats.num_cases())
         self.assertEqual(0, self.runner.stats.num_failures())
 
-        # Ensure that there was only one active job at a time.
-        self.assertEqual(len(self.debug_policy.num_active_cases), num_checks)
-        self.assertEqual(max(self.debug_policy.num_active_cases), 1)
+        # Ensure that a single task was running all the time
+        self.assertEqual(1, max(self.monitor.num_tasks))
 
         # Read the timestamps sorted to permit simple concurrency tests.
-        self.read_timestamps_sorted()
+        self.read_timestamps(self.monitor.tasks)
 
         # Ensure that the jobs were run after the previous job had finished
         # (e.g. begin[1] > end[0]).
-        begin_after_end = [b > e for b, e in zip(self.begin_stamps[1:],
-                                                 self.end_stamps[:-1])]
+        begin_after_end = (b > e for b, e in zip(self.begin_stamps[1:],
+                                                 self.end_stamps[:-1]))
         self.assertTrue(all(begin_after_end))
 
     def _run_checks(self, checks, max_jobs):

@@ -8,7 +8,7 @@ import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 import reframe.core.fields as fields
 
-from reframe.core.exceptions import ConfigError
+from reframe.core.exceptions import ConfigError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
 from reframe.core.logging import getlogger
 from reframe.core.shell import BashScriptBuilder
@@ -47,21 +47,31 @@ class Job(abc.ABC):
 
     #: List of shell commands to execute before launching this job.
     #:
-    #: These commands do not execute in the context of ReFrame.
-    #: Instead, they are emitted in the generated job script just before the
-    #: actual job launch command.
-    #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
-    pre_run = fields.TypedListField('pre_run', str)
+    #:
+    #: .. note::
+    #:    .. deprecated:: 2.10
+    #:       Please use the :attr:`reframe.core.pipeline.RegressionTest.pre_run`
+    #:       field instead.
+    pre_run = fields.DeprecatedField(
+        fields.TypedListField('_pre_run', str),
+        'Use of the pre_run field of Job is deprecated. '
+        'Please use the pre_run field of RegressionTest instead.')
 
     #: List of shell commands to execute after launching this job.
     #:
-    #: See :attr:`pre_run` for a more detailed description of the semantics.
-    #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
-    post_run = fields.TypedListField('post_run', str)
+    #:
+    #: .. note::
+    #:    .. deprecated:: 2.10
+    #:       Please use the :attr:`reframe.core.pipeline.RegressionTest.post_run`
+    #:       field instead.
+    post_run = fields.DeprecatedField(
+        fields.TypedListField('_post_run', str),
+        'Use of the post_run field of Job is deprecated. '
+        'Please use the post_run field of RegressionTest instead.')
 
     #: The parallel program launcher that will be used to launch the parallel
     #: executable of this job.
@@ -90,6 +100,8 @@ class Job(abc.ABC):
                  script_filename=None,
                  stdout=None,
                  stderr=None,
+                 pre_run=[],
+                 post_run=[],
                  sched_account=None,
                  sched_partition=None,
                  sched_reservation=None,
@@ -102,8 +114,8 @@ class Job(abc.ABC):
         self.options = list(sched_options)
 
         # Commands to be run before and after the job is launched
-        self.pre_run  = []
-        self.post_run = []
+        self._pre_run  = list(pre_run)
+        self._post_run = list(post_run)
         self.launcher = launcher
 
         self._name = name
@@ -235,11 +247,11 @@ class Job(abc.ABC):
         for e in self._environs:
             e.emit_load_instructions(builder)
 
-        for c in self.pre_run:
+        for c in self._pre_run:
             builder.verbatim(c)
 
     def emit_postamble(self, script_builder):
-        for c in self.post_run:
+        for c in self._post_run:
             script_builder.verbatim(c)
 
     def prepare(self, script_builder):
@@ -256,12 +268,15 @@ class Job(abc.ABC):
 
     @abc.abstractmethod
     def wait(self):
-        pass
+        if self._jobid is None:
+            raise JobNotStartedError('cannot wait an unstarted job')
 
     @abc.abstractmethod
     def cancel(self):
-        pass
+        if self._jobid is None:
+            raise JobNotStartedError('cannot cancel an unstarted job')
 
     @abc.abstractmethod
     def finished(self):
-        pass
+        if self._jobid is None:
+            raise JobNotStartedError('cannot poll an unstarted job')
