@@ -6,7 +6,8 @@ import reframe.core.logging as logging
 
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (
-    ReframeFatalError, ReframeError, SanityError
+    AbortTaskError, JobNotStartedError, ReframeFatalError,
+    ReframeError, SanityError, TaskExit
 )
 from reframe.core.fields import StringField, TypedField
 from reframe.core.pipeline import RegressionTest
@@ -14,130 +15,132 @@ from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
 
-
-class TestCase:
-    """Test case result placeholder class."""
-    STATE_SUCCESS = 0
-    STATE_FAILURE = 1
-
-    def __init__(self, executor):
-        self._executor = executor
-        self._result = None
-        self._failed_stage = None
-        self._exc_info = None
-
-    def __repr__(self):
-        return debug.repr(self)
-
-    @property
-    def executor(self):
-        return self._executor
-
-    @property
-    def result(self):
-        return self._result
-
-    @property
-    def failed_stage(self):
-        return self._failed_stage
-
-    @property
-    def exc_info(self):
-        return self._exc_info
-
-    def valid(self):
-        return self._result is not None
-
-    def success(self):
-        self._result = TestCase.STATE_SUCCESS
-
-    def fail(self, exc_info=None):
-        self._result = TestCase.STATE_FAILURE
-        self._failed_stage = self.executor.current_stage
-        self._exc_info = exc_info
-
-    def failed(self):
-        return self._result == TestCase.STATE_FAILURE
+ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
 
 
-class RegressionTestExecutor:
-    """Responsible for the execution of `RegressionTest`'s pipeline stages.
+class RegressionTask:
+    """A class representing a :class:`RegressionTest` through the regression
+    pipeline."""
 
-    Keeps track of the current stage and implements relaxed performance
-    checking logic."""
-    _check = TypedField('_check', RegressionTest)
-    _current_stage = StringField('_current_stage')
-
-    def __init__(self, check, strict_check=False):
-        self._current_stage = 'init'
+    def __init__(self, check, listeners=[]):
         self._check = check
-        if strict_check:
-            self._check.strict_check = True
+        self._failed_stage = None
+        self._current_stage = None
+        self._exc_info = (None, None, None)
+        self._environ = None
+        self._listeners = list(listeners)
 
-    def __repr__(self):
-        return debug.repr(self)
+        # Test case has finished, but has not been waited for yet
+        self.zombie = False
 
     @property
     def check(self):
         return self._check
 
     @property
-    def current_stage(self):
-        return self._current_stage
+    def exc_info(self):
+        return self._exc_info
 
-    def setup(self, partition, environ, **job_opts):
-        self._current_stage = 'setup'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering setup stage')
-            self._check.setup(partition, environ, **job_opts)
+    @property
+    def failed(self):
+        return self._failed_stage is not None
+
+    @property
+    def failed_stage(self):
+        return self._failed_stage
+
+    def _notify_listeners(self, callback_name):
+        for l in self._listeners:
+            callback = getattr(l, callback_name)
+            callback(self)
+
+    def _safe_call(self, fn, *args, **kwargs):
+        self._current_stage = fn.__name__
+        try:
+            with logging.logging_context(self._check) as logger:
+                logger.debug('entering stage: %s' % self._current_stage)
+                return fn(*args, **kwargs)
+        except ABORT_REASONS:
+            self.fail()
+            raise
+        except BaseException as e:
+            self.fail()
+            raise TaskExit from e
+
+    def setup(self, *args, **kwargs):
+        self._safe_call(self._check.setup, *args, **kwargs)
+        self._environ = EnvironmentSnapshot()
 
     def compile(self):
-        self._current_stage = 'compile'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering compilation stage')
-            self._check.compile()
+        self._safe_call(self._check.compile)
 
     def run(self):
-        self._current_stage = 'run'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering running stage')
-            self._check.run()
+        self._safe_call(self._check.run)
+        self._notify_listeners('on_task_run')
 
     def wait(self):
-        self._current_stage = 'wait'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering waiting stage')
-            self._check.wait()
+        self._safe_call(self._check.wait)
+        self.zombie = False
 
     def poll(self):
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('polling check')
-            ret = self._check.poll()
-            return ret
+        finished = self._safe_call(self._check.poll)
+        if finished:
+            self.zombie = True
+            self._notify_listeners('on_task_exit')
 
-    def check_sanity(self):
-        self._current_stage = 'sanity'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering sanity checking stage')
-            self._check.check_sanity()
+        return finished
 
-    def check_performance(self):
-        self._current_stage = 'performance'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering performance checking stage')
-            try:
-                self._check.check_performance()
-            except SanityError:
-                if self._check.strict_check:
-                    raise
+    def sanity(self):
+        self._safe_call(self._check.sanity)
 
-    def cleanup(self, remove_files=False, unload_env=True):
-        self._current_stage = 'cleanup'
-        with logging.logging_context(check=self._check) as logger:
-            logger.debug('entering cleanup stage')
-            self._check.cleanup(remove_files, unload_env)
+    def performance(self):
+        self._safe_call(self._check.performance)
 
-        self._current_stage = 'completed'
+    def cleanup(self, *args, **kwargs):
+        self._safe_call(self._check.cleanup, *args, **kwargs)
+        self._notify_listeners('on_task_success')
+
+    def fail(self, exc_info=None):
+        self._failed_stage = self._current_stage
+        self._exc_info = exc_info or sys.exc_info()
+        self._notify_listeners('on_task_failure')
+
+    def resume(self):
+        self._environ.load()
+
+    def abort(self, cause=None):
+        logging.getlogger().debug('aborting: %s' % self._check.info())
+        exc = AbortTaskError()
+        exc.__cause__ = cause
+        try:
+            # FIXME: we should perhaps extend the RegressionTest interface
+            # for supporting job cancelling
+            if not self.zombie:
+                self._check.job.cancel()
+        except JobNotStartedError:
+            self.fail((type(exc), exc, None))
+        except BaseException:
+            self.fail()
+        else:
+            self.fail((type(exc), exc, None))
+
+
+class TaskEventListener:
+    @abc.abstractmethod
+    def on_task_run(self, task):
+        """Called whenever the run() method of a RegressionTask is called."""
+
+    @abc.abstractmethod
+    def on_task_exit(self, task):
+        """Called whenever a RegressionTask finishes."""
+
+    @abc.abstractmethod
+    def on_task_failure(self, task):
+        """Called when a regression test has failed."""
+
+    @abc.abstractmethod
+    def on_task_success(self, task):
+        """Called when a regression test has succeeded."""
 
 
 class Runner:
@@ -151,6 +154,7 @@ class Runner:
         self._policy.runner = self
         self._sandbox = Sandbox()
         self._stats = None
+        self._environ_snapshot = EnvironmentSnapshot()
 
     def __repr__(self):
         return debug.repr(self)
@@ -181,6 +185,7 @@ class Runner:
                 just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
+            self._environ_snapshot.load()
 
     def _partition_supported(self, check, partition):
         if self._policy.skip_system_check:
@@ -189,14 +194,14 @@ class Runner:
         return check.supports_system(partition.name)
 
     def _environ_supported(self, check, environ):
-        precond = True
+        ret = True
         if self._policy.only_environs:
-            precond = environ.name in self._policy.only_environs
+            ret = environ.name in self._policy.only_environs
 
         if self._policy.skip_environ_check:
-            return precond
+            return ret
         else:
-            return precond and check.supports_progenv(environ.name)
+            return ret and check.supports_environ(environ.name)
 
     def _runall(self, checks, system):
         self._policy.enter()
@@ -226,6 +231,7 @@ class Runner:
                     self._policy.enter_environ(self._sandbox.check,
                                                self._sandbox.system,
                                                self._sandbox.environ)
+                    self._environ_snapshot.load()
                     self._policy.run_check(self._sandbox.check,
                                            self._sandbox.system,
                                            self._sandbox.environ)
@@ -255,7 +261,6 @@ class ExecutionPolicy:
         self.keep_stage_files = False
         self.only_environs = None
         self.printer = None
-        self.environ_snapshot = EnvironmentSnapshot()
         self.strict_check = False
 
         # Scheduler options
@@ -265,6 +270,9 @@ class ExecutionPolicy:
         self.sched_nodelist = None
         self.sched_exclude_nodelist = None
         self.sched_options = []
+
+        # Task event listeners
+        self.task_listeners = []
 
     def __repr__(self):
         return debug.repr(self)
@@ -308,6 +316,8 @@ class ExecutionPolicy:
         p -- the system partition to run the check on.
         e -- the environment to run the check with.
         """
+        if self.strict_check:
+            c.strict_check = True
 
     @abc.abstractmethod
     def getstats(self):

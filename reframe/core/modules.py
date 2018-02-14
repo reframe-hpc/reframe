@@ -3,11 +3,15 @@
 #
 
 import abc
+import itertools
 import os
 import re
-import reframe.utility.os as os_ext
 import subprocess
 
+import reframe.core.fields as fields
+import reframe.utility.os as os_ext
+
+from collections.abc import Iterable
 from reframe.core.exceptions import ConfigError, EnvironError
 
 
@@ -71,8 +75,50 @@ class Module:
 class ModulesSystem:
     """Implements the frontend of the module systems."""
 
+    module_map = fields.AggregateTypeField('module_map',
+                                           (dict, (str, (list, str))))
+
     def __init__(self, backend):
         self._backend = backend
+        self.module_map = {}
+
+    def resolve_module(self, name):
+        """Resolve module ``name`` in the registered module map.
+
+        :returns: the list of real modules names pointed to by ``name``.
+        :raises: :attr:`ConfigError` if the mapping contains a cycle.
+        """
+        ret = []
+        visited = set()
+        unvisited = [(name, None)]
+        path = []
+        while unvisited:
+            node, parent = unvisited.pop()
+
+            # Adjust the path
+            while path and path[-1] != parent:
+                path.pop()
+
+            try:
+                # We insert the adjacent nodes in reverse order, so as to
+                # preserve the DFS access order
+                adjacent = reversed(self.module_map[node])
+            except KeyError:
+                # We have reached a terminal node
+                ret.append(node)
+            else:
+                path.append(node)
+                for m in adjacent:
+                    if m in path:
+                        raise EnvironError('module cyclic dependency: ' +
+                                           '->'.join(path + [m]))
+
+                    if m not in visited:
+                        unvisited.append((m, node))
+
+            visited.add(node)
+
+        return ret
 
     @property
     def backend(self):
@@ -86,10 +132,21 @@ class ModulesSystem:
         return [str(m) for m in self._backend.loaded_modules()]
 
     def conflicted_modules(self, name):
-        """Return the list of conflicted modules.
+        """Return the list of conflicted modules of the module ``name``.
+
+        If module ``name`` resolves to multiple real modules, then the returned
+        list will be the concatenation of the conflict lists of all the real
+        modules.
 
         This method returns a list of strings.
         """
+        ret = []
+        for m in self.resolve_module(name):
+            ret += self._conflicted_modules(m)
+
+        return ret
+
+    def _conflicted_modules(self, name):
         return [str(m) for m in self._backend.conflicted_modules(Module(name))]
 
     def load_module(self, name, force=False):
@@ -97,8 +154,18 @@ class ModulesSystem:
 
         If ``force`` is set, forces the loading,
         unloading first any conflicting modules currently loaded.
+        If module ``name`` refers to to multiple real modules, all of the
+        target modules will be loaded.
 
-        Returns the list of unloaded modules as strings."""
+        Returns the list of unloaded modules as strings.
+        """
+        ret = []
+        for m in self.resolve_module(name):
+            ret += self._load_module(m, force)
+
+        return ret
+
+    def _load_module(self, name, force=False):
         module = Module(name)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
@@ -118,11 +185,26 @@ class ModulesSystem:
         return [str(m) for m in unload_list]
 
     def unload_module(self, name):
-        """Unload module ``name``."""
+        """Unload module ``name``.
+
+        If module ``name`` refers to multiple real modules, all the referred to
+        modules will be unloaded in reverse order.
+        """
+        for m in reversed(self.resolve_module(name)):
+            self._unload_module(m)
+
+    def _unload_module(self, name):
         self._backend.unload_module(Module(name))
 
     def is_module_loaded(self, name):
-        """Check presence of module ``name``."""
+        """Check if module ``name`` is loaded.
+
+        If module ``name`` refers to multiple real modules, this method will
+        return True only if all the referees are loaded.
+        """
+        return all(self._is_module_loaded(m) for m in self.resolve_module(name))
+
+    def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
 
     @property
@@ -263,8 +345,21 @@ class TModImpl(ModulesSystemImpl):
         command = [self._command, *args]
         return os_ext.run_command(' '.join(command))
 
-    def _exec_module_command(self, *args):
+    def _module_command_failed(self, completed):
+        return re.search(r'ERROR', completed.stderr) is not None
+
+    def _exec_module_command(self, *args, msg=None):
         completed = self._run_module_command(*args)
+        if self._module_command_failed(completed):
+            if msg is None:
+                msg = 'modules system command failed: '
+                if isinstance(completed.args, str):
+                    msg += completed.args
+                else:
+                    msg += ' '.join(completed.args)
+
+            raise EnvironError(msg)
+
         exec(completed.stdout)
 
     def loaded_modules(self):
@@ -286,14 +381,12 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self._exec_module_command('load', str(module))
-        if not self.is_module_loaded(module):
-            raise EnvironError('could not load module %s' % module)
+        self._exec_module_command('load', str(module),
+                                  msg='could not load module %s' % module)
 
     def unload_module(self, module):
-        self._exec_module_command('unload', str(module))
-        if self.is_module_loaded(module):
-            raise EnvironError('could not unload module %s' % module)
+        self._exec_module_command('unload', str(module),
+                                  msg='could not unload module %s' % module)
 
     def unload_all(self):
         self._exec_module_command('purge')
@@ -306,6 +399,67 @@ class TModImpl(ModulesSystemImpl):
 
     def searchpath_remove(self, *dirs):
         self._exec_module_command('unuse', *dirs)
+
+
+class LModImpl(TModImpl):
+    """Module system for Lmod (Tcl/Lua)."""
+
+    def __init__(self):
+        # Try to figure out if we are indeed using LMOD
+        lmod_cmd = os.getenv('LMOD_CMD')
+        if lmod_cmd is None:
+            raise ConfigError('could not find a sane Lmod installation: '
+                              'environment variable LMOD_CMD is not defined')
+
+        try:
+            completed = os_ext.run_command('%s --version' % lmod_cmd)
+        except OSError as e:
+            raise ConfigError(
+                'could not find a sane Lmod installation: %s' % e)
+
+        version_match = re.search(r'.*Version\s*(\S+)', completed.stderr,
+                                  re.MULTILINE)
+        if version_match is None:
+            raise ConfigError('could not retrieve Lmod version')
+
+        self._version = version_match.group(1)
+        self._command = '%s python ' % lmod_cmd
+        try:
+            # Try the Python bindings now
+            completed = os_ext.run_command(self._command)
+        except OSError as e:
+            raise ConfigError(
+                'could not get the Python bindings for Lmod: ' % e)
+
+        if re.search(r'Unknown shell type', completed.stderr):
+            raise ConfigError('Python is not supported by '
+                              'this Lmod installation')
+
+    def name(self):
+        return 'lmod'
+
+    def _module_command_failed(self, completed):
+        return completed.stdout.strip() == 'false'
+
+    def conflicted_modules(self, module):
+        conflict_list = []
+        completed = self._run_module_command('show', str(module))
+
+        # Lmod accepts both Lua and and Tcl syntax
+        # The following test allows incorrect syntax, e.g., `conflict
+        # ('package"(`, but we expect this to be caught by the Lmod framework
+        # in earlier stages.
+        ret = []
+        for m in re.finditer(r'conflict\s*(\S+)', completed.stderr):
+            conflict_arg = m.group(1)
+            if conflict_arg.startswith('('):
+                # Lua syntax
+                ret.append(Module(conflict_arg.strip('\'"()')))
+            else:
+                # Tmod syntax
+                ret.append(Module(conflict_arg))
+
+        return ret
 
 
 class NoModImpl(ModulesSystemImpl):
@@ -360,6 +514,8 @@ def init_modules_system(modules_kind=None):
         _modules_system = ModulesSystem(NoModImpl())
     elif modules_kind == 'tmod':
         _modules_system = ModulesSystem(TModImpl())
+    elif modules_kind == 'lmod':
+        _modules_system = ModulesSystem(LModImpl())
     else:
         raise ConfigError('unknown module system')
 

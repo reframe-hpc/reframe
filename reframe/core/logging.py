@@ -1,7 +1,8 @@
+import abc
 import collections.abc
 import logging
-import numbers
 import logging.handlers
+import numbers
 import os
 import sys
 import shutil
@@ -60,30 +61,29 @@ def _check_level(level):
     return ret
 
 
-# Redefine handlers so as to use our levels
+# Here we want that all the handlers of Python's logging framework understand
+# our log levels. For this reason we need to do two things:
+#
+# 1. Monkey-patch the `setLevel` method of `logging.Handler` with our method
+#    that understands our levels.
+# 2. We need a way to differentiate the patched handlers. For this reason, we
+#    make the `logging.Handler` a pseudo-subclass of our custom `Handler` class,
+#    which itself should be abstract and unable to be instantiated.
 
-class Handler(logging.Handler):
-    def setLevel(self, level):
-        self.level = _check_level(level)
-
-    def __repr__(self):
-        return debug.repr(self)
-
-
-class StreamHandler(Handler, logging.StreamHandler):
-    pass
-
-
-class RotatingFileHandler(Handler, logging.handlers.RotatingFileHandler):
-    pass
+class Handler(abc.ABC):
+    @abc.abstractmethod
+    def __init__(self):
+        pass
 
 
-class FileHandler(Handler, logging.FileHandler):
-    pass
+Handler.register(logging.Handler)
 
 
-class NullHandler(Handler, logging.NullHandler):
-    pass
+def set_handler_level(hdlr, level):
+    hdlr.level = _check_level(level)
+
+
+logging.Handler.setLevel = set_handler_level
 
 
 def load_from_dict(logging_config):
@@ -117,9 +117,9 @@ def _extract_handlers(handlers_dict):
         timestamp = handler_config.get('timestamp', None)
 
         if filename == '&1':
-            hdlr = StreamHandler(stream=sys.stdout)
+            hdlr = logging.StreamHandler(stream=sys.stdout)
         elif filename == '&2':
-            hdlr = StreamHandler(stream=sys.stderr)
+            hdlr = logging.StreamHandler(stream=sys.stderr)
         else:
             if timestamp:
                 basename, ext = os.path.splitext(filename)
@@ -127,10 +127,11 @@ def _extract_handlers(handlers_dict):
                     basename, datetime.now().strftime(timestamp), ext
                 )
 
-            hdlr = RotatingFileHandler(filename, mode='a+' if append else 'w+')
+            hdlr = logging.handlers.RotatingFileHandler(
+                filename, mode='a+' if append else 'w+')
 
         hdlr.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
-        hdlr.setLevel(level)
+        hdlr.setLevel(_check_level(level))
         handlers.append(hdlr)
 
     return handlers
@@ -142,7 +143,6 @@ class Logger(logging.Logger):
         # class' check
         super().__init__(name, logging.NOTSET)
         self.level = _check_level(level)
-        self.check = None
 
     def __repr__(self):
         return debug.repr(self)
@@ -152,20 +152,6 @@ class Logger(logging.Logger):
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
-        # Setup dynamic fields of the check
-        if self.check:
-            testcase_name = self.check.name
-            if self.check.job:
-                extra['check_jobid'] = self.check.job.jobid
-
-            if self.check.current_partition:
-                testcase_name += '@%s' % self.check.current_partition.fullname
-
-            if self.check.current_environ:
-                testcase_name += ' using %s' % self.check.current_environ.name
-
-            extra['testcase_name'] = testcase_name
-
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info,
                                     func, extra, sinfo)
         try:
@@ -206,12 +192,11 @@ class LoggerAdapter(logging.LoggerAdapter):
             {
                 'check_name': check.name if check else 'reframe',
                 'check_jobid': '-1',
-                'testcase_name': check.name if check else 'reframe',
+                'check_info': check.info() if check else 'reframe',
                 'version': reframe.VERSION,
             }
         )
-        if self.logger:
-            self.logger.check = check
+        self.check = check
 
     def __repr__(self):
         return debug.repr(self)
@@ -219,6 +204,20 @@ class LoggerAdapter(logging.LoggerAdapter):
     def setLevel(self, level):
         if self.logger:
             super().setLevel(level)
+
+    def process(self, msg, kwargs):
+        # Setup dynamic fields of the check
+        if self.check:
+            self.extra['check_info'] = self.check.info()
+            if self.check.job:
+                self.extra['check_jobid'] = self.check.job.jobid
+
+        try:
+            self.extra.update(kwargs['extra'])
+        except KeyError:
+            pass
+
+        return super().process(msg, kwargs)
 
     # Override log() function to treat `None` loggers
     def log(self, level, msg, *args, **kwargs):

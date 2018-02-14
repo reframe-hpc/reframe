@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 
-VERSION = '2.9'
+VERSION = '2.10'
 _required_pyver = (3, 5, 0)
 
 # Check python version

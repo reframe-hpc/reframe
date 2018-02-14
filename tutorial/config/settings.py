@@ -19,6 +19,7 @@ class ReframeSettings:
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
+                'modules_system': 'tmod',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',

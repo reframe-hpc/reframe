@@ -9,7 +9,7 @@ import reframe.utility.os as os_ext
 
 from datetime import datetime
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ReframeError, JobError
+from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
@@ -33,10 +33,10 @@ class _TestJob(unittest.TestCase):
                 dir=self.workdir, suffix='.sh'),
             stdout=os_ext.mkstemp_path(dir=self.workdir, suffix='.out'),
             stderr=os_ext.mkstemp_path(dir=self.workdir, suffix='.err'),
+            pre_run=['echo prerun'],
+            post_run=['echo postrun']
         )
         self.builder = BashScriptBuilder()
-        self.testjob.pre_run  = ['echo prerun']
-        self.testjob.post_run = ['echo postrun']
 
     def tearDown(self):
         shutil.rmtree(self.workdir)
@@ -101,12 +101,12 @@ class _TestJob(unittest.TestCase):
     def test_cancel_before_submit(self):
         self.testjob._command = 'sleep 3'
         self.testjob.prepare(self.builder)
-        self.assertRaises(ReframeError, self.testjob.cancel)
+        self.assertRaises(JobNotStartedError, self.testjob.cancel)
 
     def test_wait_before_submit(self):
         self.testjob._command = 'sleep 3'
         self.testjob.prepare(self.builder)
-        self.assertRaises(ReframeError, self.testjob.wait)
+        self.assertRaises(JobNotStartedError, self.testjob.wait)
 
     def test_poll(self):
         self.testjob._command = 'sleep 2'
@@ -114,6 +114,11 @@ class _TestJob(unittest.TestCase):
         self.testjob.submit()
         self.assertFalse(self.testjob.finished())
         self.testjob.wait()
+
+    def test_poll_before_submit(self):
+        self.testjob._command = 'sleep 3'
+        self.testjob.prepare(self.builder)
+        self.assertRaises(JobNotStartedError, self.testjob.finished)
 
 
 class TestLocalJob(_TestJob):
@@ -155,8 +160,8 @@ class TestLocalJob(_TestJob):
         self.testjob._command = 'sleep 5 &'
         self.testjob._time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
-        self.testjob.pre_run = ['trap -- "" TERM']
-        self.testjob.post_run = ['echo $!', 'wait']
+        self.testjob._pre_run = ['trap -- "" TERM']
+        self.testjob._post_run = ['echo $!', 'wait']
 
         self.testjob.prepare(self.builder)
         self.testjob.submit()
@@ -195,8 +200,8 @@ class TestLocalJob(_TestJob):
         #  kills it.
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
-        self.testjob.pre_run = []
-        self.testjob.port_run = []
+        self.testjob._pre_run = []
+        self.testjob._post_run = []
         self.testjob._command = os.path.join(TEST_RESOURCES,
                                              'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
@@ -221,6 +226,16 @@ class TestLocalJob(_TestJob):
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
+
+    def test_deprecated_pre_run_and_post_run(self):
+        from reframe.core.exceptions import ReframeDeprecationWarning
+
+        self.assertWarns(ReframeDeprecationWarning, exec,
+                         'self.testjob.pre_run = []',
+                         globals(), locals())
+        self.assertWarns(ReframeDeprecationWarning, exec,
+                         'self.testjob.post_run = []',
+                         globals(), locals())
 
 
 class TestSlurmJob(_TestJob):

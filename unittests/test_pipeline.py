@@ -8,11 +8,10 @@ import reframe.settings as settings
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 
-from reframe.core.exceptions import (CompilationError,
-                                     ReframeDeprecationWarning,
-                                     ReframeError, SanityError)
-from reframe.core.pipeline import (CompileOnlyRegressionTest,
-                                   RegressionTest, RunOnlyRegressionTest)
+from reframe.core.exceptions import (ReframeError, PipelineError, SanityError,
+                                     CompilationError)
+from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
+                                   RunOnlyRegressionTest)
 from reframe.core.modules import get_modules_system
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -25,7 +24,7 @@ class TestRegressionTest(unittest.TestCase):
         # Load a system configuration
         self.system, self.partition, self.progenv = fixtures.get_test_config()
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
-        self.loader    = RegressionCheckLoader(['unittests/resources'])
+        self.loader = RegressionCheckLoader(['unittests/resources'])
         self.resources = ResourcesManager(prefix=self.resourcesdir)
 
     def tearDown(self):
@@ -143,7 +142,7 @@ class TestRegressionTest(unittest.TestCase):
                                        self.progenv.variables)
 
         # That's a bit hacky, but we are in a unit test
-        self.system._name    += os.sep + 'bad'
+        self.system._name += os.sep + 'bad'
         self.partition._name += os.sep + 'bad'
         self.test_hellocheck_local()
 
@@ -254,7 +253,7 @@ class TestRegressionTest(unittest.TestCase):
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        self.assertRaises(ReframeError, self._run_test, test)
+        self.assertRaises(CompilationError, self._run_test, test)
 
     def test_sourcesdir_none_run_only(self):
         test = RunOnlyRegressionTest('hellocheck',
@@ -269,6 +268,28 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
         self._run_test(test)
+
+    def test_sourcepath_abs(self):
+        test = CompileOnlyRegressionTest('compileonlycheck',
+                                         'unittests/resources',
+                                         resources=self.resources,
+                                         system=self.system)
+        test.valid_prog_environs = [self.progenv.name]
+        test.valid_systems = [self.system.name]
+        test.setup(self.partition, self.progenv)
+        test.sourcepath = '/usr/src'
+        self.assertRaises(PipelineError, test.compile)
+
+    def test_sourcepath_upref(self):
+        test = CompileOnlyRegressionTest('compileonlycheck',
+                                         'unittests/resources',
+                                         resources=self.resources,
+                                         system=self.system)
+        test.valid_prog_environs = [self.progenv.name]
+        test.valid_systems = [self.system.name]
+        test.setup(self.partition, self.progenv)
+        test.sourcepath = '../hellosrc'
+        self.assertRaises(PipelineError, test.compile)
 
     def test_extra_resources(self):
         # Load test site configuration
@@ -287,7 +308,7 @@ class TestRegressionTest(unittest.TestCase):
                                 '#DW jobdw capacity=100GB',
                                 '#DW stage_in source=/foo',
                                 '--foo']
-        self.assertEqual(expected_job_options, test.job.options)
+        self.assertCountEqual(expected_job_options, test.job.options)
 
 
 class TestSanityPatterns(unittest.TestCase):

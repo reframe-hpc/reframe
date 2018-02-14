@@ -134,6 +134,17 @@ class TestOSTools(unittest.TestCase):
                                         os.path.join(prefix, 'broken1')))
         shutil.rmtree(prefix)
 
+    def test_is_url(self):
+        self.assertTrue(os_ext.is_url('https://github.com/eth-cscs/reframe.git'))
+        self.assertFalse(os_ext.is_url('git@github.com:eth-cscs/reframe.git'))
+
+    def test_git_repo_exists(self):
+        self.assertTrue(os_ext.git_repo_exists(
+            'https://github.com/eth-cscs/reframe.git', timeout=3))
+        self.assertFalse(os_ext.git_repo_exists('reframe.git', timeout=3))
+        self.assertFalse(os_ext.git_repo_exists(
+            'https://github.com/eth-cscs/xxx', timeout=3))
+
 
 class TestCopyTree(unittest.TestCase):
     def setUp(self):

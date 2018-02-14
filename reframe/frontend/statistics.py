@@ -7,18 +7,16 @@ from reframe.core.exceptions import ReframeError, SanityError
 class TestStats:
     """Stores test case statistics."""
 
-    def __init__(self, test_cases=None):
-        test_cases = test_cases or []
-        if not hasattr(test_cases, '__iter__'):
+    def __init__(self, tasks=[]):
+        if not hasattr(tasks, '__iter__'):
             raise TypeError('expected an iterable')
 
         # Store test cases per partition internally
-        self._test_cases_bypart = {}
-        for t in test_cases:
-            partition = t.executor.check.current_partition
+        self._tasks_bypart = {}
+        for t in tasks:
+            partition = t.check.current_partition
             partname = partition.fullname if partition else 'None'
-
-            tclist = self._test_cases_bypart.setdefault(partname, [])
+            tclist = self._tasks_bypart.setdefault(partname, [])
             tclist.append(t)
 
     def __repr__(self):
@@ -28,18 +26,18 @@ class TestStats:
         num_fails = 0
         if partition:
             num_fails += len([
-                t for t in self._test_cases_bypart[partition] if t.failed()
+                t for t in self._tasks_bypart[partition] if t.failed
             ])
         else:
             # count all failures
-            for tclist in self._test_cases_bypart.values():
-                num_fails += len([t for t in tclist if t.failed()])
+            for tclist in self._tasks_bypart.values():
+                num_fails += len([t for t in tclist if t.failed])
 
         return num_fails
 
     def num_failures_stage(self, stage):
         num_fails = 0
-        for tclist in self._test_cases_bypart.values():
+        for tclist in self._tasks_bypart.values():
             num_fails += len([t for t in tclist if t.failed_stage == stage])
 
         return num_fails
@@ -47,10 +45,10 @@ class TestStats:
     def num_cases(self, partition=None):
         num_cases = 0
         if partition:
-            num_cases += len(self._test_cases_bypart[partition])
+            num_cases += len(self._tasks_bypart[partition])
         else:
             # count all failures
-            for tclist in self._test_cases_bypart.values():
+            for tclist in self._tasks_bypart.values():
                 num_cases += len(tclist)
 
         return num_cases
@@ -59,9 +57,9 @@ class TestStats:
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for partname, tclist in self._test_cases_bypart.items():
-            for tf in (t for t in tclist if t.failed()):
-                check = tf.executor.check
+        for partname, tclist in self._tasks_bypart.items():
+            for tf in (t for t in tclist if t.failed):
+                check = tf.check
                 environ_name = (check.current_environ.name
                                 if check.current_environ else 'None')
                 report.append(line_width * '-')
@@ -82,9 +80,9 @@ class TestStats:
                     reason += format_exception(*tf.exc_info)
                     report.append(reason)
 
-                elif tf.failed_stage == 'sanity':
+                elif tf.failed_stage == 'check_sanity':
                     report.append('Sanity check failure')
-                elif tf.failed_stage == 'performance':
+                elif tf.failed_stage == 'check_performance':
                     report.append('Performance check failure')
                 else:
                     # This shouldn't happen...

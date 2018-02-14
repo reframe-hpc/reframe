@@ -1,368 +1,302 @@
 import itertools
+import math
 import time
 import sys
 import reframe.core.debug as debug
 
-from reframe.core.exceptions import JobBlockedError, ReframeFatalError
+from datetime import datetime
+from reframe.core.exceptions import ReframeFatalError, TaskExit
 from reframe.core.logging import getlogger
-from reframe.frontend.executors import (ExecutionPolicy,
-                                        RegressionTestExecutor,
-                                        TestCase)
+from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
+                                        TaskEventListener, ABORT_REASONS)
 from reframe.frontend.statistics import TestStats
 from reframe.settings import settings
-from reframe.core.environments import EnvironmentSnapshot
 
 
 class SerialExecutionPolicy(ExecutionPolicy):
     def __init__(self):
         super().__init__()
-        self._test_cases = []
+        self._tasks = []
 
     def getstats(self):
-        return TestStats(self._test_cases)
+        return TestStats(self._tasks)
 
     def run_check(self, check, partition, environ):
+        super().run_check(check, partition, environ)
         self.printer.status(
             'RUN', "%s on %s using %s" %
             (check.name, partition.fullname, environ.name)
         )
+        task = RegressionTask(check)
+        self._tasks.append(task)
         try:
-            executor = RegressionTestExecutor(check, self.strict_check)
-            testcase = TestCase(executor)
+            task.setup(partition, environ,
+                       sched_account=self.sched_account,
+                       sched_partition=self.sched_partition,
+                       sched_reservation=self.sched_reservation,
+                       sched_nodelist=self.sched_nodelist,
+                       sched_exclude_nodelist=self.sched_exclude_nodelist,
+                       sched_options=self.sched_options)
 
-            executor.setup(
-                partition=partition,
-                environ=environ,
-                sched_account=self.sched_account,
-                sched_partition=self.sched_partition,
-                sched_reservation=self.sched_reservation,
-                sched_nodelist=self.sched_nodelist,
-                sched_exclude_nodelist=self.sched_exclude_nodelist,
-                sched_options=self.sched_options
-            )
-
-            executor.compile()
-            executor.run()
-            executor.wait()
+            task.compile()
+            task.run()
+            task.wait()
             if not self.skip_sanity_check:
-                executor.check_sanity()
+                task.sanity()
 
             if not self.skip_performance_check:
-                executor.check_performance()
+                task.performance()
 
-            if testcase.failed():
+            if task.failed:
                 remove_stage_files = False
             else:
                 remove_stage_files = not self.keep_stage_files
 
-            executor.cleanup(remove_files=remove_stage_files,
-                             unload_env=False)
-            if not testcase.failed():
-                testcase.success()
+            task.cleanup(not self.keep_stage_files, False)
 
-        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-            testcase.fail(sys.exc_info())
+        except ABORT_REASONS:
+            task.fail(sys.exc_info())
             raise
         except BaseException:
-            testcase.fail(sys.exc_info())
+            task.fail(sys.exc_info())
         finally:
-            self._test_cases.append(testcase)
-            self.printer.result(check, partition, environ,
-                                not testcase.failed())
-            self.environ_snapshot.load()
+            self.printer.status('FAIL' if task.failed else 'OK',
+                                task.check.info(), just='right')
 
 
-class RunningTestCase:
-    def __init__(self, testcase, environ):
-        self._testcase = testcase
-        self._environ  = environ
+class PollRateFunction:
+    def __init__(self, min_rate, decay_time):
+        self._min_rate = min_rate
+        self._decay = decay_time
+        self._thres = 0.05
 
-        # Test case has finished, but has not been waited for yet
-        self.zombie = False
+        # decay function parameters
+        self._a = None
+        self._b = None
+        self._c = None
 
-    def __repr__(self):
-        return debug.repr(self)
+    def _init_poll_fn(self, init_rate):
+        self._init_rate = init_rate
+        self._b = self._min_rate
+        self._a = init_rate - self._b
+        self._c = math.log(self._a / (self._thres*self._b)) / self._decay
+        getlogger().debug('rate equation: %.3f*exp(-%.3f*x)+%.3f' %
+                          (self._a, self._c, self._b))
 
-    @property
-    def testcase(self):
-        return self._testcase
+    def __call__(self, x, init_rate):
+        if self._a is None:
+            self._init_poll_fn(init_rate)
 
-    @property
-    def environ(self):
-        return self._environ
-
-
-class WaitError(BaseException):
-    """Mark wait errors during the asynchronous execution of test cases.
-
-    It stores the `RunningTestCase` that has failed during waiting and the
-    associated exception info."""
-
-    def __init__(self, running_testcase, exc_info):
-        self._running_case = running_testcase
-        self._exc_info = exc_info
-
-    @property
-    def running_case(self):
-        return self._running_case
-
-    @property
-    def exc_info(self):
-        return self._exc_info
+        return self._a*math.exp(-self._c*x) + self._b
 
 
-class AsynchronousExecutionPolicy(ExecutionPolicy):
+class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
+        import collections
+
         super().__init__()
-        # all currently running cases
-        self._running_cases = []
 
-        # counts of running cases per partition
-        self._running_cases_counts = {}
+        # All currently running tasks
+        self._running_tasks = []
 
-        # ready cases to be executed per partition
-        self._ready_cases = {}
+        # Retired tasks that need to be finalized
+        self._retired_tasks = []
 
-        # Test case results
-        self._test_cases = []
+        # Counts of running tasks per partition
+        self._running_tasks_counts = {}
+
+        # Ready tasks to be executed per partition
+        self._ready_tasks = {}
+
+        # The tasks associated with the running checks
+        self._tasks = []
 
         # Job limit per partition
         self._max_jobs = {}
 
-    def _compile_run_testcase(self, testcase):
+        self.task_listeners.append(self)
+
+    def _remove_from_running(self, task):
+        getlogger().debug('removing task: %s' % task.check.info())
         try:
-            executor = testcase.executor
-            executor.compile()
-            executor.run()
-        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-            testcase.fail(sys.exc_info())
-            raise
-        except BaseException:
-            testcase.fail(sys.exc_info())
-        finally:
-            if testcase.valid():
-                self.printer.result(executor.check,
-                                    executor.check.current_partition,
-                                    executor.check.current_environ,
-                                    not testcase.failed())
+            self._running_tasks.remove(task)
+        except ValueError:
+            getlogger().debug('not in running tasks')
+            pass
+        else:
+            partname = task.check.current_partition.fullname
+            self._running_tasks_counts[partname] -= 1
 
-    def _finalize_testcase(self, ready_testcase):
-        try:
-            ready_testcase.environ.load()
-            testcase = ready_testcase.testcase
-            executor = testcase.executor
-            if not self.skip_sanity_check:
-                executor.check_sanity()
+    def on_task_run(self, task):
+        partname = task.check.current_partition.fullname
+        self._running_tasks_counts[partname] += 1
+        self._running_tasks.append(task)
 
-            if not self.skip_performance_check:
-                executor.check_performance()
+    def on_task_failure(self, task):
+        self._remove_from_running(task)
+        self.printer.status('FAIL', task.check.info(), just='right')
 
-            if testcase.failed():
-                remove_stage_files = False
-            else:
-                remove_stage_files = not self.keep_stage_files
+    def on_task_success(self, task):
+        self.printer.status('OK', task.check.info(), just='right')
 
-            executor.cleanup(remove_files=remove_stage_files, unload_env=False)
-            if not testcase.failed():
-                testcase.success()
-
-        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-            testcase.fail(sys.exc_info())
-            raise
-        except BaseException:
-            testcase.fail(sys.exc_info())
-        finally:
-            partname = executor.check.current_partition.fullname
-            self.printer.result(executor.check,
-                                executor.check.current_partition,
-                                executor.check.current_environ,
-                                not testcase.failed())
-
-    def _failall(self):
-        """Mark all tests as failures"""
-        for rc in self._running_cases:
-            rc.testcase.fail(sys.exc_info())
-
-        for ready_list in self._ready_cases.values():
-            for rc in ready_list:
-                rc.testcase.fail(sys.exc_info())
+    def on_task_exit(self, task):
+        task.wait()
+        self._remove_from_running(task)
+        self._retired_tasks.append(task)
 
     def enter_partition(self, c, p):
-        self._running_cases_counts.setdefault(p.fullname, 0)
-        self._ready_cases.setdefault(p.fullname, [])
+        self._running_tasks_counts.setdefault(p.fullname, 0)
+        self._ready_tasks.setdefault(p.fullname, [])
         self._max_jobs.setdefault(p.fullname, p.max_jobs)
 
     def getstats(self):
-        return TestStats(self._test_cases)
-
-    def _print_executor_status(self, status, executor):
-        checkname = executor.check.name
-        partname  = executor.check.current_partition.fullname
-        envname   = executor.check.current_environ.name
-        msg = '%s on %s using %s' % (checkname, partname, envname)
-        self.printer.status(status, msg)
+        return TestStats(self._tasks)
 
     def run_check(self, check, partition, environ):
+        super().run_check(check, partition, environ)
+        task = RegressionTask(check, self.task_listeners)
+        self._tasks.append(task)
         try:
-            executor = RegressionTestExecutor(check, self.strict_check)
-            testcase = TestCase(executor)
+            task.setup(partition, environ,
+                       sched_account=self.sched_account,
+                       sched_partition=self.sched_partition,
+                       sched_reservation=self.sched_reservation,
+                       sched_nodelist=self.sched_nodelist,
+                       sched_exclude_nodelist=self.sched_exclude_nodelist,
+                       sched_options=self.sched_options)
 
-            executor.setup(
-                partition=partition,
-                environ=environ,
-                sched_account=self.sched_account,
-                sched_partition=self.sched_partition,
-                sched_reservation=self.sched_reservation,
-                sched_nodelist=self.sched_nodelist,
-                sched_exclude_nodelist=self.sched_exclude_nodelist,
-                sched_options=self.sched_options
-            )
-
-            ready_testcase = RunningTestCase(testcase, EnvironmentSnapshot())
+            self.printer.status('RUN', task.check.info())
             partname = partition.fullname
-            if self._running_cases_counts[partname] >= partition.max_jobs:
+            if self._running_tasks_counts[partname] >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
                 getlogger().debug('reached job limit (%s) for partition %s' %
                                   (partition.max_jobs, partname))
-                self._update_running_counts()
+                self._poll_tasks()
 
-            if self._running_cases_counts[partname] < partition.max_jobs:
+            if self._running_tasks_counts[partname] < partition.max_jobs:
                 # Test's environment is already loaded; no need to be reloaded
-                self._reschedule(ready_testcase, load_env=False)
+                self._reschedule(task, load_env=False)
             else:
-                self._print_executor_status('HOLD', executor)
-                self._ready_cases[partname].append(ready_testcase)
+                self.printer.status('HOLD', task.check.info(), just='right')
+                self._ready_tasks[partname].append(task)
+        except TaskExit:
+            return
+        except ABORT_REASONS as e:
+            if not task.failed:
+                # Abort was caused due to failure elsewhere, abort current
+                # task as well
+                task.abort(e)
 
-        except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-            if not testcase.failed():
-                # test case failed during setup
-                testcase.fail(sys.exc_info())
-            self._failall()
+            self._failall(e)
             raise
-        except BaseException:
-            # Here we are sure that test case has failed during setup, since
-            # _compile_and_run() handles already non-fatal exceptions. Though
-            # we check again the testcase, just in case.
-            if not testcase.failed():
-                testcase.fail(sys.exc_info())
-        finally:
-            if testcase.valid() and testcase.failed_stage == 'setup':
-                # We need to print the result here only if the setup stage has
-                # finished, since otherwise _compile_and_run() prints it
-                self.printer.result(executor.check, partition, environ,
-                                    not testcase.failed())
 
-            self._test_cases.append(testcase)
-            self.environ_snapshot.load()
-
-    def _update_running_counts(self):
+    def _poll_tasks(self):
         """Update the counts of running checks per partition."""
         getlogger().debug('updating counts for running test cases')
-        freed_slots = {}
-        for rc in self._running_cases:
-            executor = rc.testcase.executor
-            check = executor.check
-            if not rc.zombie and executor.poll():
-                # Tests without a job descriptor are considered finished
-                rc.zombie = True
-                partname = check.current_partition.fullname
-                self._running_cases_counts[partname] -= 1
-                freed_slots.setdefault(partname, 0)
-                freed_slots[partname] += 1
+        getlogger().debug('polling %s task(s)' % len(self._running_tasks))
+        for t in self._running_tasks:
+            t.poll()
 
-        for p, ns in freed_slots.items():
-            getlogger().debug('freed %s slot(s) on partition %s' % (ns, p))
+    def _finalize_all(self):
+        getlogger().debug('finalizing retired tasks: %s',
+                          len(self._retired_tasks))
+        while True:
+            try:
+                task = self._retired_tasks.pop()
+            except IndexError:
+                break
 
-    def _reschedule(self, ready_testcase, load_env=True):
+            getlogger().debug('finalizing task: %s' % task.check.info())
+            try:
+                self._finalize_task(task)
+            except TaskExit:
+                pass
+
+    def _finalize_task(self, task):
+        if not self.skip_sanity_check:
+            task.sanity()
+
+        if not self.skip_performance_check:
+            task.performance()
+
+        task.cleanup(not self.keep_stage_files, False)
+
+    def _failall(self, cause):
+        """Mark all tests as failures"""
+        try:
+            while True:
+                self._running_tasks.pop().abort(cause)
+        except IndexError:
+            pass
+
+        for ready_list in self._ready_tasks.values():
+            getlogger().debug('ready list size: %s' % len(ready_list))
+            for task in ready_list:
+                task.abort(cause)
+
+        for task in self._retired_tasks:
+            task.abort(cause)
+
+    def _reschedule(self, task, load_env=True):
         getlogger().debug('scheduling test case for running')
-        testcase = ready_testcase.testcase
-        executor = testcase.executor
-        partname = executor.check.current_partition.fullname
+        partname = task.check.current_partition.fullname
 
         # Restore the test case's environment and run it
         if load_env:
-            ready_testcase.environ.load()
+            task.resume()
 
-        self._print_executor_status('RUN', executor)
-        self._compile_run_testcase(testcase)
-        if not testcase.failed():
-            self._running_cases_counts[partname] += 1
-            self._running_cases.append(ready_testcase)
+        task.compile()
+        task.run()
 
     def _reschedule_all(self):
-        self._update_running_counts()
-        for partname, num_jobs in self._running_cases_counts.items():
+        for partname, num_jobs in self._running_tasks_counts.items():
             assert(num_jobs >= 0)
             num_empty_slots = self._max_jobs[partname] - num_jobs
-            num_schedule_jobs = min([
-                num_empty_slots, len(self._ready_cases[partname])
-            ])
+            num_rescheduled = 0
+            for i in range(num_empty_slots):
+                try:
+                    task = self._ready_tasks[partname].pop()
+                except IndexError:
+                    break
 
-            if num_schedule_jobs:
-                getlogger().debug('rescheduling %s job(s) on %s' %
-                                  (num_schedule_jobs, partname))
+                self._reschedule(task)
+                num_rescheduled += 1
 
-            for i in range(num_schedule_jobs):
-                ready_case = self._ready_cases[partname].pop()
-                ready_case.environ.load()
-                self._reschedule(ready_case)
-
-    def _waitany(self):
-        intervals = itertools.cycle(settings.job_poll_intervals)
-        while True:
-            for i, running in enumerate(self._running_cases):
-                testcase = running.testcase
-                executor = testcase.executor
-                running_check = executor.check
-                if executor.poll():
-                    try:
-                        executor.wait()
-                        return running
-                    except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-                        # These errors should be propagated as-is
-                        testcase.fail(sys.exc_info())
-                        raise
-                    except BaseException:
-                        testcase.fail(sys.exc_info())
-                        raise WaitError(running, sys.exc_info())
-                    finally:
-                        # Case is no more running; update our logs
-                        del self._running_cases[i]
-                        if not running.zombie:
-                            partname = running_check.current_partition.fullname
-                            self._running_cases_counts[partname] -= 1
-
-                            # This is just for completeness; the case is no
-                            # more a zombie, since it has been waited for
-                            running.zombie = False
-
-                        if testcase.valid():
-                            self.printer.result(
-                                executor.check,
-                                executor.check.current_partition,
-                                executor.check.current_environ,
-                                not testcase.failed())
-
-            time.sleep(next(intervals))
+            if num_rescheduled:
+                getlogger().debug('rescheduled %s job(s) on %s' %
+                                  (num_rescheduled, partname))
 
     def exit(self):
-        self.printer.separator(
-            'short single line', 'waiting for spawned checks'
-        )
-
-        while len(self._running_cases):
+        self.printer.separator('short single line',
+                               'waiting for spawned checks to finish')
+        pollrate = PollRateFunction(1, 60)
+        num_polls = 0
+        t_start = datetime.now()
+        while self._running_tasks or self._retired_tasks:
+            getlogger().debug('running tasks: %s' % len(self._running_tasks))
+            num_polls += len(self._running_tasks)
             try:
-                ready_testcase = self._waitany()
-                self._finalize_testcase(ready_testcase)
+                self._poll_tasks()
                 self._reschedule_all()
-            except (KeyboardInterrupt, ReframeFatalError, AssertionError):
-                self._failall()
-                raise
-            except (WaitError, JobBlockedError):
-                pass
-            finally:
-                self.environ_snapshot.load()
+                self._finalize_all()
+                t_elapsed = (datetime.now() - t_start).total_seconds()
+                real_rate = num_polls / t_elapsed
+                getlogger().debug(
+                    'polling rate (real): %.3f polls/sec' % real_rate)
 
-        self.printer.separator(
-            'short single line', 'all spawned checks finished'
-        )
+                if len(self._running_tasks):
+                    desired_rate = pollrate(t_elapsed, real_rate)
+                    getlogger().debug(
+                        'polling rate (desired): %.3f' % desired_rate)
+                    t = len(self._running_tasks) / desired_rate
+                    getlogger().debug('sleeping: %.3fs' % t)
+                    time.sleep(t)
+
+            except TaskExit:
+                pass
+            except ABORT_REASONS as e:
+                self._failall(e)
+                raise
+
+        self.printer.separator('short single line',
+                               'all spawned checks have finished')

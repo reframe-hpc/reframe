@@ -1,3 +1,4 @@
+import errno
 import os
 import shutil
 import subprocess
@@ -302,6 +303,10 @@ class ProgEnvironment(Environment):
 
     def compile(self, sourcepath, makefile=None, executable=None,
                 lang=None, options=''):
+
+        if not os.path.exists(sourcepath):
+            raise FileNotFoundError(errno.ENOENT,
+                                    os.strerror(errno.ENOENT), sourcepath)
 
         if os.path.isdir(sourcepath):
             return self._compile_dir(sourcepath, makefile, options)

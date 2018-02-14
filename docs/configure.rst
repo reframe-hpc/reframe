@@ -204,7 +204,7 @@ The available partition attributes are the following:
 
    'resources': {
        'datawarp': [
-           '#DW jobdw capacity={capacity} access_mode={mode} type=scratch'
+           '#DW jobdw capacity={capacity} access_mode={mode} type=scratch',
            '#DW stage_out source={out_src} destination={out_dst} type={stage_filetype}'
        ]
    }

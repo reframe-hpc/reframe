@@ -15,6 +15,7 @@ class DeferredIterationTest(RunOnlyRegressionTest):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
+        self.pre_run = ['source limits.sh']
         self.executable = './advanced_example6.sh'
         numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
                                 'number', float)
@@ -25,10 +26,6 @@ class DeferredIterationTest(RunOnlyRegressionTest):
 
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['source %s/limits.sh' % self.stagedir]
 
 
 def _get_checks(**kwargs):

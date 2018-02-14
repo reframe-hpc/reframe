@@ -6,33 +6,38 @@ import os
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import tempfile
 
-from reframe.core.exceptions import SpawnedProcessError, SpawnedProcessTimeout
+from urllib.parse import urlparse
+
+from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
+                                     SpawnedProcessTimeout)
 from reframe.core.logging import getlogger
 
 
 def run_command(cmd, check=False, timeout=None, shell=False):
-    getlogger().debug('executing OS command: ' + cmd)
-    if not shell:
-        cmd = shlex.split(cmd)
-
     try:
-        return subprocess.run(cmd,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE,
-                              shell=shell,
-                              universal_newlines=True,
-                              timeout=timeout,
-                              check=check)
-    except subprocess.CalledProcessError as e:
-        raise SpawnedProcessError(e.cmd, e.stdout, e.stderr,
-                                  e.returncode) from None
-
+        proc = run_command_async(cmd, shell=shell, start_new_session=True)
+        proc.wait(timeout=timeout)
     except subprocess.TimeoutExpired as e:
-        raise SpawnedProcessTimeout(
-            e.cmd, e.stdout, e.stderr, e.timeout) from None
+        os.killpg(proc.pid, signal.SIGKILL)
+        raise SpawnedProcessTimeout(e.cmd,
+                                    proc.stdout.read(),
+                                    proc.stderr.read(), timeout) from None
+
+    completed = subprocess.CompletedProcess(args=shlex.split(cmd),
+                                            returncode=proc.returncode,
+                                            stdout=proc.stdout.read(),
+                                            stderr=proc.stderr.read())
+
+    if check and proc.returncode != 0:
+        raise SpawnedProcessError(completed.args,
+                                  completed.stdout, completed.stderr,
+                                  completed.returncode)
+
+    return completed
 
 
 def grep_command_output(cmd, pattern, where='stdout'):
@@ -57,14 +62,17 @@ def grep_command_output(cmd, pattern, where='stdout'):
 def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
-                      bufsize=1,
+                      shell=False,
                       **popen_args):
-    getlogger().debug('executing OS command asynchronously: ' + cmd)
-    return subprocess.Popen(args=shlex.split(cmd),
+    getlogger().debug('executing OS command: ' + cmd)
+    if not shell:
+        cmd = shlex.split(cmd)
+
+    return subprocess.Popen(args=cmd,
                             stdout=stdout,
                             stderr=stderr,
                             universal_newlines=True,
-                            bufsize=bufsize,
+                            shell=shell,
                             **popen_args)
 
 
@@ -189,6 +197,7 @@ def mkstemp_path(*args, **kwargs):
 class change_dir:
     """Context manager which changes the current working directory to the
        provided one."""
+
     def __init__(self, dir_name):
         self._wd_save = os.getcwd()
         self._dir_name = dir_name
@@ -198,3 +207,29 @@ class change_dir:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         os.chdir(self._wd_save)
+
+
+def is_url(s):
+    """Check if string is an URL."""
+    parsed = urlparse(s)
+    return parsed.scheme != '' and parsed.netloc != ''
+
+
+def git_clone(url, targetdir=None):
+    """Clone git repository from an URL."""
+    if not git_repo_exists(url):
+        raise ReframeError('git repository does not exist')
+
+    targetdir = targetdir or ''
+    run_command('git clone %s %s' % (url, targetdir), check=True)
+
+
+def git_repo_exists(url, timeout=5):
+    """Check if URL refers to git valid repository."""
+    try:
+        os.environ['GIT_TERMINAL_PROMPT'] = '0'
+        run_command('git ls-remote %s' % url, check=True, timeout=timeout)
+    except (SpawnedProcessTimeout, SpawnedProcessError):
+        return False
+    else:
+        return True

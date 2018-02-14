@@ -38,6 +38,16 @@ class ReframeFatalError(BaseException):
         return ret
 
 
+class TaskExit(ReframeError):
+    """Raised when a regression task must exit the pipeline prematurely."""
+
+
+class AbortTaskError(ReframeError):
+    """Raised into a regression task to denote that it has been aborted due to an
+    external reason (e.g., keyboard interrupt, fatal error in other places etc.)
+    """
+
+
 class ConfigError(ReframeError):
     """Raised when a configuration error occurs."""
 
@@ -152,6 +162,10 @@ class JobBlockedError(JobError):
     """Raised by job schedulers when a job is blocked indefinitely."""
 
 
+class JobNotStartedError(JobError):
+    """Raised when trying to operate on a unstarted job."""
+
+
 class ReframeDeprecationWarning(DeprecationWarning):
     """Warning for deprecated features of the ReFrame framework."""
 
@@ -189,11 +203,17 @@ def format_exception(exc_type, exc_value, tb):
         exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
         return 'fatal error: %s\n%s' % (exc_value, exc_str)
 
+    if isinstance(exc_value, AbortTaskError):
+        return 'aborted due to %s' % type(exc_value.__cause__).__name__
+
     if isinstance(exc_value, ReframeError):
         return 'caught framework exception: %s' % exc_value
 
     if isinstance(exc_value, KeyboardInterrupt):
         return 'cancelled by user'
+
+    if isinstance(exc_value, OSError):
+        return 'OS error: %s' % exc_value
 
     frame = user_frame(tb)
     if isinstance(exc_value, TypeError) and frame is not None:
