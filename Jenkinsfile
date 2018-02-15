@@ -16,7 +16,6 @@ boolean machineCheck(String message, String command, String machine) {
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def publicSettings = 'config/generic.py'
 def cscsSettings = 'config/cscs.py'
 def machinesList = ['daint', 'dom', 'kesch', 'leone', 'monch']
 def githubComment = env.ghprbCommentBody
