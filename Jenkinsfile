@@ -204,7 +204,7 @@ stage('Cleanup') {
     }
 }
 
-def staleCleanupInterval = 1
+def staleCleanupInterval = 3
 builds = [:]
 stage('Cleanup Stale') {
      for (mach in machinesList) {
