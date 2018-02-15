@@ -1,18 +1,5 @@
 #!/usr/bin/env groovy
 
-/**
-* Checks if as message contains a given command and machine.
-*
-* @param message The actual message.
-* @param command The command.
-* @param machine The machine.
-* @return A boolean indicating whether there is a match.
-*/
-boolean machineCheck(String message, String command, String machine) {
-    def matchPattern = "@jenkins-cscs\\s+${command}\\s+${machine}"
-    return message ==~ machinePattern
-}
-
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
@@ -20,15 +7,58 @@ def cscsSettings = 'config/cscs.py'
 def machinesList = ['daint', 'dom', 'kesch', 'leone', 'monch']
 def githubComment = env.ghprbCommentBody
 def machinesToRun = machinesList
-def shortCommit
+def uniqueID
 
 stage('Initialization') {
     node('master') {
         try {
             def scmVars = checkout scm
-            shortCommit = scmVars.GIT_COMMIT[0..6]
+            uniqueID = "${scmVars.GIT_COMMIT[0..6]}${env.BUILD_ID}"
+
+            println('Environment Variables:')
+            echo sh(script: 'env|sort', returnStdout: true)
+
+            if (githubComment == null) {
+                machinesToRun = machinesList
+                currentBuild.result == 'SUCCESS'
+                return
+            }
+
+            def splittedComment = githubComment.split()
+
+            if (splittedComment.size() < 3) {
+                println 'No machines were found. Aborting...'
+                currentBuild.result = 'ABORTED'
+                return
+            }
+            if (splittedComment[1] != 'retry') {
+                println "Invalid command ${splittedComment[1]}. Aborting..."
+                currentBuild.result = 'ABORTED'
+                return
+            }
+
+            if (splittedComment[2] == 'all') {
+                machinesToRun = machinesList
+                currentBuild.result = 'SUCCESS'
+                return
+            }
+
+            machinesRequested = []
+            for (i = 2; i < splittedComment.size(); i++) {
+                machinesRequested.add(splittedComment[i])
+            }
+
+            machinesToRun = machinesRequested.findAll({it in machinesList})
+
+            if (!machinesToRun) {
+                println 'No machines were found. Aborting...'
+                currentBuild.result = 'ABORTED'
+                return
+            }
+
             currentBuild.result = 'SUCCESS'
         } catch(err) {
+            println err.toString()
             if (err.toString().contains('exit code 143')) {
                 currentBuild.result = "ABORTED"
             }
@@ -56,7 +86,7 @@ stage('Unittest') {
                 def scratch = sh(returnStdout: true,
                                  script: """${loginBash}
                                             echo \$SCRATCH""").trim()
-                def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${shortCommit}"
+                def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
                 def moduleDefinition = ''
                 if (machineName == 'leone')
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
@@ -98,11 +128,14 @@ stage('Public Test') {
     }
     else {
         try {
+            if (!('dom' in machinesToRun)) {
+                return
+            }
             node('dom') {
                 def scratch = sh(returnStdout: true,
                              script: """${loginBash}
                                         echo \$SCRATCH""").trim()
-                def reframeDir = "${scratch}/${dirPrefix}-dom-${shortCommit}"
+                def reframeDir = "${scratch}/${dirPrefix}-dom-${uniqueID}"
                 dir(reframeDir) {
                     sh("""${loginBash}
                           bash ${reframeDir}/$bashScript -f ${reframeDir} -i '' -p""")
@@ -134,11 +167,14 @@ stage('Tutorial Check') {
     }
     else {
         try {
+            if (!('daint' in machinesToRun)) {
+                return
+            }
             node('daint') {
                 def scratch = sh(returnStdout: true,
                                  script: """${loginBash}
                                             echo \$SCRATCH""").trim()
-                def reframeDir = "${scratch}/${dirPrefix}-daint-${shortCommit}"
+                def reframeDir = "${scratch}/${dirPrefix}-daint-${uniqueID}"
                 dir(reframeDir) {
                     sh("""${loginBash}
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' -t""")
@@ -176,7 +212,7 @@ stage('Cleanup') {
                     def scratch = sh(returnStdout: true,
                                      script: """$loginBash
                                                 echo \$SCRATCH""").trim()
-                    def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${shortCommit}"
+                    def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
                     sh("""${loginBash}
                           rm -rf ${reframeDir}
                           date""")
