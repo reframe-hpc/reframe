@@ -1,1 +1,1 @@
-config/generic.py
+../config/generic.py

@@ -164,7 +164,7 @@ echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_PUBLIC -eq 1 ]; then
     # Run unit tests for the public release
-    ln -sf config/generic.py reframe/settings.py
+    ln -sf ../config/generic.py reframe/settings.py
 
     echo "================================="
     echo "Running public release unit tests"
@@ -172,7 +172,7 @@ if [ $CI_PUBLIC -eq 1 ]; then
     checked_exec ./test_reframe.py
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
-    ln -sf tutorial/config/settings.py reframe/settings.py
+    ln -sf ../tutorial/config/settings.py reframe/settings.py
     # Find modified or added tutorial checks
     tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
