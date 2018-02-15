@@ -15,26 +15,11 @@ TERM="${TERM:-xterm}"
 PROFILE=""
 MODULEUSE=""
 
+CI_EXITCODE=0
+
 #
 # This function prints the script usage form
 #
-
-CI_EXITCODE=0
-
-swap_files()
-{
-    if [ $# -lt 2 ]; then
-       echo "too few arguments to swap_files()" 1>&2
-       exit 1
-    fi
-
-    tmp="${1}_save"
-    cp $1 $tmp
-    cp $2 $1
-    cp $tmp $2
-    /bin/rm $tmp
-}
-
 usage()
 {
     cat <<EOF
@@ -179,7 +164,7 @@ echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_PUBLIC -eq 1 ]; then
     # Run unit tests for the public release
-    swap_files reframe/settings.py config/generic.py
+    ln -sf config/generic.py reframe/settings.py
 
     echo "================================="
     echo "Running public release unit tests"
@@ -187,8 +172,7 @@ if [ $CI_PUBLIC -eq 1 ]; then
     checked_exec ./test_reframe.py
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
-    swap_files reframe/settings.py tutorial/config/settings.py
-
+    ln -sf tutorial/config/settings.py reframe/settings.py
     # Find modified or added tutorial checks
     tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
