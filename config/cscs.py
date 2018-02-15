@@ -1,5 +1,5 @@
 #
-# Regression settings
+# CSCS ReFrame settings
 #
 
 

@@ -63,21 +63,21 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe --exec-policy=async  -r -t tutorial $@"
+    cmd="./bin/reframe --exec-policy=async --save-log-files -r -t tutorial $@"
     echo "Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
 
 run_user_checks()
 {
-    cmd="./bin/reframe --exec-policy=async  -r -t production $@"
+    cmd="./bin/reframe --exec-policy=async --save-log-files -r -t production $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }
 
 run_serial_user_checks()
 {
-    cmd="./bin/reframe --exec-policy=serial  -r -t production-serial $@"
+    cmd="./bin/reframe --exec-policy=serial --save-log-files -r -t production-serial $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -179,7 +179,7 @@ echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_PUBLIC -eq 1 ]; then
     # Run unit tests for the public release
-    swap_files reframe/settings.py reframe/settings.public.py
+    swap_files reframe/settings.py config/generic.py
 
     echo "================================="
     echo "Running public release unit tests"
