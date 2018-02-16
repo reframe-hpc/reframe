@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
+
 # ReFrame
 
 ReFrame is a new framework for writing regression tests for HPC systems.
