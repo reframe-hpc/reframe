@@ -5,7 +5,6 @@ def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
 def cscsSettings = 'config/cscs.py'
 def machinesList = ['daint', 'dom', 'kesch', 'leone', 'monch']
-def githubComment = env.ghprbCommentBody
 def machinesToRun = machinesList
 def uniqueID
 
@@ -16,9 +15,10 @@ stage('Initialization') {
             echo 'Environment Variables:'
             echo sh(script: 'env|sort', returnStdout: true)
 
-            if (githubComment == null) {
+            def githubComment = env.ghprbCommentBody
+            if (githubComment == 'null') {
                 machinesToRun = machinesList
-                currentBuild.result == 'SUCCESS'
+                currentBuild.result = 'SUCCESS'
                 return
             }
 
@@ -68,7 +68,7 @@ stage('Initialization') {
 }
 
 if (currentBuild.result != 'SUCCESS') {
-    println 'Initialization failed. Exiting...'
+    println "Initialization failed (${currentBuild.result}). Exiting..."
     return
 }
 
