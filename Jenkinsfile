@@ -12,10 +12,8 @@ def uniqueID
 stage('Initialization') {
     node('master') {
         try {
-            def scmVars = checkout scm
-            uniqueID = "${scmVars.GIT_COMMIT[0..6]}${env.BUILD_ID}"
-
-            println('Environment Variables:')
+            uniqueID = "${env.ghprbActualCommit[0..6]}-${env.BUILD_ID}"
+            echo 'Environment Variables:'
             echo sh(script: 'env|sort', returnStdout: true)
 
             if (githubComment == null) {
@@ -25,7 +23,6 @@ stage('Initialization') {
             }
 
             def splittedComment = githubComment.split()
-
             if (splittedComment.size() < 3) {
                 println 'No machines were found. Aborting...'
                 currentBuild.result = 'ABORTED'
@@ -36,7 +33,6 @@ stage('Initialization') {
                 currentBuild.result = 'ABORTED'
                 return
             }
-
             if (splittedComment[2] == 'all') {
                 machinesToRun = machinesList
                 currentBuild.result = 'SUCCESS'
@@ -49,7 +45,6 @@ stage('Initialization') {
             }
 
             machinesToRun = machinesRequested.findAll({it in machinesList})
-
             if (!machinesToRun) {
                 println 'No machines were found. Aborting...'
                 currentBuild.result = 'ABORTED'
