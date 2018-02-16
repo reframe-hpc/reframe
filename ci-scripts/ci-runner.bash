@@ -203,7 +203,7 @@ else
     # Find modified or added user checks
     userchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
-                   grep -e '^checks/.*\.py') )
+                   grep -e '^cscs-checks/.*\.py') )
 
     if [ ${#userchecks[@]} -ne 0 ]; then
         userchecks_path=""

@@ -1,0 +1,27 @@
+RM := rm -f
+EXECUTABLE := jacobi
+
+all: jacobi
+
+OBJS := _main.o _jacobi.o
+
+$(OBJS):
+	@echo 'Compiling: $@'
+	@echo '$(PREP) $(CXX) $(CXXFLAGS) -c -o $(@) $(@:.o=.cc)'
+	$(PREP) $(CXX) $(CXXFLAGS) -c -o $(@) $(@:.o=.cc)
+
+$(EXECUTABLE): $(OBJS)
+	@echo 'Linking: $@'
+	$(PREP) $(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(OBJS)
+	@echo 'Finished building: $@'
+	@echo ' '
+
+clean:
+	@echo 'Removing objects'
+	-$(RM) $(OBJS)
+	-@echo ' '
+
+distclean:
+	@echo 'Removing objects and executable'
+	-$(RM) $(OBJS) $(EXECUTABLE)
+	-@echo ' '

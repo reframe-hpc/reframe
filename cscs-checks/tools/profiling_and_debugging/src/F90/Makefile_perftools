@@ -1,0 +1,17 @@
+LD = $(FC)
+
+OBJ            = _variableDef.o _jacobi.o _main.o 
+OBJ2 	       = $(subst _,$(PE_ENV)_,$(OBJ))
+LIB            = 
+
+.SUFFIXES: .o .F90
+
+%.o: %.F90
+	$(FC) $(FFLAGS) -c $< -o $(PE_ENV)$@
+
+perftools_check: $(OBJ)
+	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@
+
+clean:
+	rm -f *.o o_* *.mod perftools_check_F90
+	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf

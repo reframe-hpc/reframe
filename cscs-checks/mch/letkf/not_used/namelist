@@ -1,0 +1,189 @@
+   !================
+   ! REPORT namelist
+   !================
+
+   &REPORT check='TIME',       use='dismiss' /   
+   &REPORT check='NONE',       use='active'  /    
+   &REPORT check='AREA',       use='passive' / 
+   &REPORT check='HEIGHT',     use='passive' / 
+   &REPORT check='DOMAIN',     use='dismiss' / 
+   &REPORT check='NO_OBS',     use='dismiss' / 
+   &REPORT excl_bnd = 0.67, height_t = 300.  / 
+
+   !=============================
+   ! rescale ps observation error
+   !=============================
+   !factor to ps obs error
+   &fof_input
+   ps_obs_error   = -0.5
+   !take fg-check from det ana	
+   percent_fg_check = -1.0 
+   /
+   !===========================
+   ! reset observation error
+   !===========================
+   &OBSERR obstype='PILOT', quantity='u',  table='extern',  scale=1.0,
+        err= 1.25, 1.30, 1.18, 1.21, 1.34,
+             1.78, 1.78, 1.78, 1.78, 1.78,
+             1.78, 1.78, 1.78, 1.78, 1.78  
+   /
+   &OBSERR obstype='PILOT', quantity='v',  table='extern',  scale=1.0,
+        err= 1.25, 1.30, 1.18, 1.21, 1.34,
+             1.78, 1.78, 1.78, 1.78, 1.78,
+             1.78, 1.78, 1.78, 1.78, 1.78  
+   / 
+   &OBSERR obstype='PILOT', quantity='t',  table='extern',  scale=1.0,
+        err= 1.10, 0.85, 0.67, 0.55, 0.54,
+             0.56, 0.56, 0.56, 0.56, 0.56,
+             0.56, 0.56, 0.56, 0.56, 0.56
+   /
+   &OBSERR obstype='PILOT', quantity='rh', table='extern', scale=1.0,
+        err= 0.09, 0.13, 0.12, 0.13, 0.13,
+             0.14, 0.14, 0.14, 0.14, 0.14,
+             0.14, 0.14, 0.14, 0.14, 0.14
+   /
+   &OBSERR obstype='AIREP', quantity='u',  table='extern',  scale=1.0,
+        err= 1.45, 1.50, 1.38, 1.41, 1.54,
+             1.98, 1.98, 1.98, 1.98, 1.98,
+             1.98, 1.98, 1.98, 1.98, 1.98
+  /
+   &OBSERR obstype='AIREP', quantity='v', table='extern', scale=1.0,
+        err= 1.45, 1.50, 1.38, 1.41, 1.54,
+             1.98, 1.98, 1.98, 1.98, 1.98,
+             1.98, 1.98, 1.98, 1.98, 1.98
+   / 
+   &OBSERR obstype='AIREP', quantity='t',  table='extern', scale=1.0,
+        err= 1.10, 0.85, 0.67, 0.55, 0.54,
+             0.56, 0.56, 0.56, 0.56, 0.56,
+             0.56, 0.56, 0.56, 0.56, 0.56
+   /
+   &OBSERR obstype='AIREP', quantity='rh', table='extern', scale=1.0
+        err= 0.09, 0.13, 0.12, 0.13, 0.13,
+             0.14, 0.14, 0.14, 0.14, 0.14,
+             0.14, 0.14, 0.14, 0.14, 0.14
+   /
+   &OBSERR obstype='TEMP', quantity='u',  table='extern', scale=1.0,
+        err= 1.65, 1.70, 1.58, 1.61, 1.74,
+             2.18, 2.18, 2.18, 2.18, 2.18,
+             2.18, 2.18, 2.18, 2.18, 2.18
+   /
+   &OBSERR obstype='TEMP', quantity='v', table='extern', scale=1.0,
+        err= 1.65, 1.70, 1.58, 1.61, 1.74,
+             2.18, 2.18, 2.18, 2.18, 2.18,
+             2.18, 2.18, 2.18, 2.18, 2.18
+   / 
+   &OBSERR obstype='TEMP', quantity='t', table='extern', scale=1.0,
+        err= 1.10, 0.85, 0.67, 0.55, 0.54,
+             0.56, 0.56, 0.56, 0.56, 0.56,
+             0.56, 0.56, 0.56, 0.56, 0.56
+   /
+   &OBSERR obstype='TEMP', quantity='rh', table='extern', scale=1.0,
+        err= 0.09, 0.13, 0.12, 0.13, 0.13,
+             0.14, 0.14, 0.14, 0.14, 0.14,
+             0.14, 0.14, 0.14, 0.14, 0.14 
+   /
+ &run
+   !===================
+   ! general parameters
+   !===================
+   nproc1         =  24
+   nproc2         =  11	
+   method         = 'LETKF'
+   model          = 'COSMO'	
+   nex            = 9259                  ! experiment number
+   run_type       = 2                     ! haupt=0, (vor=1), ass=2, test=3
+   input          = "/users/ajocksch/PyRegression.git/PyRegression/checks/mch/letkf/../input"            ! input data from working directory
+   output         = "/users/ajocksch/PyRegression.git/PyRegression/checks/mch/letkf/../output"
+   aux            = "/users/ajocksch/PyRegression.git/PyRegression/checks/mch/letkf/../output"           ! output auxiliary data to working directory
+   time_ana       = 20150814010000        ! analysis           date
+   time_ref       = 20150814000000        ! forecast reference date
+   npe_read_obs   = 100000                ! read observations from all PEs
+   runtime        = 1900010100
+   expseed        = 1
+   center         = 215  
+   proc_ana       = 130                   ! generating process (DWD: typnr)
+   proc_ana_ens   = 130                   ! generating process (DWD: typnr)
+   range_ana      = 0                     ! time range indicator 
+   !-------------------------
+   ! settings for COSMO LETKF
+   !-------------------------
+   fg_file        = 'lff20150814000000.det' ! det. analysis (det_run=0|1)
+   read_fields    = '- t_s '
+   pass_fields    = ''
+   runtype        =  ''
+   ensemble_id    = 2 ! +++ to be replaced by NUMEX +++		   
+ /
+!=======================
+! Ensemble Kalman Filter
+!=======================
+ &ENKF	
+   k_enkf  = 40 ! ensemble size (32)
+   rho     = 1.1  ! covariance inflation factor (cycled)
+   lh      = 80.0  ! horizontal localisation length scale (km)
+   lv      = 0.3   ! vertical   localisation length scale (ln p)(0.3/10.0)
+   src_fc  = 0     ! fc  from 0:mean      1:psas fc
+   gen_ens = .false.     ! generate random forecast ensemble	
+   mf        = 0.0   ! B-amplitude for model error
+   mf0       = 0.0   ! B-amplitude for model error (mean)
+   m_flag    = 0      ! 0: no me 1: me to ens 2: me to ens+mean 3: me to mean only
+   moderr_fc = 0      !add model error to forecast	
+   grid_diag  = 1     !diagn. on coarse grid 0: no , 1: yes  (1)
+   rms_diag  = 0      ! rms-stat 0: no, 1: for fg 2: for ana (1) 
+   diag_type = 1      ! rms-stat for 0: det-run 1: mean      (1)  	
+   gp_mat = 0         ! grid point output (W-matrices)	
+   norm_flag = 0      ! 0: standard norm, 1: energy norm	
+   q_bound = .true.    ! apply bounds to humidity variables
+   ane_fname = '%'
+   ana_file  = '%' ! det. an. filename 	
+   fce_fname = 'lff20150814000000' ! xxx.001 - generic
+   ana_read  = 'analysis_op' ! oper. analysis (compute statistics) - rms_diag=0|1
+   no_ps_inc = .true.  ! no surface pressure    increment
+   no_tv_inc = .false.  ! no virtual temperature increment
+   no_rh_inc = .false.  ! no rh invcrement
+   no_uv_inc = .false.  ! no uv increment
+   rf        =  3       ! horizontal coarsening factor
+   rni       =  1       ! reduced ni-resolution (GME only)	
+   nzr       =  30	! number of height levels (coarse grid)
+   kappa     =  1.05    ! factor for growth of forecast. cov. infl. err.
+   va        =  0.107453 	! error off (analysed) rho-estimate (cycled)
+   ! W-matrix output grid indices (coarse grid) 
+   gp_ind    = 1, 77, 15, 1,
+	       3, 77, 15, 1,
+	       4, 77, 15, 1,
+	       5, 77, 15, 1,             
+	       7, 77, 15, 1,
+	       10, 77, 15, 1,
+	       20, 77, 15, 1,
+	       30, 77, 15, 1,
+	       65, 77, 15, 1,             
+	       100, 77, 15, 1 
+   sat_ad    = .true. !saturation adjustement
+   hyd_bal   = .true. !hydrost. bal. of ana. incr.
+   bal_var   = 0 !variable which is hyd. bal. (0 pp, 1 T)
+   adap_rho  = .false. !adapt. rho infl (F/T), set to .false. (andreas)
+   adap_R    = .true. ! use adap. R-corr. (local, ens space)	
+   adap_rho_l = 0.5  ! lower bound for adap rho (0.5)  
+   adap_rho_u = 3.0 ! upper bound for adap rho  (9.0)
+   adap_R_l   = 1.0 ! lower bound for adap R
+   adap_R_u   = 1.0 ! upper bound for adap R		
+   ensbc_weights = 1  !apply weights at boundaries (ens bc only)
+   alpha = 0.1 !weight of new adaptive computed rho (0.33)
+!   r_factor = 1.0 !factor R is multplied with in adap rho comp.	
+   det_run = 1 !compute deterministic analysis	
+   adap_loc  = .true.
+   apply_rtpp = .true.
+   apply_rtps = .false.
+   rtpp_alpha = 0.75
+   apply_rho = 2
+   nobs_gp   = 100.0
+   lh_min    = 50.0
+   lh_max    = 100.0
+   lv_surf   = 0.075 !0.3
+   lv_top    = 0.5   !0.3
+   par_read  = '- t_s'
+   par_fc_en = '- t_s'
+   par_write = '- t_s'
+   par_fcm   = '- t_s - t_so - w_so'
+   par_fce   = 't_so  w_so'
+   par_diagn = '- t_s'
+/

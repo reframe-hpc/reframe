@@ -1,0 +1,21 @@
+LD = $(CC)
+
+OBJ            = _jacobi-cuda-kernel.o _jacobi-cuda.o
+LIB            = 
+
+.SUFFIXES: .o .cu
+
+%.o: %.cu
+	nvcc $(CXXFLAGS) $(DDTFLAGS) -c $< -o $@
+
+.SUFFIXES: .o .c
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $@
+
+nvprof_check: $(OBJ)
+	$(LD) $(LDFLAGS) $(OBJ) $(LIB) -o $@
+
+clean:
+	rm -f *.o *.mod nvprof_check
+	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf
