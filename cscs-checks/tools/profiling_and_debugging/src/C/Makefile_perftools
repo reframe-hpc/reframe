@@ -1,0 +1,17 @@
+LD = $(CC)
+
+OBJ            = _jacobi.o _main.o 
+OBJ2 	       = $(subst _,$(PE_ENV)_,$(OBJ))
+LIB            = 
+
+.SUFFIXES: .o .c
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $(PE_ENV)$@
+
+perftools_check: $(OBJ)
+	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@
+
+clean:
+	rm -f *.o o_* *.mod perftools_check_c
+	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf

@@ -17,3 +17,10 @@ Users can create their own test hierarchies, create test factories for generatin
 ## Documentation
 
 The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
+It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
+
+## Examples of Regression Tests
+
+In the `cscs-checks/` folder, you can find realistic regression tests used for the CSCS systems that you can reuse and adapt to your system.
+Notice that these tests are published as examples and may not run as-is in your system.
+However, they can serve as a very good starting point for implementing your system tests in ReFrame.
