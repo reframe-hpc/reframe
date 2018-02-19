@@ -57,7 +57,7 @@ class ReframeSettings:
             'reframe.log': {
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
-                          '%(testcase_name)s: %(message)s',
+                          '%(check_info)s: %(message)s',
                 'append': False,
             },
 

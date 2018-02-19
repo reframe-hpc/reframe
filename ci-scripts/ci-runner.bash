@@ -170,6 +170,8 @@ if [ $CI_PUBLIC -eq 1 ]; then
     echo "Running public release unit tests"
     echo "================================="
     checked_exec ./test_reframe.py
+    checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
+        grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     ln -sf ../tutorial/config/settings.py reframe/settings.py
