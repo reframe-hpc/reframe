@@ -273,7 +273,7 @@ class TestSlurmJob(_TestJob):
                                 '#DW stage_in source=/foo']
         super().test_prepare()
         expected_directives = set([
-            '#SBATCH --job-name="testjob"',
+            '#SBATCH --job-name="rfm_testjob"',
             '#SBATCH --time=0:5:0',
             '#SBATCH --output=%s' % self.testjob.stdout,
             '#SBATCH --error=%s' % self.testjob.stderr,

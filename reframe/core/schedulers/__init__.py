@@ -118,7 +118,7 @@ class Job(abc.ABC):
         self._post_run = list(post_run)
         self.launcher = launcher
 
-        self._name = name
+        self._name = 'rfm_' + name
         self._command = command
         self._environs = list(environs)
         self._workdir = workdir

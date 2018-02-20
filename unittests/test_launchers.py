@@ -102,7 +102,7 @@ class TestSrunallocLauncher(_TestLauncher):
     @property
     def expected_command(self):
         return ('srun '
-                '--job-name=fake_job '
+                '--job-name=rfm_fake_job '
                 '--time=0:10:0 '
                 '--output=fake_stdout '
                 '--error=fake_stderr '
@@ -126,10 +126,10 @@ class TestSrunallocLauncher(_TestLauncher):
     @property
     def expected_minimal_command(self):
         return ('srun '
-                '--job-name=fake_job '
+                '--job-name=rfm_fake_job '
                 '--time=0:10:0 '
-                '--output=fake_job.out '
-                '--error=fake_job.err '
+                '--output=rfm_fake_job.out '
+                '--error=rfm_fake_job.err '
                 '--ntasks=1 '
                 '--foo '
                 'ls -l')
