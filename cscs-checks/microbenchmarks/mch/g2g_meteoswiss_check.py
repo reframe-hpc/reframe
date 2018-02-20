@@ -25,9 +25,9 @@ class G2GMeteoswissTest(RegressionTest):
         self.num_tasks = 2
         self.num_gpus_per_node  = 2
 
-        cuda_visible_devices = {'1': r'CUDA_VISIBLE_DEVICES: '
+        cuda_visible_devices = {1: r'CUDA_VISIBLE_DEVICES: '
                                      r'\[0: \d\] \[1: \d\]',
-                                '2': r'CUDA_VISIBLE_DEVICES: '
+                                2: r'CUDA_VISIBLE_DEVICES: '
                                      r'\[0: \d,\d\] \[1: \d,\d\]'}
 
         self.sanity_patterns = sn.all([
@@ -44,7 +44,7 @@ class G2GMeteoswissTest(RegressionTest):
             'kesch:cn': {'perf': (3.00, None, 0.2)}
         }
 
-        self.variables = {'G2G': g2g,
+        self.variables = {'G2G': str(g2g),
                           'LD_PRELOAD': '$(pkg-config --variable=libdir '
                                         'mvapich2-gdr)/libmpi.so'}
 
@@ -62,5 +62,5 @@ class G2GMeteoswissTest(RegressionTest):
 
 
 def _get_checks(**kwargs):
-    return [G2GMeteoswissTest('1', **kwargs),
-            G2GMeteoswissTest('2', **kwargs)]
+    return [G2GMeteoswissTest(1, **kwargs),
+            G2GMeteoswissTest(2, **kwargs)]
