@@ -26,9 +26,9 @@ class G2GMeteoswissTest(RegressionTest):
         self.num_gpus_per_node  = 2
 
         cuda_visible_devices = {1: r'CUDA_VISIBLE_DEVICES: '
-                                     r'\[0: \d\] \[1: \d\]',
+                                   r'\[0: \d\] \[1: \d\]',
                                 2: r'CUDA_VISIBLE_DEVICES: '
-                                     r'\[0: \d,\d\] \[1: \d,\d\]'}
+                                   r'\[0: \d,\d\] \[1: \d,\d\]'}
 
         self.sanity_patterns = sn.all([
             sn.assert_found('ELAPSED TIME:', self.stdout),
