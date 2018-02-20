@@ -235,7 +235,7 @@ class ReframeSettings:
 
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                   'modules': ['PrgEnv-gnu'], 
+                    'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {

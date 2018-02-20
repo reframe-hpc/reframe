@@ -17,6 +17,7 @@ class G2GMeteoswissTest(RegressionTest):
         self.executable = 'src/$EXECUTABLE'
         self.sourcesdir = ('https://github.com/MeteoSwiss-APN/'
                            'comm_overlap_bench.git')
+        self.sourcepath = 'src'
 
         self.maintainers = ['TM', 'JG']
         self.tags = {'production'}
@@ -29,11 +30,11 @@ class G2GMeteoswissTest(RegressionTest):
                                 '2': r'CUDA_VISIBLE_DEVICES: '
                                      r'\[0: \d,\d\] \[1: \d,\d\]'}
 
-        self.sanity_patterns = sn.all([sn.assert_found('ELAPSED TIME:',
-                                                       self.stdout),
-                                       sn.assert_found(
-                                           cuda_visible_devices[g2g],
-                                           self.stdout)])
+        self.sanity_patterns = sn.all([
+            sn.assert_found('ELAPSED TIME:', self.stdout),
+            sn.assert_found(cuda_visible_devices[g2g], self.stdout)
+        ])
+
         self.perf_patterns = {
             'perf': sn.extractsingle(r'ELAPSED TIME:\s+(?P<perf>\S+)',
                                      self.stdout, 'perf', float)
@@ -43,20 +44,21 @@ class G2GMeteoswissTest(RegressionTest):
             'kesch:cn': {'perf': (3.00, None, 0.2)}
         }
 
-        self.variables = {'G2G': g2g}
+        self.variables = {'G2G': g2g,
+                          'LD_PRELOAD': '$(pkg-config --variable=libdir '
+                                        'mvapich2-gdr)/libmpi.so'}
+
         self.prebuild_cmd = ['git checkout barebones']
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['export LD_PRELOAD=$(pkg-config --variable=libdir '
-                            'mvapich2-gdr)/libmpi.so',
-                            "export EXECUTABLE=$(ls %s/src/ | "
+        self.job.pre_run = ["export EXECUTABLE=$(ls %s/src/ | "
                             "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"
                             % self.stagedir]
 
     def compile(self):
         super().compile(makefile='../makefiles/makefile-kesch',
-                        options='NVCC=nvcc -C src')
+                        options='NVCC=nvcc')
 
 
 def _get_checks(**kwargs):
