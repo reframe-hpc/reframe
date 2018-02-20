@@ -10,15 +10,19 @@ class G2GMeteoswissTest(RegressionTest):
         super().__init__('g2g_%s_meteoswiss_check' % g2g,
                          os.path.dirname(__file__), **kwargs)
 
+        self.descr = 'G2G Meteoswiss check with G2G=%s' % g2g
         self.strict_check = False
         self.valid_systems = ['kesch:cn']
-        self.descr = 'G2G Meteoswiss check with G2G=%s' % g2g
-        self.executable = 'src/$EXECUTABLE'
-
         self.valid_prog_environs = ['PrgEnv-gdr']
-        self.maintainers = ['TM', 'JG']
+        self.executable = 'src/$EXECUTABLE'
         self.sourcesdir = ('https://github.com/MeteoSwiss-APN/'
                            'comm_overlap_bench.git')
+
+        self.maintainers = ['TM', 'JG']
+        self.tags = {'production'}
+
+        self.num_tasks = 2
+        self.num_gpus_per_node  = 2
 
         cuda_visible_devices = {'1': r'CUDA_VISIBLE_DEVICES: '
                                      r'\[0: \d\] \[1: \d\]',
@@ -40,10 +44,6 @@ class G2GMeteoswissTest(RegressionTest):
         }
 
         self.variables = {'G2G': g2g}
-
-        self.num_tasks = 2
-        self.num_gpus_per_node  = 2
-
         self.prebuild_cmd = ['git checkout barebones']
 
     def setup(self, partition, environ, **job_opts):
