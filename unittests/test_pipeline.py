@@ -146,6 +146,33 @@ class TestRegressionTest(unittest.TestCase):
         self.partition._name += os.sep + 'bad'
         self.test_hellocheck_local()
 
+    def test_hellocheck_local_prepost_run(self):
+        @sn.sanity_function
+        def stagedir(test):
+            return test.stagedir
+
+        test = self.loader.load_from_file(
+            'unittests/resources/hellocheck.py',
+            system=self.system, resources=self.resources
+        )[0]
+
+        # Use test environment for the regression check
+        test.valid_prog_environs = [self.progenv.name]
+
+        # Test also the prebuild/postbuild functionality
+        test.pre_run  = ['echo prerun: `pwd`']
+        test.post_run = ['echo postrun: `pwd`']
+        pre_run_path = sn.extractsingle(r'^prerun: (\S+)', test.stdout, 1)
+        post_run_path = sn.extractsingle(r'^postrun: (\S+)', test.stdout, 1)
+        test.sanity_patterns = sn.all([
+            sn.assert_eq(stagedir(test), pre_run_path),
+            sn.assert_eq(stagedir(test), post_run_path),
+        ])
+
+        # Force local execution of the test
+        test.local = True
+        self._run_test(test)
+
     def test_run_only_sanity(self):
         test = RunOnlyRegressionTest('runonlycheck',
                                      'unittests/resources',

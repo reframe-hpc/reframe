@@ -56,6 +56,9 @@ class LocalJob(sched.Job):
         # Update job info
         self._jobid = self._proc.pid
 
+    def emit_preamble(self, builder):
+        pass
+
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""
         try:

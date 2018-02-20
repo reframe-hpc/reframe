@@ -10,6 +10,9 @@ from reframe.core.shell import BashScriptBuilder
 
 
 class FakeJob(Job):
+    def emit_preamble(self):
+        pass
+
     def submit(self):
         pass
 
