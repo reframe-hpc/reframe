@@ -128,9 +128,9 @@ class Job(abc.ABC):
         self._num_tasks_per_socket = num_tasks_per_socket
         self._num_cpus_per_task = num_cpus_per_task
         self._use_smt = use_smt
-        self._script_filename = script_filename or '%s.sh' % self._name
-        self._stdout = stdout or '%s.out' % self._name
-        self._stderr = stderr or '%s.err' % self._name
+        self._script_filename = script_filename or '%s.sh' % name
+        self._stdout = stdout or '%s.out' % name
+        self._stderr = stderr or '%s.err' % name
         self._time_limit = time_limit
 
         # Backend scheduler related information

@@ -128,8 +128,8 @@ class TestSrunallocLauncher(_TestLauncher):
         return ('srun '
                 '--job-name=rfm_fake_job '
                 '--time=0:10:0 '
-                '--output=rfm_fake_job.out '
-                '--error=rfm_fake_job.err '
+                '--output=fake_job.out '
+                '--error=fake_job.err '
                 '--ntasks=1 '
                 '--foo '
                 'ls -l')
