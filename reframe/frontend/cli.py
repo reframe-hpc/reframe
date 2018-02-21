@@ -85,6 +85,9 @@ def main():
 
     # Select options
     select_options.add_argument(
+        '--try-module', action='append', dest='module_map', default=[],
+        help='Map a module name to a different one')
+    select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
     select_options.add_argument(
@@ -366,6 +369,9 @@ def main():
         checks_matched = [c for c in checks_matched]
 
         # Act on checks
+
+        if options.module_map:
+            get_modules_system().load_mapping_from_file(options.module_map[0])
 
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:

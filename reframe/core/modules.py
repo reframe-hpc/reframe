@@ -4,6 +4,7 @@
 
 import abc
 import itertools
+import sys
 import os
 import re
 import subprocess
@@ -206,6 +207,31 @@ class ModulesSystem:
 
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
+
+    def load_mapping_from_file(self, module_mapping_file):
+        """Update ``self.module_map`` with a mapping defined in a file."""
+        module_mapping = {}
+        try:
+            with open(module_mapping_file, 'r') as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    elif '#' in line:
+                        line = line.split('#')[0].strip()
+
+                    try:
+                        k, v = re.split(r'\s*:\s*', line)
+                        module_mapping.setdefault(k, []).extend(
+                            re.split(r'\s*,\s*', v.strip(',')))
+                    except ValueError as e:
+                        raise ConfigError(
+                            'Incorrect format of the'
+                            'module mapping file: %s' % e) from e
+        except OSError as e:
+            raise ConfigError from e
+
+        self.module_map.update(module_mapping)
 
     @property
     def name(self):

@@ -402,3 +402,54 @@ class TestModuleMapping(unittest.TestCase):
         }
         self.assertRaisesRegex(EnvironError, 'm0->m1->m3->m4->m2->m1',
                                self.modules_system.load_module, 'm0')
+
+    def test_mapping_from_file_simple(self):
+        with open('module_mappings_file.txt', 'w') as f:
+            print('m1: m2, m3'
+                  '\nm2: m4',
+                  '\n  #m5: m6',
+                  '\n',
+                  '\nm1: m7, # An inline comment after the coma',
+                  '\nm1: m7 # An inline comment with no coma',
+                  file=f)
+        reference_map = {
+            'm1': ['m2', 'm3', 'm7', 'm7'],
+            'm2': ['m4'],
+        }
+        self.modules_system.load_mapping_from_file('module_mappings_file.txt')
+        self.assertEqual(reference_map, self.modules_system.module_map)
+
+    def test_maping_from_file_wrong_key_separator(self):
+        with open('module_mappings_file.txt', 'w') as f:
+            print('m1: m2, m3'
+                  '\nm2 m4',
+                  '\n#m5: m6',
+                  '\n',
+                  '\nm1: m7, # An inline comment after the coma',
+                  '\nm1: m7 # An inline comment with no coma',
+                  file=f)
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          'module_mappings_file.txt')
+
+    def test_maping_from_file_misplaced_comment_symbol(self):
+        with open('module_mappings_file.txt', 'w') as f:
+            print('m1: m2, m3'
+                  '\nm2 m4',
+                  '\n#m5: m6',
+                  '\n',
+                  '\nm1: m7, # An inline comment after the coma',
+                  '\nm1: m7 # An inline comment with no coma',
+                  file=f)
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          'module_mappings_file.txt')
+
+    def test_maping_from_file_missing_file(self):
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          'module_mappings_file.txt')
+
+    def tearDown(self):
+        if os.path.isfile('module_mappings_file.txt'):
+            os.remove('module_mappings_file.txt')
