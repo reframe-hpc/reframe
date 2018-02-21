@@ -19,6 +19,26 @@ Users can create their own test hierarchies, create test factories for generatin
 The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
 It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
 
+### Building the documentation from master
+
+You may build the documentation of the master either with Python 2 or Python 3 (<= 3.5).
+Here is how to do it:
+
+```
+pip install -r docs/requirements.txt
+make -C docs latest
+```
+
+For viewing it, you may do the following:
+
+```
+cd docs/html
+python -m http.server # or python -m SimpleHTTPServer for Python 2
+```
+
+The documentation is now up on [localhost:8000](http://localhost:8000), where you can navigate with your browser.
+
+
 ## Examples of Regression Tests
 
 In the `cscs-checks/` folder, you can find realistic regression tests used for the CSCS systems that you can reuse and adapt to your system.

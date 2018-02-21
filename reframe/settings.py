@@ -1,1 +1,1 @@
-../config/cscs.py
+../config/generic.py
