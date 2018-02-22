@@ -946,12 +946,14 @@ class RegressionTest:
         if not self._current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        try:
-            self._job.prepare(BashScriptBuilder(login=True))
-        except OSError as e:
-            raise PipelineError('failed to prepare job') from e
+        with os_ext.change_dir(self._stagedir):
+            try:
+                self._job.prepare(BashScriptBuilder(login=True))
+            except OSError as e:
+                raise PipelineError('failed to prepare job') from e
 
-        self._job.submit()
+            self._job.submit()
+
         msg = ('spawned job (%s=%s)' %
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
         self.logger.debug(msg)
