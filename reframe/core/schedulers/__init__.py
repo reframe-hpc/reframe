@@ -243,24 +243,30 @@ class Job(abc.ABC):
     def sched_exclusive_access(self):
         return self._sched_exclusive_access
 
-    def emit_preamble(self, builder):
+    def emit_environ(self, builder):
         for e in self._environs:
             e.emit_load_instructions(builder)
 
+    def emit_pre_run(self, builder):
         for c in self._pre_run:
             builder.verbatim(c)
 
-    def emit_postamble(self, script_builder):
+    def emit_post_run(self, script_builder):
         for c in self._post_run:
             script_builder.verbatim(c)
 
     def prepare(self, script_builder):
         self.emit_preamble(script_builder)
-        script_builder.verbatim('cd %s' % self._workdir)
+        self.emit_environ(script_builder)
+        self.emit_pre_run(script_builder)
         self.launcher.emit_run_command(self, script_builder)
-        self.emit_postamble(script_builder)
+        self.emit_post_run(script_builder)
         with open(self.script_filename, 'w') as fp:
             fp.write(script_builder.finalise())
+
+    @abc.abstractmethod
+    def emit_preamble(self, builder):
+        pass
 
     @abc.abstractmethod
     def submit(self):

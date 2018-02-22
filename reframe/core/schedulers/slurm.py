@@ -120,8 +120,6 @@ class SlurmJob(sched.Job):
             else:
                 builder.verbatim(opt)
 
-        super().emit_preamble(builder)
-
     def prepare(self, builder):
         if self.num_tasks == 0:
             if self.sched_reservation:
