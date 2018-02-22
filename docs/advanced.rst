@@ -484,8 +484,8 @@ It is often the case that you must run some commands before and/or after the par
 This can be easily achieved by using the :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` and :attr:`post_run <reframe.core.pipeline.RegressionTest.post_run>` attributes of :class:`RegressionTest`.
 
 The following example is a slightly modified version of the previous one.
-The lower and upper limits for the random numbers are now set inside a helper shell script in ``scripts/limits.sh`` and we want also to print the word ``FINISHED`` after the parallel job has finished.
-In order to achieve this, we need to source the helper script just before launching our parallel job and ``echo``  the desired message just after it finishes.
+The lower and upper limits for the random numbers are now set inside a helper shell script in ``scripts/limits.sh`` and we want also to print the word ``FINISHED`` after our executable has finished.
+In order to achieve this, we need to source the helper script just before launching the executable and ``echo`` the desired message just after it finishes.
 Here is the test file:
 
 .. code-block:: python
