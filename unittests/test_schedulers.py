@@ -273,7 +273,7 @@ class TestSlurmJob(_TestJob):
                                 '#DW stage_in source=/foo']
         super().test_prepare()
         expected_directives = set([
-            '#SBATCH --job-name="testjob"',
+            '#SBATCH --job-name="rfm_testjob"',
             '#SBATCH --time=0:5:0',
             '#SBATCH --output=%s' % self.testjob.stdout,
             '#SBATCH --error=%s' % self.testjob.stderr,
@@ -300,6 +300,30 @@ class TestSlurmJob(_TestJob):
                                               re.MULTILINE))
 
         self.assertEqual(expected_directives, found_directives)
+
+    def test_prepare_no_exclusive(self):
+        self.testjob._sched_exclusive_access = False
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNone(re.search(r'--exclusive', fp.read()))
+
+    def test_prepare_no_smt(self):
+        self.testjob._use_smt = None
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNone(re.search(r'--hint', fp.read()))
+
+    def test_prepare_with_smt(self):
+        self.testjob._use_smt = True
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNotNone(re.search(r'--hint=multithread', fp.read()))
+
+    def test_prepare_without_smt(self):
+        self.testjob._use_smt = False
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
 
     @unittest.skipIf(not partition_with_scheduler('slurm'),
                      'Slurm scheduler not supported')
