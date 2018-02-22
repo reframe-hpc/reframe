@@ -50,11 +50,8 @@ class G2GMeteoswissTest(RegressionTest):
 
         self.prebuild_cmd = ['git checkout barebones']
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ["export EXECUTABLE=$(ls %s/src/ | "
-                            "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"
-                            % self.stagedir]
+        self.pre_run = ["export EXECUTABLE=$(ls src/ | "
+                        "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"]
 
     def compile(self):
         super().compile(makefile='../makefiles/makefile-kesch',
