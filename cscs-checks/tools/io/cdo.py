@@ -78,9 +78,7 @@ class NCOModuleCompatibilityCheck(CDOBaseCheck):
             sn.assert_not_found(r'.+', self.stdout),
             sn.assert_not_found(r'.+', self.stderr)])
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['module load NCO']
+        self.pre_run = ['module load NCO']
 
 
 class InfoNCCheck(CDOBaseCheck):
@@ -170,11 +168,13 @@ class MergeNC4CCheck(CDOBaseCheck):
         self.descr = ('verifies merging and compressing of 3 compressed '
                       'netCDF-4 files')
         self.executable = 'cdo'
-        self.executable_opts = ['-O', '-z', 'zip', 'merge',
-                                'test_echam_spectral-deflated_wind10.nc4c',
-                                'test_echam_spectral-deflated_wl.nc4c',
-                                'test_echam_spectral-deflated_ws.nc4c',
-                                'test_echam_spectral-deflated_wind10_wl_ws.nc4c']
+        self.executable_opts = [
+            '-O', '-z', 'zip', 'merge',
+            'test_echam_spectral-deflated_wind10.nc4c',
+            'test_echam_spectral-deflated_wl.nc4c',
+            'test_echam_spectral-deflated_ws.nc4c',
+            'test_echam_spectral-deflated_wind10_wl_ws.nc4c'
+        ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
             sn.assert_found(r'cdo merge: Processed 442368 values from 3 '
@@ -190,4 +190,3 @@ def _get_checks(**kwargs):
         MergeNCCheck(**kwargs), MergeNC4Check(**kwargs),
         MergeNC4CCheck(**kwargs)
     ]
-
