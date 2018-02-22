@@ -238,7 +238,7 @@ stage('Cleanup') {
 def staleCleanupInterval = 3
 builds = [:]
 stage('Cleanup Stale') {
-     for (mach in machinesList) {
+     for (mach in machinesToRun) {
         def machineName = mach
         builds[machineName] = {
             node(machineName) {
