@@ -26,9 +26,13 @@ class NCOBaseCheck(RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules  = ['NCO']
         self.maintainers = ['SO']
         self.tags = {'production'}
+
+    def setup(self, partition, environ, **job_opts):
+        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
+        self.modules = [nco_name]
+        super().setup(partition, environ, **job_opts)
 
 
 # Check that the netCDF loaded by the NCO module supports the nc4 filetype
@@ -69,13 +73,17 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
         super().__init__('cdo_module_compat', **kwargs)
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
-        self.executable = 'echo'
+        output_file = 'nco_cdo_check.out'
+        self.executable = 'echo > %s' % output_file
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', self.stdout),
+            sn.assert_not_found(r'.+', output_file),
             sn.assert_not_found(r'.+', self.stderr)
         ])
 
-        self.pre_run = ['module load CDO']
+    def setup(self, partition, environ, **job_opts):
+        cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
+        self.pre_run = ['module load %s' % cdo_name]
+        super().setup(partition, environ, **job_opts)
 
 
 class InfoNCCheck(NCOBaseCheck):
