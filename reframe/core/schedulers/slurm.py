@@ -88,8 +88,10 @@ class SlurmJob(sched.Job):
         self._emit_job_option(self.num_cpus_per_task,
                               '--cpus-per-task={0}', builder)
         self._emit_job_option(self.sched_partition, '--partition={0}', builder)
-        self._emit_job_option(self.sched_exclusive_access,
-                              '--exclusive', builder)
+        if self.sched_exclusive_access:
+            self._emit_job_option(self.sched_exclusive_access,
+                                  '--exclusive', builder)
+
         self._emit_job_option(self.sched_account, '--account={0}', builder)
         self._emit_job_option(self.sched_nodelist, '--nodelist={0}', builder)
         self._emit_job_option(self.sched_exclude_nodelist,

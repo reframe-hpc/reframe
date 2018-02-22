@@ -301,6 +301,30 @@ class TestSlurmJob(_TestJob):
 
         self.assertEqual(expected_directives, found_directives)
 
+    def test_prepare_no_exclusive(self):
+        self.testjob._sched_exclusive_access = False
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNone(re.search(r'--exclusive', fp.read()))
+
+    def test_prepare_no_smt(self):
+        self.testjob._use_smt = None
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNone(re.search(r'--hint', fp.read()))
+
+    def test_prepare_with_smt(self):
+        self.testjob._use_smt = True
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNotNone(re.search(r'--hint=multithread', fp.read()))
+
+    def test_prepare_without_smt(self):
+        self.testjob._use_smt = False
+        super().test_prepare()
+        with open(self.testjob.script_filename) as fp:
+            self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
+
     @unittest.skipIf(not partition_with_scheduler('slurm'),
                      'Slurm scheduler not supported')
     def test_submit(self):
