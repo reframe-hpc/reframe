@@ -405,8 +405,8 @@ class TestModuleMapping(unittest.TestCase):
 
     def test_mapping_from_file_simple(self):
         with open('module_mappings_file.txt', 'w') as f:
-            print('m1: m2, m3'
-                  '\nm2: m4',
+            print('m1:m2, m3'
+                  '\nm2 : m4',
                   '\n  #m5: m6',
                   '\n',
                   '\nm1: m7, # An inline comment after the coma',

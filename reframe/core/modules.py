@@ -219,7 +219,7 @@ class ModulesSystem:
                         continue
 
                     try:
-                        key, value = re.split(r'\s*:[\S+|\s+]', line)
+                        key, value = re.split(r'\s*:\s*', line.strip(':'))
                         values_list = re.findall(
                             r'(?P<value>[A-Za-z0-9_\-/\+\.]+)', value)
                         module_mapping.setdefault(key, []).extend(values_list)
