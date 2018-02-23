@@ -77,11 +77,8 @@ class NCOModuleCompatibilityCheck(CDOBaseCheck):
         super().__init__('nco_module_compat', **kwargs)
         self.descr = ('verifies compatibility with the NCO module')
         self.sourcesdir = None
-        output_file = 'cdo_nco_check.out'
-        self.executable = 'echo > %s' % output_file
         self.executable = 'echo'
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', output_file),
             sn.assert_not_found(r'.+', self.stderr)])
 
     def setup(self, partition, environ, **job_opts):

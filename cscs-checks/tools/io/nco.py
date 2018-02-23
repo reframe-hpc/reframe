@@ -73,10 +73,8 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
         super().__init__('cdo_module_compat', **kwargs)
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
-        output_file = 'nco_cdo_check.out'
-        self.executable = 'echo > %s' % output_file
+        self.executable = 'echo'
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', output_file),
             sn.assert_not_found(r'.+', self.stderr)
         ])
 
