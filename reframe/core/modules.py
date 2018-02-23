@@ -214,11 +214,9 @@ class ModulesSystem:
         try:
             with open(module_mapping_file, 'r') as f:
                 for line in f.readlines():
-                    line = line.strip()
-                    if not line or line.startswith('#'):
+                    line = re.split(r'\s*#\s*', line.strip())[0]
+                    if not line:
                         continue
-                    elif '#' in line:
-                        line = line.split('#')[0].strip()
 
                     try:
                         key, value = re.split(r'\s*:[\S+|\s+]', line)
