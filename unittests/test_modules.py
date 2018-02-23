@@ -419,27 +419,18 @@ class TestModuleMapping(unittest.TestCase):
         self.modules_system.load_mapping_from_file('module_mappings_file.txt')
         self.assertEqual(reference_map, self.modules_system.module_map)
 
-    def test_maping_from_file_wrong_key_separator(self):
+    def test_maping_from_file_missing_key_separator(self):
         with open('module_mappings_file.txt', 'w') as f:
-            print('m1: m2, m3'
-                  '\nm2 m4',
-                  '\n#m5: m6',
-                  '\n',
-                  '\nm1: m7, # An inline comment after the coma',
-                  '\nm1: m7 # An inline comment with no coma',
-                  file=f)
+            print('m1 m2', file=f)
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
                           'module_mappings_file.txt')
 
-    def test_maping_from_file_misplaced_comment_symbol(self):
+    def test_maping_from_file_empty_mapping(self):
         with open('module_mappings_file.txt', 'w') as f:
             print('m1: m2, m3'
-                  '\nm2 m4',
-                  '\n#m5: m6',
-                  '\n',
-                  '\nm1: m7, # An inline comment after the coma',
-                  '\nm1: m7 # An inline comment with no coma',
+                  '\nm2:# m4',
+                  '\nm5: m6',
                   file=f)
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,

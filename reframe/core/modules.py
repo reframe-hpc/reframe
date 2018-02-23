@@ -221,9 +221,10 @@ class ModulesSystem:
                         line = line.split('#')[0].strip()
 
                     try:
-                        k, v = re.split(r'\s*:\s*', line)
-                        module_mapping.setdefault(k, []).extend(
-                            re.split(r'\s*,\s*', v.strip(',')))
+                        key, value = re.split(r'\s*:[\S+|\s+]', line)
+                        values_list = re.findall(
+                            r'(?P<value>[A-Za-z0-9_\-/\+\.]+)', value)
+                        module_mapping.setdefault(key, []).extend(values_list)
                     except ValueError as e:
                         raise ConfigError(
                             'Incorrect format of the'
