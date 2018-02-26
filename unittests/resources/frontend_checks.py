@@ -22,7 +22,6 @@ class BaseFrontendCheck(RunOnlyRegressionTest):
 class BadSetupCheck(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
@@ -45,7 +44,6 @@ class BadSetupCheckEarly(BaseFrontendCheck):
 class BadSetupCheckEarlyNonLocal(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.local = False
@@ -107,7 +105,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
 
     def __init__(self, phase='wait', **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-
+        self.executable = 'sleep 1'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.phase = phase
@@ -130,7 +128,6 @@ class SystemExitCheck(BaseFrontendCheck):
 
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
@@ -151,18 +148,15 @@ class SleepCheck(BaseFrontendCheck):
         self.executable_opts = [
             '-c "from time import sleep; sleep(%s)"' % sleep_time
         ]
+        print_timestamp = (
+            "python3 -c \"from datetime import datetime; "
+            "print(datetime.today().strftime('%s.%f'), flush=True)\"")
+        self.pre_run  = [print_timestamp]
+        self.post_run = [print_timestamp]
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         SleepCheck._next_id += 1
-
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
-        print_timestamp = (
-            "python3 -c \"from datetime import datetime; "
-            "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.job._pre_run  = [print_timestamp]
-        self.job._post_run = [print_timestamp]
 
 
 def _get_checks(**kwargs):
