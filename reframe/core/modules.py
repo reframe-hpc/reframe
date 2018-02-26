@@ -4,7 +4,6 @@
 
 import abc
 import itertools
-import sys
 import os
 import re
 import subprocess
@@ -13,6 +12,7 @@ import reframe.core.fields as fields
 import reframe.utility.os as os_ext
 
 from collections.abc import Iterable
+from collections import OrderedDict
 from reframe.core.exceptions import ConfigError, EnvironError
 
 
@@ -208,29 +208,23 @@ class ModulesSystem:
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
 
-    def load_mapping_from_file(self, module_mapping_file):
-        """Update ``self.module_map`` with a mapping defined in a file."""
-        module_mapping = {}
-        try:
-            with open(module_mapping_file, 'r') as f:
-                for line in f.readlines():
-                    line = re.split(r'\s*#\s*', line.strip())[0]
-                    if not line:
-                        continue
+    def load_mapping_from_file(self, filename):
+        """Update the internal module mapping from a file."""
 
-                    try:
-                        key, value = re.split(r'\s*:\s*', line.strip(':'))
-                        values_list = re.findall(
-                            r'(?P<value>[A-Za-z0-9_\-/\+\.]+)', value)
-                        module_mapping.setdefault(key, []).extend(values_list)
-                    except ValueError as e:
-                        raise ConfigError(
-                            'Incorrect format of the'
-                            'module mapping file: %s' % e) from e
-        except OSError as e:
-            raise ConfigError from e
+        with open(filename, 'r') as fp:
+            for lineno, line in enumerate(fp):
+                line = line.strip().split('#')[0].strip()
+                if not line:
+                    continue
 
-        self.module_map.update(module_mapping)
+                try:
+                    key, values = line.strip(':').split(':')
+                    self.module_map[key.strip()] = list(
+                        OrderedDict.fromkeys(values.split()))
+                except Exception as e:
+                    raise ConfigError('Line %d of "%s": '
+                                      'Invalid format of the module mapping'
+                                      'file.\n %s' % (lineno, filename, e))
 
     @property
     def name(self):

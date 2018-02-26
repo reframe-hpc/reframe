@@ -85,7 +85,7 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '--try-module', action='append', dest='module_map', default=[],
+        '--modules-mapping', action='store', dest='module_map',
         help='Map a module name to a different one')
     select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', default=[],
@@ -235,6 +235,9 @@ def main():
     # Init modules system
     init_modules_system(system.modules_system)
 
+    if options.module_map:
+        get_modules_system().load_mapping_from_file(options.module_map)
+
     if options.mode:
         try:
             mode_args = site_config.modes[options.mode]
@@ -369,9 +372,6 @@ def main():
         checks_matched = [c for c in checks_matched]
 
         # Act on checks
-
-        if options.module_map:
-            get_modules_system().load_mapping_from_file(options.module_map[0])
 
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:

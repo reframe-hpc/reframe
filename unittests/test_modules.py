@@ -6,6 +6,7 @@ import reframe.core.modules as modules
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
 from unittests.fixtures import TEST_MODULES, has_sane_modules_system
+from tempfile import NamedTemporaryFile
 
 
 class _TestModulesSystem(unittest.TestCase):
@@ -200,6 +201,7 @@ class TestModuleMapping(unittest.TestCase):
     def setUp(self):
         self.modules_activity = ModulesSystemEmulator()
         self.modules_system = modules.ModulesSystem(self.modules_activity)
+        self.fp = NamedTemporaryFile('wt', delete=False)
 
     def test_mapping_simple(self):
         #
@@ -404,43 +406,53 @@ class TestModuleMapping(unittest.TestCase):
                                self.modules_system.load_module, 'm0')
 
     def test_mapping_from_file_simple(self):
-        with open('module_mappings_file.txt', 'w') as f:
-            print('m1:m2, m3'
-                  '\nm2 : m4',
-                  '\n  #m5: m6',
-                  '\n',
-                  '\nm1: m7, # An inline comment after the coma',
-                  '\nm1: m7 # An inline comment with no coma',
-                  file=f)
+        self.fp.write('m1:m2  m3   m3\n'
+                      'm2 : m4 \n'
+                      ' #m5: m6\n'
+                      '\n'
+                      'm5: m6 # Inline comment')
         reference_map = {
-            'm1': ['m2', 'm3', 'm7', 'm7'],
+            'm1': ['m2', 'm3'],
             'm2': ['m4'],
+            'm5': ['m6']
         }
-        self.modules_system.load_mapping_from_file('module_mappings_file.txt')
+        self.fp.close()
+        self.modules_system.load_mapping_from_file(self.fp.name)
+        self.assertEqual(reference_map, self.modules_system.module_map)
+
+    def test_mapping_from_file_repeated_key(self):
+        self.fp.write('m1:m2  m3\n'
+                      'm1 : m4\n')
+        reference_map = {'m1': ['m4']}
+        self.fp.close()
+        self.modules_system.load_mapping_from_file(self.fp.name)
         self.assertEqual(reference_map, self.modules_system.module_map)
 
     def test_maping_from_file_missing_key_separator(self):
-        with open('module_mappings_file.txt', 'w') as f:
-            print('m1 m2', file=f)
+        self.fp.write('m1 m2')
+        self.fp.close()
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
-                          'module_mappings_file.txt')
+                          self.fp.name)
 
-    def test_maping_from_file_empty_mapping(self):
-        with open('module_mappings_file.txt', 'w') as f:
-            print('m1: m2, m3'
-                  '\nm2:# m4',
-                  '\nm5: m6',
-                  file=f)
+    def test_maping_from_file_empty_value(self):
+        self.fp.write('m2: # m4')
+        self.fp.close()
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
-                          'module_mappings_file.txt')
+                          self.fp.name)
+
+    def test_maping_from_file_empty_key(self):
+        self.fp.write(' : m4')
+        self.fp.close()
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          self.fp.name)
 
     def test_maping_from_file_missing_file(self):
-        self.assertRaises(ConfigError,
+        self.assertRaises(OSError,
                           self.modules_system.load_mapping_from_file,
-                          'module_mappings_file.txt')
+                          'foo')
 
     def tearDown(self):
-        if os.path.isfile('module_mappings_file.txt'):
-            os.remove('module_mappings_file.txt')
+        os.remove(self.fp.name)
