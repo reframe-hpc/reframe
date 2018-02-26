@@ -1,1 +1,1 @@
-
+import _foo
