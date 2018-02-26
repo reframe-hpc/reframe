@@ -1,6 +1,7 @@
 import abc
 import datetime
 import sys
+
 import reframe.core.debug as debug
 import reframe.core.logging as logging
 

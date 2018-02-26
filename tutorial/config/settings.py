@@ -2,11 +2,6 @@
 # Minimal settings for ReFrame tutorial on Piz Daint
 #
 
-import os
-import logging
-
-from datetime import datetime
-
 
 class ReframeSettings:
     _reframe_module = 'reframe'

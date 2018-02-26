@@ -3,15 +3,11 @@
 #
 
 import abc
-import itertools
 import os
 import re
-import subprocess
 
 import reframe.core.fields as fields
 import reframe.utility.os as os_ext
-
-from collections.abc import Iterable
 from reframe.core.exceptions import ConfigError, EnvironError
 
 

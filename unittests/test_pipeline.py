@@ -1,19 +1,16 @@
 import os
 import shutil
-import stat
 import tempfile
 import unittest
 
-import reframe.settings as settings
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
-
 from reframe.core.exceptions import (ReframeError, PipelineError, SanityError,
                                      CompilationError)
+from reframe.core.modules import get_modules_system
 from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
                                    RunOnlyRegressionTest)
-from reframe.core.modules import get_modules_system
-from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
 
 

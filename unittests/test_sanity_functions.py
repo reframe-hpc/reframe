@@ -1,11 +1,10 @@
 import itertools
 import os
 import unittest
-import reframe.utility.sanity as sn
-
 from tempfile import NamedTemporaryFile
-from reframe.core.deferrable import deferrable, evaluate, make_deferrable
-from reframe.core.environments import save_environment
+
+import reframe.utility.sanity as sn
+from reframe.core.deferrable import evaluate, make_deferrable
 from reframe.core.exceptions import SanityError
 from unittests.fixtures import TEST_RESOURCES
 

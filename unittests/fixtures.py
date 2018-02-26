@@ -3,12 +3,10 @@
 #
 import os
 
-from reframe.core.schedulers.registry import getscheduler
-from reframe.frontend.loader import autodetect_system, SiteConfiguration
 from reframe.core.modules import (get_modules_system,
                                   init_modules_system, NoModImpl)
+from reframe.frontend.loader import autodetect_system, SiteConfiguration
 from reframe.settings import settings
-
 
 TEST_RESOURCES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'resources')

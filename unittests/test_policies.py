@@ -4,7 +4,6 @@ import unittest
 
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-
 from reframe.core.modules import init_modules_system
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager

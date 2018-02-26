@@ -77,5 +77,3 @@ def getlauncher(name):
 
 
 # Import the launchers modules to trigger their registration
-import reframe.core.launchers.local
-import reframe.core.launchers.mpi

@@ -1,4 +1,5 @@
 import unittest
+
 import reframe.core.fields as fields
 
 
@@ -426,8 +427,6 @@ class TestFields(unittest.TestCase):
                           globals(), locals())
 
     def test_settings(self):
-        from reframe.settings import settings
-
         self.assertRaises(AttributeError, exec,
                           "settings.checks_path = ['/foo']",
                           globals(), locals())

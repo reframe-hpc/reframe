@@ -1,7 +1,7 @@
 import os
+
 import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
-
 from reframe.core.pipeline import RegressionTest
 
 

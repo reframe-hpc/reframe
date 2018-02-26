@@ -30,5 +30,3 @@ def getscheduler(name):
 
 
 # Import the schedulers modules to trigger their registration
-import reframe.core.schedulers.local
-import reframe.core.schedulers.slurm
