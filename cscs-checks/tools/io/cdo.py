@@ -32,9 +32,13 @@ class CDOBaseCheck(RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules  = ['CDO']
         self.maintainers = ['SO']
         self.tags = {'production'}
+
+    def setup(self, partition, environ, **job_opts):
+        cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
+        self.modules = [cdo_name]
+        super().setup(partition, environ, **job_opts)
 
 
 # Check that the netCDF loaded by the CDO module supports the nc4 filetype
@@ -75,12 +79,12 @@ class NCOModuleCompatibilityCheck(CDOBaseCheck):
         self.sourcesdir = None
         self.executable = 'echo'
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', self.stdout),
             sn.assert_not_found(r'.+', self.stderr)])
 
     def setup(self, partition, environ, **job_opts):
+        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
+        self.pre_run = ['module load %s' % nco_name]
         super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['module load NCO']
 
 
 class InfoNCCheck(CDOBaseCheck):
@@ -170,11 +174,13 @@ class MergeNC4CCheck(CDOBaseCheck):
         self.descr = ('verifies merging and compressing of 3 compressed '
                       'netCDF-4 files')
         self.executable = 'cdo'
-        self.executable_opts = ['-O', '-z', 'zip', 'merge',
-                                'test_echam_spectral-deflated_wind10.nc4c',
-                                'test_echam_spectral-deflated_wl.nc4c',
-                                'test_echam_spectral-deflated_ws.nc4c',
-                                'test_echam_spectral-deflated_wind10_wl_ws.nc4c']
+        self.executable_opts = [
+            '-O', '-z', 'zip', 'merge',
+            'test_echam_spectral-deflated_wind10.nc4c',
+            'test_echam_spectral-deflated_wl.nc4c',
+            'test_echam_spectral-deflated_ws.nc4c',
+            'test_echam_spectral-deflated_wind10_wl_ws.nc4c'
+        ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
             sn.assert_found(r'cdo merge: Processed 442368 values from 3 '
@@ -190,4 +196,3 @@ def _get_checks(**kwargs):
         MergeNCCheck(**kwargs), MergeNC4Check(**kwargs),
         MergeNC4CCheck(**kwargs)
     ]
-

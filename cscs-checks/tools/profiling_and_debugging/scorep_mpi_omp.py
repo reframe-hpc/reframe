@@ -57,6 +57,12 @@ class ScorepHybrid(RegressionTest):
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
 
+        # additional program call in order to generate the tracing output for
+        # the sanity check
+        self.post_run = [
+            'otf2-print scorep-*/traces.otf2 > %s' % self.otf2_file
+        ]
+
     def compile(self):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
         self.current_environ.cflags   = prgenv_flags
@@ -75,11 +81,6 @@ class ScorepHybrid(RegressionTest):
 
         self.modules = self.scorep_modules[environ.name]
         super().setup(partition, environ, **job_opts)
-        # additional program call in order to generate the tracing output for
-        # the sanity check
-        self.job.post_run = [
-            'otf2-print scorep-*/traces.otf2 > %s' % self.otf2_file
-        ]
 
 
 def _get_checks(**kwargs):
