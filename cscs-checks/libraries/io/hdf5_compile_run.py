@@ -75,9 +75,7 @@ class HDF5Test(RegressionTest):
         self.maintainers = ['SO']
         self.tags = {'production'}
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
+        self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
     def compile(self):
         self.current_environ.cflags = self.flags

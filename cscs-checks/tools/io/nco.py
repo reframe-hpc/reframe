@@ -26,9 +26,13 @@ class NCOBaseCheck(RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules  = ['NCO']
         self.maintainers = ['SO']
         self.tags = {'production'}
+
+    def setup(self, partition, environ, **job_opts):
+        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
+        self.modules = [nco_name]
+        super().setup(partition, environ, **job_opts)
 
 
 # Check that the netCDF loaded by the NCO module supports the nc4 filetype
@@ -38,7 +42,7 @@ class DependencyCheck(NCOBaseCheck):
     def __init__(self, **kwargs):
         super().__init__('dependency', **kwargs)
         self.descr = ('verifies that the netCDF loaded by the NCO module '
-                     'supports the nc4 filetype')
+                      'supports the nc4 filetype')
         self.sourcesdir = None
         self.executable = 'nc-config'
         self.executable_opts = ['--has-nc4']
@@ -71,13 +75,13 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
         self.sourcesdir = None
         self.executable = 'echo'
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', self.stdout),
             sn.assert_not_found(r'.+', self.stderr)
         ])
 
     def setup(self, partition, environ, **job_opts):
+        cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
+        self.pre_run = ['module load %s' % cdo_name]
         super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['module load CDO']
 
 
 class InfoNCCheck(NCOBaseCheck):
@@ -155,8 +159,8 @@ class MergeNC4Check(NCOBaseCheck):
         # verify the resulting file. Verifying would not be straight forward
         # as the following does not work (it seems that there is a timestamp
         # of file creation inserted in the metadata or similar):
-        #diff test_echam_spectral - deflated_wl.nc4 \
-        #     test_echam_spectral - deflated_wind10_wl.nc4
+        # diff test_echam_spectral - deflated_wl.nc4 \
+        #      test_echam_spectral - deflated_wind10_wl.nc4
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
             sn.assert_not_found(r'(?i)unsupported|error', self.stdout)
