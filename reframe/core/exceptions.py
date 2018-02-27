@@ -6,8 +6,6 @@ import inspect
 import traceback
 import warnings
 
-import reframe.core.debug as debug
-
 
 class ReframeError(Exception):
     """Base exception for soft errors.

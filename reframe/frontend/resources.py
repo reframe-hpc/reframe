@@ -4,9 +4,9 @@
 
 import os
 import shutil
-import reframe.core.debug as debug
-
 from datetime import datetime
+
+import reframe.core.debug as debug
 
 
 class ResourcesManager:

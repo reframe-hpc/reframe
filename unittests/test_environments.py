@@ -4,9 +4,8 @@ import unittest
 import reframe.core.environments as renv
 import reframe.utility.os as os_ext
 import unittests.fixtures as fixtures
-
-from reframe.core.modules import get_modules_system
 from reframe.core.exceptions import CompilationError, EnvironError
+from reframe.core.modules import get_modules_system
 
 
 class TestEnvironment(unittest.TestCase):

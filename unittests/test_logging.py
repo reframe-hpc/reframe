@@ -1,16 +1,13 @@
-import os
 import logging
 import logging.handlers
+import os
+import sys
 import tempfile
 import unittest
-import sys
-import reframe.core.logging as rlog
-
-from contextlib import contextmanager
 from datetime import datetime
-from io import StringIO
-from unittest.mock import patch
-from reframe.core.exceptions import ReframeError, ConfigError
+
+import reframe.core.logging as rlog
+from reframe.core.exceptions import ReframeError
 from reframe.core.pipeline import RegressionTest
 from reframe.core.systems import System
 from reframe.frontend.resources import ResourcesManager
