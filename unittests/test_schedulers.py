@@ -481,6 +481,55 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob.prepare(self.builder)
 
 
+class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
+
+    def setUp(self):
+        super().setUp()
+        self.testjob._sched_exclude_nodelist = 'nid00001'
+
+    def test_valid_constraint(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_multiple_constraints(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1 f3']
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob._sched_partition = 'p2'
+        self.prepare_job()
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_multiple_partitions(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-p p1 p2']
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_valid_constraint_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_not_valid_partition(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob._sched_partition = 'Invalid'
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_not_valid_constraint(self):
+        self.testjob._sched_reservation = 'Foo'
+        self.testjob.options = ['--constraint=invalid']
+        self.assertRaises(JobError, self.prepare_job)
+
+    def test_noreservation(self):
+        self.testjob._num_tasks = 0
+        self.assertRaises(JobError, self.prepare_job)
+
+
 class TestSqueueJob(TestSlurmJob):
     @property
     def job_type(self):

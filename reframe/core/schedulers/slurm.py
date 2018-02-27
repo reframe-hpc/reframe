@@ -157,6 +157,8 @@ class SlurmJob(sched.Job):
         constraints = set()
         partitions = (set(self.sched_partition.split())
                       if self.sched_partition else set())
+        excluded_nodes = (set(self.sched_exclude_nodelist.split())
+                          if self.sched_exclude_nodelist else set())
 
         if self.options:
             for optstr in self.options:
@@ -173,8 +175,10 @@ class SlurmJob(sched.Job):
 
         num_nodes = 0
         for n in nodes:
-            if n.active_features >= constraints and n.partitions >= partitions:
-                num_nodes += 1
+            if (n.active_features >= constraints and
+                n.partitions >= partitions and
+                n.name not in excluded_nodes):
+                    num_nodes += 1
 
         return num_nodes
 
