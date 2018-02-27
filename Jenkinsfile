@@ -100,7 +100,7 @@ stage('Unittest') {
                                   git checkout -f ${env.ghprbActualCommit}"""
 
                 dir(reframeDir) {
-                    if (machineName != leone) {
+                    if (machineName != 'leone') {
                         checkout scm
                     }
                     sh("""${loginBash}
