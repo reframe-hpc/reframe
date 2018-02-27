@@ -32,10 +32,7 @@ class OpenfoamExtendBaseTest(RunOnlyRegressionTest):
         self.maintainers = ['MaKra']
         self.tags = {'scs', 'production'}
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.pre_run = [
-            'source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
+        self.pre_run = ['source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
 
 
 class BlockMesh(OpenfoamExtendBaseTest):
