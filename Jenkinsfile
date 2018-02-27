@@ -84,7 +84,7 @@ stage('Unittest') {
                 def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
                 def moduleDefinition = ''
                 def gitClone = ''
-                if (machineName == 'leone')
+                if (machineName == 'leone') {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
                     gitClone = """module use /apps/common/UES/RHAT6/easybuild/modules/all/
@@ -98,7 +98,7 @@ stage('Unittest') {
                                   git rev-parse ${env.ghprbActualCommit}^{commit}
                                   git config core.sparsecheckout
                                   git checkout -f ${env.ghprbActualCommit}"""
-
+                }
                 dir(reframeDir) {
                     if (machineName != 'leone') {
                         checkout scm
