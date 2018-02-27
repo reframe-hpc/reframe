@@ -9,8 +9,7 @@ from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
-# Pycharm detects the import of ProgEnvironment wrongly as unneeded.
-from reframe.core.environments import Environment, ProgEnvironment
+from reframe.core.environments import Environment
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.launchers.registry import getlauncher
@@ -216,7 +215,9 @@ class SiteConfiguration:
                 raise TypeError("config for `%s' is not a dictionary" % name)
 
             try:
-                envtype = globals()[config['type']]
+                import reframe.core.environments as m_env
+
+                envtype = m_env.__dict__[config['type']]
                 return envtype(name, **config)
             except KeyError:
                 raise ConfigError("no type specified for environment `%s'" %
