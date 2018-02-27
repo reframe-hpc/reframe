@@ -427,6 +427,9 @@ class TestFields(unittest.TestCase):
                           globals(), locals())
 
     def test_settings(self):
+        # This import is required even if Pycharm detects it as unneeded.
+        from reframe.settings import settings
+
         self.assertRaises(AttributeError, exec,
                           "settings.checks_path = ['/foo']",
                           globals(), locals())

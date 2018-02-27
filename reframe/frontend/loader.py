@@ -2,6 +2,7 @@
 # Regression test loader
 #
 
+# Pycharm detects some of the following imports wrongly as unneeded.
 import ast
 import collections.abc
 import os
