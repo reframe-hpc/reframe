@@ -6,7 +6,7 @@ from reframe.core.pipeline import RegressionTest
 
 class RRTMGPTest(RegressionTest):
     def __init__(self, **kwargs):
-        super().__init__('rrtmgp_check_new',
+        super().__init__('rrtmgp_check',
                          os.path.dirname(__file__), **kwargs)
         self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
@@ -28,7 +28,6 @@ class RRTMGPTest(RegressionTest):
             'NCOL': '500',
             'INIFILE': 'openacc-solvers-lw'
         }
-
         values = sn.extractall(r'.*\[\S+, (\S+)\]', self.stdout, 1, float)
         self.sanity_patterns = sn.all(
             sn.chain(
