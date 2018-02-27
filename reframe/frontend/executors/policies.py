@@ -54,6 +54,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
             task.cleanup(not self.keep_stage_files, False)
 
+        except TaskExit:
+            return
         except ABORT_REASONS:
             task.fail(sys.exc_info())
             raise
