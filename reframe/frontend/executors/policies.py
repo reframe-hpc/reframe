@@ -65,6 +65,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
 
 class PollRateFunction:
+    _min_a = 0.01
+
     def __init__(self, min_rate, decay_time):
         self._min_rate = min_rate
         self._decay = decay_time
@@ -79,6 +81,8 @@ class PollRateFunction:
         self._init_rate = init_rate
         self._b = self._min_rate
         self._a = init_rate - self._b
+        if self._a < self._min_a:
+            self._a = self._min_a
         self._c = math.log(self._a / (self._thres*self._b)) / self._decay
         getlogger().debug('rate equation: %.3f*exp(-%.3f*x)+%.3f' %
                           (self._a, self._c, self._b))
