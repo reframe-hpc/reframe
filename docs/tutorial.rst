@@ -97,8 +97,8 @@ Here is the full code for this test:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -306,8 +306,8 @@ The full code of this test follows:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -453,8 +453,8 @@ The regression test file follows:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -549,8 +549,8 @@ Let's start with the OpenACC regression test:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -603,8 +603,8 @@ The regression test for the CUDA code is slightly simpler:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -642,8 +642,8 @@ In this example, we expand the regression test of the serial code, so as to chec
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -744,8 +744,8 @@ In this example, we extend the CUDA test presented `previously <tutorial.html#te
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 
@@ -838,8 +838,8 @@ Here is the final example code that combines all the tests discussed before:
 .. code-block:: python
 
   import os
-  import reframe.utility.sanity as sn
 
+  import reframe.utility.sanity as sn
   from reframe.core.pipeline import RegressionTest
 
 

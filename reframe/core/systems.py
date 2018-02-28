@@ -1,7 +1,5 @@
-import copy
 import reframe.core.debug as debug
 import reframe.core.fields as fields
-import reframe.utility.os as os_ext
 
 from reframe.core.environments import Environment
 

@@ -9,7 +9,6 @@ import shutil
 import signal
 import subprocess
 import tempfile
-
 from urllib.parse import urlparse
 
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,

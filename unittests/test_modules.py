@@ -1,11 +1,10 @@
-import abc
 import os
 import unittest
-import reframe.core.modules as modules
 
+import reframe.core.modules as modules
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
-from unittests.fixtures import TEST_MODULES, has_sane_modules_system
+from unittests.fixtures import TEST_MODULES
 
 
 class _TestModulesSystem(unittest.TestCase):

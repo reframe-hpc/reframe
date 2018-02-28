@@ -2,7 +2,6 @@
 # Shell script generators
 #
 
-import string
 import reframe.core.debug as debug
 
 

@@ -3,10 +3,10 @@
 #
 
 import os
-import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RunOnlyRegressionTest
+import reframe.utility.sanity as sn
 from reframe.core.exceptions import ReframeError, SanityError
+from reframe.core.pipeline import RunOnlyRegressionTest
 
 
 class BaseFrontendCheck(RunOnlyRegressionTest):

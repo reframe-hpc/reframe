@@ -5,13 +5,9 @@
 import abc
 
 import reframe.core.debug as debug
-import reframe.utility.os as os_ext
 import reframe.core.fields as fields
-
-from reframe.core.exceptions import ConfigError, JobNotStartedError
+from reframe.core.exceptions import JobNotStartedError
 from reframe.core.launchers import JobLauncher
-from reframe.core.logging import getlogger
-from reframe.core.shell import BashScriptBuilder
 
 
 class JobState:

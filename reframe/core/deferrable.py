@@ -3,8 +3,6 @@
 import builtins
 import functools
 
-import reframe.core.debug as debug
-
 
 def deferrable(func):
     """Function decorator for converting a function to a deferred expression."""

@@ -18,8 +18,8 @@
 #   Unsupported file structure"
 
 import os
-import reframe.utility.sanity as sn
 
+import reframe.utility.sanity as sn
 from reframe.core.pipeline import RunOnlyRegressionTest
 
 

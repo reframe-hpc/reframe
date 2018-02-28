@@ -1,7 +1,7 @@
 import os
 
-from reframe.core.pipeline import RunOnlyRegressionTest
 from reframe.core.modules import get_modules_system
+from reframe.core.pipeline import RunOnlyRegressionTest
 
 
 class DefaultPrgEnvCheck(RunOnlyRegressionTest):

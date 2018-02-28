@@ -4,15 +4,12 @@ import logging
 import logging.handlers
 import numbers
 import os
-import sys
 import shutil
+import sys
+from datetime import datetime
 
 import reframe
 import reframe.core.debug as debug
-
-from datetime import datetime
-
-from reframe.settings import settings
 
 # Reframe's log levels
 CRITICAL = 50

@@ -1,8 +1,8 @@
 import os
-import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
+import reframe.utility.sanity as sn
 from reframe.core.launchers import LauncherWrapper
+from reframe.core.pipeline import RegressionTest
 
 
 class DdtCheck(RegressionTest):

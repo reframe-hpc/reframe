@@ -62,7 +62,6 @@ import builtins
 import glob as pyglob
 import itertools
 import re
-import types
 
 from reframe.core.deferrable import deferrable, evaluate
 from reframe.core.exceptions import SanityError

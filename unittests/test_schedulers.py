@@ -5,9 +5,9 @@ import shutil
 import tempfile
 import time
 import unittest
-import reframe.utility.os as os_ext
-
 from datetime import datetime
+
+import reframe.utility.os as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
@@ -15,8 +15,6 @@ from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.schedulers.slurm import SlurmNode
 from reframe.core.shell import BashScriptBuilder
-from reframe.settings import settings
-
 from unittests.fixtures import TEST_RESOURCES, partition_with_scheduler
 
 
@@ -239,8 +237,6 @@ class TestLocalJob(_TestJob):
 
 
 class TestSlurmJob(_TestJob):
-    import reframe.core.schedulers.slurm as slurm
-
     @property
     def job_type(self):
         return getscheduler('slurm')
@@ -354,8 +350,6 @@ class TestSlurmJob(_TestJob):
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
-    import reframe.core.schedulers.slurm as slurm
-
     def create_dummy_nodes(obj):
         node_descriptions = ['NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
                              'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
