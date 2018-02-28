@@ -2,27 +2,21 @@
 # Basic functionality for regression tests
 #
 
-import copy
-import glob
 import os
-import re
 import shutil
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
-import reframe.settings as settings
 import reframe.utility.os as os_ext
-
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
-from reframe.core.exceptions import PipelineError, SanityError, ReframeError
+from reframe.core.exceptions import PipelineError, SanityError
+from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.launchers.registry import getlauncher
 from reframe.core.shell import BashScriptBuilder
 from reframe.core.systems import System, SystemPartition
-from reframe.frontend.resources import ResourcesManager
 from reframe.utility.sanity import assert_reference
 
 

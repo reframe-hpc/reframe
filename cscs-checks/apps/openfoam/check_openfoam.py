@@ -1,7 +1,6 @@
 import os
-import itertools
-import reframe.utility.sanity as sn
 
+import reframe.utility.sanity as sn
 from reframe.core.pipeline import RunOnlyRegressionTest
 
 
@@ -27,9 +26,7 @@ class OpenFOAMBaseTest(RunOnlyRegressionTest):
         self.maintainers = ['MaKra']
         self.tags = {'scs', 'production'}
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.pre_run = ['source $FOAM_BASH']
+        self.pre_run = ['source $FOAM_BASH']
 
 
 class BlockMesh(OpenFOAMBaseTest):

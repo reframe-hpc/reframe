@@ -3,16 +3,10 @@ import sys
 
 import reframe.core.debug as debug
 import reframe.core.logging as logging
-
 from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.exceptions import (
-    AbortTaskError, JobNotStartedError, ReframeFatalError,
-    ReframeError, SanityError, TaskExit
-)
-from reframe.core.fields import StringField, TypedField
-from reframe.core.pipeline import RegressionTest
+from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
+                                     ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
 
 ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)

@@ -6,10 +6,8 @@ import collections.abc
 import copy
 import numbers
 import re
-
-import reframe.core.debug as debug
-
 from collections import UserDict
+
 from reframe.core.exceptions import user_deprecation_warning
 
 

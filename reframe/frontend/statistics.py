@@ -1,7 +1,4 @@
-import traceback
 import reframe.core.debug as debug
-
-from reframe.core.exceptions import ReframeError, SanityError
 
 
 class TestStats:

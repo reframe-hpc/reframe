@@ -2,9 +2,6 @@
 # Sanity checks and modules environment setup
 #
 
-import os
-import re
-import subprocess
 import sys
 
 

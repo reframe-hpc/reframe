@@ -1,16 +1,14 @@
-import itertools
 import math
-import time
+import math
 import sys
-import reframe.core.debug as debug
-
+import time
 from datetime import datetime
-from reframe.core.exceptions import ReframeFatalError, TaskExit
+
+from reframe.core.exceptions import TaskExit
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 from reframe.frontend.statistics import TestStats
-from reframe.settings import settings
 
 
 class SerialExecutionPolicy(ExecutionPolicy):
@@ -54,6 +52,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
             task.cleanup(not self.keep_stage_files, False)
 
+        except TaskExit:
+            return
         except ABORT_REASONS:
             task.fail(sys.exc_info())
             raise
@@ -92,7 +92,6 @@ class PollRateFunction:
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
-        import collections
 
         super().__init__()
 

@@ -1,6 +1,6 @@
 import abc
 
-from reframe.core.fields import StringField, TypedListField
+from reframe.core.fields import TypedListField
 
 
 class JobLauncher(abc.ABC):

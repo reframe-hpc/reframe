@@ -3,12 +3,11 @@ import signal
 import stat
 import subprocess
 import time
+from datetime import datetime
 
 import reframe.core.schedulers as sched
 import reframe.utility.os as os_ext
-
-from datetime import datetime
-from reframe.core.exceptions import JobError, ReframeError
+from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
