@@ -307,9 +307,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         checks = [
             KeyboardInterruptCheck(system=self.system,
                                    resources=self.resources),
-            SleepCheck(2, system=self.system, resources=self.resources),
-            SleepCheck(2, system=self.system, resources=self.resources),
-            SleepCheck(2, system=self.system, resources=self.resources)
+            SleepCheck(10, system=self.system, resources=self.resources),
+            SleepCheck(10, system=self.system, resources=self.resources),
+            SleepCheck(10, system=self.system, resources=self.resources)
         ]
         self._run_checks(checks, 2)
 
