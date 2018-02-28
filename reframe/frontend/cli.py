@@ -7,7 +7,7 @@ import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
 
-from reframe.core.exceptions import (EnvironError, ReframeError,
+from reframe.core.exceptions import (EnvironError, ReframeError, ConfigError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
 from reframe.core.logging import getlogger
@@ -85,7 +85,10 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '--modules-mapping', action='store', dest='module_map',
+        '--modules-mapping', action='store', dest='module_map_file',
+        help='Map a module name to a different one')
+    select_options.add_argument(
+        '--try-module', action='append', dest='module_map_cl', default=[],
         help='Map a module name to a different one')
     select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', default=[],
@@ -235,8 +238,16 @@ def main():
     # Init modules system
     init_modules_system(system.modules_system)
 
-    if options.module_map:
-        get_modules_system().load_mapping_from_file(options.module_map)
+    if options.module_map_file:
+        get_modules_system().load_mapping_from_file(options.module_map_file)
+
+    if options.module_map_cl:
+        for m in options.module_map_cl:
+            try:
+                get_modules_system().load_mapping(m)
+            except Exception as e:
+                raise ConfigError('Invalid format of the command-line'
+                                  'module mapping: %s\n %s' % (m, e))
 
     if options.mode:
         try:

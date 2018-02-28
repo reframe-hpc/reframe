@@ -208,19 +208,22 @@ class ModulesSystem:
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
 
+    def load_mapping(self, mapping):
+        key, values = mapping.strip().strip(':').split(':')
+        self.module_map[key.strip()] = list(
+            OrderedDict.fromkeys(values.split()))
+
     def load_mapping_from_file(self, filename):
         """Update the internal module mapping from a file."""
 
         with open(filename, 'r') as fp:
             for lineno, line in enumerate(fp):
-                line = line.strip().split('#')[0].strip()
+                line = line.strip().split('#')[0]
                 if not line:
                     continue
 
                 try:
-                    key, values = line.strip(':').split(':')
-                    self.module_map[key.strip()] = list(
-                        OrderedDict.fromkeys(values.split()))
+                    self.load_mapping(line)
                 except Exception as e:
                     raise ConfigError('Line %d of "%s": '
                                       'Invalid format of the module mapping'
