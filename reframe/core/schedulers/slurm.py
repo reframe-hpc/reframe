@@ -184,15 +184,15 @@ class SlurmJob(sched.Job):
     def _get_reservation_nodes(self):
         command = 'scontrol show res %s' % self.sched_reservation
         completed = os_ext.run_command(command, check=True)
-        node_match = reservation_nodes = re.search('(Nodes=\S+)',
-                                                   completed.stdout)
+        node_match = re.search('(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
             raise JobError("could not extract the nodes names for "
                            "reservation '%s'" % self.sched_reservation)
+
         completed = os_ext.run_command(
-            'scontrol show -o -a %s' % reservation_nodes, check=True)
+            'scontrol show -o %s' % reservation_nodes, check=True)
         node_descriptions = completed.stdout.splitlines()
         return (SlurmNode(descr) for descr in node_descriptions)
 
@@ -200,7 +200,7 @@ class SlurmJob(sched.Job):
         if not self.sched_exclude_nodelist:
             return set()
 
-        command = 'scontrol show -o -a %s' % self.sched_exclude_nodelist
+        command = 'scontrol show -o node %s' % self.sched_exclude_nodelist
         try:
             completed = os_ext.run_command(command, check=True)
         except SpawnedProcessError as e:
