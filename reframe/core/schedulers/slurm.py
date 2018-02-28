@@ -157,8 +157,7 @@ class SlurmJob(sched.Job):
         constraints = set()
         partitions = (set(self.sched_partition.split())
                       if self.sched_partition else set())
-        excluded_node_names = ({n.name for n in self._get_excluded_nodes()}
-                               if self.sched_exclude_nodelist else set())
+        excluded_node_names = self._get_excluded_nodes()
 
         if self.options:
             for optstr in self.options:
@@ -198,15 +197,18 @@ class SlurmJob(sched.Job):
         return (SlurmNode(descr) for descr in node_descriptions)
 
     def _get_excluded_nodes(self):
-        command = 'scontrol show -o -a %s' % self.sched_exclude_nodelist
-        completed = os_ext.run_command(command, check=True)
+        if not self.sched_exclude_nodelist:
+            return set()
 
-        node_descriptions_output = completed.stdout()
-        if node_descriptions == '':
-            raise JobError("could not extract the node description for "
-                           "excluded nodes '%s'" % self.sched_exclude_nodelist)
-        else:
-            return (SlurmNode(descr) for descr in node_descriptions)
+        command = 'scontrol show -o -a %s' % self.sched_exclude_nodelist
+        try:
+            completed = os_ext.run_command(command, check=True)
+        except SpawnedProcessError as e:
+            raise JobError('could not retrieve the node description '
+                           'of nodes: %s' % self.sched_exclude_nodelist) from e
+        node_descriptions_output = completed.stdout
+        slurm_nodes = (SlurmNode(descr) for descr in node_descriptions)
+        return {n.name for n in slurm_nodes}
 
     def _update_state(self):
         """Check the status of the job."""
@@ -383,6 +385,4 @@ class SlurmNode:
                            "node description" % attr_name)
 
     def __str__(self):
-        return ('Slurm node {{name: {0}, partitions: {1}, '
-                'active features: {2}}}').format(
-            self._name, self._partitions, self._active_features)
+        return self._name
