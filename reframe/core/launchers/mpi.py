@@ -1,5 +1,3 @@
-import math
-
 from reframe.core.launchers import JobLauncher
 from reframe.core.launchers.registry import register_launcher
 

@@ -1,16 +1,12 @@
 import os
 import shutil
-import stat
 import tempfile
 import unittest
 
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
-
-from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
+from reframe.core.exceptions import (SpawnedProcessError,
                                      SpawnedProcessTimeout)
-from unittests.fixtures import TEST_MODULES
 
 
 class TestOSTools(unittest.TestCase):

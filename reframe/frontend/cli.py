@@ -1,16 +1,14 @@
 import os
 import socket
 import sys
-import traceback
 
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
-from reframe.core.logging import getlogger
+from reframe.core.modules import init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -18,7 +16,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.loader import (RegressionCheckLoader,
                                      SiteConfiguration,
                                      autodetect_system)
-from reframe.core.modules import init_modules_system
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings

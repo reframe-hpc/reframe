@@ -1,11 +1,10 @@
 import itertools
 import re
 import time
+from datetime import datetime
 
 import reframe.core.schedulers as sched
 import reframe.utility.os as os_ext
-
-from datetime import datetime
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger

@@ -2,9 +2,6 @@
 # Regression settings
 #
 
-import os
-from datetime import datetime
-
 
 class ReframeSettings:
     _reframe_module = 'reframe'

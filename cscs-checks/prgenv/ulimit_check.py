@@ -1,6 +1,7 @@
 import os
-from reframe.core.pipeline import RegressionTest
+
 import reframe.utility.sanity as sn
+from reframe.core.pipeline import RegressionTest
 
 
 class UlimitCheck(RegressionTest):
