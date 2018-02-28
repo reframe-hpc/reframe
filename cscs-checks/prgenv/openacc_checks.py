@@ -1,7 +1,8 @@
 import os
 
-from reframe.core.pipeline import RegressionTest
 import reframe.utility.sanity as sn
+from reframe.core.pipeline import RegressionTest
+
 
 class OpenACCFortranCheck(RegressionTest):
     def __init__(self, **kwargs):

@@ -2,6 +2,7 @@ import argparse
 
 from reframe.core.fields import ForwardField
 
+
 #
 # Notes on the ArgumentParser design
 #

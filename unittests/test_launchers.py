@@ -2,10 +2,8 @@ import abc
 import unittest
 
 import reframe.core.launchers as launchers
-
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.local import LocalJob
 from reframe.core.shell import BashScriptBuilder
 
 

@@ -2,20 +2,15 @@ import itertools
 import os
 import re
 import shutil
-import stat
 import sys
-import unittest
 import tempfile
-
-import reframe.utility.os as os_ext
-import reframe.core.logging as logging
-import unittests.fixtures as fixtures
-
+import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
+
+import unittests.fixtures as fixtures
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.modules import init_modules_system
-from reframe.frontend.loader import SiteConfiguration, autodetect_system
 from reframe.settings import settings
 
 

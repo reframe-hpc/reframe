@@ -1,7 +1,7 @@
 import os
+
 import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
-
 from reframe.core.pipeline import RegressionTest
 
 
@@ -71,6 +71,8 @@ class JacobiNoToolHybrid(RegressionTest):
         self.maintainers = ['VH', 'JG']
         self.tags = {'production'}
 
+        self.post_run = ['module list -t']
+
     def compile(self):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
         self.current_environ.cflags = prgenv_flags
@@ -92,7 +94,6 @@ class JacobiNoToolHybrid(RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
         ])
 
-        self.job.post_run = ['module list -t']
         self.reference['*:elapsed_time'] = self.reference_prgenv[self.current_environ.name]
 
 
