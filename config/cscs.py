@@ -109,7 +109,8 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
+                                     'PrgEnv-pgi'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
@@ -122,7 +123,8 @@ class ReframeSettings:
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
+                                     'PrgEnv-pgi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -197,6 +199,13 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['/apps/common/regression/prgenv_pgi_17.10_aj'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
