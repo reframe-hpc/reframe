@@ -617,3 +617,34 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
 For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.
+
+
+
+Mapping modules
+--------------------
+
+When invoking ReFrame, user-defined mappings of modules can be passed in order to replace the modules specified in a regression test without the need of modifying the files. This feature enables regression tests to be module-agnostic, which can be very practical in frequent use cases like, for instance, when performing regression tests considering different versions of a module.
+
+There are two ways to pass module mappings to ReFrame. One is as a string that is passed through the command-line option ``--try-module``. For example, the following line defines a mapping of the module ``module-1``, specified in a test file, to the module ``module-1a``  
+  
+.. code-block:: none
+
+  --try-module 'module-1: module-1a'
+
+Here, ReFrame will load ``module-1a`` instead of ``module-1``. The option ``--try-module`` can be repeated to define mappings for different modules at once. If more than one mapping is passed for a same module, the last mapping will override the precedents. It is also possible to map a single module to more than one target. This is done by listing the target modules separated by spaces in the order that they must be loaded, for instance
+
+.. code-block:: none
+
+  --try-module 'module-1: module-1a module-1b module-1c'
+
+The other way of passing mappings, is by listing them on a file, which is passed through the command-line option ``--module-mapping``. Each line on the file corresponds to the definition of a mapping for a single module. The format of the mappings on the file is the same as with the option ``--try-module`` and the same rules apply regarding repeated definitions. Text starting with character ``#`` is considered as a comment and empty lines are ignored. The following block shows an example of module mapping file
+
+.. code-block:: none
+
+  module-1: module-1a
+  module-2: module-2a module-2b module-2c
+  # module-3: module-3a module-3b
+
+  module-4: module-4a module-4b # module-4c 
+
+If both ``--try-module`` and ``--module-mapping`` are passed, ReFrame will first create a mapping from the definitions on the file. Then the mapping is updated with the definitions passed from the command-line strings. If a module is mapped both in file and in command-line string, then the last one will override the former. ReFrame also handles the possible remapping of target modules.
