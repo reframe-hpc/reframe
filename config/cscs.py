@@ -35,10 +35,9 @@ class ReframeSettings:
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
-                        # Uncomment as soon as --switches is fixed on Daint
-                        # 'resources': {
-                        #     'switches': ['--switches={num_switches}']
-                        # }
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
                     },
 
                     'mc': {
@@ -49,10 +48,9 @@ class ReframeSettings:
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
-                        # Uncomment as soon as --switches is fixed on Daint
-                        # 'resources': {
-                        #     'switches': ['--switches={num_switches}']
-                        # }
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
                     }
                 }
             },
