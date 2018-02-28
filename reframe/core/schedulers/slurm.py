@@ -157,8 +157,8 @@ class SlurmJob(sched.Job):
         constraints = set()
         partitions = (set(self.sched_partition.split())
                       if self.sched_partition else set())
-        excluded_nodes = (set(self.sched_exclude_nodelist.split())
-                          if self.sched_exclude_nodelist else set())
+        excluded_node_names = ({n.name for n in self._get_excluded_nodes()}
+                               if self.sched_exclude_nodelist else set())
 
         if self.options:
             for optstr in self.options:
@@ -177,7 +177,7 @@ class SlurmJob(sched.Job):
         for n in nodes:
             if (n.active_features >= constraints and
                 n.partitions >= partitions and
-                n.name not in excluded_nodes):
+                n.name not in excluded_node_names):
                     num_nodes += 1
 
         return num_nodes
@@ -196,6 +196,17 @@ class SlurmJob(sched.Job):
             'scontrol show -o -a %s' % reservation_nodes, check=True)
         node_descriptions = completed.stdout.splitlines()
         return (SlurmNode(descr) for descr in node_descriptions)
+
+    def _get_excluded_nodes(self):
+        command = 'scontrol show -o -a %s' % self.sched_exclude_nodelist
+        completed = os_ext.run_command(command, check=True)
+
+        node_descriptions_output = completed.stdout()
+        if node_descriptions == '':
+            raise JobError("could not extract the node description for "
+                           "excluded nodes '%s'" % self.sched_exclude_nodelist)
+        else:
+            return (SlurmNode(descr) for descr in node_descriptions)
 
     def _update_state(self):
         """Check the status of the job."""
@@ -370,3 +381,8 @@ class SlurmNode:
         else:
             raise JobError("could not extract attribute '%s' from "
                            "node description" % attr_name)
+
+    def __str__(self):
+        return ('Slurm node {{name: {0}, partitions: {1}, '
+                'active features: {2}}}').format(
+            self._name, self._partitions, self._active_features)

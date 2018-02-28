@@ -488,9 +488,15 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
 
 class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
 
+    def create_dummy_exclude_nodes(obj):
+        return [obj.create_dummy_nodes()[0]]
+
     def setUp(self):
         super().setUp()
-        self.testjob._sched_exclude_nodelist = 'nid00001'
+        self.testjob._sched_exclude_nodelist = 'Nodes=[nid00001]'
+        # monkey patch `_get_exclude_nodes` to simulate extraction of
+        # slurm nodes through the use of `scontrol show`
+        self.testjob._get_excluded_nodes = self.create_dummy_exclude_nodes
 
     def test_valid_constraint(self):
         super().test_valid_constraint(expected_num_tasks=4)
@@ -542,3 +548,14 @@ class TestSlurmNode(unittest.TestCase):
                          {'p1', 'p2'})
         self.assertEqual(self.node.active_features,
                          {'f1', 'f2'})
+
+    def test_str(self):
+        base_slurm_string = ('Slurm node {{name: nid00001, '
+                             'partitions: {0}, '
+                             'active features: {1}}}')
+        possible_partitions_str = ({'p1', 'p2'}, {'p2', 'p1'})
+        possible_features_str = ({'f1', 'f2'}, {'f2', 'f1'})
+        self.assertIn(str(self.node),
+                      {base_slurm_string.format(p, f)
+                       for p in possible_partitions_str
+                       for f in possible_features_str})
