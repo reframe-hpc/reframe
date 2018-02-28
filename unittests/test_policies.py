@@ -299,12 +299,17 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self._run_checks(checks, 4)
 
     def test_kbd_interrupt_in_wait_with_limited_concurrency(self):
+        # The general idea for this test is to allow enough time for all the
+        # four checks to be submitted and at the same time we need the
+        # KeyboardInterruptCheck to finish first (the corresponding wait should
+        # trigger the failure), so as to make the framework kill the remaining
+        # three.
         checks = [
             KeyboardInterruptCheck(system=self.system,
                                    resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources)
+            SleepCheck(2, system=self.system, resources=self.resources),
+            SleepCheck(2, system=self.system, resources=self.resources),
+            SleepCheck(2, system=self.system, resources=self.resources)
         ]
         self._run_checks(checks, 2)
 
