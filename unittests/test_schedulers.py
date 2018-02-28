@@ -496,7 +496,7 @@ class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
         self.testjob._sched_exclude_nodelist = 'Nodes=[nid00001]'
         # monkey patch `_get_exclude_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob._get_excluded_nodes = self.create_dummy_exclude_nodes
+        self.testjob._get_excluded_node_names = self.create_dummy_exclude_nodes
 
     def test_valid_constraint(self):
         super().test_valid_constraint(expected_num_tasks=4)

@@ -157,7 +157,7 @@ class SlurmJob(sched.Job):
         constraints = set()
         partitions = (set(self.sched_partition.split())
                       if self.sched_partition else set())
-        excluded_node_names = self._get_excluded_nodes()
+        excluded_node_names = self._get_excluded_node_names()
 
         if self.options:
             for optstr in self.options:
@@ -196,7 +196,7 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return (SlurmNode(descr) for descr in node_descriptions)
 
-    def _get_excluded_nodes(self):
+    def _get_excluded_node_names(self):
         if not self.sched_exclude_nodelist:
             return set()
 
@@ -206,7 +206,8 @@ class SlurmJob(sched.Job):
         except SpawnedProcessError as e:
             raise JobError('could not retrieve the node description '
                            'of nodes: %s' % self.sched_exclude_nodelist) from e
-        node_descriptions_output = completed.stdout
+
+        node_descriptions = completed.stdout.splitlines()
         slurm_nodes = (SlurmNode(descr) for descr in node_descriptions)
         return {n.name for n in slurm_nodes}
 
