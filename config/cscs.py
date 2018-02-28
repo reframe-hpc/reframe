@@ -107,20 +107,20 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-gdr'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-gdr'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-gdr'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -197,6 +197,13 @@ class ReframeSettings:
                     'modules': ['PrgEnv-gnu'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gdr': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpic++',
                     'ftn': 'mpif90',
                 },
             },
