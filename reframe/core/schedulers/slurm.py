@@ -156,6 +156,7 @@ class SlurmJob(sched.Job):
         constraints = set()
         partitions = (set(self.sched_partition.split())
                       if self.sched_partition else set())
+        excluded_node_names = self._get_excluded_node_names()
 
         if self.options:
             for optstr in self.options:
@@ -172,25 +173,42 @@ class SlurmJob(sched.Job):
 
         num_nodes = 0
         for n in nodes:
-            if n.active_features >= constraints and n.partitions >= partitions:
-                num_nodes += 1
+            if (n.active_features >= constraints and
+                n.partitions >= partitions and
+                n.name not in excluded_node_names):
+                    num_nodes += 1
 
         return num_nodes
 
     def _get_reservation_nodes(self):
         command = 'scontrol show res %s' % self.sched_reservation
         completed = os_ext.run_command(command, check=True)
-        node_match = reservation_nodes = re.search('(Nodes=\S+)',
-                                                   completed.stdout)
+        node_match = re.search('(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
             raise JobError("could not extract the nodes names for "
                            "reservation '%s'" % self.sched_reservation)
+
         completed = os_ext.run_command(
-            'scontrol show -o -a %s' % reservation_nodes, check=True)
+            'scontrol show -o %s' % reservation_nodes, check=True)
         node_descriptions = completed.stdout.splitlines()
         return (SlurmNode(descr) for descr in node_descriptions)
+
+    def _get_excluded_node_names(self):
+        if not self.sched_exclude_nodelist:
+            return set()
+
+        command = 'scontrol show -o node %s' % self.sched_exclude_nodelist
+        try:
+            completed = os_ext.run_command(command, check=True)
+        except SpawnedProcessError as e:
+            raise JobError('could not retrieve the node description '
+                           'of nodes: %s' % self.sched_exclude_nodelist) from e
+
+        node_descriptions = completed.stdout.splitlines()
+        slurm_nodes = (SlurmNode(descr) for descr in node_descriptions)
+        return {n.name for n in slurm_nodes}
 
     def _update_state(self):
         """Check the status of the job."""
@@ -365,3 +383,6 @@ class SlurmNode:
         else:
             raise JobError("could not extract attribute '%s' from "
                            "node description" % attr_name)
+
+    def __str__(self):
+        return self._name
