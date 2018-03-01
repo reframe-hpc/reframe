@@ -87,24 +87,19 @@ stage('Unittest') {
                 if (machineName == 'leone') {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
-                    gitClone = """module use /apps/common/UES/RHAT6/easybuild/modules/all/
-                                  module load git
-                                  git init .
-                                  git fetch --tags --quiet https://github.com/eth-cscs/reframe.git +refs/heads/*:refs/remotes/origin/*
-                                  git config remote.origin.url https://github.com/eth-cscs/reframe.git
-                                  git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-                                  git config remote.origin.url https://github.com/eth-cscs/reframe.git
-                                  git fetch --tags --quiet https://github.com/eth-cscs/reframe.git +refs/pull/*:refs/remotes/origin/pr/* +refs/heads/master:refs/remotes/origin/master
-                                  git rev-parse ${env.ghprbActualCommit}^{commit}
-                                  git config core.sparsecheckout
-                                  git checkout -f ${env.ghprbActualCommit}"""
                 }
                 dir(reframeDir) {
-                    if (machineName != 'leone') {
+                    if (machineName == 'leone') {
+                        withEnv(['''PATH=/apps/common/UES/RHAT6/easybuild/software/cURL/7.47.0/bin:
+                                    /apps/common/UES/RHAT6/easybuild/software/git/2.11.1/bin/:$PATH''',
+                                 'LD_LIBRARY_PATH=/apps/common/UES/RHAT6/easybuild/software/cURL/7.47.0/lib:$LD_LIBRARY_PATH']) {
+                            checkout scm
+                        }
+                    }
+                    else{
                         checkout scm
                     }
                     sh("""${loginBash}
-                          ${moduleDefinition}
                           ${gitClone}
                           ln -sf ../${cscsSettings} reframe/settings.py
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
