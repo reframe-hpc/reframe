@@ -78,8 +78,14 @@ class PollRateFunction:
     def _init_poll_fn(self, init_rate):
         self._init_rate = init_rate
         self._b = self._min_rate
-        self._a = init_rate - self._b
-        self._c = math.log(self._a / (self._thres*self._b)) / self._decay
+        log_arg = (init_rate - self._b) / (self._thres*self._b)
+        if log_arg < sys.float_info.min:
+            self._a = 0.0
+            self._c = 0.0
+        else:
+            self._a = init_rate - self._b
+            self._c = math.log(self._a / (self._thres*self._b)) / self._decay
+
         getlogger().debug('rate equation: %.3f*exp(-%.3f*x)+%.3f' %
                           (self._a, self._c, self._b))
 
