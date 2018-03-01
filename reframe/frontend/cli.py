@@ -1,16 +1,15 @@
 import os
 import socket
 import sys
-import traceback
 
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-
 from reframe.core.exceptions import (EnvironError, ReframeError, ConfigError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
 from reframe.core.logging import getlogger
+from reframe.core.modules import init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -18,7 +17,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.loader import (RegressionCheckLoader,
                                      SiteConfiguration,
                                      autodetect_system)
-from reframe.core.modules import init_modules_system
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
@@ -85,11 +83,13 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '--modules-mapping', action='store', dest='module_map_file',
-        help='Map a module name to a different one')
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
     select_options.add_argument(
-        '--try-module', action='append', dest='module_map_cl', default=[],
-        help='Map a module name to a different one')
+        '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
     select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
@@ -132,7 +132,7 @@ def main():
         help='Run checks on the selected list of nodes')
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='Exclude the list of nodes from runnning checks')
+        help='Exclude the list of nodes from running checks')
     run_options.add_argument(
         '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
@@ -239,15 +239,18 @@ def main():
     init_modules_system(system.modules_system)
 
     if options.module_map_file:
-        get_modules_system().load_mapping_from_file(options.module_map_file)
+        try:
+            get_modules_system().load_mapping_from_file(
+                options.module_map_file)
+        except Exception as e:
+                raise ConfigError('could not set module mapping: %s' % e)
 
-    if options.module_map_cl:
-        for m in options.module_map_cl:
+    if options.module_mappings:
+        for m in options.module_mappings:
             try:
                 get_modules_system().load_mapping(m)
             except Exception as e:
-                raise ConfigError('Invalid format of the command-line'
-                                  'module mapping: %s\n %s' % (m, e))
+                raise ConfigError('could not set module mapping: %s' % e)
 
     if options.mode:
         try:

@@ -205,14 +205,21 @@ class ModulesSystem:
         return self._backend.is_module_loaded(Module(name))
 
     def load_mapping(self, mapping):
-        key, values = mapping.strip().strip(':').split(':')
-        self.module_map[key.strip()] = list(
-            OrderedDict.fromkeys(values.split()))
+        """Updates the internal module mapping with a single mapping"""
+        key, *rest = mapping.split(':')
+        if len(rest) != 1:
+            raise ConfigError('invalid mapping syntax: %s' % mapping)
+
+        key = key.strip()
+        values = rest[0].split()
+        if not key or not values:
+            raise ConfigError('invalid mapping syntax: %s' % mapping)
+
+        self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
-        """Update the internal module mapping from a file."""
-
-        with open(filename, 'r') as fp:
+        """Update the internal module mapping from mappings in a file."""
+        with open(filename) as fp:
             for lineno, line in enumerate(fp):
                 line = line.strip().split('#')[0]
                 if not line:
@@ -220,10 +227,8 @@ class ModulesSystem:
 
                 try:
                     self.load_mapping(line)
-                except Exception as e:
-                    raise ConfigError('Line %d of "%s": '
-                                      'Invalid format of the module mapping'
-                                      'file.\n %s' % (lineno, filename, e))
+                except ConfigError as e:
+                    raise ConfigError('%s:%s' % (filename, lineno)) from e
 
     @property
     def name(self):
