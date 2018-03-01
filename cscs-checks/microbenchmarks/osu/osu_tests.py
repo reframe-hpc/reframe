@@ -32,6 +32,12 @@ class AlltoallBaseTest(RegressionTest):
         if self.current_system.name == 'daint':
             self.num_tasks = 16
 
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+
     def compile(self):
         super().compile(makefile='Makefile_alltoall')
 
@@ -90,6 +96,12 @@ class G2GBaseTest(RegressionTest):
         self.maintainers = ['RS', 'VK']
         self.tags = {'production'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
+
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
 
     def setup(self, partition, environ, **job_opts):
         if partition.name == 'gpu':
