@@ -5,10 +5,10 @@
 import abc
 import os
 import re
+from collections import OrderedDict
 
 import reframe.core.fields as fields
 import reframe.utility.os as os_ext
-from collections import OrderedDict
 from reframe.core.exceptions import ConfigError, EnvironError
 
 
@@ -212,15 +212,18 @@ class ModulesSystem:
 
         key = key.strip()
         values = rest[0].split()
-        if not key or not values:
-            raise ConfigError('invalid mapping syntax: %s' % mapping)
+        if not key:
+            raise ConfigError('no key found in mapping: %s' % mapping)
+
+        if not values:
+            raise ConfigError('no mapping defined for module: %s' % key)
 
         self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
         """Update the internal module mapping from mappings in a file."""
         with open(filename) as fp:
-            for lineno, line in enumerate(fp):
+            for lineno, line in enumerate(fp, start=1):
                 line = line.strip().split('#')[0]
                 if not line:
                     continue

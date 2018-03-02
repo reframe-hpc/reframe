@@ -202,6 +202,10 @@ class TestModuleMapping(unittest.TestCase):
         self.modules_system = modules.ModulesSystem(self.modules_activity)
         self.mapping_file = NamedTemporaryFile('wt', delete=False)
 
+    def tearDown(self):
+        self.mapping_file.close()
+        os.remove(self.mapping_file.name)
+
     def test_mapping_simple(self):
         #
         # m0 -> m1
@@ -412,6 +416,7 @@ class TestModuleMapping(unittest.TestCase):
                                     '\n'
                                     ' m2: m7 m8\n'
                                     'm9: m10 # Inline comment')
+
         reference_map = {
             'm1': ['m2', 'm3'],
             'm2': ['m7', 'm8'],
@@ -423,6 +428,7 @@ class TestModuleMapping(unittest.TestCase):
     def test_maping_from_file_missing_key_separator(self):
         with self.mapping_file:
             self.mapping_file.write('m1 m2')
+
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
                           self.mapping_file.name)
@@ -430,6 +436,7 @@ class TestModuleMapping(unittest.TestCase):
     def test_maping_from_file_empty_value(self):
         with self.mapping_file:
             self.mapping_file.write('m1: # m2')
+
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
                           self.mapping_file.name)
@@ -437,6 +444,7 @@ class TestModuleMapping(unittest.TestCase):
     def test_maping_from_file_multiple_key_separators(self):
         with self.mapping_file:
             self.mapping_file.write('m1 : m2 : m3')
+
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
                           self.mapping_file.name)
@@ -444,6 +452,7 @@ class TestModuleMapping(unittest.TestCase):
     def test_maping_from_file_empty_key(self):
         with self.mapping_file:
             self.mapping_file.write(' :  m2')
+
         self.assertRaises(ConfigError,
                           self.modules_system.load_mapping_from_file,
                           self.mapping_file.name)
@@ -452,8 +461,3 @@ class TestModuleMapping(unittest.TestCase):
         self.assertRaises(OSError,
                           self.modules_system.load_mapping_from_file,
                           'foo')
-
-    def tearDown(self):
-        if not self.mapping_file.closed:
-            self.mapping_file.close()
-        os.remove(self.mapping_file.name)

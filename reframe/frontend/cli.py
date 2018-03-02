@@ -5,7 +5,7 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-from reframe.core.exceptions import (EnvironError, ReframeError, ConfigError,
+from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
 from reframe.core.logging import getlogger
@@ -82,14 +82,6 @@ def main():
         help='Load checks recursively')
 
     # Select options
-    select_options.add_argument(
-        '--module-mappings', action='store', metavar='FILE',
-        dest='module_map_file',
-        help='Apply module mappings defined in FILE')
-    select_options.add_argument(
-        '--map-module', action='append', metavar='MAPPING',
-        dest='module_mappings', default=[],
-        help='Apply a single module mapping')
     select_options.add_argument(
         '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
@@ -169,6 +161,14 @@ def main():
         metavar='MOD', dest='user_modules',
         help='Load module MOD before running the regression')
     misc_options.add_argument(
+        '-M', '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
+    misc_options.add_argument(
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
+    misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
     misc_options.add_argument(
@@ -238,19 +238,17 @@ def main():
     # Init modules system
     init_modules_system(system.modules_system)
 
-    if options.module_map_file:
-        try:
+    try:
+        if options.module_map_file:
             get_modules_system().load_mapping_from_file(
                 options.module_map_file)
-        except Exception as e:
-                raise ConfigError('could not set module mapping: %s' % e)
 
-    if options.module_mappings:
-        for m in options.module_mappings:
-            try:
+        if options.module_mappings:
+            for m in options.module_mappings:
                 get_modules_system().load_mapping(m)
-            except Exception as e:
-                raise ConfigError('could not set module mapping: %s' % e)
+
+    except (ReframeError, OSError) as e:
+        raise ReframeError('could not set module mapping: %s' % e)
 
     if options.mode:
         try:
