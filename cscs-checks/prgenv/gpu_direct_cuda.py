@@ -9,6 +9,9 @@ class GpuDirectCudaCheck(RegressionTest):
                          os.path.dirname(__file__), **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-gnu-gdr']
+		
 
         self.num_tasks = 2
         self.num_gpus_per_node = 1
