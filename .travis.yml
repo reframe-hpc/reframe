@@ -9,6 +9,5 @@ install:
 
 script: ./test_reframe.py
 
-after_success:
-    - script: pycodestyle reframe/
+after_script: pycodestyle reframe/
 
