@@ -630,7 +630,7 @@ This is achieved by defining *module mappings*.
 
 There are two ways to pass module mappings to ReFrame.
 The first is to use the ``--map-module`` command-line option, which accepts a module mapping.
-For example, the following line defines maps the module ``test_module`` to the module ``real_module``:
+For example, the following line maps the module ``test_module`` to the module ``real_module``:
 
 .. code-block:: none
 
@@ -653,7 +653,7 @@ Each line on the file corresponds to the definition of a mapping for a single mo
 The syntax of the individual mappings in the file is the same as with the option ``--map-module`` and the same rules apply regarding repeated definitions.
 Text starting with ``#`` is considered a comment and is ignored until the end of line is encountered.
 Empty lines are ignored.
-The following block shows an example of module mapping file
+The following block shows an example of module mapping file:
 
 .. code-block:: none
 
@@ -664,10 +664,10 @@ The following block shows an example of module mapping file
   module-4: module-4a module-4b
 
 If both ``--map-module`` and ``--module-mappings`` are passed, ReFrame will first create a mapping from the definitions on the file and it will then process the definitions passed with the ``--map-module`` options.
-As usual later later definitions will override the former.
+As usual, later definitions will override the former.
 
 A final note on module mappings.
-Module mappings can be arbitrarily deep as long as the do not form a cycle.
+Module mappings can be arbitrarily deep as long as they do not form a cycle.
 In this case, ReFrame will issue an error (denoting the offending cyclic dependency).
 For example, suppose having the following mapping file:
 
