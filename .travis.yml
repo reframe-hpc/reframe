@@ -5,6 +5,9 @@ python:
 
 install:
     - pip install -r requirements.txt
+    - pip install pycodestyle
 
 script:
-    ./test_reframe.py
+    - ./test_reframe.py
+    - pycodestyle --ignore=E129,E221,E226,E241,E272,E722 . --exclude=docs/
+
