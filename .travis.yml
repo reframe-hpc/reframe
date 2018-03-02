@@ -1,19 +1,15 @@
 language: python
-python:
-    - "3.5"
-    - "3.6"
 
 jobs:
-    include:
-        install:
-            - pip install -r requirements.txt
-
-        script:
-            ./test_reframe.py
-        - stage: pep8
-            install:
-                - pip install pycodestyle
-            python: 3.6
-            script:
-                pycodestyle reframe/
+  include:
+    - language: python
+        python:
+          - "3.5"
+          - "3.6"
+    - install: pip install -r requirements.txt
+    - script: ./test_reframe.py
+    - stage: pep8
+      python: 3.6
+      install: pip install pycodestyle
+      script: pycodestyle reframe/
 
