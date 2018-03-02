@@ -9,5 +9,5 @@ install:
 
 script:
     - ./test_reframe.py
-    - pycodestyle reframe/
+    - pycodestyle --ignore=E129,E221,E226,E241,E272,E722 . --exclude=docs/
 
