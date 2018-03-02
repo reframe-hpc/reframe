@@ -3,11 +3,12 @@ python:
     - "3.5"
     - "3.6"
 
-- install:
+install:
     - pip install -r requirements.txt
     - pip install pycodestyle
-- script: ./test_reframe.py
 
-- after_success:
-    - script: pycodestyle reframe/
+script: ./test_reframe.py
+
+after_success:
+- pycodestyle reframe/
 
