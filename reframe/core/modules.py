@@ -513,7 +513,7 @@ def init_modules_system(modules_kind=None):
     elif modules_kind == 'lmod':
         _modules_system = ModulesSystem(LModImpl())
     else:
-        raise ConfigError('unknown module system')
+        raise ConfigError('unknown module system: %s' % modules_kind)
 
 
 def get_modules_system():
