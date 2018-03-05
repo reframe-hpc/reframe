@@ -488,7 +488,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
 
     if upper_thres is not None:
         try:
-            evaluate(assert_bounded(upper_thres, 0, None))
+            evaluate(assert_bounded(upper_thres, None, None))
         except SanityError:
             raise SanityError('invalid high threshold value: %s' % upper_thres)
 
