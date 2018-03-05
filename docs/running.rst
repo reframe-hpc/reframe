@@ -412,30 +412,37 @@ By default, the output in ``reframe.log`` looks like the following:
 
 .. code-block:: none
 
-  [2017-10-24T21:19:04] info: reframe: [----------] started processing example7_check (Matrix-vector mult
-  iplication example with Cuda)
-  [2017-10-24T21:19:04] info: reframe: [   SKIP   ] skipping daint:mc
-  [2017-10-24T21:19:04] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
-  [2017-10-24T21:19:04] debug: example7_check: setting up the environment
-  [2017-10-24T21:19:04] debug: example7_check: loading environment for partition daint:gpu
-  [2017-10-24T21:19:05] debug: example7_check: loading environment PrgEnv-cray
-  [2017-10-24T21:19:05] debug: example7_check: setting up paths
-  [2017-10-24T21:19:05] debug: example7_check: setting up the job descriptor
-  [2017-10-24T21:19:05] debug: example7_check: job scheduler backend: nativeslurm
-  [2017-10-24T21:19:05] debug: example7_check: setting up performance logging
-  [2017-10-24T21:19:05] debug: example7_check: compilation started
-  [2017-10-24T21:19:06] debug: example7_check: compilation stdout:
+   [2018-03-01T20:03:13] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
+   [2018-03-01T20:03:13] debug: example7_check: entering stage: setup
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading environment for the current partition
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show daint-gpu
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load daint-gpu
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading test's environment
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show cudatoolkit
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load cudatoolkit
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up paths
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up the job descriptor
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: job scheduler backend: local
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up performance logging
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: compile
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: copying /users/karakasv/Devel/reframe/tutorial/src to stage directory (/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv
+   -cray)
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: symlinking files: []
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: Staged sourcepath: /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
+   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: nvcc  -O3 -I/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray /users/karakasv/Devel/reframe/s
+   tage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu -o /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/./example7_check
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stdout:
 
-  [2017-10-24T21:19:06] debug: example7_check: compilation stderr:
-  nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed
-  in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stderr:
+   nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 
-  [2017-10-24T21:19:06] debug: example7_check: compilation finished
-  [2017-10-24T21:19:09] debug: example7_check: spawned job (jobid=4163846)
-  [2017-10-24T21:19:21] debug: example7_check: spawned job finished
-  [2017-10-24T21:19:21] debug: example7_check: copying interesting files to output directory
-  [2017-10-24T21:19:21] debug: example7_check: removing stage directory
-  [2017-10-24T21:19:21] info: reframe: [       OK ] example7_check on daint:gpu using PrgEnv-cray
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation finished
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: run
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: sbatch /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example7_check_daint_gpu_PrgEnv-cray
+   .sh
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: spawned job (jobid=6224537)
+   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: wait
+
 
 Each line starts with a timestamp, the level of the message (``info``, ``debug`` etc.), the context in which the framework is currently executing (either ``reframe`` or the name of the current test and, finally, the actual message.
 
@@ -459,7 +466,7 @@ The default configuration looks as follows:
           'reframe.log' : {
               'level'     : 'DEBUG',
               'format'    : '[%(asctime)s] %(levelname)s: '
-                            '%(testcase_name)s: %(message)s',
+                            '%(check_info)s: %(message)s',
               'append'    : False,
           },
 
@@ -500,9 +507,9 @@ The configurable properties of a log record handler are the following:
     If ReFrame is not in the context of regression test, ``reframe`` will be printed.
   * ``check_jobid``: Prints the job or process id of the job or process associated with currently executing regression test.
     If a job or process is not yet created, ``-1`` will be printed.
-  * ``testcase_name``: Print the name of the test case that is currently executing.
-    Test case is essentially a tuple consisting of the test name, the current system and partition and the current programming environment.
-    This format string prints out like ``<test-name>@<partition> using <environ>``.
+  * ``check_info``: Print live information of the currently executing check.
+    By default this field has the form ``<check_name> on <current_partition> using <current_environment>``.
+    It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method in your regression test.
 
 * ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
   Acceptable formats must conform to standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function.
@@ -513,21 +520,26 @@ The configurable properties of a log record handler are the following:
   If set for a ``filename.log`` handler entry, the resulting log file name will be ``filename_<timestamp>.log``.
   This property is ignored for the standard output/error handlers.
 
+.. note::
+   .. versionchanged:: 2.10
+      The ``testcase_name`` logging attribute was replaced with the ``check_info``, which is now also configurable
+
+
 Performance Logging
 ^^^^^^^^^^^^^^^^^^^
 
 ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
 For each performance test, a log file of the form ``<test-name>.log`` is created under the ReFrame's `log directory <#configuring-reframe-directories>`__ where the test's performance is recorded.
-The default format used for this file is ``'[%(asctime)s] %(testcase_name)s (jobid=%(check_jobid)s): %(message)s'`` and ReFrame always appends to this file.
+The default format used for this file is ``'[%(asctime)s] %(check_info)s (jobid=%(check_jobid)s): %(message)s'`` and ReFrame always appends to this file.
 Currently, it is not possible for users to configure performance logging.
 
 The resulting log file looks like the following:
 
 .. code-block:: none
 
-  [2017-12-01T15:31:20] example7_check@daint:gpu using PrgEnv-cray (jobid=649790): value: 47.797996, reference: (50.0, -0.1, 0.1)
-  [2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-gnu (jobid=649791): value: 49.048228, reference: (50.0, -0.1, 0.1)
-  [2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-pgi (jobid=649792): value: 48.575334, reference: (50.0, -0.1, 0.1)
+   [2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-pgi (jobid=6224525): value: 49.637615, reference: (50.0, -0.1, 0.1)
+   [2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-cray (jobid=6224523): value: 49.931819, reference: (50.0, -0.1, 0.1)
+   [2018-03-01T20:01:21] reframe 2.10: example7_check on daint:gpu using PrgEnv-gnu (jobid=6224524): value: 49.428855, reference: (50.0, -0.1, 0.1)
 
 The interpretation of the performance values depends on the individual tests.
 The above output is from the CUDA performance test we presented in the `tutorial <tutorial.html#writing-a-performance-test>`__, so the value refers to the achieved Gflop/s.
