@@ -7,8 +7,7 @@ import reframe.core.logging as logging
 import reframe.utility.os as os_ext
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
-from reframe.core.modules import get_modules_system
-from reframe.core.modules import init_modules_system
+from reframe.core.modules import get_modules_system, init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -123,7 +122,7 @@ def main():
         help='Run checks on the selected list of nodes')
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='Exclude the list of nodes from runnning checks')
+        help='Exclude the list of nodes from running checks')
     run_options.add_argument(
         '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
@@ -159,6 +158,14 @@ def main():
         '-m', '--module', action='append', default=[],
         metavar='MOD', dest='user_modules',
         help='Load module MOD before running the regression')
+    misc_options.add_argument(
+        '-M', '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
+    misc_options.add_argument(
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
     misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
@@ -231,6 +238,19 @@ def main():
         init_modules_system(system.modules_system)
     except ReframeError as e:
         printer.error('could not initialize the modules system: %s' % e)
+        sys.exit(1)
+
+    try:
+        if options.module_map_file:
+            get_modules_system().load_mapping_from_file(
+                options.module_map_file)
+
+        if options.module_mappings:
+            for m in options.module_mappings:
+                get_modules_system().load_mapping(m)
+
+    except (ReframeError, OSError) as e:
+        printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
     if options.mode:
