@@ -471,26 +471,40 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
     :arg val: The value to check.
     :arg ref: The reference value.
     :arg lower_thres: The lower threshold value expressed as a negative decimal
-        fraction of the reference value.  Must be in [-1, 0]. If ``None``, no
-        lower thresholds is applied.
+        fraction of the reference value.  Must be in [-1, 0] for ref >= 0.0 and
+        in [-inf, 0] for ref < 0.0.
+        If ``None``, no lower thresholds is applied.
     :arg upper_thres: The upper threshold value expressed as a decimal fraction
-        of the reference value.  Must be in [0, inf]. If ``None``, no upper
-        thresholds is applied.
+        of the reference value. Must be in [0, inf] for ref >= 0.0 and
+        in [0, 1] for ref < 0.0.
+        If ``None``, no upper thresholds is applied.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails or if the
         lower and upper thresholds do not have appropriate values.
     """
     if lower_thres is not None:
-        try:
-            evaluate(assert_bounded(lower_thres, -1, 0))
-        except SanityError:
-            raise SanityError('invalid low threshold value: %s' % lower_thres)
+        if ref >= 0.0:
+            try:
+                evaluate(assert_bounded(lower_thres, -1, 0))
+            except SanityError:
+                raise SanityError('invalid low threshold value: %s' % lower_thres)
+        else:
+            try:
+                evaluate(assert_bounded(lower_thres, None, 0))
+            except SanityError:
+                raise SanityError('invalid low threshold value: %s' % lower_thres)
 
     if upper_thres is not None:
-        try:
-            evaluate(assert_bounded(upper_thres, None, None))
-        except SanityError:
-            raise SanityError('invalid high threshold value: %s' % upper_thres)
+        if ref >= 0.0:
+            try:
+                evaluate(assert_bounded(upper_thres, 0, None))
+            except SanityError:
+                raise SanityError('invalid high threshold value: %s' % upper_thres)
+        else:
+            try:
+                evaluate(assert_bounded(upper_thres, 0, 1))
+            except SanityError:
+                raise SanityError('invalid high threshold value: %s' % upper_thres)
 
     def calc_bound(thres):
         if thres is None:

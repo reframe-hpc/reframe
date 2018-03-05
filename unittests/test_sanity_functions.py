@@ -342,7 +342,9 @@ class TestAsserts(unittest.TestCase):
 
         # Check upper threshold values greater than 1
         self.assertTrue(sn.assert_reference(30.0, 10.0, None, 3.0))
-        self.assertTrue(sn.assert_reference(-50.0, -20.0, None, 2.0))
+        self.assertTrue(sn.assert_reference(-50.0, -20.0, -2.0, 0.5))
+        self.assertTrue(sn.assert_reference(30.0, 10.0, None, 3.0))
+        self.assertTrue(sn.assert_reference(-50.0, -20.0, -2.0, 0.5))
 
         self.assertRaisesRegex(
             SanityError,
@@ -381,6 +383,16 @@ class TestAsserts(unittest.TestCase):
         self.assertRaisesRegex(SanityError,
                                'invalid low threshold value: 1\.2',
                                evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1))
+
+        # check invalid thresholds greater than 1
+        self.assertRaisesRegex(SanityError,
+                               'invalid low threshold value: -2\.0',
+                               evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1))
+        self.assertRaisesRegex(SanityError,
+                               'invalid high threshold value: 1\.5',
+                               evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5))
+
+
 
     def _write_tempfile(self):
         ret = None
