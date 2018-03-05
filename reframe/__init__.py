@@ -1,11 +1,7 @@
-#
-# Sanity checks and modules environment setup
-#
-
 import sys
 
 
-VERSION = '2.10'
+VERSION = '2.11'
 _required_pyver = (3, 5, 0)
 
 # Check python version
