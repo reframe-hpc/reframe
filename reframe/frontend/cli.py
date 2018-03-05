@@ -233,8 +233,12 @@ def main():
             list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
-    # Init modules system
-    init_modules_system(system.modules_system)
+    try:
+        # Init modules system
+        init_modules_system(system.modules_system)
+    except ReframeError as e:
+        printer.error('could not initialize the modules system: %s' % e)
+        sys.exit(1)
 
     try:
         if options.module_map_file:
