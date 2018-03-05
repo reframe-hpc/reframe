@@ -15,9 +15,15 @@ class EspressoBaseCheck(RunOnlyRegressionTest):
                                        'Espresso')
         self.executable = 'pw.x'
         self.executable_opts = '-in ausurf.in'.split()
-
-        self.sanity_patterns = sn.assert_found(
-            r'convergence has been achieved', self.stdout)
+        property_patterns = {
+            'energy': sn.extractsingle(r'!    total energy              ='
+                                       r'\s+(?P<energy>\S+) Ry',
+                                       self.stdout, 'energy', float)
+        }
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'convergence has been achieved', self.stdout),
+            sn.assert_reference(property_patterns['energy'], -11427.08612278,
+                                lower_thres=-1e-10, upper_thres=1e-10)])
         self.perf_patterns = {
             'sec': sn.extractsingle(r'electrons    :\s+(?P<sec>\S+)s CPU ',
                                     self.stdout, 'sec', float)
