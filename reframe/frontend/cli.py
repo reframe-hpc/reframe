@@ -7,9 +7,7 @@ import reframe.core.logging as logging
 import reframe.utility.os as os_ext
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
-from reframe.core.modules import get_modules_system
-from reframe.core.logging import getlogger
-from reframe.core.modules import init_modules_system
+from reframe.core.modules import get_modules_system, init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -248,7 +246,8 @@ def main():
                 get_modules_system().load_mapping(m)
 
     except (ReframeError, OSError) as e:
-        raise ReframeError('could not set module mapping: %s' % e)
+        printer.error('could not load module mappings: %s' % e)
+        sys.exit(1)
 
     if options.mode:
         try:
