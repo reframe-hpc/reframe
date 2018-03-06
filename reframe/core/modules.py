@@ -5,6 +5,7 @@
 import abc
 import os
 import re
+from collections import OrderedDict
 
 import reframe.core.fields as fields
 import reframe.utility.os as os_ext
@@ -202,6 +203,35 @@ class ModulesSystem:
 
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
+
+    def load_mapping(self, mapping):
+        """Updates the internal module mapping with a single mapping"""
+        key, *rest = mapping.split(':')
+        if len(rest) != 1:
+            raise ConfigError('invalid mapping syntax: %s' % mapping)
+
+        key = key.strip()
+        values = rest[0].split()
+        if not key:
+            raise ConfigError('no key found in mapping: %s' % mapping)
+
+        if not values:
+            raise ConfigError('no mapping defined for module: %s' % key)
+
+        self.module_map[key] = list(OrderedDict.fromkeys(values))
+
+    def load_mapping_from_file(self, filename):
+        """Update the internal module mapping from mappings in a file."""
+        with open(filename) as fp:
+            for lineno, line in enumerate(fp, start=1):
+                line = line.strip().split('#')[0]
+                if not line:
+                    continue
+
+                try:
+                    self.load_mapping(line)
+                except ConfigError as e:
+                    raise ConfigError('%s:%s' % (filename, lineno)) from e
 
     @property
     def name(self):
@@ -513,7 +543,7 @@ def init_modules_system(modules_kind=None):
     elif modules_kind == 'lmod':
         _modules_system = ModulesSystem(LModImpl())
     else:
-        raise ConfigError('unknown module system')
+        raise ConfigError('unknown module system: %s' % modules_kind)
 
 
 def get_modules_system():
