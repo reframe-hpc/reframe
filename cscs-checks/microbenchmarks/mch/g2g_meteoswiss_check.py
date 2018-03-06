@@ -13,7 +13,7 @@ class G2GMeteoswissTest(RegressionTest):
         self.descr = 'G2G Meteoswiss check with G2G=%s' % g2g
         self.strict_check = False
         self.valid_systems = ['kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gdr']
+        self.valid_prog_environs = ['PrgEnv-gnu-gdr']
         self.executable = 'src/$EXECUTABLE'
         self.sourcesdir = ('https://github.com/MeteoSwiss-APN/'
                            'comm_overlap_bench.git')
