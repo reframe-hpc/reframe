@@ -1,3 +1,4 @@
+import copy
 import itertools
 import os
 import re
@@ -292,6 +293,17 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
         self.assertIn('Ran 1 test case', stdout)
+
+    def test_unknown_modules_system(self):
+        # Monkey patch site configuration to trigger a module systems error
+        site_config_save = copy.deepcopy(settings._site_configuration)
+        systems = list(settings._site_configuration['systems'].keys())
+        for s in systems:
+            settings._site_configuration['systems'][s]['modules_system'] = 'foo'
+
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotEqual(0, returncode)
+        settings._site_configuration = site_config_save
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
