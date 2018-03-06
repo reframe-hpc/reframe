@@ -824,7 +824,7 @@ The first occurrence will be used as the reference value of the ``perf`` perform
 In our example, the ``perf`` key will be resolved in the ``daint:gpu`` scope giving us the reference value.
 
 Reference values in ReFrame are specified as a three-tuple comprising the reference value and lower and upper thresholds.
-Thresholds are specified as decimal fractions of the reference value. For nonnegative reference values, the lower threshold must lie in the [-1,0], whereas the upper threshold must lie in the [0,inf] interval.
+Thresholds are specified as decimal fractions of the reference value. For nonnegative reference values, the lower threshold must lie in the [-1,0], whereas the upper threshold may be any positive real number or zero.
 In our example, the reference value for this test on ``daint:gpu`` is 50 Gflop/s ±10%. Setting a threshold value to :class:`None` disables the threshold.
 
 Combining It All Together

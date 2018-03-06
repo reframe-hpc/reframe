@@ -483,28 +483,20 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         lower and upper thresholds do not have appropriate values.
     """
     if lower_thres is not None:
-        if ref >= 0.0:
-            try:
-                evaluate(assert_bounded(lower_thres, -1, 0))
-            except SanityError:
-                raise SanityError('invalid low threshold value: %s' % lower_thres)
-        else:
-            try:
-                evaluate(assert_bounded(lower_thres, None, 0))
-            except SanityError:
-                raise SanityError('invalid low threshold value: %s' % lower_thres)
+        lower_thres_limit = -1 if ref >= 0 else None
+        try:
+            evaluate(assert_bounded(lower_thres, lower_thres_limit, 0))
+        except SanityError:
+            raise SanityError('invalid low threshold value: %s'
+                              % lower_thres) from None
 
     if upper_thres is not None:
-        if ref >= 0.0:
-            try:
-                evaluate(assert_bounded(upper_thres, 0, None))
-            except SanityError:
-                raise SanityError('invalid high threshold value: %s' % upper_thres)
-        else:
-            try:
-                evaluate(assert_bounded(upper_thres, 0, 1))
-            except SanityError:
-                raise SanityError('invalid high threshold value: %s' % upper_thres)
+        upper_thres_limit = None if ref >= 0 else 1
+        try:
+            evaluate(assert_bounded(upper_thres, 0, upper_thres_limit))
+        except SanityError:
+            raise SanityError('invalid high threshold value: %s'
+                              % upper_thres) from None
 
     def calc_bound(thres):
         if thres is None:
