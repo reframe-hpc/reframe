@@ -1,7 +1,7 @@
 import os
 
-from reframe.core.pipeline import RegressionTest
 import reframe.utility.sanity as sn
+from reframe.core.pipeline import RegressionTest
 
 class GpuDirectCudaCheck(RegressionTest):
     def __init__(self, **kwargs):
@@ -9,16 +9,21 @@ class GpuDirectCudaCheck(RegressionTest):
                          os.path.dirname(__file__), **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['daint', 'dom']:
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+        elif self.current_system.name in ['kesch']:
             self.valid_prog_environs = ['PrgEnv-gnu-gdr']
-		
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1',
+                              'MV2_USE_CUDA': '1',
+                              'MV2_USE_GPUDIRECT': '1',
+                              'MPICH_G2G_PIPELINE': '1',
+                              'G2G': '1'}
 
         self.num_tasks = 2
         self.num_gpus_per_node = 1
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.num_tasks_per_node = 1
 
-        self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
         self.modules = ['cudatoolkit']
 
         result = sn.extractsingle(r'Result :\s+(?P<result>\d+\.?\d*)',

@@ -427,35 +427,41 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.workdir)
 
-    def test_valid_constraint(self):
+    def test_valid_constraint(self, expected_num_tasks=8):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, 8)
+        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
 
-    def test_valid_multiple_constraints(self):
+    def test_valid_multiple_constraints(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1 f3']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, 4)
+        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
 
-    def test_valid_partition(self):
+    def test_valid_partition(self, expected_num_tasks=8):
         self.testjob._sched_reservation = 'Foo'
         self.testjob._sched_partition = 'p2'
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, 8)
+        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
 
-    def test_valid_multiple_partitions(self):
+    def test_valid_multiple_partitions(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-p p1 p2']
-        self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, 4)
+        if expected_num_tasks:
+            self.prepare_job()
+            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        else:
+            self.assertRaises(JobError, self.prepare_job)
 
-    def test_valid_constraint_partition(self):
+    def test_valid_constraint_partition(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
-        self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, 4)
+        if expected_num_tasks:
+            self.prepare_job()
+            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        else:
+            self.assertRaises(JobError, self.prepare_job)
 
     def test_not_valid_partition(self):
         self.testjob._sched_reservation = 'Foo'
@@ -468,11 +474,39 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertRaises(JobError, self.prepare_job)
 
     def test_noreservation(self):
-        self.testjob._num_tasks = 0
         self.assertRaises(JobError, self.prepare_job)
 
     def prepare_job(self):
         self.testjob.prepare(self.builder)
+
+
+class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
+
+    def create_dummy_exclude_nodes(obj):
+        return [obj.create_dummy_nodes()[0].name]
+
+    def setUp(self):
+        super().setUp()
+        self.testjob._sched_exclude_nodelist = 'nid00001'
+        # monkey patch `_get_exclude_nodes` to simulate extraction of
+        # slurm nodes through the use of `scontrol show`
+        self.testjob._get_excluded_node_names = self.create_dummy_exclude_nodes
+
+    def test_valid_constraint(self):
+        super().test_valid_constraint(expected_num_tasks=4)
+        self.assertEquals(self.testjob.num_tasks, 4)
+
+    def test_valid_multiple_constraints(self):
+        super().test_valid_multiple_constraints(expected_num_tasks=4)
+
+    def test_valid_partition(self):
+        super().test_valid_partition(expected_num_tasks=4)
+
+    def test_valid_multiple_partitions(self):
+        super().test_valid_multiple_partitions(expected_num_tasks=None)
+
+    def test_valid_constraint_partition(self):
+        super().test_valid_constraint_partition(expected_num_tasks=None)
 
 
 class TestSqueueJob(TestSlurmJob):
@@ -508,3 +542,6 @@ class TestSlurmNode(unittest.TestCase):
                          {'p1', 'p2'})
         self.assertEqual(self.node.active_features,
                          {'f1', 'f2'})
+
+    def test_str(self):
+        self.assertEqual('nid00001', str(self.node))

@@ -35,10 +35,9 @@ class ReframeSettings:
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
-                        # Uncomment as soon as --switches is fixed on Daint
-                        # 'resources': {
-                        #     'switches': ['--switches={num_switches}']
-                        # }
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
                     },
 
                     'mc': {
@@ -49,10 +48,9 @@ class ReframeSettings:
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
-                        # Uncomment as soon as --switches is fixed on Daint
-                        # 'resources': {
-                        #     'switches': ['--switches={num_switches}']
-                        # }
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
                     }
                 }
             },
@@ -110,13 +108,14 @@ class ReframeSettings:
                     'login': {
                         'scheduler': 'local',
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi'],
+                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
+                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -124,7 +123,7 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi'],
+                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -208,6 +207,13 @@ class ReframeSettings:
                     'modules': ['/apps/common/regression/prgenv_pgi_17.10_aj'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-gdr': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpic++',
                     'ftn': 'mpif90',
                 },
             },

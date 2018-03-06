@@ -1,11 +1,11 @@
 import os
 
-from reframe.core.pipeline import RegressionTest
 import reframe.utility.sanity as sn
+from reframe.core.pipeline import RegressionTest
 
 class OpenACCFortranCheck(RegressionTest):
     def __init__(self, num_tasks, **kwargs):
-        if (num_tasks == 1):
+        if num_tasks == 1:
             check_name = 'openacc_fortran_check'
         else:
             check_name = 'openacc_mpi_fortran_check'
@@ -21,7 +21,7 @@ class OpenACCFortranCheck(RegressionTest):
             self._pgi_flags = '-acc -ta=tesla:cc35'
 
         self.num_tasks = num_tasks
-        if (self.num_tasks == 1):
+        if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
