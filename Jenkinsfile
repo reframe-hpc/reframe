@@ -132,7 +132,7 @@ stage('Public Test') {
                 def reframeDir = "${scratch}/${dirPrefix}-dom-${uniqueID}"
                 dir(reframeDir) {
                     sh("""${loginBash}
-                          bash ${reframeDir}/$bashScript -f ${reframeDir} -i '' -p""")
+                          bash ${reframeDir}/$bashScript -f ${reframeDir} -i '' -g""")
                 }
             }
             currentBuild.result = "SUCCESS"
