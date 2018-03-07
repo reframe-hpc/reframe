@@ -1,12 +1,5 @@
 #!/bin/bash
 
-##############################################################################
-#
-#
-#                                SCRIPT VARIABLES
-#
-#
-##############################################################################
 scriptname=`basename $0`
 CI_FOLDER=""
 CI_PUBLIC=0
@@ -68,22 +61,23 @@ run_serial_user_checks()
 }
 
 
-##############################################################################
-#
-#
-#                              MAIN SCRIPT
-#
-#
-##############################################################################
+save_settings()
+{
+    tempfile=$(mktemp)
+    cp reframe/settings.py $tempfile
+    echo $tempfile
+}
 
-#
-# Getting the machine name from the cmd line arguments
-#
+restore_settings()
+{
+    saved=$1
+    cp saved reframe/settings.py
+    /bin/rm $1
+}
 
-#
-# GNU Linux version
-#
-shortopts="h,p,t,f:,i:,l:,m:"
+
+### Main script ###
+
 longopts="help,public-only,tutorial-only,folder:,invocation:,load-profile:,module-use:"
 
 eval set -- $(getopt -o ${shortopts} -l ${longopts} \
@@ -164,8 +158,6 @@ echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_PUBLIC -eq 1 ]; then
     # Run unit tests for the public release
-    ln -sf ../config/generic.py reframe/settings.py
-
     echo "================================="
     echo "Running public release unit tests"
     echo "================================="
@@ -174,7 +166,8 @@ if [ $CI_PUBLIC -eq 1 ]; then
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
-    ln -sf ../tutorial/config/settings.py reframe/settings.py
+    settings_orig=$(save_settings)
+    cp tutorial/config/settings.py reframe/settings.py
     # Find modified or added tutorial checks
     tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
@@ -195,11 +188,15 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
             run_tutorial_checks ${tutorialchecks_path} ${invocations[i]}
         done
     fi
+
+    restore_settings $settings_orig
 else
     # Performing the unittests
     echo "=================="
     echo "Running unit tests"
     echo "=================="
+    settings_orig=$(save_settings)
+    cp config/cscs.py reframe/settings.py
     checked_exec ./test_reframe.py
 
     # Find modified or added user checks
@@ -226,5 +223,7 @@ else
             run_serial_user_checks ${userchecks_path} ${invocations[i]}
         done
     fi
+
+    restore_settings $settings_orig
 fi
 exit $CI_EXITCODE

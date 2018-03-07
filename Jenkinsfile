@@ -3,7 +3,6 @@
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def cscsSettings = 'config/cscs.py'
 def machinesList = ['daint', 'dom', 'kesch', 'leone', 'monch']
 def machinesToRun = machinesList
 def uniqueID
@@ -91,7 +90,6 @@ stage('Unittest') {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
-                          cp ${cscsSettings} reframe/settings.py
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
                 }
             }
