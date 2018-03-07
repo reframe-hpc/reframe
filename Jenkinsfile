@@ -91,7 +91,7 @@ stage('Unittest') {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
-                          ln -sf ../${cscsSettings} reframe/settings.py
+                          cp ${cscsSettings} reframe/settings.py
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
                 }
             }
