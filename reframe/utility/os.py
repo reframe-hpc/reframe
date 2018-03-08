@@ -227,7 +227,8 @@ def git_repo_exists(url, timeout=5):
     """Check if URL refers to git valid repository."""
     try:
         os.environ['GIT_TERMINAL_PROMPT'] = '0'
-        run_command('git ls-remote %s' % url, check=True, timeout=timeout)
+        run_command('git ls-remote --exit-code -h %s' % url, check=True,
+                    timeout=timeout)
     except (SpawnedProcessTimeout, SpawnedProcessError):
         return False
     else:
