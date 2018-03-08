@@ -16,16 +16,25 @@ class RegressionTask:
     """A class representing a :class:`RegressionTest` through the regression
     pipeline."""
 
-    def __init__(self, check, listeners=[]):
+    def __init__(self, check, retry_num, listeners=[]):
         self._check = check
         self._failed_stage = None
         self._current_stage = None
         self._exc_info = (None, None, None)
         self._environ = None
         self._listeners = list(listeners)
+        # TODO: if we had a runner accociated, then we could do
+        # self._retry_num = self.runner.retry_num
+        # Would that make sense? The runner could be passed as constructor
+        # argument instead of retry_num.
+        self._retry_num = retry_num
 
         # Test case has finished, but has not been waited for yet
         self.zombie = False
+
+    @property
+    def retry_num(self):
+        return self._retry_num
 
     @property
     def check(self):
@@ -141,24 +150,38 @@ class Runner:
     """Responsible for executing a set of regression tests based on an execution
     policy."""
 
-    def __init__(self, policy, printer=None):
-        self._printer = printer or PrettyPrinter()
+    def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
+        self._printer = printer or PrettyPrinter()
+        self._max_retries = max_retries
         self._policy.printer = self._printer
         self._policy.runner = self
         self._sandbox = Sandbox()
         self._stats = None
         self._environ_snapshot = EnvironmentSnapshot()
+        self._retry_num = 0
 
     def __repr__(self):
         return debug.repr(self)
+
+    @property
+    def max_retries(self):
+        return self._max_retries
+
+    @property
+    def retry_num(self):
+        return self._retry_num
 
     @property
     def policy(self):
         return self._policy
 
     @property
+    # This property function should in general be preferred over self._stats,
+    # because it makes sure that the stats are updated.
     def stats(self):
+        # Always update statistics
+        self._stats = self._policy.getstats()
         return self._stats
 
     def runall(self, checks, system):
@@ -168,14 +191,19 @@ class Runner:
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
             self._runall(checks, system)
+            if self._max_retries > 0:
+                self._retry(checks, system)
+
         finally:
-            # Always update statistics and print the summary line
-            self._stats = self._policy.getstats()
-            num_failures = self._stats.num_failures()
+            # Print the summary line
+            num_failures_last_retry = self.stats.num_failures(retry_num=-1)
             self._printer.status(
-                'FAILED' if num_failures else 'PASSED',
-                'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (self._stats.num_cases(), len(checks), num_failures),
+                'FAILED' if num_failures_last_retry else 'PASSED',
+                'Ran %d test case(s) from %d check(s) (%d failure(s) after '
+                '%d retries; %d test cases passed in retries)' %
+                (self.stats.num_cases(), len(checks), num_failures_last_retry,
+                 self.stats.last_retry(),
+                 self.stats.num_success_all_retries()),
                 just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
@@ -196,6 +224,18 @@ class Runner:
             return ret
         else:
             return ret and check.supports_environ(environ.name)
+
+    def _retry(self, checks, system):
+        while (self.stats.num_failures() and self._retry_num <
+                                             self._max_retries):
+            self._retry_num += 1
+            check_names_failed = self.stats.check_names_failed(retry_num=-1)
+            checks_failed = []
+            for check in checks:
+                if check.name in check_names_failed:
+                    checks_failed.append(check)
+
+            self._runall(checks_failed, system)
 
     def _runall(self, checks, system):
         self._policy.enter()
@@ -268,6 +308,9 @@ class ExecutionPolicy:
         # Task event listeners
         self.task_listeners = []
 
+        # Associated runner
+        self.runner = None
+
     def __repr__(self):
         return debug.repr(self)
 
@@ -278,9 +321,19 @@ class ExecutionPolicy:
         pass
 
     def enter_check(self, check):
+        # TODO: Better PipelineError?
+        # The following should never happen
+        if self.runner is None:
+            raise ReframeFatalError()
+
+        msg = 'started processing'
+        if self.runner.retry_num > 0:
+            msg = 'retrying (%d/%d)' % (self.runner.retry_num,
+                                        self.runner.max_retries)
+
         self.printer.separator(
             'short single line',
-            'started processing %s (%s)' % (check.name, check.descr)
+            '%s %s (%s)' % (msg, check.name, check.descr)
         )
 
     def exit_check(self, check):

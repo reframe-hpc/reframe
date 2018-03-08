@@ -1,5 +1,4 @@
 import math
-import math
 import sys
 import time
 from datetime import datetime
@@ -25,7 +24,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
             'RUN', "%s on %s using %s" %
             (check.name, partition.fullname, environ.name)
         )
-        task = RegressionTask(check)
+        task = RegressionTask(check, self.runner.retry_num)
         self._tasks.append(task)
         try:
             task.setup(partition, environ,
@@ -153,7 +152,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def run_check(self, check, partition, environ):
         super().run_check(check, partition, environ)
-        task = RegressionTask(check, self.task_listeners)
+        task = RegressionTask(check, self.runner.retry_num, self.task_listeners)
         self._tasks.append(task)
         try:
             task.setup(partition, environ,
