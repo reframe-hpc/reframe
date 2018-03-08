@@ -197,7 +197,7 @@ We will start with the most common and simple case of a regression test that com
 We will then expand this example gradually by adding functionality and more advanced sanity and performance checks.
 By the end of the tutorial, you should be able to start writing your first regression tests with ReFrame.</p>
 <p>If you just want to get a quick feeling of how it is like writing a regression test in ReFrame, you can start directly from here.
-However, if you want to get a better understanding of what is happening behind the scenes, we recommend to have a look also in <a class="reference external" href="pipeline.html">&quot;The Regression Test Pipeline&quot;</a> section.</p>
+However, if you want to get a better understanding of what is happening behind the scenes, we recommend to have a look also in <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section.</p>
 <p>All the tutorial examples can be found in <code class="docutils literal"><span class="pre">&lt;reframe-install-prefix&gt;/tutorial/</span></code>.</p>
 <p>For the configuration of the system, we provide a minimal configuration file for Piz Daint, where we have tested all the tutorial examples.
 The site configuration that we used for this tutorial is the following:</p>
@@ -269,7 +269,7 @@ The site configuration that we used for this tutorial is the following:</p>
 </pre></div>
 </div>
 <p>You can find the full <code class="docutils literal"><span class="pre">settings.py</span></code> file ready to be used by ReFrame in <code class="docutils literal"><span class="pre">&lt;reframe-install-prefix&gt;/tutorial/config/settings.py</span></code>.
-You may first need to go over the <a class="reference external" href="configure.html">&quot;Configuring ReFrame For Your Site&quot;</a> section, in order to prepare the framework for your systems.</p>
+You may first need to go over the <a class="reference external" href="configure.html">“Configuring ReFrame For Your Site”</a> section, in order to prepare the framework for your systems.</p>
 <div class="section" id="the-first-regression-test">
 <span id="the-first-regression-test"></span><h2>The First Regression Test<a class="headerlink" href="#the-first-regression-test" title="Permalink to this headline">¶</a></h2>
 <p>The following is a simple regression test that compiles and runs a serial C program, which computes a matrix-vector product (<code class="docutils literal"><span class="pre">tutorial/src/example_matrix_multiplication.c</span></code>), and verifies its sane execution.
@@ -304,22 +304,22 @@ Here is the full code for this test:</p>
 In order to make the test available to the framework, every file defining regression tests must define the special function <code class="docutils literal"><span class="pre">_get_checks()</span></code>, which it should return a list of instantiated regression tests.
 This method will be called by the framework upon loading your file, in order to retrieve the regression tests defined.
 The framework will pass some special arguments to the <code class="docutils literal"><span class="pre">_get_checks()</span></code> function through the <code class="docutils literal"><span class="pre">kwargs</span></code> parameter, which are needed for the correct initialization of the regression test.</p>
-<p>Now let's move on to the actual definition of the <code class="docutils literal"><span class="pre">SerialTest</span></code> here:</p>
+<p>Now let’s move on to the actual definition of the <code class="docutils literal"><span class="pre">SerialTest</span></code> here:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">SerialTest</span><span class="p">(</span><span class="n">RegressionTest</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;example1_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal"><span class="pre">__init__()</span></code> method is the constructor of your test.
-It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
-The first statement in the <code class="docutils literal"><span class="pre">SerialTest</span></code> constructor calls the constructor of the base class, passing it as arguments the name of the regression test (<code class="docutils literal"><span class="pre">example1_check</span></code> here), the prefix of the test (the directory that the regression test file resides) and any other arguments passed to the <code class="docutils literal"><span class="pre">SerialTest</span></code>'s constructor.
+It is usually the only method you need to implement for your tests, especially if you don’t want to customize any of the regression test pipeline stages.
+The first statement in the <code class="docutils literal"><span class="pre">SerialTest</span></code> constructor calls the constructor of the base class, passing it as arguments the name of the regression test (<code class="docutils literal"><span class="pre">example1_check</span></code> here), the prefix of the test (the directory that the regression test file resides) and any other arguments passed to the <code class="docutils literal"><span class="pre">SerialTest</span></code>’s constructor.
 You can consider these first three lines and especially the way you should call the constructor of the base class, as boilerplate code.
 As you will see, it remains the same across all our examples, except, of course, for the check name.</p>
 <p>The next line sets a more detailed description of the test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s1">&#39;Simple matrix-vector multiplication example&#39;</span>
 </pre></div>
 </div>
-<p>This is optional and it defaults to the regression test's name, if not specified.</p>
+<p>This is optional and it defaults to the regression test’s name, if not specified.</p>
 <p>The next two lines specify the systems and the programming environments that this test is valid for:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
@@ -327,10 +327,10 @@ As you will see, it remains the same across all our examples, except, of course,
 </div>
 <p>Both of these variables accept a list of system names or environment names, respectively.
 The <code class="docutils literal"><span class="pre">*</span></code> symbol is a wildcard meaning any system or any programming environment.
-The system and environment names listed in these variables must correspond to names of systems and environments defined in the ReFrame's <a class="reference external" href="configure.html#the-configuration-file">settings file</a>.</p>
+The system and environment names listed in these variables must correspond to names of systems and environments defined in the ReFrame’s <a class="reference external" href="configure.html#the-configuration-file">settings file</a>.</p>
 <blockquote>
 <div>NOTE: If a name specified in these lists does not appear in the settings file, it will be simply ignored.</div></blockquote>
-<p>When specifying system names you can always specify a partition name as well by appending <code class="docutils literal"><span class="pre">:&lt;partname&gt;</span></code> to the system's name.
+<p>When specifying system names you can always specify a partition name as well by appending <code class="docutils literal"><span class="pre">:&lt;partname&gt;</span></code> to the system’s name.
 For example, given the configuration for our tutorial, <code class="docutils literal"><span class="pre">daint:gpu</span></code> would refer specifically to the <code class="docutils literal"><span class="pre">gpu</span></code> virtual partition of the system <code class="docutils literal"><span class="pre">daint</span></code>.
 If only a system name (without a partition) is specified in the <code class="docutils literal"><span class="pre">self.valid_systems</span></code> variable, e.g., <code class="docutils literal"><span class="pre">daint</span></code>, it means that this test is valid for any partition of this system.</p>
 <p>The next line specifies the source file that needs to be compiled:</p>
@@ -349,14 +349,14 @@ If you inspect the directory structure of the <code class="docutils literal"><sp
 ReFrame will automatically pick the correct compiler based on the extension of the source file.
 The exact compiler that is going to be used depends on the programming environment that the test is running with.
 For example, given our configuration, if it is run with <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code>, the Cray C compiler will be used, if it is run with <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>, the GCC compiler will be used etc.
-A user can associate compilers with programming environments in the ReFrame's <a class="reference external" href="configure.html#the-configuration-file">settings file</a>.</p>
+A user can associate compilers with programming environments in the ReFrame’s <a class="reference external" href="configure.html#the-configuration-file">settings file</a>.</p>
 <p>The next line in our first regression test specifies a list of options to be used for running the generated executable:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Notice that you do not need to specify the executable name.
 Since ReFrame compiled it and generated it, it knows the name.
-We will see in the <a class="reference external" href="advanced.html">&quot;Customizing Further A ReFrame Regression Test&quot;</a> section, how you can specify the name of the executable, in cases that ReFrame cannot guess its name.</p>
+We will see in the <a class="reference external" href="advanced.html">“Customizing Further A ReFrame Regression Test”</a> section, how you can specify the name of the executable, in cases that ReFrame cannot guess its name.</p>
 <p>The next lines specify what should be checked for assessing the sanity of the result of the test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
             <span class="sa">r</span><span class="s1">&#39;time for single matrix vector multiplication&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
@@ -367,9 +367,9 @@ The <code class="docutils literal"><span class="pre">sanity_patterns</span></cod
 <a class="reference external" href="deferrables.html">Sanity functions</a> are special in the sense that they are evaluated lazily.
 You can generally treat them as normal Python functions inside a <code class="docutils literal"><span class="pre">sanity_patterns</span></code> expression.
 ReFrame provides already a wide range of useful sanity functions ranging from wrappers to the standard built-in functions of Python to functions related to parsing the output of a regression test.
-For a complete listing of the available functions, please have a look at the <a class="reference external" href="sanity_functions_reference.html">&quot;Sanity Functions Reference&quot;</a>.</p>
+For a complete listing of the available functions, please have a look at the <a class="reference external" href="sanity_functions_reference.html">“Sanity Functions Reference”</a>.</p>
 <p>In our example, the <code class="docutils literal"><span class="pre">assert_found()</span></code> function accepts a regular expression pattern to be searched in a file and either returns <code class="docutils literal"><span class="pre">True</span></code> on success or raises a <code class="docutils literal"><span class="pre">reframe.core.exceptions.SanityError</span></code> in case of failure with a descriptive message.
-This function uses internally the &quot;<a class="reference external" href="https://docs.python.org/3.6/library/re.html">re</a>&quot; module of the Python standard library, so it may accept the same <a class="reference external" href="https://docs.python.org/3.6/library/re.html#regular-expression-syntax">regular expression syntax</a>.
+This function uses internally the “<a class="reference external" href="https://docs.python.org/3.6/library/re.html">re</a>” module of the Python standard library, so it may accept the same <a class="reference external" href="https://docs.python.org/3.6/library/re.html#regular-expression-syntax">regular expression syntax</a>.
 As a file argument, <code class="docutils literal"><span class="pre">assert_found()</span></code> accepts any filename, which will be resolved against the stage directory of the test.
 You can also use the <code class="docutils literal"><span class="pre">self.stdout</span></code> and <code class="docutils literal"><span class="pre">self.stderr</span></code> attributes to reference the standard output and standard error, respectively.</p>
 <blockquote>
@@ -384,14 +384,14 @@ The framework will automatically abort the execution of the test, report the err
 In case of failure, this list will be printed in the failure summary.</p>
 <p>The <code class="docutils literal"><span class="pre">tags</span></code> attribute is a set of tags that you can assign to this test.
 This is useful for categorizing the tests and helps in quickly selecting the tests of interest.
-More about test selection, you can find in the <a class="reference external" href="running.html">&quot;Running ReFrame&quot;</a> section.</p>
+More about test selection, you can find in the <a class="reference external" href="running.html">“Running ReFrame”</a> section.</p>
 <blockquote>
-<div>NOTE: The values assigned to the attributes of a <code class="docutils literal"><span class="pre">RegressionTest</span></code> are validated and if they don't have the correct type, an error will be issued by ReFrame.
-For a list of all the attributes and their types, please refer to the <a class="reference external" href="reference.html">&quot;Reference Guide&quot;</a>.</div></blockquote>
+<div>NOTE: The values assigned to the attributes of a <code class="docutils literal"><span class="pre">RegressionTest</span></code> are validated and if they don’t have the correct type, an error will be issued by ReFrame.
+For a list of all the attributes and their types, please refer to the <a class="reference external" href="reference.html">“Reference Guide”</a>.</div></blockquote>
 <div class="section" id="running-the-tutorial-examples">
 <span id="running-the-tutorial-examples"></span><h3>Running the Tutorial Examples<a class="headerlink" href="#running-the-tutorial-examples" title="Permalink to this headline">¶</a></h3>
 <p>ReFrame offers a rich command-line interface that allows you to control several aspects of its executions.
-A more detailed description can be found in the <a class="reference external" href="running.html">&quot;Running ReFrame&quot;</a> section.
+A more detailed description can be found in the <a class="reference external" href="running.html">“Running ReFrame”</a> section.
 Here we will only show you how to run a specific tutorial test:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">-</span><span class="n">n</span> <span class="n">example1_check</span> <span class="o">-</span><span class="n">r</span>
 </pre></div>
@@ -442,7 +442,7 @@ Here we will only show you how to run a specific tutorial test:</p>
 </pre></div>
 </div>
 <p>Notice how our regression test is run on every partition of the configured system and for every programming environment.</p>
-<p>Now that you have got a first understanding of how a regression test is written in ReFrame, let's try to expand our example.</p>
+<p>Now that you have got a first understanding of how a regression test is written in ReFrame, let’s try to expand our example.</p>
 </div>
 </div>
 <div class="section" id="customizing-the-compilation-phase">
@@ -501,7 +501,7 @@ Notice also that we now restrict the validity of our test only to the programmin
 This is a dictionary, whose keys are the names of the environment variables and whose values are the values of the environment variables.
 Notice that both the keys and the values must be strings.</p>
 <p>In order to set the compiler flags for the current programming environment, you have to override either the <code class="docutils literal"><span class="pre">setup()</span></code> or the <code class="docutils literal"><span class="pre">compile()</span></code> method of the <code class="docutils literal"><span class="pre">RegressionTest</span></code>.
-As described in <a class="reference external" href="pipeline.html">&quot;The Regression Test Pipeline&quot;</a> section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
+As described in <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
 Here we choose to override the <code class="docutils literal"><span class="pre">compile()</span></code> method, since setting compiler flags is simply more relevant to this phase conceptually.</p>
 <blockquote>
 <div>NOTE: The <code class="docutils literal"><span class="pre">RegressionTest</span></code> implements the six phases of the regression test pipeline in separate methods.
@@ -510,7 +510,7 @@ You will hardly ever need to override any of the other methods and, in fact, you
 <p>The <code class="docutils literal"><span class="pre">current_environ</span></code> attribute of the <code class="docutils literal"><span class="pre">RegressionTest</span></code> holds an instance of the current programming environment.
 This variable is available to regression tests after the setup phase.
 Before it is <code class="docutils literal"><span class="pre">None</span></code>, so you cannot access it safely during the initialization phase.
-Let's have a closer look at the <code class="docutils literal"><span class="pre">compile()</span></code> method:</p>
+Let’s have a closer look at the <code class="docutils literal"><span class="pre">compile()</span></code> method:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">env_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span>
         <span class="k">if</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>
@@ -532,7 +532,7 @@ Finally, we call the <code class="docutils literal"><span class="pre">compile()<
 <div class="section" id="an-alternative-implementation-using-dictionaries">
 <span id="an-alternative-implementation-using-dictionaries"></span><h3>An alternative implementation using dictionaries<a class="headerlink" href="#an-alternative-implementation-using-dictionaries" title="Permalink to this headline">¶</a></h3>
 <p>Here we present an alternative implementation of the same test using a dictionary to hold the compilation flags for the different programming environments.
-The advantage of this implementation is that you move the different compilation flags in the initialization phase, where also the rest of the test's specification is, thus making it more concise.</p>
+The advantage of this implementation is that you move the different compilation flags in the initialization phase, where also the rest of the test’s specification is, thus making it more concise.</p>
 <p>The <code class="docutils literal"><span class="pre">compile()</span></code> method is now very simple: it gets the correct compilation flags from the <code class="docutils literal"><span class="pre">prgenv_flags</span></code> dictionary and applies them to the current programming environment.</p>
 <blockquote>
 <div>NOTE: A regression test is like any other Python class, so you can freely define your own attributes.
@@ -582,7 +582,7 @@ If you accidentally try to write on a reserved <code class="docutils literal"><s
 <div class="section" id="running-on-multiple-nodes">
 <span id="running-on-multiple-nodes"></span><h2>Running on Multiple Nodes<a class="headerlink" href="#running-on-multiple-nodes" title="Permalink to this headline">¶</a></h2>
 <p>So far, all our tests run on a single node.
-Depending on the actual system that ReFrame is running, the test may run locally or be submitted to the system's job scheduler.
+Depending on the actual system that ReFrame is running, the test may run locally or be submitted to the system’s job scheduler.
 In this example, we write a regression test for the MPI+OpenMP version of the matrix-vector product.
 The source code of this program is in <code class="docutils literal"><span class="pre">tutorial/src/example_matrix_vector_multiplication_mpi_openmp.c</span></code>.
 The regression test file follows:</p>
@@ -631,7 +631,7 @@ The regression test file follows:</p>
 </div>
 <p>This test is pretty much similar to the <a class="reference external" href="#an-alternative-implementation-using-dictionaries">test example</a> for the OpenMP code we have shown before, except that it adds some information about the configuration of the distributed tasks.
 It also restricts the valid systems only to those that support distributed execution.
-Let's take the changes step-by-step:</p>
+Let’s take the changes step-by-step:</p>
 <p>First we need to specify for which partitions this test is meaningful by setting the <code class="docutils literal"><span class="pre">valid_systems</span></code> attribute:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daint:gpu&#39;</span><span class="p">,</span> <span class="s1">&#39;daint:mc&#39;</span><span class="p">]</span>
 </pre></div>
@@ -654,7 +654,7 @@ As shown in the following Table, they follow closely the corresponding Slurm opt
 For schedulers that do not provide the same functionality, some of the variables may be ignored.</p>
 <p><center>
 <code class="docutils literal"><span class="pre">RegressionTest</span></code> attribute | Corresponding SLURM option
---- | ---
+— | —
 <code class="docutils literal"><span class="pre">time_limit</span> <span class="pre">=</span> <span class="pre">(0,</span> <span class="pre">10,</span> <span class="pre">30)</span></code>   | <code class="docutils literal"><span class="pre">--time=00:10:30</span></code>
 <code class="docutils literal"><span class="pre">use_multithreading</span> <span class="pre">=</span> <span class="pre">True</span></code>  | <code class="docutils literal"><span class="pre">--hint=multithread</span></code>
 <code class="docutils literal"><span class="pre">use_multithreading</span> <span class="pre">=</span> <span class="pre">False</span></code> | <code class="docutils literal"><span class="pre">--hint=nomultithread</span></code>
@@ -669,7 +669,7 @@ For schedulers that do not provide the same functionality, some of the variables
 <div class="section" id="testing-a-gpu-code">
 <span id="testing-a-gpu-code"></span><h2>Testing a GPU Code<a class="headerlink" href="#testing-a-gpu-code" title="Permalink to this headline">¶</a></h2>
 <p>In this example, we will create two regression tests for two different GPU versions of our matrix-vector code: OpenACC and CUDA.
-Let's start with the OpenACC regression test:</p>
+Let’s start with the OpenACC regression test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
@@ -791,7 +791,7 @@ In this example, we expand the regression test of the serial code, so as to chec
 </pre></div>
 </div>
 <p>The only difference with our first example is actually the more complex expression to assess the sanity of the test.
-Let's go over it line-by-line.
+Let’s go over it line-by-line.
 The first thing we do is to extract the norm printed in the standard output.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="n">found_norm</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">extractsingle</span><span class="p">(</span>
             <span class="sa">r</span><span class="s1">&#39;The L2 norm of the resulting vector is:\s+(?P&lt;norm&gt;\S+)&#39;</span><span class="p">,</span>
@@ -835,7 +835,7 @@ The important thing to mention here is that you can combine the results of sanit
 Remember that sanity functions are not evaluated at the time you call them.
 They will be evaluated later by the framework during the sanity checking phase.
 If you include the result of a sanity function in an expression, the evaluation of the resulting expression will also be deferred.
-For a detailed description of the mechanism behind the sanity functions, please have a look at <a class="reference external" href="deferrables.html">&quot;Understanding The Mechanism Of Sanity Functions&quot;</a> section.</p>
+For a detailed description of the mechanism behind the sanity functions, please have a look at <a class="reference external" href="deferrables.html">“Understanding The Mechanism Of Sanity Functions”</a> section.</p>
 </div>
 <div class="section" id="writing-a-performance-test">
 <span id="writing-a-performance-test"></span><h2>Writing a Performance Test<a class="headerlink" href="#writing-a-performance-test" title="Permalink to this headline">¶</a></h2>
@@ -887,7 +887,7 @@ ReFrame offers a flexible way of extracting and manipulating performance data fr
 : This variable defines which are the performance patterns we are looking for and how to extract the performance values.</p>
 <p><code class="docutils literal"><span class="pre">reference</span></code>
 : This variable is a collection of reference values for different systems.</p>
-<p>Let's have a closer look at each of them:</p>
+<p>Let’s have a closer look at each of them:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;perf&#39;</span><span class="p">:</span> <span class="n">sn</span><span class="o">.</span><span class="n">extractsingle</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Performance:\s+(?P&lt;Gflops&gt;\S+) Gflop/s&#39;</span><span class="p">,</span>
                                      <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="s1">&#39;Gflops&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
@@ -899,7 +899,7 @@ A sanity expression is a Python expression that uses the result of one or more <
 In our example, we name the performance value we are looking for simply as <code class="docutils literal"><span class="pre">perf</span></code> and we extract its value by converting to float the regex group named <code class="docutils literal"><span class="pre">Gflops</span></code> from the line that was matched in the standard output.</p>
 <p>Each of the performance variables defined in <code class="docutils literal"><span class="pre">perf_patterns</span></code> must be resolved in the <code class="docutils literal"><span class="pre">reference</span></code> dictionary of reference values.
 When the framework obtains a performance value from the output of the test it searches for a reference value in the <code class="docutils literal"><span class="pre">reference</span></code> dictionary, and then it checks whether the user supplied tolerance is respected.
-Let's go over the <code class="docutils literal"><span class="pre">reference</span></code> dictionary of our example and explain its syntax in more detail:</p>
+Let’s go over the <code class="docutils literal"><span class="pre">reference</span></code> dictionary of our example and explain its syntax in more detail:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span>        <span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;daint:gpu&#39;</span><span class="p">:</span> <span class="p">{</span>
                 <span class="s1">&#39;perf&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">50.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
@@ -1140,6 +1140,8 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/tutorial.html">v2.10</a></dd>
+            <dd><a href="../v2.11/tutorial.html">v2.11</a></dd>
             <dd><a href="tutorial.html">v2.7</a></dd>
             <dd><a href="../v2.8/tutorial.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/tutorial.html">v2.8.1</a></dd>

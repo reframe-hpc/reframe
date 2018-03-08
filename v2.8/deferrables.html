@@ -226,7 +226,7 @@ We shall see later on why this name is used.</p>
 </div>
 <p>If the argument passed to <code class="docutils literal"><span class="pre">evaluate()</span></code> is not a deferred expression, it will be simply returned as is.</p>
 <p>Deferrable functions may also be combined as we do with normal functions.
-Let's extend our example with <code class="docutils literal"><span class="pre">foo()</span></code> accepting an argument and printing it:</p>
+Let’s extend our example with <code class="docutils literal"><span class="pre">foo()</span></code> accepting an argument and printing it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
 <span class="nd">@sn.sanity_function</span>
@@ -257,13 +257,13 @@ An alternative way to evaluate this expression would be the following:</p>
 </div>
 <p>As you may have noticed, you can assign a deferred function to a variable and evaluate it later.
 You may also do <code class="docutils literal"><span class="pre">evaluate(x)</span></code>, which is equivalent to <code class="docutils literal"><span class="pre">x.evaluate()</span></code>.</p>
-<p>To demonstrate more clearly how the deferred evaluation of a function works, let's consider the following <code class="docutils literal"><span class="pre">size3()</span></code> deferrable function that simply checks whether an <code class="docutils literal"><span class="pre">iterable</span></code> passed as argument has three elements inside it:</p>
+<p>To demonstrate more clearly how the deferred evaluation of a function works, let’s consider the following <code class="docutils literal"><span class="pre">size3()</span></code> deferrable function that simply checks whether an <code class="docutils literal"><span class="pre">iterable</span></code> passed as argument has three elements inside it:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="nd">@sn.sanity_function</span>
 <span class="k">def</span> <span class="nf">size3</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
 </pre></div>
 </div>
-<p>Now let's assume the following example:</p>
+<p>Now let’s assume the following example:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">size3</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">evaluate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -359,7 +359,7 @@ If you want to defer the execution of such operators, you should use the corresp
 When you call <code class="docutils literal"><span class="pre">evaluate()</span></code> on a deferred expression, you trigger the evaluation of the whole subexpression tree.
 Here is how the evaluation process evolves:</p>
 <p>A deferred expression object is merely a placeholder of the target function and its arguments at the moment you call it.
-Deferred expressions leverage also the Python's data model so as to capture all the binary and unary operators supported by the language.
+Deferred expressions leverage also the Python’s data model so as to capture all the binary and unary operators supported by the language.
 When you call <code class="docutils literal"><span class="pre">evaluate()</span></code> on a deferred expression object, the stored function will be called passing it the captured arguments.
 If any of the arguments is a deferred expression, it will be evaluated too.
 If the return value of the deferred expression is also a deferred expression, it will be evaluated as well.</p>
@@ -461,8 +461,8 @@ However, when you try to iterate over the result of this call, then the deferred
 <div class="section" id="how-to-write-a-deferrable-function">
 <span id="how-to-write-a-deferrable-function"></span><h2>How to Write a Deferrable Function?<a class="headerlink" href="#how-to-write-a-deferrable-function" title="Permalink to this headline">¶</a></h2>
 <p>The answer is simple: like you would with any other normal function!
-We've done that already in all the examples we've shown in this documentation.
-A question that somehow naturally comes up here is whether you can call a deferrable function from within a deferrable function, since this doesn't make a lot of sense: after all, your function will be deferred anyway.</p>
+We’ve done that already in all the examples we’ve shown in this documentation.
+A question that somehow naturally comes up here is whether you can call a deferrable function from within a deferrable function, since this doesn’t make a lot of sense: after all, your function will be deferred anyway.</p>
 <p>The answer is, yes. You can call other deferrable functions from within a deferrable function.
 Thanks to the implicit evaluation rules as well as the fact that the return value of a deferrable function is also evaluated if it is a deferred expression, you can write a deferrable function without caring much about whether the functions you call are themselves deferrable or not.
 However, you should be aware of passing mutable objects to deferrable functions.
@@ -504,7 +504,7 @@ You can find the complete list of provided sanity functions <a class="reference 
 <p>Python allows you to create functions that will be evaluated lazily.
 These are called <a class="reference external" href="https://wiki.python.org/moin/Generators">generator functions</a>.
 Their key characteristic is that instead of using the <code class="docutils literal"><span class="pre">return</span></code> keyword to return values, they use the <code class="docutils literal"><span class="pre">yield</span></code> keyword.
-I'm not going to go into the details of the generators, since there is plenty of documentation out there, so I will focus on the similarities and differences with our deferrable functions.</p>
+I’m not going to go into the details of the generators, since there is plenty of documentation out there, so I will focus on the similarities and differences with our deferrable functions.</p>
 <div class="section" id="similarities">
 <span id="similarities"></span><h3>Similarities<a class="headerlink" href="#similarities" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
@@ -557,7 +557,7 @@ For a deferred expression you should use <code class="docutils literal"><span cl
 <li><p class="first">A generator object is iterable, whereas a deferrable object will be iterable if and only if the result of its evaluation is iterable.</p>
 <blockquote>
 <div><p>NOTE: Technically, a deferrable object is iterable, too, since it provides the <code class="docutils literal"><span class="pre">__iter__()</span></code> method.
-That's why you can include it in iteration expressions.
+That’s why you can include it in iteration expressions.
 However, it delegates this call to the result of its evaluation.</p>
 </div></blockquote>
 <p>Here is an example demonstrating this difference:</p>
@@ -669,6 +669,8 @@ Notice also, the printout of <code class="docutils literal"><span class="pre">2<
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/deferrables.html">v2.10</a></dd>
+            <dd><a href="../v2.11/deferrables.html">v2.11</a></dd>
             <dd><a href="../v2.7/deferrables.html">v2.7</a></dd>
             <dd><a href="deferrables.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/deferrables.html">v2.8.1</a></dd>

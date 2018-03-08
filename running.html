@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.10 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
         <link rel="next" title="Use Cases" href="usecases.html"/>
         <link rel="prev" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -128,6 +128,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#asynchronous-execution-of-regression-checks">Asynchronous Execution of Regression Checks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#manipulating-modules">Manipulating modules</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
@@ -586,30 +587,36 @@ ReFrame creates two files inside the current working directory every time it is 
 <li><code class="docutils literal"><span class="pre">reframe.log</span></code>: This file stores more detailed of information on ReFrame’s actions.</li>
 </ul>
 <p>By default, the output in <code class="docutils literal"><span class="pre">reframe.log</span></code> looks like the following:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>[2017-10-24T21:19:04] info: reframe: [----------] started processing example7_check (Matrix-vector mult
-iplication example with Cuda)
-[2017-10-24T21:19:04] info: reframe: [   SKIP   ] skipping daint:mc
-[2017-10-24T21:19:04] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
-[2017-10-24T21:19:04] debug: example7_check: setting up the environment
-[2017-10-24T21:19:04] debug: example7_check: loading environment for partition daint:gpu
-[2017-10-24T21:19:05] debug: example7_check: loading environment PrgEnv-cray
-[2017-10-24T21:19:05] debug: example7_check: setting up paths
-[2017-10-24T21:19:05] debug: example7_check: setting up the job descriptor
-[2017-10-24T21:19:05] debug: example7_check: job scheduler backend: nativeslurm
-[2017-10-24T21:19:05] debug: example7_check: setting up performance logging
-[2017-10-24T21:19:05] debug: example7_check: compilation started
-[2017-10-24T21:19:06] debug: example7_check: compilation stdout:
+<div class="highlight-none"><div class="highlight"><pre><span></span>[2018-03-01T20:03:13] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
+[2018-03-01T20:03:13] debug: example7_check: entering stage: setup
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading environment for the current partition
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show daint-gpu
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load daint-gpu
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading test&#39;s environment
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show cudatoolkit
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load cudatoolkit
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up paths
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up the job descriptor
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: job scheduler backend: local
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up performance logging
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: compile
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: copying /users/karakasv/Devel/reframe/tutorial/src to stage directory (/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv
+-cray)
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: symlinking files: []
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: Staged sourcepath: /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
+[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: nvcc  -O3 -I/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray /users/karakasv/Devel/reframe/s
+tage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu -o /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/./example7_check
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stdout:
 
-[2017-10-24T21:19:06] debug: example7_check: compilation stderr:
-nvcc warning : The &#39;compute_20&#39;, &#39;sm_20&#39;, and &#39;sm_21&#39; architectures are deprecated, and may be removed
-in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stderr:
+nvcc warning : The &#39;compute_20&#39;, &#39;sm_20&#39;, and &#39;sm_21&#39; architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 
-[2017-10-24T21:19:06] debug: example7_check: compilation finished
-[2017-10-24T21:19:09] debug: example7_check: spawned job (jobid=4163846)
-[2017-10-24T21:19:21] debug: example7_check: spawned job finished
-[2017-10-24T21:19:21] debug: example7_check: copying interesting files to output directory
-[2017-10-24T21:19:21] debug: example7_check: removing stage directory
-[2017-10-24T21:19:21] info: reframe: [       OK ] example7_check on daint:gpu using PrgEnv-cray
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation finished
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: run
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: sbatch /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example7_check_daint_gpu_PrgEnv-cray
+.sh
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: spawned job (jobid=6224537)
+[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: wait
 </pre></div>
 </div>
 <p>Each line starts with a timestamp, the level of the message (<code class="docutils literal"><span class="pre">info</span></code>, <code class="docutils literal"><span class="pre">debug</span></code> etc.), the context in which the framework is currently executing (either <code class="docutils literal"><span class="pre">reframe</span></code> or the name of the current test and, finally, the actual message.</p>
@@ -627,7 +634,7 @@ The default configuration looks as follows:</p>
         <span class="s1">&#39;reframe.log&#39;</span> <span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
             <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(levelname)s</span><span class="s1">: &#39;</span>
-                          <span class="s1">&#39;</span><span class="si">%(testcase_name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
             <span class="s1">&#39;append&#39;</span>    <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
         <span class="p">},</span>
 
@@ -667,9 +674,9 @@ ReFrame supports all the <a class="reference external" href="https://docs.python
 If ReFrame is not in the context of regression test, <code class="docutils literal"><span class="pre">reframe</span></code> will be printed.</li>
 <li><code class="docutils literal"><span class="pre">check_jobid</span></code>: Prints the job or process id of the job or process associated with currently executing regression test.
 If a job or process is not yet created, <code class="docutils literal"><span class="pre">-1</span></code> will be printed.</li>
-<li><code class="docutils literal"><span class="pre">testcase_name</span></code>: Print the name of the test case that is currently executing.
-Test case is essentially a tuple consisting of the test name, the current system and partition and the current programming environment.
-This format string prints out like <code class="docutils literal"><span class="pre">&lt;test-name&gt;&#64;&lt;partition&gt;</span> <span class="pre">using</span> <span class="pre">&lt;environ&gt;</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">check_info</span></code>: Print live information of the currently executing check.
+By default this field has the form <code class="docutils literal"><span class="pre">&lt;check_name&gt;</span> <span class="pre">on</span> <span class="pre">&lt;current_partition&gt;</span> <span class="pre">using</span> <span class="pre">&lt;current_environment&gt;</span></code>.
+It can be configured on a per test basis by overriding the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.info" title="reframe.core.pipeline.RegressionTest.info"><code class="xref py py-func docutils literal"><span class="pre">info</span></code></a> method in your regression test.</li>
 </ul>
 </li>
 <li><code class="docutils literal"><span class="pre">datefmt</span></code> (default: <code class="docutils literal"><span class="pre">'%FT%T'</span></code>) The format that will be used for outputting timestamps (i.e., the <code class="docutils literal"><span class="pre">%(asctime)s</span></code> field).
@@ -681,17 +688,23 @@ This property may accept any date format as the <code class="docutils literal"><
 If set for a <code class="docutils literal"><span class="pre">filename.log</span></code> handler entry, the resulting log file name will be <code class="docutils literal"><span class="pre">filename_&lt;timestamp&gt;.log</span></code>.
 This property is ignored for the standard output/error handlers.</li>
 </ul>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.10: </span>The <code class="docutils literal"><span class="pre">testcase_name</span></code> logging attribute was replaced with the <code class="docutils literal"><span class="pre">check_info</span></code>, which is now also configurable</p>
+</div>
+</div>
 </div>
 <div class="section" id="performance-logging">
 <h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
 <p>ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
 For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame’s <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test’s performance is recorded.
-The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(testcase_name)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
+The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(check_info)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
 Currently, it is not possible for users to configure performance logging.</p>
 <p>The resulting log file looks like the following:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>[2017-12-01T15:31:20] example7_check@daint:gpu using PrgEnv-cray (jobid=649790): value: 47.797996, reference: (50.0, -0.1, 0.1)
-[2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-gnu (jobid=649791): value: 49.048228, reference: (50.0, -0.1, 0.1)
-[2017-12-01T15:31:24] example7_check@daint:gpu using PrgEnv-pgi (jobid=649792): value: 48.575334, reference: (50.0, -0.1, 0.1)
+<div class="highlight-none"><div class="highlight"><pre><span></span>[2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-pgi (jobid=6224525): value: 49.637615, reference: (50.0, -0.1, 0.1)
+[2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-cray (jobid=6224523): value: 49.931819, reference: (50.0, -0.1, 0.1)
+[2018-03-01T20:01:21] reframe 2.10: example7_check on daint:gpu using PrgEnv-gnu (jobid=6224524): value: 49.428855, reference: (50.0, -0.1, 0.1)
 </pre></div>
 </div>
 <p>The interpretation of the performance values depends on the individual tests.
@@ -778,6 +791,69 @@ Reframe paths
 </div>
 <p>The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
 For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.</p>
+</div>
+<div class="section" id="manipulating-modules">
+<h2>Manipulating modules<a class="headerlink" href="#manipulating-modules" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.11.</span></p>
+</div>
+<p>ReFrame allows you to change the modules loaded by a regression test on-the-fly without having to edit the regression test file.
+This feature is extremely useful when you need to quickly test a newer version of a module, but it also allows you to completely decouple the module names used in your regression tests from the real module names in a system, thus making your test even more portable.
+This is achieved by defining <em>module mappings</em>.</p>
+<p>There are two ways to pass module mappings to ReFrame.
+The first is to use the <code class="docutils literal"><span class="pre">--map-module</span></code> command-line option, which accepts a module mapping.
+For example, the following line maps the module <code class="docutils literal"><span class="pre">test_module</span></code> to the module <code class="docutils literal"><span class="pre">real_module</span></code>:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>--map-module=&#39;test_module: real_module&#39;
+</pre></div>
+</div>
+<p>In this case, whenever ReFrame is asked to load <code class="docutils literal"><span class="pre">test_module</span></code>, it will load <code class="docutils literal"><span class="pre">real_module</span></code>.
+Any string without spaces may be accepted in place of <code class="docutils literal"><span class="pre">test_module</span></code> and <code class="docutils literal"><span class="pre">real_module</span></code>.
+You can also define multiple module mappings at once by repeating the <code class="docutils literal"><span class="pre">--map-module</span></code>.
+If more than one mapping is specified for the same module, then the last mapping will take precedence.
+It is also possible to map a single module to more than one target.
+This can be done by listing the target modules separated by spaces in the order that they should be loaded.
+In the following example, ReFrame will load <code class="docutils literal"><span class="pre">real_module0</span></code> and <code class="docutils literal"><span class="pre">real_module1</span></code> whenever the <code class="docutils literal"><span class="pre">test_module</span></code> is encountered:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>--map-module &#39;test_module: real_module0 real_module1&#39;
+</pre></div>
+</div>
+<p>The second way of defining mappings is by listing them on a file, which you can then pass to ReFrame through the command-line option <code class="docutils literal"><span class="pre">--module-mappings</span></code>.
+Each line on the file corresponds to the definition of a mapping for a single module.
+The syntax of the individual mappings in the file is the same as with the option <code class="docutils literal"><span class="pre">--map-module</span></code> and the same rules apply regarding repeated definitions.
+Text starting with <code class="docutils literal"><span class="pre">#</span></code> is considered a comment and is ignored until the end of line is encountered.
+Empty lines are ignored.
+The following block shows an example of module mapping file:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>module-1: module-1a  # an inline comment
+module-2: module-2a module-2b module-2c
+
+# This is a full line comment
+module-4: module-4a module-4b
+</pre></div>
+</div>
+<p>If both <code class="docutils literal"><span class="pre">--map-module</span></code> and <code class="docutils literal"><span class="pre">--module-mappings</span></code> are passed, ReFrame will first create a mapping from the definitions on the file and it will then process the definitions passed with the <code class="docutils literal"><span class="pre">--map-module</span></code> options.
+As usual, later definitions will override the former.</p>
+<p>A final note on module mappings.
+Module mappings can be arbitrarily deep as long as they do not form a cycle.
+In this case, ReFrame will issue an error (denoting the offending cyclic dependency).
+For example, suppose having the following mapping file:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>cudatoolkit: foo
+foo: bar
+bar: foobar
+foobar: cudatoolkit
+</pre></div>
+</div>
+<p>If you now try to run a test that loads the module <cite>cudatoolkit</cite>, the following error will be yielded:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>------------------------------------------------------------------------------
+FAILURE INFO for example7_check
+  * System partition: daint:gpu
+  * Environment: PrgEnv-gnu
+  * Stage directory: None
+  * Job type: batch job (id=-1)
+  * Maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Failing phase: setup
+  * Reason: caught framework exception: module cyclic dependency: cudatoolkit-&gt;foo-&gt;bar-&gt;foobar-&gt;cudatoolkit
+------------------------------------------------------------------------------
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -867,6 +943,8 @@ For compile-only and normal tests that require a compilation, the execution time
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="v2.10/running.html">v2.10</a></dd>
+            <dd><a href="v2.11/running.html">v2.11</a></dd>
             <dd><a href="v2.7/running.html">v2.7</a></dd>
             <dd><a href="v2.8/running.html">v2.8</a></dd>
             <dd><a href="v2.8.1/running.html">v2.8.1</a></dd>
@@ -885,7 +963,7 @@ For compile-only and normal tests that require a compilation, the execution time
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

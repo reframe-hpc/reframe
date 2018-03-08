@@ -398,23 +398,21 @@ Specifically, we would like to execute the following shell script and check that
 
 .. code-block:: bash
 
-  #!/usr/bin/env bash
+   #!/usr/bin/env bash
 
-  for i in {1..100}
-  do
-      echo Random: $((RANDOM%($UPPER+1-$LOWER)+$LOWER))
-  done
+   if [ -z $LOWER ]; then
+       export LOWER=90
+   fi
+
+   if [ -z $UPPER ]; then
+       export UPPER=100
+   fi
+
+   for i in {1..100}; do
+       echo Random: $((RANDOM%($UPPER+1-$LOWER)+$LOWER))
+   done
 
 The above script simply prints 100 random integers between the limits given by the variables ``LOWER`` and ``UPPER``.
-For this example the above limits are exported as environment variables by the ``limits.sh`` script as follows:
-
-.. code-block:: bash
-
-  #!/usr/bin/env bash
-
-  export LOWER=90
-  export UPPER=100
-
 In the corresponding regression test we want to check that all the random numbers printed lie between 90 and 100 ensuring that the script executed correctly.
 Hence, a common sanity check has to be applied to all the printed random numbers.
 In ReFrame this can achieved by the use of :func:`map <reframe.utility.sanity.map>` sanity function accepting a function and an iterable as arguments.
@@ -424,38 +422,33 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
 
 .. code-block:: python
 
-  import os
+   import os
 
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RunOnlyRegressionTest
-
-
-  class DeferredIterationTest(RunOnlyRegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('deferred_iteration_check',
-                         os.path.dirname(__file__), **kwargs)
-
-          self.descr = ('ReFrame tutorial demonstrating the use of deferred '
-                        'iteration via the `map` sanity function.')
-
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-
-          self.pre_run = ['source limits.sh']
-          self.executable = './advanced_example6.sh'
-          numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
-                                  'number', float)
-
-          self.sanity_patterns = sn.and_(
-              sn.assert_eq(sn.count(numbers), 100),
-              sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
-
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
+   import reframe.utility.sanity as sn
+   from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-  def _get_checks(**kwargs):
-      return [DeferredIterationTest(**kwargs)]
+   class DeferredIterationTest(RunOnlyRegressionTest):
+       def __init__(self, **kwargs):
+           super().__init__('deferred_iteration_check',
+                            os.path.dirname(__file__), **kwargs)
+           self.descr = ('ReFrame tutorial demonstrating the use of deferred '
+                         'iteration via the `map` sanity function.')
+           self.valid_systems = ['*']
+           self.valid_prog_environs = ['*']
+           self.executable = './random_numbers.sh'
+           numbers = sn.extractall(
+               r'Random: (?P<number>\S+)', self.stdout, 'number', float)
+           self.sanity_patterns = sn.and_(
+               sn.assert_eq(sn.count(numbers), 100),
+               sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
+           self.maintainers = ['put-your-name-here']
+           self.tags = {'tutorial'}
+
+
+   def _get_checks(**kwargs):
+       return [DeferredIterationTest(**kwargs)]
+
 
 First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
 
@@ -469,7 +462,7 @@ In order to check that the extracted numbers lie within the specified limits, we
 Additionally, our requirement is that all the numbers satisfy the above constraint and we therefore use :func:`all <reframe.utility.sanity.all>`.
 
 There is still a small complication that needs to be addressed.
-The :func:`all <reframe.utility.sanity.all>` function returns ``True`` for empty iterables, which is not what we want.
+The :func:`all <reframe.utility.sanity.all>` function returns :class:`True` for empty iterables, which is not what we want.
 So we must ensure that all the numbers are extracted as well.
 To achieve this, we make use of :func:`count <reframe.utility.sanity.count>` to get the number of elements contained in ``numbers`` combined with :func:`assert_eq <reframe.utility.sanity.assert_eq>` to check that the number is indeed 100.
 Finally, both of the above conditions have to be satisfied for the program execution to be considered successful, hence the use of the :func:`and_ <reframe.utility.sanity.and_>` function.
@@ -483,8 +476,92 @@ The full syntax for the :attr:`sanity_patterns` is the following:
       sn.assert_eq(sn.count(numbers), 100),
       sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
 
-Note that the environment variables ``LOWER`` and ``UPPER`` have to be exported before execution of the ``advanced_example6.sh`` script.
-Within ReFrame it is possible to define commands that will be run before execution of the actual :attr:`executable <reframe.core.pipeline.RegressionTest.executable>`.
-To achieve this, you can use the :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` attribute of the :class:`RegressionTest`.
-The :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` attribute is a list of shell commands to be emitted verbatim in the generated job script before the executable.
-In this case, we make sure that the ``limits.sh`` file is sourced before executing the ``advanced_example6.sh`` script.
+
+Customizing the Generated Job Script
+------------------------------------
+
+It is often the case that you must run some commands before and/or after the parallel launch of your executable.
+This can be easily achieved by using the :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` and :attr:`post_run <reframe.core.pipeline.RegressionTest.post_run>` attributes of :class:`RegressionTest`.
+
+The following example is a slightly modified version of the previous one.
+The lower and upper limits for the random numbers are now set inside a helper shell script in ``scripts/limits.sh`` and we want also to print the word ``FINISHED`` after our executable has finished.
+In order to achieve this, we need to source the helper script just before launching the executable and ``echo`` the desired message just after it finishes.
+Here is the test file:
+
+.. code-block:: python
+
+   import os
+
+   import reframe.utility.sanity as sn
+   nfrom reframe.core.pipeline import RunOnlyRegressionTest
+
+
+   class PrerunDemoTest(RunOnlyRegressionTest):
+       def __init__(self, **kwargs):
+           super().__init__('prerun_demo_check',
+                            os.path.dirname(__file__), **kwargs)
+           self.descr = ('ReFrame tutorial demonstrating the use of '
+                         'pre- and post-run commands')
+           self.valid_systems = ['*']
+           self.valid_prog_environs = ['*']
+           self.pre_run  = ['source scripts/limits.sh']
+           self.post_run = ['echo FINISHED']
+           self.executable = './random_numbers.sh'
+           numbers = sn.extractall(
+               r'Random: (?P<number>\S+)', self.stdout, 'number', float)
+           self.sanity_patterns = sn.all([
+               sn.assert_eq(sn.count(numbers), 100),
+               sn.all(sn.map(lambda x: sn.assert_bounded(x, 50, 80), numbers)),
+               sn.assert_found('FINISHED', self.stdout)
+           ])
+
+           self.maintainers = ['put-your-name-here']
+           self.tags = {'tutorial'}
+
+
+   def _get_checks(**kwargs):
+       return [PrerunDemoTest(**kwargs)]
+
+
+Notice the use of the :attr:`pre_run` and :attr:`post_run` attributes.
+These are list of shell commands that are emitted verbatim in the job script.
+The generated job script for this example is the following:
+
+.. code-block:: bash
+
+   #!/bin/bash -l
+   #SBATCH --job-name="prerun_demo_check_daint_gpu_PrgEnv-gnu"
+   #SBATCH --time=0:10:0
+   #SBATCH --ntasks=1
+   #SBATCH --output=/path/to/stage/gpu/prerun_demo_check/PrgEnv-gnu/prerun_demo_check.out
+   #SBATCH --error=/path/to/stage/gpu/prerun_demo_check/PrgEnv-gnu/prerun_demo_check.err
+   #SBATCH --constraint=gpu
+   module load daint-gpu
+   module unload PrgEnv-cray
+   module load PrgEnv-gnu
+   source scripts/limits.sh
+   srun ./random_numbers.sh
+   echo FINISHED
+
+ReFrame generates the job shell script using the following pattern:
+
+.. code-block:: bash
+
+   #!/bin/bash -l
+   {job_scheduler_preamble}
+   {test_environment}
+   {pre_run}
+   {parallel_launcher} {executable} {executable_opts}
+   {post_run}
+
+The ``job_scheduler_preamble`` contains the directives that control the job allocation.
+The ``test_environment`` are the necessary commands for setting up the environment of the test.
+This is the place where the modules and environment variables specified in :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` and :attr:`variables <reframe.core.pipeline.RegressionTest.variables>` attributes are emitted.
+Then the commands specified in :attr:`pre_run` follow, while those specified in the :attr:`post_run` come after the launch of the parallel job.
+The parallel launch itself consists of three parts:
+
+#. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,
+#. the regression test executable as specified in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` attribute and
+#. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
+
+A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against inside it.

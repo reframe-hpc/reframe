@@ -203,7 +203,7 @@
 </pre></div>
 </div>
 <p>This will search recursively for test files in <code class="docutils literal"><span class="pre">/path/to/checks</span></code> and will start running them on the current system.</p>
-<p>ReFrame's front-end goes through three phases:</p>
+<p>ReFrame’s front-end goes through three phases:</p>
 <ol class="simple">
 <li>Load tests</li>
 <li>Filter tests</li>
@@ -338,7 +338,7 @@ You can also retrieve this path as follows:</p>
 </pre></div>
 </div>
 <p>If the path line is prefixed with <code class="docutils literal"><span class="pre">(R)</span></code>, every directory in that path will be searched recursively for regression tests.</p>
-<p>As described extensively in the <a class="reference external" href="tutorial.html">&quot;ReFrame Tutorial&quot;</a>, regression tests in ReFrame are essentially Python source files that provide a special function, which returns the actual regression test instances.
+<p>As described extensively in the <a class="reference external" href="tutorial.html">“ReFrame Tutorial”</a>, regression tests in ReFrame are essentially Python source files that provide a special function, which returns the actual regression test instances.
 A single source file may also provide multiple regression tests.
 ReFrame loads the python source files and tries to call this special function;
 if this function cannot be found, the source file will be ignored.
@@ -378,7 +378,7 @@ For example the following will select all the checks that can run with both <cod
 </div>
 <div class="section" id="selecting-tests-by-tags">
 <span id="selecting-tests-by-tags"></span><h3>Selecting tests by tags<a class="headerlink" href="#selecting-tests-by-tags" title="Permalink to this headline">¶</a></h3>
-<p>As we have seen in the <a class="reference external" href="tutorial.html">&quot;ReFrame tutorial&quot;</a>, every regression test may be associated with a set of tags.
+<p>As we have seen in the <a class="reference external" href="tutorial.html">“ReFrame tutorial”</a>, every regression test may be associated with a set of tags.
 Using the <code class="docutils literal"><span class="pre">-t</span></code> or <code class="docutils literal"><span class="pre">--tag</span></code> option you can select the regression tests associated with a specific tag.
 For example the following will list all the tests that have a <code class="docutils literal"><span class="pre">maintenance</span></code> tag:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -t maintenance -l
@@ -473,13 +473,13 @@ For example, the <code class="docutils literal"><span class="pre">-n</span> <spa
 If you pass an option that is already defined by the framework, the framework will <em>not</em> explicitly override it; this is up to scheduler.
 All extra options defined from the command line are appended to the automatically generated options in the generated batch script file.
 So if you redefine one of them, e.g., <code class="docutils literal"><span class="pre">--output</span></code> for the Slurm scheduler, it is up the job scheduler on how to interpret multiple definitions of the same options.
-In this example, Slurm's policy is that later definitions of options override previous ones.
+In this example, Slurm’s policy is that later definitions of options override previous ones.
 So, in this case, way you would override the standard output for all the submitted jobs!</li>
 <li><code class="docutils literal"><span class="pre">--force-local</span></code>: Force the local execution of the selected tests. No jobs will be submitted.</li>
 <li><code class="docutils literal"><span class="pre">--skip-sanity-check</span></code>: Skip sanity checking phase.</li>
 <li><code class="docutils literal"><span class="pre">--skip-performance-check</span></code>: Skip performance verification phase.</li>
 <li><code class="docutils literal"><span class="pre">--strict</span></code>: Force strict performance checking.
-Some tests may set their <code class="docutils literal"><span class="pre">strict_check</span></code> attribute to <code class="docutils literal"><span class="pre">False</span></code> (see <a class="reference external" href="reference.html">&quot;Reference Guide&quot;</a>) in order to just let their performance recorded but not yield an error.
+Some tests may set their <code class="docutils literal"><span class="pre">strict_check</span></code> attribute to <code class="docutils literal"><span class="pre">False</span></code> (see <a class="reference external" href="reference.html">“Reference Guide”</a>) in order to just let their performance recorded but not yield an error.
 This option overrides this behavior and forces all tests to be strict.</li>
 <li><code class="docutils literal"><span class="pre">--skip-system-check</span></code>: Skips the system check and run the selected tests even if they do not support the current system.
 This option is sometimes useful when you need to quickly verify if a regression test supports a new system.</li>
@@ -496,7 +496,7 @@ For example, if you know that a tests supports only <code class="docutils litera
 <p>ReFrame uses three basic directories during the execution of tests:</p>
 <ol class="simple">
 <li>The stage directory<ul>
-<li>Each regression test is executed in a &quot;sandbox&quot;;
+<li>Each regression test is executed in a “sandbox”;
 all of its resources (source files, resources) are copied over to a stage directory and executed from there.
 This will also be the working directory for the test.</li>
 </ul>
@@ -560,7 +560,7 @@ The command line options, though, take always precedence over any default direct
 ReFrame creates two files inside the current working directory every time it is run:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">reframe.out</span></code>: This file stores the output of a run as it was printed in the standard output.</li>
-<li><code class="docutils literal"><span class="pre">reframe.log</span></code>: This file stores more detailed of information on ReFrame's actions.</li>
+<li><code class="docutils literal"><span class="pre">reframe.log</span></code>: This file stores more detailed of information on ReFrame’s actions.</li>
 </ul>
 <p>By default, the output in <code class="docutils literal"><span class="pre">reframe.log</span></code> looks like the following:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">2017</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">24</span><span class="n">T21</span><span class="p">:</span><span class="mi">19</span><span class="p">:</span><span class="mi">04</span><span class="p">]</span> <span class="n">info</span><span class="p">:</span> <span class="n">reframe</span><span class="p">:</span> <span class="p">[</span><span class="o">----------</span><span class="p">]</span> <span class="n">started</span> <span class="n">processing</span> <span class="n">example7_check</span> <span class="p">(</span><span class="n">Matrix</span><span class="o">-</span><span class="n">vector</span> <span class="n">mult</span>
@@ -595,7 +595,7 @@ However, you can ask ReFrame to copy them to the output directory before exiting
 <div class="section" id="configuring-logging">
 <span id="configuring-logging"></span><h3>Configuring logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
 <p>You can configure several aspects of logging in ReFrame and even how the output will look like.
-ReFrame's logging mechanism is built upon Python's <a class="reference external" href="https://docs.python.org/3.6/library/logging.html">logging</a> framework adding extra logging levels and more formatting capabilities.</p>
+ReFrame’s logging mechanism is built upon Python’s <a class="reference external" href="https://docs.python.org/3.6/library/logging.html">logging</a> framework adding extra logging levels and more formatting capabilities.</p>
 <p>Logging in ReFrame is configured by the <code class="docutils literal"><span class="pre">_logging_config</span></code> variable in the <code class="docutils literal"><span class="pre">reframe/settings.py</span></code> file.
 The default configuration looks as follows:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">_logging_config</span> <span class="o">=</span> <span class="p">{</span>
@@ -622,7 +622,7 @@ The default configuration looks as follows:</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Note that this configuration dictionary is not the same as the one used by Python's logging framework.
+<p>Note that this configuration dictionary is not the same as the one used by Python’s logging framework.
 It is a simplified version adapted to the needs of ReFrame.</p>
 <p>The <code class="docutils literal"><span class="pre">_logging_config</span></code> dictionary has two main key entries:</p>
 <ul class="simple">
@@ -630,7 +630,7 @@ It is a simplified version adapted to the needs of ReFrame.</p>
 Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
 ReFrame defines the following logging levels with a decreasing severity: <code class="docutils literal"><span class="pre">CRITICAL</span></code>, <code class="docutils literal"><span class="pre">ERROR</span></code>, <code class="docutils literal"><span class="pre">WARNING</span></code>, <code class="docutils literal"><span class="pre">INFO</span></code>, <code class="docutils literal"><span class="pre">VERBOSE</span></code> and <code class="docutils literal"><span class="pre">DEBUG</span></code>.
 Note that the level name is <em>not</em> case sensitive in ReFrame.</li>
-<li><code class="docutils literal"><span class="pre">handlers</span></code>: A dictionary defining the properties of the handlers that are attached to ReFrame's logging mechanism.
+<li><code class="docutils literal"><span class="pre">handlers</span></code>: A dictionary defining the properties of the handlers that are attached to ReFrame’s logging mechanism.
 The key is either a filename or a special character combination denoting standard output (<code class="docutils literal"><span class="pre">&amp;1</span></code>) or standard error (<code class="docutils literal"><span class="pre">&amp;2</span></code>).
 You can attach as many handlers as you like.
 The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.</li>
@@ -639,7 +639,7 @@ The value of each handler key is another dictionary that holds the properties of
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'debug'</span></code>): The lowest level of log records that this handler can process.</li>
 <li><code class="docutils literal"><span class="pre">format</span></code> (default: <code class="docutils literal"><span class="pre">'%(message)s'</span></code>): Format string for the printout of the log record.
-ReFrame supports all the <a class="reference external" href="https://docs.python.org/3.6/library/logging.html#logrecord-attributes">format strings</a> from Python's logging library and provides two additional ones:<ul>
+ReFrame supports all the <a class="reference external" href="https://docs.python.org/3.6/library/logging.html#logrecord-attributes">format strings</a> from Python’s logging library and provides two additional ones:<ul>
 <li><code class="docutils literal"><span class="pre">check_name</span></code>: Prints the name of the regression test on behalf of which ReFrame is currently executing.
 If ReFrame is not in the context of regression test, <code class="docutils literal"><span class="pre">reframe</span></code> will be printed.</li>
 <li><code class="docutils literal"><span class="pre">check_jobid</span></code>: Prints the job or process id of the job or process associated with currently executing regression test.
@@ -647,7 +647,7 @@ If a job or process is not yet created, <code class="docutils literal"><span cla
 </ul>
 </li>
 <li><code class="docutils literal"><span class="pre">datefmt</span></code> (default: <code class="docutils literal"><span class="pre">'%FT%T'</span></code>) The format that will be used for outputting timestamps (i.e., the <code class="docutils literal"><span class="pre">%(asctime)s</span></code> field).
-Acceptable formats must conform to standard library's <a class="reference external" href="https://docs.python.org/3.6/library/time.html#time.strftime">time.strftime()</a> function.</li>
+Acceptable formats must conform to standard library’s <a class="reference external" href="https://docs.python.org/3.6/library/time.html#time.strftime">time.strftime()</a> function.</li>
 <li><code class="docutils literal"><span class="pre">append</span></code> (default: <code class="docutils literal"><span class="pre">False</span></code>) Controls whether ReFrame should append to this file or not.
 This is ignored for the standard output/error handlers.</li>
 <li><code class="docutils literal"><span class="pre">timestamp</span></code> (default: <code class="docutils literal"><span class="pre">None</span></code>): Append a timestamp to this log filename.
@@ -659,7 +659,7 @@ This property is ignored for the standard output/error handlers.</li>
 <div class="section" id="performance-logging">
 <span id="performance-logging"></span><h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
 <p>ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
-For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame's <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test's performance is recorded.
+For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame’s <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test’s performance is recorded.
 The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(check_name)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
 Currently, it is not possible for users to configure performance logging.</p>
 <p>The resulting log file looks like the following:</p>
@@ -683,7 +683,7 @@ The asynchronous execution policy parallelizes only the <a class="reference exte
 The rest of the phases remain sequential.</p>
 <p>A limit of concurrent jobs (pending and running) may be <a class="reference external" href="configure.html#partition-configuration">configured</a> for each virtual system partition.
 As soon as the concurrency limit of a partition is reached, ReFrame will hold the execution of new regression tests until a slot is released in that partition.</p>
-<p>When executing in asynchronous mode, ReFrame's output differs from the sequential execution.
+<p>When executing in asynchronous mode, ReFrame’s output differs from the sequential execution.
 The final result of the tests will be printed at the end and additional messages may be printed to indicate that a test is held.
 Here is an example output of ReFrame using asynchronous execution policy:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ommand</span> <span class="n">line</span><span class="p">:</span> <span class="o">./</span><span class="n">reframe</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span> <span class="o">--</span><span class="n">exec</span><span class="o">-</span><span class="n">policy</span><span class="o">=</span><span class="k">async</span> <span class="o">-</span><span class="n">r</span>
@@ -841,6 +841,8 @@ For compile-only and normal tests that require a compilation, the execution time
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/running.html">v2.10</a></dd>
+            <dd><a href="../v2.11/running.html">v2.11</a></dd>
             <dd><a href="running.html">v2.7</a></dd>
             <dd><a href="../v2.8/running.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/running.html">v2.8.1</a></dd>

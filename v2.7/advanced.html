@@ -260,13 +260,13 @@ $(OBJS): advanced_example1.c
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>As in the simple single source file examples we showed in the <a class="reference external" href="tutorial.html">tutorial</a>, we use the current programming environment's flags for modifying the compilation.
+<p>As in the simple single source file examples we showed in the <a class="reference external" href="tutorial.html">tutorial</a>, we use the current programming environment’s flags for modifying the compilation.
 ReFrame will then compile the regression test source code as by invoking <code class="docutils literal"><span class="pre">make</span></code> as follows:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">CC</span><span class="o">=</span><span class="n">cc</span> <span class="n">CXX</span><span class="o">=</span><span class="n">CC</span> <span class="n">FC</span><span class="o">=</span><span class="n">ftn</span> <span class="n">CPPFLAGS</span><span class="o">=-</span><span class="n">DMESSAGE</span>
 </pre></div>
 </div>
-<p>Notice, how ReFrame passes all the programming environment's variables to the <code class="docutils literal"><span class="pre">make</span></code> invocation.
-It is important to note here that, if a set of flags is set to <code class="docutils literal"><span class="pre">None</span></code> (the default, if not otherwise set in the <a class="reference external" href="configure.html#environments-configuration">ReFrame's configuration</a>), these are not passed to <code class="docutils literal"><span class="pre">make</span></code>.
+<p>Notice, how ReFrame passes all the programming environment’s variables to the <code class="docutils literal"><span class="pre">make</span></code> invocation.
+It is important to note here that, if a set of flags is set to <code class="docutils literal"><span class="pre">None</span></code> (the default, if not otherwise set in the <a class="reference external" href="configure.html#environments-configuration">ReFrame’s configuration</a>), these are not passed to <code class="docutils literal"><span class="pre">make</span></code>.
 You can also completely disable the propagation of any flags to <code class="docutils literal"><span class="pre">make</span></code> by setting <code class="docutils literal"><span class="pre">self.propagate</span> <span class="pre">=</span> <span class="pre">False</span></code> in your regression test.</p>
 <p>At this point it is useful also to note that you can also use a custom Makefile, not named <code class="docutils literal"><span class="pre">Makefile</span></code> or after any other standard Makefile name.
 In this case, you can pass the custom Makefile name as an argument to the compile method of the base <code class="docutils literal"><span class="pre">RegressionTest</span></code> class as follows:</p>
@@ -380,7 +380,7 @@ The following regression test (<code class="docutils literal"><span class="pre">
     <span class="k">return</span> <span class="p">[</span><span class="n">EnvironmentVariableTest</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)]</span>
 </pre></div>
 </div>
-<p>Before discussing this test in more detail, let's first have a look in the source code and the Makefile of this example:</p>
+<p>Before discussing this test in more detail, let’s first have a look in the source code and the Makefile of this example:</p>
 <div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp"></span>
@@ -575,6 +575,8 @@ Time limits are implemented for both the Slurm and the local scheduler backends.
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/advanced.html">v2.10</a></dd>
+            <dd><a href="../v2.11/advanced.html">v2.11</a></dd>
             <dd><a href="advanced.html">v2.7</a></dd>
             <dd><a href="../v2.8/advanced.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/advanced.html">v2.8.1</a></dd>

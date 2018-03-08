@@ -201,14 +201,14 @@ The following Table summarizes the production regression tests.</p>
 The regression suite runs at the beginning of the maintenance session and just before returning the machine to the users, so that we can ensure that the user experience is at least at the level before the system was taken down.
 The maintenance set of tests comprises application performance tests, some GPU library performance checks, Slurm checks and some POSIX filesystem checks.</p>
 <p>The porting of the regression suite to the <a class="reference external" href="http://www.meteosvizzera.admin.ch/home.html?tab=overview">MeteoSwiss</a> production system <a class="reference external" href="http://www.cscs.ch/computers/kesch_escha_meteoswiss/index.html">Piz Kesch</a>, using ReFrame was almost trivial.
-The new system entry was added in the framework's configuration file describing the different partitions together with a new redefined <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment to use different compiler wrappers.
+The new system entry was added in the framework’s configuration file describing the different partitions together with a new redefined <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment to use different compiler wrappers.
 Porting the regression tests of interest was also a straightforward process.
 In most of the cases, adding just the corresponding system partitions to the <code class="docutils literal"><span class="pre">valid_systems</span></code> variables and adjusting accordingly the <code class="docutils literal"><span class="pre">valid_prog_environs</span></code> was enough.</p>
 <p>ReFrame really focuses on abstracting away all the gory details from the regression test description, hence letting the user to concentrate solely on the logic of his test.
 A bit of this effect can be seen in the following Table where the total amount of lines of code (loc) of the regression tests written in the previous shell script-based solution and ReFrame is shown.
 We also present a snapshot of the first public release of ReFrame (<a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.2">v2.2</a>).</p>
 <p>Maintenance Burden        | Shell-Script Based | ReFrame (v2.2) | ReFrame (v2.7) |
---------------------------|--------------------|----------------|----------------|
+————————–|——————–|—————-|—————-|
 Total tests               |   179              |  122           |  172           |
 Total size of tests       | 14635 loc          | 2985 loc       | 4493 loc       |
 Avg. test file size       |   179 loc          |   93 loc       |   87 loc       |
@@ -310,6 +310,8 @@ However, eash regression test file may contain or generate more than one related
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/usecases.html">v2.10</a></dd>
+            <dd><a href="../v2.11/usecases.html">v2.11</a></dd>
             <dd><a href="usecases.html">v2.7</a></dd>
             <dd><a href="../v2.8/usecases.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/usecases.html">v2.8.1</a></dd>

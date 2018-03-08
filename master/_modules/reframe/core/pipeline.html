@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.10 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -173,27 +173,21 @@
 <span class="c1"># Basic functionality for regression tests</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.core.logging</span> <span class="k">as</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">reframe.settings</span> <span class="k">as</span> <span class="nn">settings</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.os</span> <span class="k">as</span> <span class="nn">os_ext</span>
-
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span><span class="p">,</span> <span class="n">ReframeError</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span>
+<span class="kn">from</span> <span class="nn">reframe.core.launchers.registry</span> <span class="k">import</span> <span class="n">getlauncher</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers</span> <span class="k">import</span> <span class="n">Job</span>
 <span class="kn">from</span> <span class="nn">reframe.core.schedulers.registry</span> <span class="k">import</span> <span class="n">getscheduler</span>
-<span class="kn">from</span> <span class="nn">reframe.core.launchers.registry</span> <span class="k">import</span> <span class="n">getlauncher</span>
 <span class="kn">from</span> <span class="nn">reframe.core.shell</span> <span class="k">import</span> <span class="n">BashScriptBuilder</span>
 <span class="kn">from</span> <span class="nn">reframe.core.systems</span> <span class="k">import</span> <span class="n">System</span><span class="p">,</span> <span class="n">SystemPartition</span>
-<span class="kn">from</span> <span class="nn">reframe.frontend.resources</span> <span class="k">import</span> <span class="n">ResourcesManager</span>
 <span class="kn">from</span> <span class="nn">reframe.utility.sanity</span> <span class="k">import</span> <span class="n">assert_reference</span>
 
 
@@ -813,10 +807,21 @@
 
 <span class="sd">        This method is used by the front-end to print the status message during</span>
 <span class="sd">        the test&#39;s execution.</span>
+<span class="sd">        This function is also called to provide the message for the</span>
+<span class="sd">        ``check_info`` `logging attribute &lt;running.html#logging&gt;`__.</span>
+<span class="sd">        By default, it returns a message reporting the test name, the current</span>
+<span class="sd">        partition and the current programming environment that the test is</span>
+<span class="sd">        currently executing on.</span>
 
-<span class="sd">        :returns: a string with an informational message containing the test</span>
-<span class="sd">            name, the current partition and the current programming environment</span>
-<span class="sd">            that the test is currently executing on.</span>
+<span class="sd">        :returns: a string with an informational message about this test</span>
+
+<span class="sd">        .. note ::</span>
+<span class="sd">           When overriding this method, you should pay extra attention on how</span>
+<span class="sd">           you use the :class:`RegressionTest`&#39;s attributes, because this</span>
+<span class="sd">           method may be called at any point of the test&#39;s lifetime.</span>
+
+<span class="sd">           .. versionadded:: 2.10</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_partition</span><span class="p">:</span>
@@ -1117,12 +1122,14 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_system</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;no system or system partition is set&#39;</span><span class="p">)</span>
 
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;failed to prepare job&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">BashScriptBuilder</span><span class="p">(</span><span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">PipelineError</span><span class="p">(</span><span class="s1">&#39;failed to prepare job&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">submit</span><span class="p">()</span>
+
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;spawned job (</span><span class="si">%s</span><span class="s1">=</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span>
                <span class="p">(</span><span class="s1">&#39;pid&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;jobid&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">jobid</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
@@ -1400,6 +1407,8 @@
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../../../../v2.10/index.html">v2.10</a></dd>
+            <dd><a href="../../../../v2.11/index.html">v2.11</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.8.1/index.html">v2.8.1</a></dd>
@@ -1418,7 +1427,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

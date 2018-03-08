@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Sanity Functions Reference &mdash; ReFrame 2.10 documentation</title>
+  <title>Sanity Functions Reference &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
         <link rel="prev" title="Reference Guide" href="reference.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -495,11 +495,13 @@ propagated as a <code class="xref py py-class docutils literal"><span class="pre
 <li><strong>val</strong> – The value to check.</li>
 <li><strong>ref</strong> – The reference value.</li>
 <li><strong>lower_thres</strong> – The lower threshold value expressed as a negative decimal
-fraction of the reference value.  Must be in [-1, 0]. If <code class="docutils literal"><span class="pre">None</span></code>, no
-lower thresholds is applied.</li>
+fraction of the reference value.  Must be in [-1, 0] for ref &gt;= 0.0 and
+in [-inf, 0] for ref &lt; 0.0.
+If <code class="docutils literal"><span class="pre">None</span></code>, no lower thresholds is applied.</li>
 <li><strong>upper_thres</strong> – The upper threshold value expressed as a decimal fraction
-of the reference value.  Must be in [0, 1]. If <code class="docutils literal"><span class="pre">None</span></code>, no upper
-thresholds is applied.</li>
+of the reference value. Must be in [0, inf] for ref &gt;= 0.0 and
+in [0, 1] for ref &lt; 0.0.
+If <code class="docutils literal"><span class="pre">None</span></code>, no upper thresholds is applied.</li>
 </ul>
 </td>
 </tr>
@@ -945,6 +947,8 @@ The following function definition is equivalent to the above:</p>
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="v2.10/sanity_functions_reference.html">v2.10</a></dd>
+            <dd><a href="v2.11/sanity_functions_reference.html">v2.11</a></dd>
             <dd><a href="v2.7/sanity_functions_reference.html">v2.7</a></dd>
             <dd><a href="v2.8/sanity_functions_reference.html">v2.8</a></dd>
             <dd><a href="v2.8.1/sanity_functions_reference.html">v2.8.1</a></dd>
@@ -963,7 +967,7 @@ The following function definition is equivalent to the above:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

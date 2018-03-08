@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ReFrame Tutorial &mdash; ReFrame 2.10 documentation</title>
+  <title>ReFrame Tutorial &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
         <link rel="next" title="Customizing Further a Regression Test" href="advanced.html"/>
         <link rel="prev" title="The Regression Test Pipeline" href="pipeline.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -279,8 +279,8 @@ You may first need to go over the <a class="reference external" href="configure.
 As a sanity check, it simply looks for a specific output in the output of the program.
 Here is the full code for this test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -455,8 +455,8 @@ Reframe paths
 <p>In this example, we write a regression test to compile and run the OpenMP version of the matrix-vector product program, that we have shown before.
 The full code of this test follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -596,8 +596,8 @@ In this example, we write a regression test for the MPI+OpenMP version of the ma
 The source code of this program is in <code class="docutils literal"><span class="pre">tutorial/src/example_matrix_vector_multiplication_mpi_openmp.c</span></code>.
 The regression test file follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -709,8 +709,8 @@ For schedulers that do not provide the same functionality, some of the variables
 OpenACC and CUDA.
 Let’s start with the OpenACC regression test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -756,8 +756,8 @@ In this particular test, we need to load the <code class="docutils literal"><spa
 </div>
 <p>The regression test for the CUDA code is slightly simpler:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -792,8 +792,8 @@ In this case, there is no need to differentiate across the programming environme
 We are only looking if a specific line is present in the output of the test program.
 In this example, we expand the regression test of the serial code, so as to check also if the printed norm of the result matrix is correct.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -883,8 +883,8 @@ For a detailed description of the mechanism behind the sanity functions, please 
 ReFrame offers a flexible way of extracting and manipulating performance data from the program output, as well as a comprehensive way of setting performance thresholds per system and system partitions.</p>
 <p>In this example, we extend the CUDA test presented <a class="reference external" href="tutorial.html#testing-a-gpu-code">previously</a>, so as to check also the performance of the matrix-vector multiplication.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -958,7 +958,7 @@ The <code class="docutils literal"><span class="pre">perf</span></code> subkey w
 The first occurrence will be used as the reference value of the <code class="docutils literal"><span class="pre">perf</span></code> performance variable.
 In our example, the <code class="docutils literal"><span class="pre">perf</span></code> key will be resolved in the <code class="docutils literal"><span class="pre">daint:gpu</span></code> scope giving us the reference value.</p>
 <p>Reference values in ReFrame are specified as a three-tuple comprising the reference value and lower and upper thresholds.
-Thresholds are specified as decimal fractions of the reference value. The lower threshold must lie in the [-1,0] interval, whereas the upper threshold must be lie in the [0,1] interval.
+Thresholds are specified as decimal fractions of the reference value. For nonnegative reference values, the lower threshold must lie in the [-1,0], whereas the upper threshold may be any positive real number or zero.
 In our example, the reference value for this test on <code class="docutils literal"><span class="pre">daint:gpu</span></code> is 50 Gflop/s ±10%. Setting a threshold value to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> disables the threshold.</p>
 </div>
 <div class="section" id="combining-it-all-together">
@@ -968,8 +968,8 @@ As a result, you can leverage the language features and capabilities to organize
 In this example, we are going to reimplement all the tests of the tutorial with much less code and in a single file.
 Here is the final example code that combines all the tests discussed before:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
 <span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
 
 
@@ -1181,6 +1181,8 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="v2.10/tutorial.html">v2.10</a></dd>
+            <dd><a href="v2.11/tutorial.html">v2.11</a></dd>
             <dd><a href="v2.7/tutorial.html">v2.7</a></dd>
             <dd><a href="v2.8/tutorial.html">v2.8</a></dd>
             <dd><a href="v2.8.1/tutorial.html">v2.8.1</a></dd>
@@ -1199,7 +1201,7 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

@@ -106,8 +106,8 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">The Regression Test Pipeline</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-initialization-phase">0. The Initialization Phase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#the-setup-phase">1. The Setup Phase</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#set-up-and-load-the-test-s-environment">Set up and load the test's environment</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#setup-the-test-s-paths">Setup the test's paths</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-up-and-load-the-test-s-environment">Set up and load the test’s environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup-the-test-s-paths">Setup the test’s paths</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#prepare-a-job-for-the-test">Prepare a job for the test</a></li>
 </ul>
 </li>
@@ -211,13 +211,13 @@ If the test supports the current system partition and the current programming en
 <li>Cleanup</li>
 </ol>
 <p>A test may implement some of them as no-ops.
-As soon as the test is finished, its resources are cleaned up and the framework's environment is restored.
+As soon as the test is finished, its resources are cleaned up and the framework’s environment is restored.
 ReFrame will try to repeat the same procedure on the same regression test using the next programming environment and the next system partition until no further environments and partitions are left to be tested.
 In the following we elaborate on each of the individual phases of the lifetime of a regression test.</p>
 <div class="section" id="the-initialization-phase">
 <span id="the-initialization-phase"></span><h2>0. The Initialization Phase<a class="headerlink" href="#the-initialization-phase" title="Permalink to this headline">¶</a></h2>
 <p>This phase is not part of the regression test pipeline as shown above, but it is quite important, since during this phase the test is loaded into memory and initialized.
-As we shall see in the <a class="reference external" href="tutorial.html">&quot;Tutorial&quot;</a> and in the <a class="reference external" href="advanced.html">&quot;Customizing Further A ReFrame Regression Test&quot;</a> sections, this is the phase where the <em>specification</em> of a test is set.
+As we shall see in the <a class="reference external" href="tutorial.html">“Tutorial”</a> and in the <a class="reference external" href="advanced.html">“Customizing Further A ReFrame Regression Test”</a> sections, this is the phase where the <em>specification</em> of a test is set.
 At this point the current system is already known and the test may be set up accordingly.
 If no further differentiation is needed depending on the system partition or the programming environment, the test could go through the whole pipeline performing all of its work without the need to override any of the other pipeline stages.
 In fact, this is perhaps the most common case for most of the regression tests.</p>
@@ -227,8 +227,8 @@ In fact, this is perhaps the most common case for most of the regression tests.<
 <p>A regression test is instantiated once by the framework and it is then copied each time a new system partition or programming environment is tried.
 This first phase of the regression pipeline serves the purpose of preparing the test to run on the specified partition and programming environment by performing a number of operations described below:</p>
 <div class="section" id="set-up-and-load-the-test-s-environment">
-<span id="set-up-and-load-the-test-s-environment"></span><h3>Set up and load the test's environment<a class="headerlink" href="#set-up-and-load-the-test-s-environment" title="Permalink to this headline">¶</a></h3>
-<p>At this point the environment of the current partition, the current programming environment and any test's specific environment will be loaded.
+<span id="set-up-and-load-the-test-s-environment"></span><h3>Set up and load the test’s environment<a class="headerlink" href="#set-up-and-load-the-test-s-environment" title="Permalink to this headline">¶</a></h3>
+<p>At this point the environment of the current partition, the current programming environment and any test’s specific environment will be loaded.
 For example, if the current partition requires <code class="docutils literal"><span class="pre">slurm</span></code>, the current programming environment is <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> and the test requires also <code class="docutils literal"><span class="pre">cudatoolkit</span></code>, this phase will be equivalent to the following:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>module load slurm
 module unload PrgEnv-cray
@@ -241,20 +241,20 @@ So the user need not to care about the existing environment at all.
 She only needs to specify what is needed by her test.</p>
 </div>
 <div class="section" id="setup-the-test-s-paths">
-<span id="setup-the-test-s-paths"></span><h3>Setup the test's paths<a class="headerlink" href="#setup-the-test-s-paths" title="Permalink to this headline">¶</a></h3>
+<span id="setup-the-test-s-paths"></span><h3>Setup the test’s paths<a class="headerlink" href="#setup-the-test-s-paths" title="Permalink to this headline">¶</a></h3>
 <p>Each regression test is associated with a stage directory and an output directory.
 The stage directory will be the working directory of the test and all of its resources will be copied there before running.
 The output directory is the directory where some important output files of the test will be kept.
 By default these are the generated job script file, the standard output and standard error.
-The user can also specify additional files to be kept in the test's specification.
+The user can also specify additional files to be kept in the test’s specification.
 At this phase, all these directories are created.</p>
 </div>
 <div class="section" id="prepare-a-job-for-the-test">
 <span id="prepare-a-job-for-the-test"></span><h3>Prepare a job for the test<a class="headerlink" href="#prepare-a-job-for-the-test" title="Permalink to this headline">¶</a></h3>
-<p>At this point a <em>job descriptor</em> will be created for the test. A job descriptor in ReFrame is an abstraction of the job scheduler's functionality relevant to the regression framework.
+<p>At this point a <em>job descriptor</em> will be created for the test. A job descriptor in ReFrame is an abstraction of the job scheduler’s functionality relevant to the regression framework.
 It is responsible for submitting a job in a job queue and waiting for its completion.
 ReFrame supports two job scheduler backends that can be combined with several different parallel program launchers.
-For a complete list of the job scheduler/parallel launchers combinations, please refer to <a class="reference external" href="configure.html#partition-configuration">&quot;Partition Configuration&quot;</a>.</p>
+For a complete list of the job scheduler/parallel launchers combinations, please refer to <a class="reference external" href="configure.html#partition-configuration">“Partition Configuration”</a>.</p>
 </div>
 </div>
 <div class="section" id="the-compilation-phase">
@@ -282,7 +282,7 @@ This is the responsibility of the next pipeline stage.</li>
 <div class="section" id="the-sanity-checking-phase">
 <span id="the-sanity-checking-phase"></span><h2>4. The Sanity Checking Phase<a class="headerlink" href="#the-sanity-checking-phase" title="Permalink to this headline">¶</a></h2>
 <p>At this phase it is determined whether the check has finished successfully or not.
-Although this decision is test-specific, ReFrame provides a very flexible and expressive way for specifying complex patterns and operations to be performed on the test's output in order to determine the outcome of the test.</p>
+Although this decision is test-specific, ReFrame provides a very flexible and expressive way for specifying complex patterns and operations to be performed on the test’s output in order to determine the outcome of the test.</p>
 </div>
 <div class="section" id="the-performance-checking-phase">
 <span id="the-performance-checking-phase"></span><h2>5. The Performance Checking Phase<a class="headerlink" href="#the-performance-checking-phase" title="Permalink to this headline">¶</a></h2>
@@ -297,9 +297,9 @@ Three steps are performed in this phase:</p>
 <ol class="simple">
 <li>The interesting files of the test (job script, standard output and standard error and any additional files specified by the user) are copied to its output directory for later inspection and bookkeeping,</li>
 <li>the stage directory is removed and</li>
-<li>the test's environment is revoked.</li>
+<li>the test’s environment is revoked.</li>
 </ol>
-<p>At this point the ReFrame's environment is clean and in its original state and the framework may continue by running more test cases.</p>
+<p>At this point the ReFrame’s environment is clean and in its original state and the framework may continue by running more test cases.</p>
 </div>
 </div>
 
@@ -389,6 +389,8 @@ Three steps are performed in this phase:</p>
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../v2.10/pipeline.html">v2.10</a></dd>
+            <dd><a href="../v2.11/pipeline.html">v2.11</a></dd>
             <dd><a href="../v2.7/pipeline.html">v2.7</a></dd>
             <dd><a href="pipeline.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/pipeline.html">v2.8.1</a></dd>

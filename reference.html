@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.10 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
         <link rel="next" title="Sanity Functions Reference" href="sanity_functions_reference.html"/>
         <link rel="prev" title="About ReFrame" href="about.html"/> 
 
@@ -73,7 +73,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -509,17 +509,29 @@ that allows also custom job script directive prefixes.</p>
 <code class="descname">info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide live information of a running test.</p>
 <p>This method is used by the front-end to print the status message during
-the test’s execution.</p>
+the test’s execution.
+This function is also called to provide the message for the
+<code class="docutils literal"><span class="pre">check_info</span></code> <a class="reference external" href="running.html#logging">logging attribute</a>.
+By default, it returns a message reporting the test name, the current
+partition and the current programming environment that the test is
+currently executing on.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a string with an informational message containing the test
-name, the current partition and the current programming environment
-that the test is currently executing on.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a string with an informational message about this test</td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>When overriding this method, you should pay extra attention on how
+you use the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a>’s attributes, because this
+method may be called at any point of the test’s lifetime.</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.10.</span></p>
+</div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -1954,6 +1966,8 @@ the same name.</p>
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="v2.10/reference.html">v2.10</a></dd>
+            <dd><a href="v2.11/reference.html">v2.11</a></dd>
             <dd><a href="v2.7/reference.html">v2.7</a></dd>
             <dd><a href="v2.8/reference.html">v2.8</a></dd>
             <dd><a href="v2.8.1/reference.html">v2.8.1</a></dd>
@@ -1972,7 +1986,7 @@ the same name.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,

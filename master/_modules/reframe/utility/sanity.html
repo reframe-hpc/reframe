@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.utility.sanity &mdash; ReFrame 2.10 documentation</title>
+  <title>reframe.utility.sanity &mdash; ReFrame 2.11 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
         <link rel="index" title="Index"
               href="../../../genindex.html"/>
         <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.10 documentation" href="../../../index.html"/>
+    <link rel="top" title="ReFrame 2.11 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -72,7 +72,7 @@
             
             
               <div class="version">
-                2.10
+                2.11
               </div>
             
           
@@ -233,7 +233,6 @@
 <span class="kn">import</span> <span class="nn">glob</span> <span class="k">as</span> <span class="nn">pyglob</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">types</span>
 
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">SanityError</span>
@@ -643,26 +642,32 @@
 <span class="sd">    :arg val: The value to check.</span>
 <span class="sd">    :arg ref: The reference value.</span>
 <span class="sd">    :arg lower_thres: The lower threshold value expressed as a negative decimal</span>
-<span class="sd">        fraction of the reference value.  Must be in [-1, 0]. If ``None``, no</span>
-<span class="sd">        lower thresholds is applied.</span>
+<span class="sd">        fraction of the reference value.  Must be in [-1, 0] for ref &gt;= 0.0 and</span>
+<span class="sd">        in [-inf, 0] for ref &lt; 0.0.</span>
+<span class="sd">        If ``None``, no lower thresholds is applied.</span>
 <span class="sd">    :arg upper_thres: The upper threshold value expressed as a decimal fraction</span>
-<span class="sd">        of the reference value.  Must be in [0, 1]. If ``None``, no upper</span>
-<span class="sd">        thresholds is applied.</span>
+<span class="sd">        of the reference value. Must be in [0, inf] for ref &gt;= 0.0 and</span>
+<span class="sd">        in [0, 1] for ref &lt; 0.0.</span>
+<span class="sd">        If ``None``, no upper thresholds is applied.</span>
 <span class="sd">    :returns: ``True`` on success.</span>
 <span class="sd">    :raises reframe.core.exceptions.SanityError: if assertion fails or if the</span>
 <span class="sd">        lower and upper thresholds do not have appropriate values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">lower_thres</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lower_thres_limit</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">ref</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">lower_thres</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">lower_thres</span><span class="p">,</span> <span class="n">lower_thres_limit</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid low threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">lower_thres</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid low threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                              <span class="n">lower_thres</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">None</span>
 
     <span class="k">if</span> <span class="n">upper_thres</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">upper_thres_limit</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">ref</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">upper_thres</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">upper_thres</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">upper_thres_limit</span><span class="p">))</span>
         <span class="k">except</span> <span class="n">SanityError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid high threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">upper_thres</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span><span class="s1">&#39;invalid high threshold value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                              <span class="n">upper_thres</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">None</span>
 
     <span class="k">def</span> <span class="nf">calc_bound</span><span class="p">(</span><span class="n">thres</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">thres</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -952,6 +957,8 @@
     <div class="rst-other-versions">
         <dl>
             <dt>Tags</dt>
+            <dd><a href="../../../../v2.10/index.html">v2.10</a></dd>
+            <dd><a href="../../../../v2.11/index.html">v2.11</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.8.1/index.html">v2.8.1</a></dd>
@@ -970,7 +977,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.10',
+            VERSION:'2.11',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
