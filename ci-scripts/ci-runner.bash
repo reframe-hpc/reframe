@@ -1,15 +1,8 @@
 #!/bin/bash
 
-##############################################################################
-#
-#
-#                                SCRIPT VARIABLES
-#
-#
-##############################################################################
 scriptname=`basename $0`
 CI_FOLDER=""
-CI_PUBLIC=0
+CI_GENERIC=0
 CI_TUTORIAL=0
 TERM="${TERM:-xterm}"
 PROFILE=""
@@ -31,7 +24,7 @@ Usage: $(tput setaf 1)$scriptname$(tput sgr0) $(tput setaf 3)[OPTIONS]$(tput sgr
     $(tput setaf 3)-i | --invocation$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   invocation for modified user checks. Multiple \`-i' options are multiple invocations
     $(tput setaf 3)-l | --load-profile$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0) sources the given file before any execution of commands
     $(tput setaf 3)-m | --module-use$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   executes module use of the give folder before loading the regression
-    $(tput setaf 3)-p | --public-only$(tput sgr0)       executes only the public version of the unittests
+    $(tput setaf 3)-g | --generic-only$(tput sgr0)      executes unit tests using the generic configuration
     $(tput setaf 3)-t | --tutorial-only$(tput sgr0)     executes only the modified/new tutorial tests
     $(tput setaf 3)-h | --help$(tput sgr0)              prints this help and exits
 
@@ -68,23 +61,25 @@ run_serial_user_checks()
 }
 
 
-##############################################################################
-#
-#
-#                              MAIN SCRIPT
-#
-#
-##############################################################################
+save_settings()
+{
+    tempfile=$(mktemp)
+    cp reframe/settings.py $tempfile
+    echo $tempfile
+}
 
-#
-# Getting the machine name from the cmd line arguments
-#
+restore_settings()
+{
+    saved=$1
+    cp $saved reframe/settings.py
+    /bin/rm $saved
+}
 
-#
-# GNU Linux version
-#
-shortopts="h,p,t,f:,i:,l:,m:"
-longopts="help,public-only,tutorial-only,folder:,invocation:,load-profile:,module-use:"
+
+### Main script ###
+
+shortopts="h,g,t,f:,i:,l:,m:"
+longopts="help,generic-only,tutorial-only,folder:,invocation:,load-profile:,module-use:"
 
 eval set -- $(getopt -o ${shortopts} -l ${longopts} \
                      -n ${scriptname} -- "$@" 2> /dev/null)
@@ -113,9 +108,9 @@ while [ $# -ne 0 ]; do
         -m | --module-use)
             shift
             MODULEUSE="$1" ;;
-        -p | --public-only)
+        -g | --generic-only)
             shift
-            CI_PUBLIC=1 ;;
+            CI_GENERIC=1 ;;
         -t | --tutorial-only)
             shift
             CI_TUTORIAL=1 ;;
@@ -162,19 +157,19 @@ module list
 cd ${CI_FOLDER}
 echo "Running regression on $(hostname) in ${CI_FOLDER}"
 
-if [ $CI_PUBLIC -eq 1 ]; then
+if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
-    ln -sf ../config/generic.py reframe/settings.py
-
-    echo "================================="
-    echo "Running public release unit tests"
-    echo "================================="
+    echo "========================================"
+    echo "Running unit tests with generic settings"
+    echo "========================================"
     checked_exec ./test_reframe.py
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
-    ln -sf ../tutorial/config/settings.py reframe/settings.py
+    settings_orig=$(save_settings)
+    cp tutorial/config/settings.py reframe/settings.py
+
     # Find modified or added tutorial checks
     tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
@@ -186,20 +181,25 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
             tutorialchecks_path="${tutorialchecks_path} -c ${check}"
         done
 
-        echo "===================="
+        echo "========================"
         echo "Modified tutorial checks"
-        echo "===================="
+        echo "========================"
         echo ${tutorialchecks_path}
 
         for i in ${!invocations[@]}; do
             run_tutorial_checks ${tutorialchecks_path} ${invocations[i]}
         done
     fi
+
+    restore_settings $settings_orig
 else
     # Performing the unittests
     echo "=================="
     echo "Running unit tests"
     echo "=================="
+    settings_orig=$(save_settings)
+    cp config/cscs.py reframe/settings.py
+
     checked_exec ./test_reframe.py
 
     # Find modified or added user checks
@@ -226,5 +226,7 @@ else
             run_serial_user_checks ${userchecks_path} ${invocations[i]}
         done
     fi
+
+    restore_settings $settings_orig
 fi
 exit $CI_EXITCODE
