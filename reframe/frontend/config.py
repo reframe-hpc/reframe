@@ -17,13 +17,10 @@ def load_from_file(filename):
     global _settings
     print('Try loading %s\n' % filename)
     settings_file_path = os.path.dirname(filename)
-    print('Settings file path: %s\n' % settings_file_path)
     if os.path.isabs(filename):
         module_name = os.path.splitext(os.path.basename(filename))[0]
     else:
         module_name = os.path.splitext(os.path.basename(filename))[0]
-
-    print('Module name: %s\n' % module_name)
     spec = importlib.util.spec_from_file_location(module_name, filename)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -82,6 +79,8 @@ class SiteConfiguration:
         envconfig = site_config.get('environments', None)
         modes = site_config.get('modes', {})
 
+        print(envconfig)
+        print("\n")
         if not sysconfig:
             raise ValueError('no entry for systems was found')
 
@@ -94,7 +93,8 @@ class SiteConfiguration:
         except TypeError:
             raise TypeError('environments configuration '
                             'is not a scoped dictionary') from None
-
+        print(envconfig)
+        print("\n")
         # Convert modes to a `ScopedDict`; note that `modes` will implicitly
         # converted to a scoped dict here, since `self._models` is a
         # `ScopedDictField`.

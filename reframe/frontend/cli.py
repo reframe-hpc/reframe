@@ -5,7 +5,6 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-import reframe.frontend.config as config
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
@@ -18,6 +17,7 @@ from reframe.frontend.loader import (RegressionCheckLoader,
 from reframe.core.modules import init_modules_system
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
+from reframe.frontend.config import load_from_file, settings, SiteConfiguration
 
 
 def list_supported_systems(systems, printer):
@@ -196,12 +196,12 @@ def main():
     # Load configuration
     try:
         print('%s\n' % options.settings_file)
-        settings = config.load_from_file(options.settings_file)
+        settings = load_from_file(options.settings_file)
     except (OSError, ReframeError) as e:
         sys.stderr.write('Could not load settings: %s\n' % e)
         sys.exit(1)
 
-    site_config = config.SiteConfiguration()
+    site_config = SiteConfiguration()
     site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
