@@ -5,20 +5,19 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
+import reframe.frontend.config as config
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system
-from reframe.core.modules import init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import (RegressionCheckLoader,
-                                     SiteConfiguration,
                                      autodetect_system)
+from reframe.core.modules import init_modules_system
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-from reframe.settings import settings
 
 
 def list_supported_systems(systems, printer):
@@ -171,6 +170,11 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
+    misc_options.add_argument(
+        '-S', '--settings-file', action='store', dest='settings_file',
+        metavar='FILE', default='reframe/settings.py',
+        help='Specify a custom setting file for the machine. '
+             '(default: ./reframe/settings.py)')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -181,6 +185,16 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    # Load configuration
+    try:
+        print('%s\n' % options.settings_file)
+        settings = config.load_from_file(options.settings_file)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write('Could not load settings: %s\n' % e)
+        sys.exit(1)
+
+    site_config = config.SiteConfiguration()
+    site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
@@ -192,18 +206,10 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = options.colorize
 
-    # Load site configuration
-    site_config = SiteConfiguration()
-    try:
-        site_config.load_from_dict(settings.site_configuration)
-    except Exception as e:
-        print('could not load site configuration:', e, file=sys.stderr)
-        sys.exit(1)
-
     if options.system:
         try:
             sysname, sep, partname = options.system.partition(':')
-            system = site_config.systems[sysname]
+            system = settings.systems[sysname]
             if partname:
                 # Disable all partitions except partname
                 for p in system.partitions:
@@ -215,15 +221,15 @@ def main():
 
         except KeyError:
             printer.error("unknown system specified: `%s'" % options.system)
-            list_supported_systems(site_config.systems.values(), printer)
+            list_supported_systems(settings.systems.values(), printer)
             sys.exit(1)
     else:
         # Try to autodetect system
-        system = autodetect_system(site_config)
+        system = autodetect_system(settings)
         if not system:
             printer.error("could not auto-detect system. Please specify "
                           "it manually using the `--system' option.")
-            list_supported_systems(site_config.systems.values(), printer)
+            list_supported_systems(settings.systems.values(), printer)
             sys.exit(1)
 
     # Init modules system
@@ -231,13 +237,13 @@ def main():
 
     if options.mode:
         try:
-            mode_args = site_config.modes[options.mode]
+            mode_args = settings.modes[options.mode]
 
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options)
         except KeyError:
-            printer.error("no such execution mode: `%s'" % (options.mode))
+            printer.error("no such execution mode: `%s'" % options.mode)
             sys.exit(1)
 
     # Setup the check loader
@@ -284,7 +290,7 @@ def main():
                                  log_prefix=system.logdir,
                                  timestamp=options.timestamp)
     if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
-        not options.keep_stage_files):
+    not options.keep_stage_files):
         printer.error('stage and output refer to the same directory. '
                       'If this is on purpose, please use also the '
                       "`--keep-stage-files' option.")
