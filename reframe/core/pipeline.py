@@ -636,10 +636,21 @@ class RegressionTest:
 
         This method is used by the front-end to print the status message during
         the test's execution.
+        This function is also called to provide the message for the
+        ``check_info`` `logging attribute <running.html#logging>`__.
+        By default, it returns a message reporting the test name, the current
+        partition and the current programming environment that the test is
+        currently executing on.
 
-        :returns: a string with an informational message containing the test
-            name, the current partition and the current programming environment
-            that the test is currently executing on.
+        :returns: a string with an informational message about this test
+
+        .. note ::
+           When overriding this method, you should pay extra attention on how
+           you use the :class:`RegressionTest`'s attributes, because this
+           method may be called at any point of the test's lifetime.
+
+           .. versionadded:: 2.10
+
         """
         ret = self.name
         if self.current_partition:

@@ -1,5 +1,6 @@
 import os
 import unittest
+from tempfile import NamedTemporaryFile
 
 import reframe.core.modules as modules
 from reframe.core.environments import EnvironmentSnapshot
@@ -199,6 +200,11 @@ class TestModuleMapping(unittest.TestCase):
     def setUp(self):
         self.modules_activity = ModulesSystemEmulator()
         self.modules_system = modules.ModulesSystem(self.modules_activity)
+        self.mapping_file = NamedTemporaryFile('wt', delete=False)
+
+    def tearDown(self):
+        self.mapping_file.close()
+        os.remove(self.mapping_file.name)
 
     def test_mapping_simple(self):
         #
@@ -401,3 +407,57 @@ class TestModuleMapping(unittest.TestCase):
         }
         self.assertRaisesRegex(EnvironError, 'm0->m1->m3->m4->m2->m1',
                                self.modules_system.load_module, 'm0')
+
+    def test_mapping_from_file_simple(self):
+        with self.mapping_file:
+            self.mapping_file.write('m1:m2  m3   m3\n'
+                                    'm2 : m4 \n'
+                                    ' #m5: m6\n'
+                                    '\n'
+                                    ' m2: m7 m8\n'
+                                    'm9: m10 # Inline comment')
+
+        reference_map = {
+            'm1': ['m2', 'm3'],
+            'm2': ['m7', 'm8'],
+            'm9': ['m10']
+        }
+        self.modules_system.load_mapping_from_file(self.mapping_file.name)
+        self.assertEqual(reference_map, self.modules_system.module_map)
+
+    def test_maping_from_file_missing_key_separator(self):
+        with self.mapping_file:
+            self.mapping_file.write('m1 m2')
+
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          self.mapping_file.name)
+
+    def test_maping_from_file_empty_value(self):
+        with self.mapping_file:
+            self.mapping_file.write('m1: # m2')
+
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          self.mapping_file.name)
+
+    def test_maping_from_file_multiple_key_separators(self):
+        with self.mapping_file:
+            self.mapping_file.write('m1 : m2 : m3')
+
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          self.mapping_file.name)
+
+    def test_maping_from_file_empty_key(self):
+        with self.mapping_file:
+            self.mapping_file.write(' :  m2')
+
+        self.assertRaises(ConfigError,
+                          self.modules_system.load_mapping_from_file,
+                          self.mapping_file.name)
+
+    def test_maping_from_file_missing_file(self):
+        self.assertRaises(OSError,
+                          self.modules_system.load_mapping_from_file,
+                          'foo')

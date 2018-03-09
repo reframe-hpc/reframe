@@ -32,6 +32,12 @@ class AlltoallBaseTest(RegressionTest):
         if self.current_system.name == 'daint':
             self.num_tasks = 16
 
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+
     def compile(self):
         super().compile(makefile='Makefile_alltoall')
 
@@ -42,10 +48,10 @@ class AlltoallProdTest(AlltoallBaseTest):
         self.tags = {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (8.33, None, 0.1)
+                'perf': (8.23, None, 0.1)
             },
             'daint:gpu': {
-                'perf': (19.13, None, 0.1)
+                'perf': (20.73, None, 2.0)
             },
         }
 
@@ -91,6 +97,12 @@ class G2GBaseTest(RegressionTest):
         self.tags = {'production'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+
     def setup(self, partition, environ, **job_opts):
         if partition.name == 'gpu':
             self.num_gpus_per_node  = 1
@@ -123,16 +135,16 @@ class G2GCPUBandwidthTest(G2GBaseTest):
 
         self.reference = {
             'daint:gpu': {
-                'bw': (9840.93, -0.15, None)
+                'bw': (9798.29, -0.1, None)
             },
             'daint:mc': {
-                'bw': (9880.24, -0.15, None)
+                'bw': (9865.00, -0.2, None)
             },
             'dom:gpu': {
-                'bw': (9840.0, -0.15, None)
+                'bw': (9815.66, -0.1, None)
             },
             'dom:mc': {
-                'bw': (9880.24, -0.15, None)
+                'bw': (9472.59, -0.20, None)
             },
             'monch:compute': {
                 'bw': (6317.84, -0.15, None)
@@ -162,16 +174,16 @@ class G2GCPULatencyTest(G2GBaseTest):
         self.executable = './g2g_osu_latency'
         self.reference = {
             'daint:gpu': {
-                'latency': (1.12, None, 0.25)
+                'latency': (1.16, None, 1.0)
             },
             'daint:mc': {
-                'latency': (1.14, None, 0.25)
+                'latency': (1.15, None, 0.6)
             },
             'dom:gpu': {
-                'latency': (1.12, None, 0.25)
+                'latency': (1.13, None, 0.1)
             },
             'dom:mc': {
-                'latency': (1.14, None, 0.25)
+                'latency': (1.27, None, 0.2)
             },
             'monch:compute': {
                 'latency': (1.27, None, 0.1)
@@ -201,10 +213,10 @@ class G2GCUDABandwidthTest(G2GBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'bw': (8837.14, -0.1, None)
+                'bw': (8897.86, -0.1, None)
             },
             'daint:gpu': {
-                'bw': (8837.14, -0.1, None)
+                'bw': (8765.65, -0.1, None)
             },
             'kesch:cn': {
                 'bw': (6288.98, -0.1, None)
@@ -230,10 +242,10 @@ class G2GCUDALatencyTest(G2GBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'latency': (5.62, None, 0.4)
+                'latency': (5.49, None, 0.1)
             },
             'daint:gpu': {
-                'latency': (5.62, None, 0.4)
+                'latency': (5.73, None, 1.0)
             },
             'kesch:cn': {
                 'latency': (23.09, None, 0.1)
