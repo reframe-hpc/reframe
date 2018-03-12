@@ -2,43 +2,28 @@ import os
 import collections.abc
 
 import reframe.core.debug as debug
-import reframe.utility.os_ext as os_ext
-from reframe.core.environments import Environment
+import reframe.core.fields as fields
+import reframe.utility as util
 from reframe.core.exceptions import ConfigError, ReframeError, ReframeFatalError
-from reframe.core.fields import ScopedDict, ScopedDictField
-from reframe.core.launchers.registry import getlauncher
-from reframe.core.schedulers.registry import getscheduler
-from reframe.core.systems import System, SystemPartition
-from reframe.utility import import_module_from_file
-
-_settings = None
 
 
-def load_from_file(filename):
-    global _settings
+def load_settings(filename):
     try:
-        _settings = import_module_from_file(filename).settings
+        return util.import_module_from_file(filename).settings
     except Exception as e:
         raise ConfigError(
             "could not load configuration file `%s'" % filename) from e
 
-    return _settings
-
-
-def settings():
-    if _settings is None:
-        raise ReframeFatalError('No configuration loaded')
-
-    return _settings
-
 
 class SiteConfiguration:
     """Holds the configuration of systems and environments"""
-    _modes = ScopedDictField('_modes', (list, str))
+    _modes = fields.ScopedDictField('_modes', (list, str))
 
-    def __init__(self):
+    def __init__(self, dict_config=None):
         self._systems = {}
         self._modes = {}
+        if dict_config is not None:
+            self.load_from_dict(dict_config)
 
     def __repr__(self):
         return debug.repr(self)
@@ -53,6 +38,9 @@ class SiteConfiguration:
 
     def get_schedsystem_config(self, descr):
         # Handle the special shortcuts first
+        from reframe.core.launchers.registry import getlauncher
+        from reframe.core.schedulers.registry import getscheduler
+
         if descr == 'nativeslurm':
             return getscheduler('slurm'), getlauncher('srun')
 
@@ -71,6 +59,11 @@ class SiteConfiguration:
         if not isinstance(site_config, collections.abc.Mapping):
             raise TypeError('site configuration is not a dict')
 
+        # We do all the necessary imports here and not on the top, because we
+        # want to remove import time dependencies
+        import reframe.core.environments as m_env
+        from reframe.core.systems import System, SystemPartition
+
         sysconfig = site_config.get('systems', None)
         envconfig = site_config.get('environments', None)
         modes = site_config.get('modes', {})
@@ -83,13 +76,13 @@ class SiteConfiguration:
 
         # Convert envconfig to a ScopedDict
         try:
-            envconfig = ScopedDict(envconfig)
+            envconfig = fields.ScopedDict(envconfig)
         except TypeError:
             raise TypeError('environments configuration '
                             'is not a scoped dictionary') from None
 
         # Convert modes to a `ScopedDict`; note that `modes` will implicitly
-        # converted to a scoped dict here, since `self._models` is a
+        # converted to a scoped dict here, since `self._modes` is a
         # `ScopedDictField`.
         try:
             self._modes = modes
@@ -110,8 +103,6 @@ class SiteConfiguration:
                 raise TypeError("config for `%s' is not a dictionary" % name)
 
             try:
-                import reframe.core.environments as m_env
-
                 envtype = m_env.__dict__[config['type']]
                 return envtype(name, **config)
             except KeyError:
@@ -175,7 +166,7 @@ class SiteConfiguration:
                 part_scheduler, part_launcher = self.get_schedsystem_config(
                     partconfig.get('scheduler', 'local+local')
                 )
-                part_local_env = Environment(
+                part_local_env = m_env.Environment(
                     name='__rfm_env_%s' % part_name,
                     modules=partconfig.get('modules', []),
                     variables=partconfig.get('variables', {})
@@ -198,25 +189,3 @@ class SiteConfiguration:
                                                      max_jobs=part_max_jobs))
 
             self._systems[sys_name] = system
-
-
-def autodetect_system(site_config):
-    """Auto-detect system"""
-    import re
-    import socket
-
-    # Try to detect directly the cluster name from /etc/xthostname (Cray
-    # specific)
-    try:
-        hostname = os_ext.run_command('cat /etc/xthostname', check=True).stdout
-    except ReframeError:
-        # Try to figure it out with the standard method
-        hostname = socket.gethostname()
-
-    # Go through the supported systems and try to match the hostname
-    for system in site_config.systems.values():
-        for hostname_patt in system.hostnames:
-            if re.match(hostname_patt, hostname):
-                return system
-
-    return None

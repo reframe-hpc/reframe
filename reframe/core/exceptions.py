@@ -58,6 +58,10 @@ class ConfigError(ReframeError):
     """Raised when a configuration error occurs."""
 
 
+class UnknownSystemError(ConfigError):
+    """Raised when the host system cannot be identified."""
+
+
 class EnvironError(ReframeError):
     """Raised when an error related to an environment occurs."""
 

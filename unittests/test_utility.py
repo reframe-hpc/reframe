@@ -154,6 +154,17 @@ class TestOSTools(unittest.TestCase):
         self.assertFalse(os_ext.git_repo_exists(
             'https://github.com/eth-cscs/xxx', timeout=3))
 
+    def test_force_remove_file(self):
+        with tempfile.NamedTemporaryFile(delete=False) as fp:
+            pass
+
+        self.assertTrue(os.path.exists(fp.name))
+        os_ext.force_remove_file(fp.name)
+        self.assertFalse(os.path.exists(fp.name))
+
+        # Try to remove a non-existent file
+        os_ext.force_remove_file(fp.name)
+
 
 class TestCopyTree(unittest.TestCase):
     def setUp(self):

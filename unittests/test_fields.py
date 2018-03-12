@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import reframe.core.fields as fields
@@ -41,29 +42,28 @@ class TestFields(unittest.TestCase):
         self.assertRaises(ValueError, exec, "tester.ro = 'bar'",
                           globals(), locals())
 
-    def test_alphanumeric_field(self):
+    def test_alphanumeric_fields(self):
         class FieldTester:
-            field1 = fields.AlphanumericField('field1', allow_none=True)
-            field2 = fields.AlphanumericField('field2')
+            field1 = fields.AlphanumericField('field1')
+            field2 = fields.ExtendedAlphanumericField('field2')
 
-            def __init__(self, value):
-                self.field1 = value
+            def __init__(self, value1, value2=None):
+                self.field1 = value1
+                self.field2 = value2 or value1
 
-        tester1 = FieldTester('foo')
-        tester2 = FieldTester('bar')
+        tester1 = FieldTester('foo_bar12', 'foo-bar12')
         self.assertIsInstance(FieldTester.field1, fields.AlphanumericField)
-        self.assertEqual('foo', tester1.field1)
-        self.assertEqual('bar', tester2.field1)
+        self.assertIsInstance(FieldTester.field2,
+                              fields.ExtendedAlphanumericField)
+        self.assertEqual('foo_bar12', tester1.field1)
+        self.assertEqual('foo-bar12', tester1.field2)
         self.assertRaises(TypeError, FieldTester, 12)
-        self.assertRaises(ValueError, FieldTester, 'foo bar')
-
-        # Setting field2 must not affect field
-        tester1.field2 = 'foobar'
-        self.assertEqual('foo', tester1.field1)
-        self.assertEqual('foobar', tester1.field2)
-
-        # Setting field1 to None must be fine
-        tester1.field1 = None
+        self.assertRaises(TypeError, FieldTester, 'foo_bar12', 12)
+        self.assertRaises(ValueError, FieldTester, 'foo bar12')
+        self.assertRaises(ValueError, FieldTester, 'foo/bar12')
+        self.assertRaises(ValueError, FieldTester, 'foo-bar12')
+        self.assertRaises(ValueError, FieldTester, 'foo', 'foo bar12')
+        self.assertRaises(ValueError, FieldTester, 'foo', 'foo/bar12')
 
     def test_typed_field(self):
         class ClassA:
@@ -434,6 +434,7 @@ class TestFields(unittest.TestCase):
 
     def test_deprecated_field(self):
         from reframe.core.exceptions import ReframeDeprecationWarning
+
         class FieldTester:
             value = fields.DeprecatedField(fields.IntegerField('value'),
                                            'value field is deprecated')
@@ -441,6 +442,26 @@ class TestFields(unittest.TestCase):
         tester = FieldTester()
         self.assertWarns(ReframeDeprecationWarning, exec, 'tester.value = 2',
                          globals(), locals())
+
+    def test_absolute_path_field(self):
+        class FieldTester:
+            value = fields.AbsolutePathField('value', allow_none=True)
+
+            def __init__(self, value):
+                self.value = value
+
+        tester = FieldTester('foo')
+        self.assertEquals(os.path.abspath('foo'), tester.value)
+
+        # Test set with an absolute path already
+        tester.value = os.path.abspath('foo')
+        self.assertEquals(os.path.abspath('foo'), tester.value)
+
+        # This should not raise
+        tester.value = None
+        self.assertRaises(TypeError, exec, 'tester.value = 1',
+                          globals(), locals())
+
 
 class TestScopedDict(unittest.TestCase):
     def test_construction(self):

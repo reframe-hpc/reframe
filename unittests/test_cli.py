@@ -9,32 +9,34 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
+import reframe.core.config as config
+import reframe.core.runtime as rt
+import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
-import reframe.frontend.config as config
 from reframe.core.environments import EnvironmentSnapshot
-from reframe.core.modules import init_modules_system
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
+    # Save current execution context
     argv_save = sys.argv
     environ_save = EnvironmentSnapshot()
-    captured_stdout = StringIO()
-    captured_stderr = StringIO()
     sys.argv = argv
     exitcode = None
-    print(' '.join(argv))
+
+    captured_stdout = StringIO()
+    captured_stderr = StringIO()
+    print(sys.argv)
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:
-                exitcode = funct(*args, **kwargs)
+                with rt.temp_runtime(None):
+                    exitcode = funct(*args, **kwargs)
             except SystemExit as e:
                 exitcode = e.code
             finally:
-                # restore environment, command-line arguments, and the native
-                # modules system
+                # Restore execution context
                 environ_save.load()
                 sys.argv = argv_save
-                fixtures.init_native_modules_system()
 
     return (exitcode,
             captured_stdout.getvalue(),
@@ -75,7 +77,6 @@ class TestFrontend(unittest.TestCase):
 
     def setUp(self):
         self.prefix = tempfile.mkdtemp(dir='unittests')
-        self.config_file = 'custom_settings.py'
         self.system = 'generic:login'
         self.checkpath = ['unittests/resources/hellocheck.py']
         self.environs  = ['builtin-gcc']
@@ -83,16 +84,13 @@ class TestFrontend(unittest.TestCase):
         self.action = 'run'
         self.more_options = []
         self.mode = None
-        self.config_file, subst = fixtures.generate_test_config()
-        self.logfile = subst['logfile']
-        self.delete_config_file = True
+        self.config_file = 'unittests/resources/settings.py'
+        self.logfile = '.reframe_unittest.log'
         self.ignore_check_conflicts = True
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
-        os.remove(self.logfile)
-        if self.delete_config_file:
-            os.remove(self.config_file)
+        os_ext.force_remove_file(self.logfile)
 
     def _run_reframe(self):
         import reframe.frontend.cli as cli
@@ -131,24 +129,16 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
 
-    @unittest.skipIf(not fixtures.partition_with_scheduler(None),
-                     'job submission not supported')
+    @fixtures.switch_to_user_runtime
     def test_check_submit_success(self):
         # This test will run on the auto-detected system
-        system = fixtures.HOST
-        partition = fixtures.partition_with_scheduler(None)
-        init_modules_system(system.modules_system)
+        partition = fixtures.partition_with_scheduler()
+        if not partition:
+            self.skipTest('job submission not supported')
 
+        self.config_file = fixtures.USER_CONFIG_FILE
         self.local = False
         self.system = partition.fullname
-
-        # Use the system config file here
-        #
-        # FIXME: This whole thing is quite hacky; we definitely need to
-        # redesign the fixtures. It is also not equivalent to the previous
-        # version, which monkey-patched the logging settings.
-        self.config_file = os.getenv('RFM_CONFIG_FILE', 'reframe/settings.py')
-        self.delete_config_file = False
 
         # pick up the programming environment of the partition
         self.environs = [partition.environs[0].name]
@@ -234,6 +224,8 @@ class TestFrontend(unittest.TestCase):
         self.system = 'foo'
         self.checkpath = []
         returncode, stdout, stderr = self._run_reframe()
+        print(stdout)
+        print(stderr)
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(1, returncode)
@@ -289,12 +281,6 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('PASSED', stdout)
         self.assertIn('Ran 1 test case', stdout)
 
-    def test_unknown_modules_system(self):
-        fixtures.generate_test_config(
-            self.config_file, logfile=self.logfile, modules_system="'foo'")
-        returncode, stdout, stderr = self._run_reframe()
-        self.assertNotEqual(0, returncode)
-
     def test_no_ignore_check_conflicts(self):
         self.checkpath = ['unittests/resources']
         self.more_options = ['-R']
@@ -302,4 +288,3 @@ class TestFrontend(unittest.TestCase):
         self.action = 'list'
         returncode, *_ = self._run_reframe()
         self.assertNotEqual(0, returncode)
-

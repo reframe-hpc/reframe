@@ -80,7 +80,7 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def load_from_module(self, module, **check_args):
+    def load_from_module(self, module):
         """Load user checks from module.
 
         This method tries to call the `_get_checks()` method of the user check
@@ -89,7 +89,7 @@ class RegressionCheckLoader:
 
         # We can safely call `_get_checks()` here, since the source file is
         # already validated
-        candidates = module._get_checks(**check_args)
+        candidates = module._get_checks()
         if not isinstance(candidates, collections.abc.Sequence):
             return []
 
@@ -121,14 +121,14 @@ class RegressionCheckLoader:
             return []
 
         loader = SourceFileLoader(module_name, filename)
-        return self.load_from_module(loader.load_module(), **check_args)
+        return self.load_from_module(loader.load_module())
 
-    def load_from_dir(self, dirname, recurse=False, **check_args):
+    def load_from_dir(self, dirname, recurse=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
                 checks.extend(
-                    self.load_from_dir(entry.path, recurse, **check_args)
+                    self.load_from_dir(entry.path, recurse)
                 )
 
             if (entry.name.startswith('.') or
@@ -136,11 +136,11 @@ class RegressionCheckLoader:
                 not entry.is_file()):
                 continue
 
-            checks.extend(self.load_from_file(entry.path, **check_args))
+            checks.extend(self.load_from_file(entry.path))
 
         return checks
 
-    def load_all(self, **check_args):
+    def load_all(self):
         """Load all checks in self._load_path.
 
         If a prefix exists, it will be prepended to each path."""
@@ -150,9 +150,8 @@ class RegressionCheckLoader:
             if not os.path.exists(d):
                 continue
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self._recurse,
-                                                 **check_args))
+                checks.extend(self.load_from_dir(d, self._recurse))
             else:
-                checks.extend(self.load_from_file(d, **check_args))
+                checks.extend(self.load_from_file(d))
 
         return checks

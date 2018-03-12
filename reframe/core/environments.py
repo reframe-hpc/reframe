@@ -6,7 +6,7 @@ import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, SpawnedProcessError,
                                      CompilationError)
-from reframe.core.modules import get_modules_system
+from reframe.core.runtime import runtime
 
 
 class Environment:
@@ -16,7 +16,7 @@ class Environment:
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
     """
-    name = fields.NonWhitespaceField('name')
+    name = fields.ExtendedAlphanumericField('name')
     modules = fields.TypedListField('modules', str)
     variables = fields.TypedDictField('variables', str, str)
 
@@ -75,10 +75,10 @@ class Environment:
     def load(self):
         # conflicted module list must be filled at the time of load
         for m in self._modules:
-            if get_modules_system().is_module_loaded(m):
+            if runtime().modules_system.is_module_loaded(m):
                 self._preloaded.add(m)
 
-            self._conflicted += get_modules_system().load_module(m, force=True)
+            self._conflicted += runtime().modules_system.load_module(m, force=True)
             for conflict in self._conflicted:
                 # FIXME: explicit modules system commands are no more portable
                 self._load_stmts += ['module unload %s' % conflict]
@@ -106,11 +106,11 @@ class Environment:
         # Unload modules in reverse order
         for m in reversed(self._modules):
             if m not in self._preloaded:
-                get_modules_system().unload_module(m)
+                runtime().modules_system.unload_module(m)
 
         # Reload the conflicted packages, previously removed
         for m in self._conflicted:
-            get_modules_system().load_module(m)
+            runtime().modules_system.load_module(m)
 
         self._loaded = False
 
@@ -157,7 +157,7 @@ def swap_environments(src, dst):
 class EnvironmentSnapshot(Environment):
     def __init__(self, name='env_snapshot'):
         self._name = name
-        self._modules = get_modules_system().loaded_modules()
+        self._modules = runtime().modules_system.loaded_modules()
         self._variables = dict(os.environ)
         self._conflicted = []
 

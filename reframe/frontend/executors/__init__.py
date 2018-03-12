@@ -3,6 +3,7 @@ import sys
 
 import reframe.core.debug as debug
 import reframe.core.logging as logging
+import reframe.core.runtime as runtime
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
@@ -161,13 +162,13 @@ class Runner:
     def stats(self):
         return self._stats
 
-    def runall(self, checks, system):
+    def runall(self, checks):
         try:
             self._printer.separator('short double line',
                                     'Running %d check(s)' % len(checks))
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
-            self._runall(checks, system)
+            self._runall(checks)
         finally:
             # Always update statistics and print the summary line
             self._stats = self._policy.getstats()
@@ -197,7 +198,8 @@ class Runner:
         else:
             return ret and check.supports_environ(environ.name)
 
-    def _runall(self, checks, system):
+    def _runall(self, checks):
+        system = runtime.runtime().system
         self._policy.enter()
         for c in checks:
             self._policy.enter_check(c)

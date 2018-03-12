@@ -5,6 +5,7 @@
 import collections.abc
 import copy
 import numbers
+import os
 import re
 from collections import UserDict
 
@@ -247,12 +248,34 @@ class AlphanumericField(TypedField):
         if value is not None:
             if not isinstance(value, str):
                 raise TypeError('attempt to set an alphanumeric field '
-                                'with a non-string value')
+                                'with a non-string value; '
+                                'accepted characters are[A-Za-z0-9_]')
 
             # Check if the string is properly formatted
             if not re.fullmatch('\w+', value, re.ASCII):
                 raise ValueError('Attempt to set an alphanumeric field '
                                  'with a non-alphanumeric value')
+
+        super().__set__(obj, value)
+
+
+class ExtendedAlphanumericField(TypedField):
+    """Stores an extended alphanumeric string ([A-Za-z0-9_\-])"""
+
+    def __init__(self, fieldname, allow_none=False):
+        super().__init__(fieldname, str, allow_none)
+
+    def __set__(self, obj, value):
+        if value is not None:
+            if not isinstance(value, str):
+                raise TypeError('attempt to set an extended alphanumeric '
+                                'field with a non-string value')
+
+            # Check if the string is properly formatted
+            if not re.fullmatch('(\w|\-)+', value, re.ASCII):
+                raise ValueError('Attempt to set an extended alphanumeric '
+                                 'field with a non-alphanumeric value; '
+                                 'accepted characters are [A-Za-z0-9_\-]')
 
         super().__set__(obj, value)
 
@@ -374,6 +397,19 @@ class TimerField(AggregateTypeField):
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)
+
+
+class AbsolutePathField(StringField):
+    """A string field that stores an absolute path.
+
+    Any string assigned to such a field, will be converted to an absolute path.
+    """
+
+    def __set__(self, obj, value):
+        if value is not None:
+            value = os.path.abspath(value)
+
+        super().__set__(obj, value)
 
 
 # FIXME: This is not probably the best place for this to go

@@ -75,6 +75,17 @@ class ModulesSystem:
     module_map = fields.AggregateTypeField('module_map',
                                            (dict, (str, (list, str))))
 
+    @classmethod
+    def create(cls, modules_kind=None):
+        if modules_kind is None:
+            return ModulesSystem(NoModImpl())
+        elif modules_kind == 'tmod':
+            return ModulesSystem(TModImpl())
+        elif modules_kind == 'lmod':
+            return ModulesSystem(LModImpl())
+        else:
+            raise ConfigError('unknown module system: %s' % modules_kind)
+
     def __init__(self, backend):
         self._backend = backend
         self.module_map = {}
@@ -527,27 +538,3 @@ class NoModImpl(ModulesSystemImpl):
 
     def searchpath_remove(self, *dirs):
         pass
-
-
-# The module system used by the framework
-_modules_system = None
-
-
-def init_modules_system(modules_kind=None):
-    global _modules_system
-
-    if modules_kind is None:
-        _modules_system = ModulesSystem(NoModImpl())
-    elif modules_kind == 'tmod':
-        _modules_system = ModulesSystem(TModImpl())
-    elif modules_kind == 'lmod':
-        _modules_system = ModulesSystem(LModImpl())
-    else:
-        raise ConfigError('unknown module system: %s' % modules_kind)
-
-
-def get_modules_system():
-    if _modules_system is None:
-        raise ConfigError('no modules system is configured')
-
-    return _modules_system

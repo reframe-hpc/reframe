@@ -9,8 +9,6 @@ from datetime import datetime
 import reframe.core.logging as rlog
 from reframe.core.exceptions import ReframeError
 from reframe.core.pipeline import RegressionTest
-from reframe.core.systems import System
-from reframe.frontend.resources import ResourcesManager
 
 
 class TestLogger(unittest.TestCase):
@@ -32,10 +30,7 @@ class TestLogger(unittest.TestCase):
 
         # Logger adapter with an associated check
         self.logger_with_check = rlog.LoggerAdapter(
-            self.logger, RegressionTest(
-                'random_check', '.', System('foosys'), ResourcesManager()
-            )
-        )
+            self.logger, RegressionTest('random_check', '.'))
 
     def tearDown(self):
         os.remove(self.logfile)
@@ -116,9 +111,7 @@ class TestLoggerConfiguration(unittest.TestCase):
                 }
             }
         }
-        self.check = RegressionTest(
-            'random_check', '.', System('gagsys'), ResourcesManager()
-        )
+        self.check = RegressionTest('random_check', '.')
 
     def tearDown(self):
         if os.path.exists(self.logfile):
