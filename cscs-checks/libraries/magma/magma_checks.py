@@ -43,10 +43,10 @@ class MagmaTestingCblasZ(MagmaCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'value_duration': (1.96, None, +0.2),
+                'value_duration': (2.25, None, 0.05),
             },
             'dom:gpu': {
-                'value_duration': (1.96, None, +0.2),
+                'value_duration': (2.02, None, 0.05),
             },
         }
 
@@ -57,21 +57,22 @@ class MagmaTestingZGemm(MagmaCheck):
         self.perf_patterns = {
             'magma': sn.extractsingle(r'MAGMA GFlops: (?P<magma_gflops>\S+)',
                                       self.stdout, 'magma_gflops', float),
-            'cublas': sn.extractsingle(r'cuBLAS GFlops: (?P<cublas_gflops>\S+)',
-                                       self.stdout, 'cublas_gflops', float),
+            'cublas': sn.extractsingle(
+                r'cuBLAS GFlops: (?P<cublas_gflops>\S+)', self.stdout,
+                'cublas_gflops', float),
             'cpu': sn.extractsingle(r'CPU GFlops: (?P<cpu_gflops>\S+)',
                                     self.stdout, 'cpu_gflops', float)
         }
         self.reference = {
             'daint:gpu': {
-                'magma':  (3.300130e+03, None, +0.2),
-                'cublas': (3.411637e+03, None, +0.2),
-                'cpu':    (4.609484e+01, None, +0.2),
+                'magma':  (2150.5, None, 0.2),
+                'cublas': (2411.3, None, 0.45),
+                'cpu':    (44.1, None, 0.1),
             },
             'dom:gpu': {
-                'magma':  (3.300130e+03, None, +0.2),
-                'cublas': (3.411637e+03, None, +0.2),
-                'cpu':    (4.609484e+01, None, +0.2),
+                'magma':  (2532.4, None, 0.1),
+                'cublas': (3391.0, None, 0.05),
+                'cpu':    (43.9, None, 0.05),
             },
         }
 
@@ -91,12 +92,12 @@ class MagmaTestingZSymmetrize(MagmaCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'cpu_perf': (9.225973e-01, None, +0.2),
-                'gpu_perf': (1.564809e+02, None, +0.2),
+                'cpu_perf': (0.93, None, 0.05),
+                'gpu_perf': (157.8, None, 0.05),
             },
             'dom:gpu': {
-                'cpu_perf': (9.225973e-01, None, +0.2),
-                'gpu_perf': (1.564809e+02, None, +0.2),
+                'cpu_perf': (0.93, None, 0.05),
+                'gpu_perf': (158.4, None, 0.05),
             },
         }
 
@@ -116,12 +117,12 @@ class MagmaTestingZTranspose(MagmaCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'cpu_perf': (1.518647e+00, None, +0.2),
-                'gpu_perf': (4.836978e+02, None, +0.2),
+                'cpu_perf': (1.52, None, 0.05),
+                'gpu_perf': (499.0, None, 0.05),
             },
             'dom:gpu': {
-                'cpu_perf': (1.518647e+00, None, +0.2),
-                'gpu_perf': (4.836978e+02, None, +0.2),
+                'cpu_perf': (1.57, None, 0.05),
+                'gpu_perf': (499.1, None, 0.05),
             },
         }
 
@@ -141,12 +142,12 @@ class MagmaTestingZUnmbr(MagmaCheck):
         }
         self.reference = {
             'daint:gpu': {
-                'cpu_perf': (3.623812e+01, None, +0.2),
-                'gpu_perf': (2.545716e+02, None, +0.2),
+                'cpu_perf': (36.5, None, 0.05),
+                'gpu_perf': (252.0, None, 0.05),
             },
             'dom:gpu': {
-                'cpu_perf': (3.623812e+01, None, +0.2),
-                'gpu_perf': (2.545716e+02, None, +0.2),
+                'cpu_perf': (36.7, None, 0.05),
+                'gpu_perf': (256.4, None, 0.05),
             },
         }
 

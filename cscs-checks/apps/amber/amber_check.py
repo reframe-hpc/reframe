@@ -43,10 +43,10 @@ class AmberGPUCheck(AmberBaseCheck):
         self.executable = 'pmemd.cuda.MPI'
         self.reference = {
             'dom:gpu': {
-                'perf': (22.0, -0.05, None)
+                'perf': (22.16, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (22.0, -0.05, None)
+                'perf': (21.69, -0.05, None)
             },
         }
 
@@ -69,10 +69,10 @@ class AmberCPUCheck(AmberBaseCheck):
 
         self.reference = {
             'dom:mc': {
-                'perf': (5.0, -0.15, None)
+                'perf': (8.02, -0.05, None)
             },
             'daint:mc': {
-                'perf': (10.0, -0.15, None)
+                'perf': (10.68, -0.25, None)
             },
         }
 
