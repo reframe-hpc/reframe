@@ -50,10 +50,10 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.num_tasks_per_node = 36
         self.reference = {
             'dom:mc': {
-                'perf': (174.52, None, 0.05)
+                'perf': (174.5, None, 0.05)
             },
             'daint:mc': {
-                'perf': (113.89, None, 0.25)
+                'perf': (113.0, None, 0.25)
             },
         }
         self.tags |= {'maintenance', 'production'}
@@ -95,10 +95,10 @@ class Cp2kGpuProdCheck(Cp2kGpuCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (239.27, None, 0.05)
+                'perf': (240.0, None, 0.05)
             },
             'daint:gpu': {
-                'perf': (195.38, None, 0.10)
+                'perf': (195.0, None, 0.10)
             },
         }
 
