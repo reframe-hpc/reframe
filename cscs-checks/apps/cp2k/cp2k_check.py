@@ -13,11 +13,15 @@ class Cp2kCheck(RunOnlyRegressionTest):
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
+        energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
+                                  r'energy \(a.u.\):\s+(?P<energy>\S+)',
+                                  self.stdout, 'energy', float, item=-1)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'PROGRAM STOPPED IN', self.stdout),
             sn.assert_eq(sn.count(sn.extractall(
                 r'(?P<step_count>STEP NUM)',
-                self.stdout, 'step_count')), 10)
+                self.stdout, 'step_count')), 10),
+            sn.assert_reference(energy, -4404.23228954148, -2.e-8, 1e-8)
         ])
 
         self.perf_patterns = {
