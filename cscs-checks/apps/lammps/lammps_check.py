@@ -14,14 +14,20 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'LAMMPS')
-        self.sanity_patterns = sn.assert_found(r'Total wall time:',
-                                               self.stdout)
-
+        reference_energy = {
+            'daint:gpu': -4.6197356,
+            'daint:mc': -4.6195837,
+            'dom:gpu': -4.6189305,
+            'dom:mc': -4.619577
+        }
+        energy = sn.extractsingle(r'Step Temp E_pair E_mol TotEng Press\n'
+                                  r'[\S\s]+\n'
+                                  r'(\s+\S+){4}\s+(?P<energy>\S+)',
+                                  self.stdout, 'energy', float)
         self.perf_patterns = {
             'perf': sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
                                      self.stdout, 'perf', float),
         }
-
         self.maintainers = ['TR', 'VH']
         self.strict_check = False
         self.tags = {'scs'}
@@ -30,6 +36,13 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
                 'num_switches': 1
             }
         }
+
+    def setup(self, partition, environ, **job_opts):
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'Total wall time:', self.stdout),
+            sn.assert_reference(energy, reference_energy[partition.fullname],
+                                -1.e-8, 1e-8)
+        ])
 
 
 class LAMMPSGPUCheck(LAMMPSBaseCheck):
