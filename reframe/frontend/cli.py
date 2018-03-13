@@ -179,9 +179,9 @@ def main():
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
     misc_options.add_argument(
-        '-S', '--settings-file', action='store', dest='settings_file',
+        '-C', '--config-file', action='store', dest='config_file',
         metavar='FILE', default='reframe/settings.py',
-        help='Specify a custom setting file for the machine. '
+        help='Specify a custom config-file for the machine. '
              '(default: ./reframe/settings.py)')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
@@ -195,10 +195,9 @@ def main():
 
     # Load configuration
     try:
-        print('%s\n' % options.settings_file)
-        settings = load_from_file(options.settings_file)
+        settings = load_from_file(options.config_file)
     except (OSError, ReframeError) as e:
-        sys.stderr.write('Could not load settings: %s\n' % e)
+        sys.stderr.write('could not load settings: %s\n' % e)
         sys.exit(1)
 
     site_config = SiteConfiguration()
@@ -206,8 +205,8 @@ def main():
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
-    except Exception as e:
-        print('could not configure logging:', e, file=sys.stderr)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
     # Setup printer
