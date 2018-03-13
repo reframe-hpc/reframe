@@ -435,13 +435,15 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            runner = Runner(exec_policy, printer)
+            # TODO: Get this later from the user; set to 0 by default (get_checks_failed programmed such that can be get per partition)
+            max_retries = 2
+            runner = Runner(exec_policy, printer, max_retries)
             try:
                 runner.runall(checks_matched, system)
             finally:
-                # always print a report
                 if runner.stats.num_failures():
-                    printer.info(runner.stats.failure_report())
+                    # always print a report (if retries, for the last retry)
+                    printer.info(runner.stats.failure_report(retry_num=-1))
                     success = False
 
         else:
