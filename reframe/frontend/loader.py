@@ -5,10 +5,17 @@
 import ast
 import collections.abc
 import os
+from importlib.machinery import SourceFileLoader
+
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
-from importlib.machinery import SourceFileLoader
-from reframe.core.exceptions import ReframeError
+from reframe.core.environments import Environment
+from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.fields import ScopedDict, ScopedDictField
+from reframe.core.launchers.registry import getlauncher
+from reframe.core.schedulers.registry import getscheduler
+from reframe.core.systems import System, SystemPartition
+
 
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
@@ -130,23 +137,3 @@ class RegressionCheckLoader:
         return checks
 
 
-def autodetect_system(site_config):
-    """Auto-detect system"""
-    import re
-    import socket
-
-    # Try to detect directly the cluster name from /etc/xthostname (Cray
-    # specific)
-    try:
-        hostname = os_ext.run_command('cat /etc/xthostname', check=True).stdout
-    except ReframeError:
-        # Try to figure it out with the standard method
-        hostname = socket.gethostname()
-
-    # Go through the supported systems and try to match the hostname
-    for system in site_config.systems.values():
-        for hostname_patt in system.hostnames:
-            if re.match(hostname_patt, hostname):
-                return system
-
-    return None

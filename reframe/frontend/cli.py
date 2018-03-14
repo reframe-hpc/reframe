@@ -5,6 +5,7 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
+import reframe.frontend.config as config
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
@@ -12,12 +13,9 @@ from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
-from reframe.frontend.loader import (RegressionCheckLoader,
-                                     autodetect_system)
-from reframe.core.modules import init_modules_system
+from reframe.frontend.loader import (RegressionCheckLoader)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-from reframe.frontend.config import load_from_file, settings, SiteConfiguration
 
 
 def list_supported_systems(systems, printer):
@@ -193,14 +191,15 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    print(options.config_file)
     # Load configuration
     try:
-        settings = load_from_file(options.config_file)
+        settings = config.load_from_file(options.config_file)
     except (OSError, ReframeError) as e:
         sys.stderr.write('could not load settings: %s\n' % e)
         sys.exit(1)
 
-    site_config = SiteConfiguration()
+    site_config = config.SiteConfiguration()
     site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
@@ -213,10 +212,11 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = options.colorize
 
+
     if options.system:
         try:
             sysname, sep, partname = options.system.partition(':')
-            system = settings.systems[sysname]
+            system = site_config.systems[sysname]
             if partname:
                 # Disable all partitions except partname
                 for p in system.partitions:
@@ -228,15 +228,15 @@ def main():
 
         except KeyError:
             printer.error("unknown system specified: `%s'" % options.system)
-            list_supported_systems(settings.systems.values(), printer)
+            list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
     else:
         # Try to autodetect system
-        system = autodetect_system(settings)
+        system = config.autodetect_system(site_config)
         if not system:
             printer.error("could not auto-detect system. Please specify "
                           "it manually using the `--system' option.")
-            list_supported_systems(settings.systems.values(), printer)
+            list_supported_systems(site_config.systems.values(), printer)
             sys.exit(1)
 
     try:
@@ -261,13 +261,13 @@ def main():
 
     if options.mode:
         try:
-            mode_args = settings.modes[options.mode]
+            mode_args = site_config.modes[options.mode]
 
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options)
         except KeyError:
-            printer.error("no such execution mode: `%s'" % options.mode)
+            printer.error("no such execution mode: `%s'" % (options.mode))
             sys.exit(1)
 
     # Setup the check loader
@@ -314,7 +314,7 @@ def main():
                                  log_prefix=system.logdir,
                                  timestamp=options.timestamp)
     if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
-    not options.keep_stage_files):
+        not options.keep_stage_files):
         printer.error('stage and output refer to the same directory. '
                       'If this is on purpose, please use also the '
                       "`--keep-stage-files' option.")
@@ -435,15 +435,13 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            # TODO: Get this later from the user; set to 0 by default (get_checks_failed programmed such that can be get per partition)
-            max_retries = 2
-            runner = Runner(exec_policy, printer, max_retries)
+            runner = Runner(exec_policy, printer)
             try:
                 runner.runall(checks_matched, system)
             finally:
+                # always print a report
                 if runner.stats.num_failures():
-                    # always print a report (if retries, for the last retry)
-                    printer.info(runner.stats.failure_report(retry_num=-1))
+                    printer.info(runner.stats.failure_report())
                     success = False
 
         else:

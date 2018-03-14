@@ -10,9 +10,9 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
 import unittests.fixtures as fixtures
+import reframe.frontend.config as config
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.modules import init_modules_system
-from reframe.settings import settings
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -79,6 +79,7 @@ class TestFrontend(unittest.TestCase):
 
         # Monkey patch logging configuration
         self.logfile = os.path.join(self.prefix, 'reframe.log')
+        settings = config.load_from_file("reframe/settings.py")
         settings._logging_config = {
             'level': 'DEBUG',
             'handlers': {
@@ -296,6 +297,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_unknown_modules_system(self):
         # Monkey patch site configuration to trigger a module systems error
+        settings = config.load_from_file("config/cscs.py")
         site_config_save = copy.deepcopy(settings._site_configuration)
         systems = list(settings._site_configuration['systems'].keys())
         for s in systems:
