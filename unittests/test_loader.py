@@ -2,16 +2,17 @@ import copy
 import os
 import unittest
 
+import reframe.frontend.config as config
 from reframe.core.exceptions import ConfigError
 from reframe.core.systems import System
-from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
 from unittests.fixtures import TEST_SITE_CONFIG
 
 
 class TestSiteConfigurationFromDict(unittest.TestCase):
     def setUp(self):
-        self.config = SiteConfiguration()
+        self.config = config.SiteConfiguration()
         self.site_config = copy.deepcopy(TEST_SITE_CONFIG)
 
     def test_load_success(self):

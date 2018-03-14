@@ -5,6 +5,7 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
+import reframe.frontend.config as config
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
@@ -12,12 +13,9 @@ from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
-from reframe.frontend.loader import (RegressionCheckLoader,
-                                     SiteConfiguration,
-                                     autodetect_system)
+from reframe.frontend.loader import (RegressionCheckLoader)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-from reframe.settings import settings
 
 
 def list_supported_systems(systems, printer):
@@ -178,6 +176,11 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
+    misc_options.add_argument(
+        '-C', '--config-file', action='store', dest='config_file',
+        metavar='FILE', default='reframe/settings.py',
+        help='Specify a custom config-file for the machine. '
+             '(default: ./reframe/settings.py)')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -188,24 +191,27 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    print(options.config_file)
+    # Load configuration
+    try:
+        settings = config.load_from_file(options.config_file)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write('could not load settings: %s\n' % e)
+        sys.exit(1)
+
+    site_config = config.SiteConfiguration()
+    site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
-    except Exception as e:
-        print('could not configure logging:', e, file=sys.stderr)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
 
-    # Load site configuration
-    site_config = SiteConfiguration()
-    try:
-        site_config.load_from_dict(settings.site_configuration)
-    except Exception as e:
-        print('could not load site configuration:', e, file=sys.stderr)
-        sys.exit(1)
 
     if options.system:
         try:
@@ -226,7 +232,7 @@ def main():
             sys.exit(1)
     else:
         # Try to autodetect system
-        system = autodetect_system(site_config)
+        system = config.autodetect_system(site_config)
         if not system:
             printer.error("could not auto-detect system. Please specify "
                           "it manually using the `--system' option.")

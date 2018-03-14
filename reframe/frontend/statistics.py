@@ -8,82 +8,88 @@ class TestStats:
         if not hasattr(tasks, '__iter__'):
             raise TypeError('expected an iterable')
 
-        # Store test cases per partition internally
-        self._tasks_bypart = {}
-        for t in tasks:
-            partition = t.check.current_partition
-            partname = partition.fullname if partition else 'None'
-            tclist = self._tasks_bypart.setdefault(partname, [])
-            tclist.append(t)
+        self._tasks = tasks
+        self._last_retry = max([t.retry_num for t in tasks])
 
     def __repr__(self):
         return debug.repr(self)
 
-    def num_failures(self, partition=None):
-        num_fails = 0
-        if partition:
-            num_fails += len([
-                t for t in self._tasks_bypart[partition] if t.failed
-            ])
-        else:
-            # count all failures
-            for tclist in self._tasks_bypart.values():
-                num_fails += len([t for t in tclist if t.failed])
+    # The retry_num can be indexed from the end (e.g. -1 for the last retry)
+    def _convert_retry_num(self, retry_num):
+        return self._last_retry + retry_num + 1 if retry_num < 0 else retry_num
 
-        return num_fails
+    def last_retry(self):
+        return self._last_retry
 
-    def num_failures_stage(self, stage):
-        num_fails = 0
-        for tclist in self._tasks_bypart.values():
-            num_fails += len([t for t in tclist if t.failed_stage == stage])
+    def num_success_all_retries(self):
+        retry_nums = range(1, self._last_retry)
+        return len([t for t in self._tasks if not t.failed and t.retry_num in
+                                                               retry_nums])
 
-        return num_fails
+    def num_success(self, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
+        return len([t for t in self._tasks if not t.failed and t.retry_num ==
+                                                               retry_num])
 
-    def num_cases(self, partition=None):
-        num_cases = 0
-        if partition:
-            num_cases += len(self._tasks_bypart[partition])
-        else:
-            # count all failures
-            for tclist in self._tasks_bypart.values():
-                num_cases += len(tclist)
+    def num_failures(self, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
+        return len([t for t in self._tasks if t.failed and t.retry_num ==
+                                                           retry_num])
 
-        return num_cases
+    def num_failures_stage(self, stage, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
+        return len([t for t in self._tasks if t.failed_stage == stage and
+                                              t.retry_num == retry_num])
 
-    def failure_report(self):
+    def num_cases(self, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
+        return len([t for t in self._tasks if t.retry_num == retry_num])
+
+    def check_names_failed(self, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
+        return set([t.check.name for t in self._tasks
+                    if t.failed and t.retry_num == retry_num])
+
+    def failure_report(self, retry_num=0):
+        retry_num = self._convert_retry_num(retry_num)
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for partname, tclist in self._tasks_bypart.items():
-            for tf in (t for t in tclist if t.failed):
-                check = tf.check
-                environ_name = (check.current_environ.name
-                                if check.current_environ else 'None')
-                report.append(line_width * '-')
-                report.append('FAILURE INFO for %s' % check.name)
-                report.append('  * System partition: %s' % partname)
-                report.append('  * Environment: %s' % environ_name)
-                report.append('  * Stage directory: %s' % check.stagedir)
+        for tf in (t for t in self._tasks if t.failed and
+                                             t.retry_num == retry_num):
+            check = tf.check
+            partition = check.current_partition
+            partname = partition.fullname if partition else 'None'
+            environ_name = (check.current_environ.name
+                            if check.current_environ else 'None')
+            retry_info = ('(for the last of %s retries)' % tf.retry_num
+                          if tf.retry_num > 0 else '')
 
-                job_type = 'local' if check.is_local() else 'batch job'
-                jobid = check.job.jobid if check.job else -1
-                report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
-                report.append('  * Maintainers: %s' % check.maintainers)
-                report.append('  * Failing phase: %s' % tf.failed_stage)
-                reason = '  * Reason: '
-                if tf.exc_info is not None:
-                    from reframe.core.exceptions import format_exception
+            report.append(line_width * '-')
+            report.append('FAILURE INFO for %s %s' % (check.name, retry_info))
+            report.append('  * System partition: %s' % partname)
+            report.append('  * Environment: %s' % environ_name)
+            report.append('  * Stage directory: %s' % check.stagedir)
 
-                    reason += format_exception(*tf.exc_info)
-                    report.append(reason)
+            job_type = 'local' if check.is_local() else 'batch job'
+            jobid = check.job.jobid if check.job else -1
+            report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
+            report.append('  * Maintainers: %s' % check.maintainers)
+            report.append('  * Failing phase: %s' % tf.failed_stage)
+            reason = '  * Reason: '
+            if tf.exc_info is not None:
+                from reframe.core.exceptions import format_exception
 
-                elif tf.failed_stage == 'check_sanity':
-                    report.append('Sanity check failure')
-                elif tf.failed_stage == 'check_performance':
-                    report.append('Performance check failure')
-                else:
-                    # This shouldn't happen...
-                    report.append('Unknown error.')
+                reason += format_exception(*tf.exc_info)
+                report.append(reason)
+
+            elif tf.failed_stage == 'check_sanity':
+                report.append('Sanity check failure')
+            elif tf.failed_stage == 'check_performance':
+                report.append('Performance check failure')
+            else:
+                # This shouldn't happen...
+                report.append('Unknown error.')
 
         report.append(line_width * '-')
         return '\n'.join(report)

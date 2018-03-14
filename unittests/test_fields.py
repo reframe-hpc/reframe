@@ -428,7 +428,7 @@ class TestFields(unittest.TestCase):
 
     def test_settings(self):
         self.assertRaises(AttributeError, exec,
-                          "from reframe.settings import settings\n"
+                          "from reframe.frontend.config import settings\n"
                           "settings.checks_path = ['/foo']",
                           globals(), locals())
 
