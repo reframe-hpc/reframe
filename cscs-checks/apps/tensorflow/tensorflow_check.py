@@ -5,13 +5,12 @@ import reframe.utility.sanity as sn
 from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class TensorFlowTestBase(RunOnlyRegressionTest):
+class TensorFlowBaseTest(RunOnlyRegressionTest):
     def __init__(self, model_name, **kwargs):
         super().__init__('tensorflow_%s_check' % model_name,
                          os.path.dirname(__file__), **kwargs)
 
         self.descr = 'Tensorflow official %s test' % model_name
-        self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcesdir = 'https://github.com/tensorflow/models.git'
@@ -26,14 +25,15 @@ class TensorFlowTestBase(RunOnlyRegressionTest):
         self.pre_run = ['git checkout r1.4.0']
 
 
-class TensorFlowMnistTest(TensorFlowTestBase):
+class TensorFlowMnistTest(TensorFlowBaseTest):
     def __init__(self, **kwargs):
         super().__init__('mnist', **kwargs)
-        self.executable = ('python3 ./official/mnist/mnist.py '
-                           '--model_dir "." --export_dir "." --data_dir "."')
+        self.executable = 'python3 ./official/mnist/mnist.py'
+        self.executable_opts = ['--model_dir', '"."', '--export_dir', '"."',
+                                ' --data_dir', '"."']
 
         self.sanity_patterns = sn.all([
-            sn.assert_found('INFO:tensorflow:Finished evaluation at',
+            sn.assert_found(r'INFO:tensorflow:Finished evaluation at',
                             self.stderr),
             sn.assert_gt(sn.extractsingle(
                 r"Evaluation results:\s+\{.*'accuracy':\s+(?P<accuracy>\S+)"
@@ -41,30 +41,30 @@ class TensorFlowMnistTest(TensorFlowTestBase):
         ])
 
 
-class TensorFlowWidedeepTest(TensorFlowTestBase):
+class TensorFlowWidedeepTest(TensorFlowBaseTest):
     def __init__(self, **kwargs):
         super().__init__('wide_deep', **kwargs)
 
         train_epochs = 10
-        self.executable = ('python3 ./official/wide_deep/wide_deep.py '
-                           '--train_data "./official/wide_deep/adult.data" '
-                           '--test_data "./official/wide_deep/adult.test" '
-                           '--model_dir "./official/wide_deep/model_dir" '
-                           '--train_epochs %s' % train_epochs)
+        self.executable = 'python3 ./official/wide_deep/wide_deep.py'
+        self.executable_opts = [
+            '--train_data', '"./official/wide_deep/adult.data"',
+            '--test_data', '"./official/wide_deep/adult.test"',
+            '--model_dir', '"./official/wide_deep/model_dir"',
+            '--train_epochs', str(train_epochs)]
 
         self.sanity_patterns = sn.all([
-            sn.assert_found('INFO:tensorflow:Finished evaluation at',
+            sn.assert_found(r'INFO:tensorflow:Finished evaluation at',
                             self.stderr),
             sn.assert_reference(sn.extractsingle(
                 r"Results at epoch %s[\s\S]+accuracy:\s+(?P<accuracy>\S+)" %
                 train_epochs, self.stdout, 'accuracy', float),
                 0.85, -0.05, None)
-
         ])
 
-        self.pre_run.extend(['mkdir ./official/wide_deep/model_dir',
-                             'python3 ./official/wide_deep/data_download.py '
-                             '--data_dir "./official/wide_deep/"'])
+        self.pre_run += ['mkdir ./official/wide_deep/model_dir',
+                         'python3 ./official/wide_deep/data_download.py '
+                         '--data_dir "./official/wide_deep/"']
 
 
 def _get_checks(**kwargs):
