@@ -2,12 +2,12 @@ import shutil
 import tempfile
 import unittest
 
+import reframe.frontend.config as config
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 from reframe.core.modules import init_modules_system
-from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
-from reframe.settings import settings
 from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
                                                  SleepCheck,
                                                  SystemExitCheck)
@@ -16,7 +16,8 @@ from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
         # Load a system configuration
-        self.site_config = SiteConfiguration()
+        settings = config.load_from_file("reframe/settings.py")
+        self.site_config = config.SiteConfiguration()
         self.site_config.load_from_dict(settings.site_configuration)
         self.system = self.site_config.systems['generic']
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')

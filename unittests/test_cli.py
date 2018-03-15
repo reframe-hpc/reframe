@@ -10,9 +10,9 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
 import unittests.fixtures as fixtures
+import reframe.frontend.config as config
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.modules import init_modules_system
-from reframe.settings import settings
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -71,15 +71,16 @@ class TestFrontend(unittest.TestCase):
         self.prefix = tempfile.mkdtemp(dir='unittests')
         self.system = 'generic:login'
         self.checkpath = ['unittests/resources/hellocheck.py']
-        self.environs  = ['builtin-gcc']
-        self.local  = True
+        self.environs = ['builtin-gcc']
+        self.local = True
         self.action = 'run'
         self.more_options = []
         self.mode = None
 
         # Monkey patch logging configuration
         self.logfile = os.path.join(self.prefix, 'reframe.log')
-        settings._logging_config = {
+        self.settings = config.load_from_file("reframe/settings.py")
+        self.settings._logging_config = {
             'level': 'DEBUG',
             'handlers': {
                 self.logfile: {
@@ -97,7 +98,7 @@ class TestFrontend(unittest.TestCase):
         }
 
         # Monkey patch site configuration setting a mode
-        settings._site_configuration['modes'] = {
+        self.settings._site_configuration['modes'] = {
             '*': {
                 'unittest': [
                     '-c', 'unittests/resources/hellocheck.py',
@@ -132,6 +133,11 @@ class TestFrontend(unittest.TestCase):
 
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
+        print("\n")
+        print(outputdir)
+        print("\n")
+        print(os.path.join(outputdir, os.path.basename(self.logfile)))
+        print("\n")
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(os.path.exists(
             os.path.join(outputdir, os.path.basename(self.logfile))))
@@ -284,7 +290,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_execution_modes(self):
         self.checkpath = []
-        self.environs  = []
+        self.environs = []
         self.local = False
         self.mode = 'unittest'
 
@@ -296,10 +302,10 @@ class TestFrontend(unittest.TestCase):
 
     def test_unknown_modules_system(self):
         # Monkey patch site configuration to trigger a module systems error
-        site_config_save = copy.deepcopy(settings._site_configuration)
-        systems = list(settings._site_configuration['systems'].keys())
+        site_config_save = copy.deepcopy(self.settings._site_configuration)
+        systems = list(self.settings._site_configuration['systems'].keys())
         for s in systems:
-            settings._site_configuration['systems'][s]['modules_system'] = 'foo'
+            self.settings._site_configuration['systems'][s]['modules_system'] = 'foo'
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
