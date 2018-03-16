@@ -20,9 +20,9 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
             'dom:gpu': -4.6189305,
             'dom:mc': -4.619577
         }
-        self.energy = sn.extractsingle(r'\s+500000(\s+\S+){3}\s+'
-                                       r'(?P<energy>\S+)\s+\S+\s\n',
-                                       self.stdout, 'energy', float)
+        self.energy = sn.extractsingle(
+            r'\s+500000(\s+\S+){3}\s+(?P<energy>\S+)\s+\S+\s\n',
+            self.stdout, 'energy', float)
         self.perf_patterns = {
             'perf': sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
                                      self.stdout, 'perf', float),
