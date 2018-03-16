@@ -29,8 +29,8 @@ class TensorFlowMnistTest(TensorFlowBaseTest):
     def __init__(self, **kwargs):
         super().__init__('mnist', **kwargs)
         self.executable = 'python3 ./official/mnist/mnist.py'
-        self.executable_opts = ['--model_dir', '"."', '--export_dir', '"."',
-                                ' --data_dir', '"."']
+        self.executable_opts = ['--model_dir', '.', '--export_dir', '.',
+                                ' --data_dir', '.']
 
         self.sanity_patterns = sn.all([
             sn.assert_found(r'INFO:tensorflow:Finished evaluation at',
@@ -48,9 +48,9 @@ class TensorFlowWidedeepTest(TensorFlowBaseTest):
         train_epochs = 10
         self.executable = 'python3 ./official/wide_deep/wide_deep.py'
         self.executable_opts = [
-            '--train_data', '"./official/wide_deep/adult.data"',
-            '--test_data', '"./official/wide_deep/adult.test"',
-            '--model_dir', '"./official/wide_deep/model_dir"',
+            '--train_data', './official/wide_deep/adult.data',
+            '--test_data', './official/wide_deep/adult.test',
+            '--model_dir', './official/wide_deep/model_dir',
             '--train_epochs', str(train_epochs)]
 
         self.sanity_patterns = sn.all([
@@ -64,7 +64,7 @@ class TensorFlowWidedeepTest(TensorFlowBaseTest):
 
         self.pre_run += ['mkdir ./official/wide_deep/model_dir',
                          'python3 ./official/wide_deep/data_download.py '
-                         '--data_dir "./official/wide_deep/"']
+                         '--data_dir ./official/wide_deep/']
 
 
 def _get_checks(**kwargs):
