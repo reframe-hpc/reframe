@@ -59,7 +59,7 @@ class StreamTest(RegressionTest):
                 'dom:mc': {'triad': (56711.3, -0.25, None)},
                 'kesch:cn': {'triad': (78045.6, -0.05, None)},
                 'kesch:pn': {'triad': (43802.5, -0.1, None)},
-                'leone:normal': {'triad': (49758.4, -0.05, None)},
+                'leone:normal': {'triad': (44767.1, -0.05, None)},
                 'monch:compute': {'triad': (31010.7, -0.05, None)},
             },
             'PrgEnv-intel': {
@@ -73,6 +73,8 @@ class StreamTest(RegressionTest):
                 'daint:mc': {'triad': (56643.2, -0.25, None)},
                 'dom:gpu': {'triad': (50439.9, -0.15, None)},
                 'dom:mc': {'triad': (56711.3, -0.25, None)},
+                'kesch:cn': {'triad': (78637.1, -0.1, None)},
+                'kesch:pn': {'triad': (86022.3, -0.1, None)},
             }
         }
         self.perf_patterns = {
