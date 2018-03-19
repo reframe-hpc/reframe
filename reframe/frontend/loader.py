@@ -3,7 +3,8 @@
 #
 
 import ast
-import collections.abc
+import collections
+import inspect
 import os
 from importlib.machinery import SourceFileLoader
 
@@ -13,6 +14,7 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import System, SystemPartition
 
@@ -37,6 +39,9 @@ class RegressionCheckLoader:
         self._load_path = load_path
         self._prefix = prefix or ''
         self._recurse = recurse
+
+        # Loaded tests by name; maps test names to the file that were defined
+        self._loaded = {}
 
     def __repr__(self):
         return debug.repr(self)
@@ -89,10 +94,27 @@ class RegressionCheckLoader:
         # We can safely call `_get_checks()` here, since the source file is
         # already validated
         candidates = module._get_checks(**check_args)
-        if isinstance(candidates, collections.abc.Sequence):
-            return [c for c in candidates if isinstance(c, RegressionTest)]
-        else:
+        if not isinstance(candidates, collections.abc.Sequence):
             return []
+
+        ret = []
+        for c in candidates:
+            if not isinstance(c, RegressionTest):
+                continue
+
+            testfile = inspect.getfile(type(c))
+            try:
+                conflicted = self._loaded[c.name]
+            except KeyError:
+                self._loaded[c.name] = testfile
+                ret.append(c)
+            else:
+                getlogger().warning(
+                    "%s: test `%s' already defined in `%s'; ignoring..." %
+                    (testfile, c.name, conflicted)
+                )
+
+        return ret
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
