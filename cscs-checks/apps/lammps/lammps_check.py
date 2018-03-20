@@ -58,10 +58,10 @@ class LAMMPSGPUMaintCheck(LAMMPSGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (3409.0, -0.15, None)
+                'perf': (3457.0, -0.15, None)
             },
             'daint:gpu': {
-                'perf': (4880.0, -0.15, None)
+                'perf': (4691.0, -0.15, None)
             },
         }
 
