@@ -22,7 +22,7 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
             'perf': sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
                                      self.stdout, 'perf', float),
         }
-        energy_diff = np.abs(energy-energy_reference)
+        energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Total wall time:', self.stdout),
             sn.assert_lt(energy_diff, 6e-4)
