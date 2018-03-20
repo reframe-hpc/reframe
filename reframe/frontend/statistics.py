@@ -19,6 +19,11 @@ class TestStats:
     def __repr__(self):
         return debug.repr(self)
 
+    def alltasks(self):
+        for tlist in self._tasks_bypart.values():
+            for t in tlist:
+                yield t
+
     def num_failures(self, partition=None):
         num_fails = 0
         if partition:

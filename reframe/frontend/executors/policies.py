@@ -54,8 +54,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
         except TaskExit:
             return
-        except ABORT_REASONS:
-            task.fail(sys.exc_info())
+        except ABORT_REASONS as e:
+            task.abort(e)
             raise
         except BaseException:
             task.fail(sys.exc_info())

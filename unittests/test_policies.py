@@ -4,6 +4,7 @@ import unittest
 
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+from reframe.core.exceptions import JobNotStartedError
 from reframe.core.modules import init_modules_system
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -33,6 +34,16 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
+
+    def assert_all_dead(self):
+        stats = self.runner.stats
+        for t in self.runner.stats.alltasks():
+            try:
+                finished = t.check.poll()
+            except JobNotStartedError:
+                finished = True
+
+            self.assertTrue(finished)
 
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
@@ -106,6 +117,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
                           [check], self.system)
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+        self.assert_all_dead()
 
     def test_system_exit_within_test(self):
         check = SystemExitCheck(system=self.system, resources=self.resources)
@@ -287,6 +299,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
         self.assertEqual(4, self.runner.stats.num_cases())
         self.assertEqual(4, self.runner.stats.num_failures())
+        self.assert_all_dead()
 
     def test_kbd_interrupt_in_wait_with_concurrency(self):
         checks = [
