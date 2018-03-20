@@ -49,10 +49,10 @@ class EspressoCPUProdCheck(EspressoBaseCheck):
 
         self.reference = {
             'dom:mc': {
-                'sec': (158.8, None, 0.05),
+                'sec': (159.0, None, 0.05),
             },
             'daint:mc': {
-                'sec': (156.6, None, 0.40)
+                'sec': (157.0, None, 0.40)
             },
         }
 
