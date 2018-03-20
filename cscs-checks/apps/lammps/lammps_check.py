@@ -58,10 +58,10 @@ class LAMMPSGPUMaintCheck(LAMMPSGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (3409, -0.15, None)
+                'perf': (3457.0, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (4880, -0.15, None)
+                'perf': (4718.0, -0.10, None)
             },
         }
 
@@ -72,10 +72,10 @@ class LAMMPSGPUProdCheck(LAMMPSGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (3409, -0.15, None)
+                'perf': (3360.0, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (3481, -0.60, None)
+                'perf': (2382.0, -0.50, None)
             },
         }
 
@@ -104,10 +104,10 @@ class LAMMPSCPUProdCheck(LAMMPSCPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'perf': (2670, -0.15, None)
+                'perf': (4454.0, -0.05, None)
             },
             'daint:mc': {
-                'perf': (4760, -0.40, None)   # (4760, -0.15, None)
+                'perf': (5310.0, -0.65, None)
             },
         }
 

@@ -81,10 +81,10 @@ class Cp2kGpuMaintCheck(Cp2kGpuCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (258, None, 0.15)
+                'perf': (258.0, None, 0.15)
             },
             'daint:gpu': {
-                'perf': (171, None, 0.15)
+                'perf': (139.0, None, 0.10)
             },
         }
 
