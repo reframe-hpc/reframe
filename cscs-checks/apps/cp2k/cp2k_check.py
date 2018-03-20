@@ -84,7 +84,7 @@ class Cp2kGpuMaintCheck(Cp2kGpuCheck):
                 'perf': (258.0, None, 0.15)
             },
             'daint:gpu': {
-                'perf': (139.0, None, 0.15)
+                'perf': (139.0, None, 0.10)
             },
         }
 

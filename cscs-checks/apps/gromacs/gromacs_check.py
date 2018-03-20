@@ -62,10 +62,10 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (29.3, -0.15, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (60.0, -0.15, None)
+                'perf': (60.0, -0.25, None)
             },
         }
 
