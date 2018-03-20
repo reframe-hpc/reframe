@@ -61,7 +61,7 @@ class LAMMPSGPUMaintCheck(LAMMPSGPUCheck):
                 'perf': (3457.0, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (4691.0, -0.50, None)
+                'perf': (4718.0, -0.10, None)
             },
         }
 

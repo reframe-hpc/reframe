@@ -65,7 +65,7 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
                 'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (60.0, -0.25, None)
+                'perf': (60.2, -0.10, None)
             },
         }
 
