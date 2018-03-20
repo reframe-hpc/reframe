@@ -21,7 +21,7 @@ class Cp2kCheck(RunOnlyRegressionTest):
             sn.assert_eq(sn.count(sn.extractall(
                 r'(?P<step_count>STEP NUM)',
                 self.stdout, 'step_count')), 10),
-            sn.assert_bounded(energy, -4404.2324, -4404.2323)
+            sn.assert_bounded(energy, -4404.2324, -4404.2322)
         ])
 
         self.perf_patterns = {
