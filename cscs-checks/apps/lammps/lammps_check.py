@@ -37,11 +37,12 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
         }
 
     def setup(self, partition, environ, **job_opts):
+        eps = 1e-7
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Total wall time:', self.stdout),
-            sn.assert_reference(self.energy,
-                                self.reference_energy[partition.fullname],
-                                -1.e-8, 1e-8)
+            sn.assert_bounded(self.energy,
+                              self.reference_energy[partition.fullname] - eps,
+                              self.reference_energy[partition.fullname] + eps)
         ])
         super().setup(partition, environ, **job_opts)
 
