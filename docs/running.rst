@@ -184,6 +184,13 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
   ./bin/reframe -c /path/to/my/new/test.py -r
 
+.. note::
+   .. versionadded:: 2.12
+
+   The names of the loaded tests must be unique.
+   If you try to load two or more tests with the same name, a warning will be issued and the duplicate will be ignored.
+
+
 Filtering of Regression Tests
 -----------------------------
 
