@@ -51,6 +51,9 @@ class TestFrontend(unittest.TestCase):
         if self.system:
             ret += ['--system', self.system]
 
+        if self.config_file:
+            ret += ['-C', self.config_file]
+
         ret += itertools.chain(*(['-c', c] for c in self.checkpath))
         ret += itertools.chain(*(['-p', e] for e in self.environs))
 
@@ -69,44 +72,19 @@ class TestFrontend(unittest.TestCase):
 
     def setUp(self):
         self.prefix = tempfile.mkdtemp(dir='unittests')
+        self.config_file = 'custom_settings.py'
+        # FIXME : not really portable - will be refactored with new
+        # host global resources
+        self.logfile = 'rfm_unittests.log'
         self.system = 'generic:login'
         self.checkpath = ['unittests/resources/hellocheck.py']
-        self.environs = ['builtin-gcc']
-        self.local = True
+        self.environs  = ['builtin-gcc']
+        self.local  = True
         self.action = 'run'
         self.more_options = []
         self.mode = None
-
-        # Monkey patch logging configuration
-        self.logfile = os.path.join(self.prefix, 'reframe.log')
-        self.settings = config.load_from_file("reframe/settings.py")
-        self.settings._logging_config = {
-            'level': 'DEBUG',
-            'handlers': {
-                self.logfile: {
-                    'level': 'DEBUG',
-                    'format': '[%(asctime)s] %(levelname)s: '
-                    '%(check_name)s: %(message)s',
-                    'datefmt': '%FT%T',
-                    'append': False,
-                },
-                '&1': {
-                    'level': 'INFO',
-                    'format': '%(message)s'
-                },
-            }
-        }
-
-        # Monkey patch site configuration setting a mode
-        self.settings._site_configuration['modes'] = {
-            '*': {
-                'unittest': [
-                    '-c', 'unittests/resources/hellocheck.py',
-                    '-p', 'builtin-gcc',
-                    '--force-local'
-                ]
-            }
-        }
+        fixtures.generate_test_config(self.config_file,
+                                     logfile=self.logfile)
 
     def _run_reframe(self):
         import reframe.frontend.cli as cli
@@ -133,11 +111,6 @@ class TestFrontend(unittest.TestCase):
 
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
-        print("\n")
-        print(outputdir)
-        print("\n")
-        print(os.path.join(outputdir, os.path.basename(self.logfile)))
-        print("\n")
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(os.path.exists(
             os.path.join(outputdir, os.path.basename(self.logfile))))
@@ -290,7 +263,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_execution_modes(self):
         self.checkpath = []
-        self.environs = []
+        self.environs  = []
         self.local = False
         self.mode = 'unittest'
 
@@ -301,15 +274,11 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('Ran 1 test case', stdout)
 
     def test_unknown_modules_system(self):
-        # Monkey patch site configuration to trigger a module systems error
-        site_config_save = copy.deepcopy(self.settings._site_configuration)
-        systems = list(self.settings._site_configuration['systems'].keys())
-        for s in systems:
-            self.settings._site_configuration['systems'][s]['modules_system'] = 'foo'
-
+        fixtures.generate_test_config(self.config_file,
+                                     logfile=self.logfile,
+                                     modules_system='foo')
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
-        settings._site_configuration = site_config_save
 
     def tearDown(self):
         shutil.rmtree(self.prefix)

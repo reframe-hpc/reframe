@@ -3,9 +3,9 @@ import socket
 import sys
 
 import reframe
+import reframe.frontend.config as config
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-import reframe.frontend.config as config
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
@@ -13,7 +13,7 @@ from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
-from reframe.frontend.loader import (RegressionCheckLoader)
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 

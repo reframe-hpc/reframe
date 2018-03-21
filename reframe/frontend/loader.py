@@ -4,6 +4,7 @@
 
 import ast
 import collections.abc
+import importlib.util
 import os
 from importlib.machinery import SourceFileLoader
 
@@ -28,7 +29,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
         if (node.name == '_get_checks' and
             node.col_offset == 0 and
-                node.args.kwarg):
+            node.args.kwarg):
             self._validated = True
 
 
@@ -94,6 +95,13 @@ class RegressionCheckLoader:
         else:
             return []
 
+    def import_module_from_file(filename, name=None):
+        filename = os.path.expandvars(filename)
+        spec = importlib.util.spec_from_file_location("reframe", filename)
+        loaded_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(loaded_module)
+        return loaded_module.settings
+
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
         if not self._validate_source(filename):
@@ -112,7 +120,7 @@ class RegressionCheckLoader:
 
             if (entry.name.startswith('.') or
                 not entry.name.endswith('.py') or
-                    not entry.is_file()):
+                not entry.is_file()):
                 continue
 
             checks.extend(self.load_from_file(entry.path, **check_args))

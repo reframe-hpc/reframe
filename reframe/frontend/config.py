@@ -1,38 +1,27 @@
 import os
-import importlib.util
 import collections.abc
 
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.exceptions import ConfigError, ReframeError, ReframeFatalError
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.launchers.registry import getlauncher
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import System, SystemPartition
 
 _settings = None
 
-
 def load_from_file(filename):
     global _settings
-    settings_file_path = os.path.dirname(filename)
-    if os.path.isabs(filename):
-        module_name = os.path.splitext(
-            os.path.basename(os.path.expandvars(filename)))[0]
-    else:
-        module_name = os.path.splitext(
-            os.path.basename(os.path.expandvars(filename)))[0]
-    spec = importlib.util.spec_from_file_location(module_name, filename)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    _settings = mod.settings
+    _settings = RegressionCheckLoader.import_module_from_file(filename)
     return _settings
 
 
 def settings():
     if _settings is None:
-        raise ConfigError()
+        raise ReframeFatalError('No configuration loaded')
 
     return _settings
 
