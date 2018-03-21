@@ -14,14 +14,19 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'LAMMPS')
-        self.sanity_patterns = sn.assert_found(r'Total wall time:',
-                                               self.stdout)
-
+        energy_reference = -4.6195
+        energy = sn.extractsingle(
+            r'\s+500000(\s+\S+){3}\s+(?P<energy>\S+)\s+\S+\s\n',
+            self.stdout, 'energy', float)
         self.perf_patterns = {
             'perf': sn.extractsingle(r'\s+(?P<perf>\S+) timesteps/s',
                                      self.stdout, 'perf', float),
         }
-
+        energy_diff = sn.abs(energy-energy_reference)
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'Total wall time:', self.stdout),
+            sn.assert_lt(energy_diff, 6e-4)
+        ])
         self.maintainers = ['TR', 'VH']
         self.strict_check = False
         self.tags = {'scs'}
