@@ -104,7 +104,7 @@ def get_test_config():
     return (system, partition, environ)
 
 
-def generate_test_config(filename, template='unittests/resources/settings_unittests.py', **kwargs):
+def generate_test_config(filename, template='unittests/resources/settings_unittests.pyt', **kwargs):
     if not 'modules_system' in kwargs:
         kwargs['nomod'] = '#'
         kwargs['modules_system'] = 'foo'
