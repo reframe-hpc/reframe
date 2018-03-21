@@ -62,10 +62,10 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (15.7, -0.15, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (62.0, -0.15, None)
+                'perf': (60.2, -0.10, None)
             },
         }
 
@@ -76,10 +76,10 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (15.7, -0.15, None)
+                'perf': (32.0, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (55.1, -0.39, None)
+                'perf': (47.5, -0.40, None)
             },
         }
 
@@ -108,10 +108,10 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'perf': (36.0, -0.15, None)
+                'perf': (38.0, -0.05, None)
             },
             'daint:mc': {
-                'perf': (73.0, -0.25, None)   # (82.0, -0.15, None)
+                'perf': (73.0, -0.50, None)
             },
         }
 
