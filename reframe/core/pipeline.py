@@ -805,31 +805,9 @@ class RegressionTest:
         self._job.options = (self._current_partition.access +
                              resources_opts + self._job.options)
 
-    # FIXME: This is a temporary solution to address issue #157
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
-        self._perf_logfile = os.path.join(
-            self._resources_mgr.logdir(self._current_partition.name),
-            self.name + '.log'
-        )
-
-        perf_logging_config = {
-            'level': 'INFO',
-            'handlers': {
-                self._perf_logfile: {
-                    'level': 'DEBUG',
-                    'format': '[%(asctime)s] reframe %(version)s: '
-                              '%(check_info)s '
-                              '(jobid=%(check_jobid)s): %(message)s',
-                    'append': True,
-                }
-            }
-        }
-
-        self._perf_logger = logging.LoggerAdapter(
-            logger=logging.load_from_dict(perf_logging_config),
-            check=self
-        )
+        self._perf_logger = logging.getperflogger(self)
 
     def setup(self, partition, environ, **job_opts):
         """The setup phase of the regression test pipeline.
@@ -1024,9 +1002,24 @@ class RegressionTest:
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 try:
                     ref, low_thres, high_thres = self.reference[key]
+
+                    perf_extra = {}
+                    if value is not None:
+                        perf_extra['check_perf_value'] = value
+
+                    if  ref is not None:
+                        perf_extra['check_perf_reference'] = ref
+
+                    if low_thres is not None:
+                        perf_extra['check_perf_lower_thres'] = low_thres
+
+                    if high_thres is not None:
+                        perf_extra['check_perf_upper_thres'] = high_thres
+
                     self._perf_logger.info(
                         'value: %s, reference: %s' %
-                        (value, self.reference[key])
+                        (value, self.reference[key]),
+                        extra=perf_extra
                     )
                 except KeyError:
                     raise SanityError(

@@ -10,6 +10,7 @@ from datetime import datetime
 
 import reframe
 import reframe.core.debug as debug
+from reframe.settings import settings
 
 # Reframe's log levels
 CRITICAL = 50
@@ -83,7 +84,7 @@ def set_handler_level(hdlr, level):
 logging.Handler.setLevel = set_handler_level
 
 
-def load_from_dict(logging_config):
+def load_from_dict(logging_config, auto_logfile=None):
     if not isinstance(logging_config, collections.abc.Mapping):
         raise TypeError('logging configuration is not a dict')
 
@@ -92,13 +93,13 @@ def load_from_dict(logging_config):
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
 
-    for handler in _extract_handlers(handlers_dict):
+    for handler in _extract_handlers(handlers_dict, auto_logfile):
         logger.addHandler(handler)
 
     return logger
 
 
-def _extract_handlers(handlers_dict):
+def _extract_handlers(handlers_dict, auto_logfile=None):
     handlers = []
     if not handlers_dict:
         raise ValueError('no handlers are defined for logger')
@@ -112,11 +113,25 @@ def _extract_handlers(handlers_dict):
         datefmt = handler_config.get('datefmt', '%FT%T')
         append  = handler_config.get('append', False)
         timestamp = handler_config.get('timestamp', None)
+        filename = filename.format(auto_logfile=auto_logfile)
 
         if filename == '&1':
             hdlr = logging.StreamHandler(stream=sys.stdout)
         elif filename == '&2':
             hdlr = logging.StreamHandler(stream=sys.stderr)
+        elif filename == '__h_graylog':
+            try:
+                import pygelf
+            except ImportError:
+                continue
+            else:
+                hostname = handler_config.get('hostname', None)
+                port = handler_config.get('port', None)
+                facility = handler_config.get('facility', None)
+                hdlr = pygelf.GelfHttpHandler(host=hostname, port=port,
+                                              debug=True,
+                                              include_extra_fields=True,
+                                              facility=facility)
         else:
             if timestamp:
                 basename, ext = os.path.splitext(filename)
@@ -191,6 +206,14 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_jobid': '-1',
                 'check_info': check.info() if check else 'reframe',
                 'version': reframe.VERSION,
+                'check_perf_value': None,
+                'check_perf_reference': None,
+                'check_perf_lower_thres': None,
+                'check_perf_upper_thres': None,
+                'check_system': None,
+                'check_partition': None,
+                'check_environ': None,
+                'data-version': reframe.VERSION,
             }
         )
         self.check = check
@@ -208,6 +231,15 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_info'] = self.check.info()
             if self.check.job:
                 self.extra['check_jobid'] = self.check.job.jobid
+
+            if self.check.current_partition:
+                self.extra['check_partition'] = self.check.current_partition.name
+
+            if self.check.current_environ:
+                self.extra['check_environ'] = self.check.current_environ.name
+
+            if self.check.current_system:
+                self.extra['check_system'] = self.check.current_system.name
 
         try:
             self.extra.update(kwargs['extra'])
@@ -279,3 +311,12 @@ def save_log_files(dest):
 
 def getlogger():
     return _context_logger
+
+def getperflogger(check):
+    perf_logfile = os.path.join(
+        check._resources_mgr.logdir(check._current_partition.name),
+        check.name + '.log'
+    )
+    logger = load_from_dict(settings._perf_logging_config, perf_logfile)
+    perf_logger = LoggerAdapter(logger, check=check)
+    return perf_logger

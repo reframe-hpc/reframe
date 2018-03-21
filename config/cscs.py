@@ -312,6 +312,28 @@ class ReframeSettings:
         }
     }
 
+    _perf_logging_config = {
+        'level': 'INFO',
+        'handlers': {
+            '__h_graylog': {
+                'level': 'INFO',
+                'format': '[%(asctime)s] %(levelname)s: '
+                          '%(check_name)s: %(message)s',
+                'facility': 'reframe',
+                'hostname': 'your-sever-here',
+                'port': 12345,
+            },
+            '{auto_logfile}': {
+                'level': 'DEBUG',
+                'format': '[%(asctime)s] reframe %(version)s '
+                          '%(check_info)s'
+                          '(jobid=%(check_jobid)s): %(message)s ',
+                'append': True
+            }
+        }
+    }
+
+
     @property
     def version(self):
         return self._version
