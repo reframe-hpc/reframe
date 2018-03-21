@@ -7,7 +7,7 @@ import time
 import unittest
 from datetime import datetime
 
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher

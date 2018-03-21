@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 import reframe.core.debug as debug
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (SpawnedProcessError,
                                      SpawnedProcessTimeout)
 

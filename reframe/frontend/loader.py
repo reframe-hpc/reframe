@@ -9,7 +9,7 @@ import os
 from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.fields import ScopedDict, ScopedDictField
@@ -94,13 +94,6 @@ class RegressionCheckLoader:
             return [c for c in candidates if isinstance(c, RegressionTest)]
         else:
             return []
-
-    def import_module_from_file(filename, name=None):
-        filename = os.path.expandvars(filename)
-        spec = importlib.util.spec_from_file_location("reframe", filename)
-        loaded_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(loaded_module)
-        return loaded_module.settings
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)

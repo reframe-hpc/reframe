@@ -5,7 +5,7 @@ import sys
 import reframe
 import reframe.frontend.config as config
 import reframe.core.logging as logging
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
@@ -312,7 +312,7 @@ def main():
                                  log_prefix=system.logdir,
                                  timestamp=options.timestamp)
     if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
-            not options.keep_stage_files):
+        not options.keep_stage_files):
         printer.error('stage and output refer to the same directory. '
                       'If this is on purpose, please use also the '
                       "`--keep-stage-files' option.")
