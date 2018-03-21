@@ -7,7 +7,6 @@ from reframe.core.exceptions import TaskExit
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
-from reframe.frontend.statistics import TestStats
 
 
 class SerialExecutionPolicy(ExecutionPolicy):
@@ -15,17 +14,15 @@ class SerialExecutionPolicy(ExecutionPolicy):
         super().__init__()
         self._tasks = []
 
-    def getstats(self):
-        return TestStats(self._tasks)
-
     def run_check(self, check, partition, environ):
         super().run_check(check, partition, environ)
         self.printer.status(
             'RUN', "%s on %s using %s" %
             (check.name, partition.fullname, environ.name)
         )
-        task = RegressionTask(check, self.runner.retry_num)
+        task = RegressionTask(check)
         self._tasks.append(task)
+        self.stats.add_task(task)
         try:
             task.setup(partition, environ,
                        sched_account=self.sched_account,
@@ -120,6 +117,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         self.task_listeners.append(self)
 
+
     def _remove_from_running(self, task):
         getlogger().debug('removing task: %s' % task.check.info())
         try:
@@ -153,13 +151,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._ready_tasks.setdefault(p.fullname, [])
         self._max_jobs.setdefault(p.fullname, p.max_jobs)
 
-    def getstats(self):
-        return TestStats(self._tasks)
-
     def run_check(self, check, partition, environ):
         super().run_check(check, partition, environ)
-        task = RegressionTask(check, self.runner.retry_num, self.task_listeners)
+        task = RegressionTask(check, self.task_listeners)
         self._tasks.append(task)
+        self.stats.add_task(task)
         try:
             task.setup(partition, environ,
                        sched_account=self.sched_account,
@@ -303,4 +299,4 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise
 
         self.printer.separator('short single line',
-                               'all spawned checks have finished')
+                               'all spawned checks have finished\n')

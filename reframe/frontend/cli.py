@@ -153,6 +153,10 @@ def main():
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use'
     )
+    run_options.add_argument(
+        '--max-retries', metavar='MAX', action='store', default=0,
+        help='Specify the maximum number of retries per regression test.'
+             'Default: 0')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -429,15 +433,14 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            # TODO: Get this later from the user; set to 0 by default (get_checks_failed programmed such that can be get per partition)
-            max_retries = 2
+            max_retries = int(options.max_retries)
             runner = Runner(exec_policy, printer, max_retries)
             try:
                 runner.runall(checks_matched, system)
             finally:
                 if runner.stats.num_failures():
                     # always print a report (if retries, for the last retry)
-                    printer.info(runner.stats.failure_report(retry_num=-1))
+                    printer.info(runner.stats.failure_report(try_num=-1))
                     success = False
 
         else:
