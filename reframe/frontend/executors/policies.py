@@ -274,7 +274,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def exit(self):
         self.printer.separator('short single line',
                                'waiting for spawned checks to finish')
-        pollrate = PollRateFunction(1, 60)
+        pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
         while self._running_tasks or self._retired_tasks:
