@@ -11,7 +11,8 @@ from importlib.machinery import SourceFileLoader
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.exceptions import (ConfigError, NameConflictError,
+                                     SpawnedProcessError)
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.logging import getlogger
@@ -35,10 +36,12 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, prefix='', recurse=False):
+    def __init__(self, load_path, prefix='',
+                 recurse=False, ignore_conflicts=False):
         self._load_path = load_path
         self._prefix = prefix or ''
         self._recurse = recurse
+        self._ignore_conflicts = ignore_conflicts
 
         # Loaded tests by name; maps test names to the file that were defined
         self._loaded = {}
@@ -109,10 +112,13 @@ class RegressionCheckLoader:
                 self._loaded[c.name] = testfile
                 ret.append(c)
             else:
-                getlogger().warning(
-                    "%s: test `%s' already defined in `%s'; ignoring..." %
-                    (testfile, c.name, conflicted)
-                )
+                msg = ("%s: test `%s' already defined in `%s'" %
+                       (testfile, c.name, conflicted))
+
+                if self._ignore_conflicts:
+                    getlogger().warning(msg + '; ignoring...')
+                else:
+                    raise NameConflictError(msg)
 
         return ret
 
@@ -336,7 +342,7 @@ def autodetect_system(site_config):
     # specific)
     try:
         hostname = os_ext.run_command('cat /etc/xthostname', check=True).stdout
-    except ReframeError:
+    except SpawnedProcessError:
         # Try to figure it out with the standard method
         hostname = socket.gethostname()
 

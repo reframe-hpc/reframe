@@ -21,7 +21,8 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.system = self.site_config.systems['generic']
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
-        self.loader = RegressionCheckLoader(['unittests/resources'])
+        self.loader = RegressionCheckLoader(['unittests/resources'],
+                                            ignore_conflicts=True)
 
         # Init modules system
         init_modules_system(self.system.modules_system)
