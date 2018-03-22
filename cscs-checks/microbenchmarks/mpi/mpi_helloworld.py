@@ -1,5 +1,4 @@
 import os
-import itertools
 import reframe.utility.sanity as sn
 
 from reframe.core.deferrable import deferrable
