@@ -35,25 +35,17 @@ class GpuBandwidthCheck(RegressionTest):
                     sn.extractsingle(self._xfer_pattern(xfer_kind, device),
                                      self.stdout, 2, float, 0)
 
-        kesch_cn = {}
-        daint_gpu = {}
-        dom_gpu = {}
-        for device in range(self.num_gpus_per_node):
-            kesch_cn['perf_h2d_%i' % device] = (7213, -0.1, None)
-            kesch_cn['perf_d2h_%i' % device] = (7213, -0.1, None)
-            kesch_cn['perf_d2d_%i' % device] = (137347, -0.1, None)
-            dom_gpu['perf_h2d_%i' % device] = (11648, -0.1, None)
-            dom_gpu['perf_d2h_%i' % device] = (12423, -0.1, None)
-            dom_gpu['perf_d2d_%i' % device] = (373803, -0.1, None)
-            daint_gpu['perf_h2d_%i' % device] = (11648, -0.1, None)
-            daint_gpu['perf_d2h_%i' % device] = (12423, -0.1, None)
-            daint_gpu['perf_d2d_%i' % device] = (305000, -0.1, None)
-
-        self.reference = {
-            'kesch:cn': kesch_cn,
-            'daint:gpu': daint_gpu,
-            'dom:gpu': dom_gpu
-        }
+        self.reference = {}
+        for d in range(self.num_gpus_per_node):
+            self.reference['kesch:cn:perf_h2d_%i' % d] = (7213, -0.1, None)
+            self.reference['kesch:cn:perf_d2h_%i' % d] = (7213, -0.1, None)
+            self.reference['kesch:cn:perf_d2d_%i' % d] = (137347, -0.1, None)
+            self.reference['dom:gpu:perf_h2d_%i' % d] = (11648, -0.1, None)
+            self.reference['dom:gpu:perf_d2h_%i' % d] = (12423, -0.1, None)
+            self.reference['dom:gpu:perf_d2d_%i' % d] = (373803, -0.1, None)
+            self.reference['daint:gpu:perf_h2d_%i' % d] = (11648, -0.1, None)
+            self.reference['daint:gpu:perf_d2h_%i' % d] = (12423, -0.1, None)
+            self.reference['daint:gpu:perf_d2d_%i' % d] = (305000, -0.1, None)
 
         # Set nvcc flags
         nvidia_sm = '60'
@@ -65,7 +57,8 @@ class GpuBandwidthCheck(RegressionTest):
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        if self.current_system.name == 'kesch' and environ.name == 'PrgEnv-gnu':
+        if (self.current_system.name == 'kesch' and
+            environ.name == 'PrgEnv-gnu'):
             self.modules = ['craype-accel-nvidia35']
 
         super().setup(partition, environ, **job_opts)
@@ -82,8 +75,8 @@ class GpuBandwidthCheck(RegressionTest):
             first_part = 'Device to Host Bandwidth'
         else:
             first_part = 'Device to Device Bandwidth'
-        return r'^ *%s([^\n]*\n){%i}^ *Device Id: %i[^\n]*\n^\s*\d+\s+(\S+)' % \
-               (first_part, 3+3*devno, devno)
+        return (r'^ *%s([^\n]*\n){%i}^ *Device Id:'
+                r' %i[^\n]*\n^\s*\d+\s+(\S+)' % (first_part, 3+3*devno, devno))
 
 
 def _get_checks(**kwargs):
