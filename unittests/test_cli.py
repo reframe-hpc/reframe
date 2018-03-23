@@ -64,6 +64,9 @@ class TestFrontend(unittest.TestCase):
         elif self.action == 'help':
             ret += ['-h']
 
+        if self.ignore_check_conflicts:
+            ret += ['--ignore-check-conflicts']
+
         ret += self.more_options
         return ret
 
@@ -76,6 +79,7 @@ class TestFrontend(unittest.TestCase):
         self.action = 'run'
         self.more_options = []
         self.mode = None
+        self.ignore_check_conflicts = True
 
         # Monkey patch logging configuration
         self.logfile = os.path.join(self.prefix, 'reframe.log')
@@ -304,6 +308,14 @@ class TestFrontend(unittest.TestCase):
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
         settings._site_configuration = site_config_save
+
+    def test_no_ignore_check_conflicts(self):
+        self.checkpath = ['unittests/resources']
+        self.more_options = ['-R']
+        self.ignore_check_conflicts = False
+        self.action = 'list'
+        returncode, *_ = self._run_reframe()
+        self.assertNotEqual(0, returncode)
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
