@@ -36,10 +36,10 @@ class NamdBaseCheck(RunOnlyRegressionTest):
 
         self.reference = {
             'dom:mc': {
-                'days_ns': (1.37, None, 0.15),
+                'days_ns': (0.49, None, 0.05),
             },
             'daint:mc': {
-                'days_ns': (0.71, None, 0.10),
+                'days_ns': (0.27, None, 0.05),
             },
         }
 
@@ -76,10 +76,10 @@ class NamdGPUCheck(NamdBaseCheck):
 
         self.reference = {
             'dom:gpu':  {
-                'days_ns': (0.25, None, 0.15),
+                'days_ns': (0.16, None, 0.05),
             },
             'daint:gpu':  {
-                'days_ns': (0.16, None, 0.15),
+                'days_ns': (0.72, None, 0.05),
             },
         }
 
