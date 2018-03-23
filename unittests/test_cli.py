@@ -73,9 +73,6 @@ class TestFrontend(unittest.TestCase):
     def setUp(self):
         self.prefix = tempfile.mkdtemp(dir='unittests')
         self.config_file = 'custom_settings.py'
-        # FIXME : not really portable - will be refactored with new
-        # host global resources
-        self.logfile = 'rfm_unittests.log'
         self.system = 'generic:login'
         self.checkpath = ['unittests/resources/hellocheck.py']
         self.environs  = ['builtin-gcc']
@@ -83,8 +80,15 @@ class TestFrontend(unittest.TestCase):
         self.action = 'run'
         self.more_options = []
         self.mode = None
-        fixtures.generate_test_config(self.config_file,
-                                     logfile=self.logfile)
+        self.config_file, subst = fixtures.generate_test_config()
+        self.logfile = subst['logfile']
+        self.delete_config_file = True
+
+    def tearDown(self):
+        shutil.rmtree(self.prefix)
+        os.remove(self.logfile)
+        if self.delete_config_file:
+            os.remove(self.config_file)
 
     def _run_reframe(self):
         import reframe.frontend.cli as cli
@@ -133,6 +137,16 @@ class TestFrontend(unittest.TestCase):
 
         self.local = False
         self.system = partition.fullname
+
+        # Use the system config file here
+        try:
+            # FIXME: This whole thing is quite hacky; we definitely need to
+            # redesign the fixtures. It is also not equivalent to the previous
+            # version, which monkey-patched the logging settings.
+            self.config_file = os.environ['RFM_CONFIG_FILE']
+            self.delete_config_file = False
+        except KeyError:
+            pass
 
         # pick up the programming environment of the partition
         self.environs = [partition.environs[0].name]
@@ -274,11 +288,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('Ran 1 test case', stdout)
 
     def test_unknown_modules_system(self):
-        fixtures.generate_test_config(self.config_file,
-                                     logfile=self.logfile,
-                                     modules_system='foo')
+        fixtures.generate_test_config(
+            self.config_file, logfile=self.logfile, modules_system="'foo'")
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
-
-    def tearDown(self):
-        shutil.rmtree(self.prefix)

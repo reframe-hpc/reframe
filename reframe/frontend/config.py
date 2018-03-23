@@ -13,9 +13,15 @@ from reframe.utility import import_module_from_file
 
 _settings = None
 
+
 def load_from_file(filename):
     global _settings
-    _settings = import_module_from_file(filename)
+    try:
+        _settings = import_module_from_file(filename).settings
+    except Exception as e:
+        raise ConfigError(
+            "could not load configuration file `%s'" % filename) from e
+
     return _settings
 
 

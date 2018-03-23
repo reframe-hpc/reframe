@@ -4,18 +4,10 @@
 
 import ast
 import collections.abc
-import importlib.util
 import os
 from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
-import reframe.utility.os_ext as os_ext
-from reframe.core.environments import Environment
-from reframe.core.exceptions import ConfigError, ReframeError
-from reframe.core.fields import ScopedDict, ScopedDictField
-from reframe.core.launchers.registry import getlauncher
-from reframe.core.schedulers.registry import getscheduler
-from reframe.core.systems import System, SystemPartition
 
 
 class RegressionCheckValidator(ast.NodeVisitor):

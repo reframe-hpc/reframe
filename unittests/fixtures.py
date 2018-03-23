@@ -2,6 +2,7 @@
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
 import os
+import tempfile
 
 import reframe.frontend.config as config
 from reframe.core.modules import (get_modules_system,
@@ -82,7 +83,8 @@ def init_native_modules_system():
 
 
 # Guess current system and initialize its modules system
-settings = config.load_from_file("reframe/settings.py")
+_config_file = os.getenv('RFM_CONFIG_FILE', 'reframe/settings.py')
+settings = config.load_from_file(_config_file)
 _site_config = config.SiteConfiguration()
 _site_config.load_from_dict(settings.site_configuration)
 HOST = config.autodetect_system(_site_config)
@@ -104,15 +106,24 @@ def get_test_config():
     return (system, partition, environ)
 
 
-def generate_test_config(filename, template='unittests/resources/settings_unittests.pyt', **kwargs):
-    if not 'modules_system' in kwargs:
-        kwargs['nomod'] = '#'
-        kwargs['modules_system'] = 'foo'
-    else:
-         kwargs['nomod'] = ''
+def generate_test_config(filename=None,
+                         template='unittests/resources/settings_unittests.tmpl',
+                         **subst):
+    if not filename:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as fp:
+            filename = fp.name
+
+    if not 'modules_system' in subst:
+        subst['modules_system'] = None
+
+    if not 'logfile' in subst:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.log') as fp:
+            subst['logfile'] = fp.name
 
     with open(filename, 'w') as fw, open(template) as fr:
-        fw.write(fr.read().format(**kwargs))
+        fw.write(fr.read().format(**subst))
+
+    return filename, subst
 
 
 def force_remove_file(filename):
