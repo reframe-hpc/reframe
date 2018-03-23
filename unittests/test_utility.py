@@ -250,7 +250,7 @@ class TestImportFromFile(unittest.TestCase):
         try:
             reframe.utility.import_module_from_file('/foo')
             self.fail()
-        except ModuleNotFoundError as e:
+        except ImportError as e:
             self.assertEqual('foo', e.name)
             self.assertEqual('/foo', e.path)
 

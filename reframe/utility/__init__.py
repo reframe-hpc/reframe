@@ -15,8 +15,8 @@ def import_module_from_file(filename):
 
     spec = importlib.util.spec_from_file_location(module_name, filename)
     if spec is None:
-        raise ModuleNotFoundError("No module named '%s'" % module_name,
-                                  name=module_name, path=filename)
+        raise ImportError("No module named '%s'" % module_name,
+                          name=module_name, path=filename)
 
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

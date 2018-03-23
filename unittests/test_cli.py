@@ -139,14 +139,12 @@ class TestFrontend(unittest.TestCase):
         self.system = partition.fullname
 
         # Use the system config file here
-        try:
-            # FIXME: This whole thing is quite hacky; we definitely need to
-            # redesign the fixtures. It is also not equivalent to the previous
-            # version, which monkey-patched the logging settings.
-            self.config_file = os.environ['RFM_CONFIG_FILE']
-            self.delete_config_file = False
-        except KeyError:
-            pass
+        #
+        # FIXME: This whole thing is quite hacky; we definitely need to
+        # redesign the fixtures. It is also not equivalent to the previous
+        # version, which monkey-patched the logging settings.
+        self.config_file = os.getenv('RFM_CONFIG_FILE', 'reframe/settings.py')
+        self.delete_config_file = False
 
         # pick up the programming environment of the partition
         self.environs = [partition.environs[0].name]
