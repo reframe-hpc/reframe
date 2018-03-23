@@ -188,7 +188,9 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
    .. versionadded:: 2.12
 
    The names of the loaded tests must be unique.
-   If you try to load two or more tests with the same name, a warning will be issued and the duplicate will be ignored.
+   Trying to load two or more tests with the same name will produce an error.
+   You may ignore the error by using the ``--ignore-check-conflicts`` option.
+   In this case, any conflicting test will not be loaded and a warning will be issued.
 
 
 Filtering of Regression Tests
