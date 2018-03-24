@@ -6,7 +6,7 @@ import reframe
 import reframe.frontend.config as config
 import reframe.core.logging as logging
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (EnvironError, ReframeError,
+from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
 from reframe.frontend.argparse import ArgumentParser
@@ -195,7 +195,8 @@ def main():
     try:
         settings = config.load_from_file(options.config_file)
     except (OSError, ReframeError) as e:
-        sys.stderr.write('could not load settings: %s\n' % e)
+        sys.stderr.write(
+            '%s: could not load settings: %s\n' % (sys.argv[0], e))
         sys.exit(1)
 
     site_config = config.SiteConfiguration()
@@ -203,7 +204,7 @@ def main():
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
-    except (OSError, ReframeError) as e:
+    except (OSError, ConfigError) as e:
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
@@ -294,7 +295,7 @@ def main():
         # if prefix is set, reset all other directories
         system.prefix = os.path.expandvars(options.prefix)
         system.outputdir = None
-        system.stagedir = None
+        system.stagedir  = None
         system.logdir = None
 
     if options.output:
@@ -322,7 +323,7 @@ def main():
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
-    printer.info('Reframe version: ' + reframe.VERSION)
+    printer.info('Reframe version: '  + reframe.VERSION)
     printer.info('Launched by user: ' + os.environ['USER'])
     printer.info('Launched on host: ' + socket.gethostname())
 
@@ -400,7 +401,7 @@ def main():
             try:
                 get_modules_system().load_module(m, force=True)
             except EnvironError:
-                printer.info("Could not load module `%s': Skipping..." % m)
+                printer.info("could not load module `%s': Skipping..." % m)
 
         success = True
         if options.list:

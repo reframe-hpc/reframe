@@ -3,7 +3,9 @@ import shutil
 import tempfile
 import unittest
 
+import reframe
 import reframe.core.debug as debug
+import reframe.utility
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (SpawnedProcessError,
                                      SpawnedProcessTimeout)
@@ -131,8 +133,10 @@ class TestOSTools(unittest.TestCase):
         shutil.rmtree(prefix)
 
     def test_is_url(self):
-        self.assertTrue(os_ext.is_url('https://github.com/eth-cscs/reframe.git'))
-        self.assertFalse(os_ext.is_url('git@github.com:eth-cscs/reframe.git'))
+        repo_https = 'https://github.com/eth-cscs/reframe.git'
+        repo_ssh = 'git@github.com:eth-cscs/reframe.git'
+        self.assertTrue(os_ext.is_url(repo_https))
+        self.assertFalse(os_ext.is_url(repo_ssh))
 
     def test_git_repo_exists(self):
         self.assertTrue(os_ext.git_repo_exists(
@@ -224,6 +228,31 @@ class TestCopyTree(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.prefix)
         shutil.rmtree(self.target)
+
+
+class TestImportFromFile(unittest.TestCase):
+    def test_load_relpath(self):
+        module = reframe.utility.import_module_from_file('reframe/__init__.py')
+        self.assertEqual(reframe.VERSION, module.VERSION)
+
+        # FIXME: we do not treat specially the `__init__.py` files
+        self.assertEqual('reframe.__init__', module.__name__)
+
+    def test_load_abspath(self):
+        filename = os.path.abspath('reframe/__init__.py')
+        module = reframe.utility.import_module_from_file(filename)
+        self.assertEqual(reframe.VERSION, module.VERSION)
+
+        # FIXME: we do not treat specially the `__init__.py` files
+        self.assertEqual('__init__', module.__name__)
+
+    def test_load_unknown_path(self):
+        try:
+            reframe.utility.import_module_from_file('/foo')
+            self.fail()
+        except ImportError as e:
+            self.assertEqual('foo', e.name)
+            self.assertEqual('/foo', e.path)
 
 
 class TestDebugRepr(unittest.TestCase):
