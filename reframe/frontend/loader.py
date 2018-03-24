@@ -3,16 +3,19 @@
 #
 
 import ast
-import collections.abc
+import collections
+import inspect
 import os
 from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
 import reframe.utility.os as os_ext
 from reframe.core.environments import Environment
-from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.exceptions import (ConfigError, NameConflictError,
+                                     SpawnedProcessError)
 from reframe.core.fields import ScopedDict, ScopedDictField
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import System, SystemPartition
 
@@ -33,10 +36,15 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, prefix='', recurse=False):
+    def __init__(self, load_path, prefix='',
+                 recurse=False, ignore_conflicts=False):
         self._load_path = load_path
         self._prefix = prefix or ''
         self._recurse = recurse
+        self._ignore_conflicts = ignore_conflicts
+
+        # Loaded tests by name; maps test names to the file that were defined
+        self._loaded = {}
 
     def __repr__(self):
         return debug.repr(self)
@@ -89,10 +97,30 @@ class RegressionCheckLoader:
         # We can safely call `_get_checks()` here, since the source file is
         # already validated
         candidates = module._get_checks(**check_args)
-        if isinstance(candidates, collections.abc.Sequence):
-            return [c for c in candidates if isinstance(c, RegressionTest)]
-        else:
+        if not isinstance(candidates, collections.abc.Sequence):
             return []
+
+        ret = []
+        for c in candidates:
+            if not isinstance(c, RegressionTest):
+                continue
+
+            testfile = inspect.getfile(type(c))
+            try:
+                conflicted = self._loaded[c.name]
+            except KeyError:
+                self._loaded[c.name] = testfile
+                ret.append(c)
+            else:
+                msg = ("%s: test `%s' already defined in `%s'" %
+                       (testfile, c.name, conflicted))
+
+                if self._ignore_conflicts:
+                    getlogger().warning(msg + '; ignoring...')
+                else:
+                    raise NameConflictError(msg)
+
+        return ret
 
     def load_from_file(self, filename, **check_args):
         module_name = self._module_name(filename)
@@ -314,7 +342,7 @@ def autodetect_system(site_config):
     # specific)
     try:
         hostname = os_ext.run_command('cat /etc/xthostname', check=True).stdout
-    except ReframeError:
+    except SpawnedProcessError:
         # Try to figure it out with the standard method
         hostname = socket.gethostname()
 

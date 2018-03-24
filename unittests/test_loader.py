@@ -2,7 +2,7 @@ import copy
 import os
 import unittest
 
-from reframe.core.exceptions import ConfigError
+from reframe.core.exceptions import ConfigError, NameConflictError
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
@@ -125,9 +125,10 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
 class TestRegressionCheckLoader(unittest.TestCase):
     def setUp(self):
-        self.loader = RegressionCheckLoader(['.'])
+        self.loader = RegressionCheckLoader(['.'], ignore_conflicts=True)
         self.loader_with_path = RegressionCheckLoader(
-            ['unittests/resources', 'unittests/foobar'])
+            ['unittests/resources', 'unittests/foobar'],
+            ignore_conflicts=True)
         self.loader_with_prefix = RegressionCheckLoader(
             load_path=['badchecks'],
             prefix=os.path.abspath('unittests/resources'))
@@ -167,6 +168,11 @@ class TestRegressionCheckLoader(unittest.TestCase):
         checks = self.loader_with_prefix.load_all(system=self.system,
                                                   resources=self.resources)
         self.assertEqual(1, len(checks))
+
+    def test_conflicted_checks(self):
+        self.loader_with_path._ignore_conflicts = False
+        self.assertRaises(NameConflictError, self.loader_with_path.load_all,
+                          system=self.system, resources=self.resources)
 
     def test_load_error(self):
         self.assertRaises(OSError, self.loader.load_from_file,
