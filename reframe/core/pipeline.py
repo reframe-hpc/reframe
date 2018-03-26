@@ -8,7 +8,7 @@ import shutil
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
 from reframe.core.exceptions import PipelineError, SanityError

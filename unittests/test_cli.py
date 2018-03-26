@@ -10,9 +10,9 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
 import unittests.fixtures as fixtures
+import reframe.frontend.config as config
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.modules import init_modules_system
-from reframe.settings import settings
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -51,6 +51,9 @@ class TestFrontend(unittest.TestCase):
         if self.system:
             ret += ['--system', self.system]
 
+        if self.config_file:
+            ret += ['-C', self.config_file]
+
         ret += itertools.chain(*(['-c', c] for c in self.checkpath))
         ret += itertools.chain(*(['-p', e] for e in self.environs))
 
@@ -72,6 +75,7 @@ class TestFrontend(unittest.TestCase):
 
     def setUp(self):
         self.prefix = tempfile.mkdtemp(dir='unittests')
+        self.config_file = 'custom_settings.py'
         self.system = 'generic:login'
         self.checkpath = ['unittests/resources/hellocheck.py']
         self.environs  = ['builtin-gcc']
@@ -79,37 +83,16 @@ class TestFrontend(unittest.TestCase):
         self.action = 'run'
         self.more_options = []
         self.mode = None
+        self.config_file, subst = fixtures.generate_test_config()
+        self.logfile = subst['logfile']
+        self.delete_config_file = True
         self.ignore_check_conflicts = True
 
-        # Monkey patch logging configuration
-        self.logfile = os.path.join(self.prefix, 'reframe.log')
-        settings._logging_config = {
-            'level': 'DEBUG',
-            'handlers': {
-                self.logfile: {
-                    'level': 'DEBUG',
-                    'format': '[%(asctime)s] %(levelname)s: '
-                    '%(check_name)s: %(message)s',
-                    'datefmt': '%FT%T',
-                    'append': False,
-                },
-                '&1': {
-                    'level': 'INFO',
-                    'format': '%(message)s'
-                },
-            }
-        }
-
-        # Monkey patch site configuration setting a mode
-        settings._site_configuration['modes'] = {
-            '*': {
-                'unittest': [
-                    '-c', 'unittests/resources/hellocheck.py',
-                    '-p', 'builtin-gcc',
-                    '--force-local'
-                ]
-            }
-        }
+    def tearDown(self):
+        shutil.rmtree(self.prefix)
+        os.remove(self.logfile)
+        if self.delete_config_file:
+            os.remove(self.config_file)
 
     def _run_reframe(self):
         import reframe.frontend.cli as cli
@@ -158,6 +141,14 @@ class TestFrontend(unittest.TestCase):
 
         self.local = False
         self.system = partition.fullname
+
+        # Use the system config file here
+        #
+        # FIXME: This whole thing is quite hacky; we definitely need to
+        # redesign the fixtures. It is also not equivalent to the previous
+        # version, which monkey-patched the logging settings.
+        self.config_file = os.getenv('RFM_CONFIG_FILE', 'reframe/settings.py')
+        self.delete_config_file = False
 
         # pick up the programming environment of the partition
         self.environs = [partition.environs[0].name]
@@ -299,15 +290,10 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('Ran 1 test case', stdout)
 
     def test_unknown_modules_system(self):
-        # Monkey patch site configuration to trigger a module systems error
-        site_config_save = copy.deepcopy(settings._site_configuration)
-        systems = list(settings._site_configuration['systems'].keys())
-        for s in systems:
-            settings._site_configuration['systems'][s]['modules_system'] = 'foo'
-
+        fixtures.generate_test_config(
+            self.config_file, logfile=self.logfile, modules_system="'foo'")
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
-        settings._site_configuration = site_config_save
 
     def test_no_ignore_check_conflicts(self):
         self.checkpath = ['unittests/resources']
@@ -317,5 +303,3 @@ class TestFrontend(unittest.TestCase):
         returncode, *_ = self._run_reframe()
         self.assertNotEqual(0, returncode)
 
-    def tearDown(self):
-        shutil.rmtree(self.prefix)

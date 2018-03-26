@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 import reframe.core.schedulers as sched
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler

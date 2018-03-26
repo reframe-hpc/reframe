@@ -7,7 +7,7 @@ import time
 import unittest
 from datetime import datetime
 
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
@@ -431,26 +431,26 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_multiple_constraints(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1 f3']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_partition(self, expected_num_tasks=8):
         self.testjob._sched_reservation = 'Foo'
         self.testjob._sched_partition = 'p2'
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_multiple_partitions(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-p p1 p2']
         if expected_num_tasks:
             self.prepare_job()
-            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
         else:
             self.assertRaises(JobError, self.prepare_job)
 
@@ -459,7 +459,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
         if expected_num_tasks:
             self.prepare_job()
-            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
         else:
             self.assertRaises(JobError, self.prepare_job)
 
@@ -494,7 +494,7 @@ class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
 
     def test_valid_constraint(self):
         super().test_valid_constraint(expected_num_tasks=4)
-        self.assertEquals(self.testjob.num_tasks, 4)
+        self.assertEqual(self.testjob.num_tasks, 4)
 
     def test_valid_multiple_constraints(self):
         super().test_valid_multiple_constraints(expected_num_tasks=4)
