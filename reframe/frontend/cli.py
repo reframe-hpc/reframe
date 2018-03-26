@@ -76,6 +76,9 @@ def main():
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively')
+    locate_options.add_argument(
+        '--ignore-check-conflicts', action='store_true',
+        help='Skip checks with conflicting names')
 
     # Select options
     select_options.add_argument(
@@ -149,8 +152,7 @@ def main():
         help='Specify the execution policy for running the regression tests. '
              'Available policies: "serial" (default), "async"')
     run_options.add_argument(
-        '--mode', action='store', help='Execution mode to use'
-    )
+        '--mode', action='store', help='Execution mode to use')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -273,6 +275,7 @@ def main():
     if options.checkpath:
         load_path = []
         for d in options.checkpath:
+            d = os.path.expandvars(d)
             if not os.path.exists(d):
                 printer.info("%s: path `%s' does not exist. Skipping...\n" %
                              (argparser.prog, d))
@@ -280,7 +283,9 @@ def main():
 
             load_path.append(d)
 
-        loader = RegressionCheckLoader(load_path, recurse=options.recursive)
+        loader = RegressionCheckLoader(
+            load_path, recurse=options.recursive,
+            ignore_conflicts=options.ignore_check_conflicts)
     else:
         loader = RegressionCheckLoader(
             load_path=settings.checks_path,
@@ -455,6 +460,9 @@ def main():
         sys.exit(0)
 
     except KeyboardInterrupt:
+        sys.exit(1)
+    except ReframeError as e:
+        printer.error(str(e))
         sys.exit(1)
     except (Exception, ReframeFatalError):
         printer.error(format_exception(*sys.exc_info()))

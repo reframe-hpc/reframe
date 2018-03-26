@@ -67,6 +67,9 @@ class TestFrontend(unittest.TestCase):
         elif self.action == 'help':
             ret += ['-h']
 
+        if self.ignore_check_conflicts:
+            ret += ['--ignore-check-conflicts']
+
         ret += self.more_options
         return ret
 
@@ -83,6 +86,7 @@ class TestFrontend(unittest.TestCase):
         self.config_file, subst = fixtures.generate_test_config()
         self.logfile = subst['logfile']
         self.delete_config_file = True
+        self.ignore_check_conflicts = True
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
@@ -290,3 +294,12 @@ class TestFrontend(unittest.TestCase):
             self.config_file, logfile=self.logfile, modules_system="'foo'")
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotEqual(0, returncode)
+
+    def test_no_ignore_check_conflicts(self):
+        self.checkpath = ['unittests/resources']
+        self.more_options = ['-R']
+        self.ignore_check_conflicts = False
+        self.action = 'list'
+        returncode, *_ = self._run_reframe()
+        self.assertNotEqual(0, returncode)
+
