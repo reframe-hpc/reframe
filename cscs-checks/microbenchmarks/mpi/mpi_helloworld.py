@@ -14,6 +14,10 @@ class MPIHelloWorldTest(RegressionTest):
                               'leone:normal', 'monch:compute']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
+
         self.descr = 'MPI Hello World'
         self.sourcepath = 'mpi_helloworld.c'
         self.maintainers = ['RS', 'VK']
