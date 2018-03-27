@@ -35,10 +35,9 @@ class NetCDFTest(RegressionTest):
         self.tags = {'production'}
 
     def compile(self):
-        self.current_environ.cflags   = self.flags
+        self.current_environ.cflags = self.flags
         self.current_environ.cxxflags = self.flags
-        self.current_environ.fflags   = self.flags
-
+        self.current_environ.fflags = self.flags
         super().compile()
 
 
