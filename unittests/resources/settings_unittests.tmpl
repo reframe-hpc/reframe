@@ -1,5 +1,5 @@
 #
-# ReFrame generic settings
+# ReFrame settings template for use in the unit tests
 #
 
 
@@ -9,67 +9,71 @@ class ReframeSettings:
     _job_submit_timeout = 60
     _checks_path = ['checks/']
     _checks_path_recurse = True
-    _site_configuration = {
-        'systems': {
+    _site_configuration = {{
+        'systems': {{
             # Generic system used also in unit tests
-            'generic': {
+            'generic': {{
                 'descr': 'Generic example system',
+                'modules_system': {modules_system},
 
                 # Adjust to your system's hostname
                 'hostnames': ['localhost'],
-                'partitions': {
-                    'login': {
+                'partitions': {{
+                    'login': {{
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
                         'environs': ['builtin-gcc'],
                         'descr': 'Login nodes'
-                    }
-                }
-            }
-        },
+                    }}
+                }}
+            }}
+        }},
 
-        'environments': {
-            '*': {
-                'builtin': {
+        'environments': {{
+            '*': {{
+                'builtin': {{
                     'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
-                },
+                }},
 
-                'builtin-gcc': {
+                'builtin-gcc': {{
                     'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
-                }
-            }
-        }
-    }
+                }}
+            }}
+        }},
+        'modes': {{
+            '*': {{
+                'unittest': [
+                    '-c', 'unittests/resources/hellocheck.py',
+                    '-p', 'builtin-gcc',
+                    '--force-local'
+                ]
+            }}
+        }}
+    }}
 
-    _logging_config = {
+    _logging_config = {{
         'level': 'DEBUG',
-        'handlers': {
-            'reframe.log': {
+        'handlers': {{
+            '{logfile}': {{
                 'level': 'DEBUG',
-                'format': '[%(asctime)s] %(levelname)s: '
-                          '%(check_info)s: %(message)s',
+                'format': ('[%(asctime)s] %(levelname)s: '
+                           '%(check_name)s: %(message)s'),
+                'datefmt': '%FT%T',
                 'append': False,
-            },
-
-            # Output handling
-            '&1': {
+            }},
+            '&1': {{
                 'level': 'INFO',
                 'format': '%(message)s'
-            },
-            'reframe.out': {
-                'level': 'INFO',
-                'format': '%(message)s',
-                'append': False,
-            }
-        }
-    }
+            }},
+        }}
+    }}
 
     @property
     def version(self):

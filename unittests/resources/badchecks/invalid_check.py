@@ -3,9 +3,9 @@ import os
 from reframe.core.pipeline import RegressionTest
 
 
-class EmptyTest(RegressionTest):
+class SomeTest(RegressionTest):
     def __init__(self, **kwargs):
-        super().__init__('emptycheck', os.path.dirname(__file__), **kwargs)
+        super().__init__('somecheck', os.path.dirname(__file__), **kwargs)
 
 
 class InvalidTest:
@@ -14,4 +14,4 @@ class InvalidTest:
 
 
 def _get_checks(**kwargs):
-    return [EmptyTest(**kwargs), InvalidTest(**kwargs)]
+    return [SomeTest(**kwargs), InvalidTest(**kwargs)]

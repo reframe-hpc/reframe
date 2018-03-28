@@ -2,11 +2,11 @@
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
 import os
+import tempfile
 
+import reframe.frontend.config as config
 from reframe.core.modules import (get_modules_system,
                                   init_modules_system, NoModImpl)
-from reframe.frontend.loader import autodetect_system, SiteConfiguration
-from reframe.settings import settings
 
 TEST_RESOURCES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'resources')
@@ -83,9 +83,11 @@ def init_native_modules_system():
 
 
 # Guess current system and initialize its modules system
-_site_config = SiteConfiguration()
+_config_file = os.getenv('RFM_CONFIG_FILE', 'reframe/settings.py')
+settings = config.load_from_file(_config_file)
+_site_config = config.SiteConfiguration()
 _site_config.load_from_dict(settings.site_configuration)
-HOST = autodetect_system(_site_config)
+HOST = config.autodetect_system(_site_config)
 init_native_modules_system()
 
 
@@ -95,13 +97,33 @@ def get_test_config():
     Returns a tuple of system, partition and environment that you can pass to
     `RegressionTest`'s setup method.
     """
-    site_config = SiteConfiguration()
+    site_config = config.SiteConfiguration()
     site_config.load_from_dict(TEST_SITE_CONFIG)
 
     system = site_config.systems['testsys']
     partition = system.partition('gpu')
     environ = partition.environment('builtin-gcc')
     return (system, partition, environ)
+
+
+def generate_test_config(filename=None,
+                         template='unittests/resources/settings_unittests.tmpl',
+                         **subst):
+    if not filename:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as fp:
+            filename = fp.name
+
+    if not 'modules_system' in subst:
+        subst['modules_system'] = None
+
+    if not 'logfile' in subst:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.log') as fp:
+            subst['logfile'] = fp.name
+
+    with open(filename, 'w') as fw, open(template) as fr:
+        fw.write(fr.read().format(**subst))
+
+    return filename, subst
 
 
 def force_remove_file(filename):

@@ -1,7 +1,7 @@
 import sys
 
 
-VERSION = '2.12-dev'
+VERSION = '2.12-dev1'
 _required_pyver = (3, 5, 0)
 
 # Check python version
