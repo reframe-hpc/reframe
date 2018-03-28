@@ -15,74 +15,9 @@ All the tutorial examples can be found in ``<reframe-install-prefix>/tutorial/``
 For the configuration of the system, we provide a minimal configuration file for Piz Daint, where we have tested all the tutorial examples.
 The site configuration that we used for this tutorial is the following:
 
-.. code-block:: python
-
-   ...
-   _site_configuration = {
-       'systems': {
-           'daint': {
-               'descr': 'Piz Daint',
-               'hostnames': ['daint'],
-               'modules_system': 'tmod',
-               'partitions': {
-                   'login': {
-                       'scheduler': 'local',
-                       'modules': [],
-                       'access':  [],
-                       'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi'],
-                       'descr': 'Login nodes',
-                       'max_jobs': 4
-                   },
-
-                   'gpu': {
-                       'scheduler': 'nativeslurm',
-                       'modules': ['daint-gpu'],
-                       'access':  ['--constraint=gpu'],
-                       'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi'],
-                       'descr': 'Hybrid nodes (Haswell/P100)',
-                       'max_jobs': 100
-                   },
-
-                   'mc': {
-                       'scheduler': 'nativeslurm',
-                       'modules': ['daint-mc'],
-                       'access':  ['--constraint=mc'],
-                       'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi'],
-                       'descr': 'Multicore nodes (Broadwell)',
-                       'max_jobs': 100
-                   }
-               }
-           }
-       },
-
-       'environments': {
-           '*': {
-               'PrgEnv-cray': {
-                   'type': 'ProgEnvironment',
-                   'modules': ['PrgEnv-cray'],
-               },
-
-               'PrgEnv-gnu': {
-                   'type': 'ProgEnvironment',
-                   'modules': ['PrgEnv-gnu'],
-               },
-
-               'PrgEnv-intel': {
-                   'type': 'ProgEnvironment',
-                   'modules': ['PrgEnv-intel'],
-               },
-
-               'PrgEnv-pgi': {
-                   'type': 'ProgEnvironment',
-                   'modules': ['PrgEnv-pgi'],
-               }
-           }
-       }
-   }
-   ...
+.. literalinclude:: ../tutorial/config/settings.py
+  :lines: 12-75
+  :dedent: 4
 
 You can find the full ``settings.py`` file ready to be used by ReFrame in ``<reframe-install-prefix>/tutorial/config/settings.py``.
 You may first need to go over the `"Configuring ReFrame For Your Site" <configure.html>`__ section, in order to prepare the framework for your systems.
@@ -94,31 +29,7 @@ The following is a simple regression test that compiles and runs a serial C prog
 As a sanity check, it simply looks for a specific output in the output of the program.
 Here is the full code for this test:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class SerialTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example1_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Simple matrix-vector multiplication example'
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.sourcepath = 'example_matrix_vector_multiplication.c'
-          self.executable_opts = ['1024', '100']
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [SerialTest(**kwargs)]
+.. literalinclude:: ../tutorial/example1.py
 
 A regression test written in ReFrame is essentially a Python class that must eventually derive from :class:`RegressionTest <reframe.core.pipeline.RegressionTest>`.
 In order to make the test available to the framework, every file defining regression tests must define the special function ``_get_checks()``, which should return a list of instantiated regression tests.
@@ -127,11 +38,8 @@ The framework will pass some special arguments to the ``_get_checks()`` function
 
 Now let's move on to the actual definition of the ``SerialTest`` here:
 
-.. code-block:: python
-
-  class SerialTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example1_check', os.path.dirname(__file__), **kwargs)
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 7-10
 
 The ``__init__()`` method is the constructor of your test.
 It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
@@ -141,18 +49,17 @@ As you will see, it remains the same across all our examples, except, of course,
 
 The next line sets a more detailed description of the test:
 
-.. code-block:: python
-
-          self.descr = 'Simple matrix-vector multiplication example'
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 11
+  :dedent: 8
 
 This is optional and it defaults to the regression test's name, if not specified.
 
 The next two lines specify the systems and the programming environments that this test is valid for:
 
-.. code-block:: python
-
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 12-13
+  :dedent: 8
 
 Both of these variables accept a list of system names or environment names, respectively.
 The ``*`` symbol is a wildcard meaning any system or any programming environment.
@@ -166,9 +73,9 @@ If only a system name (without a partition) is specified in the :attr:`self.vali
 
 The next line specifies the source file that needs to be compiled:
 
-.. code-block:: python
-
-          self.sourcepath = 'example_matrix_vector_multiplication.c'
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 14
+  :dedent: 8
 
 ReFrame expects any source files, or generally resources, of the test to be inside an ``src/`` directory, which is at the same level as the regression test file.
 If you inspect the directory structure of the ``tutorial/`` folder, you will notice that:
@@ -188,9 +95,9 @@ A user can associate compilers with programming environments in the ReFrame's `s
 
 The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):
 
-.. code-block:: python
-
-          self.executable_opts = ['1024', '100']
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 15
+  :dedent: 8
 
 Notice that you do not need to specify the executable name.
 Since ReFrame compiled it and generated it, it knows the name.
@@ -198,10 +105,9 @@ We will see in the `"Customizing Further A ReFrame Regression Test" <advanced.ht
 
 The next lines specify what should be checked for assessing the sanity of the result of the test:
 
-.. code-block:: python
-
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 16-17
+  :dedent: 8
 
 This expression simply asks ReFrame to look for ``time for single matrix vector multiplication`` in the standard output of the test.
 The :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` attribute can only be assigned the result of a special type of functions, called *sanity functions*.
@@ -220,10 +126,9 @@ You can also use the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>
 
 The last two lines of the regression test are optional, but serve a good role in a production environment:
 
-.. code-block:: python
-
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
+.. literalinclude:: ../tutorial/example1.py
+  :lines: 18-19
+  :dedent: 8
 
 In the :attr:`maintainers <reframe.core.pipeline.RegressionTest.maintainers>` attribute you may store a list of people responsible for the maintenance of this test.
 In case of failure, this list will be printed in the failure summary.
@@ -303,48 +208,8 @@ Customizing the Compilation Phase
 In this example, we write a regression test to compile and run the OpenMP version of the matrix-vector product program, that we have shown before.
 The full code of this test follows:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class OpenMPTestIfElse(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example2a_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication example with OpenMP'
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                      'PrgEnv-intel', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
-          self.executable_opts = ['1024', '100']
-          self.variables = {
-              'OMP_NUM_THREADS': '4'
-          }
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          env_name = self.current_environ.name
-          if env_name == 'PrgEnv-cray':
-              self.current_environ.cflags = '-homp'
-          elif env_name == 'PrgEnv-gnu':
-              self.current_environ.cflags = '-fopenmp'
-          elif env_name == 'PrgEnv-intel':
-              self.current_environ.cflags = '-openmp'
-          elif env_name == 'PrgEnv-pgi':
-              self.current_environ.cflags = '-mp'
-
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [OpenMPTestIfElse(**kwargs)]
+.. literalinclude:: ../tutorial/example2.py
+  :lines: 1-36
 
 This example introduces two new concepts:
 
@@ -368,20 +233,9 @@ The :attr:`current_environ <reframe.core.pipeline.RegressionTest.current_environ
 This variable is available to regression tests after the setup phase. Before it is :class:`None`, so you cannot access it safely during the initialization phase.
 Let's have a closer look at the ``compile()`` method:
 
-.. code-block:: python
-
- def compile(self):
-     env_name = self.current_environ.name
-     if env_name == 'PrgEnv-cray':
-         self.current_environ.cflags = '-homp'
-     elif env_name == 'PrgEnv-gnu':
-         self.current_environ.cflags = '-fopenmp'
-     elif env_name == 'PrgEnv-intel':
-         self.current_environ.cflags = '-openmp'
-     elif env_name == 'PrgEnv-pgi':
-         self.current_environ.cflags = '-mp'
-
-     super().compile()
+.. literalinclude:: ../tutorial/example2.py
+  :lines: 25-36
+  :dedent: 4
 
 We first take the name of the current programming environment (``self.current_environ.name``) and we check it against the set of the known programming environments.
 We then set the compilation flags accordingly.
@@ -400,46 +254,8 @@ it gets the correct compilation flags from the ``prgenv_flags`` dictionary and a
 .. note:: A regression test is like any other Python class, so you can freely define your own attributes.
   If you accidentally try to write on a reserved :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` attribute that is not writeable, ReFrame will prevent this and it will throw an error.
 
-.. code-block:: python
-
-  import os
-  import reframe.utility.sanity as sn
-
-  from reframe.core.pipeline import RegressionTest
-
-
-  class OpenMPTestDict(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example2b_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication example with OpenMP'
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                      'PrgEnv-intel', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
-          self.executable_opts = ['1024', '100']
-          self.prgenv_flags = {
-              'PrgEnv-cray':  '-homp',
-              'PrgEnv-gnu':   '-fopenmp',
-              'PrgEnv-intel': '-openmp',
-              'PrgEnv-pgi':   '-mp'
-          }
-          self.variables = {
-              'OMP_NUM_THREADS': '4'
-          }
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          prgenv_flags = self.prgenv_flags[self.current_environ.name]
-          self.current_environ.cflags = prgenv_flags
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [OpenMPTestDict(**kwargs)]
+.. literalinclude:: ../tutorial/example2.py
+   :lines: 1-6,39-66
 
 Running on Multiple Nodes
 -------------------------
@@ -450,49 +266,7 @@ In this example, we write a regression test for the MPI+OpenMP version of the ma
 The source code of this program is in ``tutorial/src/example_matrix_vector_multiplication_mpi_openmp.c``.
 The regression test file follows:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class MPITest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example3_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication example with MPI'
-          self.valid_systems = ['daint:gpu', 'daint:mc']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                      'PrgEnv-intel', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_mpi_openmp.c'
-          self.executable_opts = ['1024', '10']
-          self.prgenv_flags = {
-              'PrgEnv-cray':  '-homp',
-              'PrgEnv-gnu':   '-fopenmp',
-              'PrgEnv-intel': '-openmp',
-              'PrgEnv-pgi':   '-mp'
-          }
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.num_tasks = 8
-          self.num_tasks_per_node = 2
-          self.num_cpus_per_task = 4
-          self.variables = {
-              'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-          }
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          prgenv_flags = self.prgenv_flags[self.current_environ.name]
-          self.current_environ.cflags = prgenv_flags
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [MPITest(**kwargs)]
+.. literalinclude:: ../tutorial/example3.py
 
 This test is pretty much similar to the `test example <#an-alternative-implementation-using-dictionaries>`__ for the OpenMP code we have shown before, except that it adds some information about the configuration of the distributed tasks.
 It also restricts the valid systems only to those that support distributed execution.
@@ -500,9 +274,9 @@ Let's take the changes step-by-step:
 
 First we need to specify for which partitions this test is meaningful by setting the :attr:`valid_systems <reframe.core.pipeline.RegressionTest.valid_systems>` attribute:
 
-.. code-block:: python
-
-          self.valid_systems = ['daint:gpu', 'daint:mc']
+.. literalinclude:: ../tutorial/example3.py
+  :lines: 12
+  :dedent: 8
 
 We only specify the partitions that are configured with a job scheduler.
 If we try to run the generated executable on the login nodes, it will fail.
@@ -510,11 +284,9 @@ So we remove this partition from the list of the supported systems.
 
 The most important addition to this check are the variables controlling the distributed execution:
 
-.. code-block:: python
-
-          self.num_tasks = 8
-          self.num_tasks_per_node = 2
-          self.num_cpus_per_task = 4
+.. literalinclude:: ../tutorial/example3.py
+  :lines: 25-27
+  :dedent: 8
 
 By setting these variables, we specify that this test should run with 8 MPI tasks in total, using two tasks per node.
 Each task may use four logical CPUs.
@@ -546,87 +318,26 @@ In this example, we will create two regression tests for two different GPU versi
 OpenACC and CUDA.
 Let's start with the OpenACC regression test:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class OpenACCTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example4_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication example with OpenACC'
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_openacc.c'
-          self.executable_opts = ['1024', '100']
-          self.modules = ['craype-accel-nvidia60']
-          self.num_gpus_per_node = 1
-          self.prgenv_flags = {
-              'PrgEnv-cray': '-hacc -hnoomp',
-              'PrgEnv-pgi':  '-acc -ta=tesla:cc60'
-          }
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          prgenv_flags = self.prgenv_flags[self.current_environ.name]
-          self.current_environ.cflags = prgenv_flags
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [OpenACCTest(**kwargs)]
+.. literalinclude:: ../tutorial/example4.py
 
 The things to notice in this test are the restricted list of system partitions and programming environments that this test supports and the use of the :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable:
 
-.. code-block:: python
-
-          self.modules = ['craype-accel-nvidia60']
+.. literalinclude:: ../tutorial/example4.py
+  :lines: 16
+  :dedent: 8
 
 The :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable takes a list of modules that should be loaded during the setup phase of the test.
 In this particular test, we need to load the ``craype-accel-nvidia60`` module, which enables the generation of a GPU binary from an OpenACC code.
 
 It is also important to note that in GPU-enabled tests the number of GPUs for each node have to be specified by setting the corresponding variable :attr:`num_gpus_per_node <reframe.core.pipeline.RegressionTest.num_gpus_per_node>`, as follows:
 
-.. code-block:: python
-
-  self.num_gpus_per_node = 1
+.. literalinclude:: ../tutorial/example4.py
+  :lines: 17
+  :dedent: 8
 
 The regression test for the CUDA code is slightly simpler:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class CudaTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example5_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication example with CUDA'
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_cuda.cu'
-          self.executable_opts = ['1024', '100']
-          self.modules = ['cudatoolkit']
-          self.num_gpus_per_node = 1
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [CudaTest(**kwargs)]
+.. literalinclude:: ../tutorial/example5.py
 
 ReFrame will recognize the ``.cu`` extension of the source file and it will try to invoke ``nvcc`` for compiling the code.
 In this case, there is no need to differentiate across the programming environments, since the compiler will be eventually the same.
@@ -637,54 +348,17 @@ More Advanced Sanity Checking
 
 So far we have done a very simple sanity checking.
 We are only looking if a specific line is present in the output of the test program.
-In this example, we expand the regression test of the serial code, so as to check also if the printed norm of the result matrix is correct.
+In this example, we expand the regression test of the serial code, so as to check also if the printed norm of the result vector is correct.
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class SerialNormTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example6_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication with L2 norm check'
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.sourcepath = 'example_matrix_vector_multiplication.c'
-
-          matrix_dim = 1024
-          iterations = 100
-          self.executable_opts = [str(matrix_dim), str(iterations)]
-
-          expected_norm = matrix_dim
-          found_norm = sn.extractsingle(
-              r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)',
-              self.stdout, 'norm', float)
-          self.sanity_patterns = sn.all([
-              sn.assert_found(
-                  r'time for single matrix vector multiplication', self.stdout),
-              sn.assert_lt(sn.abs(expected_norm - found_norm), 1.0e-6)
-          ])
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [SerialNormTest(**kwargs)]
+.. literalinclude:: ../tutorial/example6.py
 
 The only difference with our first example is actually the more complex expression to assess the sanity of the test.
 Let's go over it line-by-line.
 The first thing we do is to extract the norm printed in the standard output.
 
-.. code-block:: python
-
-          found_norm = sn.extractsingle(
-              r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)',
-              self.stdout, 'norm', float)
+.. literalinclude:: ../tutorial/example6.py
+  :lines: 21-23
+  :dedent: 8
 
 The :func:`extractsingle <reframe.utility.sanity.extractsingle>` sanity function extracts some information from a single occurrence (by default the first) of a pattern in a filename.
 In our case, this function will extract the ``norm`` `capturing group <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`__ from the match of the regular expression ``r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)'`` in standard output, it will convert it to float and it will return it.
@@ -707,13 +381,9 @@ For a more detailed description of this and other sanity functions, please refer
 
 The next couple of lines is the actual sanity check:
 
-.. code-block:: python
-
-          self.sanity_patterns = sn.all([
-              sn.assert_found(
-                  r'time for single matrix vector multiplication', self.stdout),
-              sn.assert_lt(sn.abs(expected_norm - found_norm), 1.0e-6)
-          ])
+.. literalinclude:: ../tutorial/example6.py
+  :lines: 24-28
+  :dedent: 8
 
 This expression combines two conditions that need to true, in order for the sanity check to succeed:
 
@@ -741,46 +411,7 @@ ReFrame offers a flexible way of extracting and manipulating performance data fr
 
 In this example, we extend the CUDA test presented `previously <tutorial.html#testing-a-gpu-code>`__, so as to check also the performance of the matrix-vector multiplication.
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class CudaPerfTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('example7_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = 'Matrix-vector multiplication (CUDA performance test)'
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_cuda.cu'
-          self.executable_opts = ['4096', '1000']
-          self.modules = ['cudatoolkit']
-          self.num_gpus_per_node = 1
-          self.sanity_patterns = sn.assert_found(
-              r'time for single matrix vector multiplication', self.stdout)
-          self.perf_patterns = {
-              'perf': sn.extractsingle(r'Performance:\s+(?P<Gflops>\S+) Gflop/s',
-                                       self.stdout, 'Gflops', float)
-          }
-          self.reference = {
-              'daint:gpu': {
-                  'perf': (50.0, -0.1, 0.1),
-              }
-          }
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          self.current_environ.cxxflags = '-O3'
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [CudaPerfTest(**kwargs)]
+.. literalinclude:: ../tutorial/example7.py
 
 The are two new variables set in this test that basically enable the performance testing:
 
@@ -791,12 +422,9 @@ The are two new variables set in this test that basically enable the performance
 
 Let's have a closer look at each of them:
 
-.. code-block:: python
-
-          self.perf_patterns = {
-              'perf': sn.extractsingle(r'Performance:\s+(?P<Gflops>\S+) Gflop/s',
-                                       self.stdout, 'Gflops', float)
-          }
+.. literalinclude:: ../tutorial/example7.py
+  :lines: 20-23
+  :dedent: 8
 
 The :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>` attribute is a dictionary, whose keys are *performance variables* (i.e., arbitrary names assigned to the performance values we are looking for), and its values are *sanity expressions* that specify how to obtain these performance values from the output.
 A sanity expression is a Python expression that uses the result of one or more *sanity functions*.
@@ -806,13 +434,9 @@ Each of the performance variables defined in :attr:`perf_patterns <reframe.core.
 When the framework obtains a performance value from the output of the test it searches for a reference value in the :attr:`reference <reframe.core.pipeline.RegressionTest.reference>` dictionary, and then it checks whether the user supplied tolerance is respected.
 Let's go over the :attr:`reference <reframe.core.pipeline.RegressionTest.reference>` dictionary of our example and explain its syntax in more detail:
 
-.. code-block:: python
-
-          self.reference = {
-              'daint:gpu': {
-                  'perf': (50.0, -0.1, 0.1),
-              }
-          }
+.. literalinclude:: ../tutorial/example7.py
+  :lines: 24-28
+  :dedent: 8
 
 This is a special type of dictionary that we call ``scoped dictionary``, because it defines scopes for its keys.
 We have already seen it being used in the ``environments`` section of the `configuration file <configure.html#environments-configuration>`__ of ReFrame.
@@ -835,118 +459,7 @@ As a result, you can leverage the language features and capabilities to organize
 In this example, we are going to reimplement all the tests of the tutorial with much less code and in a single file.
 Here is the final example code that combines all the tests discussed before:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class BaseMatrixVectorTest(RegressionTest):
-      def __init__(self, test_version, **kwargs):
-          super().__init__('example8_' + test_version.lower() + '_check',
-                           os.path.dirname(__file__), **kwargs)
-          self.descr = '%s matrix-vector multiplication' % test_version
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.prgenv_flags = None
-
-          matrix_dim = 1024
-          iterations = 100
-          self.executable_opts = [str(matrix_dim), str(iterations)]
-
-          expected_norm = matrix_dim
-          found_norm = sn.extractsingle(
-              r'The L2 norm of the resulting vector is:\s+(?P<norm>\S+)',
-              self.stdout, 'norm', float)
-          self.sanity_patterns = sn.all([
-              sn.assert_found(
-                  r'time for single matrix vector multiplication', self.stdout),
-              sn.assert_lt(sn.abs(expected_norm - found_norm), 1.0e-6)
-          ])
-          self.maintainers = ['you-can-type-your-email-here']
-          self.tags = {'tutorial'}
-
-
-      def compile(self):
-          if self.prgenv_flags is not None:
-              self.current_environ.cflags = self.prgenv_flags[self.current_environ.name]
-
-          super().compile()
-
-
-  class SerialTest(BaseMatrixVectorTest):
-      def __init__(self, **kwargs):
-          super().__init__('Serial', **kwargs)
-          self.sourcepath = 'example_matrix_vector_multiplication.c'
-
-
-  class OpenMPTest(BaseMatrixVectorTest):
-      def __init__(self, **kwargs):
-          super().__init__('OpenMP', **kwargs)
-          self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                      'PrgEnv-intel', 'PrgEnv-pgi']
-          self.prgenv_flags = {
-              'PrgEnv-cray':  '-homp',
-              'PrgEnv-gnu':   '-fopenmp',
-              'PrgEnv-intel': '-openmp',
-              'PrgEnv-pgi':   '-mp'
-          }
-          self.variables = {
-              'OMP_NUM_THREADS': '4'
-          }
-
-
-  class MPITest(BaseMatrixVectorTest):
-      def __init__(self, **kwargs):
-          super().__init__('MPI', **kwargs)
-          self.valid_systems = ['daint:gpu', 'daint:mc']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                      'PrgEnv-intel', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_mpi_openmp.c'
-          self.prgenv_flags = {
-              'PrgEnv-cray':  '-homp',
-              'PrgEnv-gnu':   '-fopenmp',
-              'PrgEnv-intel': '-openmp',
-              'PrgEnv-pgi':   '-mp'
-          }
-          self.num_tasks = 8
-          self.num_tasks_per_node = 2
-          self.num_cpus_per_task = 4
-          self.variables = {
-              'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-          }
-
-
-  class OpenACCTest(BaseMatrixVectorTest):
-      def __init__(self, **kwargs):
-          super().__init__('OpenACC', **kwargs)
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_openacc.c'
-          self.modules = ['craype-accel-nvidia60']
-          self.num_gpus_per_node = 1
-          self.prgenv_flags = {
-              'PrgEnv-cray': '-hacc -hnoomp',
-              'PrgEnv-pgi':  '-acc -ta=tesla:cc60'
-          }
-
-
-  class CudaTest(BaseMatrixVectorTest):
-      def __init__(self, **kwargs):
-          super().__init__('CUDA', **kwargs)
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']
-          self.sourcepath = 'example_matrix_vector_multiplication_cuda.cu'
-          self.modules = ['cudatoolkit']
-          self.num_gpus_per_node = 1
-
-
-  def _get_checks(**kwargs):
-      return [SerialTest(**kwargs), OpenMPTest(**kwargs), MPITest(**kwargs),
-              OpenACCTest(**kwargs), CudaTest(**kwargs)]
+.. literalinclude:: ../tutorial/example8.py
 
 This test abstracts away the common functionality found in almost all of our tutorial tests (executable options, sanity checking, etc.) to a base class, from which all the concrete regression tests derive.
 Each test then redefines only the parts that are specific to it.
