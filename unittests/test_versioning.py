@@ -1,6 +1,5 @@
 import unittest
 
-from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.utility.versioning import Version, DevelopmentTag, ReleaseTag
 
 

@@ -1,8 +1,6 @@
 import abc
 import re
 
-from reframe.core.exceptions import ConfigError
-
 
 class CustomBooleanOperations(abc.ABC):
     """Abstract class to customize Boolean operations."""
@@ -27,7 +25,7 @@ class CustomBooleanOperations(abc.ABC):
 
     @abc.abstractmethod
     def _compare(self, other, operation):
-        """Defines the method for comparing versions.
+        """Define the method for comparing versions.
 
         This method returns a bool.
         """
