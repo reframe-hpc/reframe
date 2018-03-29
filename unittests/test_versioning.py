@@ -1,6 +1,6 @@
 import unittest
 
-from reframe.utility.versioning import Version, DevelopmentTag, ReleaseTag
+from reframe.utility.versioning import DevelopmentTag, ReleaseTag, Version
 
 
 class TestVersioning(unittest.TestCase):
