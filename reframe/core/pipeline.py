@@ -684,6 +684,7 @@ class RegressionTest:
         for env in self.valid_prog_environs:
             if fnmatch.fnmatch(env_name, env):
                 return True
+
         return False
 
     def is_local(self):

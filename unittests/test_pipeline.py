@@ -257,11 +257,7 @@ class TestRegressionTest(unittest.TestCase):
         self.assertTrue(test.supports_environ('PrgEnv-foo-version1'))
         self.assertTrue(test.supports_environ('PrgEnv-foo-version2'))
         self.assertFalse(test.supports_environ('PrgEnv-boo-version1'))
-
-        test.valid_prog_environs = ['PrgEnv-*']
-        self.assertTrue(test.supports_environ('PrgEnv-foo1'))
-        self.assertTrue(test.supports_environ('PrgEnv-foo2'))
-        self.assertFalse(test.supports_environ('Prgenv-foo'))
+        self.assertFalse(test.supports_environ('Prgenv-foo-version1'))
 
     def test_sourcesdir_none(self):
         test = RegressionTest('hellocheck',
