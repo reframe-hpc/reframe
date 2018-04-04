@@ -21,7 +21,7 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
                                   r'\s+Temperature\s+Pressure \(bar\)\n'
                                   r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
                                   r'\s+Constr. rmsd',
-                                  self.stdout, 'energy', float, item=-1)
+                                  output_file, 'energy', float, item=-1)
         energy_reference = -3270799.9
         energy_diff = sn.abs(energy-energy_reference)
 
