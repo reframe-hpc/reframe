@@ -105,6 +105,10 @@ def copytree_virtual(src, dst, file_links=[],
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
 
+    if src == os.path.commonpath([src, dst]):
+        raise ValueError("copytree_virtual() failed: "
+                         "`%s' is a parent directory of `%s'" % (src, dst))
+
     # 1. Check that the link targets are valid
     # 2. Convert link targets to absolute paths
     # 3. Store them in a set for quick look up inside the ignore function
