@@ -25,10 +25,10 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
         energy_reference = -3270799.9
         energy_diff = sn.abs(energy-energy_reference)
 
-        self.sanity_patterns = sn.all(
+        self.sanity_patterns = sn.all([
             sn.assert_found('Finished mdrun', output_file),
             sn.assert_lt(energy_diff, 1560.1)
-        )
+        ])
 
         self.perf_patterns = {
             'perf': sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
