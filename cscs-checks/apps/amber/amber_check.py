@@ -18,8 +18,14 @@ class AmberBaseCheck(RunOnlyRegressionTest):
             ('-O -i %s -o %s' % (input_file, output_file)).split()
         self.keep_files = [output_file]
 
-        self.sanity_patterns = sn.assert_found(
-            r'Final Performance Info:', output_file)
+        energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
+                                  output_file, 'energy', float, item=-2)
+        energy_reference = -443246.8
+        energy_diff = sn.abs(energy-energy_reference)
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'Final Performance Info:', output_file),
+            sn.assert_lt(energy_diff, 14.9)
+        ])
 
         self.perf_patterns = {
             'perf': sn.extractsingle(r'ns/day =\s+(?P<perf>\S+)',
