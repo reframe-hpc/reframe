@@ -31,9 +31,16 @@ class NamdBaseCheck(RunOnlyRegressionTest):
             self.num_tasks = 16
             self.num_tasks_per_node = 1
 
-        self.sanity_patterns = sn.assert_eq(sn.count(sn.extractall(
-            r'TIMING: (?P<step_num>\S+)  CPU:', self.stdout, 'step_num')), 50)
-
+        energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
+                        self.stdout, 'energy', float))
+        energy_reference = -2451359.5
+        energy_diff = sn.abs(energy-energy_reference)
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(sn.count(sn.extractall(
+                         r'TIMING: (?P<step_num>\S+)  CPU:',
+                         self.stdout, 'step_num')), 50),
+            sn.assert_lt(energy_diff, 2720)
+        ])
         self.reference = {
             'dom:mc': {
                 'days_ns': (0.49, None, 0.05),
