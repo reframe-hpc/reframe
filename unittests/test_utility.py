@@ -234,12 +234,6 @@ class TestCopyTree(unittest.TestCase):
         self.assertRaises(OSError, os_ext.copytree_virtual,
                           self.prefix, self.target, file_links)
 
-    def test_virtual_copy_src_parent_of_dst(self):
-        src_path = os.path.join(self.prefix, 'bar', '..')
-        dst_path = os.path.join(self.prefix, 'bar')
-        self.assertRaises(ValueError, os_ext.copytree_virtual,
-                          src_path, dst_path)
-
     def tearDown(self):
         shutil.rmtree(self.prefix)
         shutil.rmtree(self.target)
