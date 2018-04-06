@@ -81,6 +81,10 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 
     In this case it will first remove it and then call the standard
     shutil.copytree()."""
+    if src == os.path.commonpath([src, dst]):
+        raise ValueError("cannot copy recursively the parent directory "
+                         "`%s' into one of its descendants `%s'" % (src, dst))
+
     if os.path.exists(dst):
         shutil.rmtree(dst)
 
@@ -104,10 +108,6 @@ def copytree_virtual(src, dst, file_links=[],
     # Work with absolute paths
     src = os.path.abspath(src)
     dst = os.path.abspath(dst)
-
-    if src == os.path.commonpath([src, dst]):
-        raise ValueError("copytree_virtual() failed: "
-                         "`%s' is a parent directory of `%s'" % (src, dst))
 
     # 1. Check that the link targets are valid
     # 2. Convert link targets to absolute paths
