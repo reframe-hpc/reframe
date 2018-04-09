@@ -34,7 +34,7 @@ class NamdBaseCheck(RunOnlyRegressionTest):
         energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
                         self.stdout, 'energy', float))
         energy_reference = -2451359.5
-        energy_diff = sn.abs(energy-energy_reference)
+        energy_diff = sn.abs(energy - energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_eq(sn.count(sn.extractall(
                          r'TIMING: (?P<step_num>\S+)  CPU:',
