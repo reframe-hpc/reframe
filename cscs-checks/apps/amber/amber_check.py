@@ -21,7 +21,7 @@ class AmberBaseCheck(RunOnlyRegressionTest):
         energy = sn.extractsingle(r' Etot\s+=\s+(?P<energy>\S+)',
                                   output_file, 'energy', float, item=-2)
         energy_reference = -443246.8
-        energy_diff = sn.abs(energy-energy_reference)
+        energy_diff = sn.abs(energy - energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'Final Performance Info:', output_file),
             sn.assert_lt(energy_diff, 14.9)
