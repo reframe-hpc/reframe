@@ -1,4 +1,5 @@
 import os
+import pathlib
 import socket
 import sys
 
@@ -178,11 +179,16 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
+
+    filepath = pathlib.Path(__file__)
+    reframe_dir = filepath.parent.parent.absolute()
+    default_settings = reframe_dir / 'settings.py'
     misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
-        metavar='FILE', default='reframe/settings.py',
+        metavar='FILE', default=str(default_settings),
         help='Specify a custom config-file for the machine. '
-             '(default: ./reframe/settings.py)')
+             '(default: %s' % default_settings)
+
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
