@@ -18,6 +18,9 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
 
+DEFAULT_SETTINGS_FILE = os.path.abspath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), '../settings.py'))
+
 
 def list_supported_systems(systems, printer):
     printer.info('List of supported systems:')
@@ -179,16 +182,11 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
-
-    filepath = pathlib.Path(__file__)
-    reframe_dir = filepath.parent.parent.absolute()
-    default_settings = reframe_dir / 'settings.py'
     misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
-        metavar='FILE', default=str(default_settings),
+        metavar='FILE', default=DEFAULT_SETTINGS_FILE,
         help='Specify a custom config-file for the machine. '
-             '(default: %s' % default_settings)
-
+             '(default: %s' % DEFAULT_SETTINGS_FILE)
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
