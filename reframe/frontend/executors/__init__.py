@@ -5,7 +5,7 @@ import reframe.core.debug as debug
 import reframe.core.logging as logging
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeFatalError, TaskExit)
+                                     ReframeFatalError, TaskExit, ConfigError)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
@@ -145,10 +145,13 @@ class Runner:
     def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
-        self._max_retries = max_retries
-        self._try_num = 0
+        try:
+            self._max_retries = int(max_retries)
+        except ValueError:
+            raise ConfigError('--max-retries is not a valid integer: %s' %
+                              max_retries) from None
+        self._current_run = 0
         self._stats = TestStats()
-        self._stats.next_try(self._try_num)
         self._policy.stats = self._stats
         self._policy.printer = self._printer
         self._sandbox = Sandbox()
@@ -156,14 +159,6 @@ class Runner:
 
     def __repr__(self):
         return debug.repr(self)
-
-    @property
-    def max_retries(self):
-        return self._max_retries
-
-    @property
-    def try_num(self):
-        return self._try_num
 
     @property
     def policy(self):
@@ -180,19 +175,16 @@ class Runner:
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
             self._runall(checks, system)
-            if self._max_retries > 0:
-                self._retry(checks, system)
+            if self._max_retries:
+                self._retry_failed(checks, system)
 
         finally:
             # Print the summary line
-            num_failures_last_retry = self._stats.num_failures(try_num=-1)
             self._printer.status(
-                'FAILED' if num_failures_last_retry else 'PASSED',
-                'Ran %d test case(s) from %d check(s) (%d failure(s) after '
-                '%d retries; %d test case(s) passed in retries)' %
-                (self._stats.num_cases(), len(checks), num_failures_last_retry,
-                 self._try_num, self._stats.num_success_all_retries()),
-                just='center'
+                'FAILED' if self._stats.num_failures() else 'PASSED',
+                'Ran %d test case(s) from %d check(s) (%d failure(s))' %
+                (self._stats.num_cases(run=0), len(checks),
+                 self._stats.num_failures()), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
             self._environ_snapshot.load()
@@ -213,21 +205,18 @@ class Runner:
         else:
             return ret and check.supports_environ(environ.name)
 
-    def _retry(self, checks, system):
-        while (self._stats.num_failures() and self._try_num <
-                                             self._max_retries):
-            self._try_num += 1
-            self._stats.next_try(self._try_num)
-            check_names_failed = self._stats.check_names_failed(try_num=-2)
-            checks_failed = []
-            for check in checks:
-                if check.name in check_names_failed:
-                    checks_failed.append(check)
-
+    def _retry_failed(self, checks, system):
+        while (self._stats.num_failures() and self._current_run <
+                                              self._max_retries):
+            self._current_run += 1
+            self._stats.next_run(self._current_run)
+            check_names_failed = set([t.check.name for t in
+                                      self._stats.tasks_failed(run=-2)])
+            checks_failed = [c for c in checks if c.name in check_names_failed]
             self._printer.separator(
                 'short single line',
-                'Retrying the %d failed check(s) (retry %d/%d)' %
-                (len(checks_failed), self._try_num, self._max_retries)
+                'Retrying %d failed check(s) (retry %d/%d)' %
+                (len(checks_failed), self._current_run, self._max_retries)
             )
             self._runall(checks_failed, system)
 

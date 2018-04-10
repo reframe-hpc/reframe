@@ -154,9 +154,9 @@ def main():
         '--mode', action='store', help='Execution mode to use'
     )
     run_options.add_argument(
-        '--max-retries', metavar='MAX', action='store', default=0,
-        help='Specify the maximum number of retries per regression test.'
-             'Default: 0')
+        '--max-retries', metavar='NUM', action='store', default=0,
+        help='Specify the maximum number of times a failed regression test may'
+             ' be retried (default: 0)')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -433,14 +433,18 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            max_retries = int(options.max_retries)
+            max_retries = options.max_retries
             runner = Runner(exec_policy, printer, max_retries)
             try:
                 runner.runall(checks_matched, system)
             finally:
+                if runner.stats.num_failures(run=0):
+                    # always print a retries report
+                    printer.info(runner.stats.retry_report())
+
                 if runner.stats.num_failures():
                     # always print a report (if retries, for the last retry)
-                    printer.info(runner.stats.failure_report(try_num=-1))
+                    printer.info(runner.stats.failure_report())
                     success = False
 
         else:

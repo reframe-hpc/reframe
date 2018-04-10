@@ -64,6 +64,10 @@ class PipelineError(ReframeError):
     """
 
 
+class StatisticsError(ReframeError):
+    """Raised to denote an error in dealing with statistics."""
+
+
 class SpawnedProcessError(ReframeError):
     """Raised when a spawned OS command has failed."""
 

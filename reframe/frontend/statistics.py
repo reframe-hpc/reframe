@@ -1,72 +1,81 @@
-from itertools import chain
-
 import reframe.core.debug as debug
-import reframe.core.exceptions as exc
+from reframe.core.exceptions import (ReframeFatalError, StatisticsError)
 
 
 class TestStats:
     """Stores test case statistics."""
 
     def __init__(self):
-        self._tasks = []
-        self._try_num = -1
+        self._tasks = [[]]
+        self._current_run = 0
 
     def __repr__(self):
         return debug.repr(self)
 
-    def next_try(self, try_num):
-        # TODO: RAISE DIFFERENT error?
-        if try_num != self._try_num + 1:
-            raise exc.ReframeFatalError('try_num out of sync')
+    def next_run(self, current_run):
+        if current_run != self._current_run + 1:
+            raise ReframeFatalError('current_run variable out of sync')
 
-        self._try_num = try_num
+        self._current_run = current_run
         self._tasks.append([])
 
     def add_task(self, task):
-        self._tasks[self._try_num].append(task)
+        self._tasks[self._current_run].append(task)
 
-    # The try_num can be indexed from the end (e.g. -1 for the last retry)
-    def _convert_try_num(self, try_num):
-        return self._try_num + try_num + 1 if try_num < 0 else try_num
+    def _get_tasks(self, run):
+        try:
+            return self._tasks[run]
+        except IndexError:
+            raise StatisticsError('no such run: %s' % run)
 
-    def num_success_all_retries(self):
-        tasks_retries = list(chain.from_iterable(self._tasks[1:]))
-        return len([t for t in tasks_retries if not t.failed])
+    def num_failures(self, run=-1):
+        return len([t for t in self._get_tasks(run) if t.failed])
 
-    def num_success(self, try_num=0):
-        try_num = self._convert_try_num(try_num)
-        return len([t for t in self._tasks[try_num] if not t.failed])
-
-    def num_failures(self, try_num=0):
-        try_num = self._convert_try_num(try_num)
-        return len([t for t in self._tasks[try_num] if t.failed])
-
-    def num_failures_stage(self, stage, try_num=0):
-        try_num = self._convert_try_num(try_num)
-        return len([t for t in self._tasks[try_num] if t.failed_stage ==
+    def num_failures_stage(self, stage, run=-1):
+        return len([t for t in self._get_tasks(run) if t.failed_stage ==
                                                          stage])
 
-    def num_cases(self, try_num=0):
-        try_num = self._convert_try_num(try_num)
-        return len(self._tasks[try_num])
+    def num_cases(self, run=-1):
+        return len(self._get_tasks(run))
 
-    def check_names_failed(self, try_num=0):
-        try_num = self._convert_try_num(try_num)
-        return set([t.check.name for t in self._tasks[try_num] if t.failed])
+    def tasks_failed(self, run=-1):
+        return [t for t in self._get_tasks(run) if t.failed]
 
-    def failure_report(self, try_num=0):
-        try_num = self._convert_try_num(try_num)
+    def retry_report(self):
+        # Return an empty report if no retries were done.
+        if not self._current_run:
+            return ''
+
+        line_width = 78
+        report = [line_width * '=']
+        report.append('SUMMARY OF RETRIES')
+        report.append(line_width * '-')
+        messages = {}
+        for run in range(1, len(self._tasks)):
+            for t in self._get_tasks(run):
+                # Overwrite entry from previous run if available
+                messages[t.check.info()] = (
+                    '  * Test %s was retried %s time(s) and %s.' %
+                    (t.check.info(), run, 'failed' if t.failed else 'passed')
+                )
+
+        for key in sorted(messages.keys()):
+            report.append(messages[key])
+
+        return '\n'.join(report)
+
+    def failure_report(self):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for tf in (t for t in self._tasks[try_num] if t.failed):
+        for tf in (t for t in self._get_tasks(self._current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
             partname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            retry_info = ('(for the last of %s retries)' % try_num
-                          if try_num > 0 else '')
+            retry_info = ('(for the last of %s retries)' % self._current_run
+                          if self._current_run > 0 else '')
 
             report.append(line_width * '-')
             report.append('FAILURE INFO for %s %s' % (check.name, retry_info))
