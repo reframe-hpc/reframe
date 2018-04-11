@@ -1,63 +1,56 @@
 import functools
-import math
 
 
 @functools.total_ordering
 class Version:
     def __init__(self, version):
+        base_part, *dev_part = version.split('-dev')
         try:
-            str_base, dev = version.split('-dev')
-            base = str_base.split('.')
-            try:
-                self.dev = int(dev)
-            except ValueError:
-                raise ValueError('invalid version: %s' % version)
+            major, minor, *patch_part = base_part.split('.')
+        except ValueError:
+            raise ValueError('invalid version string: %s' % version) from None
 
-        except:
-            base = version.split('.')
-            self.dev = None
+        patch_level = patch_part[0] if patch_part else 0
 
-        if len(base) < 2 or len(base) > 3:
-            raise ValueError('invalid version: %s' % version)
-        elif len(base) == 2:
-            base.append('0')
+        try:
+            self._major = int(major)
+            self._minor = int(minor)
+            self._patch_level = int(patch_level)
+            self._dev_number = int(dev_part[0]) if dev_part else None
+        except ValueError:
+            raise ValueError('invalid version string: %s' % version) from None
 
-        for i, j in enumerate(base):
-            try:
-                base[i] = int(j)
-            except ValueError:
-                raise ValueError('invalid version: %s' % version)
-
-        self.base = tuple(base)
+    def _value(self):
+        return 1000*self._major + 100*self._minor + self._patch_level
 
     def __eq__(self, other):
-        return self._compare(other, lambda s, o: s == o)
-
-    def __ge__(self, other):
-        return self._compare(other, lambda s, o: s >= o)
-
-    def _compare(self, other, operation):
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, type(self)):
             return NotImplemented
 
-        if self.dev is None:
-            self_dev = math.inf
-        else:
-            self_dev = self.dev
+        return (self._value() == other._value() and
+                self._dev_number == other._dev_number)
 
-        if other.dev is None:
-            other_dev = math.inf
-        else:
-            other_dev = other.dev
+    def __gt__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
 
-        return operation((self.base, self_dev), (other.base, other_dev))
+        if self._value() != other._value():
+            return self._value() > other._value()
+        elif self._dev_number is None and other._dev_number is None:
+            return self._value() > other._value()
+        elif self._dev_number is not None and other._dev_number is None:
+            return False
+        elif self._dev_number is None and other._dev_number is not None:
+            return True
+        elif self._dev_number is not None and other._dev_number is not None:
+            return self._dev_number > other._dev_number
 
     def __repr__(self):
-        return "Version('%s')" % self.__str__()
+        return "Version('%s')" % self
 
     def __str__(self):
-        base = '.'.join(str(i) for i in self.base)
-        if self.dev is None:
+        base = '%s.%s.%s' % (self._major, self._minor, self._patch_level)
+        if self._dev_number is None:
             return base
 
-        return base + '-dev%s' % self.dev
+        return base + '-dev%s' % self._dev_number
