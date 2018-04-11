@@ -34,15 +34,20 @@ class TestSerialExecutionPolicy(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
+    def _num_failures_stage(self, stage):
+        stats = self.runner.stats
+        return len([t for t in stats.tasks_failed() if t.failed_stage ==
+                                                         stage])
+
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
 
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_system_check(self):
         self.runner.policy.skip_system_check = True
@@ -51,9 +56,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(9, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_prgenv_check(self):
         self.runner.policy.skip_environ_check = True
@@ -62,9 +67,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(9, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
@@ -73,9 +78,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(0, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(0, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True
@@ -84,9 +89,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(0, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(0, self._num_failures_stage('performance'))
 
     def test_strict_performance_check(self):
         self.runner.policy.strict_check = True
@@ -95,9 +100,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(6, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(2, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(2, self._num_failures_stage('performance'))
 
     def test_kbd_interrupt_within_test(self):
         check = KeyboardInterruptCheck(system=self.system,

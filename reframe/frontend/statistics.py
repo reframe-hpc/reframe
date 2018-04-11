@@ -31,10 +31,6 @@ class TestStats:
     def num_failures(self, run=-1):
         return len([t for t in self._get_tasks(run) if t.failed])
 
-    def num_failures_stage(self, stage, run=-1):
-        return len([t for t in self._get_tasks(run) if t.failed_stage ==
-                                                         stage])
-
     def num_cases(self, run=-1):
         return len(self._get_tasks(run))
 
