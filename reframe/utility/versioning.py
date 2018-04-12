@@ -1,10 +1,16 @@
 import functools
+import sys
 
 
 @functools.total_ordering
 class Version:
     def __init__(self, version):
+        if version is None:
+            raise ValueError('invalid type for version: %s'
+                             % version) from None
+
         base_part, *dev_part = version.split('-dev')
+
         try:
             major, minor, *patch_part = base_part.split('.')
         except ValueError:
@@ -34,16 +40,18 @@ class Version:
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        if self._value() != other._value():
+        if self._value() > other._value():
             return self._value() > other._value()
-        elif self._dev_number is None and other._dev_number is None:
+
+        if self._value() < other._value():
             return self._value() > other._value()
-        elif self._dev_number is not None and other._dev_number is None:
-            return False
-        elif self._dev_number is None and other._dev_number is not None:
-            return True
-        elif self._dev_number is not None and other._dev_number is not None:
-            return self._dev_number > other._dev_number
+
+        self_dev_number = (self._dev_number if self._dev_number is not None
+                           else sys.maxsize)
+        other_dev_number = (other._dev_number if other._dev_number is not None
+                            else sys.maxsize)
+
+        return self_dev_number > other_dev_number
 
     def __repr__(self):
         return "Version('%s')" % self

@@ -10,6 +10,7 @@ class TestVersioning(unittest.TestCase):
         Version('1.2-dev0')
         Version('1.2-dev5')
         Version('1.2.3-dev2')
+        self.assertRaises(ValueError, Version, None)
         self.assertRaises(ValueError, Version, '')
         self.assertRaises(ValueError, Version, '1')
         self.assertRaises(ValueError, Version, '1.2a')
