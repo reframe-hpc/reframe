@@ -1,5 +1,4 @@
 import os
-import pathlib
 import socket
 import sys
 
@@ -17,9 +16,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-
-DEFAULT_SETTINGS_FILE = os.path.abspath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), '../settings.py'))
 
 
 def list_supported_systems(systems, printer):
@@ -184,9 +180,11 @@ def main():
         help='Load SYSTEM configuration explicitly')
     misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
-        metavar='FILE', default=DEFAULT_SETTINGS_FILE,
+        metavar='FILE', default=os.path.join(reframe.INSTALL_PREFIX,
+                                             'reframe/settings.py'),
         help='Specify a custom config-file for the machine. '
-             '(default: %s' % DEFAULT_SETTINGS_FILE)
+             '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
+                                           'reframe/settings.py'))
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -293,11 +291,8 @@ def main():
     else:
         loader = RegressionCheckLoader(
             load_path=settings.checks_path,
-            prefix=os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', '..')
-            ),
-            recurse=settings.checks_path_recurse,
-        )
+            prefix=reframe.INSTALL_PREFIX,
+            recurse=settings.checks_path_recurse)
 
     # Adjust system directories
     if options.prefix:
