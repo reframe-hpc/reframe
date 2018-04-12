@@ -6,8 +6,7 @@ import sys
 class Version:
     def __init__(self, version):
         if version is None:
-            raise ValueError('invalid type for version: %s'
-                             % version) from None
+            raise ValueError('version string may not be None')
 
         base_part, *dev_part = version.split('-dev')
 
