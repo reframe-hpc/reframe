@@ -3,7 +3,7 @@
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def machinesList = ['daint', 'dom', 'kesch', 'leone', 'monch']
+def machinesList = ['daint', 'dom', 'kesch', 'monch']
 def machinesToRun = machinesList
 def uniqueID
 
