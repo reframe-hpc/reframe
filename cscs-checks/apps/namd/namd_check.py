@@ -58,7 +58,7 @@ class NamdBaseCheck(RunOnlyRegressionTest):
         }
 
         self.maintainers = ['CB', 'LM']
-        self.tags = {'production'}
+        self.tags = {'scs'}
         self.strict_check = False
         self.extra_resources = {
             'switches': {
@@ -68,29 +68,45 @@ class NamdBaseCheck(RunOnlyRegressionTest):
 
 
 class NamdGPUCheck(NamdBaseCheck):
-    def __init__(self, **kwargs):
-        super().__init__('gpu', **kwargs)
+    def __init__(self, version, **kwargs):
+        super().__init__('gpu_%s' % version, **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.tags |= {'maintenance', 'scs'}
-
         self.executable_opts = '+idlepoll +ppn 23 stmv.namd'.split()
-
         self.use_multithreading = True
         self.num_cpus_per_task = 24
         self.num_tasks_per_core = 2
-
         self.num_gpus_per_node = 1
 
+
+class NamdGPUProdCheck(NamdGPUCheck):
+    def __init__(self, **kwargs):
+        super().__init__('prod', **kwargs)
+        self.tags |= {'production'}
         self.reference = {
             'dom:gpu':  {
                 'days_ns': (0.16, None, 0.05),
             },
             'daint:gpu':  {
-                'days_ns': (0.72, None, 0.05),
+                'days_ns': (0.07, None, 0.05),
+            },
+        }
+
+
+class NamdGPUMaintCheck(NamdGPUCheck):
+    def __init__(self, **kwargs):
+        super().__init__('maint', **kwargs)
+        self.tags |= {'maintenance'}
+        self.reference = {
+            'dom:gpu':  {
+                'days_ns': (0.16, None, 0.05),
+            },
+            'daint:gpu':  {
+                'days_ns': (0.07, None, 0.05),
             },
         }
 
 
 def _get_checks(**kwargs):
     return [NamdBaseCheck(**kwargs),
-            NamdGPUCheck(**kwargs)]
+            NamdGPUProdCheck(**kwargs),
+            NamdGPUMaintCheck(**kwargs)]
