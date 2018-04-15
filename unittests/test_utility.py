@@ -62,6 +62,15 @@ class TestOSTools(unittest.TestCase):
         shutil.rmtree(dir_src)
         shutil.rmtree(dir_dst)
 
+    def test_copytree_src_parent_of_dst(self):
+        dst_path = tempfile.mkdtemp()
+        src_path = os.path.abspath(os.path.join(dst_path, '..'))
+
+        self.assertRaises(ValueError, os_ext.copytree,
+                          src_path, dst_path)
+
+        shutil.rmtree(dst_path)
+
     def test_inpath(self):
         self.assertTrue(os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin'))
         self.assertFalse(os_ext.inpath('/foo/bin', '/bin:/usr/local/bin'))

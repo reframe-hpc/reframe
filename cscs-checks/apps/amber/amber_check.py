@@ -27,7 +27,7 @@ class AmberBaseCheck(RunOnlyRegressionTest):
         }
 
         self.maintainers = ['SO', 'VH']
-        self.tags = {'production'}
+        self.tags = {'scs'}
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -36,11 +36,21 @@ class AmberBaseCheck(RunOnlyRegressionTest):
 
 
 class AmberGPUCheck(AmberBaseCheck):
-    def __init__(self, **kwargs):
-        super().__init__('amber_gpu_check', 'mdin.GPU', 'amber.out', **kwargs)
-
-        self.descr = 'Amber parallel GPU check'
+    def __init__(self, version, **kwargs):
+        super().__init__('amber_gpu_%s_check' % version, 'mdin.GPU',
+                         'amber.out', **kwargs)
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.executable = 'pmemd.cuda.MPI'
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
+        self.num_gpus_per_node = 1
+
+
+class AmberGPUProdCheck(AmberGPUCheck):
+    def __init__(self, **kwargs):
+        super().__init__('prod', **kwargs)
+        self.descr = 'Amber parallel GPU production check'
+        self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
                 'perf': (22.2, -0.05, None)
@@ -50,18 +60,27 @@ class AmberGPUCheck(AmberBaseCheck):
             },
         }
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.tags |= {'maintenance', 'scs'}
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-        self.num_gpus_per_node = 1
+
+class AmberGPUMaintCheck(AmberGPUCheck):
+    def __init__(self, **kwargs):
+        super().__init__('maint', **kwargs)
+        self.descr = 'Amber parallel GPU maintenance check'
+        self.tags |= {'maintenance'}
+        self.reference = {
+            'dom:gpu': {
+                'perf': (22.2, -0.05, None)
+            },
+            'daint:gpu': {
+                'perf': (21.7, -0.05, None)
+            },
+        }
 
 
 class AmberCPUCheck(AmberBaseCheck):
     def __init__(self, **kwargs):
         super().__init__('amber_cpu_check', 'mdin.CPU', 'amber.out', **kwargs)
-
         self.descr = 'Amber parallel CPU check'
+        self.tags |= {'production'}
         self.executable = 'pmemd.MPI'
         self.strict_check = False
         self.valid_systems = ['daint:mc', 'dom:mc']
@@ -85,4 +104,5 @@ class AmberCPUCheck(AmberBaseCheck):
 
 
 def _get_checks(**kwargs):
-    return [AmberGPUCheck(**kwargs), AmberCPUCheck(**kwargs)]
+    return [AmberGPUProdCheck(**kwargs), AmberGPUMaintCheck(**kwargs),
+            AmberCPUCheck(**kwargs)]
