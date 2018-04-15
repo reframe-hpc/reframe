@@ -2,6 +2,7 @@
 # Basic functionality for regression tests
 #
 
+import fnmatch
 import os
 import shutil
 
@@ -54,10 +55,14 @@ class RegressionTest:
     #: :type: Alphanumeric string.
     name = fields.AlphanumericField('name')
 
-    #: List of programming environmets supported by this test.
+    #: List of programming environments supported by this test.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 2.12
+    #:        Programming environments can now be specified using wildcards.
     valid_prog_environs = fields.TypedListField('valid_prog_environs', str)
 
     #: List of systems supported by this test.
@@ -676,10 +681,11 @@ class RegressionTest:
         return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
-        if '*' in self.valid_prog_environs:
-            return True
+        for env in self.valid_prog_environs:
+            if fnmatch.fnmatch(env_name, env):
+                return True
 
-        return env_name in self.valid_prog_environs
+        return False
 
     def is_local(self):
         """Check if the test will execute locally.

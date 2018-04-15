@@ -242,6 +242,23 @@ class TestRegressionTest(unittest.TestCase):
         self.assertFalse(test.supports_system('testsys:gpu'))
         self.assertFalse(test.supports_system('testsys:login'))
 
+    def test_supports_environ(self):
+        test = self.loader.load_from_file(
+            'unittests/resources/hellocheck.py',
+            system=self.system, resources=self.resources
+        )[0]
+
+        test.valid_prog_environs = ['*']
+        self.assertTrue(test.supports_environ('foo1'))
+        self.assertTrue(test.supports_environ('foo-env'))
+        self.assertTrue(test.supports_environ('*'))
+
+        test.valid_prog_environs = ['PrgEnv-foo-*']
+        self.assertTrue(test.supports_environ('PrgEnv-foo-version1'))
+        self.assertTrue(test.supports_environ('PrgEnv-foo-version2'))
+        self.assertFalse(test.supports_environ('PrgEnv-boo-version1'))
+        self.assertFalse(test.supports_environ('Prgenv-foo-version1'))
+
     def test_sourcesdir_none(self):
         test = RegressionTest('hellocheck',
                               'unittests/resources',
