@@ -81,6 +81,10 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 
     In this case it will first remove it and then call the standard
     shutil.copytree()."""
+    if src == os.path.commonpath([src, dst]):
+        raise ValueError("cannot copy recursively the parent directory "
+                         "`%s' into one of its descendants `%s'" % (src, dst))
+
     if os.path.exists(dst):
         shutil.rmtree(dst)
 

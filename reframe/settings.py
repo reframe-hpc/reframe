@@ -1,5 +1,5 @@
 #
-# Regression settings
+# ReFrame generic settings
 #
 
 

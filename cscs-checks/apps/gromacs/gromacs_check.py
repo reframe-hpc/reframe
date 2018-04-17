@@ -17,7 +17,18 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
                                        'Gromacs')
         self.keep_files = [output_file]
 
-        self.sanity_patterns = sn.assert_found('Finished mdrun', output_file)
+        energy = sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
+                                  r'\s+Temperature\s+Pressure \(bar\)\n'
+                                  r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
+                                  r'\s+Constr\. rmsd',
+                                  output_file, 'energy', float, item=-1)
+        energy_reference = -3270799.9
+        energy_diff = sn.abs(energy - energy_reference)
+
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Finished mdrun', output_file),
+            sn.assert_lt(energy_diff, 1560.1)
+        ])
 
         self.perf_patterns = {
             'perf': sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
@@ -62,10 +73,10 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (15.7, -0.15, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (62.0, -0.15, None)
+                'perf': (60.2, -0.10, None)
             },
         }
 

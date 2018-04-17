@@ -3,21 +3,19 @@ import socket
 import sys
 
 import reframe
+import reframe.frontend.config as config
 import reframe.core.logging as logging
-import reframe.utility.os as os_ext
-from reframe.core.exceptions import (EnvironError, ReframeError,
+import reframe.utility.os_ext as os_ext
+from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
-from reframe.frontend.loader import (RegressionCheckLoader,
-                                     SiteConfiguration,
-                                     autodetect_system)
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.resources import ResourcesManager
-from reframe.settings import settings
 
 
 def list_supported_systems(systems, printer):
@@ -78,6 +76,9 @@ def main():
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively')
+    locate_options.add_argument(
+        '--ignore-check-conflicts', action='store_true',
+        help='Skip checks with conflicting names')
 
     # Select options
     select_options.add_argument(
@@ -151,8 +152,7 @@ def main():
         help='Specify the execution policy for running the regression tests. '
              'Available policies: "serial" (default), "async"')
     run_options.add_argument(
-        '--mode', action='store', help='Execution mode to use'
-    )
+        '--mode', action='store', help='Execution mode to use')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -178,6 +178,13 @@ def main():
     misc_options.add_argument(
         '--system', action='store',
         help='Load SYSTEM configuration explicitly')
+    misc_options.add_argument(
+        '-C', '--config-file', action='store', dest='config_file',
+        metavar='FILE', default=os.path.join(reframe.INSTALL_PREFIX,
+                                             'reframe/settings.py'),
+        help='Specify a custom config-file for the machine. '
+             '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
+                                           'reframe/settings.py'))
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -188,24 +195,26 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    # Load configuration
+    try:
+        settings = config.load_from_file(options.config_file)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write(
+            '%s: could not load settings: %s\n' % (sys.argv[0], e))
+        sys.exit(1)
+
+    site_config = config.SiteConfiguration()
+    site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
-    except Exception as e:
-        print('could not configure logging:', e, file=sys.stderr)
+    except (OSError, ConfigError) as e:
+        sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
-
-    # Load site configuration
-    site_config = SiteConfiguration()
-    try:
-        site_config.load_from_dict(settings.site_configuration)
-    except Exception as e:
-        print('could not load site configuration:', e, file=sys.stderr)
-        sys.exit(1)
 
     if options.system:
         try:
@@ -226,7 +235,7 @@ def main():
             sys.exit(1)
     else:
         # Try to autodetect system
-        system = autodetect_system(site_config)
+        system = config.autodetect_system(site_config)
         if not system:
             printer.error("could not auto-detect system. Please specify "
                           "it manually using the `--system' option.")
@@ -268,6 +277,7 @@ def main():
     if options.checkpath:
         load_path = []
         for d in options.checkpath:
+            d = os.path.expandvars(d)
             if not os.path.exists(d):
                 printer.info("%s: path `%s' does not exist. Skipping...\n" %
                              (argparser.prog, d))
@@ -275,15 +285,14 @@ def main():
 
             load_path.append(d)
 
-        loader = RegressionCheckLoader(load_path, recurse=options.recursive)
+        loader = RegressionCheckLoader(
+            load_path, recurse=options.recursive,
+            ignore_conflicts=options.ignore_check_conflicts)
     else:
         loader = RegressionCheckLoader(
             load_path=settings.checks_path,
-            prefix=os.path.abspath(
-                os.path.join(os.path.dirname(__file__), '..', '..')
-            ),
-            recurse=settings.checks_path_recurse,
-        )
+            prefix=reframe.INSTALL_PREFIX,
+            recurse=settings.checks_path_recurse)
 
     # Adjust system directories
     if options.prefix:
@@ -291,7 +300,7 @@ def main():
         system.prefix = os.path.expandvars(options.prefix)
         system.outputdir = None
         system.stagedir  = None
-        system.logdir    = None
+        system.logdir = None
 
     if options.output:
         system.outputdir = os.path.expandvars(options.output)
@@ -396,7 +405,7 @@ def main():
             try:
                 get_modules_system().load_module(m, force=True)
             except EnvironError:
-                printer.info("Could not load module `%s': Skipping..." % m)
+                printer.info("could not load module `%s': Skipping..." % m)
 
         success = True
         if options.list:
@@ -450,6 +459,9 @@ def main():
         sys.exit(0)
 
     except KeyboardInterrupt:
+        sys.exit(1)
+    except ReframeError as e:
+        printer.error(str(e))
         sys.exit(1)
     except (Exception, ReframeFatalError):
         printer.error(format_exception(*sys.exc_info()))
