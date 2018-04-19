@@ -5,7 +5,7 @@ import sys
 import reframe
 import reframe.core.logging as logging
 import reframe.utility.os as os_ext
-from reframe.core.exceptions import (EnvironError, ReframeError,
+from reframe.core.exceptions import (EnvironError, ReframeError, ConfigError,
                                      ReframeFatalError, format_exception)
 from reframe.core.modules import get_modules_system, init_modules_system
 from reframe.frontend.argparse import ArgumentParser
@@ -155,8 +155,8 @@ def main():
     )
     run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
-        help='Specify the maximum number of times a failed regression test may'
-             ' be retried (default: 0)')
+        help='Specify the maximum number of times a failed regression test '
+             'may be retried (default: 0)')
 
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -433,17 +433,21 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            max_retries = options.max_retries
+            try:
+                max_retries = int(options.max_retries)
+            except ValueError:
+                raise ConfigError('--max-retries is not a valid integer: %s' %
+                                  max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
                 runner.runall(checks_matched, system)
             finally:
+                # Print a retry report if we did any retries
                 if runner.stats.num_failures(run=0):
-                    # always print a retries report
                     printer.info(runner.stats.retry_report())
 
+                # Print a failure report if we had failures in the last run
                 if runner.stats.num_failures():
-                    # always print a report (if retries, for the last retry)
                     printer.info(runner.stats.failure_report())
                     success = False
 

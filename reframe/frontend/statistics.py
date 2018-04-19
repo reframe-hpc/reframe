@@ -1,22 +1,25 @@
 import reframe.core.debug as debug
-from reframe.core.exceptions import (ReframeFatalError, StatisticsError)
+
+from reframe.core.exceptions import StatisticsError
 
 
 class TestStats:
     """Stores test case statistics."""
 
     def __init__(self):
+        # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
         self._tasks = [[]]
         self._current_run = 0
 
     def __repr__(self):
         return debug.repr(self)
 
-    def next_run(self, current_run):
-        if current_run != self._current_run + 1:
-            raise ReframeFatalError('current_run variable out of sync')
+    @property
+    def current_run(self):
+        return self._current_run
 
-        self._current_run = current_run
+    def next_run(self):
+        self._current_run += 1
         self._tasks.append([])
 
     def add_task(self, task):
@@ -26,7 +29,7 @@ class TestStats:
         try:
             return self._tasks[run]
         except IndexError:
-            raise StatisticsError('no such run: %s' % run)
+            raise StatisticsError('no such run: %s' % run) from None
 
     def num_failures(self, run=-1):
         return len([t for t in self._get_tasks(run) if t.failed])
@@ -49,8 +52,12 @@ class TestStats:
         messages = {}
         for run in range(1, len(self._tasks)):
             for t in self._get_tasks(run):
+                key = '%s:%s:%s' % (
+                      t.check.name, t.check.current_partition.fullname,
+                      t.check.current_environ.name
+                )
                 # Overwrite entry from previous run if available
-                messages[t.check.info()] = (
+                messages[key] = (
                     '  * Test %s was retried %s time(s) and %s.' %
                     (t.check.info(), run, 'failed' if t.failed else 'passed')
                 )

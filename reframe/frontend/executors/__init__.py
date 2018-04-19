@@ -5,7 +5,7 @@ import reframe.core.debug as debug
 import reframe.core.logging as logging
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeFatalError, TaskExit, ConfigError)
+                                     ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
@@ -145,11 +145,7 @@ class Runner:
     def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
-        try:
-            self._max_retries = int(max_retries)
-        except ValueError:
-            raise ConfigError('--max-retries is not a valid integer: %s' %
-                              max_retries) from None
+        self._max_retries = max_retries
         self._current_run = 0
         self._stats = TestStats()
         self._policy.stats = self._stats
@@ -180,11 +176,12 @@ class Runner:
 
         finally:
             # Print the summary line
+            num_failures = self._stats.num_failures()
+            num_cases    = self._stats.num_cases(run=0)
             self._printer.status(
-                'FAILED' if self._stats.num_failures() else 'PASSED',
+                'FAILED' if num_failures else 'PASSED',
                 'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (self._stats.num_cases(run=0), len(checks),
-                 self._stats.num_failures()), just='center'
+                (num_cases, len(checks), num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
             self._environ_snapshot.load()
@@ -206,19 +203,23 @@ class Runner:
             return ret and check.supports_environ(environ.name)
 
     def _retry_failed(self, checks, system):
-        while (self._stats.num_failures() and self._current_run <
-                                              self._max_retries):
+        while (self._stats.num_failures() and
+               self._current_run < self._max_retries):
+            failed_checks = [
+                c for c in checks if c.name in
+                set([t.check.name for t in self._stats.tasks_failed()])
+            ]
             self._current_run += 1
-            self._stats.next_run(self._current_run)
-            check_names_failed = set([t.check.name for t in
-                                      self._stats.tasks_failed(run=-2)])
-            checks_failed = [c for c in checks if c.name in check_names_failed]
+            self._stats.next_run()
+            if self._stats.current_run != self._current_run:
+                    raise AssertionError('current_run variable out of sync')
+
             self._printer.separator(
-                'short single line',
+                'short double line',
                 'Retrying %d failed check(s) (retry %d/%d)' %
-                (len(checks_failed), self._current_run, self._max_retries)
+                (len(failed_checks), self._current_run, self._max_retries)
             )
-            self._runall(checks_failed, system)
+            self._runall(failed_checks, system)
 
     def _runall(self, checks, system):
         self._policy.enter()

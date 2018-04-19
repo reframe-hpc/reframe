@@ -117,7 +117,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         self.task_listeners.append(self)
 
-
     def _remove_from_running(self, task):
         getlogger().debug('removing task: %s' % task.check.info())
         try:
