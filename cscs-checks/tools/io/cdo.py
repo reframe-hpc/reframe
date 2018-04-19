@@ -78,8 +78,8 @@ class NCOModuleCompatibilityCheck(CDOBaseCheck):
         self.descr = ('verifies compatibility with the NCO module')
         self.sourcesdir = None
         self.executable = 'echo'
-        self.sanity_patterns = sn.assert_not_found(r'(ERROR)|(conflict)',
-                                                   self.stderr)
+        self.sanity_patterns = sn.assert_not_found(
+            r'(?i)error|conflict|unsupported|failure', self.stderr)
 
     def setup(self, partition, environ, **job_opts):
         nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
