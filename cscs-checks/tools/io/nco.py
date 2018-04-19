@@ -74,9 +74,8 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
         self.executable = 'echo'
-        self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', self.stderr)
-        ])
+        self.sanity_patterns = sn.assert_not_found(r'(ERROR)|(conflict)',
+                                                   self.stderr)
 
     def setup(self, partition, environ, **job_opts):
         cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
