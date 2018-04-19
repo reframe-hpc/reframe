@@ -260,6 +260,20 @@ class ModulesSystem:
         """Remove ``dirs`` from the module system search path."""
         return self._backend.searchpath_remove(*dirs)
 
+    def get_load_string(self, name):
+        """Load string for name."""
+        ret = ''
+        for m in self.resolve_module(name):
+            ret += self._backend.get_load_string(m)
+        return ret
+
+    def get_unload_string(self, name):
+        """Unload string for name."""
+        ret = ''
+        for m in self.resolve_module(name):
+            ret += self._backend.get_unload_string(m)
+        return ret
+
     def __str__(self):
         return str(self._backend)
 
@@ -321,6 +335,14 @@ class ModulesSystemImpl(abc.ABC):
     @abc.abstractmethod
     def searchpath_remove(self, *dirs):
         """Remove ``dirs`` from the module system search path."""
+
+    @abc.abstractmethod
+    def get_load_string(self, module):
+        """Load string for module."""
+
+    @abc.abstractmethod
+    def get_unload_string(self, module):
+        """Unload string for module."""
 
     def __repr__(self):
         return type(self).__name__ + '()'
@@ -425,6 +447,12 @@ class TModImpl(ModulesSystemImpl):
 
     def searchpath_remove(self, *dirs):
         self._exec_module_command('unuse', *dirs)
+
+    def get_load_string(self, module):
+        return 'module load %s' % module
+
+    def get_unload_string(self, module):
+        return 'module unload %s' % module
 
 
 class LModImpl(TModImpl):
