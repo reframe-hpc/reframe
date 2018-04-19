@@ -74,9 +74,8 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
         self.executable = 'echo'
-        self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'.+', self.stderr)
-        ])
+        self.sanity_patterns = sn.assert_not_found(
+            r'(?i)error|conflict|unsupported|failure', self.stderr)
 
     def setup(self, partition, environ, **job_opts):
         cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
@@ -121,7 +120,7 @@ class InfoNC4CCheck(NCOBaseCheck):
             '-M', 'test_echam_spectral-deflated_wind10_wl_ws.nc4c'
         ]
         self.sanity_patterns = sn.all([
-            sn.assert_not_found(r'(?i)unsupported|(?i)error', self.stderr),
+            sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
             sn.assert_found(r'^Global attribute \d+: CDO, size = 63 NC_CHAR',
                             self.stdout)
         ])
