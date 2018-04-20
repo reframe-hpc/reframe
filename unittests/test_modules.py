@@ -195,6 +195,12 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
+    def get_load_string(self, module):
+        pass
+
+    def get_unload_string(self, module):
+        pass
+
 
 class TestModuleMapping(unittest.TestCase):
     def setUp(self):

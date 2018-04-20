@@ -556,6 +556,12 @@ class NoModImpl(ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
+    def get_load_string(self, module):
+        pass
+
+    def get_unload_string(self, module):
+        pass
+
 
 # The module system used by the framework
 _modules_system = None
