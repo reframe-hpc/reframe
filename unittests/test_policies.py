@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import unittest
@@ -8,9 +9,10 @@ from reframe.core.modules import init_modules_system
 from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
+from unittests.resources.hellocheck import HelloTest
 from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
-                                                 SleepCheck,
-                                                 SystemExitCheck)
+                                                 SleepCheck, BadSetupCheck,
+                                                 RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -31,13 +33,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.checks = self.loader.load_all(system=self.system,
                                            resources=self.resources)
 
+
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
     def _num_failures_stage(self, stage):
         stats = self.runner.stats
-        return len([t for t in stats.tasks_failed() if t.failed_stage ==
-                                                         stage])
+        return len([t for t in stats.tasks_failed()
+                    if t.failed_stage == stage])
 
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
@@ -119,6 +122,49 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall([check], self.system)
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+
+    def test_retries_bad_check(self):
+        max_retries = 2
+        checks = [BadSetupCheck(system=self.system, resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test was retried #max_retries times and failed.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(1, self.runner.stats.num_failures())
+
+    def test_retries_good_check(self):
+        max_retries = 2
+        checks = [HelloTest(system=self.system, resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test passed without retries.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+
+    def test_pass_in_retries(self):
+        max_retries = 3
+        run_to_pass = 2
+        # Create a file containing the current_run; Run 0 will set it to 0,
+        # run 1 to 1 and so on.
+        with tempfile.NamedTemporaryFile(mode='wt', delete=False) as fp:
+            fp.write("-1\n")
+
+        checks = [RetriesCheck(run_to_pass, fp.name, system=self.system,
+                               resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test passed after retries in run #run_to_pass.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(1, self.runner.stats.num_failures(run=0))
+        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+
+        os.remove(fp.name)
 
 
 class TaskEventMonitor(executors.TaskEventListener):

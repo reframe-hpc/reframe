@@ -294,30 +294,6 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('PASSED', stdout)
         self.assertIn('Ran 1 test case', stdout)
 
-    def test_retries_bad_check(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'BadSetupCheck', '--max-retries', '2']
-
-        returncode, stdout, _ = self._run_reframe()
-        self.assertIn('FAILED', stdout)
-        self.assertIn('Retrying', stdout)
-        self.assertIn('Test BadSetupCheck on generic:login using builtin-gcc '
-                      'was retried 2 time(s) and failed.', stdout)
-        self.assertNotIn('PASSED', stdout)
-        self.assertNotEqual(returncode, 0)
-        self.assertIn('Ran 1 test case', stdout)
-
-    def test_retries_good_check(self):
-        self.checkpath = ['unittests/resources/hellocheck.py']
-        self.more_options = ['-c', 'HelloTest', '--max-retries', '2']
-
-        returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stderr)
-        self.assertNotIn('FAILED', stdout)
-        self.assertNotIn('Retrying', stdout)
-        self.assertIn('PASSED', stdout)
-        self.assertIn('Ran 1 test case', stdout)
-
     def test_unknown_modules_system(self):
         # Monkey patch site configuration to trigger a module systems error
         site_config_save = copy.deepcopy(settings._site_configuration)

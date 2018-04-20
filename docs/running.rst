@@ -332,8 +332,7 @@ They are summarized below:
 
     ./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
 
-* ``--max-retries NUM``: Specify the maximum number of times a failed
-                        regression test may be retried (default: 0).
+* ``--max-retries NUM``: Specify the maximum number of times a failed regression test may be retried (default: 0).
 
 Configuring ReFrame Directories
 -------------------------------

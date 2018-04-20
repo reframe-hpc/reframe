@@ -159,6 +159,19 @@ class SleepCheck(BaseFrontendCheck):
         SleepCheck._next_id += 1
 
 
+class RetriesCheck(BaseFrontendCheck):
+
+    def __init__(self, run_to_pass, file_name, **kwargs):
+        super().__init__(type(self).__name__, **kwargs)
+        self.sourcesdir = None
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.executable = 'bash'
+        self.executable_opts = ['-c "echo $(($(cat %s) + 1)) > %s "' %
+                                (file_name, file_name)]
+        self.sanity_patterns = sn.assert_found(r'%d' % run_to_pass, file_name)
+
+
 def _get_checks(**kwargs):
     return [BadSetupCheck(**kwargs),
             BadSetupCheckEarly(**kwargs),
