@@ -13,11 +13,17 @@ class Cp2kCheck(RunOnlyRegressionTest):
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
+        energy = sn.extractsingle(r'\s+ENERGY\| Total FORCE_EVAL \( QS \) '
+                                  r'energy \(a\.u\.\):\s+(?P<energy>\S+)',
+                                  self.stdout, 'energy', float, item=-1)
+        energy_reference = -4404.2323
+        energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'PROGRAM STOPPED IN', self.stdout),
             sn.assert_eq(sn.count(sn.extractall(
                 r'(?P<step_count>STEP NUM)',
-                self.stdout, 'step_count')), 10)
+                self.stdout, 'step_count')), 10),
+            sn.assert_lt(energy_diff, 1e-4)
         ])
 
         self.perf_patterns = {
@@ -50,10 +56,10 @@ class Cp2kCpuCheck(Cp2kCheck):
         self.num_tasks_per_node = 36
         self.reference = {
             'dom:mc': {
-                'perf': (340, None, 0.15)
+                'perf': (174.5, None, 0.05)
             },
             'daint:mc': {
-                'perf': (113, None, 0.15)   # 'perf': (186, None, 0.15)
+                'perf': (113.0, None, 0.25)
             },
         }
         self.tags |= {'maintenance', 'production'}
@@ -81,10 +87,10 @@ class Cp2kGpuMaintCheck(Cp2kGpuCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (258, None, 0.15)
+                'perf': (258.0, None, 0.15)
             },
             'daint:gpu': {
-                'perf': (171, None, 0.15)
+                'perf': (139.0, None, 0.10)
             },
         }
 
@@ -95,10 +101,10 @@ class Cp2kGpuProdCheck(Cp2kGpuCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (258, None, 0.15)
+                'perf': (240.0, None, 0.05)
             },
             'daint:gpu': {
-                'perf': (195, None, 0.15)
+                'perf': (195.0, None, 0.10)
             },
         }
 

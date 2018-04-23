@@ -25,20 +25,20 @@ class TestStats:
     def add_task(self, task):
         self._tasks[self._current_run].append(task)
 
-    def _get_tasks(self, run):
+    def get_tasks(self, run=-1):
         try:
             return self._tasks[run]
         except IndexError:
             raise StatisticsError('no such run: %s' % run) from None
 
     def num_failures(self, run=-1):
-        return len([t for t in self._get_tasks(run) if t.failed])
+        return len([t for t in self.get_tasks(run) if t.failed])
 
     def num_cases(self, run=-1):
-        return len(self._get_tasks(run))
+        return len(self.get_tasks(run))
 
     def tasks_failed(self, run=-1):
-        return [t for t in self._get_tasks(run) if t.failed]
+        return [t for t in self.get_tasks(run) if t.failed]
 
     def retry_report(self):
         # Return an empty report if no retries were done.
@@ -51,7 +51,7 @@ class TestStats:
         report.append(line_width * '-')
         messages = {}
         for run in range(1, len(self._tasks)):
-            for t in self._get_tasks(run):
+            for t in self.get_tasks(run):
                 key = '%s:%s:%s' % (
                       t.check.name, t.check.current_partition.fullname,
                       t.check.current_environ.name
@@ -71,7 +71,7 @@ class TestStats:
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for tf in (t for t in self._get_tasks(self._current_run) if t.failed):
+        for tf in (t for t in self.get_tasks(self._current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
             partname = partition.fullname if partition else 'None'

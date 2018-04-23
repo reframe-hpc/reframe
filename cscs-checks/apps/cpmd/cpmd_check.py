@@ -20,13 +20,12 @@ class CPMDCheck(RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.use_multithreading = True
 
-        found_energy = sn.extractsingle(
+        energy = sn.extractsingle(
             r'CLASSICAL ENERGY\s+-(?P<result>\S+)',
             'stdout.txt', 'result', float)
-
-        self.sanity_patterns = sn.assert_reference(
-            found_energy, 25.812675, -1e-2, 1e-2)
-
+        energy_reference = 25.81
+        energy_diff = sn.abs(energy - energy_reference)
+        self.sanity_patterns = sn.assert_lt(energy_diff, 0.26)
         self.perf_patterns = {
             'perf': sn.extractsingle(r'^ cpmd(\s+[\d\.]+){3}\s+(?P<perf>\S+)',
                                      'stdout.txt', 'perf', float)

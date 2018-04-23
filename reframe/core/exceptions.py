@@ -36,6 +36,14 @@ class ReframeFatalError(BaseException):
         return ret
 
 
+class TestSuiteError(ReframeError):
+    """Raised when the regression test suite does not meet certain criteria."""
+
+
+class NameConflictError(TestSuiteError):
+    """Raised when there is a name clash in the test suite."""
+
+
 class TaskExit(ReframeError):
     """Raised when a regression task must exit the pipeline prematurely."""
 

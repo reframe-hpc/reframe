@@ -8,7 +8,7 @@ import re
 from collections import OrderedDict
 
 import reframe.core.fields as fields
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, EnvironError
 
 

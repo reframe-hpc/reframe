@@ -3,10 +3,12 @@ import shutil
 import tempfile
 import unittest
 
+import reframe.frontend.config as config
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+from reframe.core.exceptions import JobNotStartedError
 from reframe.core.modules import init_modules_system
-from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
+from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.resources import ResourcesManager
 from reframe.settings import settings
 from unittests.resources.hellocheck import HelloTest
@@ -18,12 +20,14 @@ from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
         # Load a system configuration
-        self.site_config = SiteConfiguration()
+        settings = config.load_from_file("reframe/settings.py")
+        self.site_config = config.SiteConfiguration()
         self.site_config.load_from_dict(settings.site_configuration)
         self.system = self.site_config.systems['generic']
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.resources = ResourcesManager(prefix=self.resourcesdir)
-        self.loader = RegressionCheckLoader(['unittests/resources'])
+        self.loader = RegressionCheckLoader(['unittests/resources'],
+                                            ignore_conflicts=True)
 
         # Init modules system
         init_modules_system(self.system.modules_system)
@@ -33,7 +37,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.checks = self.loader.load_all(system=self.system,
                                            resources=self.resources)
 
-
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
@@ -41,6 +44,16 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         return len([t for t in stats.tasks_failed()
                     if t.failed_stage == stage])
+
+    def assert_all_dead(self):
+        stats = self.runner.stats
+        for t in self.runner.stats.alltasks():
+            try:
+                finished = t.check.poll()
+            except JobNotStartedError:
+                finished = True
+
+            self.assertTrue(finished)
 
     def test_runall(self):
         self.runner.runall(self.checks, self.system)
@@ -114,6 +127,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
                           [check], self.system)
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+        self.assert_all_dead()
 
     def test_system_exit_within_test(self):
         check = SystemExitCheck(system=self.system, resources=self.resources)
@@ -337,6 +351,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
         self.assertEqual(4, self.runner.stats.num_cases())
         self.assertEqual(4, self.runner.stats.num_failures())
+        self.assert_all_dead()
 
     def test_kbd_interrupt_in_wait_with_concurrency(self):
         checks = [
