@@ -151,7 +151,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         # Create a file containing the current_run; Run 0 will set it to 0,
         # run 1 to 1 and so on.
         with tempfile.NamedTemporaryFile(mode='wt', delete=False) as fp:
-            fp.write("-1\n")
+            fp.write('0\n')
 
         checks = [RetriesCheck(run_to_pass, fp.name, system=self.system,
                                resources=self.resources)]
@@ -163,7 +163,6 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(1, self.runner.stats.num_failures(run=0))
         self.assertEqual(run_to_pass, self.runner.stats.current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
-
         os.remove(fp.name)
 
 

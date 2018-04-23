@@ -212,7 +212,10 @@ class Runner:
             self._current_run += 1
             self._stats.next_run()
             if self._stats.current_run != self._current_run:
-                    raise AssertionError('current_run variable out of sync')
+                    raise AssertionError('current_run variable out of sync'
+                                         '(Runner: %d; TestStats: %d)' %
+                                         self._current_run,
+                                         self._stats.current_run)
 
             self._printer.separator(
                 'short double line',
