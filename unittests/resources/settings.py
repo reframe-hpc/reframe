@@ -33,7 +33,6 @@ class ReframeSettings:
                 'hostnames': ['testsys'],
                 'prefix': '.rfm_testing/install',
                 'resourcesdir': '.rfm_testing/resources',
-                'modules_system': 'tmod',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',

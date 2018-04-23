@@ -81,9 +81,12 @@ class TypedField(Field):
         self._fieldtype = fieldtype
         self._allow_none = allow_none
 
+    def _check_type(self, value):
+        return ((self._allow_none and value is None) or
+                isinstance(value, self._fieldtype))
+
     def __set__(self, obj, value):
-        if ((value is not None or not self._allow_none) and
-            not isinstance(value, self._fieldtype)):
+        if not self._check_type(value):
             raise TypeError('attempt to set a field of different type. '
                             'Required: %s, Found: %s' %
                             (self._fieldtype.__name__, type(value).__name__))
@@ -406,10 +409,15 @@ class AbsolutePathField(StringField):
     """
 
     def __set__(self, obj, value):
+        if not self._check_type(value):
+            raise TypeError('attempt to set a path field with a '
+                            'non string value: %s' % value)
+
         if value is not None:
             value = os.path.abspath(value)
 
-        super().__set__(obj, value)
+        # Call Field's __set__() method, type checking is already performed
+        Field.__set__(self, obj, value)
 
 
 # FIXME: This is not probably the best place for this to go
