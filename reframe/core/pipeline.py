@@ -2,7 +2,13 @@
 # Basic functionality for regression tests
 #
 
+__all__ = ['RegressionTest',
+           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
+
+
 import fnmatch
+import inspect
+import itertools
 import os
 import shutil
 
@@ -10,8 +16,8 @@ import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
-from reframe.core.decorators import abstract_regression_test
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
 from reframe.core.exceptions import PipelineError, SanityError
@@ -23,7 +29,6 @@ from reframe.core.systems import SystemPartition
 from reframe.utility.sanity import assert_reference
 
 
-@abstract_regression_test
 class RegressionTest:
     """Base class for regression tests.
 
@@ -466,9 +471,26 @@ class RegressionTest:
                                          allow_none=True)
     _job = fields.TypedField('_job', Job, allow_none=True)
 
-    def __init__(self, name, prefix):
-        self.name  = name
-        self.descr = name
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls)
+        obj._prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        # Create a test name from the class name and the constructor's
+        # arguments
+        name = util.decamelize(cls.__name__)
+        if args or kwargs:
+            arg_names = map(lambda x: util.toalphanum(str(x)),
+                            itertools.chain(args, kwargs.values()))
+            name += '_' + '_'.join(arg_names)
+
+        obj.name = name
+        return obj
+
+    def __init__(self, name=None, prefix=None):
+        if name is not None:
+            self.name = name
+
+        self.descr = self.name
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
@@ -500,7 +522,9 @@ class RegressionTest:
         self.local = False
 
         # Static directories of the regression check
-        self._prefix = os.path.abspath(prefix)
+        if prefix is not None:
+            self._prefix = os.path.abspath(prefix)
+
         self.sourcesdir = 'src'
 
         # Output patterns
@@ -1077,7 +1101,6 @@ class RegressionTest:
                  ', '.join(self.tags), ', '.join(self.maintainers)))
 
 
-@abstract_regression_test
 class RunOnlyRegressionTest(RegressionTest):
     """Base class for run-only regression tests."""
 
@@ -1103,7 +1126,6 @@ class RunOnlyRegressionTest(RegressionTest):
         super().run()
 
 
-@abstract_regression_test
 class CompileOnlyRegressionTest(RegressionTest):
     """Base class for compile-only regression tests.
 

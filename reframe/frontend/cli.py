@@ -8,7 +8,8 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
-                                     ReframeFatalError, format_exception)
+                                     ReframeFatalError, format_exception,
+                                     SystemAutodetectionError)
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
@@ -215,6 +216,11 @@ def main():
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
+    except SystemAutodetectionError:
+        printer.error("could not auto-detect system; please use the "
+                      "`--system' option to specify one explicitly")
+        sys.exit(1)
+
     except (ConfigError, OSError) as e:
         printer.error('configuration error %s' % e)
         sys.exit(1)

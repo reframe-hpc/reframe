@@ -8,15 +8,15 @@ import reframe.frontend.executors.policies as policies
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.settings import settings
-from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
-                                                 SleepCheck,
-                                                 SystemExitCheck)
+from unittests.resources.checks.frontend_checks import (KeyboardInterruptCheck,
+                                                        SleepCheck,
+                                                        SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
-        self.loader = RegressionCheckLoader(['unittests/resources'],
+        self.loader = RegressionCheckLoader(['unittests/resources/checks'],
                                             ignore_conflicts=True)
 
         # Setup the runner

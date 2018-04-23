@@ -15,6 +15,7 @@ import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (ConfigError,
                                      ReframeFatalError,
                                      SpawnedProcessError,
+                                     SystemAutodetectionError,
                                      UnknownSystemError)
 from reframe.core.modules import ModulesSystem
 
@@ -54,9 +55,9 @@ class HostSystem:
 
     @property
     def partitions(self):
-        """Get all the partitions of this system.
+        """The partitions of this system.
 
-        :returns: a list of :class:`SystemPartition`.
+        :type: a list of :class:`reframe.core.systems.SystemPartition`.
         """
 
         if not self._partname:
@@ -174,9 +175,7 @@ class RuntimeContext:
                 if re.match(hostname_patt, hostname):
                     return system
 
-        raise UnknownSystemError(
-            "could not auto-detect system; please use the "
-            "`--system' option to specify one explicitly")
+        raise SystemAutodetectionError
 
     def mode(self, name):
         try:

@@ -233,7 +233,7 @@ class TestLocalJob(_TestJob):
 
         self.testjob._pre_run = []
         self.testjob._post_run = []
-        self.testjob._command = os.path.join(fixtures.TEST_RESOURCES,
+        self.testjob._command = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                              'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
         self.testjob.prepare(self.builder)

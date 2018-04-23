@@ -9,23 +9,40 @@ import os
 from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
-from reframe.core.exceptions import NameConflictError
+import reframe.utility as util
+from reframe.core.exceptions import NameConflictError, TestLoadError
 from reframe.core.logging import getlogger
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
-        self._validated = False
+        self._has_import = False
+        self._has_regression_test = False
 
     @property
     def valid(self):
-        return self._validated
+        return self._has_import and self._has_regression_test
 
-    def visit_FunctionDef(self, node):
-        if (node.name == '_get_checks' and
-            node.col_offset == 0 and
-            node.args.kwarg):
-            self._validated = True
+    def visit_Import(self, node):
+        for m in node.names:
+            if m.name.startswith('reframe'):
+                self._has_import = True
+
+    def visit_ImportFrom(self, node):
+        if node.module.startswith('reframe'):
+            self._has_import = True
+
+    def visit_ClassDef(self, node):
+        for b in node.bases:
+            try:
+                # Unqualified name as in `class C(RegressionTest)`
+                cls_name = b.id
+            except AttributeError:
+                # Qualified name as in `class C(rfm.RegressionTest)`
+                cls_name = b.attr
+
+            if 'RegressionTest' in cls_name:
+                self._has_regression_test = True
 
 
 class RegressionCheckLoader:
@@ -87,9 +104,20 @@ class RegressionCheckLoader:
         and validates its return value."""
         from reframe.core.pipeline import RegressionTest
 
-        # We can safely call `_get_checks()` here, since the source file is
-        # already validated
-        candidates = module._get_checks()
+        old_syntax = hasattr(module, '_get_checks')
+        new_syntax = hasattr(module, '_rfm_gettests')
+        if old_syntax and new_syntax:
+            raise TestLoadError('%s: mixing old and new regression test '
+                                'syntax is not allowed' % module.__file__)
+
+        if not old_syntax and not new_syntax:
+            return []
+
+        if old_syntax:
+            candidates = module._get_checks()
+        else:
+            candidates = module._rfm_gettests()
+
         if not isinstance(candidates, collections.abc.Sequence):
             return []
 
@@ -98,7 +126,7 @@ class RegressionCheckLoader:
             if not isinstance(c, RegressionTest):
                 continue
 
-            testfile = inspect.getfile(type(c))
+            testfile = module.__file__
             try:
                 conflicted = self._loaded[c.name]
             except KeyError:
@@ -116,12 +144,10 @@ class RegressionCheckLoader:
         return ret
 
     def load_from_file(self, filename, **check_args):
-        module_name = self._module_name(filename)
         if not self._validate_source(filename):
             return []
 
-        loader = SourceFileLoader(module_name, filename)
-        return self.load_from_module(loader.load_module())
+        return self.load_from_module(util.import_module_from_file(filename))
 
     def load_from_dir(self, dirname, recurse=False):
         checks = []

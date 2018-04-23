@@ -169,7 +169,7 @@ class TestEnvironment(unittest.TestCase):
 class TestProgEnvironment(unittest.TestCase):
     def setUp(self):
         self.environ_save = renv.EnvironmentSnapshot()
-        self.executable = os.path.join(fixtures.TEST_RESOURCES, 'hello')
+        self.executable = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'hello')
 
     def tearDown(self):
         # Remove generated executable ingoring file-not-found errors
@@ -185,7 +185,7 @@ class TestProgEnvironment(unittest.TestCase):
         os_ext.force_remove_file(executable)
 
     def compile_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES, 'src')
+        srcdir = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'src')
         env.cxxflags = '-O2'
         env.load()
         env.compile(sourcepath=os.path.join(srcdir, 'hello.c'),
@@ -204,7 +204,7 @@ class TestProgEnvironment(unittest.TestCase):
         env.unload()
 
     def compile_dir_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES, 'src')
+        srcdir = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'src')
         env.cxxflags = '-O3'
         env.load()
 

@@ -1,11 +1,12 @@
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 
 import reframe
 import reframe.core.debug as debug
-import reframe.utility
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (SpawnedProcessError,
                                      SpawnedProcessTimeout)
@@ -252,27 +253,42 @@ class TestCopyTree(unittest.TestCase):
 
 class TestImportFromFile(unittest.TestCase):
     def test_load_relpath(self):
-        module = reframe.utility.import_module_from_file('reframe/__init__.py')
+        module = util.import_module_from_file('reframe/__init__.py')
         self.assertEqual(reframe.VERSION, module.VERSION)
+        self.assertEqual('reframe', module.__name__)
+        self.assertIs(module, sys.modules.get('reframe'))
 
-        # FIXME: we do not treat specially the `__init__.py` files
-        self.assertEqual('reframe.__init__', module.__name__)
+    def test_load_directory(self):
+        module = util.import_module_from_file('reframe')
+        self.assertEqual(reframe.VERSION, module.VERSION)
+        self.assertEqual('reframe', module.__name__)
+        self.assertIs(module, sys.modules.get('reframe'))
 
     def test_load_abspath(self):
         filename = os.path.abspath('reframe/__init__.py')
-        module = reframe.utility.import_module_from_file(filename)
+        module = util.import_module_from_file(filename)
         self.assertEqual(reframe.VERSION, module.VERSION)
-
-        # FIXME: we do not treat specially the `__init__.py` files
-        self.assertEqual('__init__', module.__name__)
+        self.assertEqual('reframe', module.__name__)
+        self.assertIs(module, sys.modules.get('reframe'))
 
     def test_load_unknown_path(self):
         try:
-            reframe.utility.import_module_from_file('/foo')
+            util.import_module_from_file('/foo')
             self.fail()
         except ImportError as e:
             self.assertEqual('foo', e.name)
             self.assertEqual('/foo', e.path)
+
+    def test_load_twice(self):
+        filename = os.path.abspath('reframe/__init__.py')
+        module1 = util.import_module_from_file(filename)
+        module2 = util.import_module_from_file(filename)
+        self.assertIs(module1, module2)
+
+    def test_load_namespace_package(self):
+        module = util.import_module_from_file('unittests/resources')
+        self.assertIn('unittests', sys.modules)
+        self.assertIn('unittests.resources', sys.modules)
 
 
 class TestDebugRepr(unittest.TestCase):
@@ -331,3 +347,23 @@ class TestChangeDirCtxManager(unittest.TestCase):
 
     def tearDown(self):
         os.rmdir(self.temp_dir)
+
+
+class TestMiscUtilities(unittest.TestCase):
+    def test_decamelize(self):
+        self.assertEqual('', util.decamelize(''))
+        self.assertEqual('my_base_class', util.decamelize('MyBaseClass'))
+        self.assertEqual('my_base_class12', util.decamelize('MyBaseClass12'))
+        self.assertEqual('my_class_a', util.decamelize('MyClass_A'))
+        self.assertEqual('my_class', util.decamelize('my_class'))
+        self.assertRaises(TypeError, util.decamelize, None)
+        self.assertRaises(TypeError, util.decamelize, 12)
+
+    def test_sanitize(self):
+        self.assertEqual('', util.toalphanum(''))
+        self.assertEqual('ab12', util.toalphanum('ab12'))
+        self.assertEqual('ab1_2', util.toalphanum('ab1_2'))
+        self.assertEqual('ab1__2', util.toalphanum('ab1**2'))
+        self.assertEqual('ab__12_', util.toalphanum('ab (12)'))
+        self.assertRaises(TypeError, util.toalphanum, None)
+        self.assertRaises(TypeError, util.toalphanum, 12)

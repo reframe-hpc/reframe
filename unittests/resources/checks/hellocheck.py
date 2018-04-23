@@ -1,12 +1,12 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class HelloTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('hellocheck', os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class HelloTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.name = 'hellocheck'
         self.descr = 'C Hello World test'
 
         # All available systems are supported
@@ -16,7 +16,3 @@ class HelloTest(RegressionTest):
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']
-
-
-def _get_checks(**kwargs):
-    return [HelloTest(**kwargs)]

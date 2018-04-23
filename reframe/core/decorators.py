@@ -1,85 +1,57 @@
 #
-# Core decorators
+# Decorators for registering tests with the framework
 #
 
+__all__ = ['parameterized_test', 'simple_test']
+
+
+import collections
 import inspect
-import os
-import re
 
-from reframe.core.exceptions import ReframeError
-
-
-_RFM_BASES = tuple()
+from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.pipeline import RegressionTest
 
 
-def abstract_regression_test(cls):
-    global _RFM_BASES
+def _register_test(cls, args=None):
+    def _instantiate():
+        ret = []
+        for cls, args in mod.__rfm_test_registry:
+            if isinstance(args, collections.Sequence):
+                ret.append(cls(*args))
+            elif isinstance(args, collections.Mapping):
+                ret.append(cls(**args))
+            elif args is None:
+                ret.append(cls())
 
-    _RFM_BASES += (cls,)
-    return cls
+        return ret
 
+    mod = inspect.getmodule(cls)
+    if not hasattr(mod, '_rfm_gettests'):
+        mod._rfm_gettests = _instantiate
 
-def _check_bases(cls):
-    """Check if cls is directly derived from one of the framework base
-    classes."""
-
-    for base in cls.__bases__:
-        if base in _RFM_BASES:
-            return True
-
-    return False
-
-
-def _base_names():
-    return (c.__name__ for c in _RFM_BASES)
-
-
-def _decamelize(s):
-    if not s:
-        return ''
-
-    return re.sub(r'([a-z])([A-Z])', r'\1_\2', s).lower()
-
-
-def autoinit_test(cls):
-    if not _check_bases(cls):
-        raise ReframeError(
-            '@autoinit_test decorator can only be used '
-            'on direct subclasses of %s' % ', '.join(_base_names()))
-
-    user_init = cls.__init__
-
-    def _rich_init(self, *args, **kwargs):
-        super(cls, self).__init__(_decamelize(cls.__name__),
-                                  os.path.dirname(inspect.getfile(cls)))
-
-        user_init(self, *args, **kwargs)
-
-    cls.__init__ = _rich_init
-    return cls
-
-
-def _register_test(check):
-    def _get_checks(**kwargs):
-        return __rfm_checks
-
-    mod = inspect.getmodule(type(cls))
-    mod._get_checks = _get_checks
     try:
-        mod.__rfm_checks.append(check)
-    except NameError:
-        mod.__rfm_checks = [check]
+        mod.__rfm_test_registry.append((cls, args))
+    except AttributeError:
+        mod.__rfm_test_registry = [(cls, args)]
 
 
-def register_singletest(cls):
-    _register_test(cls())
+def _validate_test(cls):
+    if not issubclass(cls, RegressionTest):
+        raise ReframeSyntaxError('the decorated class must be a '
+                                 'subclass of RegressionTest')
+
+
+def simple_test(cls):
+    _validate_test(cls)
+    _register_test(cls)
     return cls
 
 
-def register_multitest(inst):
+def parameterized_test(inst=[]):
     def _do_register(cls):
+        _validate_test(cls)
         for args in inst:
-            _register_test(cls(*args))
+            _register_test(cls, args)
 
         return cls
 

@@ -78,7 +78,7 @@ class TestFrontend(unittest.TestCase):
     def setUp(self):
         self.prefix = tempfile.mkdtemp(dir='unittests')
         self.system = 'generic:login'
-        self.checkpath = ['unittests/resources/hellocheck.py']
+        self.checkpath = ['unittests/resources/checks/hellocheck.py']
         self.environs  = ['builtin-gcc']
         self.local  = True
         self.action = 'run'
@@ -149,16 +149,16 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(0, returncode)
 
     def test_check_failure(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'BadSetupCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'bad_setup_check']
 
         returncode, stdout, _ = self._run_reframe()
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
 
     def test_check_setup_failure(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'BadSetupCheckEarlyNonLocal']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'bad_setup_check_early_non_local']
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
@@ -167,8 +167,8 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
 
     def test_check_sanity_failure(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'SanityFailureCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'sanity_failure_check']
 
         returncode, stdout, stderr = self._run_reframe()
         self.assertIn('FAILED', stdout)
@@ -176,12 +176,12 @@ class TestFrontend(unittest.TestCase):
         # This is a normal failure, it should not raise any exception
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(returncode, 0)
-        self.assertTrue(self._stage_exists('SanityFailureCheck',
+        self.assertTrue(self._stage_exists('sanity_failure_check',
                                            ['login'], self.environs))
 
     def test_performance_check_failure(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'PerformanceFailureCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'performance_failure_check']
         returncode, stdout, stderr = self._run_reframe()
 
         self.assertIn('FAILED', stdout)
@@ -189,20 +189,20 @@ class TestFrontend(unittest.TestCase):
         # This is a normal failure, it should not raise any exception
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(0, returncode)
-        self.assertTrue(self._stage_exists('PerformanceFailureCheck',
+        self.assertTrue(self._stage_exists('performance_failure_check',
                                            ['login'], self.environs))
-        self.assertTrue(self._perflog_exists('PerformanceFailureCheck',
+        self.assertTrue(self._perflog_exists('performance_failure_check',
                                              ['login']))
 
     def test_skip_system_check_option(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['--skip-system-check', '-t', 'NoSystemCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['--skip-system-check', '-t', 'no_system_check']
         returncode, stdout, _ = self._run_reframe()
         self.assertIn('PASSED', stdout)
 
     def test_skip_prgenv_check_option(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['--skip-prgenv-check', '-t', 'NoPrgEnvCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['--skip-prgenv-check', '-t', 'no_prg_env_check']
         returncode, stdout, _ = self._run_reframe()
         self.assertIn('PASSED', stdout)
         self.assertEqual(0, returncode)
@@ -282,7 +282,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('Ran 1 test case', stdout)
 
     def test_no_ignore_check_conflicts(self):
-        self.checkpath = ['unittests/resources']
+        self.checkpath = ['unittests/resources/checks']
         self.more_options = ['-R']
         self.ignore_check_conflicts = False
         self.action = 'list'

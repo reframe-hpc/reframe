@@ -134,8 +134,7 @@ class TestConfigLoading(unittest.TestCase):
         self.assertRaises(ConfigError, config.load_settings, 'foo')
 
     def test_load_no_settings(self):
-        self.assertRaises(ConfigError, config.load_settings,
-                          'reframe/__init__.py')
+        self.assertRaises(ConfigError, config.load_settings, 'unittests')
 
     def test_load_invalid_settings(self):
         self.assertRaises(ConfigError, config.load_settings,

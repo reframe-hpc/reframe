@@ -95,7 +95,7 @@ class ReframeSettings:
         'modes': {
             '*': {
                 'unittest': [
-                    '-c', 'unittests/resources/hellocheck.py',
+                    '-c', 'unittests/resources/checks/hellocheck.py',
                     '-p', 'builtin-gcc',
                     '--force-local'
                 ]
