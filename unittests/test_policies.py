@@ -47,7 +47,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def assert_all_dead(self):
         stats = self.runner.stats
-        for t in self.runner.stats.alltasks():
+        for t in self.runner.stats.get_tasks():
             try:
                 finished = t.check.poll()
             except JobNotStartedError:
