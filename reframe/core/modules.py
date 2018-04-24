@@ -264,14 +264,14 @@ class ModulesSystem:
         """Load string for name."""
         ret = ''
         for m in self.resolve_module(name):
-            ret += self._backend.get_load_string(m)
+            ret += str(self._backend.get_load_string(m))
         return ret
 
     def get_unload_string(self, name):
         """Unload string for name."""
         ret = ''
         for m in self.resolve_module(name):
-            ret += self._backend.get_unload_string(m)
+            ret += str(self._backend.get_unload_string(m))
         return ret
 
     def __str__(self):
