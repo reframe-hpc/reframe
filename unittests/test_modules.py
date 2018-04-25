@@ -1,3 +1,4 @@
+import abc
 import os
 import unittest
 from tempfile import NamedTemporaryFile
@@ -66,6 +67,22 @@ class _TestModulesSystem(unittest.TestCase):
         self.assertIn('testmod_foo', conflict_list)
         self.assertIn('testmod_boo', conflict_list)
 
+    @abc.abstractmethod
+    def expected_load_command(self, module):
+        return ''
+
+    def test_emit_load_commands(self):
+        self.modules_system.module_map = {
+            'm0': ['m1', 'm2']
+        }
+        self.assertEqual([self.expected_load_command('foo')],
+                         self.modules_system.emit_load_command('foo'))
+        self.assertEqual([self.expected_load_command('foo/1.2')],
+                         self.modules_system.emit_load_command('foo/1.2'))
+        self.assertEqual([self.expected_load_command('m1'),
+                          self.expected_load_command('m2')],
+                         self.modules_system.emit_load_command('m0'))
+
 
 class TestTModModulesSystem(_TestModulesSystem):
     def setUp(self):
@@ -75,6 +92,9 @@ class TestTModModulesSystem(_TestModulesSystem):
             self.skipTest('tmod not supported')
         else:
             super().setUp()
+
+    def expected_load_command(self, module):
+        return 'module load %s' % module
 
 
 class TestLModModulesSystem(_TestModulesSystem):
@@ -195,11 +215,11 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
-    def get_load_string(self, module):
-        pass
+    def emit_load_command(self, module):
+        return ''
 
-    def get_unload_string(self, module):
-        pass
+    def emit_unload_command(self, module):
+        return ''
 
 
 class TestModuleMapping(unittest.TestCase):

@@ -260,19 +260,13 @@ class ModulesSystem:
         """Remove ``dirs`` from the module system search path."""
         return self._backend.searchpath_remove(*dirs)
 
-    def get_load_string(self, name):
-        """Load string for name."""
-        ret = ''
-        for m in self.resolve_module(name):
-            ret += str(self._backend.get_load_string(m))
-        return ret
+    def emit_load_command(self, name):
+        """Return the appropriate shell command for loading module."""
+        return [self._backend.emit_load_command(Module(name)) for name in self.resolve_module(name)]
 
-    def get_unload_string(self, name):
-        """Unload string for name."""
-        ret = ''
-        for m in self.resolve_module(name):
-            ret += str(self._backend.get_unload_string(m))
-        return ret
+    def emit_unload_command(self, name):
+        """Return the appropriate shell command for unloading module."""
+        return [self._backend.emit_unload_command(Module(name)) for name in self.resolve_module(name)]
 
     def __str__(self):
         return str(self._backend)
@@ -337,11 +331,11 @@ class ModulesSystemImpl(abc.ABC):
         """Remove ``dirs`` from the module system search path."""
 
     @abc.abstractmethod
-    def get_load_string(self, module):
+    def emit_load_command(self, module):
         """Load string for module."""
 
     @abc.abstractmethod
-    def get_unload_string(self, module):
+    def emit_unload_command(self, module):
         """Unload string for module."""
 
     def __repr__(self):
@@ -448,11 +442,11 @@ class TModImpl(ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         self._exec_module_command('unuse', *dirs)
 
-    def get_load_string(self, module):
-        return 'module load %s' % module
+    def emit_load_command(self, module):
+        return 'module load %s' % module.fullname
 
-    def get_unload_string(self, module):
-        return 'module unload %s' % module
+    def emit_unload_command(self, module):
+        return 'module unload %s' % module.fullname
 
 
 class LModImpl(TModImpl):
@@ -556,11 +550,11 @@ class NoModImpl(ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
-    def get_load_string(self, module):
-        pass
+    def emit_load_command(self, module):
+        return ''
 
-    def get_unload_string(self, module):
-        pass
+    def emit_unload_command(self, module):
+        return ''
 
 
 # The module system used by the framework

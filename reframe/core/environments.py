@@ -82,7 +82,7 @@ class Environment:
             for conflict in self._conflicted:
                 self._load_stmts += [get_modules_system().get_unload_string(conflict)]
 
-            self._load_stmts += [get_modules_system().get_load_string(m)]
+            self._load_stmts += [get_modules_system().emit_load_command(m)]
 
         for k, v in self._variables.items():
             if k in os.environ:
