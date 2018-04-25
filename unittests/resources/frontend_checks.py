@@ -33,17 +33,6 @@ class BadSetupCheck(BaseFrontendCheck):
 class BadSetupCheckEarly(BaseFrontendCheck):
     def __init__(self, **kwargs):
         super().__init__(type(self).__name__, **kwargs)
-
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-
-    def setup(self, system, environ, **job_opts):
-        raise ReframeError('Setup failure')
-
-
-class BadSetupCheckEarlyNonLocal(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.local = False
@@ -111,9 +100,10 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
         self.phase = phase
 
     def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
         if self.phase == 'setup':
             raise KeyboardInterrupt
+
+        super().setup(system, environ, **job_opts)
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -176,7 +166,7 @@ class RetriesCheck(BaseFrontendCheck):
 def _get_checks(**kwargs):
     return [BadSetupCheck(**kwargs),
             BadSetupCheckEarly(**kwargs),
-            BadSetupCheckEarlyNonLocal(**kwargs),
+            KeyboardInterruptCheck(phase='setup', **kwargs),
             NoSystemCheck(**kwargs),
             NoPrgEnvCheck(**kwargs),
             SanityFailureCheck(**kwargs),
