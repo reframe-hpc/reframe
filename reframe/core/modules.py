@@ -260,13 +260,15 @@ class ModulesSystem:
         """Remove ``dirs`` from the module system search path."""
         return self._backend.searchpath_remove(*dirs)
 
-    def emit_load_command(self, name):
+    def emit_load_commands(self, name):
         """Return the appropriate shell command for loading module."""
-        return [self._backend.emit_load_command(Module(name)) for name in self.resolve_module(name)]
+        return [self._backend.emit_load_instruction(Module(name)) for name in
+                self.resolve_module(name)]
 
-    def emit_unload_command(self, name):
+    def emit_unload_commands(self, name):
         """Return the appropriate shell command for unloading module."""
-        return [self._backend.emit_unload_command(Module(name)) for name in self.resolve_module(name)]
+        return [self._backend.emit_unload_instruction(Module(name)) for name in
+                self.resolve_module(name)]
 
     def __str__(self):
         return str(self._backend)
@@ -331,11 +333,11 @@ class ModulesSystemImpl(abc.ABC):
         """Remove ``dirs`` from the module system search path."""
 
     @abc.abstractmethod
-    def emit_load_command(self, module):
+    def emit_load_instruction(self, module):
         """Load string for module."""
 
     @abc.abstractmethod
-    def emit_unload_command(self, module):
+    def emit_unload_instruction(self, module):
         """Unload string for module."""
 
     def __repr__(self):
@@ -442,10 +444,10 @@ class TModImpl(ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         self._exec_module_command('unuse', *dirs)
 
-    def emit_load_command(self, module):
+    def emit_load_instruction(self, module):
         return 'module load %s' % module.fullname
 
-    def emit_unload_command(self, module):
+    def emit_unload_instruction(self, module):
         return 'module unload %s' % module.fullname
 
 
@@ -550,10 +552,10 @@ class NoModImpl(ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
-    def emit_load_command(self, module):
+    def emit_load_instruction(self, module):
         return ''
 
-    def emit_unload_command(self, module):
+    def emit_unload_instruction(self, module):
         return ''
 
 

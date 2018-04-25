@@ -68,20 +68,20 @@ class _TestModulesSystem(unittest.TestCase):
         self.assertIn('testmod_boo', conflict_list)
 
     @abc.abstractmethod
-    def expected_load_command(self, module):
+    def expected_load_instruction(self, module):
         return ''
 
     def test_emit_load_commands(self):
         self.modules_system.module_map = {
             'm0': ['m1', 'm2']
         }
-        self.assertEqual([self.expected_load_command('foo')],
-                         self.modules_system.emit_load_command('foo'))
-        self.assertEqual([self.expected_load_command('foo/1.2')],
-                         self.modules_system.emit_load_command('foo/1.2'))
-        self.assertEqual([self.expected_load_command('m1'),
-                          self.expected_load_command('m2')],
-                         self.modules_system.emit_load_command('m0'))
+        self.assertEqual([self.expected_load_instruction('foo')],
+                         self.modules_system.emit_load_commands('foo'))
+        self.assertEqual([self.expected_load_instruction('foo/1.2')],
+                         self.modules_system.emit_load_commands('foo/1.2'))
+        self.assertEqual([self.expected_load_instruction('m1'),
+                          self.expected_load_instruction('m2')],
+                         self.modules_system.emit_load_commands('m0'))
 
 
 class TestTModModulesSystem(_TestModulesSystem):
@@ -93,7 +93,7 @@ class TestTModModulesSystem(_TestModulesSystem):
         else:
             super().setUp()
 
-    def expected_load_command(self, module):
+    def expected_load_instruction(self, module):
         return 'module load %s' % module
 
 
@@ -215,10 +215,10 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
     def searchpath_remove(self, *dirs):
         pass
 
-    def emit_load_command(self, module):
+    def emit_load_instruction(self, module):
         return ''
 
-    def emit_unload_command(self, module):
+    def emit_unload_instruction(self, module):
         return ''
 
 
