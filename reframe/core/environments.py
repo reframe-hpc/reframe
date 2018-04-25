@@ -80,7 +80,8 @@ class Environment:
 
             self._conflicted += get_modules_system().load_module(m, force=True)
             for conflict in self._conflicted:
-                self._load_stmts += [get_modules_system().get_unload_string(conflict)]
+                self._load_stmts += \
+                    [get_modules_system().emit_unload_command(conflict)]
 
             self._load_stmts += [get_modules_system().emit_load_command(m)]
 
