@@ -168,10 +168,22 @@ class TestFrontend(unittest.TestCase):
 
     def test_check_setup_failure(self):
         self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'BadSetupCheckEarlyNonLocal']
+        self.more_options = ['-t', 'BadSetupCheckEarly']
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertIn('FAILED', stdout)
+        self.assertNotEqual(returncode, 0)
+
+    def test_check_kbd_interrupt(self):
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'KeyboardInterruptCheck']
+        self.local = False
+
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
@@ -184,6 +196,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('FAILED', stdout)
 
         # This is a normal failure, it should not raise any exception
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(returncode, 0)
         self.assertTrue(self._stage_exists('SanityFailureCheck',
@@ -197,6 +210,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('FAILED', stdout)
 
         # This is a normal failure, it should not raise any exception
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('PerformanceFailureCheck',
@@ -284,6 +298,7 @@ class TestFrontend(unittest.TestCase):
         self.mode = 'unittest'
 
         returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
@@ -302,4 +317,3 @@ class TestFrontend(unittest.TestCase):
         self.action = 'list'
         returncode, *_ = self._run_reframe()
         self.assertNotEqual(0, returncode)
-
