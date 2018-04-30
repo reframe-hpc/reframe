@@ -225,16 +225,6 @@ class TestLocalJob(_TestJob):
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
 
-    def test_deprecated_pre_run_and_post_run(self):
-        from reframe.core.exceptions import ReframeDeprecationWarning
-
-        self.assertWarns(ReframeDeprecationWarning, exec,
-                         'self.testjob.pre_run = []',
-                         globals(), locals())
-        self.assertWarns(ReframeDeprecationWarning, exec,
-                         'self.testjob.post_run = []',
-                         globals(), locals())
-
 
 class TestSlurmJob(_TestJob):
     @property
