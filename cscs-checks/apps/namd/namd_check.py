@@ -19,6 +19,16 @@ class NamdBaseCheck(RunOnlyRegressionTest):
                                        'NAMD')
         self.executable = 'namd2'
 
+        self.use_multithreading = True
+        self.num_tasks_per_core = 2
+
+        if self.current_system.name == 'dom':
+            self.num_tasks = 6
+            self.num_tasks_per_node = 1
+        else:
+            self.num_tasks = 16
+            self.num_tasks_per_node = 1
+
         energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
                         self.stdout, 'energy', float))
         energy_reference = -2451359.5
@@ -52,9 +62,7 @@ class NamdGPUCheck(NamdBaseCheck):
         super().__init__('gpu_%s' % version, **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.executable_opts = '+idlepoll +ppn 23 stmv.namd'.split()
-        self.use_multithreading = True
         self.num_cpus_per_task = 24
-        self.num_tasks_per_core = 2
         self.num_gpus_per_node = 1
 
 
@@ -91,15 +99,7 @@ class NamdCPUCheck(NamdBaseCheck):
         super().__init__('cpu_%s' % version, **kwargs)
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.executable_opts = '+idlepoll +ppn 71 stmv.namd'.split()
-        self.use_multithreading = True
         self.num_cpus_per_task = 72
-        self.num_tasks_per_core = 2
-        if self.current_system.name == 'dom':
-            self.num_tasks = 6
-            self.num_tasks_per_node = 1
-        else:
-            self.num_tasks = 16
-            self.num_tasks_per_node = 1
 
 
 class NamdCPUProdCheck(NamdCPUCheck):
