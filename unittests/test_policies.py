@@ -120,6 +120,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(2, self._num_failures_stage('performance'))
 
+    def test_force_local_execution(self):
+        self.runner.policy.force_local = True
+        self.runner.runall([HelloTest(system=self.system, resources=self.resources)],
+                           self.system)
+        stats = self.runner.stats
+        for t in stats.get_tasks():
+            self.assertTrue(t.check.local)
+
     def test_kbd_interrupt_within_test(self):
         check = KeyboardInterruptCheck(system=self.system,
                                        resources=self.resources)

@@ -342,6 +342,9 @@ class ExecutionPolicy:
         if self.strict_check:
             c.strict_check = True
 
+        if self.force_local:
+            c.local = True
+
     @abc.abstractmethod
     def getstats(self):
         """Return test case statistics of the run."""
