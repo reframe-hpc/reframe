@@ -99,8 +99,8 @@ class TestFields(unittest.TestCase):
             int_list    = fields.AggregateTypeField('int_list', (list, int))
             tuple_list  = fields.AggregateTypeField('tuple_list',
                                                     (list, (tuple, int)))
-            mixed_tuple = fields.AggregateTypeField('mixed_tuple',
-                                                    (tuple, ((int, float, int),)))
+            mixed_tuple = fields.AggregateTypeField(
+                'mixed_tuple', (tuple, ((int, float, int),)))
             float_tuple = fields.AggregateTypeField('float_tuple',
                                                     (tuple, float))
             dict_list   = fields.AggregateTypeField('dict_list',
@@ -434,6 +434,7 @@ class TestFields(unittest.TestCase):
 
     def test_deprecated_field(self):
         from reframe.core.exceptions import ReframeDeprecationWarning
+
         class FieldTester:
             value = fields.DeprecatedField(fields.IntegerField('value'),
                                            'value field is deprecated')
@@ -441,6 +442,7 @@ class TestFields(unittest.TestCase):
         tester = FieldTester()
         self.assertWarns(ReframeDeprecationWarning, exec, 'tester.value = 2',
                          globals(), locals())
+
 
 class TestScopedDict(unittest.TestCase):
     def test_construction(self):
@@ -667,6 +669,22 @@ class TestScopedDict(unittest.TestCase):
         # try to delete a non-existent key
         self.assertRaises(
             KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
+        )
+
+    def test_delparent_scope(self):
+        scoped_dict = fields.ScopedDict({
+            's0': {'s1': 1},
+            's0:s1': {'k0': 2}
+        })
+
+        self.assertEqual(1, scoped_dict['s0:s1'])
+        self.assertEqual(2, scoped_dict['s0:s1:k0'])
+
+        # delete the parent scope
+        del scoped_dict['s0']
+        self.assertEqual(2, scoped_dict['s0:s1:k0'])
+        self.assertRaises(
+            KeyError, exec, "scoped_dict['s0:s1']", globals(), locals()
         )
 
     def test_update(self):
