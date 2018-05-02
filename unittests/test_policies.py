@@ -8,10 +8,10 @@ import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
-from unittests.resources.hellocheck import HelloTest
-from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
-                                                 SleepCheck, BadSetupCheck,
-                                                 RetriesCheck, SystemExitCheck)
+from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.frontend_checks import (
+    KeyboardInterruptCheck, SleepCheck,
+    BadSetupCheck, RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -109,8 +109,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_force_local_execution(self):
         self.runner.policy.force_local = True
-        self.runner.runall([HelloTest(system=self.system, resources=self.resources)],
-                           self.system)
+        self.runner.runall([HelloTest()])
         stats = self.runner.stats
         for t in stats.get_tasks():
             self.assertTrue(t.check.local)
@@ -133,9 +132,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_retries_bad_check(self):
         max_retries = 2
-        checks = [BadSetupCheck(system=self.system, resources=self.resources)]
+        checks = [BadSetupCheck()]
         self.runner._max_retries = max_retries
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that the test was retried #max_retries times and failed.
         self.assertEqual(1, self.runner.stats.num_cases())
@@ -144,9 +143,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_retries_good_check(self):
         max_retries = 2
-        checks = [HelloTest(system=self.system, resources=self.resources)]
+        checks = [HelloTest()]
         self.runner._max_retries = max_retries
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that the test passed without retries.
         self.assertEqual(1, self.runner.stats.num_cases())
@@ -161,10 +160,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='wt', delete=False) as fp:
             fp.write('0\n')
 
-        checks = [RetriesCheck(run_to_pass, fp.name, system=self.system,
-                               resources=self.resources)]
+        checks = [RetriesCheck(run_to_pass, fp.name)]
         self.runner._max_retries = max_retries
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that the test passed after retries in run #run_to_pass.
         self.assertEqual(1, self.runner.stats.num_cases())
@@ -332,8 +330,8 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.assert_all_dead()
 
     def test_kbd_interrupt_in_wait_with_concurrency(self):
-        checks = [KeyboardInterruptCheck(), SleepCheck(10),
-                  SleepCheck(10), SleepCheck(10)]
+        checks = [KeyboardInterruptCheck(),
+                  SleepCheck(10), SleepCheck(10), SleepCheck(10)]
         self._run_checks(checks, 4)
 
     def test_kbd_interrupt_in_wait_with_limited_concurrency(self):

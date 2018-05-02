@@ -203,7 +203,7 @@ class Runner:
         else:
             return ret and check.supports_environ(environ.name)
 
-    def _retry_failed(self, checks, system):
+    def _retry_failed(self, checks):
         while (self._stats.num_failures() and
                self._current_run < self._max_retries):
             failed_checks = [
@@ -223,9 +223,9 @@ class Runner:
                 'Retrying %d failed check(s) (retry %d/%d)' %
                 (len(failed_checks), self._current_run, self._max_retries)
             )
-            self._runall(failed_checks, system)
+            self._runall(failed_checks)
 
-    def _runall(self, checks, system):
+    def _runall(self, checks):
         system = runtime.runtime().system
         self._policy.enter()
         for c in checks:

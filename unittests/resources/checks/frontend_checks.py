@@ -35,17 +35,6 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-
-    def setup(self, system, environ, **job_opts):
-        raise ReframeError('Setup failure')
-
-
-@rfm.simple_test
-class BadSetupCheckEarlyNonLocal(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
         self.local = False
 
     def setup(self, system, environ, **job_opts):
@@ -105,6 +94,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         raise SanityError('performance failure')
 
 
+@rfm.parameterized_test([{'phase': 'setup'}])
 class KeyboardInterruptCheck(BaseFrontendCheck):
     """Simulate keyboard interrupt during test's execution."""
 
@@ -176,5 +166,3 @@ class RetriesCheck(BaseFrontendCheck):
         self.post_run = ['((current_run++))',
                          'echo $current_run > %s' % filename]
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
-
-

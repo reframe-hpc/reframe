@@ -158,7 +158,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_check_setup_failure(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
-        self.more_options = ['-t', 'bad_setup_check_early_non_local']
+        self.more_options = ['-t', 'bad_setup_check_early']
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
@@ -168,8 +168,8 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
 
     def test_check_kbd_interrupt(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
-        self.more_options = ['-t', 'KeyboardInterruptCheck']
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'keyboard_interrupt_check_setup']
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()

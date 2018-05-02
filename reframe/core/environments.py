@@ -74,16 +74,17 @@ class Environment:
 
     def load(self):
         # conflicted module list must be filled at the time of load
+        rt = runtime()
         for m in self._modules:
-            if runtime().modules_system.is_module_loaded(m):
+            if rt.modules_system.is_module_loaded(m):
                 self._preloaded.add(m)
 
-            self._conflicted += runtime().modules_system.load_module(m, force=True)
+            self._conflicted += rt.modules_system.load_module(m, force=True)
             for conflict in self._conflicted:
-                stmts = get_modules_system().emit_unload_commands(conflict)
+                stmts = rt.modules_system.emit_unload_commands(conflict)
                 self._load_stmts += stmts
 
-            self._load_stmts += get_modules_system().emit_load_commands(m)
+            self._load_stmts += rt.modules_system.emit_load_commands(m)
 
         for k, v in self._variables.items():
             if k in os.environ:
