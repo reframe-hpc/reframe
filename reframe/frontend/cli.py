@@ -153,7 +153,12 @@ def main():
              'Available policies: "serial" (default), "async"')
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use')
+    run_options.add_argument(
+        '--max-retries', metavar='NUM', action='store', default=0,
+        help='Specify the maximum number of times a failed regression test '
+             'may be retried (default: 0)')
 
+    # Miscellaneous options
     misc_options.add_argument(
         '-m', '--module', action='append', default=[],
         metavar='MOD', dest='user_modules',
@@ -410,11 +415,20 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-            runner = Runner(exec_policy, printer)
+            try:
+                max_retries = int(options.max_retries)
+            except ValueError:
+                raise ConfigError('--max-retries is not a valid integer: %s' %
+                                  max_retries) from None
+            runner = Runner(exec_policy, printer, max_retries)
             try:
                 runner.runall(checks_matched)
             finally:
-                # always print a report
+                # Print a retry report if we did any retries
+                if runner.stats.num_failures(run=0):
+                    printer.info(runner.stats.retry_report())
+
+                # Print a failure report if we had failures in the last run
                 if runner.stats.num_failures():
                     printer.info(runner.stats.failure_report())
                     success = False

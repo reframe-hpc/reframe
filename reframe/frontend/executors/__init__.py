@@ -8,6 +8,7 @@ from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
+from reframe.frontend.statistics import TestStats
 from reframe.utility.sandbox import Sandbox
 
 ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
@@ -110,7 +111,7 @@ class RegressionTask:
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
-            if not self.zombie:
+            if not self.zombie and self._check.job:
                 self._check.job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None))
@@ -142,13 +143,15 @@ class Runner:
     """Responsible for executing a set of regression tests based on an execution
     policy."""
 
-    def __init__(self, policy, printer=None):
-        self._printer = printer or PrettyPrinter()
+    def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
+        self._printer = printer or PrettyPrinter()
+        self._max_retries = max_retries
+        self._current_run = 0
+        self._stats = TestStats()
+        self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._policy.runner = self
         self._sandbox = Sandbox()
-        self._stats = None
         self._environ_snapshot = EnvironmentSnapshot()
 
     def __repr__(self):
@@ -169,15 +172,17 @@ class Runner:
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
             self._runall(checks)
+            if self._max_retries:
+                self._retry_failed(checks)
+
         finally:
-            # Always update statistics and print the summary line
-            self._stats = self._policy.getstats()
+            # Print the summary line
             num_failures = self._stats.num_failures()
+            num_cases    = self._stats.num_cases(run=0)
             self._printer.status(
                 'FAILED' if num_failures else 'PASSED',
                 'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (self._stats.num_cases(), len(checks), num_failures),
-                just='center'
+                (num_cases, len(checks), num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
             self._environ_snapshot.load()
@@ -198,7 +203,29 @@ class Runner:
         else:
             return ret and check.supports_environ(environ.name)
 
-    def _runall(self, checks):
+    def _retry_failed(self, checks, system):
+        while (self._stats.num_failures() and
+               self._current_run < self._max_retries):
+            failed_checks = [
+                c for c in checks if c.name in
+                set([t.check.name for t in self._stats.tasks_failed()])
+            ]
+            self._current_run += 1
+            self._stats.next_run()
+            if self._stats.current_run != self._current_run:
+                raise AssertionError('current_run variable out of sync'
+                                     '(Runner: %d; TestStats: %d)' %
+                                     self._current_run,
+                                     self._stats.current_run)
+
+            self._printer.separator(
+                'short double line',
+                'Retrying %d failed check(s) (retry %d/%d)' %
+                (len(failed_checks), self._current_run, self._max_retries)
+            )
+            self._runall(failed_checks, system)
+
+    def _runall(self, checks, system):
         system = runtime.runtime().system
         self._policy.enter()
         for c in checks:
@@ -270,6 +297,8 @@ class ExecutionPolicy:
         # Task event listeners
         self.task_listeners = []
 
+        self.stats = None
+
     def __repr__(self):
         return debug.repr(self)
 
@@ -314,6 +343,9 @@ class ExecutionPolicy:
         """
         if self.strict_check:
             c.strict_check = True
+
+        if self.force_local:
+            c.local = True
 
     @abc.abstractmethod
     def getstats(self):

@@ -116,9 +116,10 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
         self.phase = phase
 
     def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
         if self.phase == 'setup':
             raise KeyboardInterrupt
+
+        super().setup(system, environ, **job_opts)
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -162,3 +163,18 @@ class SleepCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         SleepCheck._next_id += 1
+
+
+class RetriesCheck(BaseFrontendCheck):
+    def __init__(self, run_to_pass, filename):
+        super().__init__()
+        self.sourcesdir = None
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.pre_run = ['current_run=$(cat %s)' % filename]
+        self.executable = 'echo $current_run'
+        self.post_run = ['((current_run++))',
+                         'echo $current_run > %s' % filename]
+        self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
+
+

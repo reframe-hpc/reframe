@@ -162,6 +162,18 @@ class TestFrontend(unittest.TestCase):
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertIn('FAILED', stdout)
+        self.assertNotEqual(returncode, 0)
+
+    def test_check_kbd_interrupt(self):
+        self.checkpath = ['unittests/resources/frontend_checks.py']
+        self.more_options = ['-t', 'KeyboardInterruptCheck']
+        self.local = False
+
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
@@ -174,6 +186,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('FAILED', stdout)
 
         # This is a normal failure, it should not raise any exception
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(returncode, 0)
         self.assertTrue(self._stage_exists('sanity_failure_check',
@@ -187,6 +200,7 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('FAILED', stdout)
 
         # This is a normal failure, it should not raise any exception
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('performance_failure_check',
@@ -276,6 +290,7 @@ class TestFrontend(unittest.TestCase):
         self.mode = 'unittest'
 
         returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)

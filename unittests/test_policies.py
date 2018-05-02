@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import unittest
@@ -7,10 +8,10 @@ import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
-from reframe.settings import settings
-from unittests.resources.checks.frontend_checks import (KeyboardInterruptCheck,
-                                                        SleepCheck,
-                                                        SystemExitCheck)
+from unittests.resources.hellocheck import HelloTest
+from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
+                                                 SleepCheck, BadSetupCheck,
+                                                 RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -26,9 +27,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
+    def _num_failures_stage(self, stage):
+        stats = self.runner.stats
+        return len([t for t in stats.tasks_failed()
+                    if t.failed_stage == stage])
+
     def assert_all_dead(self):
         stats = self.runner.stats
-        for t in self.runner.stats.alltasks():
+        for t in self.runner.stats.get_tasks():
             try:
                 finished = t.check.poll()
             except JobNotStartedError:
@@ -42,9 +48,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_system_check(self):
         self.runner.policy.skip_system_check = True
@@ -53,9 +59,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(9, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_prgenv_check(self):
         self.runner.policy.skip_environ_check = True
@@ -64,9 +70,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(9, stats.num_cases())
         self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
@@ -75,9 +81,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(0, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(0, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True
@@ -86,9 +92,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(0, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(0, self._num_failures_stage('performance'))
 
     def test_strict_performance_check(self):
         self.runner.policy.strict_check = True
@@ -97,9 +103,17 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
         self.assertEqual(6, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(2, stats.num_failures_stage('performance'))
+        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(2, self._num_failures_stage('performance'))
+
+    def test_force_local_execution(self):
+        self.runner.policy.force_local = True
+        self.runner.runall([HelloTest(system=self.system, resources=self.resources)],
+                           self.system)
+        stats = self.runner.stats
+        for t in stats.get_tasks():
+            self.assertTrue(t.check.local)
 
     def test_kbd_interrupt_within_test(self):
         check = KeyboardInterruptCheck()
@@ -116,6 +130,48 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall([check])
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+
+    def test_retries_bad_check(self):
+        max_retries = 2
+        checks = [BadSetupCheck(system=self.system, resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test was retried #max_retries times and failed.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(1, self.runner.stats.num_failures())
+
+    def test_retries_good_check(self):
+        max_retries = 2
+        checks = [HelloTest(system=self.system, resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test passed without retries.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+
+    def test_pass_in_retries(self):
+        max_retries = 3
+        run_to_pass = 2
+        # Create a file containing the current_run; Run 0 will set it to 0,
+        # run 1 to 1 and so on.
+        with tempfile.NamedTemporaryFile(mode='wt', delete=False) as fp:
+            fp.write('0\n')
+
+        checks = [RetriesCheck(run_to_pass, fp.name, system=self.system,
+                               resources=self.resources)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks, self.system)
+
+        # Ensure that the test passed after retries in run #run_to_pass.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(1, self.runner.stats.num_failures(run=0))
+        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+        os.remove(fp.name)
 
 
 class TaskEventMonitor(executors.TaskEventListener):

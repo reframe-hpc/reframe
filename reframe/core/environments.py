@@ -80,10 +80,10 @@ class Environment:
 
             self._conflicted += runtime().modules_system.load_module(m, force=True)
             for conflict in self._conflicted:
-                # FIXME: explicit modules system commands are no more portable
-                self._load_stmts += ['module unload %s' % conflict]
+                stmts = get_modules_system().emit_unload_commands(conflict)
+                self._load_stmts += stmts
 
-            self._load_stmts += ['module load %s' % m]
+            self._load_stmts += get_modules_system().emit_load_commands(m)
 
         for k, v in self._variables.items():
             if k in os.environ:
