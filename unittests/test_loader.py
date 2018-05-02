@@ -41,12 +41,12 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources', recurse=True,
             system=self.system, resources=self.resources
         )
-        self.assertEqual(12, len(checks))
+        self.assertEqual(11, len(checks))
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all(system=self.system,
                                                 resources=self.resources)
-        self.assertEqual(11, len(checks))
+        self.assertEqual(10, len(checks))
 
     def test_load_all_with_prefix(self):
         checks = self.loader_with_prefix.load_all(system=self.system,
