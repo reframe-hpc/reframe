@@ -33,9 +33,11 @@ You can always find the latest release `here <https://github.com/eth-cscs/refram
 Publications
 ============
 
-* *ReFrame: A regression framework for checking the health of large HPC
-  systems* [`slides <_static/files/reframe-cug17-slides.pdf>`__]
+* *ReFrame: A regression framework for checking the health of large HPC systems* [`slides <_static/files/reframe-cug17-slides.pdf>`__]
 
+* *ReFrame: A Regression Testing Tool for HPC Systems* [`slides <_static/files/reframe-bof-sc17-slides.pdf>`__]
+
+* *ReFrame: A Regression Testing Framework Enabling Continuous Integration of Large HPC Systems* [`slides <_static/files/reframe-hpac18-slides.pdf>`__]
 
 .. toctree::
    :caption: Table of Contents:
