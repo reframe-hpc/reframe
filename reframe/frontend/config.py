@@ -5,11 +5,11 @@ import reframe.core.debug as debug
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import ConfigError, ReframeError, ReframeFatalError
-from reframe.core.fields import ScopedDict, ScopedDictField
+from reframe.core.fields import ScopedDictField
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import System, SystemPartition
-from reframe.utility import import_module_from_file
+from reframe.utility import ScopedDict, import_module_from_file
 
 _settings = None
 
