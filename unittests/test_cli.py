@@ -168,8 +168,10 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(returncode, 0)
 
     def test_check_kbd_interrupt(self):
-        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
-        self.more_options = ['-t', 'keyboard_interrupt_check_setup']
+        self.checkpath = [
+            'unittests/resources/checks_newstyle/kbd_interrupt_check.py'
+        ]
+        self.more_options = ['-t', 'keyboard_interrupt_check']
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()

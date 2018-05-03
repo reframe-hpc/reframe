@@ -46,9 +46,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(1, self._num_failures_stage('performance'))
 
@@ -57,9 +57,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(9, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(8, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(1, self._num_failures_stage('performance'))
 
@@ -68,9 +68,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(9, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(8, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(1, self._num_failures_stage('performance'))
 
@@ -79,9 +79,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(3, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(0, self._num_failures_stage('sanity'))
         self.assertEqual(1, self._num_failures_stage('performance'))
 
@@ -90,9 +90,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(3, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(0, self._num_failures_stage('performance'))
 
@@ -101,9 +101,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(6, stats.num_failures())
-        self.assertEqual(3, self._num_failures_stage('setup'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(5, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
         self.assertEqual(2, self._num_failures_stage('performance'))
 

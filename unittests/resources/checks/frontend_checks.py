@@ -94,7 +94,6 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         raise SanityError('performance failure')
 
 
-@rfm.parameterized_test([{'phase': 'setup'}])
 class KeyboardInterruptCheck(BaseFrontendCheck):
     """Simulate keyboard interrupt during test's execution."""
 
