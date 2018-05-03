@@ -10,6 +10,7 @@ import re
 from reframe.core.exceptions import user_deprecation_warning
 from reframe.utility import ScopedDict
 
+
 class Field:
     """Base class for attribute validators."""
 
@@ -373,7 +374,6 @@ class TimerField(AggregateTypeField):
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)
-
 
 
 class ScopedDictField(AggregateTypeField):
