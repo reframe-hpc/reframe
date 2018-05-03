@@ -41,34 +41,6 @@ class Job(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedListField('options', str)
 
-    #: List of shell commands to execute before launching this job.
-    #:
-    #: :type: :class:`list` of :class:`str`
-    #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. deprecated:: 2.10
-    #:       Please use the :attr:`reframe.core.pipeline.RegressionTest.pre_run`
-    #:       field instead.
-    pre_run = fields.DeprecatedField(
-        fields.TypedListField('_pre_run', str),
-        'Use of the pre_run field of Job is deprecated. '
-        'Please use the pre_run field of RegressionTest instead.')
-
-    #: List of shell commands to execute after launching this job.
-    #:
-    #: :type: :class:`list` of :class:`str`
-    #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. deprecated:: 2.10
-    #:       Please use the :attr:`reframe.core.pipeline.RegressionTest.post_run`
-    #:       field instead.
-    post_run = fields.DeprecatedField(
-        fields.TypedListField('_post_run', str),
-        'Use of the post_run field of Job is deprecated. '
-        'Please use the post_run field of RegressionTest instead.')
-
     #: The parallel program launcher that will be used to launch the parallel
     #: executable of this job.
     #:

@@ -177,8 +177,10 @@ class TestFrontend(unittest.TestCase):
         self.assertIn('FAILED', stdout)
         self.assertNotEqual(returncode, 0)
 
-    def test_check_kbd_interrupt(self):
-        self.checkpath = ['unittests/resources/frontend_checks.py']
+    # FIXME: The following test is temporarily disabled. It should be
+    # re-enabled with the unit tests refactoring.
+    def _test_check_kbd_interrupt(self):
+        self.checkpath = ['unittests/resources/kbd_interrupt_check.py']
         self.more_options = ['-t', 'KeyboardInterruptCheck']
         self.local = False
 

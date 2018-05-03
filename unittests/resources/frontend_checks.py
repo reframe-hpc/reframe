@@ -166,7 +166,6 @@ class RetriesCheck(BaseFrontendCheck):
 def _get_checks(**kwargs):
     return [BadSetupCheck(**kwargs),
             BadSetupCheckEarly(**kwargs),
-            KeyboardInterruptCheck(phase='setup', **kwargs),
             NoSystemCheck(**kwargs),
             NoPrgEnvCheck(**kwargs),
             SanityFailureCheck(**kwargs),
