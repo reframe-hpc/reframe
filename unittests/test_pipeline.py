@@ -381,7 +381,7 @@ class TestNewStyleChecks(unittest.TestCase):
 
     def test_registration(self):
         import sys
-        import unittests.resources.checks_newstyle.good as mod
+        import unittests.resources.checks_unlisted.good as mod
         checks = mod._rfm_gettests()
         self.assertEqual(13, len(checks))
         self.assertEqual([mod.MyBaseTest(0, 0),

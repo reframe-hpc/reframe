@@ -44,12 +44,12 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
     def test_load_new_syntax(self):
         checks = self.loader.load_from_file(
-            'unittests/resources/checks_newstyle/good.py')
+            'unittests/resources/checks_unlisted/good.py')
         self.assertEqual(13, len(checks))
 
     def test_load_mixed_syntax(self):
         self.assertRaises(TestLoadError, self.loader.load_from_file,
-                          'unittests/resources/checks_newstyle/mixed.py')
+                          'unittests/resources/checks_unlisted/mixed.py')
 
     def test_conflicted_checks(self):
         self.loader_with_path._ignore_conflicts = False

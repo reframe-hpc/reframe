@@ -169,7 +169,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_check_kbd_interrupt(self):
         self.checkpath = [
-            'unittests/resources/checks_newstyle/kbd_interrupt_check.py'
+            'unittests/resources/checks_unlisted/kbd_interrupt.py'
         ]
         self.more_options = ['-t', 'keyboard_interrupt_check']
         self.local = False
