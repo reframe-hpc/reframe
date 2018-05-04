@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Customizing Further a Regression Test &mdash; ReFrame 2.11 documentation</title>
+  <title>Customizing Further a Regression Test &mdash; ReFrame 2.12 documentation</title>
   
 
   
@@ -27,30 +27,21 @@
   
 
   
-  
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="about.html"/>
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
-        <link rel="next" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html"/>
-        <link rel="prev" title="ReFrame Tutorial" href="tutorial.html"/> 
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html" />
+    <link rel="prev" title="ReFrame Tutorial" href="tutorial.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -73,7 +64,7 @@
             
             
               <div class="version">
-                2.11
+                2.12
               </div>
             
           
@@ -146,7 +137,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">ReFrame</a>
@@ -154,9 +145,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           <div role="navigation" aria-label="breadcrumbs navigation">
   <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
@@ -209,15 +201,17 @@ If this is a directory, it will invoke <code class="docutils literal"><span clas
 As a result, by not specifying a <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a> at all, ReFrame will eventually compile the files found in the <code class="docutils literal"><span class="pre">src/</span></code> directory.
 This is exactly what our first example here does.</p>
 <p>For completeness, here are the contents of <code class="docutils literal"><span class="pre">Makefile</span></code> provided:</p>
-<div class="highlight-makefile"><div class="highlight"><pre><span></span><span class="nv">EXECUTABLE</span> <span class="o">:=</span> advanced_example1
+<div class="highlight-makefile"><div class="highlight"><pre><span></span><span class="nv">EXECUTABLE</span> <span class="o">:=</span> advanced_example1 
+
+<span class="nf">.SUFFIXES</span><span class="o">:</span> .<span class="n">o</span> .<span class="n">c</span>
 
 <span class="nv">OBJS</span> <span class="o">:=</span> advanced_example1.o
 
 <span class="nf">$(EXECUTABLE)</span><span class="o">:</span> <span class="k">$(</span><span class="nv">OBJS</span><span class="k">)</span>
-    <span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
-
+	<span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
+ 
 <span class="nf">$(OBJS)</span><span class="o">:</span> <span class="n">advanced_example</span>1.<span class="n">c</span>
-    <span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CPPFLAGS<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> -c <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
+	<span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CPPFLAGS<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> -c <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^ 
 </pre></div>
 </div>
 <p>The corresponding <code class="docutils literal"><span class="pre">advanced_example1.c</span></code> source file consists of a simple printing of a message, whose content depends on the preprocessor variable <code class="docutils literal"><span class="pre">MESSAGE</span></code>:</p>
@@ -236,14 +230,14 @@ This is exactly what our first example here does.</p>
 </div>
 <p>The purpose of the regression test in this case is to set the preprocessor variable <code class="docutils literal"><span class="pre">MESSAGE</span></code> via <code class="docutils literal"><span class="pre">CPPFLAGS</span></code> and then check the standard output for the message <code class="docutils literal"><span class="pre">SUCCESS</span></code>, which indicates that the preprocessor flag has been passed and processed correctly by the Makefile.</p>
 <p>The contents of this regression test are the following (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example1.py</span></code>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">MakefileTest</span><span class="p">(</span><span class="n">RegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;preprocessor_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -266,7 +260,7 @@ This is exactly what our first example here does.</p>
 </pre></div>
 </div>
 <p>The important bit here is the <code class="docutils literal"><span class="pre">compile()</span></code> method.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cppflags</span> <span class="o">=</span> <span class="s1">&#39;-DMESSAGE&#39;</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 </pre></div>
@@ -313,14 +307,14 @@ You will have to specify it as URL using the <code class="docutils literal"><spa
 <p>There are cases when it is desirable to perform regression testing for an already built executable.
 The following test uses the <code class="docutils literal"><span class="pre">echo</span></code> Bash shell command to print a random integer between specific lower and upper bounds.
 Here is the full regression test (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example2.py</span></code>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RunOnlyRegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RunOnlyRegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">RunOnlyTest</span><span class="p">(</span><span class="n">RunOnlyRegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;run_only_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -328,11 +322,11 @@ Here is the full regression test (<code class="docutils literal"><span class="pr
                       <span class="s1">&#39;RunOnlyRegressionTest&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">lower</span> <span class="o">=</span> <span class="mi">90</span>
         <span class="n">upper</span> <span class="o">=</span> <span class="mi">100</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;echo &quot;Random: $((RANDOM%({1}+1-{0})+{0}))&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;echo &quot;Random: $((RANDOM%(</span><span class="si">{1}</span><span class="s1">+1-</span><span class="si">{0}</span><span class="s1">)+</span><span class="si">{0}</span><span class="s1">))&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">sn</span><span class="o">.</span><span class="n">extractsingle</span><span class="p">(</span>
             <span class="sa">r</span><span class="s1">&#39;Random: (?P&lt;number&gt;\S+)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="s1">&#39;number&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
@@ -356,22 +350,22 @@ For this reason, we can set <a class="reference internal" href="reference.html#r
 <p>ReFrame provides the option to write compile-only tests which consist only of a compilation phase without a specified executable.
 This kind of tests must derive from the <a class="reference internal" href="reference.html#reframe.core.pipeline.CompileOnlyRegressionTest" title="reframe.core.pipeline.CompileOnlyRegressionTest"><code class="xref py py-class docutils literal"><span class="pre">CompileOnlyRegressionTest</span></code></a> class provided by the framework.
 The following example (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example3.py</span></code>) reuses the code of our first example in this section and checks that no warnings are issued by the compiler:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">CompileOnlyRegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">CompileOnlyRegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">CompileOnlyTest</span><span class="p">(</span><span class="n">CompileOnlyRegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;compile_only_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;ReFrame tutorial demonstrating the class&#39;</span>
                       <span class="s1">&#39;CompileOnlyRegressionTest&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_not_found</span><span class="p">(</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;put-your-name-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
@@ -387,14 +381,14 @@ So sanity checking can be done in exactly the same way as with a normal test.</p
 <h2>Leveraging Environment Variables<a class="headerlink" href="#leveraging-environment-variables" title="Permalink to this headline">¶</a></h2>
 <p>We have already demonstrated in the <a class="reference external" href="tutorial.html">tutorial</a> that ReFrame allows you to load the required modules for regression tests and also set any needed environment variables. When setting environment variables for your test through the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.variables" title="reframe.core.pipeline.RegressionTest.variables"><code class="xref py py-attr docutils literal"><span class="pre">variables</span></code></a> attribute, you can assign them values of other, already defined, environment variables using the standard notation <code class="docutils literal"><span class="pre">$OTHER_VARIABLE</span></code> or <code class="docutils literal"><span class="pre">${OTHER_VARIABLE}</span></code>.
 The following regression test (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example4.py</span></code>) sets the <code class="docutils literal"><span class="pre">CUDA_HOME</span></code> environment variable to the value of the <code class="docutils literal"><span class="pre">CUDATOOLKIT_HOME</span></code> and then compiles and runs a simple program:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">EnvironmentVariableTest</span><span class="p">(</span><span class="n">RegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;env_variable_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -418,7 +412,7 @@ The following regression test (<code class="docutils literal"><span class="pre">
 </pre></div>
 </div>
 <p>Before discussing this test in more detail, let’s first have a look in the source code and the Makefile of this example:</p>
-<div class="highlight-cpp"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<div class="highlight-c"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&lt;string.h&gt;</span><span class="cp"></span>
 
@@ -457,13 +451,13 @@ The Makefile for this example compiles this source by simply setting <code class
 <span class="nv">OBJS</span> <span class="o">:=</span> advanced_example4.o
 
 <span class="nf">$(EXECUTABLE)</span><span class="o">:</span> <span class="k">$(</span><span class="nv">OBJS</span><span class="k">)</span>
-    <span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
+	<span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
 
 <span class="nf">$(OBJS)</span><span class="o">:</span> <span class="n">advanced_example</span>4.<span class="n">c</span>
-    <span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CPPFLAGS<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> -c <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
+	<span class="k">$(</span>CC<span class="k">)</span> <span class="k">$(</span>CPPFLAGS<span class="k">)</span> <span class="k">$(</span>CFLAGS<span class="k">)</span> -c <span class="k">$(</span>LDFLAGS<span class="k">)</span> -o <span class="nv">$@</span> $^
 
 <span class="nf">clean</span><span class="o">:</span>
-    /bin/rm -f <span class="k">$(</span>OBJS<span class="k">)</span> <span class="k">$(</span>EXECUTABLE<span class="k">)</span>
+	/bin/rm -f <span class="k">$(</span>OBJS<span class="k">)</span> <span class="k">$(</span>EXECUTABLE<span class="k">)</span>
 </pre></div>
 </div>
 <p>Coming back now to the ReFrame regression test, the <code class="docutils literal"><span class="pre">CUDATOOLKIT_HOME</span></code> environment variable is defined by the <code class="docutils literal"><span class="pre">cudatoolkit</span></code> module.
@@ -477,7 +471,7 @@ This has the result that <code class="docutils literal"><span class="pre">CUDA_H
 </div>
 <p>This ensures that the environment of the test is also set correctly at runtime.</p>
 <p>Finally, as already mentioned <a class="reference external" href="#leveraging-makefiles">previously</a>, since the <code class="docutils literal"><span class="pre">Makefile</span></code> name is not one of the standard ones, it has to be passed as an argument to the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.compile" title="reframe.core.pipeline.RegressionTest.compile"><code class="xref py py-func docutils literal"><span class="pre">compile</span></code></a> method of the base <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a> class as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">makefile</span><span class="o">=</span><span class="s1">&#39;Makefile_example4&#39;</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">makefile</span><span class="o">=</span><span class="s1">&#39;Makefile_example4&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -485,14 +479,14 @@ This has the result that <code class="docutils literal"><span class="pre">CUDA_H
 <h2>Setting a Time Limit for Regression Tests<a class="headerlink" href="#setting-a-time-limit-for-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>ReFrame gives you the option to limit the execution time of regression tests.
 The following example (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example5.py</span></code>) demonstrates how you can achieve this by limiting the execution time of a test that tries to sleep 100 seconds:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RunOnlyRegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RunOnlyRegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">TimeLimitTest</span><span class="p">(</span><span class="n">RunOnlyRegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;time_limit_check&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span>
                          <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -514,13 +508,14 @@ The following example (<code class="docutils literal"><span class="pre">tutorial
 </pre></div>
 </div>
 <p>The important bit here is the following line that sets the time limit for the test to one minute:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">time_limit</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">time_limit</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.time_limit" title="reframe.core.pipeline.RegressionTest.time_limit"><code class="xref py py-attr docutils literal"><span class="pre">time_limit</span></code></a> attribute is a three-tuple in the form <code class="docutils literal"><span class="pre">(HOURS,</span> <span class="pre">MINUTES,</span> <span class="pre">SECONDS)</span></code>.
 Time limits are implemented for all the scheduler backends.</p>
 <p>The sanity condition for this test verifies that associated job has been canceled due to the time limit.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span><span class="s1">&#39;CANCELLED.*TIME LIMIT&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;CANCELLED.*DUE TO TIME LIMIT&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -551,14 +546,14 @@ In ReFrame this can achieved by the use of <a class="reference internal" href="s
 Through <a class="reference internal" href="sanity_functions_reference.html#reframe.utility.sanity.map" title="reframe.utility.sanity.map"><code class="xref py py-func docutils literal"><span class="pre">map</span></code></a> the given function will be applied to all the members of the iterable object.
 Note that since <a class="reference internal" href="sanity_functions_reference.html#reframe.utility.sanity.map" title="reframe.utility.sanity.map"><code class="xref py py-func docutils literal"><span class="pre">map</span></code></a> is a sanity function, its execution will be deferred.
 The contents of the ReFrame regression test contained in <code class="docutils literal"><span class="pre">advanced_example6.py</span></code> are the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="kn">import</span> <span class="n">RunOnlyRegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RunOnlyRegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">DeferredIterationTest</span><span class="p">(</span><span class="n">RunOnlyRegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;deferred_iteration_check&#39;</span><span class="p">,</span>
                          <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;ReFrame tutorial demonstrating the use of deferred &#39;</span>
@@ -580,8 +575,8 @@ The contents of the ReFrame regression test contained in <code class="docutils l
 </pre></div>
 </div>
 <p>First the random numbers are extracted through the <a class="reference internal" href="sanity_functions_reference.html#reframe.utility.sanity.extractall" title="reframe.utility.sanity.extractall"><code class="xref py py-func docutils literal"><span class="pre">extractall</span></code></a> function as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">numbers</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Random: (?P&lt;number&gt;\S+)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
-                        <span class="s1">&#39;number&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">numbers</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;Random: (?P&lt;number&gt;\S+)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="s1">&#39;number&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal"><span class="pre">numbers</span></code> variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
@@ -594,7 +589,7 @@ To achieve this, we make use of <a class="reference internal" href="sanity_funct
 Finally, both of the above conditions have to be satisfied for the program execution to be considered successful, hence the use of the <a class="reference internal" href="sanity_functions_reference.html#reframe.utility.sanity.and_" title="reframe.utility.sanity.and_"><code class="xref py py-func docutils literal"><span class="pre">and_</span></code></a> function.
 Note that the <code class="docutils literal"><span class="pre">and</span></code> operator is not deferrable and will trigger the evaluation of any deferrable argument passed to it.</p>
 <p>The full syntax for the <code class="xref py py-attr docutils literal"><span class="pre">sanity_patterns</span></code> is the following:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">and_</span><span class="p">(</span>
     <span class="n">sn</span><span class="o">.</span><span class="n">assert_eq</span><span class="p">(</span><span class="n">sn</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">numbers</span><span class="p">),</span> <span class="mi">100</span><span class="p">),</span>
     <span class="n">sn</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">sn</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_bounded</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">numbers</span><span class="p">)))</span>
 </pre></div>
@@ -608,14 +603,14 @@ This can be easily achieved by using the <a class="reference internal" href="ref
 The lower and upper limits for the random numbers are now set inside a helper shell script in <code class="docutils literal"><span class="pre">scripts/limits.sh</span></code> and we want also to print the word <code class="docutils literal"><span class="pre">FINISHED</span></code> after our executable has finished.
 In order to achieve this, we need to source the helper script just before launching the executable and <code class="docutils literal"><span class="pre">echo</span></code> the desired message just after it finishes.
 Here is the test file:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="kn">as</span> <span class="nn">sn</span>
-<span class="n">nfrom</span> <span class="n">reframe</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">pipeline</span> <span class="kn">import</span> <span class="nn">RunOnlyRegressionTest</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+<span class="kn">from</span> <span class="nn">reframe.core.pipeline</span> <span class="k">import</span> <span class="n">RunOnlyRegressionTest</span>
 
 
 <span class="k">class</span> <span class="nc">PrerunDemoTest</span><span class="p">(</span><span class="n">RunOnlyRegressionTest</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;prerun_demo_check&#39;</span><span class="p">,</span>
                          <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;ReFrame tutorial demonstrating the use of &#39;</span>
@@ -684,9 +679,7 @@ The parallel launch itself consists of three parts:</p>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           
 <footer>
@@ -705,7 +698,7 @@ The parallel launch itself consists of three parts:</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CSCS.
+        &copy; Copyright 2017-2018, CSCS.
     </p>
 
     <style type="text/css">
@@ -770,6 +763,9 @@ The parallel launch itself consists of three parts:</p>
             <dt>Tags</dt>
             <dd><a href="v2.10/advanced.html">v2.10</a></dd>
             <dd><a href="v2.11/advanced.html">v2.11</a></dd>
+            <dd><a href="v2.12/advanced.html">v2.12</a></dd>
+            <dd><a href="v2.12-dev0/advanced.html">v2.12-dev0</a></dd>
+            <dd><a href="v2.12-dev1/advanced.html">v2.12-dev1</a></dd>
             <dd><a href="v2.7/advanced.html">v2.7</a></dd>
             <dd><a href="v2.8/advanced.html">v2.8</a></dd>
             <dd><a href="v2.8.1/advanced.html">v2.8.1</a></dd>
@@ -788,7 +784,8 @@ The parallel launch itself consists of three parts:</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.11',
+            VERSION:'2.12',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -806,14 +803,11 @@ The parallel launch itself consists of three parts:</p>
     <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

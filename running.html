@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.11 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.12 documentation</title>
   
 
   
@@ -27,30 +27,21 @@
   
 
   
-  
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="about.html"/>
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.11 documentation" href="index.html"/>
-        <link rel="next" title="Use Cases" href="usecases.html"/>
-        <link rel="prev" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html"/> 
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Use Cases" href="usecases.html" />
+    <link rel="prev" title="Understanding the Mechanism of Sanity Functions" href="deferrables.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -73,7 +64,7 @@
             
             
               <div class="version">
-                2.11
+                2.12
               </div>
             
           
@@ -157,7 +148,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">ReFrame</a>
@@ -165,9 +156,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           <div role="navigation" aria-label="breadcrumbs navigation">
   <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
@@ -361,6 +353,16 @@ The <code class="docutils literal"><span class="pre">-c</span></code>option acce
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/my/new/test.py -r
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.12.</span></p>
+</div>
+<p class="last">The names of the loaded tests must be unique.
+Trying to load two or more tests with the same name will produce an error.
+You may ignore the error by using the <code class="docutils literal"><span class="pre">--ignore-check-conflicts</span></code> option.
+In this case, any conflicting test will not be loaded and a warning will be issued.</p>
+</div>
 </div>
 <div class="section" id="filtering-of-regression-tests">
 <h2>Filtering of Regression Tests<a class="headerlink" href="#filtering-of-regression-tests" title="Permalink to this headline">¶</a></h2>
@@ -502,6 +504,8 @@ For example, if you know that a tests supports only <code class="docutils litera
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
 </pre></div>
 </div>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">--max-retries</span> <span class="pre">NUM</span></code>: Specify the maximum number of times a failed regression test may be retried (default: 0).</p>
 </li>
 </ul>
 </div>
@@ -859,9 +863,7 @@ FAILURE INFO for example7_check
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           
 <footer>
@@ -880,7 +882,7 @@ FAILURE INFO for example7_check
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CSCS.
+        &copy; Copyright 2017-2018, CSCS.
     </p>
 
     <style type="text/css">
@@ -945,6 +947,9 @@ FAILURE INFO for example7_check
             <dt>Tags</dt>
             <dd><a href="v2.10/running.html">v2.10</a></dd>
             <dd><a href="v2.11/running.html">v2.11</a></dd>
+            <dd><a href="v2.12/running.html">v2.12</a></dd>
+            <dd><a href="v2.12-dev0/running.html">v2.12-dev0</a></dd>
+            <dd><a href="v2.12-dev1/running.html">v2.12-dev1</a></dd>
             <dd><a href="v2.7/running.html">v2.7</a></dd>
             <dd><a href="v2.8/running.html">v2.8</a></dd>
             <dd><a href="v2.8.1/running.html">v2.8.1</a></dd>
@@ -963,7 +968,8 @@ FAILURE INFO for example7_check
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.11',
+            VERSION:'2.12',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -981,14 +987,11 @@ FAILURE INFO for example7_check
     <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.11 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.12 documentation</title>
   
 
   
@@ -27,29 +27,19 @@
   
 
   
-  
     <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="../../../about.html"/>
-        <link rel="index" title="Index"
-              href="../../../genindex.html"/>
-        <link rel="search" title="Search" href="../../../search.html"/>
-    <link rel="top" title="ReFrame 2.11 documentation" href="../../../index.html"/>
-        <link rel="up" title="Module code" href="../../index.html"/> 
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
 
   
   <script src="../../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -72,7 +62,7 @@
             
             
               <div class="version">
-                2.11
+                2.12
               </div>
             
           
@@ -133,7 +123,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">ReFrame</a>
@@ -141,9 +131,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           <div role="navigation" aria-label="breadcrumbs navigation">
   <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
@@ -173,13 +164,14 @@
 <span class="c1"># Basic functionality for regression tests</span>
 <span class="c1">#</span>
 
+<span class="kn">import</span> <span class="nn">fnmatch</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.core.logging</span> <span class="k">as</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">reframe.utility.os</span> <span class="k">as</span> <span class="nn">os_ext</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.os_ext</span> <span class="k">as</span> <span class="nn">os_ext</span>
 <span class="kn">from</span> <span class="nn">reframe.core.deferrable</span> <span class="k">import</span> <span class="n">deferrable</span><span class="p">,</span> <span class="n">_DeferredExpression</span><span class="p">,</span> <span class="n">evaluate</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">PipelineError</span><span class="p">,</span> <span class="n">SanityError</span>
@@ -225,10 +217,14 @@
     <span class="c1">#: :type: Alphanumeric string.</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AlphanumericField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
 
-    <span class="c1">#: List of programming environmets supported by this test.</span>
+    <span class="c1">#: List of programming environments supported by this test.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. note::</span>
+    <span class="c1">#:     .. versionchanged:: 2.12</span>
+    <span class="c1">#:        Programming environments can now be specified using wildcards.</span>
     <span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;valid_prog_environs&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: List of systems supported by this test.</span>
@@ -847,10 +843,11 @@
         <span class="k">return</span> <span class="n">partition_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span>
 
     <span class="k">def</span> <span class="nf">supports_environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env_name</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">env_name</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
 
-        <span class="k">return</span> <span class="n">env_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="RegressionTest.is_local"><a class="viewcode-back" href="../../../reference.html#reframe.core.pipeline.RegressionTest.is_local">[docs]</a>    <span class="k">def</span> <span class="nf">is_local</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check if the test will execute locally.</span>
@@ -1332,9 +1329,7 @@
 </pre></div>
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           
 <footer>
@@ -1344,7 +1339,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CSCS.
+        &copy; Copyright 2017-2018, CSCS.
     </p>
 
     <style type="text/css">
@@ -1409,6 +1404,9 @@
             <dt>Tags</dt>
             <dd><a href="../../../v2.10/index.html">v2.10</a></dd>
             <dd><a href="../../../v2.11/index.html">v2.11</a></dd>
+            <dd><a href="../../../v2.12/index.html">v2.12</a></dd>
+            <dd><a href="../../../v2.12-dev0/index.html">v2.12-dev0</a></dd>
+            <dd><a href="../../../v2.12-dev1/index.html">v2.12-dev1</a></dd>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
@@ -1427,7 +1425,8 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.11',
+            VERSION:'2.12',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -1445,14 +1444,11 @@
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

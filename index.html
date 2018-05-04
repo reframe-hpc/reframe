@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to ReFrame &mdash; ReFrame 2.11 documentation</title>
+  <title>Welcome to ReFrame &mdash; ReFrame 2.12 documentation</title>
   
 
   
@@ -27,29 +27,20 @@
   
 
   
-  
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-    <link rel="stylesheet" href="_static/banner.css" type="text/css" />
-  
-
-  
-        <link rel="author" title="About these documents"
-              href="about.html"/>
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="ReFrame 2.11 documentation" href="#"/>
-        <link rel="next" title="Getting Started" href="started.html"/> 
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/banner.css" type="text/css" />
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting Started" href="started.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -72,7 +63,7 @@
             
             
               <div class="version">
-                2.11
+                2.12
               </div>
             
           
@@ -133,7 +124,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="#">ReFrame</a>
@@ -141,9 +132,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           <div role="navigation" aria-label="breadcrumbs navigation">
   <div style="text-align: center; margin-bottom: -1.5em; display: block"></div>
   <ul class="wy-breadcrumbs">
@@ -198,8 +190,9 @@ You can always find the latest release <a class="reference external" href="https
 <div class="section" id="publications">
 <h2>Publications<a class="headerlink" href="#publications" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><em>ReFrame: A regression framework for checking the health of large HPC
-systems</em> [<a class="reference external" href="_static/files/reframe-cug17-slides.pdf">slides</a>]</li>
+<li><a class="reference external" href="_static/files/reframe-hpac18-slides.pdf">Presentation</a> &amp; <a class="reference external" href="https://asciinema.org/a/kAETsA1ojG6L7dkzow8opEGvr">Demo1</a>,  <a class="reference external" href="https://asciinema.org/a/LLcOToWYX4gRIfrcb1GpmvkuB">Demo2</a> &#64; <a class="reference external" href="http://www.hpcadvisorycouncil.com/events/2018/swiss-workshop/">HPC Advisory Council 2018</a></li>
+<li><a class="reference external" href="_static/files/reframe-bof-sc17-slides.pdf">Presentation</a> &amp; <a class="reference external" href="https://asciinema.org/a/kBZfdV0rmc0PCd84zxk6nAojG">Demo</a> &#64; <a class="reference external" href="https://sc17.supercomputing.org/">SC17</a></li>
+<li><a class="reference external" href="_static/files/reframe-cug17-slides.pdf">Presentation</a> &#64; <a class="reference external" href="https://cug.org/cug-2017/">CUG 2017</a></li>
 </ul>
 <div class="toctree-wrapper compound">
 </div>
@@ -208,9 +201,7 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           
 <footer>
@@ -227,7 +218,7 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, CSCS.
+        &copy; Copyright 2017-2018, CSCS.
     </p>
 
     <style type="text/css">
@@ -292,6 +283,9 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
             <dt>Tags</dt>
             <dd><a href="v2.10/index.html">v2.10</a></dd>
             <dd><a href="v2.11/index.html">v2.11</a></dd>
+            <dd><a href="v2.12/index.html">v2.12</a></dd>
+            <dd><a href="v2.12-dev0/index.html">v2.12-dev0</a></dd>
+            <dd><a href="v2.12-dev1/index.html">v2.12-dev1</a></dd>
             <dd><a href="v2.7/index.html">v2.7</a></dd>
             <dd><a href="v2.8/index.html">v2.8</a></dd>
             <dd><a href="v2.8.1/index.html">v2.8.1</a></dd>
@@ -310,7 +304,8 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.11',
+            VERSION:'2.12',
+            LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
@@ -328,14 +323,11 @@ systems</em> [<a class="reference external" href="_static/files/reframe-cug17-sl
     <script type="text/javascript" src="_static/js/theme.js"></script>
   
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

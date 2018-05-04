@@ -184,6 +184,15 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
   ./bin/reframe -c /path/to/my/new/test.py -r
 
+.. note::
+   .. versionadded:: 2.12
+
+   The names of the loaded tests must be unique.
+   Trying to load two or more tests with the same name will produce an error.
+   You may ignore the error by using the ``--ignore-check-conflicts`` option.
+   In this case, any conflicting test will not be loaded and a warning will be issued.
+
+
 Filtering of Regression Tests
 -----------------------------
 
@@ -331,6 +340,8 @@ They are summarized below:
   .. code-block:: bash
 
     ./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
+
+* ``--max-retries NUM``: Specify the maximum number of times a failed regression test may be retried (default: 0).
 
 Configuring ReFrame Directories
 -------------------------------
