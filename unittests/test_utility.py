@@ -552,6 +552,18 @@ class TestScopedDict(unittest.TestCase):
             KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
         )
 
+    def test_delkey_in_global_scope(self):
+        scoped_dict = reframe.utility.ScopedDict({
+            '*': {'k0': 0, 'k1': 1}
+        })
+        self.assertEqual(0, scoped_dict['k0'])
+        self.assertEqual(1, scoped_dict['k1'])
+        del scoped_dict['k0']
+        self.assertEqual(1, scoped_dict['k1'])
+        self.assertRaises(
+            KeyError, exec, "scoped_dict['k0']", globals(), locals()
+        )
+
     def test_addscope_same_as_key(self):
         scoped_dict = reframe.utility.ScopedDict({
             's0': {'s1': 1},

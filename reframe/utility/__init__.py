@@ -121,7 +121,7 @@ class ScopedDict(UserDict):
         the exact key requested will be deleted. No key resolution will be
         performed."""
         scope, lookup_key = self._keyinfo(key)
-        if scope in self.data and lookup_key != key:
+        if scope in self.data and lookup_key in self.data[scope]:
             del self.data[scope][lookup_key]
         elif key in self.data:
             # key is a scope
