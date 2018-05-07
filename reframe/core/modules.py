@@ -9,7 +9,8 @@ from collections import OrderedDict
 
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.exceptions import (ConfigError, EnvironError,
+                                     SpawnedProcessError)
 
 
 class Module:
@@ -460,10 +461,10 @@ class TMod4Impl(TModImpl):
             completed = os_ext.run_command(self._command + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
-                'could not find a sane Tmod4 installation: %s' % e) from e
+                'could not find a sane Tmod4 installation') from e
         except SpawnedProcessError as e:
             raise ConfigError(
-                'could not get the Python bindings for Tmod4: ' % e) from e
+                'could not get the Python bindings for Tmod4') from e
 
         version_match = re.match('^Modules Release (\S+)\s+', completed.stderr)
         if not version_match:
