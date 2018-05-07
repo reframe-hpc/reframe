@@ -538,6 +538,14 @@ class TestScopedDict(unittest.TestCase):
         del scoped_dict['a:k1']
         self.assertEqual(7, scoped_dict['a:k1'])
 
+        # delete key from global scope
+        del scoped_dict['k1']
+        self.assertEqual(9, scoped_dict['k3'])
+        self.assertEqual(10, scoped_dict['k4'])
+        self.assertRaises(
+            KeyError, exec, "scoped_dict['k1']", globals(), locals()
+        )
+
         # delete a whole scope
         del scoped_dict['*']
         self.assertRaises(
@@ -552,19 +560,16 @@ class TestScopedDict(unittest.TestCase):
             KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
         )
 
-    def test_delkey_in_global_scope(self):
-        scoped_dict = reframe.utility.ScopedDict({
-            '*': {'k0': 0, 'k1': 1}
-        })
-        self.assertEqual(0, scoped_dict['k0'])
-        self.assertEqual(1, scoped_dict['k1'])
-        del scoped_dict['k0']
-        self.assertEqual(1, scoped_dict['k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['k0']", globals(), locals()
-        )
+        # test deletion of parent scope keeping a nested one
+        scoped_dict = reframe.utility.ScopedDict()
+        scoped_dict['s0:k0'] = 1
+        scoped_dict['s0:s1:k0'] = 2
+        scoped_dict['*:k0'] = 3
+        del scoped_dict['s0']
+        self.assertEqual(3, scoped_dict['s0:k0'])
+        self.assertEqual(2, scoped_dict['s0:s1:k0'])
 
-    def test_addscope_same_as_key(self):
+    def test_scope_key_name_pseudoconflict(self):
         scoped_dict = reframe.utility.ScopedDict({
             's0': {'s1': 1},
             's0:s1': {'k0': 2}
@@ -573,7 +578,6 @@ class TestScopedDict(unittest.TestCase):
         self.assertEqual(1, scoped_dict['s0:s1'])
         self.assertEqual(2, scoped_dict['s0:s1:k0'])
 
-        # delete the parent scope
         del scoped_dict['s0:s1']
         self.assertEqual(2, scoped_dict['s0:s1:k0'])
         self.assertRaises(
@@ -596,12 +600,3 @@ class TestScopedDict(unittest.TestCase):
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
         self.assertEqual(scoped_dict, scoped_dict_alt)
-
-    def test_delete_parent_keep_nested(self):
-        scoped_dict = reframe.utility.ScopedDict()
-        scoped_dict['s0:k0'] = 1
-        scoped_dict['s0:s1:k0'] = 2
-        scoped_dict['*:k0'] = 3
-        del scoped_dict['s0']
-        self.assertEqual(3, scoped_dict['s0:k0'])
-        self.assertEqual(2, scoped_dict['s0:s1:k0'])

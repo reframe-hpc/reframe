@@ -117,9 +117,10 @@ class ScopedDict(UserDict):
     def __delitem__(self, key):
         """Deletes either a key or a scope if key refers to a scope.
 
-        If key refers to scope, the whole scope entry will be deleted. If not,
-        the exact key requested will be deleted. No key resolution will be
-        performed."""
+        If key refers to both a scope and a key, the key will be deleted.
+        If key refers to scope, the whole scope entry will be deleted.
+        If not, the exact key requested will be deleted.
+        No key resolution will be performed."""
         scope, lookup_key = self._keyinfo(key)
         if scope in self.data and lookup_key in self.data[scope]:
             del self.data[scope][lookup_key]
