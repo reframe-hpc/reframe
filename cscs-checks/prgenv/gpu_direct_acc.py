@@ -3,6 +3,7 @@ import os
 import reframe.utility.sanity as sn
 from reframe.core.pipeline import RegressionTest
 
+
 class GpuDirectAccCheck(RegressionTest):
     def __init__(self, **kwargs):
         super().__init__('gpu_direct_acc_check',
@@ -28,11 +29,7 @@ class GpuDirectAccCheck(RegressionTest):
             self.num_tasks_per_node = 8
 
         self.sourcepath = 'gpu_direct_acc.F90'
-
-        result = sn.findall(r'Result :\s+OK', self.stdout)
-        self.sanity_patterns = sn.all(
-            sn.chain([sn.assert_eq(sn.count(result), 1)]))
-
+        self.sanity_patterns = sn.assert_found(r'Result :\s+OK', self.stdout)
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
