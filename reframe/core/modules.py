@@ -9,7 +9,8 @@ from collections import OrderedDict
 
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.exceptions import (ConfigError, EnvironError,
+                                     SpawnedProcessError)
 
 
 class Module:
@@ -451,6 +452,46 @@ class TModImpl(ModulesSystemImpl):
         return 'module unload %s' % module
 
 
+class TMod4Impl(TModImpl):
+    """Module system for TMod 4."""
+
+    def __init__(self):
+        self._command = 'modulecmd python'
+        try:
+            completed = os_ext.run_command(self._command + ' -V', check=True)
+        except OSError as e:
+            raise ConfigError(
+                'could not find a sane Tmod4 installation') from e
+        except SpawnedProcessError as e:
+            raise ConfigError(
+                'could not get the Python bindings for Tmod4') from e
+
+        version_match = re.match('^Modules Release (\S+)\s+', completed.stderr)
+        if not version_match:
+            raise ConfigError('could not retrieve the TMod4 version')
+
+        self._version = version_match.group(1)
+
+    def name(self):
+        return 'tmod4'
+
+    def _exec_module_command(self, *args, msg=None):
+        command = ' '.join([self._command, *args])
+        completed = os_ext.run_command(command, check=True)
+        namespace = {}
+        exec(completed.stdout, {}, namespace)
+        if not namespace['_mlstatus']:
+            # _mlstatus is set by the TMod4 Python bindings
+            if msg is None:
+                msg = 'modules system command failed: '
+                if isinstance(completed.args, str):
+                    msg += completed.args
+                else:
+                    msg += ' '.join(completed.args)
+
+            raise EnvironError(msg)
+
+
 class LModImpl(TModImpl):
     """Module system for Lmod (Tcl/Lua)."""
 
@@ -570,6 +611,8 @@ def init_modules_system(modules_kind=None):
         _modules_system = ModulesSystem(NoModImpl())
     elif modules_kind == 'tmod':
         _modules_system = ModulesSystem(TModImpl())
+    elif modules_kind == 'tmod4':
+        _modules_system = ModulesSystem(TMod4Impl())
     elif modules_kind == 'lmod':
         _modules_system = ModulesSystem(LModImpl())
     else:
