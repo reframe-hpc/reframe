@@ -1,6 +1,7 @@
 import unittest
 
 import reframe.core.fields as fields
+from reframe.utility import ScopedDict
 
 
 class TestFields(unittest.TestCase):
@@ -99,8 +100,8 @@ class TestFields(unittest.TestCase):
             int_list    = fields.AggregateTypeField('int_list', (list, int))
             tuple_list  = fields.AggregateTypeField('tuple_list',
                                                     (list, (tuple, int)))
-            mixed_tuple = fields.AggregateTypeField('mixed_tuple',
-                                                    (tuple, ((int, float, int),)))
+            mixed_tuple = fields.AggregateTypeField(
+                'mixed_tuple', (tuple, ((int, float, int),)))
             float_tuple = fields.AggregateTypeField('float_tuple',
                                                     (tuple, float))
             dict_list   = fields.AggregateTypeField('dict_list',
@@ -434,6 +435,7 @@ class TestFields(unittest.TestCase):
 
     def test_deprecated_field(self):
         from reframe.core.exceptions import ReframeDeprecationWarning
+
         class FieldTester:
             value = fields.DeprecatedField(fields.IntegerField('value'),
                                            'value field is deprecated')
@@ -441,250 +443,6 @@ class TestFields(unittest.TestCase):
         tester = FieldTester()
         self.assertWarns(ReframeDeprecationWarning, exec, 'tester.value = 2',
                          globals(), locals())
-
-class TestScopedDict(unittest.TestCase):
-    def test_construction(self):
-        d = {
-            'a': {'k1': 3, 'k2': 4},
-            'b': {'k3': 5}
-        }
-        namespace_dict = fields.ScopedDict()
-        namespace_dict = fields.ScopedDict(d)
-
-        # Change local dict and verify that the stored values are not affected
-        d['a']['k1'] = 10
-        d['b']['k3'] = 10
-        self.assertEqual(3, namespace_dict['a:k1'])
-        self.assertEqual(5, namespace_dict['b:k3'])
-        del d['b']
-        self.assertIn('b:k3', namespace_dict)
-
-        self.assertRaises(TypeError, fields.ScopedDict, 1)
-        self.assertRaises(TypeError, fields.ScopedDict, {'a': 1, 'b': 2})
-        self.assertRaises(TypeError, fields.ScopedDict, [('a', 1), ('b', 2)])
-        self.assertRaises(TypeError, fields.ScopedDict, {'a': {1: 'k1'},
-                                                         'b': {2: 'k2'}})
-
-    def test_contains(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        # Test simple lookup
-        self.assertIn('a:k1', scoped_dict)
-        self.assertIn('a:k2', scoped_dict)
-        self.assertIn('a:k3', scoped_dict)
-        self.assertIn('a:k4', scoped_dict)
-
-        self.assertIn('a:b:k1', scoped_dict)
-        self.assertIn('a:b:k2', scoped_dict)
-        self.assertIn('a:b:k3', scoped_dict)
-        self.assertIn('a:b:k4', scoped_dict)
-
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
-
-        # Test global scope
-        self.assertIn('k1', scoped_dict)
-        self.assertNotIn('k2', scoped_dict)
-        self.assertIn('k3', scoped_dict)
-        self.assertIn('k4', scoped_dict)
-
-        self.assertIn(':k1', scoped_dict)
-        self.assertNotIn(':k2', scoped_dict)
-        self.assertIn(':k3', scoped_dict)
-        self.assertIn(':k4', scoped_dict)
-
-        self.assertIn('*:k1', scoped_dict)
-        self.assertNotIn('*:k2', scoped_dict)
-        self.assertIn('*:k3', scoped_dict)
-        self.assertIn('*:k4', scoped_dict)
-
-        # Try to get full scopes as keys
-        self.assertNotIn('a', scoped_dict)
-        self.assertNotIn('a:b', scoped_dict)
-        self.assertNotIn('a:b:c', scoped_dict)
-        self.assertNotIn('a:b:c:d', scoped_dict)
-        self.assertNotIn('*', scoped_dict)
-        self.assertNotIn('', scoped_dict)
-
-    def test_iter_keys(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        expected_keys = [
-            'a:k1', 'a:k2',
-            'a:b:k1', 'a:b:k3',
-            'a:b:c:k2', 'a:b:c:k3',
-            '*:k1', '*:k3', '*:k4'
-        ]
-        self.assertEqual(sorted(expected_keys),
-                         sorted(k for k in scoped_dict.keys()))
-
-    def test_iter_items(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        expected_items = [
-            ('a:k1', 1), ('a:k2', 2),
-            ('a:b:k1', 3), ('a:b:k3', 4),
-            ('a:b:c:k2', 5), ('a:b:c:k3', 6),
-            ('*:k1', 7), ('*:k3', 9), ('*:k4', 10)
-        ]
-        self.assertEqual(sorted(expected_items),
-                         sorted(item for item in scoped_dict.items()))
-
-    def test_iter_values(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        expected_values = [1, 2, 3, 4, 5, 6, 7, 9, 10]
-        self.assertEqual(expected_values,
-                         sorted(v for v in scoped_dict.values()))
-
-    def test_key_resolution(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        self.assertEqual(1, scoped_dict['a:k1'])
-        self.assertEqual(2, scoped_dict['a:k2'])
-        self.assertEqual(9, scoped_dict['a:k3'])
-        self.assertEqual(10, scoped_dict['a:k4'])
-
-        self.assertEqual(3, scoped_dict['a:b:k1'])
-        self.assertEqual(2, scoped_dict['a:b:k2'])
-        self.assertEqual(4, scoped_dict['a:b:k3'])
-        self.assertEqual(10, scoped_dict['a:b:k4'])
-
-        self.assertEqual(3, scoped_dict['a:b:c:k1'])
-        self.assertEqual(5, scoped_dict['a:b:c:k2'])
-        self.assertEqual(6, scoped_dict['a:b:c:k3'])
-        self.assertEqual(10, scoped_dict['a:b:c:k4'])
-
-        # Test global scope
-        self.assertEqual(7, scoped_dict['k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict['k3'])
-        self.assertEqual(10, scoped_dict['k4'])
-
-        self.assertEqual(7, scoped_dict[':k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict[':k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict[':k3'])
-        self.assertEqual(10, scoped_dict[':k4'])
-
-        self.assertEqual(7, scoped_dict['*:k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['*:k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict['*:k3'])
-        self.assertEqual(10, scoped_dict['*:k4'])
-
-        # Try to fool it, by requesting keys with scope names
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b:c']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b:c:d']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['*']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['']", globals(), locals()
-        )
-
-    def test_setitem(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        scoped_dict['a:k2'] = 20
-        scoped_dict['c:k2'] = 30
-        scoped_dict[':k4'] = 40
-        scoped_dict['*:k5'] = 50
-        scoped_dict['k6'] = 60
-        self.assertEqual(20, scoped_dict['a:k2'])
-        self.assertEqual(30, scoped_dict['c:k2'])
-        self.assertEqual(40, scoped_dict[':k4'])
-        self.assertEqual(50, scoped_dict['k5'])
-        self.assertEqual(60, scoped_dict['k6'])
-
-    def test_delitem(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        # delete key
-        del scoped_dict['a:k1']
-        self.assertEqual(7, scoped_dict['a:k1'])
-
-        # delete a whole scope
-        del scoped_dict['*']
-        self.assertRaises(
-            KeyError, exec, "scoped_dict[':k4']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:k3']", globals(), locals()
-        )
-
-        # try to delete a non-existent key
-        self.assertRaises(
-            KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
-        )
-
-    def test_update(self):
-        scoped_dict = fields.ScopedDict({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-
-        scoped_dict_alt = fields.ScopedDict({'a': {'k1': 3, 'k2': 5}})
-        scoped_dict_alt.update({
-            'a': {'k1': 1, 'k2': 2},
-            'a:b': {'k1': 3, 'k3': 4},
-            'a:b:c': {'k2': 5, 'k3': 6},
-            '*': {'k1': 7, 'k3': 9, 'k4': 10}
-        })
-        self.assertEqual(scoped_dict, scoped_dict_alt)
 
     def test_scoped_dict_field(self):
         class FieldTester:
@@ -705,7 +463,7 @@ class TestScopedDict(unittest.TestCase):
 
         # Check that we have indeed a ScopedDict here
         self.assertIsInstance(FieldTester.field, fields.ScopedDictField)
-        self.assertIsInstance(tester.field, fields.ScopedDict)
+        self.assertIsInstance(tester.field, ScopedDict)
         self.assertEqual(10, tester.field['a:k4'])
 
         # Test invalid assignments
@@ -721,4 +479,4 @@ class TestScopedDict(unittest.TestCase):
                           globals(), locals())
 
         # Test assigning a ScopedDict already
-        tester.field = fields.ScopedDict({})
+        tester.field = ScopedDict({})
