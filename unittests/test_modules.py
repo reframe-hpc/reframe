@@ -116,6 +116,22 @@ class TestTModModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
+class TestTMod4ModulesSystem(_TestModulesSystem):
+    def setUp(self):
+        try:
+            self.modules_system = modules.ModulesSystem.create('tmod4')
+        except ConfigError:
+            self.skipTest('tmod4 not supported')
+        else:
+            super().setUp()
+
+    def expected_load_instr(self, module):
+        return 'module load %s' % module
+
+    def expected_unload_instr(self, module):
+        return 'module unload %s' % module
+
+
 class TestLModModulesSystem(_TestModulesSystem):
     def setUp(self):
         try:

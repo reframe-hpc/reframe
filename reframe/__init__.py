@@ -2,7 +2,7 @@ import os
 import sys
 
 
-VERSION = '2.12-dev2'
+VERSION = '2.13-dev0'
 _required_pyver = (3, 5, 0)
 INSTALL_PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
