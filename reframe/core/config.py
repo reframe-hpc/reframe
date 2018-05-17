@@ -7,12 +7,24 @@ import reframe.utility as util
 from reframe.core.exceptions import ConfigError, ReframeError, ReframeFatalError
 
 
-def load_settings(filename):
+_settings = None
+
+
+def load_settings_from_file(filename):
+    global _settings
     try:
-        return util.import_module_from_file(filename).settings
+        _settings = util.import_module_from_file(filename).settings
+        return _settings
     except Exception as e:
         raise ConfigError(
             "could not load configuration file `%s'" % filename) from e
+
+
+def settings():
+    if _settings is None:
+        raise ReframeFatalError('ReFrame is not configured')
+
+    return _settings
 
 
 class SiteConfiguration:

@@ -128,14 +128,15 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
 class TestConfigLoading(unittest.TestCase):
     def test_load_normal_config(self):
-        config.load_settings('unittests/resources/settings.py')
+        config.load_settings_from_file('unittests/resources/settings.py')
 
     def test_load_unknown_file(self):
-        self.assertRaises(ConfigError, config.load_settings, 'foo')
+        self.assertRaises(ConfigError, config.load_settings_from_file, 'foo')
 
     def test_load_no_settings(self):
-        self.assertRaises(ConfigError, config.load_settings, 'unittests')
+        self.assertRaises(ConfigError,
+                          config.load_settings_from_file, 'unittests')
 
     def test_load_invalid_settings(self):
-        self.assertRaises(ConfigError, config.load_settings,
+        self.assertRaises(ConfigError, config.load_settings_from_file,
                           'unittests/resources/invalid_settings.py')

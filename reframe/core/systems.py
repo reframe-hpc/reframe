@@ -7,7 +7,7 @@ from reframe.core.environments import Environment
 class SystemPartition:
     """A representation of a system partition inside ReFrame."""
 
-    _name      = fields.ExtendedAlphanumericField('_name')
+    _name      = fields.StringPatternField('_name', '(\w|-)+')
     _descr     = fields.StringField('_descr')
     _access    = fields.TypedListField('_access', str)
     _environs  = fields.TypedListField('_environs', Environment)
@@ -144,12 +144,12 @@ class SystemPartition:
 
 class System:
     """A representation of a system inside ReFrame."""
-    _name  = fields.ExtendedAlphanumericField('_name')
+    _name  = fields.StringPatternField('_name', '(\w|-)+')
     _descr = fields.StringField('_descr')
     _hostnames  = fields.TypedListField('_hostnames', str)
     _partitions = fields.TypedListField('_partitions', SystemPartition)
-    _modules_system = fields.ExtendedAlphanumericField('_modules_system',
-                                                       allow_none=True)
+    _modules_system = fields.StringPatternField('_modules_system',
+                                                '(\w|-)+', allow_none=True)
 
     _prefix = fields.StringField('_prefix')
     _stagedir  = fields.StringField('_stagedir', allow_none=True)

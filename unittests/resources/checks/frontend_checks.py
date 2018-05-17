@@ -13,7 +13,7 @@ class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
         self.local = True
         self.executable = 'echo hello && echo perf: 10'
         self.sanity_patterns = sn.assert_found('hello', self.stdout)
-        self.tags = {self.name}
+        self.tags = {type(self).__name__}
         self.maintainers = ['VK']
 
 

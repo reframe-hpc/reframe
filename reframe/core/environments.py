@@ -16,7 +16,7 @@ class Environment:
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
     """
-    name = fields.ExtendedAlphanumericField('name')
+    name = fields.StringPatternField('name', '(\w|-)+')
     modules = fields.TypedListField('modules', str)
     variables = fields.TypedDictField('variables', str, str)
 

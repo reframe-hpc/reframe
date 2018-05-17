@@ -43,29 +43,6 @@ class TestFields(unittest.TestCase):
         self.assertRaises(ValueError, exec, "tester.ro = 'bar'",
                           globals(), locals())
 
-    def test_alphanumeric_fields(self):
-        class FieldTester:
-            field1 = fields.AlphanumericField('field1')
-            field2 = fields.ExtendedAlphanumericField('field2')
-
-            def __init__(self, value1, value2=None):
-                self.field1 = value1
-                self.field2 = value2 or value1
-
-        tester1 = FieldTester('foo_bar12', 'foo-bar12')
-        self.assertIsInstance(FieldTester.field1, fields.AlphanumericField)
-        self.assertIsInstance(FieldTester.field2,
-                              fields.ExtendedAlphanumericField)
-        self.assertEqual('foo_bar12', tester1.field1)
-        self.assertEqual('foo-bar12', tester1.field2)
-        self.assertRaises(TypeError, FieldTester, 12)
-        self.assertRaises(TypeError, FieldTester, 'foo_bar12', 12)
-        self.assertRaises(ValueError, FieldTester, 'foo bar12')
-        self.assertRaises(ValueError, FieldTester, 'foo/bar12')
-        self.assertRaises(ValueError, FieldTester, 'foo-bar12')
-        self.assertRaises(ValueError, FieldTester, 'foo', 'foo bar12')
-        self.assertRaises(ValueError, FieldTester, 'foo', 'foo/bar12')
-
     def test_typed_field(self):
         class ClassA:
             def __init__(self, val):
@@ -250,15 +227,19 @@ class TestFields(unittest.TestCase):
         self.assertRaises(TypeError, exec, 'tester.field = 13',
                           globals(), locals())
 
-    def test_non_whitespace_field(self):
+    def test_string_pattern_field(self):
         class FieldTester:
-            field = fields.NonWhitespaceField('field')
+            field = fields.StringPatternField('field', '\S+')
 
-        tester = FieldTester()
-        tester.field = 'foobar'
-        self.assertIsInstance(FieldTester.field, fields.NonWhitespaceField)
-        self.assertEqual('foobar', tester.field)
-        self.assertRaises(ValueError, exec, 'tester.field = "foo bar"',
+            def __init__(self, value):
+                self.field = value
+
+        tester = FieldTester('foo123')
+        self.assertIsInstance(FieldTester.field, fields.StringPatternField)
+        self.assertEqual('foo123', tester.field)
+        self.assertRaises(TypeError, exec, 'tester.field = 13',
+                          globals(), locals())
+        self.assertRaises(ValueError, exec, 'tester.field = "foo 123"',
                           globals(), locals())
 
     def test_integer_field(self):

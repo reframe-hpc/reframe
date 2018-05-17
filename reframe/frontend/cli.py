@@ -202,7 +202,7 @@ def main():
 
     # Load configuration
     try:
-        settings = config.load_settings(options.config_file)
+        settings = config.load_settings_from_file(options.config_file)
     except (OSError, ReframeError) as e:
         sys.stderr.write(
             '%s: could not load settings: %s\n' % (sys.argv[0], e))

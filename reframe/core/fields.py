@@ -241,72 +241,31 @@ class AggregateTypeField(Field):
         return True
 
 
-class AlphanumericField(TypedField):
-    """Stores an alphanumeric string ([A-Za-z0-9_])"""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            if not isinstance(value, str):
-                raise TypeError('attempt to set an alphanumeric field '
-                                'with a non-string value; '
-                                'accepted characters are[A-Za-z0-9_]')
-
-            # Check if the string is properly formatted
-            if not re.fullmatch('\w+', value, re.ASCII):
-                raise ValueError('Attempt to set an alphanumeric field '
-                                 'with a non-alphanumeric value')
-
-        super().__set__(obj, value)
-
-
-class ExtendedAlphanumericField(TypedField):
-    """Stores an extended alphanumeric string ([A-Za-z0-9_\-])"""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            if not isinstance(value, str):
-                raise TypeError('attempt to set an extended alphanumeric '
-                                'field with a non-string value')
-
-            # Check if the string is properly formatted
-            if not re.fullmatch('(\w|\-)+', value, re.ASCII):
-                raise ValueError('Attempt to set an extended alphanumeric '
-                                 'field with a non-alphanumeric value; '
-                                 'accepted characters are [A-Za-z0-9_\-]')
-
-        super().__set__(obj, value)
-
-
-class NonWhitespaceField(TypedField):
-    """Stores a string without any whitespace"""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            if not isinstance(value, str):
-                raise TypeError('Attempt to set a string field '
-                                'with a non-string value')
-
-            if not re.fullmatch('\S+', value, re.ASCII):
-                raise ValueError('Attempt to set a non-whitespace field '
-                                 'with a string containing whitespace')
-
-        super().__set__(obj, value)
-
-
 class StringField(TypedField):
     """Stores a standard string object"""
 
     def __init__(self, fieldname, allow_none=False):
         super().__init__(fieldname, str, allow_none)
+
+
+class StringPatternField(StringField):
+    """Stores a string that must follow a specific pattern"""
+
+    def __init__(self, fieldname, pattern, allow_none=False):
+        super().__init__(fieldname, allow_none)
+        self._pattern = pattern
+
+    def __set__(self, obj, value):
+        if not self._check_type(value):
+            raise TypeError('a string type is required')
+
+        if (value is not None and
+            not re.fullmatch(self._pattern, value, re.ASCII)):
+            raise ValueError(
+                'cannot validate string "%s" against pattern: "%s"' %
+                (value, self._pattern))
+
+        super().__set__(obj, value)
 
 
 class IntegerField(TypedField):

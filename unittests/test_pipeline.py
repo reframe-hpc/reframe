@@ -322,7 +322,8 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('my_test_1_2', test.name)
+        self.assertEqual('TestNewStyleChecks.test_regression_test.'
+                         '<locals>.MyTest_1_2', test.name)
 
     def test_regression_test_strange_names(self):
         class C:
@@ -339,7 +340,9 @@ class TestNewStyleChecks(unittest.TestCase):
                 self.b = b
 
         test = MyTest('(a*b+c)/12', C(33))
-        self.assertEqual('my_test__a_b_c__12_C_33_', test.name)
+        self.assertEqual(
+            'TestNewStyleChecks.test_regression_test_strange_names.'
+            '<locals>.MyTest__a_b_c__12_C_33_', test.name)
 
     def test_user_inheritance(self):
         class MyBaseTest(RegressionTest):
@@ -353,7 +356,8 @@ class TestNewStyleChecks(unittest.TestCase):
                 super().__init__(1, 2)
 
         test = MyTest()
-        self.assertEqual('my_test', test.name)
+        self.assertEqual('TestNewStyleChecks.test_user_inheritance.'
+                         '<locals>.MyTest', test.name)
 
     def test_runonly_test(self):
         class MyTest(RunOnlyRegressionTest):
@@ -365,7 +369,8 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('my_test_1_2', test.name)
+        self.assertEqual('TestNewStyleChecks.test_runonly_test.'
+                         '<locals>.MyTest_1_2', test.name)
 
     def test_compileonly_test(self):
         class MyTest(CompileOnlyRegressionTest):
@@ -377,7 +382,8 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('my_test_1_2', test.name)
+        self.assertEqual('TestNewStyleChecks.test_compileonly_test.'
+                         '<locals>.MyTest_1_2', test.name)
 
     def test_registration(self):
         import sys

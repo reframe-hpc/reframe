@@ -21,13 +21,13 @@ class TestRegressionCheckLoader(unittest.TestCase):
         checks = self.loader.load_from_file(
             'unittests/resources/checks/emptycheck.py')
         self.assertEqual(1, len(checks))
-        self.assertEqual(checks[0].name, 'empty_test')
+        self.assertEqual(checks[0].name, 'EmptyTest')
 
     def test_load_file_absolute(self):
         checks = self.loader.load_from_file(
             os.path.abspath('unittests/resources/checks/emptycheck.py'))
         self.assertEqual(1, len(checks))
-        self.assertEqual(checks[0].name, 'empty_test')
+        self.assertEqual(checks[0].name, 'EmptyTest')
 
     def test_load_recursive(self):
         checks = self.loader.load_from_dir('unittests/resources/checks',

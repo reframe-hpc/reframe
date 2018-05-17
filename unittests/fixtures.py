@@ -8,7 +8,7 @@ import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
 from reframe.core.exceptions import UnknownSystemError
-from reframe.settings import settings
+
 
 TEST_RESOURCES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'resources')
@@ -28,14 +28,15 @@ def set_user_config(config_file):
     global USER_CONFIG_FILE, USER_SITE_CONFIG
 
     USER_CONFIG_FILE = config_file
-    user_settings = config.load_settings(config_file)
+    user_settings = config.load_settings_from_file(config_file)
     USER_SITE_CONFIG = user_settings.site_configuration
 
 
 def init_runtime():
     global TEST_SITE_CONFIG
 
-    settings = config.load_settings('unittests/resources/settings.py')
+    settings = config.load_settings_from_file(
+        'unittests/resources/settings.py')
     TEST_SITE_CONFIG = settings.site_configuration
     rt.init_runtime(TEST_SITE_CONFIG, 'generic')
 

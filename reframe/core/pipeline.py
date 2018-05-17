@@ -60,8 +60,8 @@ class RegressionTest:
     """
     #: The name of the test.
     #:
-    #: :type: Alphanumeric string.
-    name = fields.AlphanumericField('name')
+    #: :type: string that can contain any character except ``/``
+    name = fields.StringPatternField('name', '[^\/]+')
 
     #: List of programming environments supported by this test.
     #:
@@ -477,7 +477,8 @@ class RegressionTest:
 
         # Create a test name from the class name and the constructor's
         # arguments
-        name = util.decamelize(cls.__name__)
+        name = cls.__qualname__
+        #name = util.decamelize(cls.__name__)
         if args or kwargs:
             arg_names = map(lambda x: util.toalphanum(str(x)),
                             itertools.chain(args, kwargs.values()))
