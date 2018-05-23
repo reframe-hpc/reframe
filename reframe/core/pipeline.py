@@ -3,6 +3,7 @@
 #
 
 import fnmatch
+import inspect
 import os
 import shutil
 
@@ -1081,9 +1082,11 @@ class RegressionTest:
 
     def __str__(self):
         return ('%s (%s)\n'
-                '        tags: [%s], maintainers: [%s]' %
+                '        tags: [%s], maintainers: [%s]\n'
+                '        file: [%s]' %
                 (self.name, self.descr,
-                 ', '.join(self.tags), ', '.join(self.maintainers)))
+                 ', '.join(self.tags), ', '.join(self.maintainers),
+                 self.prefix + os.path.basename(inspect.getfile(type(self)))))
 
 
 class RunOnlyRegressionTest(RegressionTest):
