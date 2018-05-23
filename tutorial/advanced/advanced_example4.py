@@ -1,14 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class EnvironmentVariableTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('env_variable_check', os.path.dirname(__file__),
-                         **kwargs)
-
+@rfm.simple_test
+class EnvironmentVariableTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use'
                       'of environment variables provided by loaded modules')
         self.valid_systems = ['daint:gpu']
@@ -22,7 +19,3 @@ class EnvironmentVariableTest(RegressionTest):
 
     def compile(self):
         super().compile(makefile='Makefile_example4')
-
-
-def _get_checks(**kwargs):
-    return [EnvironmentVariableTest(**kwargs)]

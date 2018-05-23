@@ -1,14 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class TimeLimitTest(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('time_limit_check', os.path.dirname(__file__),
-                         **kwargs)
-
+@rfm.simple_test
+class TimeLimitTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use'
                       'of a user-defined time limit')
         self.valid_systems = ['daint:gpu', 'daint:mc']
@@ -20,7 +17,3 @@ class TimeLimitTest(RunOnlyRegressionTest):
             r'CANCELLED.*DUE TO TIME LIMIT', self.stderr)
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [TimeLimitTest(**kwargs)]

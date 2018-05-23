@@ -43,7 +43,7 @@ The contents of this regression test are the following (``tutorial/advanced/adva
 The important bit here is the ``compile()`` method.
 
 .. literalinclude:: ../tutorial/advanced/advanced_example1.py
-  :lines: 21-23
+  :lines: 18-20
   :dedent: 4
 
 As in the simple single source file examples we showed in the `tutorial <tutorial.html>`__, we use the current programming environment's flags for modifying the compilation.
@@ -162,7 +162,7 @@ This ensures that the environment of the test is also set correctly at runtime.
 Finally, as already mentioned `previously <#leveraging-makefiles>`__, since the ``Makefile`` name is not one of the standard ones, it has to be passed as an argument to the :func:`compile <reframe.core.pipeline.RegressionTest.compile>` method of the base :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` class as follows:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example4.py
-  :lines: 24
+  :lines: 21
   :dedent: 8
 
 Setting a Time Limit for Regression Tests
@@ -175,18 +175,17 @@ The following example (``tutorial/advanced/advanced_example5.py``) demonstrates 
 
 The important bit here is the following line that sets the time limit for the test to one minute:
 
-
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 16
+  :lines: 13
   :dedent: 8
 
 The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a three-tuple in the form ``(HOURS, MINUTES, SECONDS)``.
 Time limits are implemented for all the scheduler backends.
 
-The sanity condition for this test verifies that associated job has been canceled due to the time limit.
+The sanity condition for this test verifies that associated job has been canceled due to the time limit (note that this message is SLURM-specific).
 
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 19-20
+  :lines: 16-17
   :dedent: 8
 
 Applying a sanity function iteratively
@@ -212,7 +211,7 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
 First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 16-17
+  :lines: 14-15
   :dedent: 8
 
 The ``numbers`` variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
@@ -229,7 +228,7 @@ Note that the ``and`` operator is not deferrable and will trigger the evaluation
 The full syntax for the :attr:`sanity_patterns` is the following:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 18-20
+  :lines: 16-18
   :dedent: 8
 
 Customizing the Generated Job Script
@@ -286,4 +285,72 @@ The parallel launch itself consists of three parts:
 #. the regression test executable as specified in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` attribute and
 #. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
 
-A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against inside it.
+A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against it.
+
+
+Working with parameterized tests
+--------------------------------
+
+.. versionadded:: 2.13
+
+We have seen already in the `basic tutorial <tutorial.html#combining-it-all-together>`__ how we could better organize the tests so as to avoid code duplication by using test class hierarchies.
+An alternative technique, which could also be used in parallel with the class hierarchies, is to use `parameterized tests`.
+The following is a test that takes a ``variant`` parameter, which controls which variant of the code will be used.
+Depending on that value, the test is set up differently:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example8.py
+
+If you have already gone through the `tutorial <tutorial.html>`__, this test can be easily understood.
+The new bit here is the ``@parameterized_test`` decorator of the ``MatrixVectorTest`` class.
+This decorator takes as argument an iterable of either sequence (i.e., lists, tuples etc.) or mapping types (i.e., dictionaries).
+Each of this iterable's elements corresponds to the arguments that will be used to instantiate the decorated test each time.
+In the example shown, the test will instantiated twice, once passing ``variant`` as ``MPI`` and a second time with ``variant`` passed as ``OpenMP``.
+The framework will try to generate unique names for the generated tests by stringifying the arguments passed to the test's constructor:
+
+
+.. code-block:: none
+
+   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
+   Reframe version: 2.13-dev0
+   Launched by user: XXX
+   Launched on host: daint101
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/advanced/advanced_example8.py'
+       Stage dir prefix  : current/working/dir/reframe/stage/
+       Output dir prefix : current/working/dir/reframe/output/
+       Logging dir       : current/working/dir/reframe/logs
+   List of matched checks
+   ======================
+     * MatrixVectorTest_MPI (Matrix-vector multiplication test (MPI))
+           tags: [tutorial], maintainers: [you-can-type-your-email-here]
+     * MatrixVectorTest_OpenMP (Matrix-vector multiplication test (OpenMP))
+           tags: [tutorial], maintainers: [you-can-type-your-email-here]
+   Found 2 check(s).
+
+
+There are a couple of different ways that we could have used the ``@parameterized_test`` decorator.
+One is to use dictionaries for specifying the instantiations of our test class.
+The dictionaries will be converted to keyword arguments and passed to the constructor of the test class:
+
+.. code-block:: python
+
+   @rfm.parameterized_test([{'variant': 'MPI'}, {'variant': 'OpenMP'}])
+
+
+Another way, which is quite useful if you want to generate lots of different tests at the same time, is to use either `list comprehensions <https://docs.python.org/3.6/tutorial/datastructures.html#list-comprehensions>`__ or `generator expressions <https://www.python.org/dev/peps/pep-0289/>`__ for specifying the different test instantiations:
+
+.. code-block:: python
+
+   @rfm.parameterized_test((variant,) for variant in ['MPI', 'OpenMP'])
+
+
+.. note::
+   In versions of the framework prior to 2.13, this could be achieved by explicitly instantiating your tests inside the ``_get_checks()`` method.
+
+
+.. tip::
+
+   Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
+   We use this technique extensively in our tests.
