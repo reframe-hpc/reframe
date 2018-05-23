@@ -1,6 +1,8 @@
 import functools
 import sys
 
+from itertools import takewhile
+
 
 @functools.total_ordering
 class Version:
@@ -61,3 +63,60 @@ class Version:
             return base
 
         return base + '-dev%s' % self._dev_number
+
+
+class VersionValidator:
+    def __init__(self, condition):
+        self.condition = condition
+        self._operations = {
+            ">": lambda x, y: x > y,
+            ">=": lambda x, y: x >= y,
+            "<": lambda x, y: x < y,
+            "<=": lambda x, y: x <= y,
+            "==": lambda x, y: x == y,
+            "!=": lambda x, y: x != y,
+        }
+
+    def _parse_condition(self, condition):
+        try:
+            operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
+                                              condition)))
+            if operator == '':
+                operator = '=='
+
+            str_version = condition.split(operator, maxsplit=1)[-1]
+        except ValueError:
+            raise ValueError('invalid condition: %s'
+                             % condition.strip()) from None
+
+        if operator not in self._operations.keys():
+            raise ValueError("invalid boolean operator: '%s'" % operator)
+
+        return Version(str_version), operator
+
+    def _validate_interval(self, version_ref):
+        min_version_str, max_version_str = self.condition.split(',')
+
+        try:
+            min_version = Version(min_version_str)
+            max_version = Version(max_version_str)
+        except ValueError:
+            raise ValueError('invalid interval: "%s", '
+                             'expecting "min_version, max_version"'
+                             % self.condition.strip()) from None
+
+        return ((Version(version_ref) > min_version) and
+                (Version(version_ref) < max_version))
+
+    def _validate_relation(self, version_ref):
+        version, op = self._parse_condition(self.condition)
+
+        return self._operations[op](Version(version_ref), version)
+
+    def validate(self, version_ref):
+        try:
+            res = self._validate_interval(version_ref)
+        except ValueError:
+            res = self._validate_relation(version_ref)
+
+        return res

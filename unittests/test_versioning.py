@@ -1,6 +1,6 @@
 import unittest
 
-from reframe.utility.versioning import Version
+from reframe.utility.versioning import Version, VersionValidator
 
 
 class TestVersioning(unittest.TestCase):
@@ -27,3 +27,14 @@ class TestVersioning(unittest.TestCase):
         self.assertEqual(Version('1.3-dev1'), Version('1.3.0-dev1'))
         self.assertGreater(Version('1.12.3'), Version('1.2.3'))
         self.assertGreater(Version('1.2.23'), Version('1.2.3'))
+
+    def test_version_validation(self):
+        conditions = [VersionValidator('<=1.0.0'),
+                      VersionValidator('2.0.0,2.5'),
+                      VersionValidator('3.0')]
+        self.assertTrue(any(c.validate('0.1') for c in conditions))
+        self.assertFalse(any(c.validate('2.0.0') for c in conditions))
+        self.assertTrue(any(c.validate('2.2') for c in conditions))
+        self.assertFalse(any(c.validate('2.5') for c in conditions))
+        self.assertTrue(any(c.validate('3.0') for c in conditions))
+        self.assertFalse(any(c.validate('3.1') for c in conditions))
