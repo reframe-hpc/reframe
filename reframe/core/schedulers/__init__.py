@@ -30,7 +30,7 @@ class JobState:
 class Job(abc.ABC):
     """A job descriptor.
 
-    .. note::
+    .. caution::
        This is an abstract class.
        Users may not create jobs directly.
     """

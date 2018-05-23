@@ -13,7 +13,7 @@ from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
 
 
-class Module:
+class _Module:
     """Module wrapper.
 
     This class represents internally a module. Concrete module system
@@ -71,7 +71,11 @@ class Module:
 
 
 class ModulesSystem:
-    """Implements the frontend of the module systems."""
+    """A modules system abstraction inside ReFrame.
+
+    This class interfaces between the framework internals and the actual
+    modules systems implementation.
+    """
 
     module_map = fields.AggregateTypeField('module_map',
                                            (dict, (str, (list, str))))
@@ -97,7 +101,8 @@ class ModulesSystem:
         """Resolve module ``name`` in the registered module map.
 
         :returns: the list of real modules names pointed to by ``name``.
-        :raises: :attr:`ConfigError` if the mapping contains a cycle.
+        :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
+            contains a cycle.
         """
         ret = []
         visited = set()
@@ -143,7 +148,7 @@ class ModulesSystem:
         return [str(m) for m in self._backend.loaded_modules()]
 
     def conflicted_modules(self, name):
-        """Return the list of conflicted modules of the module ``name``.
+        """Return the list of the modules conflicting with module ``name``.
 
         If module ``name`` resolves to multiple real modules, then the returned
         list will be the concatenation of the conflict lists of all the real
@@ -158,15 +163,14 @@ class ModulesSystem:
         return ret
 
     def _conflicted_modules(self, name):
-        return [str(m) for m in self._backend.conflicted_modules(Module(name))]
+        return [str(m) for m in self._backend.conflicted_modules(_Module(name))]
 
     def load_module(self, name, force=False):
-        """Load the module `name'.
+        """Load the module ``name``.
 
-        If ``force`` is set, forces the loading,
-        unloading first any conflicting modules currently loaded.
-        If module ``name`` refers to to multiple real modules, all of the
-        target modules will be loaded.
+        If ``force`` is set, forces the loading, unloading first any
+        conflicting modules currently loaded. If module ``name`` refers to
+        multiple real modules, all of the target modules will be loaded.
 
         Returns the list of unloaded modules as strings.
         """
@@ -177,7 +181,7 @@ class ModulesSystem:
         return ret
 
     def _load_module(self, name, force=False):
-        module = Module(name)
+        module = _Module(name)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -205,21 +209,26 @@ class ModulesSystem:
             self._unload_module(m)
 
     def _unload_module(self, name):
-        self._backend.unload_module(Module(name))
+        self._backend.unload_module(_Module(name))
 
     def is_module_loaded(self, name):
         """Check if module ``name`` is loaded.
 
         If module ``name`` refers to multiple real modules, this method will
-        return True only if all the referees are loaded.
+        return :class:`True` only if all the referees are loaded.
         """
         return all(self._is_module_loaded(m) for m in self.resolve_module(name))
 
     def _is_module_loaded(self, name):
-        return self._backend.is_module_loaded(Module(name))
+        return self._backend.is_module_loaded(_Module(name))
 
     def load_mapping(self, mapping):
-        """Updates the internal module mapping with a single mapping"""
+        """Update the internal module mappings using a single mapping.
+
+        :arg mapping: a string specifying the module mapping.
+            Example syntax: ``'m0: m1 m2'``.
+
+        """
         key, *rest = mapping.split(':')
         if len(rest) != 1:
             raise ConfigError('invalid mapping syntax: %s' % mapping)
@@ -235,7 +244,7 @@ class ModulesSystem:
         self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
-        """Update the internal module mapping from mappings in a file."""
+        """Update the internal module mappings from mappings read from file."""
         with open(filename) as fp:
             for lineno, line in enumerate(fp, start=1):
                 line = line.strip().split('#')[0]
@@ -275,20 +284,21 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name):
-        """Return the appropriate shell command for loading module."""
-        return [self._backend.emit_load_instr(Module(name))
+        """Return the appropriate shell command for loading module ``name``."""
+        return [self._backend.emit_load_instr(_Module(name))
                 for name in self.resolve_module(name)]
 
     def emit_unload_commands(self, name):
-        """Return the appropriate shell command for unloading module."""
-        return [self._backend.emit_unload_instr(Module(name))
+        """Return the appropriate shell command for unloading module
+        ``name``."""
+        return [self._backend.emit_unload_instr(_Module(name))
                 for name in reversed(self.resolve_module(name))]
 
     def __str__(self):
         return str(self._backend)
 
 
-class ModulesSystemImpl(abc.ABC):
+class _ModulesSystemImpl(abc.ABC):
     """Abstract base class for module systems."""
 
     @abc.abstractmethod
@@ -307,7 +317,7 @@ class ModulesSystemImpl(abc.ABC):
 
     @abc.abstractmethod
     def load_module(self, module):
-        """Load the module `name'.
+        """Load the module ``name``.
 
         If ``force`` is set, forces the loading,
         unloading first any conflicting modules currently loaded.
@@ -361,7 +371,7 @@ class ModulesSystemImpl(abc.ABC):
         return self.name() + ' ' + self.version()
 
 
-class TModImpl(ModulesSystemImpl):
+class TModImpl(_ModulesSystemImpl):
     """Module system for TMod (Tcl)."""
 
     def __init__(self):
@@ -423,7 +433,7 @@ class TModImpl(ModulesSystemImpl):
     def loaded_modules(self):
         try:
             # LOADEDMODULES may be defined but empty
-            return [Module(m)
+            return [_Module(m)
                     for m in os.environ['LOADEDMODULES'].split(':') if m]
         except KeyError:
             return []
@@ -431,7 +441,7 @@ class TModImpl(ModulesSystemImpl):
     def conflicted_modules(self, module):
         conflict_list = []
         completed = self._run_module_command('show', str(module))
-        return [Module(m.group(1))
+        return [_Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
 
@@ -558,15 +568,15 @@ class LModImpl(TModImpl):
             conflict_arg = m.group(1)
             if conflict_arg.startswith('('):
                 # Lua syntax
-                ret.append(Module(conflict_arg.strip('\'"()')))
+                ret.append(_Module(conflict_arg.strip('\'"()')))
             else:
                 # Tmod syntax
-                ret.append(Module(conflict_arg))
+                ret.append(_Module(conflict_arg))
 
         return ret
 
 
-class NoModImpl(ModulesSystemImpl):
+class NoModImpl(_ModulesSystemImpl):
     """A convenience class that implements a no-op a modules system."""
 
     def loaded_modules(self):

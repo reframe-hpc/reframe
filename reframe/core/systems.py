@@ -177,42 +177,60 @@ class System:
 
     @property
     def name(self):
+        """The name of this system."""
         return self._name
 
     @property
     def descr(self):
+        """The description of this system."""
         return self._descr
 
     @property
     def hostnames(self):
+        """The hostname patterns associated with this system."""
         return self._hostnames
 
     @property
     def modules_system(self):
+        """The modules system name associated with this system."""
         return self._modules_system
 
     @property
     def prefix(self):
+        """The ReFrame prefix associated with this system."""
         return self._prefix
 
     @property
     def stagedir(self):
+        """The ReFrame stage directory prefix associated with this system."""
         return self._stagedir
 
     @property
     def outputdir(self):
+        """The ReFrame output directory prefix associated with this system."""
         return self._outputdir
 
     @property
     def logdir(self):
+        """The ReFrame log directory prefix associated with this system."""
         return self._logdir
 
     @property
     def resourcesdir(self):
+        """Global resources directory for this system.
+
+        You may use this directory for storing large resource files of your
+        regression tests.
+        See `here <configure.html#system-configuration>`__ on how to configure
+        this.
+
+        :type: :class:`str`
+        """
         return self._resourcesdir
 
     @property
     def partitions(self):
+        """All the system partitions associated with this system."""
         return self._partitions
 
     def add_partition(self, partition):

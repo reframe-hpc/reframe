@@ -21,6 +21,24 @@ from reframe.core.modules import ModulesSystem
 
 
 class HostSystem:
+    """The host system of the framework.
+
+    The host system is a representation of the system that the framework
+    currently runs on.If the framework is properly configured, the host
+    system is automatically detected. If not, it may be explicitly set by the
+    user.
+
+    This class is mainly a proxy of :class:`reframe.core.systems.System` that
+    stores optionally a partition name and provides some additional
+    functionality for manipulating system partitions.
+
+    All attributes of the :class:`reframe.core.systems.System` may be accessed
+    directly from this proxy.
+
+    .. note::
+       .. versionadded:: 2.13
+    """
+
     def __init__(self, system, partname=None):
         self._system = system
         self._partname = partname
@@ -29,35 +47,11 @@ class HostSystem:
         # Delegate any failed attribute lookup to our backend
         return getattr(self._system, attr)
 
-    # We redefine the following properties just to document them for the users
-    @property
-    def name(self):
-        """The name of this system."""
-        return self._system.name
-
-    @property
-    def descr(self):
-        """The description of this system."""
-        return self._system.descr
-
-    @property
-    def resourcesdir(self):
-        """Global resources directory for this system.
-
-        You may use this directory for storing large resource files of your
-        regression tests.
-        See `here <configure.html#system-configuration>`__ on how to configure
-        this.
-
-        :type: :class:`str`
-        """
-        return self._system.resourcesdir
-
     @property
     def partitions(self):
         """The partitions of this system.
 
-        :type: a list of :class:`reframe.core.systems.SystemPartition`.
+        :type: :class:`list[reframe.core.systems.SystemPartition]`.
         """
 
         if not self._partname:
@@ -66,6 +60,10 @@ class HostSystem:
         return [p for p in self._system.partitions if p.name == self._partname]
 
     def partition(self, name):
+        """Return the system partition ``name``.
+
+        :type: :class:`reframe.core.systems.SystemPartition`.
+        """
         for p in self.partitions:
             if p.name == name:
                 return p
@@ -80,6 +78,20 @@ class HostSystem:
 
 
 class HostResources:
+    """Resources associated with ReFrame execution on the current host.
+
+    .. note::
+       .. versionadded:: 2.13
+    """
+
+    #: The prefix directory of ReFrame execution.
+    #: This is always an absolute path.
+    #:
+    #: :type: :class:`str`
+    #:
+    #: .. danger::
+    #:    Users may not set this field.
+    #:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
     stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
@@ -108,6 +120,7 @@ class HostResources:
 
     @property
     def output_prefix(self):
+        """The output prefix directory of ReFrame."""
         if self.outputdir is None:
             return os.path.join(self.prefix, 'output', self.timestamp)
         else:
@@ -115,6 +128,7 @@ class HostResources:
 
     @property
     def stage_prefix(self):
+        """The stage prefix directory of ReFrame."""
         if self.stagedir is None:
             return os.path.join(self.prefix, 'stage', self.timestamp)
         else:
@@ -122,6 +136,7 @@ class HostResources:
 
     @property
     def perflog_prefix(self):
+        """The prefix directory of the performance logs of ReFrame."""
         if self.perflogdir is None:
             return os.path.join(self.prefix, 'logs')
         else:
@@ -138,6 +153,17 @@ class HostResources:
 
 
 class RuntimeContext:
+    """The runtime context of the framework.
+
+    This class essentially groups the current host system and the associated
+    resources of the framework on the current system.
+
+    There is a single instance of this class globally in the framework.
+
+    .. note::
+       .. versionadded:: 2.13
+    """
+
     def __init__(self, dict_config, sysdescr=None):
         self._site_config = config.SiteConfiguration(dict_config)
         if sysdescr is not None:
@@ -185,14 +211,26 @@ class RuntimeContext:
 
     @property
     def system(self):
+        """The current host system.
+
+        :type: :class:`reframe.core.runtime.HostSystem`
+        """
         return self._system
 
     @property
     def resources(self):
+        """The framework resources.
+
+        :type: :class:`reframe.core.runtime.HostResources`
+        """
         return self._resources
 
     @property
     def modules_system(self):
+        """The modules system used by the current host system.
+
+        :type: :class:`reframe.core.modules.ModulesSystem`.
+        """
         return self._modules_system
 
 
@@ -209,6 +247,13 @@ def init_runtime(dict_config, sysname=None):
 
 
 def runtime():
+    """Retrieve the framework's runtime context.
+
+    :type: :class:`reframe.core.runtime.RuntimeContext`
+
+    .. note::
+       .. versionadded:: 2.13
+    """
     if _runtime_context is None:
         raise ReframeFatalError('no runtime context is configured')
 
@@ -218,8 +263,7 @@ def runtime():
 # The following utilities are useful only for the unit tests
 
 class temp_runtime:
-    """Context manager to temporarily switch to another runtime."""
-
+    # Context manager to temporarily switch to another runtime.
     def __init__(self, dict_config, sysname=None):
         global _runtime_context
         self._runtime_save = _runtime_context
@@ -237,7 +281,7 @@ class temp_runtime:
 
 
 def switch_runtime(dict_config, sysname=None):
-    """Function decorator for temporarily changing the runtime for a function."""
+    # Function decorator for temporarily changing the runtime for a function.
     def _runtime_deco(fn):
         @functools.wraps(fn)
         def _fn(*args, **kwargs):

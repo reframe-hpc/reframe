@@ -186,35 +186,36 @@ class TestNoModModulesSystem(_TestModulesSystem):
 
 class TestModule(unittest.TestCase):
     def setUp(self):
-        self.module = modules.Module('foo/1.2')
+        self.module = modules._Module('foo/1.2')
 
     def test_invalid_initialization(self):
-        self.assertRaises(ValueError, modules.Module, '')
-        self.assertRaises(ValueError, modules.Module, ' ')
-        self.assertRaises(TypeError, modules.Module, None)
-        self.assertRaises(TypeError, modules.Module, 23)
+        self.assertRaises(ValueError, modules._Module, '')
+        self.assertRaises(ValueError, modules._Module, ' ')
+        self.assertRaises(TypeError, modules._Module, None)
+        self.assertRaises(TypeError, modules._Module, 23)
 
     def test_name_version(self):
         self.assertEqual(self.module.name, 'foo')
         self.assertEqual(self.module.version, '1.2')
 
     def test_equal(self):
-        self.assertEqual(modules.Module('foo'), modules.Module('foo'))
-        self.assertEqual(modules.Module('foo/1.2'), modules.Module('foo/1.2'))
-        self.assertEqual(modules.Module('foo'), modules.Module('foo/1.2'))
-        self.assertEqual(hash(modules.Module('foo')),
-                         hash(modules.Module('foo')))
-        self.assertEqual(hash(modules.Module('foo/1.2')),
-                         hash(modules.Module('foo/1.2')))
-        self.assertEqual(hash(modules.Module('foo')),
-                         hash(modules.Module('foo/1.2')))
-        self.assertNotEqual(modules.Module('foo/1.2'),
-                            modules.Module('foo/1.3'))
-        self.assertNotEqual(modules.Module('foo'), modules.Module('bar'))
-        self.assertNotEqual(modules.Module('foo'), modules.Module('foobar'))
+        self.assertEqual(modules._Module('foo'), modules._Module('foo'))
+        self.assertEqual(modules._Module('foo/1.2'),
+                         modules._Module('foo/1.2'))
+        self.assertEqual(modules._Module('foo'), modules._Module('foo/1.2'))
+        self.assertEqual(hash(modules._Module('foo')),
+                         hash(modules._Module('foo')))
+        self.assertEqual(hash(modules._Module('foo/1.2')),
+                         hash(modules._Module('foo/1.2')))
+        self.assertEqual(hash(modules._Module('foo')),
+                         hash(modules._Module('foo/1.2')))
+        self.assertNotEqual(modules._Module('foo/1.2'),
+                            modules._Module('foo/1.3'))
+        self.assertNotEqual(modules._Module('foo'), modules._Module('bar'))
+        self.assertNotEqual(modules._Module('foo'), modules._Module('foobar'))
 
 
-class ModulesSystemEmulator(modules.ModulesSystemImpl):
+class ModulesSystemEmulator(modules._ModulesSystemImpl):
     """A convenience class that simulates a modules system."""
 
     def __init__(self):

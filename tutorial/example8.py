@@ -1,13 +1,10 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class BaseMatrixVectorTest(RegressionTest):
-    def __init__(self, test_version, **kwargs):
-        super().__init__('example8_' + test_version.lower() + '_check',
-                         os.path.dirname(__file__), **kwargs)
+class BaseMatrixVectorTest(rfm.RegressionTest):
+    def __init__(self, test_version):
+        super().__init__()
         self.descr = '%s matrix-vector multiplication' % test_version
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -36,15 +33,17 @@ class BaseMatrixVectorTest(RegressionTest):
         super().compile()
 
 
+@rfm.simple_test
 class SerialTest(BaseMatrixVectorTest):
-    def __init__(self, **kwargs):
-        super().__init__('Serial', **kwargs)
+    def __init__(self):
+        super().__init__('Serial')
         self.sourcepath = 'example_matrix_vector_multiplication.c'
 
 
+@rfm.simple_test
 class OpenMPTest(BaseMatrixVectorTest):
-    def __init__(self, **kwargs):
-        super().__init__('OpenMP', **kwargs)
+    def __init__(self):
+        super().__init__('OpenMP')
         self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
@@ -59,9 +58,10 @@ class OpenMPTest(BaseMatrixVectorTest):
         }
 
 
+@rfm.simple_test
 class MPITest(BaseMatrixVectorTest):
-    def __init__(self, **kwargs):
-        super().__init__('MPI', **kwargs)
+    def __init__(self):
+        super().__init__('MPI')
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
@@ -80,9 +80,10 @@ class MPITest(BaseMatrixVectorTest):
         }
 
 
+@rfm.simple_test
 class OpenACCTest(BaseMatrixVectorTest):
-    def __init__(self, **kwargs):
-        super().__init__('OpenACC', **kwargs)
+    def __init__(self):
+        super().__init__('OpenACC')
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.sourcepath = 'example_matrix_vector_multiplication_openacc.c'
@@ -94,16 +95,12 @@ class OpenACCTest(BaseMatrixVectorTest):
         }
 
 
+@rfm.simple_test
 class CudaTest(BaseMatrixVectorTest):
-    def __init__(self, **kwargs):
-        super().__init__('CUDA', **kwargs)
+    def __init__(self):
+        super().__init__('CUDA')
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']
         self.sourcepath = 'example_matrix_vector_multiplication_cuda.cu'
         self.modules = ['cudatoolkit']
         self.num_gpus_per_node = 1
-
-
-def _get_checks(**kwargs):
-    return [SerialTest(**kwargs), OpenMPTest(**kwargs), MPITest(**kwargs),
-            OpenACCTest(**kwargs), CudaTest(**kwargs)]

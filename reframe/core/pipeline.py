@@ -37,26 +37,25 @@ class RegressionTest:
     regression test goes through during its lifetime.
 
     :arg name: The name of the test.
-        This is the only argument that the users may specify freely.
+        If :class:`None`, the framework will try to assign a unique and
+        human-readable name to the test.
+
     :arg prefix: The directory prefix of the test.
-        You should initialize this to the directory containing the file that
-        defines the regression test.
-        You can achieve this by always passing ``os.path.dirname(__file__)``.
-    :arg system: The system that this regression test will run on.
-        The framework takes care of initializing and passing correctly this
-        argument.
-    :arg resources: An object managing the framework's resources.
-        The framework takes care of initializing and passing correctly this
-        argument.
+        If :class:`None`, the framework will set it to the directory containing
+        the test file.
 
-    Concrete regression test subclasses should call the base constructor as
-    follows:
+    .. note::
+        The ``name`` and ``prefix`` arguments are just maintained for backward
+        compatibility to the old (prior to 2.13) syntax of regression tests.
+        Users are advised to use the new simplified syntax for writing
+        regression tests.
+        Refer to the :doc:`ReFrame Tutorial </tutorial>` for more information.
 
-    ::
+        This class is also directly available under the top-level :mod:`reframe`
+        module.
 
-        class MyTest(RegressionTest):
-            def __init__(self, my_test_args, **kwargs):
-                super().__init__('mytest', os.path.dirname(__file__), **kwargs)
+       .. versionchanged:: 2.13
+
     """
     #: The name of the test.
     #:
@@ -1103,7 +1102,11 @@ class RegressionTest:
 
 
 class RunOnlyRegressionTest(RegressionTest):
-    """Base class for run-only regression tests."""
+    """Base class for run-only regression tests.
+
+    This class is also directly available under the top-level :mod:`reframe`
+    module.
+    """
 
     def compile(self, **compile_opts):
         """The compilation phase of the regression test pipeline.
@@ -1135,6 +1138,9 @@ class CompileOnlyRegressionTest(RegressionTest):
 
     The standard output and standard error of the test will be set to those of
     the compilation stage.
+
+    This class is also directly available under the top-level :mod:`reframe`
+    module.
     """
 
     def __init__(self, *args, **kwargs):
