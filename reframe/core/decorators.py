@@ -42,12 +42,39 @@ def _validate_test(cls):
 
 
 def simple_test(cls):
+    """Class decorator for registering parameterless tests with ReFrame.
+
+    The decorated class must derive from
+    :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
+    available directly under the :mod:`reframe` module.
+
+    .. versionadded:: 2.13
+
+    """
+
     _validate_test(cls)
     _register_test(cls)
     return cls
 
 
 def parameterized_test(inst=[]):
+    """Class decorator for registering multiple instantiations of a test class.
+
+   The decorated class must derive from
+   :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
+   available directly under the :mod:`reframe` module.
+
+   :arg inst: An iterable of the argument lists of the difference
+              instantiations.  Instantiation arguments may also be passed as
+              keyword dictionaries.
+
+   .. versionadded:: 2.13
+
+   .. note::
+
+      This decorator does not instantiate any test.  It only registers them.
+      The actual instantiation happens during the loading phase of the test.
+    """
     def _do_register(cls):
         _validate_test(cls)
         for args in inst:

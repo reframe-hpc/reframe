@@ -13,7 +13,7 @@ from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
 
 
-class _Module:
+class Module:
     """Module wrapper.
 
     This class represents internally a module. Concrete module system
@@ -163,7 +163,7 @@ class ModulesSystem:
         return ret
 
     def _conflicted_modules(self, name):
-        return [str(m) for m in self._backend.conflicted_modules(_Module(name))]
+        return [str(m) for m in self._backend.conflicted_modules(Module(name))]
 
     def load_module(self, name, force=False):
         """Load the module ``name``.
@@ -181,7 +181,7 @@ class ModulesSystem:
         return ret
 
     def _load_module(self, name, force=False):
-        module = _Module(name)
+        module = Module(name)
         loaded_modules = self._backend.loaded_modules()
         if module in loaded_modules:
             # Do not try to load the module if it is already present
@@ -209,7 +209,7 @@ class ModulesSystem:
             self._unload_module(m)
 
     def _unload_module(self, name):
-        self._backend.unload_module(_Module(name))
+        self._backend.unload_module(Module(name))
 
     def is_module_loaded(self, name):
         """Check if module ``name`` is loaded.
@@ -220,7 +220,7 @@ class ModulesSystem:
         return all(self._is_module_loaded(m) for m in self.resolve_module(name))
 
     def _is_module_loaded(self, name):
-        return self._backend.is_module_loaded(_Module(name))
+        return self._backend.is_module_loaded(Module(name))
 
     def load_mapping(self, mapping):
         """Update the internal module mappings using a single mapping.
@@ -285,20 +285,20 @@ class ModulesSystem:
 
     def emit_load_commands(self, name):
         """Return the appropriate shell command for loading module ``name``."""
-        return [self._backend.emit_load_instr(_Module(name))
+        return [self._backend.emit_load_instr(Module(name))
                 for name in self.resolve_module(name)]
 
     def emit_unload_commands(self, name):
         """Return the appropriate shell command for unloading module
         ``name``."""
-        return [self._backend.emit_unload_instr(_Module(name))
+        return [self._backend.emit_unload_instr(Module(name))
                 for name in reversed(self.resolve_module(name))]
 
     def __str__(self):
         return str(self._backend)
 
 
-class _ModulesSystemImpl(abc.ABC):
+class ModulesSystemImpl(abc.ABC):
     """Abstract base class for module systems."""
 
     @abc.abstractmethod
@@ -371,7 +371,7 @@ class _ModulesSystemImpl(abc.ABC):
         return self.name() + ' ' + self.version()
 
 
-class TModImpl(_ModulesSystemImpl):
+class TModImpl(ModulesSystemImpl):
     """Module system for TMod (Tcl)."""
 
     def __init__(self):
@@ -433,7 +433,7 @@ class TModImpl(_ModulesSystemImpl):
     def loaded_modules(self):
         try:
             # LOADEDMODULES may be defined but empty
-            return [_Module(m)
+            return [Module(m)
                     for m in os.environ['LOADEDMODULES'].split(':') if m]
         except KeyError:
             return []
@@ -441,7 +441,7 @@ class TModImpl(_ModulesSystemImpl):
     def conflicted_modules(self, module):
         conflict_list = []
         completed = self._run_module_command('show', str(module))
-        return [_Module(m.group(1))
+        return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
 
@@ -568,15 +568,15 @@ class LModImpl(TModImpl):
             conflict_arg = m.group(1)
             if conflict_arg.startswith('('):
                 # Lua syntax
-                ret.append(_Module(conflict_arg.strip('\'"()')))
+                ret.append(Module(conflict_arg.strip('\'"()')))
             else:
                 # Tmod syntax
-                ret.append(_Module(conflict_arg))
+                ret.append(Module(conflict_arg))
 
         return ret
 
 
-class NoModImpl(_ModulesSystemImpl):
+class NoModImpl(ModulesSystemImpl):
     """A convenience class that implements a no-op a modules system."""
 
     def loaded_modules(self):

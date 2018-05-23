@@ -89,7 +89,7 @@ class HostResources:
     #:
     #: :type: :class:`str`
     #:
-    #: .. danger::
+    #: .. caution::
     #:    Users may not set this field.
     #:
     prefix = fields.AbsolutePathField('prefix')
@@ -263,7 +263,8 @@ def runtime():
 # The following utilities are useful only for the unit tests
 
 class temp_runtime:
-    # Context manager to temporarily switch to another runtime.
+    """Context manager to temporarily switch to another runtime."""
+
     def __init__(self, dict_config, sysname=None):
         global _runtime_context
         self._runtime_save = _runtime_context
@@ -281,7 +282,7 @@ class temp_runtime:
 
 
 def switch_runtime(dict_config, sysname=None):
-    # Function decorator for temporarily changing the runtime for a function.
+    """Function decorator for temporarily changing the runtime for a function."""
     def _runtime_deco(fn):
         @functools.wraps(fn)
         def _fn(*args, **kwargs):

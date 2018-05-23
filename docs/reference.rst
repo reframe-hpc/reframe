@@ -10,33 +10,44 @@ Internal data structures and APIs are covered only to the extent that might be h
 Regression test classes and related utilities
 ---------------------------------------------
 
-.. py:decorator:: reframe.core.decorators.simple_test
+.. class:: reframe.RegressionTest(name=None, prefix=None)
 
-   Class decorator for registering parameterless tests with ReFrame.
-
-   The decorated class must derive from :class:`reframe.core.pipeline.RegressionTest`.
-   This decorator is also available directly under the :mod:`reframe` module.
+   This is an alias of :class:`reframe.core.pipeline.RegressionTest`.
 
    .. versionadded:: 2.13
 
 
-.. py:decorator:: reframe.core.decorators.parameterized_test(inst=[])
+.. class:: reframe.RunOnlyRegressionTest(*args, **kwargs)
 
-   Class decorator for registering multiple instantiations of a test class.
-
-   The decorated class must derive from :class:`reframe.core.pipeline.RegressionTest`.
-   This decorator is also available directly under the :mod:`reframe` module.
-
-   :arg inst: An iterable of the argument lists of the difference instantiations.
-              Instantiation arguments may also be passed as keyword dictionaries.
+   This is an alias of :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
 
    .. versionadded:: 2.13
 
-   .. note::
-      This decorator does not instantiate any test.
-      It only registers them.
-      The actual instantiation happens during the loading phase of the test.
 
+.. class:: reframe.CompileOnlyRegressionTest(*args, **kwargs)
+
+   This is an alias of :class:`reframe.core.pipeline.CompileOnlyRegressionTest`.
+
+   .. versionadded:: 2.13
+
+
+.. py:decorator:: reframe.simple_test
+
+   This is an alias of :func:`reframe.core.decorators.simple_test`.
+
+   .. versionadded:: 2.13
+
+
+.. py:decorator:: reframe.parameterized_test(inst=[])
+
+   This is an alias of :func:`reframe.core.decorators.parameterized_test`.
+
+   .. versionadded:: 2.13
+
+
+.. automodule:: reframe.core.decorators
+   :members:
+   :show-inheritance:
 
 .. automodule:: reframe.core.pipeline
    :members:
@@ -67,20 +78,9 @@ Job schedulers and parallel launchers
    :show-inheritance:
 
 
-.. py:decorator:: reframe.core.launchers.registry.register_launcher(name, local=False)
-
-    .. versionadded:: 2.8
-
-    Class decorator for registering new job launchers.
-
-    .. epigraph::
-       *This decorator is only relevant to developers of new job launchers.*
-
-    :arg name: The registration name of this launcher
-    :arg local: :class:`True` if launcher may only submit local jobs,
-        :class:`False` otherwise.
-    :raises ValueError: if a job launcher is already registered with
-        the same name.
+.. automodule:: reframe.core.launchers.registry
+   :members:
+   :show-inheritance:
 
 
 Runtime services
@@ -88,12 +88,11 @@ Runtime services
 
 .. automodule:: reframe.core.runtime
    :members:
+   :exclude-members: temp_runtime, switch_runtime
    :show-inheritance:
 
 
 Modules System API
 ------------------
 
-.. automodule:: reframe.core.modules
-   :members:
-   :show-inheritance:
+.. autoclass:: reframe.core.modules.ModulesSystem
