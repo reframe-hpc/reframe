@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import reframe.utility.sanity as sn
 from reframe.core.deferrable import evaluate, make_deferrable
 from reframe.core.exceptions import SanityError
-from unittests.fixtures import TEST_RESOURCES
+from unittests.fixtures import TEST_RESOURCES_CHECKS
 
 
 class TestDeferredBuiltins(unittest.TestCase):
@@ -155,7 +155,8 @@ class TestDeferredBuiltins(unittest.TestCase):
 
 class TestAsserts(unittest.TestCase):
     def setUp(self):
-        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
+        self.utf16_file = os.path.join(TEST_RESOURCES_CHECKS,
+                                       'src', 'homer.txt')
 
     def test_assert_true(self):
         self.assertTrue(sn.assert_true(True))
@@ -340,6 +341,10 @@ class TestAsserts(unittest.TestCase):
         self.assertTrue(sn.assert_reference(-0.9, -1, upper_thres=0.1))
         self.assertTrue(sn.assert_reference(-0.9, -1))
 
+        # Check upper threshold values greater than 1
+        self.assertTrue(sn.assert_reference(20.0, 10.0, None, 3.0))
+        self.assertTrue(sn.assert_reference(-50.0, -20.0, -2.0, 0.5))
+
         self.assertRaisesRegex(
             SanityError,
             '0\.5 is beyond reference value 1 \(l=0\.8, u=1\.1\)',
@@ -372,14 +377,19 @@ class TestAsserts(unittest.TestCase):
                                'invalid high threshold value: -0\.1',
                                evaluate, sn.assert_reference(0.9, 1, -0.2, -0.1))
         self.assertRaisesRegex(SanityError,
-                               'invalid high threshold value: 1\.1',
-                               evaluate, sn.assert_reference(0.9, 1, -0.2, 1.1))
-        self.assertRaisesRegex(SanityError,
                                'invalid low threshold value: 0\.2',
                                evaluate, sn.assert_reference(0.9, 1, 0.2, 0.1))
         self.assertRaisesRegex(SanityError,
                                'invalid low threshold value: 1\.2',
                                evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1))
+
+        # check invalid thresholds greater than 1
+        self.assertRaisesRegex(SanityError,
+                               'invalid low threshold value: -2\.0',
+                               evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1))
+        self.assertRaisesRegex(SanityError,
+                               'invalid high threshold value: 1\.5',
+                               evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5))
 
     def _write_tempfile(self):
         ret = None
@@ -465,12 +475,12 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(0, sn.count(myrange(0)))
 
     def test_glob(self):
-        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.glob(filepatt))
         self.assertTrue(sn.glob(make_deferrable(filepatt)))
 
     def test_iglob(self):
-        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.count(sn.iglob(filepatt)))
         self.assertTrue(sn.count(sn.iglob(make_deferrable(filepatt))))
 
@@ -485,7 +495,8 @@ class TestUtilityFunctions(unittest.TestCase):
 class TestPatternMatchingFunctions(unittest.TestCase):
     def setUp(self):
         self.tempfile = None
-        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
+        self.utf16_file = os.path.join(TEST_RESOURCES_CHECKS,
+                                       'src', 'homer.txt')
         with NamedTemporaryFile('wt', delete=False) as fp:
             self.tempfile = fp.name
             fp.write('Step: 1\n')

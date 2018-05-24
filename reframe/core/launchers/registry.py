@@ -1,5 +1,4 @@
 import reframe.core.fields as fields
-
 from reframe.core.exceptions import ConfigError
 
 
@@ -10,18 +9,20 @@ _LAUNCHERS = {}
 def register_launcher(name, local=False):
     """Class decorator for registering new job launchers.
 
+    .. caution::
+       This decorator is only relevant to developers of new job launchers.
+
+    .. note::
+       .. versionadded:: 2.8
+
     :arg name: The registration name of this launcher
     :arg local: :class:`True` if launcher may only submit local jobs,
         :class:`False` otherwise.
     :raises ValueError: if a job launcher is already registered with
         the same name.
-
-    .. note::
-       .. versionadded:: 2.8
-
-       This method is only relevant to developers of new job launchers.
-
     """
+
+    # See reference.rst for documentation
     def _register_launcher(cls):
         if name in _LAUNCHERS:
             raise ValueError("a job launcher is already "
@@ -60,15 +61,14 @@ def getlauncher(name):
     You have to instantiate it explicitly before assigning it to the
     :attr:`launcher` attribute of the job.
 
+    .. note::
+       .. versionadded:: 2.8
+
     :arg name: The name of the launcher to retrieve.
     :returns: The class of the launcher requested, which is a subclass of
         :class:`reframe.core.launchers.JobLauncher`.
     :raises reframe.core.exceptions.ConfigError: if no launcher is
         registered with that name.
-
-    .. note::
-       .. versionadded:: 2.8
-
     """
     try:
         return _LAUNCHERS[name]

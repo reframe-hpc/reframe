@@ -26,75 +26,25 @@ This is exactly what our first example here does.
 
 For completeness, here are the contents of ``Makefile`` provided:
 
-.. code-block:: makefile
-
-  EXECUTABLE := advanced_example1
-
-  OBJS := advanced_example1.o
-
-  $(EXECUTABLE): $(OBJS)
-      $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-  $(OBJS): advanced_example1.c
-      $(CC) $(CPPFLAGS) $(CFLAGS) -c $(LDFLAGS) -o $@ $^
+.. literalinclude:: ../tutorial/advanced/src/Makefile
+  :language: makefile
 
 The corresponding ``advanced_example1.c`` source file consists of a simple printing of a message, whose content depends on the preprocessor variable ``MESSAGE``:
 
-.. code-block:: c
-
-  #include <stdio.h>
-
-  int main(){
-  #ifdef MESSAGE
-      char *message = "SUCCESS";
-  #else
-      char *message = "FAILURE";
-  #endif
-      printf("Setting of preprocessor variable: %s\n", message);
-      return 0;
-  }
+.. literalinclude:: ../tutorial/advanced/src/advanced_example1.c
+  :language: c
 
 The purpose of the regression test in this case is to set the preprocessor variable ``MESSAGE`` via ``CPPFLAGS`` and then check the standard output for the message ``SUCCESS``, which indicates that the preprocessor flag has been passed and processed correctly by the Makefile.
 
 The contents of this regression test are the following (``tutorial/advanced/advanced_example1.py``):
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class MakefileTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('preprocessor_check', os.path.dirname(__file__),
-                           **kwargs)
-
-          self.descr = ('ReFrame tutorial demonstrating the use of Makefiles '
-                        'and compile options')
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.executable = './advanced_example1'
-          self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          self.current_environ.cppflags = '-DMESSAGE'
-          super().compile()
-
-
-  def _get_checks(**kwargs):
-      return [MakefileTest(**kwargs)]
+.. literalinclude:: ../tutorial/advanced/advanced_example1.py
 
 The important bit here is the ``compile()`` method.
 
-.. code-block:: python
-
-  def compile(self):
-      self.current_environ.cppflags = '-DMESSAGE'
-      super().compile()
+.. literalinclude:: ../tutorial/advanced/advanced_example1.py
+  :lines: 18-20
+  :dedent: 4
 
 As in the simple single source file examples we showed in the `tutorial <tutorial.html>`__, we use the current programming environment's flags for modifying the compilation.
 ReFrame will then compile the regression test source code as by invoking ``make`` as follows:
@@ -154,38 +104,7 @@ There are cases when it is desirable to perform regression testing for an alread
 The following test uses the ``echo`` Bash shell command to print a random integer between specific lower and upper bounds.
 Here is the full regression test (``tutorial/advanced/advanced_example2.py``):
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RunOnlyRegressionTest
-
-
-  class RunOnlyTest(RunOnlyRegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('run_only_check', os.path.dirname(__file__),
-                           **kwargs)
-
-          self.descr = ('ReFrame tutorial demonstrating the class'
-                        'RunOnlyRegressionTest')
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.sourcesdir = None
-
-          lower = 90
-          upper = 100
-          self.executable = 'echo "Random: $((RANDOM%({1}+1-{0})+{0}))"'.format(
-              lower, upper)
-          self.sanity_patterns = sn.assert_bounded(sn.extractsingle(
-              r'Random: (?P<number>\S+)', self.stdout, 'number', float),
-              lower, upper)
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [RunOnlyTest(**kwargs)]
+.. literalinclude:: ../tutorial/advanced/advanced_example2.py
 
 There is nothing special for this test compared to those presented `earlier <tutorial.html>`__ except that it derives from the :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` and that it does not contain any resources (``self.sourcesdir = None``).
 Note that run-only regression tests may also have resources, as for instance a precompiled executable or some input data. The copying of these resources to the stage directory is performed at the beginning of the run phase.
@@ -200,30 +119,7 @@ ReFrame provides the option to write compile-only tests which consist only of a 
 This kind of tests must derive from the :class:`CompileOnlyRegressionTest <reframe.core.pipeline.CompileOnlyRegressionTest>` class provided by the framework.
 The following example (``tutorial/advanced/advanced_example3.py``) reuses the code of our first example in this section and checks that no warnings are issued by the compiler:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import CompileOnlyRegressionTest
-
-
-  class CompileOnlyTest(CompileOnlyRegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('compile_only_check', os.path.dirname(__file__),
-                           **kwargs)
-          self.descr = ('ReFrame tutorial demonstrating the class'
-                        'CompileOnlyRegressionTest')
-          self.valid_systems = ['*']
-          self.valid_prog_environs = ['*']
-          self.sanity_patterns = sn.assert_not_found('warning', self.stderr)
-
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [CompileOnlyTest(**kwargs)]
+.. literalinclude:: ../tutorial/advanced/advanced_example3.py
 
 The important thing to note here is that the standard output and standard error of the tests, accessible through the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>` and :attr:`stderr <reframe.core.pipeline.RegressionTest.stderr>` attributes, are now the corresponding those of the compilation command.
 So sanity checking can be done in exactly the same way as with a normal test.
@@ -234,89 +130,19 @@ Leveraging Environment Variables
 We have already demonstrated in the `tutorial <tutorial.html>`__ that ReFrame allows you to load the required modules for regression tests and also set any needed environment variables. When setting environment variables for your test through the :attr:`variables <reframe.core.pipeline.RegressionTest.variables>` attribute, you can assign them values of other, already defined, environment variables using the standard notation ``$OTHER_VARIABLE`` or ``${OTHER_VARIABLE}``.
 The following regression test (``tutorial/advanced/advanced_example4.py``) sets the ``CUDA_HOME`` environment variable to the value of the ``CUDATOOLKIT_HOME`` and then compiles and runs a simple program:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RegressionTest
-
-
-  class EnvironmentVariableTest(RegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('env_variable_check', os.path.dirname(__file__),
-                           **kwargs)
-
-          self.descr = ('ReFrame tutorial demonstrating the use'
-                        'of environment variables provided by loaded modules')
-          self.valid_systems = ['daint:gpu']
-          self.valid_prog_environs = ['*']
-          self.modules = ['cudatoolkit']
-          self.variables = {'CUDA_HOME': '$CUDATOOLKIT_HOME'}
-          self.executable = './advanced_example4'
-          self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
-
-      def compile(self):
-          super().compile(makefile='Makefile_example4')
-
-
-  def _get_checks(**kwargs):
-      return [EnvironmentVariableTest(**kwargs)]
+.. literalinclude:: ../tutorial/advanced/advanced_example4.py
 
 Before discussing this test in more detail, let's first have a look in the source code and the Makefile of this example:
 
-.. code-block:: cpp
-
-  #include <stdio.h>
-  #include <stdlib.h>
-  #include <string.h>
-
-  #ifndef CUDA_HOME
-  #   define CUDA_HOME ""
-  #endif
-
-  int main() {
-      char *cuda_home_compile = CUDA_HOME;
-      char *cuda_home_runtime = getenv("CUDA_HOME");
-      if (cuda_home_runtime &&
-          strnlen(cuda_home_runtime, 256) &&
-          strnlen(cuda_home_compile, 256) &&
-          !strncmp(cuda_home_compile, cuda_home_runtime, 256)) {
-          printf("SUCCESS\n");
-      } else {
-          printf("FAILURE\n");
-          printf("Compiled with CUDA_HOME=%s, ran with CUDA_HOME=%s\n",
-                 cuda_home_compile,
-                 cuda_home_runtime ? cuda_home_runtime : "<null>");
-      }
-
-      return 0;
-  }
+.. literalinclude:: ../tutorial/advanced/src/advanced_example4.c
+  :language: c
 
 This program is pretty basic, but enough to demonstrate the use of environment variables from ReFrame.
 It simply compares the value of the ``CUDA_HOME`` macro with the value of the environment variable ``CUDA_HOME`` at runtime, printing ``SUCCESS`` if they are not empty and match.
 The Makefile for this example compiles this source by simply setting ``CUDA_HOME`` to the value of the ``CUDA_HOME`` environment variable:
 
-.. code-block:: makefile
-
-  EXECUTABLE := advanced_example4
-
-  CPPFLAGS = -DCUDA_HOME=\"$(CUDA_HOME)\"
-
-  .SUFFIXES: .o .c
-
-  OBJS := advanced_example4.o
-
-  $(EXECUTABLE): $(OBJS)
-      $(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-  $(OBJS): advanced_example4.c
-      $(CC) $(CPPFLAGS) $(CFLAGS) -c $(LDFLAGS) -o $@ $^
-
-  clean:
-      /bin/rm -f $(OBJS) $(EXECUTABLE)
+.. literalinclude:: ../tutorial/advanced/src/Makefile_example4
+  :language: makefile
 
 Coming back now to the ReFrame regression test, the ``CUDATOOLKIT_HOME`` environment variable is defined by the ``cudatoolkit`` module.
 If you try to run the test, you will see that it will succeed, meaning that the ``CUDA_HOME`` variable was set correctly both during the compilation and the runtime.
@@ -335,9 +161,9 @@ This ensures that the environment of the test is also set correctly at runtime.
 
 Finally, as already mentioned `previously <#leveraging-makefiles>`__, since the ``Makefile`` name is not one of the standard ones, it has to be passed as an argument to the :func:`compile <reframe.core.pipeline.RegressionTest.compile>` method of the base :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` class as follows:
 
-.. code-block:: python
-
-  super().compile(makefile='Makefile_example4')
+.. literalinclude:: ../tutorial/advanced/advanced_example4.py
+  :lines: 21
+  :dedent: 8
 
 Setting a Time Limit for Regression Tests
 -----------------------------------------
@@ -345,49 +171,22 @@ Setting a Time Limit for Regression Tests
 ReFrame gives you the option to limit the execution time of regression tests.
 The following example (``tutorial/advanced/advanced_example5.py``) demonstrates how you can achieve this by limiting the execution time of a test that tries to sleep 100 seconds:
 
-.. code-block:: python
-
-  import os
-
-  import reframe.utility.sanity as sn
-  from reframe.core.pipeline import RunOnlyRegressionTest
-
-
-  class TimeLimitTest(RunOnlyRegressionTest):
-      def __init__(self, **kwargs):
-          super().__init__('time_limit_check', os.path.dirname(__file__),
-                           **kwargs)
-
-          self.descr = ('ReFrame tutorial demonstrating the use'
-                        'of a user-defined time limit')
-          self.valid_systems = ['daint:gpu', 'daint:mc']
-          self.valid_prog_environs = ['*']
-          self.time_limit = (0, 1, 0)
-          self.executable = 'sleep'
-          self.executable_opts = ['100']
-          self.sanity_patterns = sn.assert_found(
-              r'CANCELLED.*DUE TO TIME LIMIT', self.stderr)
-          self.maintainers = ['put-your-name-here']
-          self.tags = {'tutorial'}
-
-
-  def _get_checks(**kwargs):
-      return [TimeLimitTest(**kwargs)]
+.. literalinclude:: ../tutorial/advanced/advanced_example5.py
 
 The important bit here is the following line that sets the time limit for the test to one minute:
 
-.. code-block:: python
-
-  self.time_limit = (0, 1, 0)
+.. literalinclude:: ../tutorial/advanced/advanced_example5.py
+  :lines: 13
+  :dedent: 8
 
 The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a three-tuple in the form ``(HOURS, MINUTES, SECONDS)``.
 Time limits are implemented for all the scheduler backends.
 
-The sanity condition for this test verifies that associated job has been canceled due to the time limit.
+The sanity condition for this test verifies that associated job has been canceled due to the time limit (note that this message is SLURM-specific).
 
-.. code-block:: python
-
-  self.sanity_patterns = sn.assert_found('CANCELLED.*TIME LIMIT', self.stderr)
+.. literalinclude:: ../tutorial/advanced/advanced_example5.py
+  :lines: 16-17
+  :dedent: 8
 
 Applying a sanity function iteratively
 --------------------------------------
@@ -396,21 +195,8 @@ It is often the case that a common sanity pattern has to be applied many times.
 In this example we will demonstrate how the above situation can be easily tackled using the :mod:`sanity <reframe.utility.sanity>` functions offered by ReFrame.
 Specifically, we would like to execute the following shell script and check that its output is correct:
 
-.. code-block:: bash
-
-   #!/usr/bin/env bash
-
-   if [ -z $LOWER ]; then
-       export LOWER=90
-   fi
-
-   if [ -z $UPPER ]; then
-       export UPPER=100
-   fi
-
-   for i in {1..100}; do
-       echo Random: $((RANDOM%($UPPER+1-$LOWER)+$LOWER))
-   done
+.. literalinclude:: ../tutorial/advanced/src/random_numbers.sh
+  :language: bash
 
 The above script simply prints 100 random integers between the limits given by the variables ``LOWER`` and ``UPPER``.
 In the corresponding regression test we want to check that all the random numbers printed lie between 90 and 100 ensuring that the script executed correctly.
@@ -420,42 +206,13 @@ Through :func:`map <reframe.utility.sanity.map>` the given function will be appl
 Note that since :func:`map <reframe.utility.sanity.map>` is a sanity function, its execution will be deferred.
 The contents of the ReFrame regression test contained in ``advanced_example6.py`` are the following:
 
-.. code-block:: python
-
-   import os
-
-   import reframe.utility.sanity as sn
-   from reframe.core.pipeline import RunOnlyRegressionTest
-
-
-   class DeferredIterationTest(RunOnlyRegressionTest):
-       def __init__(self, **kwargs):
-           super().__init__('deferred_iteration_check',
-                            os.path.dirname(__file__), **kwargs)
-           self.descr = ('ReFrame tutorial demonstrating the use of deferred '
-                         'iteration via the `map` sanity function.')
-           self.valid_systems = ['*']
-           self.valid_prog_environs = ['*']
-           self.executable = './random_numbers.sh'
-           numbers = sn.extractall(
-               r'Random: (?P<number>\S+)', self.stdout, 'number', float)
-           self.sanity_patterns = sn.and_(
-               sn.assert_eq(sn.count(numbers), 100),
-               sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
-           self.maintainers = ['put-your-name-here']
-           self.tags = {'tutorial'}
-
-
-   def _get_checks(**kwargs):
-       return [DeferredIterationTest(**kwargs)]
-
+.. literalinclude:: ../tutorial/advanced/advanced_example6.py
 
 First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
 
-.. code-block:: python
-
-  numbers = sn.extractall(r'Random: (?P<number>\S+)', self.stdout,
-                          'number', float)
+.. literalinclude:: ../tutorial/advanced/advanced_example6.py
+  :lines: 14-15
+  :dedent: 8
 
 The ``numbers`` variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
 In order to check that the extracted numbers lie within the specified limits, we make use of the :func:`map <reframe.utility.sanity.map>` sanity function, which will apply the :func:`assert_bounded <reframe.utility.sanity.assert_bounded>` to all the elements of ``numbers``.
@@ -470,12 +227,9 @@ Note that the ``and`` operator is not deferrable and will trigger the evaluation
 
 The full syntax for the :attr:`sanity_patterns` is the following:
 
-.. code-block:: python
-
-  self.sanity_patterns = sn.and_(
-      sn.assert_eq(sn.count(numbers), 100),
-      sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
-
+.. literalinclude:: ../tutorial/advanced/advanced_example6.py
+  :lines: 16-18
+  :dedent: 8
 
 Customizing the Generated Job Script
 ------------------------------------
@@ -488,40 +242,7 @@ The lower and upper limits for the random numbers are now set inside a helper sh
 In order to achieve this, we need to source the helper script just before launching the executable and ``echo`` the desired message just after it finishes.
 Here is the test file:
 
-.. code-block:: python
-
-   import os
-
-   import reframe.utility.sanity as sn
-   nfrom reframe.core.pipeline import RunOnlyRegressionTest
-
-
-   class PrerunDemoTest(RunOnlyRegressionTest):
-       def __init__(self, **kwargs):
-           super().__init__('prerun_demo_check',
-                            os.path.dirname(__file__), **kwargs)
-           self.descr = ('ReFrame tutorial demonstrating the use of '
-                         'pre- and post-run commands')
-           self.valid_systems = ['*']
-           self.valid_prog_environs = ['*']
-           self.pre_run  = ['source scripts/limits.sh']
-           self.post_run = ['echo FINISHED']
-           self.executable = './random_numbers.sh'
-           numbers = sn.extractall(
-               r'Random: (?P<number>\S+)', self.stdout, 'number', float)
-           self.sanity_patterns = sn.all([
-               sn.assert_eq(sn.count(numbers), 100),
-               sn.all(sn.map(lambda x: sn.assert_bounded(x, 50, 80), numbers)),
-               sn.assert_found('FINISHED', self.stdout)
-           ])
-
-           self.maintainers = ['put-your-name-here']
-           self.tags = {'tutorial'}
-
-
-   def _get_checks(**kwargs):
-       return [PrerunDemoTest(**kwargs)]
-
+.. literalinclude:: ../tutorial/advanced/advanced_example7.py
 
 Notice the use of the :attr:`pre_run` and :attr:`post_run` attributes.
 These are list of shell commands that are emitted verbatim in the job script.
@@ -564,4 +285,72 @@ The parallel launch itself consists of three parts:
 #. the regression test executable as specified in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` attribute and
 #. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
 
-A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against inside it.
+A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against it.
+
+
+Working with parameterized tests
+--------------------------------
+
+.. versionadded:: 2.13
+
+We have seen already in the `basic tutorial <tutorial.html#combining-it-all-together>`__ how we could better organize the tests so as to avoid code duplication by using test class hierarchies.
+An alternative technique, which could also be used in parallel with the class hierarchies, is to use `parameterized tests`.
+The following is a test that takes a ``variant`` parameter, which controls which variant of the code will be used.
+Depending on that value, the test is set up differently:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example8.py
+
+If you have already gone through the `tutorial <tutorial.html>`__, this test can be easily understood.
+The new bit here is the ``@parameterized_test`` decorator of the ``MatrixVectorTest`` class.
+This decorator takes as argument an iterable of either sequence (i.e., lists, tuples etc.) or mapping types (i.e., dictionaries).
+Each of this iterable's elements corresponds to the arguments that will be used to instantiate the decorated test each time.
+In the example shown, the test will instantiated twice, once passing ``variant`` as ``MPI`` and a second time with ``variant`` passed as ``OpenMP``.
+The framework will try to generate unique names for the generated tests by stringifying the arguments passed to the test's constructor:
+
+
+.. code-block:: none
+
+   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
+   Reframe version: 2.13-dev0
+   Launched by user: XXX
+   Launched on host: daint101
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/advanced/advanced_example8.py'
+       Stage dir prefix  : current/working/dir/reframe/stage/
+       Output dir prefix : current/working/dir/reframe/output/
+       Logging dir       : current/working/dir/reframe/logs
+   List of matched checks
+   ======================
+     * MatrixVectorTest_MPI (Matrix-vector multiplication test (MPI))
+           tags: [tutorial], maintainers: [you-can-type-your-email-here]
+     * MatrixVectorTest_OpenMP (Matrix-vector multiplication test (OpenMP))
+           tags: [tutorial], maintainers: [you-can-type-your-email-here]
+   Found 2 check(s).
+
+
+There are a couple of different ways that we could have used the ``@parameterized_test`` decorator.
+One is to use dictionaries for specifying the instantiations of our test class.
+The dictionaries will be converted to keyword arguments and passed to the constructor of the test class:
+
+.. code-block:: python
+
+   @rfm.parameterized_test([{'variant': 'MPI'}, {'variant': 'OpenMP'}])
+
+
+Another way, which is quite useful if you want to generate lots of different tests at the same time, is to use either `list comprehensions <https://docs.python.org/3.6/tutorial/datastructures.html#list-comprehensions>`__ or `generator expressions <https://www.python.org/dev/peps/pep-0289/>`__ for specifying the different test instantiations:
+
+.. code-block:: python
+
+   @rfm.parameterized_test((variant,) for variant in ['MPI', 'OpenMP'])
+
+
+.. note::
+   In versions of the framework prior to 2.13, this could be achieved by explicitly instantiating your tests inside the ``_get_checks()`` method.
+
+
+.. tip::
+
+   Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
+   We use this technique extensively in our tests.

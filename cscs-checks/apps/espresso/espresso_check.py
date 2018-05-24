@@ -15,9 +15,11 @@ class EspressoBaseCheck(RunOnlyRegressionTest):
                                        'Espresso')
         self.executable = 'pw.x'
         self.executable_opts = '-in ausurf.in'.split()
-
-        self.sanity_patterns = sn.assert_found(
-            r'convergence has been achieved', self.stdout)
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                                  self.stdout, 'energy', float)
+        self.sanity_patterns = sn.all([
+            sn.assert_found(r'convergence has been achieved', self.stdout),
+            sn.assert_reference(energy, -11427.08612278, -1e-10, 1e-10)])
         self.perf_patterns = {
             'sec': sn.extractsingle(r'electrons    :\s+(?P<sec>\S+)s CPU ',
                                     self.stdout, 'sec', float)
@@ -47,10 +49,10 @@ class EspressoCPUProdCheck(EspressoBaseCheck):
 
         self.reference = {
             'dom:mc': {
-                'sec': (217.0, None, 0.15),
+                'sec': (159.0, None, 0.05),
             },
             'daint:mc': {
-                'sec': (156.6, None, 0.34)   # (151.0, None, 0.15)
+                'sec': (157.0, None, 0.40)
             },
         }
 

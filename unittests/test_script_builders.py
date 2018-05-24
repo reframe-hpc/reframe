@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 import reframe.core.shell as builders
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 
 
 class TestShellScriptBuilder(unittest.TestCase):

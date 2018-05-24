@@ -17,7 +17,18 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
                                        'Gromacs')
         self.keep_files = [output_file]
 
-        self.sanity_patterns = sn.assert_found('Finished mdrun', output_file)
+        energy = sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
+                                  r'\s+Conserved En\.\s+Temperature\n'
+                                  r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
+                                  r'\s+Pressure \(bar\)\s+Constr\. rmsd',
+                                  output_file, 'energy', float, item=-1)
+        energy_reference = -3270799.9
+        energy_diff = sn.abs(energy - energy_reference)
+
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Finished mdrun', output_file),
+            sn.assert_lt(energy_diff, 1560.1)
+        ])
 
         self.perf_patterns = {
             'perf': sn.extractsingle(r'Performance:\s+(?P<perf>\S+)',
@@ -62,10 +73,10 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (15.7, -0.15, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (62.0, -0.15, None)
+                'perf': (60.2, -0.10, None)
             },
         }
 
@@ -76,10 +87,10 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (15.7, -0.15, None)
+                'perf': (32.0, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (55.1, -0.39, None)
+                'perf': (47.5, -0.40, None)
             },
         }
 
@@ -108,10 +119,10 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'perf': (36.0, -0.15, None)
+                'perf': (38.0, -0.05, None)
             },
             'daint:mc': {
-                'perf': (73.0, -0.25, None)   # (82.0, -0.15, None)
+                'perf': (73.0, -0.50, None)
             },
         }
 

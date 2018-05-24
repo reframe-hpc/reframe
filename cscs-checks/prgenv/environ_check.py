@@ -1,7 +1,7 @@
 import os
 
-from reframe.core.modules import get_modules_system
 from reframe.core.pipeline import RunOnlyRegressionTest
+from reframe.core.runtime import runtime
 
 
 class DefaultPrgEnvCheck(RunOnlyRegressionTest):
@@ -31,7 +31,7 @@ class DefaultPrgEnvCheck(RunOnlyRegressionTest):
         pass
 
     def check_sanity(self):
-        return get_modules_system().is_module_loaded('PrgEnv-cray')
+        return runtime().modules_system.is_module_loaded('PrgEnv-cray')
 
     def cleanup(self, remove_files=False, unload_env=True):
         pass
@@ -53,7 +53,8 @@ class EnvironmentCheck(RunOnlyRegressionTest):
         self.tags = {'production'}
 
     def check_sanity(self):
-        return get_modules_system().is_module_loaded(self.current_environ.name)
+        return runtime().modules_system.is_module_loaded(
+            self.current_environ.name)
 
 
 def _get_checks(**kwargs):

@@ -2,13 +2,22 @@
 # Basic functionality for regression tests
 #
 
+__all__ = ['RegressionTest',
+           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
+
+
+import fnmatch
+import inspect
+import itertools
 import os
 import shutil
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
-import reframe.utility.os as os_ext
+import reframe.core.runtime as rt
+import reframe.utility as util
+import reframe.utility.os_ext as os_ext
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
 from reframe.core.exceptions import PipelineError, SanityError
@@ -16,7 +25,7 @@ from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.shell import BashScriptBuilder
-from reframe.core.systems import System, SystemPartition
+from reframe.core.systems import SystemPartition
 from reframe.utility.sanity import assert_reference
 
 
@@ -28,36 +37,39 @@ class RegressionTest:
     regression test goes through during its lifetime.
 
     :arg name: The name of the test.
-        This is the only argument that the users may specify freely.
+        If :class:`None`, the framework will try to assign a unique and
+        human-readable name to the test.
+
     :arg prefix: The directory prefix of the test.
-        You should initialize this to the directory containing the file that
-        defines the regression test.
-        You can achieve this by always passing ``os.path.dirname(__file__)``.
-    :arg system: The system that this regression test will run on.
-        The framework takes care of initializing and passing correctly this
-        argument.
-    :arg resources: An object managing the framework's resources.
-        The framework takes care of initializing and passing correctly this
-        argument.
+        If :class:`None`, the framework will set it to the directory containing
+        the test file.
 
-    Concrete regression test subclasses should call the base constructor as
-    follows:
+    .. note::
+        The ``name`` and ``prefix`` arguments are just maintained for backward
+        compatibility to the old (prior to 2.13) syntax of regression tests.
+        Users are advised to use the new simplified syntax for writing
+        regression tests.
+        Refer to the :doc:`ReFrame Tutorial </tutorial>` for more information.
 
-    ::
+        This class is also directly available under the top-level :mod:`reframe`
+        module.
 
-        class MyTest(RegressionTest):
-            def __init__(self, my_test_args, **kwargs):
-                super().__init__('mytest', os.path.dirname(__file__), **kwargs)
+       .. versionchanged:: 2.13
+
     """
     #: The name of the test.
     #:
-    #: :type: Alphanumeric string.
-    name = fields.AlphanumericField('name')
+    #: :type: string that can contain any character except ``/``
+    name = fields.StringPatternField('name', '[^\/]+')
 
-    #: List of programming environmets supported by this test.
+    #: List of programming environments supported by this test.
     #:
     #: :type: :class:`list[str]`
     #: :default: ``[]``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 2.12
+    #:        Programming environments can now be specified using wildcards.
     valid_prog_environs = fields.TypedListField('valid_prog_environs', str)
 
     #: List of systems supported by this test.
@@ -452,29 +464,46 @@ class RegressionTest:
     _stdout = fields.StringField('_stdout', allow_none=True)
     _stderr = fields.StringField('_stderr', allow_none=True)
     _perf_logfile = fields.StringField('_perf_logfile', allow_none=True)
-    _current_system = fields.TypedField('_current_system', System)
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, allow_none=True)
     _current_environ = fields.TypedField('_current_environ', Environment,
                                          allow_none=True)
     _job = fields.TypedField('_job', Job, allow_none=True)
 
-    def __init__(self, name, prefix, system, resources):
-        self.name  = name
-        self.descr = name
+    def __new__(cls, *args, **kwargs):
+        obj = super().__new__(cls)
+        obj._prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        # Create a test name from the class name and the constructor's
+        # arguments
+        name = cls.__qualname__
+        #name = util.decamelize(cls.__name__)
+        if args or kwargs:
+            arg_names = map(lambda x: util.toalphanum(str(x)),
+                            itertools.chain(args, kwargs.values()))
+            name += '_' + '_'.join(arg_names)
+
+        obj.name = name
+        return obj
+
+    def __init__(self, name=None, prefix=None):
+        if name is not None:
+            self.name = name
+
+        self.descr = self.name
         self.valid_prog_environs = []
-        self.valid_systems   = []
-        self.sourcepath      = ''
-        self.prebuild_cmd    = []
-        self.postbuild_cmd   = []
-        self.executable      = os.path.join('.', self.name)
+        self.valid_systems = []
+        self.sourcepath = ''
+        self.prebuild_cmd  = []
+        self.postbuild_cmd = []
+        self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run         = []
-        self.post_run        = []
-        self.keep_files      = []
-        self.readonly_files  = []
-        self.tags            = set()
-        self.maintainers     = []
+        self.pre_run  = []
+        self.post_run = []
+        self.keep_files = []
+        self.readonly_files = []
+        self.tags = set()
+        self.maintainers = []
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -493,7 +522,9 @@ class RegressionTest:
         self.local = False
 
         # Static directories of the regression check
-        self._prefix = os.path.abspath(prefix)
+        if prefix is not None:
+            self._prefix = os.path.abspath(prefix)
+
         self.sourcesdir = 'src'
 
         # Output patterns
@@ -511,22 +542,20 @@ class RegressionTest:
         self.time_limit = (0, 10, 0)
 
         # Runtime information of the test
-        self._current_system    = system
         self._current_partition = None
-        self._current_environ   = None
+        self._current_environ = None
 
         # Associated job
-        self._job           = None
+        self._job = None
         self.extra_resources = {}
 
         # Dynamic paths of the regression check; will be set in setup()
-        self._resources_mgr = resources
         self._stagedir = None
         self._stdout = None
         self._stderr = None
 
-        # Compilation task output
-        self._compile_task = None
+        # Compilation process output
+        self._compile_proc = None
 
         # Performance logging
         self._perf_logger = logging.null_logger
@@ -560,9 +589,9 @@ class RegressionTest:
 
         This is set by the framework during the initialization phase.
 
-        :type: :class:`reframe.core.systems.System`.
+        :type: :class:`reframe.core.runtime.HostSystem`.
         """
-        return self._current_system
+        return rt.runtime().system
 
     @property
     def job(self):
@@ -665,21 +694,22 @@ class RegressionTest:
         if '*' in self.valid_systems:
             return True
 
-        if self._current_system.name in self.valid_systems:
+        if self.current_system.name in self.valid_systems:
             return True
 
         # Check if this is a relative name
         if partition_name.find(':') == -1:
-            partition_name = '%s:%s' % (self._current_system.name,
+            partition_name = '%s:%s' % (self.current_system.name,
                                         partition_name)
 
         return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
-        if '*' in self.valid_prog_environs:
-            return True
+        for env in self.valid_prog_environs:
+            if fnmatch.fnmatch(env_name, env):
+                return True
 
-        return env_name in self.valid_prog_environs
+        return False
 
     def is_local(self):
         """Check if the test will execute locally.
@@ -691,12 +721,6 @@ class RegressionTest:
             return self.local
 
         return self.local or self._current_partition.scheduler.is_local
-
-    def _sanitize_basename(self, name):
-        """Create a basename safe to be used as path component
-
-        Replace all path separator characters in `name` with underscores."""
-        return name.replace(os.sep, '_')
 
     def _setup_environ(self, environ):
         """Setup the current environment and load it."""
@@ -721,17 +745,15 @@ class RegressionTest:
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
         try:
-            self._stagedir = self._resources_mgr.stagedir(
-                self._sanitize_basename(self._current_partition.name),
+            self._stagedir = rt.runtime().resources.make_stagedir(
+                self._current_partition.name,
                 self.name,
-                self._sanitize_basename(self._current_environ.name)
-            )
+                self._current_environ.name)
 
-            self.outputdir = self._resources_mgr.outputdir(
-                self._sanitize_basename(self._current_partition.name),
+            self.outputdir = rt.runtime().resources.make_outputdir(
+                self._current_partition.name,
                 self.name,
-                self._sanitize_basename(self._current_environ.name)
-            )
+                self._current_environ.name)
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
@@ -761,12 +783,10 @@ class RegressionTest:
             scheduler_type = self._current_partition.scheduler
             launcher_type  = self._current_partition.launcher
 
-        job_name = '%s_%s_%s_%s' % (
-            self.name,
-            self._sanitize_basename(self._current_system.name),
-            self._sanitize_basename(self._current_partition.name),
-            self._sanitize_basename(self._current_environ.name)
-        )
+        job_name = '%s_%s_%s_%s' % (self.name,
+                                    self.current_system.name,
+                                    self._current_partition.name,
+                                    self._current_environ.name)
         job_script_filename = os.path.join(self._stagedir, job_name + '.sh')
 
         self._job = scheduler_type(
@@ -908,14 +928,14 @@ class RegressionTest:
                 includedir = os.path.dirname(staged_sourcepath)
 
             self._current_environ.include_search_path.append(includedir)
-            self._compile_task = self._current_environ.compile(
+            self._compile_proc = self._current_environ.compile(
                 sourcepath=staged_sourcepath,
                 executable=os.path.join(self._stagedir, self.executable),
                 **compile_opts)
             self.logger.debug('compilation stdout:\n%s' %
-                              self._compile_task.stdout)
+                              self._compile_proc.stdout)
             self.logger.debug('compilation stderr:\n%s' %
-                              self._compile_task.stderr)
+                              self._compile_proc.stderr)
             self.postbuild()
 
         self.logger.debug('compilation finished')
@@ -926,7 +946,7 @@ class RegressionTest:
         This call is non-blocking.
         It simply submits the job associated with this test and returns.
         """
-        if not self._current_system or not self._current_partition:
+        if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
         with os_ext.change_dir(self._stagedir):
@@ -1007,7 +1027,7 @@ class RegressionTest:
                     if value is not None:
                         perf_extra['check_perf_value'] = value
 
-                    if  ref is not None:
+                    if ref is not None:
                         perf_extra['check_perf_reference'] = ref
 
                     if low_thres is not None:
@@ -1074,7 +1094,11 @@ class RegressionTest:
 
 
 class RunOnlyRegressionTest(RegressionTest):
-    """Base class for run-only regression tests."""
+    """Base class for run-only regression tests.
+
+    This class is also directly available under the top-level :mod:`reframe`
+    module.
+    """
 
     def compile(self, **compile_opts):
         """The compilation phase of the regression test pipeline.
@@ -1106,6 +1130,9 @@ class CompileOnlyRegressionTest(RegressionTest):
 
     The standard output and standard error of the test will be set to those of
     the compilation stage.
+
+    This class is also directly available under the top-level :mod:`reframe`
+    module.
     """
 
     def __init__(self, *args, **kwargs):
@@ -1133,10 +1160,10 @@ class CompileOnlyRegressionTest(RegressionTest):
 
         try:
             with open(self._stdout, 'w') as f:
-                f.write(self._compile_task.stdout)
+                f.write(self._compile_proc.stdout)
 
             with open(self._stderr, 'w') as f:
-                f.write(self._compile_task.stderr)
+                f.write(self._compile_proc.stderr)
         except OSError as e:
             raise PipelineError('could not write stdout/stderr') from e
 

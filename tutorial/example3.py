@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class MPITest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example3_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example3Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication example with MPI'
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -35,7 +33,3 @@ class MPITest(RegressionTest):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
         self.current_environ.cflags = prgenv_flags
         super().compile()
-
-
-def _get_checks(**kwargs):
-    return [MPITest(**kwargs)]

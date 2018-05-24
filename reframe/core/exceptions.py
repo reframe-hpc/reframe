@@ -36,6 +36,18 @@ class ReframeFatalError(BaseException):
         return ret
 
 
+class ReframeSyntaxError(ReframeError):
+    """Raised when the syntax of regression tests is not correct."""
+
+
+class TestLoadError(ReframeError):
+    """Raised when the regression test cannot be loaded."""
+
+
+class NameConflictError(TestLoadError):
+    """Raised when there is a name clash in the test suite."""
+
+
 class TaskExit(ReframeError):
     """Raised when a regression task must exit the pipeline prematurely."""
 
@@ -50,6 +62,14 @@ class ConfigError(ReframeError):
     """Raised when a configuration error occurs."""
 
 
+class UnknownSystemError(ConfigError):
+    """Raised when the host system cannot be identified."""
+
+
+class SystemAutodetectionError(UnknownSystemError):
+    """Raised when the host system cannot be auto-detected"""
+
+
 class EnvironError(ReframeError):
     """Raised when an error related to an environment occurs."""
 
@@ -62,6 +82,10 @@ class PipelineError(ReframeError):
     """Raised when a condition prevents the regression test pipeline to continue
     and the error may not be described by another more specific exception.
     """
+
+
+class StatisticsError(ReframeError):
+    """Raised to denote an error in dealing with statistics."""
 
 
 class SpawnedProcessError(ReframeError):
@@ -214,8 +238,8 @@ def format_exception(exc_type, exc_value, tb):
         return 'OS error: %s' % exc_value
 
     frame = user_frame(tb)
-    if isinstance(exc_value, TypeError) and frame is not None:
-        return 'type error: ' + format_user_frame(frame)
+    # if isinstance(exc_value, TypeError) and frame is not None:
+    #     return 'type error: ' + format_user_frame(frame)
 
     if isinstance(exc_value, ValueError) and frame is not None:
         return 'value error: ' + format_user_frame(frame)

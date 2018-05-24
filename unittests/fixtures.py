@@ -2,130 +2,70 @@
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
 import os
+import tempfile
 
-from reframe.core.modules import (get_modules_system,
-                                  init_modules_system, NoModImpl)
-from reframe.frontend.loader import autodetect_system, SiteConfiguration
-from reframe.settings import settings
+import reframe.core.config as config
+import reframe.core.modules as modules
+import reframe.core.runtime as rt
+from reframe.core.exceptions import UnknownSystemError
+
 
 TEST_RESOURCES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'resources')
+TEST_RESOURCES_CHECKS = os.path.join(TEST_RESOURCES, 'checks')
 TEST_MODULES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'modules')
-TEST_SITE_CONFIG = {
-    'systems': {
-        'testsys': {
-            'descr': 'Fake system for unit tests',
-            'hostnames': ['testsys'],
-            'prefix': '/foo/bar',
-            'partitions': {
-                'login': {
-                    'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
-                    'resources': {},
-                    'environs': ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
-                    'descr': 'Login nodes'
-                },
 
-                'gpu': {
-                    'scheduler': 'nativeslurm',
-                    'modules': [],
-                    'resources': {
-                        'gpu': ['--gres=gpu:{num_gpus_per_node}'],
-                        'datawarp': [
-                            '#DW jobdw capacity={capacity}',
-                            '#DW stage_in source={stagein_src}'
-                        ]
-                    },
-                    'access': [],
-                    'environs': ['PrgEnv-gnu', 'builtin-gcc'],
-                    'descr': 'GPU partition',
-                }
-            }
-        }
-    },
+# Unit tests site configuration
+TEST_SITE_CONFIG = None
 
-    'environments': {
-        'testsys:login': {
-            'PrgEnv-gnu': {
-                'type': 'ProgEnvironment',
-                'modules': ['PrgEnv-gnu'],
-                'cc': 'gcc',
-                'cxx': 'g++',
-                'ftn': 'gfortran',
-            },
-        },
-        '*': {
-            'PrgEnv-gnu': {
-                'type': 'ProgEnvironment',
-                'modules': ['PrgEnv-gnu'],
-            },
-
-            'PrgEnv-cray': {
-                'type': 'ProgEnvironment',
-                'modules': ['PrgEnv-cray'],
-            },
-
-            'builtin-gcc': {
-                'type': 'ProgEnvironment',
-                'cc': 'gcc',
-                'cxx': 'g++',
-                'ftn': 'gfortran',
-            }
-        }
-    }
-}
+# User supplied configuration file and site configuration
+USER_CONFIG_FILE = None
+USER_SITE_CONFIG = None
 
 
-def init_native_modules_system():
-    init_modules_system(HOST.modules_system if HOST else None)
+def set_user_config(config_file):
+    global USER_CONFIG_FILE, USER_SITE_CONFIG
+
+    USER_CONFIG_FILE = config_file
+    user_settings = config.load_settings_from_file(config_file)
+    USER_SITE_CONFIG = user_settings.site_configuration
 
 
-# Guess current system and initialize its modules system
-_site_config = SiteConfiguration()
-_site_config.load_from_dict(settings.site_configuration)
-HOST = autodetect_system(_site_config)
-init_native_modules_system()
+def init_runtime():
+    global TEST_SITE_CONFIG
+
+    settings = config.load_settings_from_file(
+        'unittests/resources/settings.py')
+    TEST_SITE_CONFIG = settings.site_configuration
+    rt.init_runtime(TEST_SITE_CONFIG, 'generic')
 
 
-def get_test_config():
-    """Get a regression tests setup configuration.
+def switch_to_user_runtime(fn):
+    """Decorator to switch to the user supplied configuration.
 
-    Returns a tuple of system, partition and environment that you can pass to
-    `RegressionTest`'s setup method.
+    If no such configuration exists, this decorator returns the target function
+    untouched.
     """
-    site_config = SiteConfiguration()
-    site_config.load_from_dict(TEST_SITE_CONFIG)
+    if USER_SITE_CONFIG is None:
+        return fn
 
-    system = site_config.systems['testsys']
-    partition = system.partition('gpu')
-    environ = partition.environment('builtin-gcc')
-    return (system, partition, environ)
-
-
-def force_remove_file(filename):
-    try:
-        os.remove(filename)
-    except FileNotFoundError:
-        pass
+    return rt.switch_runtime(USER_SITE_CONFIG)(fn)
 
 
 # FIXME: This may conflict in the unlikely situation that a user defines a
 # system named `kesch` with a partition named `pn`.
-def partition_with_scheduler(name, skip_partitions=['kesch:pn']):
-    """Retrieve a partition from the current system whose registered name is
-    ``name``.
+def partition_with_scheduler(name=None, skip_partitions=['kesch:pn']):
+    """Retrieve a system partition from the runtime whose scheduler is registered
+    with ``name``.
 
     If ``name`` is :class:`None`, any partition with a non-local scheduler will
     be returned.
     Partitions specified in ``skip_partitions`` will be skipped from searching.
     """
 
-    if HOST is None:
-        return None
-
-    for p in HOST.partitions:
+    system = rt.runtime().system
+    for p in system.partitions:
         if p.fullname in skip_partitions:
             continue
 
@@ -139,4 +79,5 @@ def partition_with_scheduler(name, skip_partitions=['kesch:pn']):
 
 
 def has_sane_modules_system():
-    return not isinstance(get_modules_system().backend, NoModImpl)
+    return not isinstance(rt.runtime().modules_system.backend,
+                          modules.NoModImpl)

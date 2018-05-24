@@ -7,7 +7,9 @@ import time
 import unittest
 from datetime import datetime
 
-import reframe.utility.os as os_ext
+import reframe.core.runtime as rt
+import reframe.utility.os_ext as os_ext
+import unittests.fixtures as fixtures
 from reframe.core.environments import Environment
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
@@ -15,7 +17,6 @@ from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.schedulers.slurm import SlurmNode
 from reframe.core.shell import BashScriptBuilder
-from unittests.fixtures import TEST_RESOURCES, partition_with_scheduler
 
 
 class _TestJob(unittest.TestCase):
@@ -40,14 +41,30 @@ class _TestJob(unittest.TestCase):
         shutil.rmtree(self.workdir)
 
     @property
-    @abc.abstractmethod
     def job_type(self):
-        """Return a concrete job class."""
+        return getscheduler(self.sched_name)
+
+    @property
+    @abc.abstractmethod
+    def sched_name(self):
+        """Return the registered name of the scheduler."""
 
     @property
     @abc.abstractmethod
     def launcher(self):
         """Return a launcher to use for this test."""
+
+    @abc.abstractmethod
+    def setup_user(self, msg=None):
+        """Configure the test for running with the user supplied job scheduler
+        configuration or skip it.
+        """
+        partition = fixtures.partition_with_scheduler(self.sched_name)
+        if partition is None:
+            msg = msg or "scheduler '%s' not configured" % self.sched_name
+            self.skipTest(msg)
+
+        self.testjob.options += partition.access
 
     @abc.abstractmethod
     def assertScriptSanity(self, script_file):
@@ -62,14 +79,18 @@ class _TestJob(unittest.TestCase):
         self.testjob.prepare(self.builder)
         self.assertScriptSanity(self.testjob.script_filename)
 
+    @fixtures.switch_to_user_runtime
     def test_submit(self):
+        self.setup_user()
         self.testjob.prepare(self.builder)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
         self.assertEqual(0, self.testjob.exitcode)
 
+    @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
+        self.setup_user()
         self.testjob._command = 'sleep 10'
         self.testjob._time_limit = (0, 0, 2)
         self.testjob.prepare(self.builder)
@@ -85,7 +106,9 @@ class _TestJob(unittest.TestCase):
         with open(self.testjob.stdout) as fp:
             self.assertIsNone(re.search('postrun', fp.read()))
 
+    @fixtures.switch_to_user_runtime
     def test_cancel(self):
+        self.setup_user()
         self.testjob._command = 'sleep 30'
         self.testjob.prepare(self.builder)
         t_job = datetime.now()
@@ -106,7 +129,9 @@ class _TestJob(unittest.TestCase):
         self.testjob.prepare(self.builder)
         self.assertRaises(JobNotStartedError, self.testjob.wait)
 
+    @fixtures.switch_to_user_runtime
     def test_poll(self):
+        self.setup_user()
         self.testjob._command = 'sleep 2'
         self.testjob.prepare(self.builder)
         self.testjob.submit()
@@ -128,12 +153,20 @@ class TestLocalJob(_TestJob):
             pass
 
     @property
-    def job_type(self):
-        return getscheduler('local')
+    def sched_name(self):
+        return 'local'
+
+    @property
+    def sched_configured(self):
+        return True
 
     @property
     def launcher(self):
         return LocalLauncher()
+
+    def setup_user(self, msg=None):
+        # Local scheduler is by definition available
+        pass
 
     def test_submit_timelimit(self):
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
@@ -200,7 +233,7 @@ class TestLocalJob(_TestJob):
 
         self.testjob._pre_run = []
         self.testjob._post_run = []
-        self.testjob._command = os.path.join(TEST_RESOURCES,
+        self.testjob._command = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                              'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
         self.testjob.prepare(self.builder)
@@ -225,29 +258,22 @@ class TestLocalJob(_TestJob):
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
 
-    def test_deprecated_pre_run_and_post_run(self):
-        from reframe.core.exceptions import ReframeDeprecationWarning
-
-        self.assertWarns(ReframeDeprecationWarning, exec,
-                         'self.testjob.pre_run = []',
-                         globals(), locals())
-        self.assertWarns(ReframeDeprecationWarning, exec,
-                         'self.testjob.post_run = []',
-                         globals(), locals())
-
 
 class TestSlurmJob(_TestJob):
     @property
-    def job_type(self):
-        return getscheduler('slurm')
+    def sched_name(self):
+        return 'slurm'
+
+    @property
+    def sched_configured(self):
+        return fixtures.partition_with_scheduler('slurm') is not None
 
     @property
     def launcher(self):
         return LocalLauncher()
 
-    def setup_from_sysconfig(self):
-        partition = partition_with_scheduler('slurm')
-        self.testjob.options += partition.access
+    def setup_user(self, msg=None):
+        super().setup_user(msg='SLURM (with sacct) not configured')
 
     def test_prepare(self):
         # Mock up a job submission
@@ -321,31 +347,17 @@ class TestSlurmJob(_TestJob):
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
 
-    @unittest.skipIf(not partition_with_scheduler('slurm'),
-                     'Slurm scheduler not supported')
-    def test_submit(self):
-        self.setup_from_sysconfig()
-        super().test_submit()
-
-    @unittest.skipIf(not partition_with_scheduler('slurm'),
-                     'Slurm scheduler not supported')
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
-        self.skipTest("Slurm's minimum time limit is 60s")
+        self.skipTest("SLURM's minimum time limit is 60s")
 
-    @unittest.skipIf(not partition_with_scheduler('slurm'),
-                     'Slurm scheduler not supported')
     def test_cancel(self):
         from reframe.core.schedulers.slurm import SLURM_JOB_CANCELLED
 
-        self.setup_from_sysconfig()
         super().test_cancel()
         self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
 
-    @unittest.skipIf(not partition_with_scheduler('slurm'),
-                     'Slurm scheduler not supported')
     def test_poll(self):
-        self.setup_from_sysconfig()
         super().test_poll()
 
 
@@ -431,26 +443,26 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_multiple_constraints(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-C f1 f3']
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_partition(self, expected_num_tasks=8):
         self.testjob._sched_reservation = 'Foo'
         self.testjob._sched_partition = 'p2'
         self.prepare_job()
-        self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
 
     def test_valid_multiple_partitions(self, expected_num_tasks=4):
         self.testjob._sched_reservation = 'Foo'
         self.testjob.options = ['-p p1 p2']
         if expected_num_tasks:
             self.prepare_job()
-            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
         else:
             self.assertRaises(JobError, self.prepare_job)
 
@@ -459,7 +471,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
         if expected_num_tasks:
             self.prepare_job()
-            self.assertEquals(self.testjob.num_tasks, expected_num_tasks)
+            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
         else:
             self.assertRaises(JobError, self.prepare_job)
 
@@ -481,7 +493,6 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
 
 
 class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
-
     def create_dummy_exclude_nodes(obj):
         return [obj.create_dummy_nodes()[0].name]
 
@@ -494,7 +505,7 @@ class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
 
     def test_valid_constraint(self):
         super().test_valid_constraint(expected_num_tasks=4)
-        self.assertEquals(self.testjob.num_tasks, 4)
+        self.assertEqual(self.testjob.num_tasks, 4)
 
     def test_valid_multiple_constraints(self):
         super().test_valid_multiple_constraints(expected_num_tasks=4)
@@ -507,12 +518,6 @@ class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
 
     def test_valid_constraint_partition(self):
         super().test_valid_constraint_partition(expected_num_tasks=None)
-
-
-class TestSqueueJob(TestSlurmJob):
-    @property
-    def job_type(self):
-        return getscheduler('squeue')
 
 
 class TestSlurmNode(unittest.TestCase):
@@ -545,3 +550,17 @@ class TestSlurmNode(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual('nid00001', str(self.node))
+
+
+class TestSqueueJob(TestSlurmJob):
+    @property
+    def sched_name(self):
+        return 'squeue'
+
+    def setup_user(self, msg=None):
+        partition = (fixtures.partition_with_scheduler(self.sched_name) or
+                     fixtures.partition_with_scheduler('slurm'))
+        if partition is None:
+            self.skipTest('SLURM not configured')
+
+        self.testjob.options += partition.access

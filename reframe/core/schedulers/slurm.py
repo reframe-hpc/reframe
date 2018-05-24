@@ -4,12 +4,12 @@ import time
 from datetime import datetime
 
 import reframe.core.schedulers as sched
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
+from reframe.core.config import settings
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
-from reframe.settings import settings
 
 
 class SlurmJobState(sched.JobState):
@@ -143,7 +143,7 @@ class SlurmJob(sched.Job):
 
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
-        completed = self._run_command(cmd, settings.job_submit_timeout)
+        completed = self._run_command(cmd, settings().job_submit_timeout)
         jobid_match = re.search('Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
@@ -176,7 +176,7 @@ class SlurmJob(sched.Job):
             if (n.active_features >= constraints and
                 n.partitions >= partitions and
                 n.name not in excluded_node_names):
-                    num_nodes += 1
+                num_nodes += 1
 
         return num_nodes
 
@@ -270,7 +270,7 @@ class SlurmJob(sched.Job):
         if self._state in self._completion_states:
             return
 
-        intervals = itertools.cycle(settings.job_poll_intervals)
+        intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state()
         while self._state not in self._completion_states:
             time.sleep(next(intervals))
@@ -280,7 +280,7 @@ class SlurmJob(sched.Job):
         super().cancel()
         getlogger().debug('cancelling job (id=%s)' % self._jobid)
         self._run_command('scancel %s' % self._jobid,
-                          settings.job_submit_timeout)
+                          settings().job_submit_timeout)
         self._is_cancelling = True
 
     def finished(self):
