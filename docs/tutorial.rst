@@ -32,33 +32,46 @@ Here is the full code for this test:
 .. literalinclude:: ../tutorial/example1.py
 
 A regression test written in ReFrame is essentially a Python class that must eventually derive from :class:`RegressionTest <reframe.core.pipeline.RegressionTest>`.
-In order to make the test available to the framework, every file defining regression tests must define the special function ``_get_checks()``, which should return a list of instantiated regression tests.
-This method will be called by the framework upon loading your file, in order to retrieve the regression tests defined.
-The framework will pass some special arguments to the ``_get_checks()`` function through the ``kwargs`` parameter, which are needed for the correct initialization of the regression test.
+To make a test visible to the framework, you must decorate your final test class with one of the following decorators:
 
-Now let's move on to the actual definition of the ``SerialTest`` here:
+* ``@simple_test``: for registering a single parameterless instantiation of your test.
+* ``@parameterized_test``: for registering multiple instantiations of your test.
+
+Let's see in more detail how the ``Example1Test`` is defined:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 7-10
+  :lines: 5-8
 
 The ``__init__()`` method is the constructor of your test.
 It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
-The first statement in the ``SerialTest`` constructor calls the constructor of the base class, passing as arguments the name of the regression test (``example1_check`` here), the path to the test directory and any other arguments passed to the ``SerialTest``'s constructor.
-You can consider these first three lines and especially the way you should call the constructor of the base class, as boilerplate code.
-As you will see, it remains the same across all our examples, except, of course, for the check name.
+The first statement in the ``Example1Test`` constructor calls the constructor of the base class.
+This is essential for properly initializing your test.
+When your test is instantiated, the framework assigns a default name to it.
+This name is essentially a concatenation of the fully qualified name of the class and string representations of the constructor arguments, with any non-alphanumeric characters converted to underscores.
+In this example, the auto-generated test name is simply ``Example1Test``.
+You may change the name of the test later in the constructor by setting the :attr:`name <reframe.core.pipeline.RegressionTest.name>` attribute.
+
+.. note::
+      ReFrame requires that the names of all the tests it loads are unique.
+      In case of name clashes, it will refuse to load the conflicting test.
+
+   .. versionadded:: 2.12
 
 The next line sets a more detailed description of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 11
+  :lines: 9
   :dedent: 8
 
-This is optional and it defaults to the regression test's name, if not specified.
+This is optional and it defaults to the auto-generated test's name, if not specified.
+
+.. note::
+   If you explicitly set only the name of the test, the description will not be automatically updated and will still keep its default value.
 
 The next two lines specify the systems and the programming environments that this test is valid for:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 12-13
+  :lines: 10-11
   :dedent: 8
 
 Both of these variables accept a list of system names or environment names, respectively.
@@ -74,7 +87,7 @@ If only a system name (without a partition) is specified in the :attr:`self.vali
 The next line specifies the source file that needs to be compiled:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 14
+  :lines: 12
   :dedent: 8
 
 ReFrame expects any source files, or generally resources, of the test to be inside an ``src/`` directory, which is at the same level as the regression test file.
@@ -96,7 +109,7 @@ A user can associate compilers with programming environments in the ReFrame's `s
 The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 15
+  :lines: 13
   :dedent: 8
 
 Notice that you do not need to specify the executable name.
@@ -106,7 +119,7 @@ We will see in the `"Customizing Further A ReFrame Regression Test" <advanced.ht
 The next lines specify what should be checked for assessing the sanity of the result of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 16-17
+  :lines: 14-15
   :dedent: 8
 
 This expression simply asks ReFrame to look for ``time for single matrix vector multiplication`` in the standard output of the test.
@@ -121,13 +134,13 @@ This function uses internally the "`re <https://docs.python.org/3.6/library/re.h
 As a file argument, :func:`assert_found <reframe.utility.sanity.assert_found>` accepts any filename, which will be resolved against the stage directory of the test.
 You can also use the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>` and :attr:`stderr <reframe.core.pipeline.RegressionTest.stderr>` attributes to reference the standard output and standard error, respectively.
 
-.. note:: You need not to care about handling exceptions, and error handling in general, inside your test.
+.. tip:: You need not to care about handling exceptions, and error handling in general, inside your test.
   The framework will automatically abort the execution of the test, report the error and continue with the next test case.
 
 The last two lines of the regression test are optional, but serve a good role in a production environment:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 18-19
+  :lines: 16-17
   :dedent: 8
 
 In the :attr:`maintainers <reframe.core.pipeline.RegressionTest.maintainers>` attribute you may store a list of people responsible for the maintenance of this test.
@@ -149,54 +162,56 @@ Here we will only show you how to run a specific tutorial test:
 
 .. code-block:: bash
 
-  ./bin/reframe -c tutorial/ -n example1_check -r
+  ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
 
 If everything is configured correctly for your system, you should get an output similar to the following:
 
 .. code-block:: none
 
-  Reframe version: 2.7
-  Launched by user: <your-username>
-  Launched on host: daint104
-  Reframe paths
-  =============
-      Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : <cwd>/stage/
-      Output dir prefix : <cwd>/output/
-      Logging dir       : <cwd>/logs
-  [==========] Running 1 check(s)
-  [==========] Started on Fri Oct 20 15:11:38 2017
+   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
+   Reframe version: 2.13-dev0
+   Launched by user: XXX
+   Launched on host: daint104
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/example1.py'
+       Stage dir prefix  : /current/working/dir/stage/
+       Output dir prefix : /current/working/dir/output/
+       Logging dir       : /current/working/dir/logs
+   [==========] Running 1 check(s)
+   [==========] Started on Fri May 18 13:19:12 2018
 
-  [----------] started processing example1_check (Simple matrix-vector multiplication example)
-  [ RUN      ] example1_check on daint:mc using PrgEnv-cray
-  [       OK ] example1_check on daint:mc using PrgEnv-cray
-  [ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-  [       OK ] example1_check on daint:mc using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:mc using PrgEnv-intel
-  [       OK ] example1_check on daint:mc using PrgEnv-intel
-  [ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-  [       OK ] example1_check on daint:mc using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:login using PrgEnv-cray
-  [       OK ] example1_check on daint:login using PrgEnv-cray
-  [ RUN      ] example1_check on daint:login using PrgEnv-gnu
-  [       OK ] example1_check on daint:login using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:login using PrgEnv-intel
-  [       OK ] example1_check on daint:login using PrgEnv-intel
-  [ RUN      ] example1_check on daint:login using PrgEnv-pgi
-  [       OK ] example1_check on daint:login using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-  [       OK ] example1_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example1_check on daint:gpu using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-  [       OK ] example1_check on daint:gpu using PrgEnv-intel
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example1_check on daint:gpu using PrgEnv-pgi
-  [----------] finished processing example1_check (Simple matrix-vector multiplication example)
+   [----------] started processing Example1Test (Simple matrix-vector multiplication example)
+   [ RUN      ] Example1Test on daint:login using PrgEnv-cray
+   [       OK ] Example1Test on daint:login using PrgEnv-cray
+   [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+   [       OK ] Example1Test on daint:login using PrgEnv-gnu
+   [ RUN      ] Example1Test on daint:login using PrgEnv-intel
+   [       OK ] Example1Test on daint:login using PrgEnv-intel
+   [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+   [       OK ] Example1Test on daint:login using PrgEnv-pgi
+   [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+   [       OK ] Example1Test on daint:gpu using PrgEnv-cray
+   [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+   [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
+   [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+   [       OK ] Example1Test on daint:gpu using PrgEnv-intel
+   [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+   [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
+   [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+   [       OK ] Example1Test on daint:mc using PrgEnv-cray
+   [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+   [       OK ] Example1Test on daint:mc using PrgEnv-gnu
+   [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+   [       OK ] Example1Test on daint:mc using PrgEnv-intel
+   [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+   [       OK ] Example1Test on daint:mc using PrgEnv-pgi
+   [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
-  [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Fri Oct 20 15:15:25 2017
+   [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
+   [==========] Finished on Fri May 18 13:20:17 2018
+
 
 Notice how our regression test is run on every partition of the configured system and for every programming environment.
 
@@ -209,7 +224,7 @@ In this example, we write a regression test to compile and run the OpenMP versio
 The full code of this test follows:
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 1-36
+  :lines: 1-34
 
 This example introduces two new concepts:
 
@@ -234,7 +249,7 @@ This variable is available to regression tests after the setup phase. Before it 
 Let's have a closer look at the ``compile()`` method:
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 25-36
+  :lines: 23-34
   :dedent: 4
 
 We first take the name of the current programming environment (``self.current_environ.name``) and we check it against the set of the known programming environments.
@@ -251,11 +266,11 @@ The advantage of this implementation is that you move the different compilation 
 The ``compile()`` method is now very simple:
 it gets the correct compilation flags from the ``prgenv_flags`` dictionary and applies them to the current programming environment.
 
-.. note:: A regression test is like any other Python class, so you can freely define your own attributes.
-  If you accidentally try to write on a reserved :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` attribute that is not writeable, ReFrame will prevent this and it will throw an error.
-
 .. literalinclude:: ../tutorial/example2.py
-   :lines: 1-6,39-66
+   :lines: 1-4,37-64
+
+.. tip:: A regression test is like any other Python class, so you can freely define your own attributes.
+  If you accidentally try to write on a reserved :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` attribute that is not writeable, ReFrame will prevent this and it will throw an error.
 
 Running on Multiple Nodes
 -------------------------
@@ -275,7 +290,7 @@ Let's take the changes step-by-step:
 First we need to specify for which partitions this test is meaningful by setting the :attr:`valid_systems <reframe.core.pipeline.RegressionTest.valid_systems>` attribute:
 
 .. literalinclude:: ../tutorial/example3.py
-  :lines: 12
+  :lines: 10
   :dedent: 8
 
 We only specify the partitions that are configured with a job scheduler.
@@ -285,7 +300,7 @@ So we remove this partition from the list of the supported systems.
 The most important addition to this check are the variables controlling the distributed execution:
 
 .. literalinclude:: ../tutorial/example3.py
-  :lines: 25-27
+  :lines: 23-25
   :dedent: 8
 
 By setting these variables, we specify that this test should run with 8 MPI tasks in total, using two tasks per node.
@@ -323,7 +338,7 @@ Let's start with the OpenACC regression test:
 The things to notice in this test are the restricted list of system partitions and programming environments that this test supports and the use of the :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable:
 
 .. literalinclude:: ../tutorial/example4.py
-  :lines: 16
+  :lines: 14
   :dedent: 8
 
 The :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable takes a list of modules that should be loaded during the setup phase of the test.
@@ -332,7 +347,7 @@ In this particular test, we need to load the ``craype-accel-nvidia60`` module, w
 It is also important to note that in GPU-enabled tests the number of GPUs for each node have to be specified by setting the corresponding variable :attr:`num_gpus_per_node <reframe.core.pipeline.RegressionTest.num_gpus_per_node>`, as follows:
 
 .. literalinclude:: ../tutorial/example4.py
-  :lines: 17
+  :lines: 15
   :dedent: 8
 
 The regression test for the CUDA code is slightly simpler:
@@ -357,7 +372,7 @@ Let's go over it line-by-line.
 The first thing we do is to extract the norm printed in the standard output.
 
 .. literalinclude:: ../tutorial/example6.py
-  :lines: 21-23
+  :lines: 19-21
   :dedent: 8
 
 The :func:`extractsingle <reframe.utility.sanity.extractsingle>` sanity function extracts some information from a single occurrence (by default the first) of a pattern in a filename.
@@ -379,13 +394,13 @@ Notice that we replaced the ``'norm'`` argument with ``1``, which is the capturi
 A useful counterpart of :func:`extractsingle <reframe.utility.sanity.extractsingle>` is the :func:`extractall <reframe.utility.sanity.extractall>` function, which instead of a single occurrence, returns a list of all the occurrences found.
 For a more detailed description of this and other sanity functions, please refer to the `sanity function reference <sanity_functions_reference.html>`__.
 
-The next couple of lines is the actual sanity check:
+The next four lines is the actual sanity check:
 
 .. literalinclude:: ../tutorial/example6.py
-  :lines: 24-28
+  :lines: 22-26
   :dedent: 8
 
-This expression combines two conditions that need to true, in order for the sanity check to succeed:
+This expression combines two conditions that need to be true, in order for the sanity check to succeed:
 
 1. Find in standard output the same line we were looking for already in the first example.
 2. Verify that the printed norm does not deviate significantly from the expected value.
@@ -423,7 +438,7 @@ The are two new variables set in this test that basically enable the performance
 Let's have a closer look at each of them:
 
 .. literalinclude:: ../tutorial/example7.py
-  :lines: 20-23
+  :lines: 18-21
   :dedent: 8
 
 The :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>` attribute is a dictionary, whose keys are *performance variables* (i.e., arbitrary names assigned to the performance values we are looking for), and its values are *sanity expressions* that specify how to obtain these performance values from the output.
@@ -435,7 +450,7 @@ When the framework obtains a performance value from the output of the test it se
 Let's go over the :attr:`reference <reframe.core.pipeline.RegressionTest.reference>` dictionary of our example and explain its syntax in more detail:
 
 .. literalinclude:: ../tutorial/example7.py
-  :lines: 24-28
+  :lines: 22-26
   :dedent: 8
 
 This is a special type of dictionary that we call ``scoped dictionary``, because it defines scopes for its keys.
@@ -463,13 +478,11 @@ Here is the final example code that combines all the tests discussed before:
 
 This test abstracts away the common functionality found in almost all of our tutorial tests (executable options, sanity checking, etc.) to a base class, from which all the concrete regression tests derive.
 Each test then redefines only the parts that are specific to it.
-The ``_get_checks()`` now instantiates all the interesting tests and returns them as a list to the framework.
+Notice also that only the actual tests, i.e., the derived classes, are made visible to the framework through the ``@simple_test`` decorator.
+Decorating the base class has now meaning, because it does not correspond to an actual test.
+
 The total line count of this refactored example is less than half of that of the individual tutorial tests.
-Notice how the base class for all tutorial regression tests specify additional parameters to its constructor, so that the concrete subclasses can initialize it based on their needs.
-
-Another interesting technique, not demonstrated here, is to create regression test factories that will create different regression tests based on specific arguments they take in their constructor.
-
-We use such techniques extensively in the regression tests for our production systems, in order to facilitate their maintenance.
+Another interesting thing to note here is the base class accepting additional additional parameters to its constructor, so that the concrete subclasses can initialize it based on their needs.
 
 Summary
 -------

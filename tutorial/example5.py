@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class CudaTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example5_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example5Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication example with CUDA'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
@@ -19,7 +17,3 @@ class CudaTest(RegressionTest):
             r'time for single matrix vector multiplication', self.stdout)
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [CudaTest(**kwargs)]

@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import reframe.utility.sanity as sn
 from reframe.core.deferrable import evaluate, make_deferrable
 from reframe.core.exceptions import SanityError
-from unittests.fixtures import TEST_RESOURCES
+from unittests.fixtures import TEST_RESOURCES_CHECKS
 
 
 class TestDeferredBuiltins(unittest.TestCase):
@@ -155,7 +155,8 @@ class TestDeferredBuiltins(unittest.TestCase):
 
 class TestAsserts(unittest.TestCase):
     def setUp(self):
-        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
+        self.utf16_file = os.path.join(TEST_RESOURCES_CHECKS,
+                                       'src', 'homer.txt')
 
     def test_assert_true(self):
         self.assertTrue(sn.assert_true(True))
@@ -474,12 +475,12 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(0, sn.count(myrange(0)))
 
     def test_glob(self):
-        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.glob(filepatt))
         self.assertTrue(sn.glob(make_deferrable(filepatt)))
 
     def test_iglob(self):
-        filepatt = os.path.join(TEST_RESOURCES, '*.py')
+        filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.count(sn.iglob(filepatt)))
         self.assertTrue(sn.count(sn.iglob(make_deferrable(filepatt))))
 
@@ -494,7 +495,8 @@ class TestUtilityFunctions(unittest.TestCase):
 class TestPatternMatchingFunctions(unittest.TestCase):
     def setUp(self):
         self.tempfile = None
-        self.utf16_file = os.path.join(TEST_RESOURCES, 'src', 'homer.txt')
+        self.utf16_file = os.path.join(TEST_RESOURCES_CHECKS,
+                                       'src', 'homer.txt')
         with NamedTemporaryFile('wt', delete=False) as fp:
             self.tempfile = fp.name
             fp.write('Step: 1\n')

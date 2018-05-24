@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class PrerunDemoTest(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('prerun_demo_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class PrerunDemoTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of '
                       'pre- and post-run commands')
         self.valid_systems = ['*']
@@ -22,10 +20,5 @@ class PrerunDemoTest(RunOnlyRegressionTest):
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 50, 80), numbers)),
             sn.assert_found('FINISHED', self.stdout)
         ])
-
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [PrerunDemoTest(**kwargs)]
