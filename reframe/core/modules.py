@@ -71,10 +71,27 @@ class Module:
 
 
 class ModulesSystem:
-    """Implements the frontend of the module systems."""
+    """A modules system abstraction inside ReFrame.
+
+    This class interfaces between the framework internals and the actual
+    modules systems implementation.
+    """
 
     module_map = fields.AggregateTypeField('module_map',
                                            (dict, (str, (list, str))))
+
+    @classmethod
+    def create(cls, modules_kind=None):
+        if modules_kind is None:
+            return ModulesSystem(NoModImpl())
+        elif modules_kind == 'tmod':
+            return ModulesSystem(TModImpl())
+        elif modules_kind == 'tmod4':
+            return ModulesSystem(TMod4Impl())
+        elif modules_kind == 'lmod':
+            return ModulesSystem(LModImpl())
+        else:
+            raise ConfigError('unknown module system: %s' % modules_kind)
 
     def __init__(self, backend):
         self._backend = backend
@@ -84,7 +101,8 @@ class ModulesSystem:
         """Resolve module ``name`` in the registered module map.
 
         :returns: the list of real modules names pointed to by ``name``.
-        :raises: :attr:`ConfigError` if the mapping contains a cycle.
+        :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
+            contains a cycle.
         """
         ret = []
         visited = set()
@@ -130,7 +148,7 @@ class ModulesSystem:
         return [str(m) for m in self._backend.loaded_modules()]
 
     def conflicted_modules(self, name):
-        """Return the list of conflicted modules of the module ``name``.
+        """Return the list of the modules conflicting with module ``name``.
 
         If module ``name`` resolves to multiple real modules, then the returned
         list will be the concatenation of the conflict lists of all the real
@@ -148,12 +166,11 @@ class ModulesSystem:
         return [str(m) for m in self._backend.conflicted_modules(Module(name))]
 
     def load_module(self, name, force=False):
-        """Load the module `name'.
+        """Load the module ``name``.
 
-        If ``force`` is set, forces the loading,
-        unloading first any conflicting modules currently loaded.
-        If module ``name`` refers to to multiple real modules, all of the
-        target modules will be loaded.
+        If ``force`` is set, forces the loading, unloading first any
+        conflicting modules currently loaded. If module ``name`` refers to
+        multiple real modules, all of the target modules will be loaded.
 
         Returns the list of unloaded modules as strings.
         """
@@ -198,7 +215,7 @@ class ModulesSystem:
         """Check if module ``name`` is loaded.
 
         If module ``name`` refers to multiple real modules, this method will
-        return True only if all the referees are loaded.
+        return :class:`True` only if all the referees are loaded.
         """
         return all(self._is_module_loaded(m) for m in self.resolve_module(name))
 
@@ -206,7 +223,12 @@ class ModulesSystem:
         return self._backend.is_module_loaded(Module(name))
 
     def load_mapping(self, mapping):
-        """Updates the internal module mapping with a single mapping"""
+        """Update the internal module mappings using a single mapping.
+
+        :arg mapping: a string specifying the module mapping.
+            Example syntax: ``'m0: m1 m2'``.
+
+        """
         key, *rest = mapping.split(':')
         if len(rest) != 1:
             raise ConfigError('invalid mapping syntax: %s' % mapping)
@@ -222,7 +244,7 @@ class ModulesSystem:
         self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
-        """Update the internal module mapping from mappings in a file."""
+        """Update the internal module mappings from mappings read from file."""
         with open(filename) as fp:
             for lineno, line in enumerate(fp, start=1):
                 line = line.strip().split('#')[0]
@@ -262,12 +284,13 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name):
-        """Return the appropriate shell command for loading module."""
+        """Return the appropriate shell command for loading module ``name``."""
         return [self._backend.emit_load_instr(Module(name))
                 for name in self.resolve_module(name)]
 
     def emit_unload_commands(self, name):
-        """Return the appropriate shell command for unloading module."""
+        """Return the appropriate shell command for unloading module
+        ``name``."""
         return [self._backend.emit_unload_instr(Module(name))
                 for name in reversed(self.resolve_module(name))]
 
@@ -294,7 +317,7 @@ class ModulesSystemImpl(abc.ABC):
 
     @abc.abstractmethod
     def load_module(self, module):
-        """Load the module `name'.
+        """Load the module ``name``.
 
         If ``force`` is set, forces the loading,
         unloading first any conflicting modules currently loaded.
@@ -598,29 +621,3 @@ class NoModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
-
-
-# The module system used by the framework
-_modules_system = None
-
-
-def init_modules_system(modules_kind=None):
-    global _modules_system
-
-    if modules_kind is None:
-        _modules_system = ModulesSystem(NoModImpl())
-    elif modules_kind == 'tmod':
-        _modules_system = ModulesSystem(TModImpl())
-    elif modules_kind == 'tmod4':
-        _modules_system = ModulesSystem(TMod4Impl())
-    elif modules_kind == 'lmod':
-        _modules_system = ModulesSystem(LModImpl())
-    else:
-        raise ConfigError('unknown module system: %s' % modules_kind)
-
-
-def get_modules_system():
-    if _modules_system is None:
-        raise ConfigError('no modules system is configured')
-
-    return _modules_system

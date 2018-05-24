@@ -2,9 +2,10 @@
 # Useful descriptors for advanced operations on fields
 #
 
-import collections.abc
+import collections
 import copy
 import numbers
+import os
 import re
 
 from reframe.core.exceptions import user_deprecation_warning
@@ -80,9 +81,12 @@ class TypedField(Field):
         self._fieldtype = fieldtype
         self._allow_none = allow_none
 
+    def _check_type(self, value):
+        return ((self._allow_none and value is None) or
+                isinstance(value, self._fieldtype))
+
     def __set__(self, obj, value):
-        if ((value is not None or not self._allow_none) and
-            not isinstance(value, self._fieldtype)):
+        if not self._check_type(value):
             raise TypeError('attempt to set a field of different type. '
                             'Required: %s, Found: %s' %
                             (self._fieldtype.__name__, type(value).__name__))
@@ -237,50 +241,31 @@ class AggregateTypeField(Field):
         return True
 
 
-class AlphanumericField(TypedField):
-    """Stores an alphanumeric string ([A-Za-z0-9_])"""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            if not isinstance(value, str):
-                raise TypeError('attempt to set an alphanumeric field '
-                                'with a non-string value')
-
-            # Check if the string is properly formatted
-            if not re.fullmatch('\w+', value, re.ASCII):
-                raise ValueError('Attempt to set an alphanumeric field '
-                                 'with a non-alphanumeric value')
-
-        super().__set__(obj, value)
-
-
-class NonWhitespaceField(TypedField):
-    """Stores a string without any whitespace"""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-    def __set__(self, obj, value):
-        if value is not None:
-            if not isinstance(value, str):
-                raise TypeError('Attempt to set a string field '
-                                'with a non-string value')
-
-            if not re.fullmatch('\S+', value, re.ASCII):
-                raise ValueError('Attempt to set a non-whitespace field '
-                                 'with a string containing whitespace')
-
-        super().__set__(obj, value)
-
-
 class StringField(TypedField):
     """Stores a standard string object"""
 
     def __init__(self, fieldname, allow_none=False):
         super().__init__(fieldname, str, allow_none)
+
+
+class StringPatternField(StringField):
+    """Stores a string that must follow a specific pattern"""
+
+    def __init__(self, fieldname, pattern, allow_none=False):
+        super().__init__(fieldname, allow_none)
+        self._pattern = pattern
+
+    def __set__(self, obj, value):
+        if not self._check_type(value):
+            raise TypeError('a string type is required')
+
+        if (value is not None and
+            not re.fullmatch(self._pattern, value, re.ASCII)):
+            raise ValueError(
+                'cannot validate string "%s" against pattern: "%s"' %
+                (value, self._pattern))
+
+        super().__set__(obj, value)
 
 
 class IntegerField(TypedField):
@@ -371,6 +356,24 @@ class TimerField(AggregateTypeField):
             if m > 59 or s > 59:
                 raise ValueError('minutes and seconds in a timer '
                                  'field must not exceed 59')
+
+        # Call Field's __set__() method, type checking is already performed
+        Field.__set__(self, obj, value)
+
+
+class AbsolutePathField(StringField):
+    """A string field that stores an absolute path.
+
+    Any string assigned to such a field, will be converted to an absolute path.
+    """
+
+    def __set__(self, obj, value):
+        if not self._check_type(value):
+            raise TypeError('attempt to set a path field with a '
+                            'non string value: %s' % value)
+
+        if value is not None:
+            value = os.path.abspath(value)
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)

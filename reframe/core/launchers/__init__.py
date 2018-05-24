@@ -30,15 +30,15 @@ class JobLauncher(abc.ABC):
 
     @abc.abstractmethod
     def command(self, job):
-        # The launcher command.
-        #
-        # :arg job: A :class:`reframe.core.schedulers.Job` that may be used by
-        #     this launcher to properly emit its options.
-        #     Subclasses may override this method and emit options according the
-        #     num of tasks associated to the job etc.
-        # :returns: a list of command line arguments (including the launcher
-        #     executable).
-        pass
+        """The launcher command.
+
+        :arg job: A :class:`reframe.core.schedulers.Job` that will be used by
+            this launcher to properly emit its options.
+            Subclasses may override this method and emit options according the
+            number of tasks associated to the job etc.
+        :returns: a list of command line arguments (including the launcher
+            executable).
+        """
 
     def emit_run_command(self, job, builder):
         return builder.verbatim(

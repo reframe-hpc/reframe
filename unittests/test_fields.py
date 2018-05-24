@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import reframe.core.fields as fields
@@ -41,30 +42,6 @@ class TestFields(unittest.TestCase):
         self.assertEqual(tester.ro, 'foo')
         self.assertRaises(ValueError, exec, "tester.ro = 'bar'",
                           globals(), locals())
-
-    def test_alphanumeric_field(self):
-        class FieldTester:
-            field1 = fields.AlphanumericField('field1', allow_none=True)
-            field2 = fields.AlphanumericField('field2')
-
-            def __init__(self, value):
-                self.field1 = value
-
-        tester1 = FieldTester('foo')
-        tester2 = FieldTester('bar')
-        self.assertIsInstance(FieldTester.field1, fields.AlphanumericField)
-        self.assertEqual('foo', tester1.field1)
-        self.assertEqual('bar', tester2.field1)
-        self.assertRaises(TypeError, FieldTester, 12)
-        self.assertRaises(ValueError, FieldTester, 'foo bar')
-
-        # Setting field2 must not affect field
-        tester1.field2 = 'foobar'
-        self.assertEqual('foo', tester1.field1)
-        self.assertEqual('foobar', tester1.field2)
-
-        # Setting field1 to None must be fine
-        tester1.field1 = None
 
     def test_typed_field(self):
         class ClassA:
@@ -250,15 +227,19 @@ class TestFields(unittest.TestCase):
         self.assertRaises(TypeError, exec, 'tester.field = 13',
                           globals(), locals())
 
-    def test_non_whitespace_field(self):
+    def test_string_pattern_field(self):
         class FieldTester:
-            field = fields.NonWhitespaceField('field')
+            field = fields.StringPatternField('field', '\S+')
 
-        tester = FieldTester()
-        tester.field = 'foobar'
-        self.assertIsInstance(FieldTester.field, fields.NonWhitespaceField)
-        self.assertEqual('foobar', tester.field)
-        self.assertRaises(ValueError, exec, 'tester.field = "foo bar"',
+            def __init__(self, value):
+                self.field = value
+
+        tester = FieldTester('foo123')
+        self.assertIsInstance(FieldTester.field, fields.StringPatternField)
+        self.assertEqual('foo123', tester.field)
+        self.assertRaises(TypeError, exec, 'tester.field = 13',
+                          globals(), locals())
+        self.assertRaises(ValueError, exec, 'tester.field = "foo 123"',
                           globals(), locals())
 
     def test_integer_field(self):
@@ -443,6 +424,25 @@ class TestFields(unittest.TestCase):
         tester = FieldTester()
         self.assertWarns(ReframeDeprecationWarning, exec, 'tester.value = 2',
                          globals(), locals())
+
+    def test_absolute_path_field(self):
+        class FieldTester:
+            value = fields.AbsolutePathField('value', allow_none=True)
+
+            def __init__(self, value):
+                self.value = value
+
+        tester = FieldTester('foo')
+        self.assertEquals(os.path.abspath('foo'), tester.value)
+
+        # Test set with an absolute path already
+        tester.value = os.path.abspath('foo')
+        self.assertEquals(os.path.abspath('foo'), tester.value)
+
+        # This should not raise
+        tester.value = None
+        self.assertRaises(TypeError, exec, 'tester.value = 1',
+                          globals(), locals())
 
     def test_scoped_dict_field(self):
         class FieldTester:

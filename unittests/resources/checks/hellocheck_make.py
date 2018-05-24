@@ -1,3 +1,7 @@
+#
+# We purposely use the old syntax here
+#
+
 import os
 
 import reframe.utility.sanity as sn

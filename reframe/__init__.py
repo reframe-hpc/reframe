@@ -11,3 +11,8 @@ if sys.version_info[:3] < _required_pyver:
     sys.stderr.write('Unsupported Python version: '
                      'Python >= %d.%d.%d is required\n' % _required_pyver)
     sys.exit(1)
+
+
+# Import important names for user tests
+from reframe.core.pipeline import *
+from reframe.core.decorators import *
