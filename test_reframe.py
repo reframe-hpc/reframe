@@ -23,4 +23,4 @@ if __name__ == '__main__':
     fixtures.init_runtime()
 
     sys.argv = [sys.argv[0], *rem_args]
-    pytest.main()
+    sys.exit(pytest.main())
