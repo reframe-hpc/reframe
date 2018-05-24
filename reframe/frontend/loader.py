@@ -10,7 +10,7 @@ from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
 import reframe.utility as util
-from reframe.core.exceptions import NameConflictError, TestLoadError
+from reframe.core.exceptions import NameConflictError, LoadTestError
 from reframe.core.logging import getlogger
 
 
@@ -107,7 +107,7 @@ class RegressionCheckLoader:
         old_syntax = hasattr(module, '_get_checks')
         new_syntax = hasattr(module, '_rfm_gettests')
         if old_syntax and new_syntax:
-            raise TestLoadError('%s: mixing old and new regression test '
+            raise LoadTestError('%s: mixing old and new regression test '
                                 'syntax is not allowed' % module.__file__)
 
         if not old_syntax and not new_syntax:

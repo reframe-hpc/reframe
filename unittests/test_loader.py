@@ -2,7 +2,7 @@ import os
 import unittest
 
 from reframe.core.exceptions import (ConfigError,
-                                     NameConflictError, TestLoadError)
+                                     NameConflictError, LoadTestError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -48,7 +48,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
         self.assertEqual(13, len(checks))
 
     def test_load_mixed_syntax(self):
-        self.assertRaises(TestLoadError, self.loader.load_from_file,
+        self.assertRaises(LoadTestError, self.loader.load_from_file,
                           'unittests/resources/checks_unlisted/mixed.py')
 
     def test_conflicted_checks(self):

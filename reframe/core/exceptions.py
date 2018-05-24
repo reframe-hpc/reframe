@@ -40,11 +40,11 @@ class ReframeSyntaxError(ReframeError):
     """Raised when the syntax of regression tests is not correct."""
 
 
-class TestLoadError(ReframeError):
+class LoadTestError(ReframeError):
     """Raised when the regression test cannot be loaded."""
 
 
-class NameConflictError(TestLoadError):
+class NameConflictError(LoadTestError):
     """Raised when there is a name clash in the test suite."""
 
 

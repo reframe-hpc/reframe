@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import nose
+import pytest
 import sys
 
 import unittests.fixtures as fixtures
@@ -23,4 +23,4 @@ if __name__ == '__main__':
     fixtures.init_runtime()
 
     sys.argv = [sys.argv[0], *rem_args]
-    nose.main()
+    pytest.main()
