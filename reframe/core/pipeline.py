@@ -1095,10 +1095,12 @@ class RegressionTest:
             self._current_partition.local_env.unload()
 
     def __str__(self):
-        return ('%s (%s)\n'
-                '        tags: [%s], maintainers: [%s]' %
-                (self.name, self.descr,
-                 ', '.join(self.tags), ', '.join(self.maintainers)))
+        return ('%s (found in %s)\n'
+                '        descr: %s\n'
+                '        tags: %s, maintainers: %s' %
+                (self.name,
+                 self.prefix + os.path.basename(inspect.getfile(type(self))),
+                 self.descr, self.tags, self.maintainers))
 
 
 class RunOnlyRegressionTest(RegressionTest):
