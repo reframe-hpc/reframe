@@ -31,6 +31,9 @@ SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
 SLURM_JOB_SUSPENDED   = SlurmJobState('SUSPENDED')
 SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 
+# Number of _update_state calls per which _cancel_if_blocked is called
+SACCT_SQUEUE_RATIO = 20
+
 
 @register_scheduler('slurm')
 class SlurmJob(sched.Job):
@@ -61,6 +64,7 @@ class SlurmJob(sched.Job):
                                 'ReqNodeNotAvail',  # Inaccurate SLURM doc
                                 'QOSUsageThreshold']
         self._is_cancelling = False
+        self._update_state_count = 0
 
     def _emit_job_option(self, var, option, builder):
         if var is not None:
@@ -144,7 +148,7 @@ class SlurmJob(sched.Job):
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
         completed = self._run_command(cmd, settings().job_submit_timeout)
-        jobid_match = re.search('Submitted batch job (?P<jobid>\d+)',
+        jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
             raise JobError(
@@ -183,7 +187,7 @@ class SlurmJob(sched.Job):
     def _get_reservation_nodes(self):
         command = 'scontrol show res %s' % self.sched_reservation
         completed = os_ext.run_command(command, check=True)
-        node_match = re.search('(Nodes=\S+)', completed.stdout)
+        node_match = re.search(r'(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
@@ -217,6 +221,7 @@ class SlurmJob(sched.Job):
             'sacct -S %s -P -j %s -o jobid,state,exitcode' %
             (datetime.now().strftime('%F'), self._jobid)
         )
+        self._update_state_count += 1
         state_match = re.search(r'^(?P<jobid>\d+)\|(?P<state>\S+)([^\|]*)\|'
                                 r'(?P<exitcode>\d+)\:(?P<signal>\d+)',
                                 completed.stdout, re.MULTILINE)
@@ -226,7 +231,11 @@ class SlurmJob(sched.Job):
             return
 
         self._state = SlurmJobState(state_match.group('state'))
-        self._cancel_if_blocked()
+
+        if self._update_state_count == SACCT_SQUEUE_RATIO:
+            self._update_state_count = 0
+            self._cancel_if_blocked()
+
         if self._state in self._completion_states:
             self._exitcode = int(state_match.group('exitcode'))
 
