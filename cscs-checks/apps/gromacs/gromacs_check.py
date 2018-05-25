@@ -87,10 +87,10 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (32.0, -0.05, None)
+                'perf': (37.5, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (47.5, -0.40, None)
+                'perf': (55.6, -0.20, None)
             },
         }
 
@@ -119,10 +119,10 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'perf': (38.0, -0.05, None)
+                'perf': (42.7, -0.05, None)
             },
             'daint:mc': {
-                'perf': (73.0, -0.50, None)
+                'perf': (70.4, -0.20, None)
             },
         }
 
