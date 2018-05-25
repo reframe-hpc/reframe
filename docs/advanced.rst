@@ -302,11 +302,10 @@ Depending on that value, the test is set up differently:
 
 If you have already gone through the `tutorial <tutorial.html>`__, this test can be easily understood.
 The new bit here is the ``@parameterized_test`` decorator of the ``MatrixVectorTest`` class.
-This decorator takes as argument an iterable of either sequence (i.e., lists, tuples etc.) or mapping types (i.e., dictionaries).
-Each of this iterable's elements corresponds to the arguments that will be used to instantiate the decorated test each time.
-In the example shown, the test will instantiated twice, once passing ``variant`` as ``MPI`` and a second time with ``variant`` passed as ``OpenMP``.
+This decorator takes an arbitrary number of arguments, which are either of a sequence type (i.e., list, tuple etc.) or of a mapping type (i.e., dictionary).
+Each of the decorator's arguments corresponds to the constructor arguments of the decorated test that will be used to instantiate it.
+In the example shown, the test will be instantiated twice, once passing ``variant`` as ``MPI`` and a second time with ``variant`` passed as ``OpenMP``.
 The framework will try to generate unique names for the generated tests by stringifying the arguments passed to the test's constructor:
-
 
 .. code-block:: none
 
@@ -336,14 +335,14 @@ The dictionaries will be converted to keyword arguments and passed to the constr
 
 .. code-block:: python
 
-   @rfm.parameterized_test([{'variant': 'MPI'}, {'variant': 'OpenMP'}])
+   @rfm.parameterized_test({'variant': 'MPI'}, {'variant': 'OpenMP'})
 
 
 Another way, which is quite useful if you want to generate lots of different tests at the same time, is to use either `list comprehensions <https://docs.python.org/3.6/tutorial/datastructures.html#list-comprehensions>`__ or `generator expressions <https://www.python.org/dev/peps/pep-0289/>`__ for specifying the different test instantiations:
 
 .. code-block:: python
 
-   @rfm.parameterized_test((variant,) for variant in ['MPI', 'OpenMP'])
+   @rfm.parameterized_test(*([variant] for variant in ['MPI', 'OpenMP']))
 
 
 .. note::
