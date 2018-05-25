@@ -25,7 +25,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
     captured_stdout = StringIO()
     captured_stderr = StringIO()
-    print(sys.argv)
+    print(' '.join(sys.argv))
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:

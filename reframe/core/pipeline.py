@@ -364,6 +364,25 @@ class RegressionTest:
     perf_patterns = fields.TypedDictField(
         'perf_patterns', str, _DeferredExpression, allow_none=True)
 
+    #:
+    #: The performance log file name associated with this test.
+    #:
+    #: This file will be used for logging the performance of this test, if this
+    #: test is a performance test and if the performance logging configuration
+    #: makes use of this file. This file will not be created until the
+    #: performance check phase has finished.
+    #:
+    #: The value of this attribute is determined and set during the test's setup
+    #: phase.
+    #:
+    #: .. versionadded: 2.13
+    #:
+    #: :type: :class:`str`
+    #: :default: ``{LOGDIR}/{PARTITION_NAME}/{CHECK_NAME}.log``, where
+    #: ``LOGDIR`` is the performance logging directory prefix of ReFrame.
+    #:
+    perf_logfile = fields.StringField('perf_logfile', allow_none=True)
+
     #: List of modules to be loaded before running this test.
     #:
     #: These modules will be loaded during the :func:`setup` phase.
@@ -463,7 +482,6 @@ class RegressionTest:
     _stagedir = fields.StringField('_stagedir', allow_none=True)
     _stdout = fields.StringField('_stdout', allow_none=True)
     _stderr = fields.StringField('_stderr', allow_none=True)
-    _perf_logfile = fields.StringField('_perf_logfile', allow_none=True)
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, allow_none=True)
     _current_environ = fields.TypedField('_current_environ', Environment,
@@ -551,6 +569,7 @@ class RegressionTest:
 
         # Dynamic paths of the regression check; will be set in setup()
         self._stagedir = None
+        self._outputdir = None
         self._stdout = None
         self._stderr = None
 
@@ -559,7 +578,8 @@ class RegressionTest:
 
         # Performance logging
         self._perf_logger = logging.null_logger
-        self._perf_logfile = None
+        self._perf_logdir = None
+        self.perf_logfile = None
 
     # Export read-only views to interesting fields
     @property
@@ -628,6 +648,18 @@ class RegressionTest:
         :type: :class:`str`.
         """
         return self._stagedir
+
+    @property
+    def outputdir(self):
+        """The output directory of the test.
+
+        This is set during the :func:`setup` phase.
+
+        .. versionadded:: 2.13
+
+        :type: :class:`str`.
+        """
+        return self._outputdir
 
     @property
     @deferrable
@@ -750,7 +782,7 @@ class RegressionTest:
                 self.name,
                 self._current_environ.name)
 
-            self.outputdir = rt.runtime().resources.make_outputdir(
+            self._outputdir = rt.runtime().resources.make_outputdir(
                 self._current_partition.name,
                 self.name,
                 self._current_environ.name)
@@ -827,6 +859,10 @@ class RegressionTest:
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
+        resources = rt.runtime().resources
+        self.perf_logfile = os.path.join(
+            resources.make_perflogdir(self._current_partition.name),
+            self.name + '.log')
         self._perf_logger = logging.getperflogger(self)
 
     def setup(self, partition, environ, **job_opts):
@@ -1022,45 +1058,28 @@ class RegressionTest:
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 try:
                     ref, low_thres, high_thres = self.reference[key]
-
-                    perf_extra = {}
-                    if value is not None:
-                        perf_extra['check_perf_value'] = value
-
-                    if ref is not None:
-                        perf_extra['check_perf_reference'] = ref
-
-                    if low_thres is not None:
-                        perf_extra['check_perf_lower_thres'] = low_thres
-
-                    if high_thres is not None:
-                        perf_extra['check_perf_upper_thres'] = high_thres
-
-                    self._perf_logger.info(
-                        'value: %s, reference: %s' %
-                        (value, self.reference[key]),
-                        extra=perf_extra
-                    )
                 except KeyError:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname)
-                    )
+                        (tag, self._current_partition.fullname))
+
+                self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                  ref, low_thres, high_thres)
                 evaluate(assert_reference(value, ref, low_thres, high_thres))
 
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
         self.logger.debug('copying interesting files to output directory')
-        shutil.copy(self._stdout, self.outputdir)
-        shutil.copy(self._stderr, self.outputdir)
+        shutil.copy(self._stdout, self._outputdir)
+        shutil.copy(self._stderr, self._outputdir)
         if self._job:
-            shutil.copy(self._job.script_filename, self.outputdir)
+            shutil.copy(self._job.script_filename, self._outputdir)
 
         # Copy files specified by the user
         for f in self.keep_files:
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
-            shutil.copy(f, self.outputdir)
+            shutil.copy(f, self._outputdir)
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
@@ -1070,7 +1089,7 @@ class RegressionTest:
         :arg unload_env: If :class:`True`, the environment that was used to run
             this test will be unloaded.
         """
-        aliased = os.path.samefile(self._stagedir, self.outputdir)
+        aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
             self.logger.debug('skipping copy to output dir '
                               'since they alias each other')

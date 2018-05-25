@@ -101,15 +101,17 @@ class TestLoggerConfiguration(unittest.TestCase):
         os.close(tmpfd)
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                self.logfile: {
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': self.logfile,
                     'level': 'WARNING',
                     'format': '[%(asctime)s] %(levelname)s: '
                               '%(check_name)s: %(message)s',
                     'datefmt': '%F',
                     'append': True,
                 }
-            }
+            ]
         }
         self.check = RegressionTest('random_check', '.')
 
@@ -146,7 +148,7 @@ class TestLoggerConfiguration(unittest.TestCase):
                           self.logging_config)
 
     def test_empty_handlers(self):
-        self.logging_config['handlers'] = {}
+        self.logging_config['handlers'] = []
         self.assertRaises(ValueError, rlog.configure_logging,
                           self.logging_config)
 
@@ -173,14 +175,16 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_handler_noappend(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                self.logfile: {
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': self.logfile,
                     'level': 'WARNING',
                     'format': '[%(asctime)s] %(levelname)s: %(message)s',
                     'datefmt': '%F',
                     'append': False,
                 }
-            }
+            ]
         }
 
         rlog.configure_logging(self.logging_config)
@@ -203,9 +207,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_stream_handler_stdout(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&1': {},
-            }
+            'handlers': [{'type': 'stream', 'stream': 'stdout'}],
         }
         rlog.configure_logging(self.logging_config)
         raw_logger = rlog.getlogger().logger
@@ -218,9 +220,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_stream_handler_stderr(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&2': {},
-            }
+            'handlers': [{'type': 'stream', 'stream': 'stderr'}],
         }
 
         rlog.configure_logging(self.logging_config)
@@ -234,10 +234,10 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_multiple_handlers(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&1': {},
-                self.logfile: {},
-            }
+            'handlers': [
+                {'type': 'stream', 'stream': 'stderr'},
+                {'type': 'file', 'name': self.logfile}
+            ],
         }
         rlog.configure_logging(self.logging_config)
         self.assertEqual(len(rlog.getlogger().logger.handlers), 2)

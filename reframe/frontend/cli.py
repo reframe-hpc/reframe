@@ -210,7 +210,8 @@ def main():
 
     # Configure logging
     try:
-        logging.configure_logging(settings.logging_config)
+        logging.configure_logging(settings.logging_config,
+                                  settings.perf_logging_config)
     except (OSError, ConfigError) as e:
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
