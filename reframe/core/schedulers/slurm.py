@@ -31,12 +31,13 @@ SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
 SLURM_JOB_SUSPENDED   = SlurmJobState('SUSPENDED')
 SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 
-# Number of _update_state calls per which _cancel_if_blocked is called
-SACCT_SQUEUE_RATIO = 20
-
 
 @register_scheduler('slurm')
 class SlurmJob(sched.Job):
+    # The following ratio was introduced in order to reduce the number of
+    # squeue calls during asynchronous execution of ReFrame
+    SACCT_SQUEUE_RATIO = 10
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._prefix  = '#SBATCH'
@@ -232,8 +233,7 @@ class SlurmJob(sched.Job):
 
         self._state = SlurmJobState(state_match.group('state'))
 
-        if self._update_state_count == SACCT_SQUEUE_RATIO:
-            self._update_state_count = 0
+        if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked()
 
         if self._state in self._completion_states:
