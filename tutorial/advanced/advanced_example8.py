@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test([('MPI',), ('OpenMP',)])
+@rfm.parameterized_test(['MPI'], ['OpenMP'])
 class MatrixVectorTest(rfm.RegressionTest):
     def __init__(self, variant):
         super().__init__()
