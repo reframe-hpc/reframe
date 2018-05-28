@@ -128,28 +128,26 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         }
 
 
-@rfm.parameterized_test([(1,), (2,), (4,), (6,), (8,)])
+@rfm.parameterized_test([1], [2], [4], [6], [8])
 class GromacsCPUMonchAcceptance(GromacsBaseCheck):
-    def __init__(self, variant):
-        nodes_label = 'node' if variant == 1 else 'nodes'
-        super().__init__('gromacs_cpu_monch_%d_%s_check'
-                         % (variant, nodes_label), 'md.log')
+    def __init__(self, num_nodes):
+        super().__init__('gromacs_cpu_monch_%d_node_check' % num_nodes,
+                         'md.log')
 
         self.valid_systems = ['monch:compute']
-        self.descr = 'GROMACS CPU check on %d %s on monch' % (variant,
-                                                              nodes_label)
+        self.descr = 'GROMACS %d-node CPU check on monch' % num_nodes
 
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
                                 '-nsteps 5000 -nb cpu -s herflat.tpr ').split()
 
         self.tags = {'monch_acceptance'}
         self.num_tasks_per_node = 20
-        self.num_tasks = variant * self.num_tasks_per_node
+        self.num_tasks = num_nodes * self.num_tasks_per_node
 
         reference_by_nodes = {1: 2.6, 2: 5.1, 4: 11.1, 6: 15.8, 8: 20.6}
 
         self.reference = {
             'monch:compute': {
-                'perf': (reference_by_nodes[variant], -0.15, None)
+                'perf': (reference_by_nodes[num_nodes], -0.15, None)
             }
         }
