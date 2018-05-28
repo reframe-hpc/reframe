@@ -34,8 +34,11 @@ SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 
 @register_scheduler('slurm')
 class SlurmJob(sched.Job):
-    # The following ratio was introduced in order to reduce the number of
-    # squeue calls during asynchronous execution of ReFrame
+    # In some systems, scheduler performance is sensitive to the squeue poll
+    # ratio. In this backend, squeue is used to obtain the reason a job is
+    # blocked, so as to cancel it if it is blocked indefinitely. The following
+    # variable controls the frequency of squeue polling compared to the
+    # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
     def __init__(self, *args, **kwargs):
