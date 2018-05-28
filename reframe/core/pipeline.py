@@ -1098,8 +1098,7 @@ class RegressionTest:
         return ('%s (found in %s)\n'
                 '        descr: %s\n'
                 '        tags: %s, maintainers: %s' %
-                (self.name,
-                 self.prefix + os.path.basename(inspect.getfile(type(self))),
+                (self.name, inspect.getfile(type(self)),
                  self.descr, self.tags, self.maintainers))
 
 
