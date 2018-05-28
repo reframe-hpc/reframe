@@ -6,8 +6,8 @@ import reframe.utility.sanity as sn
 
 
 class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, name, output_file):
-        super().__init__(name, os.path.dirname(__file__))
+    def __init__(self, output_file):
+        super().__init__()
 
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.executable = 'gmx_mpi'
@@ -48,10 +48,11 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
 
 class GromacsGPUCheck(GromacsBaseCheck):
     def __init__(self, variant):
-        super().__init__('gromacs_gpu_%s_check' % variant, 'md.log')
+        super().__init__('md.log')
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'GROMACS GPU check'
+        self.name = 'gromacs_gpu_%s_check' % variant
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme 0 '
                                 '-s herflat.tpr ').split()
         self.variables = {'CRAY_CUDA_MPS': '1'}
@@ -98,10 +99,11 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
 
 class GromacsCPUCheck(GromacsBaseCheck):
     def __init__(self, variant):
-        super().__init__('gromacs_cpu_%s_check' % variant, 'md.log')
+        super().__init__('md.log')
 
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.descr = 'GROMACS CPU check'
+        self.name = 'gromacs_cpu_%s_check' % variant
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
                                 '-nb cpu -s herflat.tpr ').split()
 
@@ -131,12 +133,11 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
 @rfm.parameterized_test([1], [2], [4], [6], [8])
 class GromacsCPUMonchAcceptance(GromacsBaseCheck):
     def __init__(self, num_nodes):
-        super().__init__('gromacs_cpu_monch_%d_node_check' % num_nodes,
-                         'md.log')
+        super().__init__('md.log')
 
         self.valid_systems = ['monch:compute']
         self.descr = 'GROMACS %d-node CPU check on monch' % num_nodes
-
+        self.name = 'gromacs_cpu_monch_%d_node_check' % num_nodes
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
                                 '-nsteps 5000 -nb cpu -s herflat.tpr ').split()
 
