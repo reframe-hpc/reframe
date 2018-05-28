@@ -26,7 +26,7 @@ class _TimeoutExpired(ReframeError):
     pass
 
 
-@register_scheduler('local')
+@register_scheduler('local', local=True)
 class LocalJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

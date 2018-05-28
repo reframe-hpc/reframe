@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class CudaPerfTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example7_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example7Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication (CUDA performance test)'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']
@@ -32,7 +30,3 @@ class CudaPerfTest(RegressionTest):
     def compile(self):
         self.current_environ.cxxflags = '-O3'
         super().compile()
-
-
-def _get_checks(**kwargs):
-    return [CudaPerfTest(**kwargs)]

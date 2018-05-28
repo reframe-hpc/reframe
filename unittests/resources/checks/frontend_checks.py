@@ -2,26 +2,25 @@
 # Special checks for testing the front-end
 #
 
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.exceptions import ReframeError, SanityError
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class BaseFrontendCheck(RunOnlyRegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, os.path.dirname(__file__), **kwargs)
+class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.local = True
         self.executable = 'echo hello && echo perf: 10'
         self.sanity_patterns = sn.assert_found('hello', self.stdout)
-        self.tags = {self.name}
+        self.tags = {type(self).__name__}
         self.maintainers = ['VK']
 
 
+@rfm.simple_test
 class BadSetupCheck(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
@@ -30,9 +29,10 @@ class BadSetupCheck(BaseFrontendCheck):
         raise ReframeError('Setup failure')
 
 
+@rfm.simple_test
 class BadSetupCheckEarly(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.local = False
@@ -41,29 +41,33 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         raise ReframeError('Setup failure')
 
 
+@rfm.simple_test
 class NoSystemCheck(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_prog_environs = ['*']
 
 
+@rfm.simple_test
 class NoPrgEnvCheck(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
 
 
+@rfm.simple_test
 class SanityFailureCheck(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.sanity_patterns = sn.assert_found('foo', self.stdout)
 
 
+@rfm.simple_test
 class PerformanceFailureCheck(BaseFrontendCheck):
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.perf_patterns = {
@@ -76,11 +80,12 @@ class PerformanceFailureCheck(BaseFrontendCheck):
         }
 
 
+@rfm.simple_test
 class CustomPerformanceFailureCheck(BaseFrontendCheck):
     """Simulate a performance check that ignores completely logging"""
 
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.strict_check = False
@@ -92,8 +97,8 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
 class KeyboardInterruptCheck(BaseFrontendCheck):
     """Simulate keyboard interrupt during test's execution."""
 
-    def __init__(self, phase='wait', **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self, phase='wait'):
+        super().__init__()
         self.executable = 'sleep 1'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -116,8 +121,8 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
 class SystemExitCheck(BaseFrontendCheck):
     """Simulate system exit from within a check."""
 
-    def __init__(self, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
@@ -129,8 +134,8 @@ class SystemExitCheck(BaseFrontendCheck):
 class SleepCheck(BaseFrontendCheck):
     _next_id = 0
 
-    def __init__(self, sleep_time, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self, sleep_time):
+        super().__init__()
         self.name = '%s_%s' % (self.name, SleepCheck._next_id)
         self.sourcesdir = None
         self.sleep_time = sleep_time
@@ -150,9 +155,8 @@ class SleepCheck(BaseFrontendCheck):
 
 
 class RetriesCheck(BaseFrontendCheck):
-
-    def __init__(self, run_to_pass, filename, **kwargs):
-        super().__init__(type(self).__name__, **kwargs)
+    def __init__(self, run_to_pass, filename):
+        super().__init__()
         self.sourcesdir = None
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -161,14 +165,3 @@ class RetriesCheck(BaseFrontendCheck):
         self.post_run = ['((current_run++))',
                          'echo $current_run > %s' % filename]
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
-
-
-def _get_checks(**kwargs):
-    return [BadSetupCheck(**kwargs),
-            BadSetupCheckEarly(**kwargs),
-            KeyboardInterruptCheck(phase='setup', **kwargs),
-            NoSystemCheck(**kwargs),
-            NoPrgEnvCheck(**kwargs),
-            SanityFailureCheck(**kwargs),
-            PerformanceFailureCheck(**kwargs),
-            CustomPerformanceFailureCheck(**kwargs)]

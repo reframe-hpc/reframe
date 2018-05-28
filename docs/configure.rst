@@ -94,8 +94,12 @@ The valid attributes of a system are the following:
 
 * ``descr``: A detailed description of the system (default is the system name).
 * ``hostnames``: This is a list of hostname patterns that will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
-* ``modules_system``: The modules system that should be used for loading environment modules on this system.
-  The only available modules system backend is currently ``tmod``, which corresponds to the `TCL implementation <http://modules.sourceforge.net/>`__ of the environment modules (default :class:`None`).
+* ``modules_system``: The modules system that should be used for loading environment modules on this system (default :class:`None`).
+  Three types of modules systems are currently supported:
+
+  - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
+  - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__.
+  - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
