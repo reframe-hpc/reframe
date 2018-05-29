@@ -108,8 +108,8 @@ class RegressionCheckLoader:
         new_syntax = hasattr(module, '_rfm_gettests')
         if old_syntax and new_syntax:
             raise RegressionTestLoadError('%s: mixing old and new regression '
-                                          'test syntax is not allowed'
-                                          % module.__file__)
+                                          'test syntax is not allowed' %
+                                          module.__file__)
 
         if not old_syntax and not new_syntax:
             return []
