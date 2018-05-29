@@ -7,14 +7,14 @@ Requirements
 
 * Python 3.5 or higher. Python 2 is not supported.
 
-  .. note:: 
+  .. note::
     .. versionchanged:: 2.8
       A functional TCL modules system is no more required. ReFrame can now operate without a modules system at all.
 
 Optional
 ~~~~~~~~
 
-* For running the unit tests of the framework, the `nose <https://pypi.python.org/pypi/nose>`__ Python module is needed.
+* For running the unit tests of the framework, the `pytest <https://pytest.org/>`__ unittesting framework is needed.
 
 You are advised to run the `unit tests <#running-the-unit-tests>`__ of the framework after installing it on a new system to make sure that everything works fine.
 
@@ -42,24 +42,30 @@ The output should look like the following:
 
 .. code:: bash
 
-    test_check_failure (unittests.test_cli.TestFrontend) ... ok
-    test_check_sanity_failure (unittests.test_cli.TestFrontend) ... ok
-    test_check_submit_success (unittests.test_cli.TestFrontend) ... SKIP: job submission not supported
-    test_check_success (unittests.test_cli.TestFrontend) ... ok
-    test_checkpath_recursion (unittests.test_cli.TestFrontend) ... ok
-    test_custom_performance_check_failure (unittests.test_cli.TestFrontend) ... ok
-    ...
-    test_copytree (unittests.test_utility.TestOSTools) ... ok
-    test_grep (unittests.test_utility.TestOSTools) ... ok
-    test_inpath (unittests.test_utility.TestOSTools) ... ok
-    test_subdirs (unittests.test_utility.TestOSTools) ... ok
-    test_always_true (unittests.test_utility.TestUtilityFunctions) ... ok
-    test_standard_threshold (unittests.test_utility.TestUtilityFunctions) ... ok
+    collected 442 items
 
-    ----------------------------------------------------------------------
-    Ran 235 tests in 33.842s
+    unittests/test_argparser.py ..                                                     [  0%]
+    unittests/test_cli.py ....s...........                                             [  4%]
+    unittests/test_config.py ...............                                           [  7%]
+    unittests/test_deferrable.py ..............................................        [ 17%]
+    unittests/test_environments.py sss...s.....                                        [ 20%]
+    unittests/test_exceptions.py .............                                         [ 23%]
+    unittests/test_fields.py ....................                                      [ 28%]
+    unittests/test_launchers.py ..............                                         [ 31%]
+    unittests/test_loader.py .........                                                 [ 33%]
+    unittests/test_logging.py .....................                                    [ 38%]
+    unittests/test_modules.py ........ssssssssssssssss............................     [ 49%]
+    unittests/test_pipeline.py ....s..s.........................                       [ 57%]
+    unittests/test_policies.py ...............................                         [ 64%]
+    unittests/test_runtime.py .                                                        [ 64%]
+    unittests/test_sanity_functions.py ............................................... [ 75%]
+    ..............                                                                     [ 78%]
+    unittests/test_schedulers.py ..........s.s......ss...................s.s......ss.  [ 90%]
+    unittests/test_script_builders.py .                                                [ 90%]
+    unittests/test_utility.py .........................................                [ 99%]
+    unittests/test_versioning.py ..                                                    [100%]
 
-    OK (SKIP=7)
+    ======================== 411 passed, 31 skipped in 28.10 seconds =========================
 
 You will notice in the output that all the job submission related tests have been skipped.
 The test suite detects if the current system has a job submission system and is configured for ReFrame (see `Configuring ReFrame for your site <configure.html>`__) and it will skip all the unsupported unit tests.
