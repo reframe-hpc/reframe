@@ -10,7 +10,7 @@ from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
 
 
-class _TestModulesSystem(unittest.TestCase):
+class _TestModulesSystem:
     def setUp(self):
         self.environ_save = EnvironmentSnapshot()
         self.modules_system.searchpath_add(TEST_MODULES)
@@ -100,7 +100,7 @@ class _TestModulesSystem(unittest.TestCase):
                          self.modules_system.emit_unload_commands('m0'))
 
 
-class TestTModModulesSystem(_TestModulesSystem):
+class TestTModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
             self.modules_system = modules.ModulesSystem.create('tmod')
@@ -116,7 +116,7 @@ class TestTModModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
-class TestTMod4ModulesSystem(_TestModulesSystem):
+class TestTMod4ModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
             self.modules_system = modules.ModulesSystem.create('tmod4')
@@ -132,7 +132,7 @@ class TestTMod4ModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
-class TestLModModulesSystem(_TestModulesSystem):
+class TestLModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
             self.modules_system = modules.ModulesSystem.create('lmod')
@@ -148,7 +148,7 @@ class TestLModModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
-class TestNoModModulesSystem(_TestModulesSystem):
+class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
             self.modules_system = modules.ModulesSystem.create()
