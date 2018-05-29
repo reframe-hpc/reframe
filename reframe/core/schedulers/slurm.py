@@ -34,6 +34,13 @@ SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
 
 @register_scheduler('slurm')
 class SlurmJob(sched.Job):
+    # In some systems, scheduler performance is sensitive to the squeue poll
+    # ratio. In this backend, squeue is used to obtain the reason a job is
+    # blocked, so as to cancel it if it is blocked indefinitely. The following
+    # variable controls the frequency of squeue polling compared to the
+    # standard job state polling using sacct.
+    SACCT_SQUEUE_RATIO = 10
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._prefix  = '#SBATCH'
@@ -61,6 +68,7 @@ class SlurmJob(sched.Job):
                                 'ReqNodeNotAvail',  # Inaccurate SLURM doc
                                 'QOSUsageThreshold']
         self._is_cancelling = False
+        self._update_state_count = 0
 
     def _emit_job_option(self, var, option, builder):
         if var is not None:
@@ -144,7 +152,7 @@ class SlurmJob(sched.Job):
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
         completed = self._run_command(cmd, settings().job_submit_timeout)
-        jobid_match = re.search('Submitted batch job (?P<jobid>\d+)',
+        jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
             raise JobError(
@@ -183,7 +191,7 @@ class SlurmJob(sched.Job):
     def _get_reservation_nodes(self):
         command = 'scontrol show res %s' % self.sched_reservation
         completed = os_ext.run_command(command, check=True)
-        node_match = re.search('(Nodes=\S+)', completed.stdout)
+        node_match = re.search(r'(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
@@ -217,6 +225,7 @@ class SlurmJob(sched.Job):
             'sacct -S %s -P -j %s -o jobid,state,exitcode' %
             (datetime.now().strftime('%F'), self._jobid)
         )
+        self._update_state_count += 1
         state_match = re.search(r'^(?P<jobid>\d+)\|(?P<state>\S+)([^\|]*)\|'
                                 r'(?P<exitcode>\d+)\:(?P<signal>\d+)',
                                 completed.stdout, re.MULTILINE)
@@ -226,7 +235,10 @@ class SlurmJob(sched.Job):
             return
 
         self._state = SlurmJobState(state_match.group('state'))
-        self._cancel_if_blocked()
+
+        if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
+            self._cancel_if_blocked()
+
         if self._state in self._completion_states:
             self._exitcode = int(state_match.group('exitcode'))
 
