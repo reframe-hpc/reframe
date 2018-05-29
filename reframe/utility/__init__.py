@@ -43,6 +43,8 @@ def import_module_from_file(filename):
     filename = os.path.normpath(os.path.expandvars(filename))
     if os.path.isdir(filename):
         filename = os.path.join(filename, '__init__.py')
+    else:
+        filename = os.path.abspath(filename)
 
     module_name = _get_module_name(filename)
     if os.path.isabs(filename):
