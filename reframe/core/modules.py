@@ -575,6 +575,9 @@ class LModImpl(TModImpl):
 
         return ret
 
+    def unload_all(self):
+        self._exec_module_command('--force', 'purge')
+
 
 class NoModImpl(ModulesSystemImpl):
     """A convenience class that implements a no-op a modules system."""
