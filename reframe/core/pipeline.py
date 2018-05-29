@@ -364,25 +364,6 @@ class RegressionTest:
     perf_patterns = fields.TypedDictField(
         'perf_patterns', str, _DeferredExpression, allow_none=True)
 
-    #:
-    #: The performance log file name associated with this test.
-    #:
-    #: This file will be used for logging the performance of this test, if this
-    #: test is a performance test and if the performance logging configuration
-    #: makes use of this file. This file will not be created until the
-    #: performance check phase has finished.
-    #:
-    #: The value of this attribute is determined and set during the test's setup
-    #: phase.
-    #:
-    #: .. versionadded: 2.13
-    #:
-    #: :type: :class:`str`
-    #: :default: ``{LOGDIR}/{PARTITION_NAME}/{CHECK_NAME}.log``, where
-    #: ``LOGDIR`` is the performance logging directory prefix of ReFrame.
-    #:
-    perf_logfile = fields.StringField('perf_logfile', allow_none=True)
-
     #: List of modules to be loaded before running this test.
     #:
     #: These modules will be loaded during the :func:`setup` phase.
@@ -578,8 +559,6 @@ class RegressionTest:
 
         # Performance logging
         self._perf_logger = logging.null_logger
-        self._perf_logdir = None
-        self.perf_logfile = None
 
     # Export read-only views to interesting fields
     @property
@@ -859,10 +838,6 @@ class RegressionTest:
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
-        resources = rt.runtime().resources
-        self.perf_logfile = os.path.join(
-            resources.make_perflogdir(self._current_partition.name),
-            self.name + '.log')
         self._perf_logger = logging.getperflogger(self)
 
     def setup(self, partition, environ, **job_opts):

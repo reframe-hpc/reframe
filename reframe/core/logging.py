@@ -13,7 +13,13 @@ from datetime import datetime
 import reframe
 import reframe.core.debug as debug
 from reframe.core.exceptions import ConfigError, LoggingError
-from reframe.settings import settings
+
+
+# Global configuration options for logging
+LOG_CONFIG_OPTS = {
+    'handlers.filelog.prefix': './logs/'
+}
+
 
 # Reframe's log levels
 CRITICAL = 50
@@ -87,31 +93,44 @@ def set_handler_level(hdlr, level):
 logging.Handler.setLevel = set_handler_level
 
 
-class DynamicFileHandler(logging.FileHandler):
-    """A file handler that allows its filename to be specified lazily using fields
-    from a log record.
+class MultiFileHandler(logging.FileHandler):
+    """A file handler that allows writing on different log files based on
+    information from the log record.
     """
 
-    def __init__(self, name_pattern, mode='a', encoding=None):
-        super().__init__(name_pattern, mode, encoding, delay=True)
+    def __init__(self, prefix, mode='a', encoding=None):
+        super().__init__(prefix, mode, encoding, delay=True)
 
         # Reset FileHandler's filename
         self.baseFilename = None
-        self._filename_patt = name_pattern
+        self._prefix = prefix
+
+        # Associates filenames with open streams
+        self._streams = {}
 
     def emit(self, record):
-        # Generate dynamically a filename from the record information
-        if self.stream is None:
-            try:
-                self.baseFilename = self._filename_patt % record.__dict__
-            except KeyError as e:
-                raise LoggingError('unknown placeholder in '
-                                   'filename pattern: %s' % e) from None
+        try:
+            dirname = self._prefix % record.__dict__
+            os.makedirs(dirname, exist_ok=True)
+        except KeyError as e:
+            raise LoggingError('logging failed: unknown placeholder in '
+                               'filename pattern: %s' % e) from None
+        except OSError as e:
+            raise LoggingError('logging failed') from e
 
+        self.baseFilename = os.path.join(dirname, record.check_name + '.log')
+        self.stream = self._streams.get(self.baseFilename, None)
+        self._streams[self.baseFilename] = self.stream
         super().emit(record)
 
+    def close(self):
+        # Close all open streams
+        for s in self._streams.values():
+            self.stream = s
+            super().close()
 
-def load_from_dict(logging_config, auto_logfile=None):
+
+def load_from_dict(logging_config):
     if not isinstance(logging_config, collections.abc.Mapping):
         raise TypeError('logging configuration is not a dict')
 
@@ -119,8 +138,7 @@ def load_from_dict(logging_config, auto_logfile=None):
     handlers_descr = logging_config.get('handlers', None)
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
-
-    for handler in _extract_handlers(handlers_descr, auto_logfile):
+    for handler in _extract_handlers(handlers_descr):
         logger.addHandler(handler)
 
     return logger
@@ -133,10 +151,10 @@ def _convert_handler_syntax(handler_dict):
         new_keys = {}
         if filename == '&1':
             new_keys['type'] = 'stream'
-            new_keys['stream'] = 'stdout'
+            new_keys['name'] = 'stdout'
         elif filename == '&2':
             new_keys['type'] = 'stream'
-            new_keys['stream'] = 'stderr'
+            new_keys['name'] = 'stderr'
         else:
             new_keys['type'] = 'file'
             new_keys['name'] = filename
@@ -157,27 +175,28 @@ def _create_file_handler(handler_config):
     timestamp = handler_config.get('timestamp', None)
     if timestamp:
         basename, ext = os.path.splitext(filename)
-        filename = '%s_%s%s' % (
-            basename, datetime.now().strftime(timestamp), ext)
+        filename = '%s_%s%s' % (basename,
+                                datetime.now().strftime(timestamp), ext)
 
     append = handler_config.get('append', False)
     return logging.handlers.RotatingFileHandler(filename,
                                                 mode='a+' if append else 'w+')
 
 
-def _create_dynfile_handler(handler_config):
+def _create_filelog_handler(handler_config):
+    logdir = os.path.abspath(LOG_CONFIG_OPTS['handlers.filelog.prefix'])
     try:
-        filename_patt = handler_config['name']
+        filename_patt = os.path.join(logdir, handler_config['prefix'])
     except KeyError:
         raise ConfigError('no file specified for file handler:\n%s' %
                           pprint.pformat(handler_config)) from None
 
     append = handler_config.get('append', False)
-    return DynamicFileHandler(filename_patt, mode='a+' if append else 'w+')
+    return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
 
 
 def _create_stream_handler(handler_config):
-    stream = handler_config.get('stream', 'stdout')
+    stream = handler_config.get('name', 'stdout')
     if stream == 'stdout':
         return logging.StreamHandler(stream=sys.stdout)
     elif stream == 'stderr':
@@ -202,12 +221,12 @@ def _create_graylog_handler(handler_config):
                                   include_extra_fields=True)
 
 
-def _extract_handlers(handlers_list, auto_logfile=None):
+def _extract_handlers(handlers_list):
     # Check if we are using the old syntax
     if isinstance(handlers_list, collections.abc.Mapping):
         handlers_list = _convert_handler_syntax(handlers_list)
         sys.stderr.write(
-            'WARNING: looks like you are using an old syntax for '
+            'WARNING: looks like you are using an old syntax for the '
             'logging configuration; please update your syntax as follows:\n'
             '\nhandlers: %s\n' % pprint.pformat(handlers_list, indent=1))
 
@@ -228,8 +247,8 @@ def _extract_handlers(handlers_list, auto_logfile=None):
 
         if handler_type == 'file':
             hdlr = _create_file_handler(handler_config)
-        elif handler_type == 'dynfile':
-            hdlr = _create_dynfile_handler(handler_config)
+        elif handler_type == 'filelog':
+            hdlr = _create_filelog_handler(handler_config)
         elif handler_type == 'stream':
             hdlr = _create_stream_handler(handler_config)
         elif handler_type == 'graylog':
@@ -312,7 +331,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_environ': None,
                 'check_outputdir': None,
                 'check_stagedir': None,
-                'check_perf_logfile': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -354,10 +372,8 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, msg=''):
-        # Update the performance-relevant extras and log the message
-        if self.check:
-            self.extra['check_perf_logfile'] = self.check.perf_logfile
 
+        # Update the performance-relevant extras and log the message
         self.extra['check_perf_var'] = tag
         self.extra['check_perf_value'] = value
         self.extra['check_perf_ref'] = ref
@@ -417,8 +433,8 @@ class logging_context:
         _context_logger = self._orig_logger
 
 
-def configure_logging(loggin_config, perf_logging_config=None):
-    global _logger, _perf_logger, _context_logger
+def configure_logging(loggin_config):
+    global _logger, _context_logger
 
     if loggin_config is None:
         _logger = None
@@ -427,8 +443,12 @@ def configure_logging(loggin_config, perf_logging_config=None):
 
     _logger = load_from_dict(loggin_config)
     _context_logger = LoggerAdapter(_logger)
-    if perf_logging_config:
-        _perf_logger = load_from_dict(perf_logging_config)
+
+
+def configure_perflogging(perf_logging_config):
+    global _perf_logger
+
+    _perf_logger = load_from_dict(perf_logging_config)
 
 
 def save_log_files(dest):

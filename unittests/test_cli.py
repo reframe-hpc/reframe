@@ -72,6 +72,9 @@ class TestFrontend(unittest.TestCase):
         if self.ignore_check_conflicts:
             ret += ['--ignore-check-conflicts']
 
+        if self.perflogdir:
+            ret += ['--perflogdir', self.perflogdir]
+
         ret += self.more_options
         return ret
 
@@ -85,11 +88,13 @@ class TestFrontend(unittest.TestCase):
         self.more_options = []
         self.mode = None
         self.config_file = 'unittests/resources/settings.py'
-        self.logfile = '.reframe_unittest.log'
+        self.logfile = '.rfm_unittest.log'
         self.ignore_check_conflicts = True
+        self.perflogdir = '.rfm-perflogs'
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
+        shutil.rmtree(self.perflogdir, ignore_errors=True)
         os_ext.force_remove_file(self.logfile)
 
     def _run_reframe(self):
@@ -106,14 +111,9 @@ class TestFrontend(unittest.TestCase):
 
         return True
 
-    def _perflog_exists(self, check_name, partitions):
-        logdir = os.path.join(self.prefix, 'logs')
-        for p in partitions:
-            logfile = os.path.join(logdir, p, check_name + '.log')
-            if not os.path.exists(logfile):
-                return False
-
-        return True
+    def _perflog_exists(self, check_name):
+        logfile = '.rfm-perflogs/generic/login/%s.log' % check_name
+        return os.path.exists(logfile)
 
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
@@ -207,8 +207,7 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('PerformanceFailureCheck',
                                            ['login'], self.environs))
-        self.assertTrue(self._perflog_exists('PerformanceFailureCheck',
-                                             ['login']))
+        self.assertTrue(self._perflog_exists('PerformanceFailureCheck'))
 
     def test_skip_system_check_option(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']

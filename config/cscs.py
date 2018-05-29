@@ -278,7 +278,7 @@ class ReframeSettings:
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/maintenance',
-                    '--logdir=$APPS/UES/$USER/regression/maintenance/logs',
+                    '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                     '--stage=$SCRATCH/regression/maintenance/stage',
                     '--reservation=maintenance',
                     '--save-log-files',
@@ -289,7 +289,7 @@ class ReframeSettings:
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/production',
-                    '--logdir=$APPS/UES/$USER/regression/production/logs',
+                    '--perflogdir=$APPS/UES/$USER/regression/production/logs',
                     '--stage=$SCRATCH/regression/production/stage',
                     '--save-log-files',
                     '--tag=production',
@@ -314,7 +314,7 @@ class ReframeSettings:
             # Output handling
             {
                 'type': 'stream',
-                'stream': 'stdout',
+                'name': 'stdout',
                 'level': 'INFO',
                 'format': '%(message)s'
             },
@@ -329,7 +329,7 @@ class ReframeSettings:
     }
 
     perf_logging_config = {
-        'level': 'INFO',
+        'level': 'DEBUG',
         'handlers': [
             {
                 'type': 'graylog',
@@ -341,9 +341,9 @@ class ReframeSettings:
                           '%(check_name)s: %(message)s',
             },
             {
-                'type': 'dynfile',
-                'name': '%(check_perf_logfile)s',
-                'level': 'DEBUG',
+                'type': 'filelog',
+                'prefix': '%(check_system)s/%(check_partition)s',
+                'level': 'INFO',
                 'format': (
                     '%(asctime)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'

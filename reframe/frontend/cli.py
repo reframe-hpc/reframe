@@ -60,7 +60,11 @@ def main():
         help='Set regression stage directory to DIR')
     output_options.add_argument(
         '--logdir', action='store', metavar='DIR',
-        help='Set regression log directory to DIR')
+        help='(deprecated) Use --perflogdir instead.')
+    output_options.add_argument(
+        '--perflogdir', action='store', metavar='DIR',
+        help='Set directory prefix for the performance logs '
+        '(relevant only if the filelog backend is used)')
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
         help='Keep stage directory even if check is successful')
@@ -200,6 +204,12 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    if options.logdir:
+        sys.stderr.write('WARNING: --logdir option is deprecated; '
+                         'please use --perflogdir instead.\n')
+        if not options.perflogdir:
+            options.perflogdir = options.logdir
+
     # Load configuration
     try:
         settings = config.load_settings_from_file(options.config_file)
@@ -210,8 +220,7 @@ def main():
 
     # Configure logging
     try:
-        logging.configure_logging(settings.logging_config,
-                                  settings.perf_logging_config)
+        logging.configure_logging(settings.logging_config),
     except (OSError, ConfigError) as e:
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
@@ -255,22 +264,29 @@ def main():
             printer.error('could not obtain execution mode: %s' % e)
             sys.exit(1)
 
+    # Configure performance logging
+    if options.perflogdir:
+        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
+            os.path.expandvars(options.perflogdir))
+
+    try:
+        logging.configure_perflogging(settings.perf_logging_config)
+    except (OSError, ConfigError) as e:
+        sys.stderr.write('could not configure performance logging: %s\n' % e)
+        sys.exit(1)
+
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
         rt.resources.prefix = os.path.expandvars(options.prefix)
         rt.resources.outputdir = None
         rt.resources.stagedir  = None
-        rt.resources.perflogdir = None
 
     if options.output:
         rt.resources.outputdir = os.path.expandvars(options.output)
 
     if options.stage:
         rt.resources.stagedir = os.path.expandvars(options.stage)
-
-    if options.logdir:
-        rt.resources.perflogdir = os.path.expandvars(options.logdir)
 
     if (os_ext.samefile(rt.resources.stage_prefix,
                         rt.resources.output_prefix) and
@@ -316,9 +332,11 @@ def main():
     printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
-    printer.info('    Stage dir prefix  : %s' % rt.resources.stage_prefix)
-    printer.info('    Output dir prefix : %s' % rt.resources.output_prefix)
-    printer.info('    Logging dir       : %s' % rt.resources.perflog_prefix)
+    printer.info('    Stage dir prefix     : %s' % rt.resources.stage_prefix)
+    printer.info('    Output dir prefix    : %s' % rt.resources.output_prefix)
+    printer.info(
+        '    Perf. logging prefix : %s' %
+        os.path.abspath(logging.LOG_CONFIG_OPTS['handlers.filelog.prefix']))
     try:
         # Locate and load checks
         try:

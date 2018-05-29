@@ -207,7 +207,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_stream_handler_stdout(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': [{'type': 'stream', 'stream': 'stdout'}],
+            'handlers': [{'type': 'stream', 'name': 'stdout'}],
         }
         rlog.configure_logging(self.logging_config)
         raw_logger = rlog.getlogger().logger
@@ -220,7 +220,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_stream_handler_stderr(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': [{'type': 'stream', 'stream': 'stderr'}],
+            'handlers': [{'type': 'stream', 'name': 'stderr'}],
         }
 
         rlog.configure_logging(self.logging_config)
@@ -235,7 +235,7 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.logging_config = {
             'level': 'INFO',
             'handlers': [
-                {'type': 'stream', 'stream': 'stderr'},
+                {'type': 'stream', 'name': 'stderr'},
                 {'type': 'file', 'name': self.logfile}
             ],
         }
