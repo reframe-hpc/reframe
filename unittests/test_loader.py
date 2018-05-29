@@ -2,7 +2,8 @@ import os
 import unittest
 
 from reframe.core.exceptions import (ConfigError, NameConflictError,
-                                     RegressionTestLoadError)
+                                     RegressionTestLoadError,
+                                     ReframeSyntaxError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -58,3 +59,8 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_error(self):
         self.assertRaises(OSError, self.loader.load_from_file,
                           'unittests/resources/checks/foo.py')
+
+    def test_load_invalid_sytax(self):
+        self.assertRaises(ReframeSyntaxError, self.loader.load_from_file,
+                          'unittests/resources/checks_unlisted/'
+                          'invalid_syntax_check.py')
