@@ -19,7 +19,7 @@ from reframe.core.schedulers.slurm import SlurmNode
 from reframe.core.shell import BashScriptBuilder
 
 
-class _TestJob(unittest.TestCase):
+class _TestJob:
     def setUp(self):
         self.workdir = tempfile.mkdtemp(dir='unittests')
         self.testjob = self.job_type(
@@ -144,7 +144,7 @@ class _TestJob(unittest.TestCase):
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
 
-class TestLocalJob(_TestJob):
+class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
         try:
             os.kill(pid, 0)
@@ -259,7 +259,7 @@ class TestLocalJob(_TestJob):
         self.assertProcessDied(sleep_pid)
 
 
-class TestSlurmJob(_TestJob):
+class TestSlurmJob(_TestJob, unittest.TestCase):
     @property
     def sched_name(self):
         return 'slurm'
