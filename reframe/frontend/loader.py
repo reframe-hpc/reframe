@@ -11,8 +11,7 @@ from importlib.machinery import SourceFileLoader
 import reframe.core.debug as debug
 import reframe.utility as util
 from reframe.core.exceptions import (NameConflictError,
-                                     RegressionTestLoadError,
-                                     ReframeSyntaxError)
+                                     RegressionTestLoadError)
 from reframe.core.logging import getlogger
 
 
@@ -81,12 +80,7 @@ class RegressionCheckLoader:
         further tests and finalizes and validation."""
 
         with open(filename, 'r') as f:
-            try:
-                source_tree = ast.parse(f.read())
-            except SyntaxError as e:
-                message = ('\nRegression check syntax error:\n{0}Line: {1}\n'
-                           'File: {2}'.format(e.text, e.lineno, filename))
-                raise ReframeSyntaxError(message)
+            source_tree = ast.parse(f.read(), filename)
 
         validator = RegressionCheckValidator()
         validator.visit(source_tree)
