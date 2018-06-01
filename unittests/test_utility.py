@@ -280,18 +280,16 @@ class TestImportFromFile(unittest.TestCase):
             self.assertEqual('foo', e.name)
             self.assertEqual('/foo', e.path)
 
-    def test_load_dir_starts_with_ddot(self):
+    def test_load_directory_relative(self):
         with os_ext.change_dir('reframe'):
-            filename = '../reframe'
-            module = util.import_module_from_file(filename)
+            module = util.import_module_from_file('../reframe')
             self.assertEqual(reframe.VERSION, module.VERSION)
             self.assertEqual('reframe', module.__name__)
             self.assertIs(module, sys.modules.get('reframe'))
 
-    def test_load_file_starts_with_ddot(self):
+    def test_load_file_relative(self):
         with os_ext.change_dir('reframe'):
-            filename = '../reframe/__init__.py'
-            module = util.import_module_from_file(filename)
+            module = util.import_module_from_file('../reframe/__init__.py')
             self.assertEqual(reframe.VERSION, module.VERSION)
             self.assertEqual('reframe', module.__name__)
             self.assertIs(module, sys.modules.get('reframe'))
