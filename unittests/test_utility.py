@@ -282,7 +282,7 @@ class TestImportFromFile(unittest.TestCase):
 
     def test_load_dir_starts_with_ddot(self):
         with os_ext.change_dir('reframe'):
-            filename = '..%s/reframe' % os.getcwd()
+            filename = '../reframe'
             module = util.import_module_from_file(filename)
             self.assertEqual(reframe.VERSION, module.VERSION)
             self.assertEqual('reframe', module.__name__)
@@ -290,7 +290,7 @@ class TestImportFromFile(unittest.TestCase):
 
     def test_load_file_starts_with_ddot(self):
         with os_ext.change_dir('reframe'):
-            filename = '..%s/reframe/__init__.py' % os.getcwd()
+            filename = '../reframe/__init__.py'
             module = util.import_module_from_file(filename)
             self.assertEqual(reframe.VERSION, module.VERSION)
             self.assertEqual('reframe', module.__name__)
