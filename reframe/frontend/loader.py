@@ -10,8 +10,7 @@ from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
 import reframe.utility as util
-from reframe.core.exceptions import (NameConflictError,
-                                     RegressionTestLoadError)
+from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
 from reframe.core.logging import getlogger
 
 
