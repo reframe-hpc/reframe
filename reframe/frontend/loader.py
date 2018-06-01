@@ -79,7 +79,7 @@ class RegressionCheckLoader:
         further tests and finalizes and validation."""
 
         with open(filename, 'r') as f:
-            source_tree = ast.parse(f.read())
+            source_tree = ast.parse(f.read(), filename)
 
         validator = RegressionCheckValidator()
         validator.visit(source_tree)
