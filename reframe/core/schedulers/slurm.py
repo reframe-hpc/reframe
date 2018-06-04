@@ -255,8 +255,8 @@ class SlurmJob(sched.Job):
         self._check_and_cancel(completed.stdout)
 
     def _check_and_cancel(self, reason_descr):
-        """Check if blocking reason ``reason_descr`` is unrecoverable and cancel the
-        job in this case."""
+        """Check if blocking reason ``reason_descr`` is unrecoverable and
+        cancel the job in this case."""
 
         # The reason description may have two parts as follows:
         # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
@@ -265,6 +265,12 @@ class SlurmJob(sched.Job):
         except ValueError:
             # no reason details
             reason, reason_details = reason_descr, None
+
+        # Here we handle the case were the UnavailableNodes list is empty,
+        # which actually means that the job is pending
+        if reason == 'ReqNodeNotAvail' and reason_details:
+            if not re.match(r'UnavailableNodes:\S+', reason_details):
+                return
 
         if reason in self._cancel_reasons:
             self.cancel()
