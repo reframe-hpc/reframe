@@ -64,7 +64,8 @@ def main():
     output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
         help='Set directory prefix for the performance logs '
-        '(relevant only if the filelog backend is used)')
+        '(default: ${prefix}/perflogs, '
+        'relevant only if the filelog backend is used)')
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
         help='Keep stage directory even if check is successful')
@@ -264,17 +265,6 @@ def main():
             printer.error('could not obtain execution mode: %s' % e)
             sys.exit(1)
 
-    # Configure performance logging
-    if options.perflogdir:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.expandvars(options.perflogdir))
-
-    try:
-        logging.configure_perflogging(settings.perf_logging_config)
-    except (OSError, ConfigError) as e:
-        sys.stderr.write('could not configure performance logging: %s\n' % e)
-        sys.exit(1)
-
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
@@ -294,6 +284,22 @@ def main():
         printer.error('stage and output refer to the same directory; '
                       'if this is on purpose, please use also the '
                       "`--keep-stage-files' option.")
+        sys.exit(1)
+
+    # Configure performance logging
+    # NOTE: we need resources to be configured in order to set the global
+    # perf. logging prefix correctly
+    if options.perflogdir:
+        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
+            os.path.expandvars(options.perflogdir))
+    else:
+        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
+            os.path.join(rt.resources.prefix, 'perflogs'))
+
+    try:
+        logging.configure_perflogging(settings.perf_logging_config)
+    except (OSError, ConfigError) as e:
+        sys.stderr.write('could not configure performance logging: %s\n' % e)
         sys.exit(1)
 
     # Setup the check loader

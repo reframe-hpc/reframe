@@ -211,13 +211,20 @@ def _create_graylog_handler(handler_config):
     except ImportError:
         return None
 
-    hostname = handler_config.get('hostname', None)
+    host = handler_config.get('host', None)
     port = handler_config.get('port', None)
-    facility = handler_config.get('facility', None)
-    return pygelf.GelfHttpHandler(host=hostname,
-                                  port=port,
-                                  facility=facility,
-                                  debug=True,
+    extras = handler_config.get('extras', None)
+    if host is None:
+        raise ConfigError('graylog handler: no host specified')
+
+    if port is None:
+        raise ConfigError('graylog handler: no port specified')
+
+    if extras is not None and not isinstance(extras, collections.abc.Mapping):
+        raise ConfigError('graylog handler: extras must be a mapping type')
+
+    return pygelf.GelfHttpHandler(host=host, port=port, debug=True,
+                                  static_fields=extras,
                                   include_extra_fields=True)
 
 
@@ -336,7 +343,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
-                'data-version': reframe.VERSION,
+                'check_tags': None,
                 'version': reframe.VERSION,
             }
         )
@@ -358,6 +365,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_info'] = self.check.info()
         self.extra['check_outputdir'] = self.check.outputdir
         self.extra['check_stagedir'] = self.check.stagedir
+        self.extra['check_tags'] = self.check.tags
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
 

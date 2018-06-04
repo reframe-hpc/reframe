@@ -53,19 +53,27 @@ class ReframeSettings:
         'handlers': [
             {
                 'type': 'file',
-                'name': '.reframe_unittest.log',
+                'name': 'reframe.log',
                 'level': 'DEBUG',
-                'format': ('[%(asctime)s] %(levelname)s: '
-                           '%(check_name)s: %(message)s'),
-                'datefmt': '%FT%T',
+                'format': '[%(asctime)s] %(levelname)s: '
+                          '%(check_info)s: %(message)s',
                 'append': False,
             },
+
+            # Output handling
             {
                 'type': 'stream',
                 'name': 'stdout',
                 'level': 'INFO',
                 'format': '%(message)s'
             },
+            {
+                'type': 'file',
+                'name': 'reframe.out',
+                'level': 'INFO',
+                'format': '%(message)s',
+                'append': False,
+            }
         ]
     }
 
