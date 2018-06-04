@@ -30,11 +30,19 @@ class TestVersioning(unittest.TestCase):
 
     def test_version_validation(self):
         conditions = [VersionValidator('<=1.0.0'),
-                      VersionValidator('2.0.0,2.5'),
+                      VersionValidator('2.0.0..2.5'),
                       VersionValidator('3.0')]
         self.assertTrue(any(c.validate('0.1') for c in conditions))
-        self.assertFalse(any(c.validate('2.0.0') for c in conditions))
+        self.assertTrue(any(c.validate('2.0.0') for c in conditions))
         self.assertTrue(any(c.validate('2.2') for c in conditions))
-        self.assertFalse(any(c.validate('2.5') for c in conditions))
+        self.assertTrue(any(c.validate('2.5') for c in conditions))
         self.assertTrue(any(c.validate('3.0') for c in conditions))
         self.assertFalse(any(c.validate('3.1') for c in conditions))
+        self.assertRaises(ValueError, VersionValidator, '2.0.0..')
+        self.assertRaises(ValueError, VersionValidator, '..2.0.0')
+        self.assertRaises(ValueError, VersionValidator, '1.0.0..2.0.0..3.0.0')
+        self.assertRaises(ValueError, VersionValidator, '=>2.0.0')
+        self.assertRaises(ValueError, VersionValidator, '2.0.0>')
+        self.assertRaises(ValueError, VersionValidator, '2.0.0>1.0.0')
+        self.assertRaises(ValueError, VersionValidator, '=>')
+        self.assertRaises(ValueError, VersionValidator, '>1')

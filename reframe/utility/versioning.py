@@ -1,3 +1,4 @@
+import abc
 import functools
 import sys
 
@@ -65,58 +66,80 @@ class Version:
         return base + '-dev%s' % self._dev_number
 
 
-class VersionValidator:
+class _ValidatorImpl:
+    """Abstract base class for the validation of version ranges."""
+    @abc.abstractmethod
+    def validate(version):
+        pass
+
+
+class _IntervalValidator(_ValidatorImpl):
+    """Class for the validation of version intervals.
+
+    This class takes an interval of versions "v1..v2" and its method
+    ``validate`` returns ``True`` if a given version string is inside
+    the interval including the endpoints.
+    """
     def __init__(self, condition):
-        self.condition = condition
+        try:
+            min_version_str, max_version_str = condition.split('..')
+        except ValueError:
+            raise ValueError("invalid format of version interval: %s"
+                             % condition) from None
+
+        if min_version_str and max_version_str:
+            self.min_version = Version(min_version_str)
+            self.max_version = Version(max_version_str)
+        else:
+            raise ValueError("missing bound on version interval %s"
+                             % condition)
+
+    def validate(self, version):
+        return ((Version(version) >= self.min_version) and
+                (Version(version) <= self.max_version))
+
+
+class _RelationalValidator(_ValidatorImpl):
+    """Class for the validation of Boolean relations of versions.
+
+    This class takes a Boolean relation of versions with the form
+    ``<bool_operator><version>``, and its method ``validate`` returns
+    ``True`` if a given version string satisfies the relation.
+    """
+    def __init__(self, condition):
         self._operations = {
-            ">": lambda x, y: x > y,
+            ">":  lambda x, y: x > y,
             ">=": lambda x, y: x >= y,
-            "<": lambda x, y: x < y,
+            "<":  lambda x, y: x < y,
             "<=": lambda x, y: x <= y,
             "==": lambda x, y: x == y,
             "!=": lambda x, y: x != y,
         }
-
-    def _parse_condition(self, condition):
         try:
-            operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
-                                              condition)))
-            if operator == '':
-                operator = '=='
+            self.operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
+                                                   condition)))
+            if self.operator == '':
+                self.operator = '=='
 
-            str_version = condition.split(operator, maxsplit=1)[-1]
+            str_version = condition.split(self.operator, maxsplit=1)[-1]
         except ValueError:
             raise ValueError('invalid condition: %s'
                              % condition.strip()) from None
 
-        if operator not in self._operations.keys():
-            raise ValueError("invalid boolean operator: '%s'" % operator)
+        self.ref_version = Version(str_version)
 
-        return Version(str_version), operator
+        if self.operator not in self._operations.keys():
+            raise ValueError("invalid boolean operator: '%s'" % self.operator)
 
-    def _validate_interval(self, version_ref):
-        min_version_str, max_version_str = self.condition.split(',')
+    def validate(self, version):
+        return self._operations[self.operator](Version(version),
+                                               self.ref_version)
 
-        try:
-            min_version = Version(min_version_str)
-            max_version = Version(max_version_str)
-        except ValueError:
-            raise ValueError('invalid interval: "%s", '
-                             'expecting "min_version, max_version"'
-                             % self.condition.strip()) from None
 
-        return ((Version(version_ref) > min_version) and
-                (Version(version_ref) < max_version))
-
-    def _validate_relation(self, version_ref):
-        version, op = self._parse_condition(self.condition)
-
-        return self._operations[op](Version(version_ref), version)
-
-    def validate(self, version_ref):
-        try:
-            res = self._validate_interval(version_ref)
-        except ValueError:
-            res = self._validate_relation(version_ref)
-
-        return res
+class VersionValidator:
+    """Class factory for the validation of version ranges."""
+    def __new__(cls, condition):
+        if '..' in condition:
+            return _IntervalValidator(condition)
+        else:
+            return _RelationalValidator(condition)
