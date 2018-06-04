@@ -65,7 +65,7 @@ class SlurmJob(sched.Job):
                                 'PartitionNodeLimit',
                                 'QOSJobLimit',
                                 'QOSResourceLimit',
-                                'ReqNodeNotAvail',  # Inaccurate SLURM doc
+                                'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
         self._is_cancelling = False
         self._update_state_count = 0
@@ -266,13 +266,13 @@ class SlurmJob(sched.Job):
             # no reason details
             reason, reason_details = reason_descr, None
 
-        # Here we handle the case were the UnavailableNodes list is empty,
-        # which actually means that the job is pending
-        if reason == 'ReqNodeNotAvail' and reason_details:
-            if not re.match(r'UnavailableNodes:\S+', reason_details):
-                return
-
         if reason in self._cancel_reasons:
+            # Here we handle the case were the UnavailableNodes list is empty,
+            # which actually means that the job is pending
+            if reason == 'ReqNodeNotAvail' and reason_details:
+                if not re.match(r'UnavailableNodes:$', reason_details):
+                    return
+
             self.cancel()
             reason_msg = ('job cancelled because it was blocked due to '
                           'a perhaps non-recoverable reason: ' + reason)
