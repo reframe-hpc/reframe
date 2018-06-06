@@ -9,7 +9,7 @@ class GpuDirectAccCheck(RegressionTest):
         super().__init__('gpu_direct_acc_check',
                          os.path.dirname(__file__), **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self._pgi_flags = '-acc -ta=tesla:cc60'
@@ -29,14 +29,17 @@ class GpuDirectAccCheck(RegressionTest):
             self.num_tasks_per_node = 8
 
         self.sourcepath = 'gpu_direct_acc.F90'
-        self.sanity_patterns = sn.assert_found(r'Result :\s+OK', self.stdout)
+        self.sanity_patterns = sn.all([sn.assert_found(r'GPU with OpenACC',
+                                                       self.stdout),
+                                       sn.assert_found(r'Result :\s+OK',
+                                                       self.stdout)])
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        if environ.name == 'PrgEnv-cray':
+        if 'PrgEnv-cray' in environ.name:
             environ.fflags = '-hacc -hnoomp'
-        elif environ.name == 'PrgEnv-pgi':
+        elif 'PrgEnv-pgi' in environ.name:
             environ.fflags = self._pgi_flags
 
         super().setup(partition, environ, **job_opts)
