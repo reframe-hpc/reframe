@@ -35,12 +35,12 @@ class PbsJob(sched.Job):
 
     def _emit_lselect_option(self, builder):
         num_tasks_per_node = self._num_tasks_per_node or 1
+        num_cpus_per_task = self._num_cpus_per_task or 1
         num_nodes = self._num_tasks // num_tasks_per_node
-        ret = '-l select=%s:mpiprocs=%s' % (num_nodes, num_tasks_per_node)
-        if self._num_cpus_per_task:
-            num_cpus_per_node = num_tasks_per_node * self._num_cpus_per_task
-            ret += ':ncpus=%s' % num_cpus_per_node
-
+        num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
+        ret = '-l select=%s:mpiprocs=%s:ncpus=%s' % (num_nodes,
+                                                     num_tasks_per_node,
+                                                     num_cpus_per_node)
         if self.options:
             ret += ':' + ':'.join(self.options)
 
@@ -98,7 +98,7 @@ class PbsJob(sched.Job):
         # Recreate the full job id
         jobid = str(self._jobid)
         if self._pbs_server:
-            jobid += ':' + self._pbs_server
+            jobid += '.' + self._pbs_server
 
         getlogger().debug('cancelling job (id=%s)' % jobid)
         self._run_command('qdel %s' % jobid, settings().job_submit_timeout)
