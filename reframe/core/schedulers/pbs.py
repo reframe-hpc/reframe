@@ -38,13 +38,27 @@ class PbsJob(sched.Job):
         num_cpus_per_task = self._num_cpus_per_task or 1
         num_nodes = self._num_tasks // num_tasks_per_node
         num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-        ret = '-l select=%s:mpiprocs=%s:ncpus=%s' % (num_nodes,
-                                                     num_tasks_per_node,
-                                                     num_cpus_per_node)
-        if self.options:
-            ret += ':' + ':'.join(self.options)
+        select_opt = '-l select=%s:mpiprocs=%s:ncpus=%s' % (num_nodes,
+                                                            num_tasks_per_node,
+                                                            num_cpus_per_node)
 
-        self._emit_job_option(ret, builder)
+        # Options starting with `-` are emitted in separate lines
+        rem_opts = []
+        verb_opts = []
+        for opt in self.options:
+            if opt.startswith('-'):
+                rem_opts.append(opt)
+            elif opt.startswith('#'):
+                verb_opts.append(opt)
+            else:
+                select_opt += ':' + opt
+
+        self._emit_job_option(select_opt, builder)
+        for opt in rem_opts:
+            self._emit_job_option(opt, builder)
+
+        for opt in verb_opts:
+            builder.verbatim(opt)
 
     def _emit_job_option(self, option, builder):
         builder.verbatim(self._prefix + ' ' + option)

@@ -408,7 +408,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
 
     def test_prepare(self):
         self.setup_job()
-        self.testjob.options = ['mem=100GB', 'cpu_type=haswell']
+        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
         super().test_prepare()
         num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
         num_cpus_per_node = (self.testjob.num_cpus_per_task *
@@ -423,6 +423,9 @@ class TestPbsJob(_TestJob, unittest.TestCase):
                                              self.testjob.num_tasks_per_node,
                                              num_cpus_per_node),
             '#PBS -q %s' % self.testjob.sched_partition,
+            '#PBS --gres=gpu:4',
+            '#DW jobdw capacity=100GB',
+            '#DW stage_in source=/foo'
         ])
         with open(self.testjob.script_filename) as fp:
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
@@ -433,7 +436,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
     def test_prepare_no_cpus(self):
         self.setup_job()
         self.testjob._num_cpus_per_task = None
-        self.testjob.options = ['mem=100GB', 'cpu_type=haswell']
+        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
         super().test_prepare()
         num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
         num_cpus_per_node = self.testjob.num_tasks_per_node
@@ -447,6 +450,9 @@ class TestPbsJob(_TestJob, unittest.TestCase):
                                              self.testjob.num_tasks_per_node,
                                              num_cpus_per_node),
             '#PBS -q %s' % self.testjob.sched_partition,
+            '#PBS --gres=gpu:4',
+            '#DW jobdw capacity=100GB',
+            '#DW stage_in source=/foo'
         ])
         with open(self.testjob.script_filename) as fp:
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
