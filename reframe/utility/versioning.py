@@ -1,6 +1,7 @@
 import abc
 import functools
 import sys
+import re
 
 from itertools import takewhile
 
@@ -116,21 +117,19 @@ class _RelationalValidator(_ValidatorImpl):
             "==": lambda x, y: x == y,
             "!=": lambda x, y: x != y,
         }
-        try:
-            self._operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
-                                                    condition)))
-            if self._operator == '':
-                self._operator = '=='
+        cond_match = re.match(r'(\W{0,2})(\S+)', condition)
+        if not cond_match:
+            raise ValueError("invalid condition: '%s'" % condition)
 
-            str_version = condition.split(self._operator, maxsplit=1)[-1]
-        except ValueError:
-            raise ValueError('invalid condition: %s' %
-                             condition.strip()) from None
+        self._ref_version = Version(cond_match.group(2))
+        op = cond_match.group(1)
+        if op == '':
+            op = '=='
 
-        self._ref_version = Version(str_version)
-
-        if self._operator not in self._op_actions.keys():
-            raise ValueError("invalid boolean operator: '%s'" % self._operator)
+        if op not in self._op_actions.keys():
+            raise ValueError("invalid boolean operator: '%s'" % op)
+        else:
+            self._operator = op
 
     def validate(self, version):
         return self._op_actions[self._operator](Version(version),
