@@ -5,7 +5,7 @@ program GpuDirectAcc
 
     include 'mpif.h'
 
-    integer :: ierr, status, i
+    integer :: ierr, status(MPI_STATUS_SIZE), i
     integer :: mpi_size, mpi_rank
     integer(8) :: mydata(1), data_sum(1), ref_val
 
