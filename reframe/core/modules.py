@@ -576,6 +576,8 @@ class LModImpl(TModImpl):
         return ret
 
     def unload_all(self):
+        # Currently, we don't take any provision for sticky modules in Lmod, so
+        # we forcefully unload everything.
         self._exec_module_command('--force', 'purge')
 
 
