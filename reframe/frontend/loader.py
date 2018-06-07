@@ -9,23 +9,40 @@ import os
 from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
-from reframe.core.exceptions import NameConflictError
+import reframe.utility as util
+from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
 from reframe.core.logging import getlogger
 
 
 class RegressionCheckValidator(ast.NodeVisitor):
     def __init__(self):
-        self._validated = False
+        self._has_import = False
+        self._has_regression_test = False
 
     @property
     def valid(self):
-        return self._validated
+        return self._has_import and self._has_regression_test
 
-    def visit_FunctionDef(self, node):
-        if (node.name == '_get_checks' and
-            node.col_offset == 0 and
-            node.args.kwarg):
-            self._validated = True
+    def visit_Import(self, node):
+        for m in node.names:
+            if m.name.startswith('reframe'):
+                self._has_import = True
+
+    def visit_ImportFrom(self, node):
+        if node.module.startswith('reframe'):
+            self._has_import = True
+
+    def visit_ClassDef(self, node):
+        for b in node.bases:
+            try:
+                # Unqualified name as in `class C(RegressionTest)`
+                cls_name = b.id
+            except AttributeError:
+                # Qualified name as in `class C(rfm.RegressionTest)`
+                cls_name = b.attr
+
+            if 'RegressionTest' in cls_name:
+                self._has_regression_test = True
 
 
 class RegressionCheckLoader:
@@ -62,7 +79,7 @@ class RegressionCheckLoader:
         further tests and finalizes and validation."""
 
         with open(filename, 'r') as f:
-            source_tree = ast.parse(f.read())
+            source_tree = ast.parse(f.read(), filename)
 
         validator = RegressionCheckValidator()
         validator.visit(source_tree)
@@ -80,16 +97,28 @@ class RegressionCheckLoader:
     def recurse(self):
         return self._recurse
 
-    def load_from_module(self, module, **check_args):
+    def load_from_module(self, module):
         """Load user checks from module.
 
         This method tries to call the `_get_checks()` method of the user check
         and validates its return value."""
         from reframe.core.pipeline import RegressionTest
 
-        # We can safely call `_get_checks()` here, since the source file is
-        # already validated
-        candidates = module._get_checks(**check_args)
+        old_syntax = hasattr(module, '_get_checks')
+        new_syntax = hasattr(module, '_rfm_gettests')
+        if old_syntax and new_syntax:
+            raise RegressionTestLoadError('%s: mixing old and new regression '
+                                          'test syntax is not allowed' %
+                                          module.__file__)
+
+        if not old_syntax and not new_syntax:
+            return []
+
+        if old_syntax:
+            candidates = module._get_checks()
+        else:
+            candidates = module._rfm_gettests()
+
         if not isinstance(candidates, collections.abc.Sequence):
             return []
 
@@ -98,7 +127,7 @@ class RegressionCheckLoader:
             if not isinstance(c, RegressionTest):
                 continue
 
-            testfile = inspect.getfile(type(c))
+            testfile = module.__file__
             try:
                 conflicted = self._loaded[c.name]
             except KeyError:
@@ -116,19 +145,17 @@ class RegressionCheckLoader:
         return ret
 
     def load_from_file(self, filename, **check_args):
-        module_name = self._module_name(filename)
         if not self._validate_source(filename):
             return []
 
-        loader = SourceFileLoader(module_name, filename)
-        return self.load_from_module(loader.load_module(), **check_args)
+        return self.load_from_module(util.import_module_from_file(filename))
 
-    def load_from_dir(self, dirname, recurse=False, **check_args):
+    def load_from_dir(self, dirname, recurse=False):
         checks = []
         for entry in os.scandir(dirname):
             if recurse and entry.is_dir():
                 checks.extend(
-                    self.load_from_dir(entry.path, recurse, **check_args)
+                    self.load_from_dir(entry.path, recurse)
                 )
 
             if (entry.name.startswith('.') or
@@ -136,11 +163,11 @@ class RegressionCheckLoader:
                 not entry.is_file()):
                 continue
 
-            checks.extend(self.load_from_file(entry.path, **check_args))
+            checks.extend(self.load_from_file(entry.path))
 
         return checks
 
-    def load_all(self, **check_args):
+    def load_all(self):
         """Load all checks in self._load_path.
 
         If a prefix exists, it will be prepended to each path."""
@@ -150,9 +177,8 @@ class RegressionCheckLoader:
             if not os.path.exists(d):
                 continue
             if os.path.isdir(d):
-                checks.extend(self.load_from_dir(d, self._recurse,
-                                                 **check_args))
+                checks.extend(self.load_from_dir(d, self._recurse))
             else:
-                checks.extend(self.load_from_file(d, **check_args))
+                checks.extend(self.load_from_file(d))
 
         return checks

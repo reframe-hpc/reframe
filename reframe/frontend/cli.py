@@ -3,19 +3,19 @@ import socket
 import sys
 
 import reframe
-import reframe.frontend.config as config
+import reframe.core.config as config
 import reframe.core.logging as logging
+import reframe.core.runtime as runtime
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
-                                     ReframeFatalError, format_exception)
-from reframe.core.modules import get_modules_system, init_modules_system
+                                     ReframeFatalError, format_exception,
+                                     SystemAutodetectionError)
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.resources import ResourcesManager
 
 
 def list_supported_systems(systems, printer):
@@ -202,14 +202,12 @@ def main():
 
     # Load configuration
     try:
-        settings = config.load_from_file(options.config_file)
+        settings = config.load_settings_from_file(options.config_file)
     except (OSError, ReframeError) as e:
         sys.stderr.write(
             '%s: could not load settings: %s\n' % (sys.argv[0], e))
         sys.exit(1)
 
-    site_config = config.SiteConfiguration()
-    site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
         logging.configure_logging(settings.logging_config)
@@ -221,62 +219,68 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = options.colorize
 
-    if options.system:
-        try:
-            sysname, sep, partname = options.system.partition(':')
-            system = site_config.systems[sysname]
-            if partname:
-                # Disable all partitions except partname
-                for p in system.partitions:
-                    if p.name != partname:
-                        p.disable()
-
-            if not system.partitions:
-                raise KeyError(options.system)
-
-        except KeyError:
-            printer.error("unknown system specified: `%s'" % options.system)
-            list_supported_systems(site_config.systems.values(), printer)
-            sys.exit(1)
-    else:
-        # Try to autodetect system
-        system = config.autodetect_system(site_config)
-        if not system:
-            printer.error("could not auto-detect system. Please specify "
-                          "it manually using the `--system' option.")
-            list_supported_systems(site_config.systems.values(), printer)
-            sys.exit(1)
-
     try:
-        # Init modules system
-        init_modules_system(system.modules_system)
-    except ReframeError as e:
-        printer.error('could not initialize the modules system: %s' % e)
+        runtime.init_runtime(settings.site_configuration, options.system)
+    except SystemAutodetectionError:
+        printer.error("could not auto-detect system; please use the "
+                      "`--system' option to specify one explicitly")
         sys.exit(1)
 
+    except (ConfigError, OSError) as e:
+        printer.error('configuration error %s' % e)
+        sys.exit(1)
+
+    rt = runtime.runtime()
     try:
         if options.module_map_file:
-            get_modules_system().load_mapping_from_file(
-                options.module_map_file)
+            rt.modules_system.load_mapping_from_file(options.module_map_file)
 
         if options.module_mappings:
             for m in options.module_mappings:
-                get_modules_system().load_mapping(m)
+                rt.modules_system.load_mapping(m)
 
-    except (ReframeError, OSError) as e:
+    except (ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
     if options.mode:
         try:
-            mode_args = site_config.modes[options.mode]
+            mode_args = rt.mode(options.mode)
 
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options)
-        except KeyError:
-            printer.error("no such execution mode: `%s'" % (options.mode))
+        except ConfigError as e:
+            printer.error('could not obtain execution mode: %s' % e)
             sys.exit(1)
+
+    # Adjust system directories
+    if options.prefix:
+        # if prefix is set, reset all other directories
+        rt.resources.prefix = os.path.expandvars(options.prefix)
+        rt.resources.outputdir = None
+        rt.resources.stagedir  = None
+        rt.resources.perflogdir = None
+
+    if options.output:
+        rt.resources.outputdir = os.path.expandvars(options.output)
+
+    if options.stage:
+        rt.resources.stagedir = os.path.expandvars(options.stage)
+
+    if options.logdir:
+        rt.resources.perflogdir = os.path.expandvars(options.logdir)
+
+    if (os_ext.samefile(rt.resources.stage_prefix,
+                        rt.resources.output_prefix) and
+        not options.keep_stage_files):
+        printer.error('stage and output refer to the same directory; '
+                      'if this is on purpose, please use also the '
+                      "`--keep-stage-files' option.")
+        sys.exit(1)
+
+    if options.timestamp:
+        rt.resources.timefmt = options.timestamp
 
     # Setup the check loader
     if options.checkpath:
@@ -299,35 +303,6 @@ def main():
             prefix=reframe.INSTALL_PREFIX,
             recurse=settings.checks_path_recurse)
 
-    # Adjust system directories
-    if options.prefix:
-        # if prefix is set, reset all other directories
-        system.prefix = os.path.expandvars(options.prefix)
-        system.outputdir = None
-        system.stagedir  = None
-        system.logdir = None
-
-    if options.output:
-        system.outputdir = os.path.expandvars(options.output)
-
-    if options.stage:
-        system.stagedir = os.path.expandvars(options.stage)
-
-    if options.logdir:
-        system.logdir = os.path.expandvars(options.logdir)
-
-    resources = ResourcesManager(prefix=system.prefix,
-                                 output_prefix=system.outputdir,
-                                 stage_prefix=system.stagedir,
-                                 log_prefix=system.logdir,
-                                 timestamp=options.timestamp)
-    if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
-        not options.keep_stage_files):
-        printer.error('stage and output refer to the same directory. '
-                      'If this is on purpose, please use also the '
-                      "`--keep-stage-files' option.")
-        sys.exit(1)
-
     printer.log_config(options)
 
     # Print command line
@@ -343,13 +318,13 @@ def main():
     printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
-    printer.info('    Stage dir prefix  : %s' % resources.stage_prefix)
-    printer.info('    Output dir prefix : %s' % resources.output_prefix)
-    printer.info('    Logging dir       : %s' % resources.log_prefix)
+    printer.info('    Stage dir prefix  : %s' % rt.resources.stage_prefix)
+    printer.info('    Output dir prefix : %s' % rt.resources.output_prefix)
+    printer.info('    Logging dir       : %s' % rt.resources.perflog_prefix)
     try:
         # Locate and load checks
         try:
-            checks_found = loader.load_all(system=system, resources=resources)
+            checks_found = loader.load_all()
         except OSError as e:
             raise ReframeError from e
 
@@ -404,11 +379,11 @@ def main():
 
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:
-            get_modules_system().unload_module(settings.reframe_module)
+            rt.modules_system.unload_module(settings.reframe_module)
 
         for m in options.user_modules:
             try:
-                get_modules_system().load_module(m, force=True)
+                rt.modules_system.load_module(m, force=True)
             except EnvironError:
                 printer.info("could not load module `%s': Skipping..." % m)
 
@@ -450,7 +425,7 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
-                runner.runall(checks_matched, system)
+                runner.runall(checks_matched)
             finally:
                 # Print a retry report if we did any retries
                 if runner.stats.num_failures(run=0):
@@ -483,8 +458,8 @@ def main():
     finally:
         try:
             if options.save_log_files:
-                logging.save_log_files(resources.output_prefix)
+                logging.save_log_files(rt.resources.output_prefix)
 
         except OSError as e:
-            printer.error(str(e))
+            printer.error('could not save log file: %s' % e)
             sys.exit(1)

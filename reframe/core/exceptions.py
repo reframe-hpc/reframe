@@ -36,11 +36,15 @@ class ReframeFatalError(BaseException):
         return ret
 
 
-class TestSuiteError(ReframeError):
-    """Raised when the regression test suite does not meet certain criteria."""
+class ReframeSyntaxError(ReframeError):
+    """Raised when the syntax of regression tests is not correct."""
 
 
-class NameConflictError(TestSuiteError):
+class RegressionTestLoadError(ReframeError):
+    """Raised when the regression test cannot be loaded."""
+
+
+class NameConflictError(RegressionTestLoadError):
     """Raised when there is a name clash in the test suite."""
 
 
@@ -56,6 +60,14 @@ class AbortTaskError(ReframeError):
 
 class ConfigError(ReframeError):
     """Raised when a configuration error occurs."""
+
+
+class UnknownSystemError(ConfigError):
+    """Raised when the host system cannot be identified."""
+
+
+class SystemAutodetectionError(UnknownSystemError):
+    """Raised when the host system cannot be auto-detected"""
 
 
 class EnvironError(ReframeError):
@@ -226,8 +238,8 @@ def format_exception(exc_type, exc_value, tb):
         return 'OS error: %s' % exc_value
 
     frame = user_frame(tb)
-    if isinstance(exc_value, TypeError) and frame is not None:
-        return 'type error: ' + format_user_frame(frame)
+    # if isinstance(exc_value, TypeError) and frame is not None:
+    #     return 'type error: ' + format_user_frame(frame)
 
     if isinstance(exc_value, ValueError) and frame is not None:
         return 'value error: ' + format_user_frame(frame)

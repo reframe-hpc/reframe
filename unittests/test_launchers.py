@@ -24,7 +24,7 @@ class FakeJob(Job):
         pass
 
 
-class _TestLauncher(abc.ABC, unittest.TestCase):
+class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
 
     def setUp(self):
@@ -80,7 +80,7 @@ class _TestLauncher(abc.ABC, unittest.TestCase):
         self.assertEqual(self.expected_minimal_command, emitted_command)
 
 
-class TestSrunLauncher(_TestLauncher):
+class TestSrunLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return getlauncher('srun')(options=['--foo'])
@@ -94,7 +94,7 @@ class TestSrunLauncher(_TestLauncher):
         return 'srun --foo ls -l'
 
 
-class TestSrunallocLauncher(_TestLauncher):
+class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def launcher(self):
@@ -136,7 +136,7 @@ class TestSrunallocLauncher(_TestLauncher):
                 'ls -l')
 
 
-class TestAlpsLauncher(_TestLauncher):
+class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return getlauncher('alps')(options=['--foo'])
@@ -150,7 +150,7 @@ class TestAlpsLauncher(_TestLauncher):
         return 'aprun -B --foo ls -l'
 
 
-class TestMpirunLauncher(_TestLauncher):
+class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return getlauncher('mpirun')(options=['--foo'])
@@ -164,7 +164,7 @@ class TestMpirunLauncher(_TestLauncher):
         return 'mpirun -np 1 --foo ls -l'
 
 
-class TestMpiexecLauncher(_TestLauncher):
+class TestMpiexecLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return getlauncher('mpiexec')(options=['--foo'])
@@ -178,7 +178,7 @@ class TestMpiexecLauncher(_TestLauncher):
         return 'mpiexec -n 1 --foo ls -l'
 
 
-class TestLauncherWrapperAlps(_TestLauncher):
+class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return launchers.LauncherWrapper(
@@ -195,7 +195,7 @@ class TestLauncherWrapperAlps(_TestLauncher):
         return 'ddt --offline aprun -B --foo ls -l'
 
 
-class TestLocalLauncher(_TestLauncher):
+class TestLocalLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return getlauncher('local')(['--foo'])

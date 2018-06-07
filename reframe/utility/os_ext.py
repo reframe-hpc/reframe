@@ -197,6 +197,14 @@ def mkstemp_path(*args, **kwargs):
     return path
 
 
+def force_remove_file(filename):
+    """Remove filename ignoring errors if the file does not exist."""
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
+
+
 class change_dir:
     """Context manager which changes the current working directory to the
        provided one."""

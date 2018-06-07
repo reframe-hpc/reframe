@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class OpenMPTestIfElse(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example2a_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example2aTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -36,10 +34,10 @@ class OpenMPTestIfElse(RegressionTest):
         super().compile()
 
 
-class OpenMPTestDict(RegressionTest):
+@rfm.simple_test
+class Example2bTest(rfm.RegressionTest):
     def __init__(self, **kwargs):
-        super().__init__('example2b_check',
-                         os.path.dirname(__file__), **kwargs)
+        super().__init__()
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -64,7 +62,3 @@ class OpenMPTestDict(RegressionTest):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
         self.current_environ.cflags = prgenv_flags
         super().compile()
-
-
-def _get_checks(**kwargs):
-    return [OpenMPTestIfElse(**kwargs), OpenMPTestDict(**kwargs)]
