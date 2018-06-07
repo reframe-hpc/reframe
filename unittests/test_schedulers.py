@@ -430,6 +430,30 @@ class TestPbsJob(_TestJob, unittest.TestCase):
 
         self.assertEqual(expected_directives, found_directives)
 
+    def test_prepare_no_cpus(self):
+        self.setup_job()
+        self.testjob._num_cpus_per_task = None
+        self.testjob.options = ['mem=100GB', 'cpu_type=haswell']
+        super().test_prepare()
+        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        num_cpus_per_node = self.testjob.num_tasks_per_node
+        expected_directives = set([
+            '#PBS -N "rfm_testjob"',
+            '#PBS -l walltime=0:5:0',
+            '#PBS -o %s' % self.testjob.stdout,
+            '#PBS -e %s' % self.testjob.stderr,
+            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
+            ':mem=100GB:cpu_type=haswell' % (num_nodes,
+                                             self.testjob.num_tasks_per_node,
+                                             num_cpus_per_node),
+            '#PBS -q %s' % self.testjob.sched_partition,
+        ])
+        with open(self.testjob.script_filename) as fp:
+            found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
+                                              re.MULTILINE))
+
+        self.assertEqual(expected_directives, found_directives)
+
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
         self.skipTest("PBS minimum time limit is 60s")
