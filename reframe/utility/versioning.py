@@ -84,19 +84,20 @@ class _IntervalValidator(_ValidatorImpl):
         try:
             min_version_str, max_version_str = condition.split('..')
         except ValueError:
-            raise ValueError("invalid format of version interval: %s"
-                             % condition) from None
+            raise ValueError("invalid format of version interval: %s" %
+                             condition) from None
 
         if min_version_str and max_version_str:
-            self.min_version = Version(min_version_str)
-            self.max_version = Version(max_version_str)
+            self._min_version = Version(min_version_str)
+            self._max_version = Version(max_version_str)
         else:
-            raise ValueError("missing bound on version interval %s"
-                             % condition)
+            raise ValueError("missing bound on version interval %s" %
+                             condition)
 
     def validate(self, version):
-        return ((Version(version) >= self.min_version) and
-                (Version(version) <= self.max_version))
+        version = Version(version)
+        return ((version >= self._min_version) and
+                (version <= self._max_version))
 
 
 class _RelationalValidator(_ValidatorImpl):
@@ -107,7 +108,7 @@ class _RelationalValidator(_ValidatorImpl):
     ``True`` if a given version string satisfies the relation.
     """
     def __init__(self, condition):
-        self._operations = {
+        self._op_actions = {
             ">":  lambda x, y: x > y,
             ">=": lambda x, y: x >= y,
             "<":  lambda x, y: x < y,
@@ -116,24 +117,24 @@ class _RelationalValidator(_ValidatorImpl):
             "!=": lambda x, y: x != y,
         }
         try:
-            self.operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
-                                                   condition)))
-            if self.operator == '':
-                self.operator = '=='
+            self._operator = ''.join(list(takewhile(lambda s: not s.isdigit(),
+                                                    condition)))
+            if self._operator == '':
+                self._operator = '=='
 
-            str_version = condition.split(self.operator, maxsplit=1)[-1]
+            str_version = condition.split(self._operator, maxsplit=1)[-1]
         except ValueError:
-            raise ValueError('invalid condition: %s'
-                             % condition.strip()) from None
+            raise ValueError('invalid condition: %s' %
+                             condition.strip()) from None
 
-        self.ref_version = Version(str_version)
+        self._ref_version = Version(str_version)
 
-        if self.operator not in self._operations.keys():
-            raise ValueError("invalid boolean operator: '%s'" % self.operator)
+        if self._operator not in self._op_actions.keys():
+            raise ValueError("invalid boolean operator: '%s'" % self._operator)
 
     def validate(self, version):
-        return self._operations[self.operator](Version(version),
-                                               self.ref_version)
+        return self._op_actions[self._operator](Version(version),
+                                                self._ref_version)
 
 
 class VersionValidator:
