@@ -286,6 +286,9 @@ def main():
                       "`--keep-stage-files' option.")
         sys.exit(1)
 
+    if options.timestamp:
+        rt.resources.timefmt = options.timestamp
+
     # Configure performance logging
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly

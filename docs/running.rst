@@ -42,46 +42,60 @@ The output looks like:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -l
-  Reframe version: 2.7
-  Launched by user: karakasv
-  Launched on host: daint103
-  Reframe paths
-  =============
-      Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
-  List of matched checks
-  ======================
-    * example1_check (Simple matrix-vector multiplication example)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2a_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2b_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example3_check (Matrix-vector multiplication example with MPI)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example4_check (Matrix-vector multiplication example with OpenACC)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example5_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example6_check (Matrix-vector multiplication with L2 norm check)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example7_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_serial_check (Serial matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openmp_check (OpenMP matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_mpi_check (MPI matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openacc_check (OpenACC matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_cuda_check (Cuda matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  Found 13 check(s).
+   Command line: ./bin/reframe -c tutorial/ -l
+   Reframe version: 2.13-dev0
+   Launched by user: USER
+   Launched on host: daint103
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/'
+       Stage dir prefix  : /path/to/reframe/stage/
+       Output dir prefix : /path/to/reframe/output/
+       Logging dir       : /path/to/reframe/logs
+   List of matched checks
+   ======================
+     * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+           descr: Matrix-vector multiplication example with CUDA
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+           descr: Simple matrix-vector multiplication example
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+           descr: Matrix-vector multiplication example with OpenACC
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+           descr: Serial matrix-vector multiplication
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+           descr: OpenMP matrix-vector multiplication
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * MPITest (found in /path/to/reframe/tutorial/example8.py)
+           descr: MPI matrix-vector multiplication
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+           descr: OpenACC matrix-vector multiplication
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+           descr: CUDA matrix-vector multiplication
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+           descr: Matrix-vector multiplication example with MPI
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+           descr: Matrix-vector multiplication (CUDA performance test)
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+           descr: Matrix-vector multiplication with L2 norm check
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+           descr: Matrix-vector multiplication example with OpenMP
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+           descr: Matrix-vector multiplication example with OpenMP
+           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+   Found 13 check(s).
+
 
 The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
 Note that this listing may also contain checks that are not supported by the current system.
@@ -97,55 +111,56 @@ To run the regression tests you should specify the *run* action though the ``-r`
 
 .. code-block:: bash
 
-  ./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+  ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
 
 The output of the regression run looks like the following:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/example1.py -r
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
+  Reframe version: 2.13-dev0
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
       Check search path : 'tutorial/example1.py'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   [==========] Running 1 check(s)
-  [==========] Started on Tue Oct 24 18:13:33 2017
+  [==========] Started on Sat May 26 00:34:34 2018
 
-  [----------] started processing example1_check (Simple matrix-vector multiplication example)
-  [ RUN      ] example1_check on daint:mc using PrgEnv-cray
-  [       OK ] example1_check on daint:mc using PrgEnv-cray
-  [ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-  [       OK ] example1_check on daint:mc using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:mc using PrgEnv-intel
-  [       OK ] example1_check on daint:mc using PrgEnv-intel
-  [ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-  [       OK ] example1_check on daint:mc using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-  [       OK ] example1_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example1_check on daint:gpu using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-  [       OK ] example1_check on daint:gpu using PrgEnv-intel
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example1_check on daint:gpu using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:login using PrgEnv-cray
-  [       OK ] example1_check on daint:login using PrgEnv-cray
-  [ RUN      ] example1_check on daint:login using PrgEnv-gnu
-  [       OK ] example1_check on daint:login using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:login using PrgEnv-intel
-  [       OK ] example1_check on daint:login using PrgEnv-intel
-  [ RUN      ] example1_check on daint:login using PrgEnv-pgi
-  [       OK ] example1_check on daint:login using PrgEnv-pgi
-  [----------] finished processing example1_check (Simple matrix-vector multiplication example)
+  [----------] started processing Example1Test (Simple matrix-vector multiplication example)
+  [ RUN      ] Example1Test on daint:login using PrgEnv-cray
+  [       OK ] Example1Test on daint:login using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] Example1Test on daint:login using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:login using PrgEnv-intel
+  [       OK ] Example1Test on daint:login using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] Example1Test on daint:login using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+  [       OK ] Example1Test on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+  [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] Example1Test on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+  [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+  [       OK ] Example1Test on daint:mc using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+  [       OK ] Example1Test on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+  [       OK ] Example1Test on daint:mc using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+  [       OK ] Example1Test on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
   [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Tue Oct 24 18:15:06 2017
+  [==========] Finished on Sat May 26 00:35:39 2018
+
 
 Discovery of Regression Tests
 -----------------------------
@@ -184,13 +199,13 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
   ./bin/reframe -c /path/to/my/new/test.py -r
 
-.. note::
-   .. versionadded:: 2.12
-
+.. important::
    The names of the loaded tests must be unique.
    Trying to load two or more tests with the same name will produce an error.
    You may ignore the error by using the ``--ignore-check-conflicts`` option.
    In this case, any conflicting test will not be loaded and a warning will be issued.
+
+   .. versionadded:: 2.12
 
 
 Filtering of Regression Tests
@@ -236,73 +251,88 @@ Selecting tests by name
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to select or exclude tests by name through the ``--name`` or ``-n`` and ``--exclude`` or ``-x`` options.
-For example, you can select only the ``example7_check`` from the tutorial as follows:
+For example, you can select only the ``Example7Test`` from the tutorial as follows:
 
 .. code-block:: bash
 
-  ./bin/reframe -c tutorial n example7_check -l
+  ./bin/reframe -c tutorial/ -n Example7Test -l
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -n example7_check -l
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
+  Reframe version: 2.13-dev0
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Check search path : 'tutorial'
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   List of matched checks
   ======================
-    * example7_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
+    * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+          descr: Matrix-vector multiplication (CUDA performance test)
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
   Found 1 check(s).
 
-Similarly, you can exclude this test by passing the ``-x example7_check`` option:
+
+Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -x example7_check -l
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./bin/reframe -c tutorial -x Example7Test -l
+  Reframe version: 2.13-dev0
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Check search path : 'tutorial'
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   List of matched checks
   ======================
-    * example1_check (Simple matrix-vector multiplication example)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2a_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2b_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example3_check (Matrix-vector multiplication example with MPI)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example4_check (Matrix-vector multiplication example with OpenACC)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example5_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example6_check (Matrix-vector multiplication with L2 norm check)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_serial_check (Serial matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openmp_check (OpenMP matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_mpi_check (MPI matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openacc_check (OpenACC matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_cuda_check (Cuda matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
+    * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+          descr: Matrix-vector multiplication example with CUDA
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+          descr: Simple matrix-vector multiplication example
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+          descr: Matrix-vector multiplication example with OpenACC
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+          descr: Serial matrix-vector multiplication
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+          descr: OpenMP matrix-vector multiplication
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * MPITest (found in /path/to/reframe/tutorial/example8.py)
+          descr: MPI matrix-vector multiplication
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+          descr: OpenACC matrix-vector multiplication
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+          descr: CUDA matrix-vector multiplication
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+          descr: Matrix-vector multiplication example with MPI
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+          descr: Matrix-vector multiplication with L2 norm check
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+          descr: Matrix-vector multiplication example with OpenMP
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
+    * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+          descr: Matrix-vector multiplication example with OpenMP
+          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
   Found 12 check(s).
+
 
 Controlling the Execution of Regression Tests
 ---------------------------------------------
@@ -382,17 +412,17 @@ This is useful if you want to check the directories that ReFrame will create.
 
 .. code-block:: bash
 
-  ./bin/reframe --prefix /foo -l
+  ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
 
 .. code-block:: none
 
-  Command line: ./bin/reframe --system=generic --prefix /foo -l
+  Command line: ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
   Reframe version: 2.13-dev0
-  Launched by user: karakasv
-  Launched on host: tresa.cscs.ch
+  Launched by user: USER
+  Launched on host: daint103
   Reframe paths
   =============
-      Check prefix      : /Users/karakasv/Repositories/reframe
+      Check prefix      : /path/to/reframe
   (R) Check search path : 'checks/'
       Stage dir prefix     : /foo/stage/
       Output dir prefix    : /foo/output/
@@ -418,36 +448,51 @@ By default, the output in ``reframe.log`` looks like the following:
 
 .. code-block:: none
 
-   [2018-03-01T20:03:13] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
-   [2018-03-01T20:03:13] debug: example7_check: entering stage: setup
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading environment for the current partition
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show daint-gpu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load daint-gpu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading test's environment
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show cudatoolkit
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load cudatoolkit
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up paths
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up the job descriptor
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: job scheduler backend: local
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up performance logging
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: compile
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: copying /users/karakasv/Devel/reframe/tutorial/src to stage directory (/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv
-   -cray)
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: symlinking files: []
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: Staged sourcepath: /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: nvcc  -O3 -I/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray /users/karakasv/Devel/reframe/s
-   tage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu -o /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/./example7_check
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stdout:
+  2018-05-26T00:30:39] info: reframe: [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: entering stage: setup
+  [2018-05-26T00:30:39] debug: Example7Test: loading environment for the current partition
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show daint-gpu
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load daint-gpu
+  [2018-05-26T00:30:39] debug: Example7Test: loading test's environment
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python unload PrgEnv-gnu
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show cudatoolkit
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load cudatoolkit
+  [2018-05-26T00:30:39] debug: Example7Test: setting up paths
+  [2018-05-26T00:30:40] debug: Example7Test: setting up the job descriptor
+  [2018-05-26T00:30:40] debug: Example7Test: job scheduler backend: local
+  [2018-05-26T00:30:40] debug: Example7Test: setting up performance logging
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: compile
+  [2018-05-26T00:30:40] debug: Example7Test: copying /path/to/reframe/tutorial/src to stage directory (/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray)
+  [2018-05-26T00:30:40] debug: Example7Test: symlinking files: []
+  [2018-05-26T00:30:40] debug: Example7Test: Staged sourcepath: /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: nvcc  -O3 -I/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/e
+  xample_matrix_vector_multiplication_cuda.cu -o /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/./Example7Test
+  [2018-05-26T00:30:40] debug: Example7Test: compilation stdout:
 
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stderr:
-   nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+  [2018-05-26T00:30:40] debug: Example7Test: compilation stderr:
+  nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation finished
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: run
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: sbatch /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example7_check_daint_gpu_PrgEnv-cray
-   .sh
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: spawned job (jobid=6224537)
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: wait
+  [2018-05-26T00:30:40] debug: Example7Test: compilation finished
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: run
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sbatch /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/Example7Test_daint_gpu_PrgEnv-cray.sh
+  [2018-05-26T00:30:40] debug: Example7Test: spawned job (jobid=746641)
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: wait
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:40] debug: Example7Test: job state not matched (stdout follows)
+  JobID|State|ExitCode
+
+  [2018-05-26T00:30:41] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:44] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:47] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:47] debug: Example7Test: spawned job finished
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: sanity
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: performance
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: cleanup
+  [2018-05-26T00:30:47] debug: Example7Test: copying interesting files to output directory
+  [2018-05-26T00:30:47] debug: Example7Test: removing stage directory
+  [2018-05-26T00:30:47] info: reframe: [       OK ] Example7Test on daint:gpu using PrgEnv-cray
 
 
 Each line starts with a timestamp, the level of the message (``info``, ``debug`` etc.), the context in which the framework is currently executing (either ``reframe`` or the name of the current test and, finally, the actual message.
@@ -527,7 +572,7 @@ All handlers accept the following set of attributes (keys) in their configuratio
 * ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
   Acceptable formats must conform to standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function.
 
-.. note::
+.. caution::
    The ``testcase_name`` logging attribute is replaced with the ``check_info``, which is now also configurable
 
    .. versionchanged:: 2.10
@@ -693,68 +738,81 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 .. code-block:: none
 
-  Command line: ./reframe.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 2.7
-  Launched by user: karakasv
-  Launched on host: daint104
+  Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
+  Reframe version: 2.13-dev0
+  Launched by user: USER
+  Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
       Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   [==========] Running 13 check(s)
-  [==========] Started on Sun Nov  5 19:37:09 2017
+  [==========] Started on Sat May 26 00:48:03 2018
 
-  [----------] started processing example1_check (Simple matrix-vector multiplication example)
-  [ RUN      ] example1_check on daint:login using PrgEnv-cray
-  [ RUN      ] example1_check on daint:login using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:login using PrgEnv-intel
-  [ RUN      ] example1_check on daint:login using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:mc using PrgEnv-cray
-  [ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:mc using PrgEnv-intel
-  [ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-  [----------] finished processing example1_check (Simple matrix-vector multiplication example)
+  [----------] started processing Example1Test (Simple matrix-vector multiplication example)
+  [ RUN      ] Example1Test on daint:login using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:login using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
-  ...
+  [----------] started processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-pgi
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+  <output omitted>
+  [----------] waiting for spawned checks to finish
+  [       OK ] MPITest on daint:gpu using PrgEnv-pgi
+  [       OK ] MPITest on daint:gpu using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-pgi
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-pgi
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-gnu
+  <output omitted>
+  [       OK ] Example1Test on daint:login using PrgEnv-cray
+  [       OK ] MPITest on daint:mc using PrgEnv-cray
+  [       OK ] MPITest on daint:gpu using PrgEnv-cray
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-cray
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-cray
+  [       OK ] SerialTest on daint:login using PrgEnv-pgi
+  [       OK ] MPITest on daint:mc using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-intel
+  [       OK ] OpenMPTest on daint:login using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-intel
+  [       OK ] MPITest on daint:gpu using PrgEnv-intel
+  [       OK ] CudaTest on daint:gpu using PrgEnv-gnu
+  [       OK ] OpenACCTest on daint:gpu using PrgEnv-pgi
+  [       OK ] MPITest on daint:mc using PrgEnv-intel
+  [       OK ] CudaTest on daint:gpu using PrgEnv-cray
+  [       OK ] MPITest on daint:mc using PrgEnv-pgi
+  [       OK ] OpenACCTest on daint:gpu using PrgEnv-cray
+  [       OK ] CudaTest on daint:gpu using PrgEnv-pgi
+  [----------] all spawned checks have finished
 
-  [----------] started processing example8_cuda_check (Cuda matrix-vector multiplication)
-  [   SKIP   ] skipping daint:login
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-  [   SKIP   ] skipping PrgEnv-intel for daint:gpu
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-  [   SKIP   ] skipping daint:mc
-  [----------] finished processing example8_cuda_check (Cuda matrix-vector multiplication)
+  [  PASSED  ] Ran 101 test case(s) from 13 check(s) (0 failure(s))
+  [==========] Finished on Sat May 26 00:52:02 2018
 
-  [----------] waiting for spawned checks
-  [       OK ] example1_check on daint:login using PrgEnv-cray
-  [       OK ] example1_check on daint:login using PrgEnv-gnu
-  [       OK ] example1_check on daint:login using PrgEnv-intel
-  [       OK ] example1_check on daint:login using PrgEnv-pgi
-  [       OK ] example1_check on daint:gpu using PrgEnv-cray
-  [       OK ] example1_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example1_check on daint:gpu using PrgEnv-intel
-  [       OK ] example1_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example1_check on daint:mc using PrgEnv-cray
-  [       OK ] example1_check on daint:mc using PrgEnv-gnu
-  [       OK ] example1_check on daint:mc using PrgEnv-intel
-  [       OK ] example1_check on daint:mc using PrgEnv-pgi
-  ...
-  [       OK ] example8_openacc_check on daint:gpu using PrgEnv-cray
-  [       OK ] example8_openacc_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-cray
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-  [----------] all spawned checks finished
-  [  PASSED  ] Ran 97 test case(s) from 13 check(s) (0 failure(s))
-  [==========] Finished on Sun Nov  5 19:42:23 2017
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
 For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.
@@ -824,7 +882,7 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
 .. code-block:: none
 
    ------------------------------------------------------------------------------
-   FAILURE INFO for example7_check
+   FAILURE INFO for Example7Test
      * System partition: daint:gpu
      * Environment: PrgEnv-gnu
      * Stage directory: None

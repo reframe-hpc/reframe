@@ -1,8 +1,8 @@
 import os
 import unittest
 
-from reframe.core.exceptions import (ConfigError,
-                                     NameConflictError, TestLoadError)
+from reframe.core.exceptions import (ConfigError, NameConflictError,
+                                     RegressionTestLoadError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader
 
@@ -48,7 +48,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
         self.assertEqual(13, len(checks))
 
     def test_load_mixed_syntax(self):
-        self.assertRaises(TestLoadError, self.loader.load_from_file,
+        self.assertRaises(RegressionTestLoadError, self.loader.load_from_file,
                           'unittests/resources/checks_unlisted/mixed.py')
 
     def test_conflicted_checks(self):
@@ -58,3 +58,11 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_error(self):
         self.assertRaises(OSError, self.loader.load_from_file,
                           'unittests/resources/checks/foo.py')
+
+    def test_load_invalid_sytax(self):
+        invalid_check = ('unittests/resources/checks_unlisted/'
+                         'invalid_syntax_check.py')
+        with self.assertRaises(SyntaxError) as e:
+            self.loader.load_from_file(invalid_check)
+
+        self.assertEqual(e.exception.filename, invalid_check)

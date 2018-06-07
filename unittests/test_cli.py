@@ -25,7 +25,6 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
     captured_stdout = StringIO()
     captured_stderr = StringIO()
-    print(' '.join(sys.argv))
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:
@@ -304,3 +303,16 @@ class TestFrontend(unittest.TestCase):
         self.action = 'list'
         returncode, *_ = self._run_reframe()
         self.assertNotEqual(0, returncode)
+
+    def test_timestamp_option(self):
+        from datetime import datetime
+
+        self.checkpath = ['unittests/resources/checks']
+        self.more_options = ['-R']
+        self.ignore_check_conflicts = False
+        self.action = 'list'
+        self.more_options = ['--timestamp=xxx_%F']
+        timefmt = datetime.now().strftime('xxx_%F')
+        returncode, stdout, _ = self._run_reframe()
+        self.assertNotEqual(0, returncode)
+        self.assertIn(timefmt, stdout)
