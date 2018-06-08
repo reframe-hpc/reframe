@@ -30,7 +30,7 @@ class Version:
             raise ValueError('invalid version string: %s' % version) from None
 
     def _value(self):
-        return 1000*self._major + 100*self._minor + self._patch_level
+        return 10000*self._major + 100*self._minor + self._patch_level
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

@@ -2,20 +2,30 @@
 # Decorators for registering tests with the framework
 #
 
-__all__ = ['parameterized_test', 'simple_test']
+__all__ = ['parameterized_test', 'simple_test', 'required_version']
 
 
 import collections
 import inspect
 
+from reframe import VERSION
 from reframe.core.exceptions import ReframeSyntaxError
 from reframe.core.pipeline import RegressionTest
+from reframe.frontend.printer import PrettyPrinter
+from reframe.utility.versioning import Version, VersionValidator
 
 
 def _register_test(cls, args=None):
     def _instantiate():
         ret = []
         for cls, args in mod.__rfm_test_registry:
+            try:
+                if cls in mod.__rfm_skip_tests:
+                    continue
+
+            except AttributeError:
+                mod.__rfm_skip_tests = set()
+
             if isinstance(args, collections.Sequence):
                 ret.append(cls(*args))
             elif isinstance(args, collections.Mapping):
@@ -83,3 +93,24 @@ def parameterized_test(*inst):
         return cls
 
     return _do_register
+
+
+def required_version(*compat_versions):
+    printer = PrettyPrinter()
+    """Class decorator for skipping version-uncompatible tests."""
+    conditions = [VersionValidator(c) for c in compat_versions]
+
+    def _skip_tests(cls):
+        mod = inspect.getmodule(cls)
+        if not any(c.validate(VERSION) for c in conditions):
+            printer.status('SKIP',
+                           'skipping uncompatible class %s' % cls.__name__,
+                           just='center')
+            try:
+                mod.__rfm_skip_tests |= {cls}
+            except AttributeError:
+                mod.__rfm_skip_tests = {cls}
+
+        return cls
+
+    return _skip_tests
