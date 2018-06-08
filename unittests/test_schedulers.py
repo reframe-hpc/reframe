@@ -75,6 +75,25 @@ class _TestJob:
             self.assertEqual(['echo prerun', 'hostname', 'echo postrun'],
                              matches)
 
+    def setup_job(self):
+        # Mock up a job submission
+        self.testjob._time_limit = (0, 5, 0)
+        self.testjob._num_tasks = 16
+        self.testjob._num_tasks_per_node = 2
+        self.testjob._num_tasks_per_core = 1
+        self.testjob._num_tasks_per_socket = 1
+        self.testjob._num_cpus_per_task = 18
+        self.testjob._use_smt = True
+        self.testjob._sched_nodelist = 'nid000[00-17]'
+        self.testjob._sched_exclude_nodelist = 'nid00016'
+        self.testjob._sched_partition = 'foo'
+        self.testjob._sched_reservation = 'bar'
+        self.testjob._sched_account = 'spam'
+        self.testjob._sched_exclusive_access = True
+        self.testjob.options = ['--gres=gpu:4',
+                                '#DW jobdw capacity=100GB',
+                                '#DW stage_in source=/foo']
+
     def test_prepare(self):
         self.testjob.prepare(self.builder)
         self.assertScriptSanity(self.testjob.script_filename)
@@ -86,7 +105,6 @@ class _TestJob:
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
-        self.assertEqual(0, self.testjob.exitcode)
 
     @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
@@ -167,6 +185,10 @@ class TestLocalJob(_TestJob, unittest.TestCase):
     def setup_user(self, msg=None):
         # Local scheduler is by definition available
         pass
+
+    def test_submit(self):
+        super().test_submit()
+        self.assertEqual(0, self.testjob.exitcode)
 
     def test_submit_timelimit(self):
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
@@ -276,23 +298,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         super().setup_user(msg='SLURM (with sacct) not configured')
 
     def test_prepare(self):
-        # Mock up a job submission
-        self.testjob._time_limit = (0, 5, 0)
-        self.testjob._num_tasks = 16
-        self.testjob._num_tasks_per_node = 2
-        self.testjob._num_tasks_per_core = 1
-        self.testjob._num_tasks_per_socket = 1
-        self.testjob._num_cpus_per_task = 18
-        self.testjob._use_smt = True
-        self.testjob._sched_nodelist = 'nid000[00-17]'
-        self.testjob._sched_exclude_nodelist = 'nid00016'
-        self.testjob._sched_partition = 'foo'
-        self.testjob._sched_reservation = 'bar'
-        self.testjob._sched_account = 'spam'
-        self.testjob._sched_exclusive_access = True
-        self.testjob.options = ['--gres=gpu:4',
-                                '#DW jobdw capacity=100GB',
-                                '#DW stage_in source=/foo']
+        self.setup_job()
         super().test_prepare()
         expected_directives = set([
             '#SBATCH --job-name="rfm_testjob"',
@@ -324,28 +330,36 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.assertEqual(expected_directives, found_directives)
 
     def test_prepare_no_exclusive(self):
+        self.setup_job()
         self.testjob._sched_exclusive_access = False
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNone(re.search(r'--exclusive', fp.read()))
 
     def test_prepare_no_smt(self):
+        self.setup_job()
         self.testjob._use_smt = None
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNone(re.search(r'--hint', fp.read()))
 
     def test_prepare_with_smt(self):
+        self.setup_job()
         self.testjob._use_smt = True
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=multithread', fp.read()))
 
     def test_prepare_without_smt(self):
+        self.setup_job()
         self.testjob._use_smt = False
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
+
+    def test_submit(self):
+        super().test_submit()
+        self.assertEqual(0, self.testjob.exitcode)
 
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
@@ -357,8 +371,98 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         super().test_cancel()
         self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
 
-    def test_poll(self):
-        super().test_poll()
+
+class TestSqueueJob(TestSlurmJob):
+    @property
+    def sched_name(self):
+        return 'squeue'
+
+    def setup_user(self, msg=None):
+        partition = (fixtures.partition_with_scheduler(self.sched_name) or
+                     fixtures.partition_with_scheduler('slurm'))
+        if partition is None:
+            self.skipTest('SLURM not configured')
+
+        self.testjob.options += partition.access
+
+    def test_submit(self):
+        # Squeue backend may not set the exitcode; bypass ourp parent's submit
+        _TestJob.test_submit(self)
+
+
+class TestPbsJob(_TestJob, unittest.TestCase):
+    @property
+    def sched_name(self):
+        return 'pbs'
+
+    @property
+    def sched_configured(self):
+        return fixtures.partition_with_scheduler('pbs') is not None
+
+    @property
+    def launcher(self):
+        return LocalLauncher()
+
+    def setup_user(self, msg=None):
+        super().setup_user(msg='PBS not configured')
+
+    def test_prepare(self):
+        self.setup_job()
+        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
+        super().test_prepare()
+        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        num_cpus_per_node = (self.testjob.num_cpus_per_task *
+                             self.testjob.num_tasks_per_node)
+        expected_directives = set([
+            '#PBS -N "rfm_testjob"',
+            '#PBS -l walltime=0:5:0',
+            '#PBS -o %s' % self.testjob.stdout,
+            '#PBS -e %s' % self.testjob.stderr,
+            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
+            ':mem=100GB:cpu_type=haswell' % (num_nodes,
+                                             self.testjob.num_tasks_per_node,
+                                             num_cpus_per_node),
+            '#PBS -q %s' % self.testjob.sched_partition,
+            '#PBS --gres=gpu:4',
+            '#DW jobdw capacity=100GB',
+            '#DW stage_in source=/foo'
+        ])
+        with open(self.testjob.script_filename) as fp:
+            found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
+                                              re.MULTILINE))
+
+        self.assertEqual(expected_directives, found_directives)
+
+    def test_prepare_no_cpus(self):
+        self.setup_job()
+        self.testjob._num_cpus_per_task = None
+        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
+        super().test_prepare()
+        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        num_cpus_per_node = self.testjob.num_tasks_per_node
+        expected_directives = set([
+            '#PBS -N "rfm_testjob"',
+            '#PBS -l walltime=0:5:0',
+            '#PBS -o %s' % self.testjob.stdout,
+            '#PBS -e %s' % self.testjob.stderr,
+            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
+            ':mem=100GB:cpu_type=haswell' % (num_nodes,
+                                             self.testjob.num_tasks_per_node,
+                                             num_cpus_per_node),
+            '#PBS -q %s' % self.testjob.sched_partition,
+            '#PBS --gres=gpu:4',
+            '#DW jobdw capacity=100GB',
+            '#DW stage_in source=/foo'
+        ])
+        with open(self.testjob.script_filename) as fp:
+            found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
+                                              re.MULTILINE))
+
+        self.assertEqual(expected_directives, found_directives)
+
+    def test_submit_timelimit(self):
+        # Skip this test for PBS, since we the minimum time limit is 1min
+        self.skipTest("PBS minimum time limit is 60s")
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
@@ -550,17 +654,3 @@ class TestSlurmNode(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual('nid00001', str(self.node))
-
-
-class TestSqueueJob(TestSlurmJob):
-    @property
-    def sched_name(self):
-        return 'squeue'
-
-    def setup_user(self, msg=None):
-        partition = (fixtures.partition_with_scheduler(self.sched_name) or
-                     fixtures.partition_with_scheduler('slurm'))
-        if partition is None:
-            self.skipTest('SLURM not configured')
-
-        self.testjob.options += partition.access
