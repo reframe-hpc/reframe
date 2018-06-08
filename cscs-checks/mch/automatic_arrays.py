@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class AutomaticArraysCheck(RegressionTest):
+@rfm.simple_test
+class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self, **kwargs):
-        super().__init__('automatic_arrays_check',
-                         os.path.dirname(__file__), **kwargs)
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*',
                                     'PrgEnv-gnu']
@@ -28,7 +26,7 @@ class AutomaticArraysCheck(RegressionTest):
                                      self.stdout, 'perf', float)
         }
 
-        self.aarrays_reference = {
+        self.arrays_reference = {
             'PrgEnv-cray': {
                 'daint:gpu': {'perf': (1.4E-04, None, 0.15)},
                 'dom:gpu': {'perf': (1.4E-04, None, 0.15)},
@@ -47,18 +45,15 @@ class AutomaticArraysCheck(RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VK']
+        self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        if 'PrgEnv-cray' in environ.name:
+        if environ.name.startswith('PrgEnv-cray'):
             environ.fflags = '-O2 -hacc -hnoomp'
-        elif 'PrgEnv-pgi' in environ.name:
+        elif environ.name.startswith('PrgEnv-pgi'):
             environ.fflags = self._pgi_flags
-        elif 'PrgEnv-gnu' in environ.name:
+        elif environ.name.startswith('PrgEnv-gnu'):
             environ.fflags = '-O2'
 
+        self.reference = self.arrays_reference[environ.name]
         super().setup(partition, environ, **job_opts)
-        self.reference = self.aarrays_reference[self.current_environ.name]
-
-
-def _get_checks(**kwargs):
-    return [AutomaticArraysCheck(**kwargs)]
