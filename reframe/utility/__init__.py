@@ -48,7 +48,7 @@ def import_module_from_file(filename):
         filename = os.path.abspath(filename)
 
     module_name = _get_module_name(filename)
-    if os.path.isabs(filename) or os.path.isfile(filename):
+    if os.path.isabs(filename) or os.path.basename(filename) == filename:
         return _do_import_module_from_file(filename, module_name)
 
     return importlib.import_module(module_name)
