@@ -44,7 +44,7 @@ def import_module_from_file(filename):
     if os.path.isdir(filename):
         filename = os.path.join(filename, '__init__.py')
 
-    if filename.startswith('..'):
+    if filename.startswith('..') or os.path.isfile(filename):
         filename = os.path.abspath(filename)
 
     module_name = _get_module_name(filename)

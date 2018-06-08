@@ -294,6 +294,12 @@ class TestImportFromFile(unittest.TestCase):
             self.assertEqual('reframe', module.__name__)
             self.assertIs(module, sys.modules.get('reframe'))
 
+    def test_load_python_file(self):
+        with os_ext.change_dir('reframe/utility'):
+            module = util.import_module_from_file('os_ext.py')
+            self.assertEqual('os_ext', module.__name__)
+            self.assertIs(module, sys.modules.get('os_ext'))
+
     def test_load_twice(self):
         filename = os.path.abspath('reframe/__init__.py')
         module1 = util.import_module_from_file(filename)
