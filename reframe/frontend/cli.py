@@ -279,6 +279,9 @@ def main():
                       "`--keep-stage-files' option.")
         sys.exit(1)
 
+    if options.timestamp:
+        rt.resources.timefmt = options.timestamp
+
     # Setup the check loader
     if options.checkpath:
         load_path = []
