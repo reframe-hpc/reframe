@@ -25,6 +25,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
     captured_stdout = StringIO()
     captured_stderr = StringIO()
+    print(*sys.argv)
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:
@@ -119,6 +120,13 @@ class TestFrontend(unittest.TestCase):
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(os.path.exists(
             os.path.join(outputdir, os.path.basename(self.logfile))))
+
+    def test_default_settings(self):
+        # Simply make sure that a default settings file exists
+        try:
+            import reframe.settings as settings
+        except ImportError:
+            self.fail('default settings file find could not be found')
 
     def test_check_success(self):
         self.more_options = ['--save-log-files']
