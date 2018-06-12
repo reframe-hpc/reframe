@@ -59,13 +59,10 @@ def import_module_from_file(filename):
 def allx(iterable):
     """Same as the built-in all, except that it returns :class:`False` if
     ``iterable`` is empty.
-
-    .. versionadded:: 2.13
-
     """
 
-    # The following code first tests that `iterable` is a generator and
-    # then checks if the generator has at least one element into it.
+    # Generators must be treated specially, because there is no way to get
+    # their size without consuming their elements.
     if isinstance(iterable, types.GeneratorType):
         try:
             head = next(iterable)
@@ -75,8 +72,8 @@ def allx(iterable):
             return all(itertools.chain([head], iterable))
 
     if not isinstance(iterable, collections.abc.Iterable):
-        raise TypeError("'%s' object is not iterable"
-                        % iterable.__class__.__name__)
+        raise TypeError("'%s' object is not iterable" %
+                        iterable.__class__.__name__)
 
     return all(iterable) if iterable else False
 
