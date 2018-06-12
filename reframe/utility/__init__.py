@@ -57,25 +57,28 @@ def import_module_from_file(filename):
 
 
 def allx(iterable):
-    """Return ``True`` if all elements of the `iterable` are true. If
-    iterable is empty or ``None`` return ``False``.
+    """Same as the built-in all, except that it returns :class:`False` if
+    ``iterable`` is empty.
 
     .. versionadded:: 2.13
 
     """
 
-    # Check if iterable is an empty generator
+    # The following code first tests that `iterable` is a generator and
+    # then checks if the generator has at least one element into it.
     if isinstance(iterable, types.GeneratorType):
         try:
-            first_item = next(iterable)
-            return all(itertools.chain([first_item], iterable))
+            head = next(iterable)
         except StopIteration:
             return False
+        else:
+            return all(itertools.chain([head], iterable))
 
-    if not iterable:
-        return False
+    if not isinstance(iterable, collections.abc.Iterable):
+        raise TypeError("'%s' object is not iterable"
+                        % iterable.__class__.__name__)
 
-    return all(iterable)
+    return all(iterable) if iterable else False
 
 
 def decamelize(s):

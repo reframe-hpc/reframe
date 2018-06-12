@@ -56,21 +56,13 @@ class TestDeferredBuiltins(unittest.TestCase):
         self.assertTrue(expr)
 
     def test_allx(self):
-        l1 = [1, 1, 1]
-        l2 = [1, 0]
-        expr1 = sn.allx(l1)
-        expr2 = sn.allx(l2)
-        expr3 = sn.allx([])
-        expr4 = sn.allx(None)
-        expr5 = sn.allx(i for i in [])
-        expr6 = sn.allx(i for i in [1])
-        self.assertTrue(expr1)
-        self.assertFalse(expr2)
-        self.assertFalse(expr3)
-        self.assertFalse(expr4)
-        self.assertFalse(expr5)
-        self.assertTrue(expr6)
-        return
+        self.assertTrue(sn.allx([1, 1, 1]))
+        self.assertFalse(sn.allx([1, 0]))
+        self.assertFalse(sn.allx([]))
+        self.assertFalse(sn.allx(i for i in range(0)))
+        self.assertTrue(sn.allx(i for i in range(1, 2)))
+        with self.assertRaises(TypeError):
+            sn.evaluate(sn.allx(None))
 
     def test_any(self):
         l = [0, 0, 1]

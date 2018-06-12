@@ -119,7 +119,7 @@ def all(iterable):
 
 @deferrable
 def allx(iterable):
-    """Replacement for the :func:`allx() <reframe.utility.allx>` function.
+    """Replacement for the :func:`allx()` function.
 
     .. versionadded:: 2.13
 

@@ -371,11 +371,12 @@ class TestMiscUtilities(unittest.TestCase):
         self.assertTrue(all(l1), util.allx(l1))
         self.assertFalse(all(l2), util.allx(l2))
         self.assertFalse(util.allx([]))
-        self.assertFalse(util.allx(None))
         self.assertTrue(util.allx(i for i in [1, 1, 1]))
-        self.assertTrue(util.allx(i for i in [1]))
-        self.assertFalse(util.allx(i for i in [0]))
-        self.assertFalse(util.allx(i for i in []))
+        self.assertTrue(util.allx(i for i in range(1, 2)))
+        self.assertFalse(util.allx(i for i in range(1)))
+        self.assertFalse(util.allx(i for i in range(0)))
+        with self.assertRaises(TypeError):
+            util.allx(None)
 
     def test_decamelize(self):
         self.assertEqual('', util.decamelize(''))
