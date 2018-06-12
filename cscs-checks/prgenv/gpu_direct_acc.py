@@ -25,6 +25,9 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 'G2G': '1',
                 'X': '$(pkg-config --variable=libdir mvapich2-gdr)'
             }
+            self._pgi_kesch_variables = {
+                'LD_PRELOAD': '$X/libmpi.so'
+            }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
@@ -44,9 +47,8 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         elif environ.name.startswith('PrgEnv-pgi'):
             environ.fflags = self._pgi_flags
 
-        super().setup(partition, environ, **job_opts)
         if (self.current_system.name in ['kesch']) and \
             (environ.name.startswith('PrgEnv-pgi')):
-            self.job.launcher = LauncherWrapper(self.job.launcher,
-                'LD_PRELOAD=$X/libmpi.so', self.launch_options
-            )
+            self.variables.update(self._pgi_kesch_variables)
+
+        super().setup(partition, environ, **job_opts)

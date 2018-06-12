@@ -17,7 +17,8 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',
-                'X': '$(pkg-config --variable=libdir mvapich2-gdr)'
+                'X': '$(pkg-config --variable=libdir mvapich2-gdr)',
+                'LD_PRELOAD': '$X/libmpi.so'
             }
 
         self.num_tasks = 2
@@ -46,11 +47,3 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                                          '-arch=sm_%s' % 
                                          (cpp_compiler, nvidia_sm))
         super().compile()
-
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        if (self.current_system.name in ['kesch']) and \
-            (environ.name.startswith('PrgEnv-gnu')):
-            self.job.launcher = LauncherWrapper(self.job.launcher,
-                'LD_PRELOAD=$X/libmpi.so', self.launch_options
-            )
