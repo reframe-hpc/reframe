@@ -1,10 +1,12 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
+from reframe.core.launchers import LauncherWrapper
 
 @rfm.simple_test
 class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self, **kwargs):
         super().__init__()
+        self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
         if self.current_system.name in ['daint', 'dom']:
@@ -17,10 +19,12 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
             self._pgi_flags = '-acc -ta=tesla:cc35 -Mnorpath'
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1',
-                              'MV2_USE_CUDA': '1',
-                              'MV2_USE_GPUDIRECT': '1',
-                              'G2G': '1'}
+            self.variables = {
+                'MPICH_RDMA_ENABLED_CUDA': '1',
+                'MV2_USE_CUDA': '1',
+                'G2G': '1',
+                'X': '$(pkg-config --variable=libdir mvapich2-gdr)'
+            }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 8
@@ -30,6 +34,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             sn.assert_found(r'GPU with OpenACC', self.stdout),
             sn.assert_found(r'Result :\s+OK', self.stdout)
         ])
+        self.launch_options = []
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
@@ -40,3 +45,8 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             environ.fflags = self._pgi_flags
 
         super().setup(partition, environ, **job_opts)
+        if (self.current_system.name in ['kesch']) and \
+            (environ.name.startswith('PrgEnv-pgi')):
+            self.job.launcher = LauncherWrapper(self.job.launcher,
+                'LD_PRELOAD=$X/libmpi.so', self.launch_options
+            )
