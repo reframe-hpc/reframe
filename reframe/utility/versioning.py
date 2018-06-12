@@ -123,7 +123,7 @@ class _RelationalValidator(_ValidatorImpl):
 
         self._ref_version = Version(cond_match.group(2))
         op = cond_match.group(1)
-        if op == '':
+        if not op:
             op = '=='
 
         if op not in self._op_actions.keys():
@@ -132,8 +132,8 @@ class _RelationalValidator(_ValidatorImpl):
             self._operator = op
 
     def validate(self, version):
-        return self._op_actions[self._operator](Version(version),
-                                                self._ref_version)
+        do_validate = self._op_actions[self._operator]
+        return do_validate(Version(version), self._ref_version)
 
 
 class VersionValidator:

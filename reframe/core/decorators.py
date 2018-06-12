@@ -8,10 +8,10 @@ __all__ = ['parameterized_test', 'simple_test', 'required_version']
 import collections
 import inspect
 
-from reframe import VERSION
+import reframe
 from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
-from reframe.frontend.printer import PrettyPrinter
 from reframe.utility.versioning import Version, VersionValidator
 
 
@@ -95,21 +95,29 @@ def parameterized_test(*inst):
     return _do_register
 
 
-def required_version(*compat_versions):
-    printer = PrettyPrinter()
-    """Class decorator for skipping version-uncompatible tests."""
-    conditions = [VersionValidator(c) for c in compat_versions]
+def required_version(*versions):
+    """Class decorator for skipping version-uncompatible tests.
+
+    The decorated class must derive from
+    :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
+    available directly under the :mod:`reframe` module.
+
+    :arg versions: The versions that are compatible with the test.
+
+    .. versionadded:: 2.13
+
+    """
+    conditions = [VersionValidator(v) for v in versions]
 
     def _skip_tests(cls):
         mod = inspect.getmodule(cls)
-        if not any(c.validate(VERSION) for c in conditions):
-            printer.status('SKIP',
-                           'skipping uncompatible class %s' % cls.__name__,
-                           just='center')
-            try:
-                mod.__rfm_skip_tests |= {cls}
-            except AttributeError:
-                mod.__rfm_skip_tests = {cls}
+        if not hasattr(mod, '__rfm_skip_tests'):
+            mod.__rfm_skip_tests = set()
+
+        if not any(c.validate(reframe.VERSION) for c in conditions):
+            getlogger().info('skipping incompatible test defined'
+                             ' in class: %s' % cls.__name__)
+            mod.__rfm_skip_tests.add(cls)
 
         return cls
 
