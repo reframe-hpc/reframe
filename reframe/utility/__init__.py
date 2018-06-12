@@ -1,9 +1,11 @@
 import collections
 import importlib
 import importlib.util
+import itertools
 import os
 import re
 import sys
+import types
 
 from collections import UserDict
 
@@ -52,6 +54,28 @@ def import_module_from_file(filename):
         return _do_import_module_from_file(filename, module_name)
 
     return importlib.import_module(module_name)
+
+
+def allx(iterable):
+    """Return ``True`` if all elements of the `iterable` are true. If
+    iterable is empty or ``None`` return ``False``.
+
+    .. versionadded:: 2.13
+
+    """
+
+    # Check if iterable is an empty generator
+    if isinstance(iterable, types.GeneratorType):
+        try:
+            first_item = next(iterable)
+            return all(itertools.chain([first_item], iterable))
+        except StopIteration:
+            return False
+
+    if not iterable:
+        return False
+
+    return all(iterable)
 
 
 def decamelize(s):

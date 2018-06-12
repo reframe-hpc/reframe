@@ -63,6 +63,7 @@ import glob as pyglob
 import itertools
 import re
 
+import reframe.utility as util
 from reframe.core.deferrable import deferrable, evaluate
 from reframe.core.exceptions import SanityError
 
@@ -114,6 +115,16 @@ def abs(x):
 def all(iterable):
     """Replacement for the built-in :func:`all() <python:all>` function."""
     return builtins.all(iterable)
+
+
+@deferrable
+def allx(iterable):
+    """Replacement for the :func:`allx() <reframe.utility.allx>` function.
+
+    .. versionadded:: 2.13
+
+    """
+    return util.allx(iterable)
 
 
 @deferrable

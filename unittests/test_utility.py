@@ -365,6 +365,18 @@ class TestChangeDirCtxManager(unittest.TestCase):
 
 
 class TestMiscUtilities(unittest.TestCase):
+    def test_allx(self):
+        l1 = [1, 1, 1]
+        l2 = [True, False]
+        self.assertTrue(all(l1), util.allx(l1))
+        self.assertFalse(all(l2), util.allx(l2))
+        self.assertFalse(util.allx([]))
+        self.assertFalse(util.allx(None))
+        self.assertTrue(util.allx(i for i in [1, 1, 1]))
+        self.assertTrue(util.allx(i for i in [1]))
+        self.assertFalse(util.allx(i for i in [0]))
+        self.assertFalse(util.allx(i for i in []))
+
     def test_decamelize(self):
         self.assertEqual('', util.decamelize(''))
         self.assertEqual('my_base_class', util.decamelize('MyBaseClass'))
