@@ -118,16 +118,6 @@ def all(iterable):
 
 
 @deferrable
-def allx(iterable):
-    """Replacement for the :func:`allx()` function.
-
-    .. versionadded:: 2.13
-
-    """
-    return util.allx(iterable)
-
-
-@deferrable
 def any(iterable):
     """Replacement for the built-in :func:`any() <python:any>` function."""
     return builtins.any(iterable)
@@ -672,6 +662,16 @@ def avg(iterable):
 
 
 # Other utility functions
+
+@deferrable
+def allx(iterable):
+    """Same as the built-in :func:`all() <python:all>` function, except that it
+    returns :class:`False` if ``iterable`` is empty.
+
+    .. versionadded:: 2.13
+    """
+    return util.allx(iterable)
+
 
 @deferrable
 def getitem(container, item):
