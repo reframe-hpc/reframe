@@ -1,101 +1,148 @@
 import os
 
 import reframe.utility.sanity as sn
-from reframe.core.fields import ScopedDict
+from reframe.core.launchers import LauncherWrapper
 from reframe.core.pipeline import RegressionTest
 
 
-class JacobiNoToolHybrid(RegressionTest):
-    def __init__(self, lang, **kwargs):
-        super().__init__('jacobi_%s' % lang.replace('+', 'p'),
+class DdtCheck(RegressionTest):
+    def __init__(self, lang, extension, **kwargs):
+        super().__init__('ddt_check_' + lang.replace('+', 'p'),
                          os.path.dirname(__file__), **kwargs)
-
-        self.language = lang
-        self.descr = '%s check' % lang
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
-
-        self.prgenv_flags = {
-            'PrgEnv-cray': '-O2 -g -homp',
-            'PrgEnv-gnu': '-O2 -g -fopenmp',
-            'PrgEnv-intel': '-O2 -g -qopenmp',
-            'PrgEnv-pgi': '-O2 -g -mp'
-        }
-
-        self.sourcesdir = os.path.join('src', lang)
+        self.lang = lang
+        self.extension = extension
+        self.makefile = 'Makefile'
         self.executable = './jacobi'
-
-        self.num_tasks = 3
-        self.num_tasks_per_node = 3
+        self.sourcesdir = os.path.join('src', lang)
+        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.modules = ['ddt']
+        self.prgenv_flags = {
+            # 'PrgEnv-cray': ' -O2 -homp',
+            'PrgEnv-gnu': ' -O2 -fopenmp',
+            # 'PrgEnv-intel': ' -O2 -qopenmp',
+            # 'PrgEnv-pgi': ' -O2 -mp'
+        }
+        self.flags = ' -g'
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
-        self.num_iterations = 200
-
+        self.num_iterations = 5
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'ITERATIONS': str(self.num_iterations),
             'OMP_PROC_BIND': 'true',
-            'CRAYPE_LINK_TYPE': 'dynamic'
         }
-
-        self.openmp_versions = ScopedDict({
-            'PrgEnv-cray': {'version': 201307},
-            'PrgEnv-gnu': {'version': 201307},
-            'PrgEnv-intel': {'version': 201511},
-            'PrgEnv-pgi': {'version': 201307},
-            'PrgEnv-pgi:C++': {'version': 200805},
-        })
-        # a scopedict is better than this:
-        # if (self.language == 'C++' and
-        #    self.current_environ.name == 'PrgEnv-pgi'):
-        #    self.omp_versions['PrgEnv-pgi'] = '200805'
-
-        self.perf_patterns = {
-            'elapsed_time': sn.extractsingle('Elapsed Time\s*:\s+(\S+)',
-                                             self.stdout, 1, float)
+        self.instrumented_linenum = {
+            'F90': 90,
+            'C': 91,
+            'C++': 94,
+            'Cuda': 94
         }
-
-        self.reference_prgenv = {
-            'PrgEnv-gnu': (0.90, -0.6, None),
-            'PrgEnv-cray': (0.90, -0.6, None),
-            'PrgEnv-intel': (0.90, -0.6, None),
-            'PrgEnv-pgi': (18.0, -0.6, None),
-        }
-
-        self.reference = {
-            '*': {
-                'elapsed_time': (0, None, None)
-            }
-        }
-        self.maintainers = ['VH', 'JG']
+        self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
+        self.post_run = ['ddt -V ; which ddt ;']
+        self.ddt_options = []
+        self.keep_files = ['ddtreport.txt']
 
-        self.post_run = ['module list -t']
-
-    def compile(self):
+    def _set_compiler_flags(self):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags = prgenv_flags
-        self.current_environ.cxxflags = prgenv_flags
-        self.current_environ.fflags = prgenv_flags
-        self.current_environ.ldflags = '-lm '
-        super().compile()
+        self.current_environ.cflags = self.flags + prgenv_flags
+        self.current_environ.cxxflags = self.flags + prgenv_flags
+        self.current_environ.fflags = self.flags + prgenv_flags
+        self.current_environ.ldflags = self.flags + prgenv_flags
 
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
+    def compile(self, **job_opts):
+        self._set_compiler_flags()
+        super().compile(makefile=self.makefile, **job_opts)
 
-        found_version = sn.extractsingle(
-            r'OpenMP-\s*(\d+)', self.stdout, 1, int)
-        ompversion_key = '%s:%s:version' % (
-            self.current_environ.name, self.language)
+    def setup(self, partition, environ, **job_opts):
+        super().setup(partition, environ, **job_opts)
+        self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
+                                            self.ddt_options)
+
+
+class DdtCpuCheck(DdtCheck):
+    def __init__(self, lang, extension, **kwargs):
+        super().__init__(lang, extension, **kwargs)
+        self.valid_systems = ['daint:gpu', 'daint:mc',
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
+
+        if self.current_system.name == 'kesch' and self.lang == 'C':
+            self.flags += ' -lm '
+
+        residual_pattern = '_jacobi.%s:%d,residual'
+        self.ddt_options = [
+            '--offline', '--output=ddtreport.txt', '--trace-at',
+            residual_pattern % (
+                self.extension, self.instrumented_linenum[self.lang])
+        ]
 
         self.sanity_patterns = sn.all([
-            sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
-            sn.assert_found('SUCCESS', self.stdout),
+            sn.assert_found('MPI implementation', 'ddtreport.txt'),
+            sn.assert_found(r'Debugging\s*:\s*srun\s+%s' % self.executable,
+                            'ddtreport.txt'),
+            sn.assert_reference(sn.extractsingle(
+                r'^tracepoint\s+.*\s+residual:\s+(?P<result>\S+)',
+                'ddtreport.txt', 'result', float), 2.572e-6, -1e-1, 1.0e-1),
+            sn.assert_found(r'Every process in your program has terminated\.',
+                            'ddtreport.txt')
         ])
 
-        self.reference['*:elapsed_time'] = self.reference_prgenv[self.current_environ.name]
+
+class DdtGpuCheck(DdtCheck):
+    def __init__(self, lang, extension, **kwargs):
+        super().__init__(lang, extension, **kwargs)
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.num_gpus_per_node = 1
+        self.num_tasks_per_node = 1
+
+        self.system_modules = {
+            'daint': ['craype-accel-nvidia60'],
+            'dom': ['craype-accel-nvidia60',
+                    'cudatoolkit/9.0.103_3.7-6.0.4.1_2.1__g72b395b'],
+            'kesch': ['cudatoolkit']
+        }
+        sysname = self.current_system.name
+        self.modules += self.system_modules.get(sysname, [])
+
+        # as long as cuda/9 will not be the default, we will need:
+        if sysname in {'daint', 'kesch'}:
+            self.variables = {'ALLINEA_FORCE_CUDA_VERSION': '8.0'}
+
+        self.ddt_options = [
+            '--offline --output=ddtreport.txt ',
+            '--break-at _jacobi-cuda-kernel.cu:59 --evaluate *residue_d ',
+            '--trace-at _jacobi-cuda-kernel.cu:111,residue'
+        ]
+
+        self.sanity_patterns = sn.all([
+            sn.assert_found('MPI implementation', 'ddtreport.txt'),
+            sn.assert_found('Evaluate', 'ddtreport.txt'),
+            sn.assert_found(r'\*residue_d:', 'ddtreport.txt'),
+            sn.assert_found(r'Debugging\s*:\s*srun\s+%s' % self.executable,
+                            'ddtreport.txt'),
+            sn.assert_lt(sn.abs(sn.extractsingle(
+                r'^tracepoint\s+.*\s+residue:\s+(?P<result>\S+)',
+                'ddtreport.txt', 'result', float) - 0.25), 1e-5),
+            sn.assert_found(r'Every process in your program has terminated\.',
+                            'ddtreport.txt')
+        ])
+
+    def compile(self):
+        self.flags += ' -DUSE_MPI'
+        self.flags += ' -D_CSCS_ITMAX=5'
+
+        if self.current_system.name == 'kesch':
+            arch = 'sm_37'
+            self.flags += ' -lm -lcudart'
+        else:
+            arch = 'sm_60'
+        options = ' NVCCFLAGS="-g -arch=%s"' % arch
+        super().compile(options=options)
 
 
 def _get_checks(**kwargs):
-    return [JacobiNoToolHybrid(lang, **kwargs) for lang in ('C', 'C++', 'F90')]
+    return [DdtCpuCheck('F90', 'F90', **kwargs),
+            DdtCpuCheck('C', 'c', **kwargs),
+            DdtCpuCheck('C++', 'cc', **kwargs),
+            DdtGpuCheck('Cuda', 'cu', **kwargs)]
