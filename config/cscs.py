@@ -333,7 +333,7 @@ class ReframeSettings:
         'handlers': [
             {
                 'type': 'graylog',
-                'host': 'your-sever-here',
+                'host': 'your-server-here',
                 'port': 12345,
                 'level': 'INFO',
                 'format': (

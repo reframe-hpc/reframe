@@ -558,14 +558,14 @@ All handlers accept the following set of attributes (keys) in their configuratio
   - ``check_info``: Print live information of the currently executing check.
     By default this field has the form ``<check_name> on <current_partition> using <current_environment>``.
     It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
-  - ``check_jobid``: Prints the job or process id of the job or process associated with currently executing regression test.
+  - ``check_jobid``: Prints the job or process id of the job or process associated with the currently executing regression test.
     If a job or process is not yet created, ``-1`` will be printed.
   - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
     If ReFrame is not in the context of regression test, ``reframe`` will be printed.
   - ``check_outputdir``: The output directory associated with the currently executing test.
-  - ``check_partition``: The system partition a test is currently executing.
+  - ``check_partition``: The system partition where this test is currently executing.
   - ``check_stagedir``: The stage directory associated with the currently executing test.
-  - ``check_system``: The host system a test is currently executing.
+  - ``check_system``: The host system where this test is currently executing.
   - ``check_tags``: The tags associated with this test.
   - ``version``: The ReFrame version.
 
@@ -684,7 +684,7 @@ Performance Logging Using Graylog
 """""""""""""""""""""""""""""""""
 
 The type of this handler is ``graylog`` and it logs performance data to a `Graylog <https://www.graylog.org/>`__ server.
-Graylog is distributed enterprise log management service.
+Graylog is a distributed enterprise log management service.
 An example configuration of such a handler is the following:
 
 .. code-block:: python
@@ -714,7 +714,7 @@ This handler introduces three new attributes:
 * ``extras``: (optional) A set of optional user attributes to be passed with each log record to the server.
   These may depend on the server configuration.
 
-This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this module Python must be available, otherwise this log handler will be ignored.
+This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this Python module must be available, otherwise this log handler will be ignored.
 `GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
 The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
 More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__

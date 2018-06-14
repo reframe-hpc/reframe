@@ -120,8 +120,8 @@ class MultiFileHandler(logging.FileHandler):
 
         self.baseFilename = os.path.join(dirname, record.check_name + '.log')
         self.stream = self._streams.get(self.baseFilename, None)
-        self._streams[self.baseFilename] = self.stream
         super().emit(record)
+        self._streams[self.baseFilename] = self.stream
 
     def close(self):
         # Close all open streams
