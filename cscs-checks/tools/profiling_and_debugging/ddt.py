@@ -40,6 +40,7 @@ class DdtCheck(RegressionTest):
         }
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
+        self.post_run = ['ddt -V ; which ddt ;']
         self.ddt_options = []
         self.keep_files = ['ddtreport.txt']
 
@@ -104,7 +105,8 @@ class DdtGpuCheck(DdtCheck):
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
 
-        if sysname in {'kesch'}:
+        # as long as cuda/9 will not be the default, we will need:
+        if sysname in {'daint', 'kesch'}:
             self.variables = {'ALLINEA_FORCE_CUDA_VERSION': '8.0'}
 
         self.ddt_options = [
