@@ -14,11 +14,13 @@ def _get_module_name(filename):
         barename = os.path.dirname(filename)
 
     if os.path.isabs(barename):
-        module_name = os.path.basename(barename)
-    else:
-        module_name = barename.replace(os.sep, '.')
+        raise AssertionError('BUG: _get_module_name() '
+                             'accepts relative paths only')
 
-    return module_name
+    if filename.startswith('..'):
+        return os.path.basename(barename)
+    else:
+        return barename.replace(os.sep, '.')
 
 
 def _do_import_module_from_file(filename, module_name=None):
@@ -40,15 +42,17 @@ def _do_import_module_from_file(filename, module_name=None):
 def import_module_from_file(filename):
     """Import module from file."""
 
-    filename = os.path.normpath(os.path.expandvars(filename))
+    # Expand and sanitize filename
+    filename = os.path.abspath(os.path.expandvars(filename))
     if os.path.isdir(filename):
         filename = os.path.join(filename, '__init__.py')
 
-    if filename.startswith('..'):
-        filename = os.path.abspath(filename)
-
-    module_name = _get_module_name(filename)
-    if os.path.isabs(filename):
+    # Express filename relative to reframe
+    rel_filename = os.path.relpath(filename, sys.path[0])
+    module_name = _get_module_name(rel_filename)
+    if rel_filename.startswith('..'):
+        # We cannot use the standard Python import mechanism here, because the
+        # module to import is outside the top-level package
         return _do_import_module_from_file(filename, module_name)
 
     return importlib.import_module(module_name)
