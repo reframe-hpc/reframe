@@ -5,6 +5,11 @@ python:
 
 install:
     - pip install -r requirements.txt
+    - pip install codecov
 
 script:
-    ./test_reframe.py
+    - coverage run --source=reframe,unittests ./test_reframe.py
+    - coverage report -m
+
+after_success:
+    - codecov

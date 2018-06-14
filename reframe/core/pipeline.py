@@ -811,8 +811,7 @@ class RegressionTest:
             pre_run=self.pre_run,
             post_run=self.post_run,
             sched_exclusive_access=self.exclusive_access,
-            **job_opts
-        )
+            **job_opts)
 
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
