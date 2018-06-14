@@ -50,10 +50,13 @@ class AutomaticArraysCheck(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
             environ.fflags = '-O2 -hacc -hnoomp'
+            key = 'PrgEnv-cray'
         elif environ.name.startswith('PrgEnv-pgi'):
             environ.fflags = self._pgi_flags
+            key = 'PrgEnv-pgi'
         elif environ.name.startswith('PrgEnv-gnu'):
             environ.fflags = '-O2'
+            key = 'PrgEnv-gnu'
 
-        self.reference = self.arrays_reference[environ.name]
+        self.reference = self.arrays_reference[key]
         super().setup(partition, environ, **job_opts)
