@@ -351,11 +351,16 @@ def main():
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
-            checks_matched = filter(
-                lambda c: c if util.allx(c.supports_environ(e)
-                                         for e in options.prgenv) else None,
-                checks_matched
-            )
+            if options.prgenv:
+                filter_func = lambda c: c if util.allx(
+                    c.supports_environ(e) for e in options.prgenv) else None
+            else:
+                # Here we also check that the valid_prog_environs of the check
+                # is an iterable and not empty
+                filter_func = lambda c: c if util.allx(
+                    c.valid_prog_environs) else None
+
+            checks_matched = filter(filter_func, checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:

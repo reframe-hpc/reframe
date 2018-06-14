@@ -318,7 +318,25 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(0, returncode)
         self.assertIn(timefmt, stdout)
 
+    def test_list_empty_prgenvs_check_and_options(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = []
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
     def test_list_check_with_empty_prgenvs(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = ['foo']
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_empty_prgenvs_in_check_and_options(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.action = 'list'
         self.environs = []
