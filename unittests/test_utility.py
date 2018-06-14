@@ -280,8 +280,38 @@ class TestImportFromFile(unittest.TestCase):
             self.assertEqual('foo', e.name)
             self.assertEqual('/foo', e.path)
 
+    def test_load_directory_relative(self):
+        with os_ext.change_dir('reframe'):
+            module = util.import_module_from_file('../reframe')
+            self.assertEqual(reframe.VERSION, module.VERSION)
+            self.assertEqual('reframe', module.__name__)
+            self.assertIs(module, sys.modules.get('reframe'))
+
+    def test_load_relative(self):
+        with os_ext.change_dir('reframe'):
+            # Load a module from a directory up
+            module = util.import_module_from_file('../reframe/__init__.py')
+            self.assertEqual(reframe.VERSION, module.VERSION)
+            self.assertEqual('reframe', module.__name__)
+            self.assertIs(module, sys.modules.get('reframe'))
+
+            # Load a module from the current directory
+            module = util.import_module_from_file('utility/os_ext.py')
+            self.assertEqual('reframe.utility.os_ext', module.__name__)
+            self.assertIs(module, sys.modules.get('reframe.utility.os_ext'))
+
+    def test_load_outside_pkg(self):
+        module = util.import_module_from_file(os.path.__file__)
+
+        # os imports the OS-specific path libraries under the name `path`. Our
+        # importer will import the actual file, thus the module name should be
+        # the real one.
+        self.assertTrue(module is sys.modules.get('posixpath') or
+                        module is sys.modules.get('ntpath') or
+                        module is sys.modules.get('macpath'))
+
     def test_load_twice(self):
-        filename = os.path.abspath('reframe/__init__.py')
+        filename = os.path.abspath('reframe')
         module1 = util.import_module_from_file(filename)
         module2 = util.import_module_from_file(filename)
         self.assertIs(module1, module2)

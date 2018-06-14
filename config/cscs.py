@@ -182,7 +182,6 @@ class ReframeSettings:
                 }
             },
 
-            # Generic system used for cli unit tests
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
