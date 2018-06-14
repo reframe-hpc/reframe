@@ -270,7 +270,7 @@ class SlurmJob(sched.Job):
             # Here we handle the case were the UnavailableNodes list is empty,
             # which actually means that the job is pending
             if reason == 'ReqNodeNotAvail' and reason_details:
-                if re.match(r'UnavailableNodes:$', reason_details):
+                if re.match(r'UnavailableNodes:$', reason_details.strip()):
                     return
 
             self.cancel()
