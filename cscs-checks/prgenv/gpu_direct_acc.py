@@ -1,6 +1,6 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.launchers import LauncherWrapper
+
 
 @rfm.simple_test
 class GpuDirectAccCheck(rfm.RegressionTest):
@@ -23,10 +23,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',
-                'X': '$(pkg-config --variable=libdir mvapich2-gdr)'
-            }
-            self._pgi_kesch_variables = {
-                'LD_PRELOAD': '$X/libmpi.so'
             }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
@@ -48,7 +44,10 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             environ.fflags = self._pgi_flags
 
         if (self.current_system.name in ['kesch']) and \
-            (environ.name.startswith('PrgEnv-pgi')):
-            self.variables.update(self._pgi_kesch_variables)
+                (environ.name.startswith('PrgEnv-pgi')):
+            self.pre_run = [
+                'export LD_PRELOAD='
+                '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+            ]
 
         super().setup(partition, environ, **job_opts)
