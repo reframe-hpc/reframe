@@ -183,6 +183,18 @@ else
 
     checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
 
+    echo "==================================="
+    echo "Running unit tests with PBS backend"
+    echo "==================================="
+
+    if [[ $(hostname) =~ dom ]]; then
+        PATH_save=$PATH
+        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-pbs.py
+        export PATH=$PATH_save
+    fi
+
+
     # Find modified or added user checks
     userchecks=( $(git log --name-status --oneline --no-merges -1 | \
                    awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
