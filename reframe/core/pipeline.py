@@ -477,7 +477,7 @@ class RegressionTest:
         # Create a test name from the class name and the constructor's
         # arguments
         name = cls.__qualname__
-        #name = util.decamelize(cls.__name__)
+        # name = util.decamelize(cls.__name__)
         if args or kwargs:
             arg_names = map(lambda x: util.toalphanum(str(x)),
                             itertools.chain(args, kwargs.values()))
@@ -808,8 +808,6 @@ class RegressionTest:
             script_filename=job_script_filename,
             stdout=self._stdout,
             stderr=self._stderr,
-            pre_run=self.pre_run,
-            post_run=self.post_run,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -970,6 +968,10 @@ class RegressionTest:
         """
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
+
+        # Temporary fix for supporting multiple pre/post run steps
+        self._job._pre_run  += self.pre_run
+        self._job._post_run += self.post_run
 
         with os_ext.change_dir(self._stagedir):
             try:
