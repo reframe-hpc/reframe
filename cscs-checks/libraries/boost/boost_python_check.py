@@ -28,7 +28,7 @@ class BoostCrayGnuPythonTest(RegressionTest):
         python_include_suffix = 'm' if python_major_version == '3' else ''
         python_lib_suffix = '3' if python_major_version == '3' else ''
         self.variables = {
-            'PYTHON_INCLUDE': (r'${PYTHON_PATH}/include/python%s%s') % (
+            'PYTHON_INCLUDE': r'include/python%s%s' % (
                 python_version, python_include_suffix),
             'PYTHON_BOOST_LIB': 'boost_python' + python_lib_suffix
         }
@@ -38,4 +38,4 @@ class BoostCrayGnuPythonTest(RegressionTest):
 
 def _get_checks(**kwargs):
     return [BoostCrayGnuPythonTest('1.65.0', '17.08', '2.7', **kwargs),
-            BoostCrayGnuPythonTest('1.65.0', '17.08', '3.5', **kwargs)]
+            BoostCrayGnuPythonTest('1.65.0', '17.08', '3.6', **kwargs)]
