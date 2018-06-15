@@ -1,20 +1,18 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class BoostCrayGnuPythonTest(RegressionTest):
-
-    def __init__(self, boost_version, cray_gnu_version, python_version,
-                 **kwargs):
-
+@rfm.parameterized_test(['1.65.0', '17.08', '2.7'], ['1.65.0', '17.08', '3.6'])
+class BoostCrayGnuPythonTest(rfm.RegressionTest):
+    def __init__(self, boost_version, cray_gnu_version, python_version):
         def normalize(s):
             return s.replace('.', '_')
 
         super().__init__('boost_%s_cray_gnu_%s_python_%s_check' % (
             normalize(boost_version), normalize(cray_gnu_version),
-            normalize(python_version)), os.path.dirname(__file__), **kwargs)
+            normalize(python_version)))
         self.descr = ('Test for Boost-%s for CrayGnu-%s with python %s '
                       'support') % (boost_version, cray_gnu_version,
                                     python_version)
@@ -34,8 +32,3 @@ class BoostCrayGnuPythonTest(RegressionTest):
         }
         self.maintainers = ['JB', 'AJ']
         self.tags = {'scs', 'production'}
-
-
-def _get_checks(**kwargs):
-    return [BoostCrayGnuPythonTest('1.65.0', '17.08', '2.7', **kwargs),
-            BoostCrayGnuPythonTest('1.65.0', '17.08', '3.6', **kwargs)]
