@@ -477,7 +477,6 @@ class RegressionTest:
         # Create a test name from the class name and the constructor's
         # arguments
         name = cls.__qualname__
-        # name = util.decamelize(cls.__name__)
         if args or kwargs:
             arg_names = map(lambda x: util.toalphanum(str(x)),
                             itertools.chain(args, kwargs.values()))
@@ -972,7 +971,6 @@ class RegressionTest:
         # FIXME: Temporary fix to support multiple run steps
         self._job._pre_run  += self.pre_run
         self._job._post_run += self.post_run
-
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(BashScriptBuilder(login=True))
