@@ -1,119 +1,175 @@
+import os
 import shutil
 import tempfile
 import unittest
 
+import reframe.core.runtime as runtime
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
-from reframe.core.modules import init_modules_system
-from reframe.frontend.loader import RegressionCheckLoader, SiteConfiguration
-from reframe.frontend.resources import ResourcesManager
-from reframe.settings import settings
-from unittests.resources.frontend_checks import (KeyboardInterruptCheck,
-                                                 SleepCheck,
-                                                 SystemExitCheck)
+from reframe.core.exceptions import JobNotStartedError
+from reframe.frontend.loader import RegressionCheckLoader
+from unittests.resources.checks.hellocheck import HelloTest
+from unittests.resources.checks.frontend_checks import (
+    KeyboardInterruptCheck, SleepCheck,
+    BadSetupCheck, RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
-        # Load a system configuration
-        self.site_config = SiteConfiguration()
-        self.site_config.load_from_dict(settings.site_configuration)
-        self.system = self.site_config.systems['generic']
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
-        self.resources = ResourcesManager(prefix=self.resourcesdir)
-        self.loader = RegressionCheckLoader(['unittests/resources'])
-
-        # Init modules system
-        init_modules_system(self.system.modules_system)
+        self.loader = RegressionCheckLoader(['unittests/resources/checks'],
+                                            ignore_conflicts=True)
 
         # Setup the runner
         self.runner = executors.Runner(policies.SerialExecutionPolicy())
-        self.checks = self.loader.load_all(system=self.system,
-                                           resources=self.resources)
+        self.checks = self.loader.load_all()
 
     def tearDown(self):
         shutil.rmtree(self.resourcesdir, ignore_errors=True)
 
+    def _num_failures_stage(self, stage):
+        stats = self.runner.stats
+        return len([t for t in stats.tasks_failed()
+                    if t.failed_stage == stage])
+
+    def assert_all_dead(self):
+        stats = self.runner.stats
+        for t in self.runner.stats.get_tasks():
+            try:
+                finished = t.check.poll()
+            except JobNotStartedError:
+                finished = True
+
+            self.assertTrue(finished)
+
     def test_runall(self):
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_system_check(self):
         self.runner.policy.skip_system_check = True
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(9, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(8, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_prgenv_check(self):
         self.runner.policy.skip_environ_check = True
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(9, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(8, stats.num_cases())
+        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(0, stats.num_failures_stage('sanity'))
-        self.assertEqual(1, stats.num_failures_stage('performance'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(3, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(0, self._num_failures_stage('sanity'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(0, stats.num_failures_stage('performance'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(3, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(0, self._num_failures_stage('performance'))
 
     def test_strict_performance_check(self):
         self.runner.policy.strict_check = True
-        self.runner.runall(self.checks, self.system)
+        self.runner.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(6, stats.num_failures())
-        self.assertEqual(3, stats.num_failures_stage('setup'))
-        self.assertEqual(1, stats.num_failures_stage('sanity'))
-        self.assertEqual(2, stats.num_failures_stage('performance'))
+        self.assertEqual(7, stats.num_cases())
+        self.assertEqual(5, stats.num_failures())
+        self.assertEqual(2, self._num_failures_stage('setup'))
+        self.assertEqual(1, self._num_failures_stage('sanity'))
+        self.assertEqual(2, self._num_failures_stage('performance'))
+
+    def test_force_local_execution(self):
+        self.runner.policy.force_local = True
+        self.runner.runall([HelloTest()])
+        stats = self.runner.stats
+        for t in stats.get_tasks():
+            self.assertTrue(t.check.local)
 
     def test_kbd_interrupt_within_test(self):
-        check = KeyboardInterruptCheck(system=self.system,
-                                       resources=self.resources)
+        check = KeyboardInterruptCheck()
         self.assertRaises(KeyboardInterrupt, self.runner.runall,
-                          [check], self.system)
+                          [check])
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+        self.assert_all_dead()
 
     def test_system_exit_within_test(self):
-        check = SystemExitCheck(system=self.system, resources=self.resources)
+        check = SystemExitCheck()
 
         # This should not raise and should not exit
-        self.runner.runall([check], self.system)
+        self.runner.runall([check])
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
+
+    def test_retries_bad_check(self):
+        max_retries = 2
+        checks = [BadSetupCheck()]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks)
+
+        # Ensure that the test was retried #max_retries times and failed.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(1, self.runner.stats.num_failures())
+
+    def test_retries_good_check(self):
+        max_retries = 2
+        checks = [HelloTest()]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks)
+
+        # Ensure that the test passed without retries.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+
+    def test_pass_in_retries(self):
+        max_retries = 3
+        run_to_pass = 2
+        # Create a file containing the current_run; Run 0 will set it to 0,
+        # run 1 to 1 and so on.
+        with tempfile.NamedTemporaryFile(mode='wt', delete=False) as fp:
+            fp.write('0\n')
+
+        checks = [RetriesCheck(run_to_pass, fp.name)]
+        self.runner._max_retries = max_retries
+        self.runner.runall(checks)
+
+        # Ensure that the test passed after retries in run #run_to_pass.
+        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(1, self.runner.stats.num_failures(run=0))
+        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(0, self.runner.stats.num_failures())
+        os.remove(fp.name)
 
 
 class TaskEventMonitor(executors.TaskEventListener):
@@ -163,7 +219,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runner.policy.task_listeners.append(self.monitor)
 
     def set_max_jobs(self, value):
-        for p in self.system.partitions:
+        for p in runtime.runtime().system.partitions:
             p._max_jobs = value
 
     def read_timestamps(self, tasks):
@@ -182,13 +238,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.end_stamps.sort()
 
     def test_concurrency_unlimited(self):
-        checks = [
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources)
-        ]
+        checks = [SleepCheck(0.5) for i in range(3)]
         self.set_max_jobs(len(checks))
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that all tests were run and without failures.
         self.assertEqual(len(checks), self.runner.stats.num_cases())
@@ -210,16 +262,10 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
     def test_concurrency_limited(self):
         # The number of checks must be <= 2*max_jobs.
-        checks = [
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources)
-        ]
+        checks = [SleepCheck(0.5) for i in range(5)]
         max_jobs = len(checks) - 2
         self.set_max_jobs(max_jobs)
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that all tests were run and without failures.
         self.assertEqual(len(checks), self.runner.stats.num_cases())
@@ -254,15 +300,10 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
             self.skipTest('the system seems too loaded.')
 
     def test_concurrency_none(self):
-        checks = [
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources),
-            SleepCheck(0.5, system=self.system, resources=self.resources)
-        ]
-
+        checks = [SleepCheck(0.5) for i in range(3)]
         num_checks = len(checks)
         self.set_max_jobs(1)
-        self.runner.runall(checks, self.system)
+        self.runner.runall(checks)
 
         # Ensure that all tests were run and without failures.
         self.assertEqual(len(checks), self.runner.stats.num_cases())
@@ -282,20 +323,15 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
     def _run_checks(self, checks, max_jobs):
         self.set_max_jobs(max_jobs)
-        self.assertRaises(KeyboardInterrupt, self.runner.runall,
-                          checks, self.system)
+        self.assertRaises(KeyboardInterrupt, self.runner.runall, checks)
 
         self.assertEqual(4, self.runner.stats.num_cases())
         self.assertEqual(4, self.runner.stats.num_failures())
+        self.assert_all_dead()
 
     def test_kbd_interrupt_in_wait_with_concurrency(self):
-        checks = [
-            KeyboardInterruptCheck(system=self.system,
-                                   resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources)
-        ]
+        checks = [KeyboardInterruptCheck(),
+                  SleepCheck(10), SleepCheck(10), SleepCheck(10)]
         self._run_checks(checks, 4)
 
     def test_kbd_interrupt_in_wait_with_limited_concurrency(self):
@@ -304,33 +340,16 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # KeyboardInterruptCheck to finish first (the corresponding wait should
         # trigger the failure), so as to make the framework kill the remaining
         # three.
-        checks = [
-            KeyboardInterruptCheck(system=self.system,
-                                   resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources),
-            SleepCheck(10, system=self.system, resources=self.resources)
-        ]
+        checks = [KeyboardInterruptCheck(),
+                  SleepCheck(10), SleepCheck(10), SleepCheck(10)]
         self._run_checks(checks, 2)
 
     def test_kbd_interrupt_in_setup_with_concurrency(self):
-        checks = [
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            KeyboardInterruptCheck(phase='setup',
-                                   system=self.system,
-                                   resources=self.resources),
-        ]
+        checks = [SleepCheck(1), SleepCheck(1), SleepCheck(1),
+                  KeyboardInterruptCheck(phase='setup')]
         self._run_checks(checks, 4)
 
     def test_kbd_interrupt_in_setup_with_limited_concurrency(self):
-        checks = [
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            SleepCheck(1, system=self.system, resources=self.resources),
-            KeyboardInterruptCheck(phase='setup',
-                                   system=self.system,
-                                   resources=self.resources),
-        ]
+        checks = [SleepCheck(1), SleepCheck(1), SleepCheck(1),
+                  KeyboardInterruptCheck(phase='setup')]
         self._run_checks(checks, 2)

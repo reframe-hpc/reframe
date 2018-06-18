@@ -1,3 +1,4 @@
+import abc
 import os
 import unittest
 from tempfile import NamedTemporaryFile
@@ -5,12 +6,12 @@ from tempfile import NamedTemporaryFile
 import reframe.core.modules as modules
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
 
 
-class _TestModulesSystem(unittest.TestCase):
+class _TestModulesSystem:
     def setUp(self):
-        self.modules_system = modules.get_modules_system()
         self.environ_save = EnvironmentSnapshot()
         self.modules_system.searchpath_add(TEST_MODULES)
 
@@ -66,38 +67,104 @@ class _TestModulesSystem(unittest.TestCase):
         self.assertIn('testmod_foo', conflict_list)
         self.assertIn('testmod_boo', conflict_list)
 
+    @abc.abstractmethod
+    def expected_load_instr(self, module):
+        """Expected load instruction."""
 
-class TestTModModulesSystem(_TestModulesSystem):
+    @abc.abstractmethod
+    def expected_unload_instr(self, module):
+        """Expected unload instruction."""
+
+    def test_emit_load_commands(self):
+        self.modules_system.module_map = {
+            'm0': ['m1', 'm2']
+        }
+        self.assertEqual([self.expected_load_instr('foo')],
+                         self.modules_system.emit_load_commands('foo'))
+        self.assertEqual([self.expected_load_instr('foo/1.2')],
+                         self.modules_system.emit_load_commands('foo/1.2'))
+        self.assertEqual([self.expected_load_instr('m1'),
+                          self.expected_load_instr('m2')],
+                         self.modules_system.emit_load_commands('m0'))
+
+    def test_emit_unload_commands(self):
+        self.modules_system.module_map = {
+            'm0': ['m1', 'm2']
+        }
+        self.assertEqual([self.expected_unload_instr('foo')],
+                         self.modules_system.emit_unload_commands('foo'))
+        self.assertEqual([self.expected_unload_instr('foo/1.2')],
+                         self.modules_system.emit_unload_commands('foo/1.2'))
+        self.assertEqual([self.expected_unload_instr('m2'),
+                          self.expected_unload_instr('m1')],
+                         self.modules_system.emit_unload_commands('m0'))
+
+
+class TestTModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system('tmod')
+            self.modules_system = modules.ModulesSystem.create('tmod')
         except ConfigError:
             self.skipTest('tmod not supported')
         else:
             super().setUp()
 
+    def expected_load_instr(self, module):
+        return 'module load %s' % module
 
-class TestLModModulesSystem(_TestModulesSystem):
+    def expected_unload_instr(self, module):
+        return 'module unload %s' % module
+
+
+class TestTMod4ModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system('lmod')
+            self.modules_system = modules.ModulesSystem.create('tmod4')
+        except ConfigError:
+            self.skipTest('tmod4 not supported')
+        else:
+            super().setUp()
+
+    def expected_load_instr(self, module):
+        return 'module load %s' % module
+
+    def expected_unload_instr(self, module):
+        return 'module unload %s' % module
+
+
+class TestLModModulesSystem(_TestModulesSystem, unittest.TestCase):
+    def setUp(self):
+        try:
+            self.modules_system = modules.ModulesSystem.create('lmod')
         except ConfigError:
             self.skipTest('lmod not supported')
         else:
             super().setUp()
 
+    def expected_load_instr(self, module):
+        return 'module load %s' % module
 
-class TestNoModModulesSystem(_TestModulesSystem):
+    def expected_unload_instr(self, module):
+        return 'module unload %s' % module
+
+
+class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system()
+            self.modules_system = modules.ModulesSystem.create()
         except ConfigError:
             self.skipTest('nomod not supported')
         else:
             super().setUp()
 
-    # Simply test that no exceptions are thrown
+    def expected_load_instr(self, module):
+        return ''
+
+    def expected_unload_instr(self, module):
+        return ''
+
     def test_searchpath(self):
+        # Simply test that no exceptions are thrown
         self.modules_system.searchpath_remove(TEST_MODULES)
 
     def test_module_load(self):
@@ -133,7 +200,8 @@ class TestModule(unittest.TestCase):
 
     def test_equal(self):
         self.assertEqual(modules.Module('foo'), modules.Module('foo'))
-        self.assertEqual(modules.Module('foo/1.2'), modules.Module('foo/1.2'))
+        self.assertEqual(modules.Module('foo/1.2'),
+                         modules.Module('foo/1.2'))
         self.assertEqual(modules.Module('foo'), modules.Module('foo/1.2'))
         self.assertEqual(hash(modules.Module('foo')),
                          hash(modules.Module('foo')))
@@ -194,6 +262,12 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
 
     def searchpath_remove(self, *dirs):
         pass
+
+    def emit_load_instr(self, module):
+        return ''
+
+    def emit_unload_instr(self, module):
+        return ''
 
 
 class TestModuleMapping(unittest.TestCase):

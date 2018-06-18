@@ -1,14 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class MakefileTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('preprocessor_check', os.path.dirname(__file__),
-                         **kwargs)
-
+@rfm.simple_test
+class MakefileTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of Makefiles '
                       'and compile options')
         self.valid_systems = ['*']
@@ -21,7 +18,3 @@ class MakefileTest(RegressionTest):
     def compile(self):
         self.current_environ.cppflags = '-DMESSAGE'
         super().compile()
-
-
-def _get_checks(**kwargs):
-    return [MakefileTest(**kwargs)]

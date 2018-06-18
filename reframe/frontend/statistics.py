@@ -1,89 +1,110 @@
 import reframe.core.debug as debug
 
+from reframe.core.exceptions import StatisticsError
+
 
 class TestStats:
     """Stores test case statistics."""
 
-    def __init__(self, tasks=[]):
-        if not hasattr(tasks, '__iter__'):
-            raise TypeError('expected an iterable')
-
-        # Store test cases per partition internally
-        self._tasks_bypart = {}
-        for t in tasks:
-            partition = t.check.current_partition
-            partname = partition.fullname if partition else 'None'
-            tclist = self._tasks_bypart.setdefault(partname, [])
-            tclist.append(t)
+    def __init__(self):
+        # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
+        self._tasks = [[]]
+        self._current_run = 0
 
     def __repr__(self):
         return debug.repr(self)
 
-    def num_failures(self, partition=None):
-        num_fails = 0
-        if partition:
-            num_fails += len([
-                t for t in self._tasks_bypart[partition] if t.failed
-            ])
-        else:
-            # count all failures
-            for tclist in self._tasks_bypart.values():
-                num_fails += len([t for t in tclist if t.failed])
+    @property
+    def current_run(self):
+        return self._current_run
 
-        return num_fails
+    def next_run(self):
+        self._current_run += 1
+        self._tasks.append([])
 
-    def num_failures_stage(self, stage):
-        num_fails = 0
-        for tclist in self._tasks_bypart.values():
-            num_fails += len([t for t in tclist if t.failed_stage == stage])
+    def add_task(self, task):
+        self._tasks[self._current_run].append(task)
 
-        return num_fails
+    def get_tasks(self, run=-1):
+        try:
+            return self._tasks[run]
+        except IndexError:
+            raise StatisticsError('no such run: %s' % run) from None
 
-    def num_cases(self, partition=None):
-        num_cases = 0
-        if partition:
-            num_cases += len(self._tasks_bypart[partition])
-        else:
-            # count all failures
-            for tclist in self._tasks_bypart.values():
-                num_cases += len(tclist)
+    def num_failures(self, run=-1):
+        return len([t for t in self.get_tasks(run) if t.failed])
 
-        return num_cases
+    def num_cases(self, run=-1):
+        return len(self.get_tasks(run))
+
+    def tasks_failed(self, run=-1):
+        return [t for t in self.get_tasks(run) if t.failed]
+
+    def retry_report(self):
+        # Return an empty report if no retries were done.
+        if not self._current_run:
+            return ''
+
+        line_width = 78
+        report = [line_width * '=']
+        report.append('SUMMARY OF RETRIES')
+        report.append(line_width * '-')
+        messages = {}
+        for run in range(1, len(self._tasks)):
+            for t in self.get_tasks(run):
+                key = '%s:%s:%s' % (
+                      t.check.name, t.check.current_partition.fullname,
+                      t.check.current_environ.name
+                )
+                # Overwrite entry from previous run if available
+                messages[key] = (
+                    '  * Test %s was retried %s time(s) and %s.' %
+                    (t.check.info(), run, 'failed' if t.failed else 'passed')
+                )
+
+        for key in sorted(messages.keys()):
+            report.append(messages[key])
+
+        return '\n'.join(report)
 
     def failure_report(self):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for partname, tclist in self._tasks_bypart.items():
-            for tf in (t for t in tclist if t.failed):
-                check = tf.check
-                environ_name = (check.current_environ.name
-                                if check.current_environ else 'None')
-                report.append(line_width * '-')
-                report.append('FAILURE INFO for %s' % check.name)
-                report.append('  * System partition: %s' % partname)
-                report.append('  * Environment: %s' % environ_name)
-                report.append('  * Stage directory: %s' % check.stagedir)
+        for tf in (t for t in self.get_tasks(self._current_run) if t.failed):
+            check = tf.check
+            partition = check.current_partition
+            partname = partition.fullname if partition else 'None'
+            environ_name = (check.current_environ.name
+                            if check.current_environ else 'None')
+            retry_info = ('(for the last of %s retries)' % self._current_run
+                          if self._current_run > 0 else '')
 
-                job_type = 'local' if check.is_local() else 'batch job'
-                jobid = check.job.jobid if check.job else -1
-                report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
-                report.append('  * Maintainers: %s' % check.maintainers)
-                report.append('  * Failing phase: %s' % tf.failed_stage)
-                reason = '  * Reason: '
-                if tf.exc_info is not None:
-                    from reframe.core.exceptions import format_exception
+            report.append(line_width * '-')
+            report.append('FAILURE INFO for %s %s' % (check.name, retry_info))
+            report.append('  * System partition: %s' % partname)
+            report.append('  * Environment: %s' % environ_name)
+            report.append('  * Stage directory: %s' % check.stagedir)
 
-                    reason += format_exception(*tf.exc_info)
-                    report.append(reason)
+            job_type = 'local' if check.is_local() else 'batch job'
+            jobid = check.job.jobid if check.job else -1
+            report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
+            report.append('  * Maintainers: %s' % check.maintainers)
+            report.append('  * Failing phase: %s' % tf.failed_stage)
+            reason = '  * Reason: '
+            if tf.exc_info is not None:
+                from reframe.core.exceptions import format_exception
 
-                elif tf.failed_stage == 'check_sanity':
-                    report.append('Sanity check failure')
-                elif tf.failed_stage == 'check_performance':
-                    report.append('Performance check failure')
-                else:
-                    # This shouldn't happen...
-                    report.append('Unknown error.')
+                reason += format_exception(*tf.exc_info)
+                report.append(reason)
+
+            elif tf.failed_stage == 'check_sanity':
+                report.append('Sanity check failure')
+            elif tf.failed_stage == 'check_performance':
+                report.append('Performance check failure')
+            else:
+                # This shouldn't happen...
+                report.append('Unknown error.')
 
         report.append(line_width * '-')
         return '\n'.join(report)

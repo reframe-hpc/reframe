@@ -1,14 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import CompileOnlyRegressionTest
 
 
-class CompileOnlyTest(CompileOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('compile_only_check', os.path.dirname(__file__),
-                         **kwargs)
-
+@rfm.simple_test
+class ExampleCompileOnlyTest(rfm.CompileOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the class'
                       'CompileOnlyRegressionTest')
         self.valid_systems = ['*']
@@ -16,7 +13,3 @@ class CompileOnlyTest(CompileOnlyRegressionTest):
         self.sanity_patterns = sn.assert_not_found('warning', self.stderr)
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [CompileOnlyTest(**kwargs)]

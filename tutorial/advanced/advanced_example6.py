@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class DeferredIterationTest(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('deferred_iteration_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class DeferredIterationTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of deferred '
                       'iteration via the `map` sanity function.')
         self.valid_systems = ['*']
@@ -20,7 +18,3 @@ class DeferredIterationTest(RunOnlyRegressionTest):
             sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)))
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [DeferredIterationTest(**kwargs)]

@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class OpenACCTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example4_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example4Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication example with OpenACC'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
@@ -28,7 +26,3 @@ class OpenACCTest(RegressionTest):
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
         self.current_environ.cflags = prgenv_flags
         super().compile()
-
-
-def _get_checks(**kwargs):
-    return [OpenACCTest(**kwargs)]

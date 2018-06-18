@@ -81,6 +81,10 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 
     In this case it will first remove it and then call the standard
     shutil.copytree()."""
+    if src == os.path.commonpath([src, dst]):
+        raise ValueError("cannot copy recursively the parent directory "
+                         "`%s' into one of its descendants `%s'" % (src, dst))
+
     if os.path.exists(dst):
         shutil.rmtree(dst)
 
@@ -193,6 +197,14 @@ def mkstemp_path(*args, **kwargs):
     return path
 
 
+def force_remove_file(filename):
+    """Remove filename ignoring errors if the file does not exist."""
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
+
+
 class change_dir:
     """Context manager which changes the current working directory to the
        provided one."""
@@ -227,7 +239,8 @@ def git_repo_exists(url, timeout=5):
     """Check if URL refers to git valid repository."""
     try:
         os.environ['GIT_TERMINAL_PROMPT'] = '0'
-        run_command('git ls-remote %s' % url, check=True, timeout=timeout)
+        run_command('git ls-remote -h %s' % url, check=True,
+                    timeout=timeout)
     except (SpawnedProcessTimeout, SpawnedProcessError):
         return False
     else:

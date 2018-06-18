@@ -1,13 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class SerialNormTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example6_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example6Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Matrix-vector multiplication with L2 norm check'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -28,7 +26,3 @@ class SerialNormTest(RegressionTest):
         ])
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [SerialNormTest(**kwargs)]
