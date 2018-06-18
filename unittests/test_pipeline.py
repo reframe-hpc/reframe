@@ -152,9 +152,9 @@ class TestRegressionTest(unittest.TestCase):
 
     def test_hellocheck_local_prepost_run_in_setup(self):
         def custom_setup(obj, partition, environ, **job_opts):
-            obj.pre_run  = ['echo prerun cmd']
-            obj.post_run = ['echo postrun cmd']
             super(obj.__class__, obj).setup(partition, environ, **job_opts)
+            obj.pre_run  = ['echo Prerunning cmd from setup phase']
+            obj.post_run = ['echo Postruning cmd from setup phase']
 
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]
@@ -163,12 +163,12 @@ class TestRegressionTest(unittest.TestCase):
         test.setup = custom_setup.__get__(test)
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = ['*']
 
         test.sanity_patterns = sn.all([
-            sn.assert_found(r'^prerun cmd', test.stdout),
+            sn.assert_found(r'^Prerunning cmd from setup phase', test.stdout),
             sn.assert_found(r'Hello, World\!', test.stdout),
-            sn.assert_found(r'^postrun cmd', test.stdout)
+            sn.assert_found(r'^Postruning cmd from setup phase', test.stdout)
         ])
 
         # Force local execution of the test

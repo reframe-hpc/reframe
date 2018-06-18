@@ -969,7 +969,7 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        # Temporary fix for supporting multiple pre/post run steps
+        # FIXME: Temporary fix to support multiple run steps
         self._job._pre_run  += self.pre_run
         self._job._post_run += self.post_run
 
