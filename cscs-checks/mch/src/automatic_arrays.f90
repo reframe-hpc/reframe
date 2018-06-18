@@ -336,11 +336,11 @@ module computation
 end module computation
 
 program AutomaticArrays
-  include 'mpif.h'
   use setup, only: nvec, niter, max_rel_diff
   use computation
   use workarrays, only: allocate_arrays, deallocate_arrays
   implicit none
+  include 'mpif.h'
 
   real*8, allocatable :: a(:), b(:), ref_a(:)
 
