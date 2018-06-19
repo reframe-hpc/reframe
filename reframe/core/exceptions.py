@@ -3,8 +3,10 @@
 #
 
 import inspect
+import os
 import traceback
 import warnings
+import sys
 
 
 class ReframeError(Exception):
@@ -200,11 +202,8 @@ def user_frame(tb):
         raise ValueError('could not retrieve frame: argument not a traceback')
 
     for finfo in reversed(inspect.getinnerframes(tb)):
-        module = inspect.getmodule(finfo.frame)
-        if module is None:
-            continue
-
-        if not module.__name__.startswith('reframe'):
+        relpath = os.path.relpath(finfo.filename, sys.path[0])
+        if relpath.split(os.sep)[0] != 'reframe':
             return finfo
 
     return None
@@ -212,7 +211,8 @@ def user_frame(tb):
 
 def format_exception(exc_type, exc_value, tb):
     def format_user_frame(frame):
-        return '%s:%s: %s\n%s' % (frame.filename, frame.lineno,
+        relpath = os.path.relpath(frame.filename)
+        return '%s:%s: %s\n%s' % (relpath, frame.lineno,
                                   exc_value, ''.join(frame.code_context))
 
     if exc_type is None:
@@ -238,8 +238,8 @@ def format_exception(exc_type, exc_value, tb):
         return 'OS error: %s' % exc_value
 
     frame = user_frame(tb)
-    # if isinstance(exc_value, TypeError) and frame is not None:
-    #     return 'type error: ' + format_user_frame(frame)
+    if isinstance(exc_value, TypeError) and frame is not None:
+        return 'type error: ' + format_user_frame(frame)
 
     if isinstance(exc_value, ValueError) and frame is not None:
         return 'value error: ' + format_user_frame(frame)

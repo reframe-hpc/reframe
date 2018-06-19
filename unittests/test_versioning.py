@@ -47,11 +47,3 @@ class TestVersioning(unittest.TestCase):
         self.assertRaises(ValueError, VersionValidator, '2.0.0>1.0.0')
         self.assertRaises(ValueError, VersionValidator, '=>')
         self.assertRaises(ValueError, VersionValidator, '>1')
-
-    def test_load_invalid_sytax(self):
-        loader = RegressionCheckLoader(['.'], ignore_conflicts=True)
-        invalid_check = ('unittests/resources/checks_unlisted/'
-                         'required_versions.py')
-        loaded_checks = [c.descr for c in loader.load_from_file(invalid_check)]
-        self.assertEqual(loaded_checks, ['Test1Check', 'Test4Check',
-                                         'Test5Check'])

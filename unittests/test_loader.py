@@ -59,10 +59,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
         self.assertRaises(OSError, self.loader.load_from_file,
                           'unittests/resources/checks/foo.py')
 
-    def test_load_invalid_sytax(self):
-        invalid_check = ('unittests/resources/checks_unlisted/'
-                         'invalid_syntax_check.py')
-        with self.assertRaises(SyntaxError) as e:
-            self.loader.load_from_file(invalid_check)
-
-        self.assertEqual(e.exception.filename, invalid_check)
+    def test_load_bad_required_version(self):
+        with self.assertRaises(ValueError):
+            self.loader.load_from_file('unittests/resources/checks_unlisted/'
+                                       'no_required_version.py')
