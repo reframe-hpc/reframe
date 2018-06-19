@@ -12,9 +12,11 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self._pgi_flags = '-acc -ta=tesla:cc60 -Mnorpath'
+            self._cray_variables = {}
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
             self._pgi_flags = '-O2 -ta=tesla,cc35,cuda8.0'
+            self._cray_variables = {'MV2_USE_CUDA': '1'}
 
         self.num_tasks = 1
         self.num_gpus_per_node = 1
@@ -51,6 +53,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         if environ.name.startswith('PrgEnv-cray'):
             environ.fflags = '-O2 -hacc -hnoomp'
             key = 'PrgEnv-cray'
+            self.variables = self._cray_variables
         elif environ.name.startswith('PrgEnv-pgi'):
             environ.fflags = self._pgi_flags
             key = 'PrgEnv-pgi'
