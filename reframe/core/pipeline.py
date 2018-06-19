@@ -1083,9 +1083,9 @@ class RegressionTest:
     def __str__(self):
         return ('%s (found in %s)\n'
                 '        descr: %s\n'
-                '        tags: %s, maintainers: %s' %
+                '        tags: {%s}, maintainers: %s' %
                 (self.name, inspect.getfile(type(self)),
-                 self.descr, self.tags, self.maintainers))
+                 self.descr, ','.join(self.tags), self.maintainers))
 
 
 class RunOnlyRegressionTest(RegressionTest):
