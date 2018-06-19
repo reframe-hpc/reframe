@@ -44,7 +44,16 @@ class AnotherBaseTest(RegressionTest):
         return 'AnotherBaseTest(%s, %s)' % (self.a, self.b)
 
 
+@rfm.required_version('>=2.13-dev1')
 @rfm.simple_test
 class MyTest(MyBaseTest):
     def __init__(self):
         super().__init__(10, 20)
+
+
+# We intentionally have swapped the order of the two decorators here.
+# The order should not play any role.
+@rfm.simple_test
+@rfm.required_version('<=2.12')
+class InvalidTest(MyBaseTest):
+    pass

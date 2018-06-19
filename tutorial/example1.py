@@ -1,7 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-
+@rfm.required_version()
 @rfm.simple_test
 class Example1Test(rfm.RegressionTest):
     def __init__(self):
