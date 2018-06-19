@@ -12,7 +12,7 @@ class CudaCheck(RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
-        self.modules = ['cudatoolkit']
+        self.modules = ['craype-accel-nvidia60']
         self.maintainers = ['AJ', 'VK']
         self.num_gpus_per_node = 1
         self.tags = {'production'}
