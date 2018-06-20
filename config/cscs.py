@@ -382,14 +382,7 @@ class ReframeSettings:
                 'host': 'your-server-here',
                 'port': 12345,
                 'level': 'INFO',
-                'format': (
-                    '%(asctime)s|reframe %(version)s|'
-                    '%(check_info)s|jobid=%(check_jobid)s|'
-                    '%(check_perf_var)s=%(check_perf_value)s|'
-                    'ref=%(check_perf_ref)s '
-                    '(l=%(check_perf_lower_thres)s, '
-                    'u=%(check_perf_upper_thres)s)'
-                ),
+                'format': '%(message)s',
                 'extras': {
                     'facility': 'reframe',
                     'data-version': '1.0',

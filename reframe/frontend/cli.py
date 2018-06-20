@@ -300,11 +300,15 @@ def main():
         logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
             os.path.join(rt.resources.prefix, 'perflogs'))
 
-    try:
-        logging.configure_perflogging(settings.perf_logging_config)
-    except (OSError, ConfigError) as e:
-        sys.stderr.write('could not configure performance logging: %s\n' % e)
-        sys.exit(1)
+    if hasattr(settings, 'perf_logging_config'):
+        try:
+            logging.configure_perflogging(settings.perf_logging_config)
+        except (OSError, ConfigError) as e:
+            printer.error('could not configure performance logging: %s\n' % e)
+            sys.exit(1)
+    else:
+        printer.warning('no performance logging is configured; '
+                        'please check documentation')
 
     # Setup the check loader
     if options.checkpath:
