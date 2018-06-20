@@ -257,19 +257,19 @@ class TestFrontend(unittest.TestCase):
         self.checkpath = []
         returncode, stdout, _ = self._run_reframe()
         num_checks_default = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
 
         self.checkpath = ['checks/']
         self.more_options = ['-R']
         returncode, stdout, _ = self._run_reframe()
         num_checks_in_checkdir = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual(num_checks_in_checkdir, num_checks_default)
 
         self.more_options = []
         returncode, stdout, stderr = self._run_reframe()
         num_checks_in_checkdir = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual('0', num_checks_in_checkdir)
 
     def test_same_output_stage_dir(self):
@@ -317,3 +317,30 @@ class TestFrontend(unittest.TestCase):
         returncode, stdout, _ = self._run_reframe()
         self.assertNotEqual(0, returncode)
         self.assertIn(timefmt, stdout)
+
+    def test_list_empty_prgenvs_check_and_options(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = []
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_check_with_empty_prgenvs(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = ['foo']
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_empty_prgenvs_in_check_and_options(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = []
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
