@@ -88,6 +88,10 @@ class StatisticsError(ReframeError):
     """Raised to denote an error in dealing with statistics."""
 
 
+class BuildSystemError(ReframeError):
+    """Raised when a build system is not configured properly."""
+
+
 class SpawnedProcessError(ReframeError):
     """Raised when a spawned OS command has failed."""
 

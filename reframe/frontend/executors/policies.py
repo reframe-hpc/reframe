@@ -33,6 +33,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
                        sched_options=self.sched_options)
 
             task.compile()
+            task.compile_wait()
             task.run()
             task.wait()
             if not self.skip_sanity_check:
@@ -245,6 +246,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             task.resume()
 
         task.compile()
+        task.compile_wait()
         task.run()
 
     def _reschedule_all(self):

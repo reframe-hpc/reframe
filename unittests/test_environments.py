@@ -166,7 +166,7 @@ class TestEnvironment(unittest.TestCase):
         self.assertTrue(self.environ_other.is_loaded)
 
 
-class TestProgEnvironment(unittest.TestCase):
+class _TestProgEnvironment:
     def setUp(self):
         self.environ_save = renv.EnvironmentSnapshot()
         self.executable = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'hello')

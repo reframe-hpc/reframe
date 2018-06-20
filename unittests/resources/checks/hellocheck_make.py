@@ -17,17 +17,15 @@ class HelloMakeTest(RegressionTest):
         # All available systems are supported
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sourcepath = ''
+        self.build_system = 'Make'
+        self.build_system.cflags = '-O3'
+        self.build_system.cxxflags = '-O3'
+        self.build_system.makefile = 'Makefile.nofort'
         self.executable = './hello_cpp'
         self.keep_files = ['hello_cpp']
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']
-
-    def compile(self):
-        self.current_environ.cflags = '-O3'
-        self.current_environ.cxxflags = '-O3'
-        super().compile(makefile='Makefile.nofort')
 
 
 def _get_checks(**kwargs):

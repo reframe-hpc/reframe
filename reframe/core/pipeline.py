@@ -18,9 +18,11 @@ import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
-from reframe.core.exceptions import PipelineError, SanityError
+from reframe.core.exceptions import (PipelineError, SanityError,
+                                     user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
@@ -122,6 +124,8 @@ class RegressionTest:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
     sourcesdir = fields.StringField('sourcesdir', allow_none=True)
+
+    build_system = BuildSystemField('build_system', allow_none=True)
 
     #: List of shell commands to be executed before compiling.
     #:
@@ -469,6 +473,7 @@ class RegressionTest:
     _current_environ = fields.TypedField('_current_environ', Environment,
                                          allow_none=True)
     _job = fields.TypedField('_job', Job, allow_none=True)
+    _build_job = fields.TypedField('_build_job', Job, allow_none=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -554,7 +559,9 @@ class RegressionTest:
         self._stderr = None
 
         # Compilation process output
+        self._build_job = None
         self._compile_proc = None
+        self.build_system = None
 
         # Performance logging
         self._perf_logger = logging.null_logger
@@ -655,6 +662,16 @@ class RegressionTest:
         :type: :class:`str`.
         """
         return self._stderr
+
+    @property
+    @deferrable
+    def build_stdout(self):
+        return self._build_job.stdout
+
+    @property
+    @deferrable
+    def build_stderr(self):
+        return self._build_job.stderr
 
     def __repr__(self):
         return debug.repr(self)
@@ -909,8 +926,8 @@ class RegressionTest:
 
             if commonpath:
                 self.logger.warn(
-                    "sourcepath (`%s') seems to be a subdirectory of "
-                    "sourcesdir (`%s'), but it will be interpreted "
+                    "sourcepath `%s' seems to be a subdirectory of "
+                    "sourcesdir `%s', but it will be interpreted "
                     "as relative to it." % (self.sourcepath, self.sourcesdir))
 
             if os_ext.is_url(self.sourcesdir):
@@ -930,34 +947,65 @@ class RegressionTest:
 
         staged_sourcepath = os.path.join(self._stagedir, self.sourcepath)
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
+        if os.path.isdir(staged_sourcepath):
+            if not self.build_system:
+                self.build_system = 'Make'
 
-        # Remove source and executable from compile_opts
-        compile_opts.pop('source', None)
-        compile_opts.pop('executable', None)
+            self.build_system.srcdir = self.sourcepath
+        else:
+            if not self.build_system:
+                self.build_system = 'SingleSource'
 
-        # Change working dir to stagedir although absolute paths are used
-        # everywhere in the compilation process. This is done to ensure that
-        # any other files (besides the executable) generated during the the
-        # compilation will remain in the stage directory
+            self.build_system.srcfile = self.sourcepath
+            self.build_system.executable = self.executable
+
+        if compile_opts:
+            user_deprecation_warning(
+                'passing options to the compile() method is deprecated; '
+                'please use a build system.')
+
+            # Remove source and executable from compile_opts
+            compile_opts.pop('source', None)
+            compile_opts.pop('executable', None)
+            try:
+                self.build_system.makefile = compile_opts['makefile']
+                self.build_system.options  = compile_opts['options']
+            except KeyError:
+                pass
+
+        # Prepare build job
+        build_commands = [
+            *self.prebuild_cmd,
+            *self.build_system.emit_build_commands(self._current_environ),
+            *self.postbuild_cmd
+        ]
+        self._build_job = getscheduler('local')(
+            name='rfm_%s_build' % self.name,
+            launcher=getlauncher('local')(),
+            command='\n'.join(build_commands),
+            environs=[self._current_partition.local_env,
+                      self._current_environ],
+            workdir=self._stagedir)
+
         with os_ext.change_dir(self._stagedir):
-            self.prebuild()
-            if os.path.isdir(staged_sourcepath):
-                includedir = staged_sourcepath
-            else:
-                includedir = os.path.dirname(staged_sourcepath)
+            try:
+                self._build_job.prepare(BashScriptBuilder())
+            except OSError as e:
+                raise PipelineError('failed to prepare build job') from e
 
-            self._current_environ.include_search_path.append(includedir)
-            self._compile_proc = self._current_environ.compile(
-                sourcepath=staged_sourcepath,
-                executable=os.path.join(self._stagedir, self.executable),
-                **compile_opts)
-            self.logger.debug('compilation stdout:\n%s' %
-                              self._compile_proc.stdout)
-            self.logger.debug('compilation stderr:\n%s' %
-                              self._compile_proc.stderr)
-            self.postbuild()
+            self._build_job.submit()
 
+    def compile_wait(self):
+        """Wait for compilation phase to finish.
+
+        .. versionadded:: 2.13
+        """
+        self._build_job.wait()
         self.logger.debug('compilation finished')
+
+        # FIXME: this check is not reliable for certain scheduler backends
+        if self._build_job.exitcode != 0:
+            raise PipelineError('compilation failed')
 
     def run(self):
         """The run phase of the regression test pipeline.
@@ -1114,6 +1162,13 @@ class RunOnlyRegressionTest(RegressionTest):
         This is a no-op for this type of test.
         """
 
+    def compile_wait(self):
+        """Wait for compilation phase to finish.
+
+        This is a no-op for this type of test.
+        .. versionadded:: 2.13
+        """
+
     def run(self):
         """The run phase of the regression test pipeline.
 
@@ -1158,22 +1213,14 @@ class CompileOnlyRegressionTest(RegressionTest):
         self._setup_environ(environ)
         self._setup_paths()
 
-    def compile(self, **compile_opts):
-        """The compilation stage of the regression test pipeline.
-
-        The standard output and standard error of this stage will be used as
-        the standard output and error of the test.
-        """
-        super().compile(**compile_opts)
-
+    def compile_wait(self):
         try:
-            with open(self._stdout, 'w') as f:
-                f.write(self._compile_proc.stdout)
-
-            with open(self._stderr, 'w') as f:
-                f.write(self._compile_proc.stderr)
-        except OSError as e:
-            raise PipelineError('could not write stdout/stderr') from e
+            super().compile_wait()
+        except PipelineError:
+            raise
+        finally:
+            self._stdout = self._build_job.stdout
+            self._stderr = self._build_job.stderr
 
     def run(self):
         """The run stage of the regression test pipeline.

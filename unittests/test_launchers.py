@@ -129,8 +129,8 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
         return ('srun '
                 '--job-name=rfm_fake_job '
                 '--time=0:10:0 '
-                '--output=fake_job.out '
-                '--error=fake_job.err '
+                '--output=./fake_job.out '
+                '--error=./fake_job.err '
                 '--ntasks=1 '
                 '--foo '
                 'ls -l')

@@ -410,14 +410,23 @@ class ScopedDictField(AggregateTypeField):
 class DeprecatedField(Field):
     """Field wrapper for deprecating fields."""
 
-    def __init__(self, target_field, message):
+    OP_SET = 1
+    OP_GET = 2
+    OP_ALL = OP_SET | OP_GET
+
+    def __init__(self, target_field, message, op=OP_ALL):
         self._target_field = target_field
         self._message = message
+        self._op = op
 
     def __set__(self, obj, value):
-        user_deprecation_warning(self._message)
+        if self._op & DeprecatedField.OP_SET:
+            user_deprecation_warning(self._message)
+
         self._target_field.__set__(obj, value)
 
     def __get__(self, obj, objtype):
-        user_deprecation_warning(self._message)
+        if self._op & DeprecatedField.OP_GET:
+            user_deprecation_warning(self._message)
+
         return self._target_field.__get__(obj, objtype)

@@ -420,10 +420,45 @@ class TestFields(unittest.TestCase):
         class FieldTester:
             value = fields.DeprecatedField(fields.IntegerField('value'),
                                            'value field is deprecated')
+            _value = fields.IntegerField('value')
+            ro = fields.DeprecatedField(fields.IntegerField('ro'),
+                                        'value field is deprecated',
+                                        fields.DeprecatedField.OP_SET)
+            _ro = fields.IntegerField('ro')
+            wo = fields.DeprecatedField(fields.IntegerField('wo'),
+                                        'value field is deprecated',
+                                        fields.DeprecatedField.OP_GET)
+
+            def __init__(self):
+                self._value = 1
+                self._ro = 2
+                self.wo = 3
 
         tester = FieldTester()
-        self.assertWarns(ReframeDeprecationWarning, exec, 'tester.value = 2',
-                         globals(), locals())
+
+        # Test set operation
+        with self.assertWarns(ReframeDeprecationWarning):
+            tester.value = 2
+
+        with self.assertWarns(ReframeDeprecationWarning):
+            tester.ro = 1
+
+        try:
+            tester.wo = 20
+        except ReframeDeprecationWarning:
+            self.fail('deprecation warning not expected here')
+
+        # Test get operation
+        try:
+            a = tester.ro
+        except ReframeDeprecationWarning:
+            self.fail('deprecation warning not expected here')
+
+        with self.assertWarns(ReframeDeprecationWarning):
+            a = tester.value
+
+        with self.assertWarns(ReframeDeprecationWarning):
+            a = tester.wo
 
     def test_absolute_path_field(self):
         class FieldTester:
