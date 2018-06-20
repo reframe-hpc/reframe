@@ -343,6 +343,9 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
+                'check_perf_upper_thres': None,
+                'username': None,
+                'group': None,
                 'check_tags': None,
                 'version': reframe.VERSION,
             }
@@ -377,6 +380,24 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
+
+        try:
+            import pwd
+            self.extra['username'] = pwd.getpwuid(os.geteuid()).pw_name
+        except:
+            try:
+                import getpass
+                self.extra['username'] = getpass.getuser()
+            except:
+                pass
+
+        try:
+            import grp
+            import pwd
+            gid = pwd.getpwnam(self.extra['username']).pw_gid
+            self.extra['group'] = grp.getgrgid(gid).gr_name
+        except:
+            pass
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, msg=None):
