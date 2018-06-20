@@ -72,6 +72,10 @@ class SystemAutodetectionError(UnknownSystemError):
     """Raised when the host system cannot be auto-detected"""
 
 
+class LoggingError(ReframeError):
+    """Raised when an error related to logging has occurred."""
+
+
 class EnvironError(ReframeError):
     """Raised when an error related to an environment occurs."""
 
