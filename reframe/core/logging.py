@@ -343,7 +343,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
-                'check_perf_upper_thres': None,
                 'username': None,
                 'group': None,
                 'check_tags': None,
