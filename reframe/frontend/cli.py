@@ -6,6 +6,7 @@ import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
@@ -374,12 +375,14 @@ def main():
         )
 
         # Filter checks by prgenv
+        def filter_prgenv(c):
+            if options.prgenv:
+                return util.allx(c.supports_environ(e) for e in options.prgenv)
+            else:
+                return bool(c.valid_prog_environs)
+
         if not options.skip_prgenv_check:
-            checks_matched = filter(
-                lambda c: c if all(c.supports_environ(e)
-                                   for e in options.prgenv) else None,
-                checks_matched
-            )
+            checks_matched = filter(filter_prgenv, checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
