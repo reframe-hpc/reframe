@@ -1039,21 +1039,27 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+            # first check and print all values with references
+            value = {}
             for tag, expr in self.perf_patterns.items():
-                value = evaluate(expr)
+                value[tag] = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 try:
-                    ref, low_thres, high_thres = self.reference[key]
                     self._perf_logger.info(
-                        'value: %s, reference: %s' %
-                        (value, self.reference[key])
+                        '%s, value: %s, reference: %s' %
+                        (tag, value[tag], self.reference[key])
                     )
+                    ref, low_thres, high_thres = self.reference[key]
                 except KeyError:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname)
                     )
-                evaluate(assert_reference(value, ref, low_thres, high_thres))
+            for tag, expr in self.perf_patterns.items():
+                key = '%s:%s' % (self._current_partition.fullname, tag)
+                ref, low_thres, high_thres = self.reference[key]
+                evaluate(assert_reference(value[tag], ref, low_thres,
+                         high_thres))
 
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
