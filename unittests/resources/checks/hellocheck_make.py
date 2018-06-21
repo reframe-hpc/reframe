@@ -18,8 +18,8 @@ class HelloMakeTest(RegressionTest):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.build_system = 'Make'
-        self.build_system.cflags = '-O3'
-        self.build_system.cxxflags = '-O3'
+        self.build_system.cflags = ['-O3']
+        self.build_system.cxxflags = ['-O3']
         self.build_system.makefile = 'Makefile.nofort'
         self.executable = './hello_cpp'
         self.keep_files = ['hello_cpp']

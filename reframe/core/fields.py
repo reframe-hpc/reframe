@@ -287,6 +287,14 @@ class TypedListField(AggregateTypeField):
 
     def __init__(self, fieldname, elemtype, allow_none=False):
         super().__init__(
+            fieldname, (list, elemtype), allow_none)
+
+
+class TypedSequenceField(AggregateTypeField):
+    """Stores a list of objects of the same type"""
+
+    def __init__(self, fieldname, elemtype, allow_none=False):
+        super().__init__(
             fieldname, (collections.abc.Sequence, elemtype), allow_none)
 
 

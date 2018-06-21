@@ -193,8 +193,10 @@ class SingleSource(BuildSystem):
         fflags   = self._fflags(environ)  or []
         ldflags  = self._ldflags(environ) or []
 
-        # Adjust cppflags with the include path
-        cppflags += [*map(lambda d: '-I ' + d, self.include_path)]
+        # Adjust cppflags with the include directories
+        # NOTE: We do not use the += operator on purpose, be cause we don't
+        # want to change the original list passed by the user
+        cppflags = cppflags + [*map(lambda d: '-I ' + d, self.include_path)]
 
         # Generate the executable
         executable = self.executable or self._auto_exec_name()

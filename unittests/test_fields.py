@@ -272,16 +272,31 @@ class TestFields(unittest.TestCase):
 
     def test_typed_list_field(self):
         class FieldTester:
-            field  = fields.TypedListField('field', int)
+            field  = fields.TypedListField('field', str)
 
             def __init__(self, value):
                 self.field = value
 
-        tester = FieldTester([1, 2, 3])
-        self.assertEqual([1, 2, 3], tester.field)
+        tester = FieldTester(['a', 'b', 'c'])
+        self.assertEqual(['a', 'b', 'c'], tester.field)
         self.assertRaises(TypeError, FieldTester, [1, 'foo'])
-        self.assertRaises(TypeError, exec, 'tester.field = 3',
-                          globals(), locals())
+        with self.assertRaises(TypeError):
+            tester.field = 'foo'
+
+    def test_typed_sequence_field(self):
+        class FieldTester:
+            field  = fields.TypedSequenceField('field', str)
+
+            def __init__(self, value):
+                self.field = value
+
+        tester = FieldTester(['a', 'b', 'c'])
+        self.assertEqual(['a', 'b', 'c'], tester.field)
+
+        # strings are valid sequences
+        tester.field = 'foo'
+        self.assertEqual('foo', tester.field)
+        self.assertRaises(TypeError, FieldTester, [1, 'foo'])
 
     def test_typed_set_field(self):
         class FieldTester:

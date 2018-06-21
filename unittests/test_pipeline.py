@@ -201,7 +201,7 @@ class TestRegressionTest(unittest.TestCase):
                                          'unittests/resources/checks')
         test.build_system = 'SingleSource'
         test.build_system.srcfile = 'compiler_warning.c'
-        test.build_system.cflags = '-Wall'
+        test.build_system.cflags = ['-Wall']
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.sanity_patterns = sn.assert_found(r'warning', test.stderr)

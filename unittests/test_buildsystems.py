@@ -28,11 +28,11 @@ class _BuildSystemTest:
         self.build_system.cxx = 'CC'
         self.build_system.ftn = 'ftn'
         self.build_system.nvcc = 'clang'
-        self.build_system.cppflags = '-DFOO'
-        self.build_system.cflags = '-Wall -std=c99 -O3'
-        self.build_system.cxxflags = '-Wall -std=c++11 -O3'
-        self.build_system.fflags = '-Wall -O3'
-        self.build_system.ldflags = '-static'
+        self.build_system.cppflags = ['-DFOO']
+        self.build_system.cflags = ['-Wall', '-std=c99', '-O3']
+        self.build_system.cxxflags = ['-Wall', '-std=c++11', '-O3']
+        self.build_system.fflags = ['-Wall', '-O3']
+        self.build_system.ldflags = ['-static']
         self.build_system.flags_from_environ = False
 
 
@@ -102,10 +102,9 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
         }
 
     def test_emit_from_env(self):
+        self.build_system.include_path = ['foodir/include', 'bardir/include']
+        self.build_system.executable = 'foo.e'
         for lang, comp in self.compilers.items():
-            self.build_system.include_path = [
-                'foodir/include', 'bardir/include']
-            self.build_system.executable = 'foo.e'
             self.build_system.srcfile = self.files[lang]
             if lang == 'CUDA':
                 flags = self.flags['C++']
@@ -135,10 +134,9 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
             'C++': '-Wall -std=c++11 -O3',
             'Fortran': '-Wall -O3',
         }
+        self.build_system.include_path = ['foodir/include', 'bardir/include']
+        self.build_system.executable = 'foo.e'
         for lang, comp in self.compilers.items():
-            self.build_system.include_path = [
-                'foodir/include', 'bardir/include']
-            self.build_system.executable = 'foo.e'
             self.build_system.srcfile = self.files[lang]
             if lang == 'CUDA':
                 flags = self.flags['C++']
