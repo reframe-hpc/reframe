@@ -4,7 +4,7 @@
 
 # ReFrame
 
-ReFrame is a new framework for writing regression tests for HPC systems.
+ReFrame is a framework for writing regression tests for HPC systems.
 The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
 This allows users to write easily portable regression tests, focusing only on the functionality.
 
