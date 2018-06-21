@@ -12,6 +12,7 @@ from datetime import datetime
 
 import reframe
 import reframe.core.debug as debug
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
 
 
@@ -343,8 +344,8 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
-                'username': None,
-                'group': None,
+                'osuser':  os_ext.osuser()  or '<unknown>',
+                'osgroup': os_ext.osgroup() or '<unknown>',
                 'check_tags': None,
                 'version': reframe.VERSION,
             }
@@ -380,24 +381,6 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
 
-        try:
-            import pwd
-            self.extra['username'] = pwd.getpwuid(os.geteuid()).pw_name
-        except:
-            try:
-                import getpass
-                self.extra['username'] = getpass.getuser()
-            except:
-                pass
-
-        try:
-            import grp
-            import pwd
-            gid = pwd.getpwnam(self.extra['username']).pw_gid
-            self.extra['group'] = grp.getgrgid(gid).gr_name
-        except:
-            pass
-
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, msg=None):
 
@@ -408,7 +391,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_perf_lower_thres'] = low_thres
         self.extra['check_perf_upper_thres'] = upper_thres
         if msg is None:
-            msg = 'sent by ' + os.environ['USER']
+            msg = 'sent by ' + self.extra['osuser']
 
         self.log(level, msg)
 
