@@ -2,6 +2,8 @@
 # OS and shell utility functions
 #
 
+import getpass
+import grp
 import os
 import re
 import shlex
@@ -13,7 +15,6 @@ from urllib.parse import urlparse
 
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
-from reframe.core.logging import getlogger
 
 
 def run_command(cmd, check=False, timeout=None, shell=False):
@@ -63,6 +64,9 @@ def run_command_async(cmd,
                       stderr=subprocess.PIPE,
                       shell=False,
                       **popen_args):
+    # Import logger here to avoid unnecessary circular dependencies
+    from reframe.core.logging import getlogger
+
     getlogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
@@ -73,6 +77,28 @@ def run_command_async(cmd,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
+
+
+def osuser():
+    """Return the name of the current OS user.
+
+    If the name cannot be retrieved, :class:`None` will be returned.
+    """
+    try:
+        return getpass.getuser()
+    except BaseException:
+        return None
+
+
+def osgroup():
+    """Return the group name of the current OS user.
+
+    If the name cannot be retrieved, :class:`None` will be returned.
+    """
+    try:
+        return grp.getgrgid(os.getgid()).gr_name
+    except KeyError:
+        return None
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,

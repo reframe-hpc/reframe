@@ -12,6 +12,7 @@ from datetime import datetime
 
 import reframe
 import reframe.core.debug as debug
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
 
 
@@ -343,6 +344,8 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
+                'osuser':  os_ext.osuser()  or '<unknown>',
+                'osgroup': os_ext.osgroup() or '<unknown>',
                 'check_tags': None,
                 'version': reframe.VERSION,
             }
@@ -388,7 +391,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_perf_lower_thres'] = low_thres
         self.extra['check_perf_upper_thres'] = upper_thres
         if msg is None:
-            msg = 'sent by ' + os.environ['USER']
+            msg = 'sent by ' + self.extra['osuser']
 
         self.log(level, msg)
 

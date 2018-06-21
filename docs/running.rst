@@ -567,6 +567,8 @@ All handlers accept the following set of attributes (keys) in their configuratio
   - ``check_stagedir``: The stage directory associated with the currently executing test.
   - ``check_system``: The host system where this test is currently executing.
   - ``check_tags``: The tags associated with this test.
+  - ``osuser``: The name of the OS user running ReFrame.
+  - ``osgroup``: The group name of the OS user running ReFrame.
   - ``version``: The ReFrame version.
 
 * ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
