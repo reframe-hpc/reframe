@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.launchers.registry &mdash; ReFrame 2.12 documentation</title>
+  <title>reframe.core.launchers.registry &mdash; ReFrame 2.13 documentation</title>
   
 
   
@@ -26,8 +26,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../../_static/banner.css" type="text/css" />
     <link rel="author" title="About these documents" href="../../../../about.html" />
@@ -62,7 +61,7 @@
             
             
               <div class="version">
-                2.12
+                2.13
               </div>
             
           
@@ -163,7 +162,6 @@
             
   <h1>Source code for reframe.core.launchers.registry</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
-
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">ConfigError</span>
 
 
@@ -174,18 +172,20 @@
 <div class="viewcode-block" id="register_launcher"><a class="viewcode-back" href="../../../../reference.html#reframe.core.launchers.registry.register_launcher">[docs]</a><span class="k">def</span> <span class="nf">register_launcher</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class decorator for registering new job launchers.</span>
 
+<span class="sd">    .. caution::</span>
+<span class="sd">       This decorator is only relevant to developers of new job launchers.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">       .. versionadded:: 2.8</span>
+
 <span class="sd">    :arg name: The registration name of this launcher</span>
 <span class="sd">    :arg local: :class:`True` if launcher may only submit local jobs,</span>
 <span class="sd">        :class:`False` otherwise.</span>
 <span class="sd">    :raises ValueError: if a job launcher is already registered with</span>
 <span class="sd">        the same name.</span>
-
-<span class="sd">    .. note::</span>
-<span class="sd">       .. versionadded:: 2.8</span>
-
-<span class="sd">       This method is only relevant to developers of new job launchers.</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># See reference.rst for documentation</span>
     <span class="k">def</span> <span class="nf">_register_launcher</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_LAUNCHERS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;a job launcher is already &quot;</span>
@@ -224,15 +224,14 @@
 <span class="sd">    You have to instantiate it explicitly before assigning it to the</span>
 <span class="sd">    :attr:`launcher` attribute of the job.</span>
 
+<span class="sd">    .. note::</span>
+<span class="sd">       .. versionadded:: 2.8</span>
+
 <span class="sd">    :arg name: The name of the launcher to retrieve.</span>
 <span class="sd">    :returns: The class of the launcher requested, which is a subclass of</span>
 <span class="sd">        :class:`reframe.core.launchers.JobLauncher`.</span>
 <span class="sd">    :raises reframe.core.exceptions.ConfigError: if no launcher is</span>
 <span class="sd">        registered with that name.</span>
-
-<span class="sd">    .. note::</span>
-<span class="sd">       .. versionadded:: 2.8</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_LAUNCHERS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
@@ -324,6 +323,8 @@
             <dd><a href="../../../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../../../v2.12-dev0/index.html">v2.12-dev0</a></dd>
             <dd><a href="../../../../../v2.12-dev1/index.html">v2.12-dev1</a></dd>
+            <dd><a href="../../../../../v2.13/index.html">v2.13</a></dd>
+            <dd><a href="../../../../../v2.13-dev0/index.html">v2.13-dev0</a></dd>
             <dd><a href="../../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../../v2.8.1/index.html">v2.8.1</a></dd>
@@ -342,7 +343,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'2.12',
+            VERSION:'2.13',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -356,10 +357,7 @@
 
   
 
-  
-  
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {

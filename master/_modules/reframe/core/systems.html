@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.systems &mdash; ReFrame 2.12 documentation</title>
+  <title>reframe.core.systems &mdash; ReFrame 2.13 documentation</title>
   
 
   
@@ -26,8 +26,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/banner.css" type="text/css" />
     <link rel="author" title="About these documents" href="../../../about.html" />
@@ -62,7 +61,7 @@
             
             
               <div class="version">
-                2.12
+                2.13
               </div>
             
           
@@ -169,7 +168,7 @@
 <div class="viewcode-block" id="SystemPartition"><a class="viewcode-back" href="../../../reference.html#reframe.core.systems.SystemPartition">[docs]</a><span class="k">class</span> <span class="nc">SystemPartition</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A representation of a system partition inside ReFrame.&quot;&quot;&quot;</span>
 
-    <span class="n">_name</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">)</span>
+    <span class="n">_name</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">)</span>
     <span class="n">_descr</span>     <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
     <span class="n">_access</span>    <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_access&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">_environs</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_environs&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">)</span>
@@ -191,24 +190,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_resources</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_jobs</span>  <span class="o">=</span> <span class="n">max_jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_local_env</span> <span class="o">=</span> <span class="n">local_env</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span>    <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># Parent system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">enable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="k">def</span> <span class="nf">disable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active</span> <span class="o">=</span> <span class="kc">False</span>
-
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_access</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">active</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">descr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -317,26 +305,18 @@
 
 <div class="viewcode-block" id="System"><a class="viewcode-back" href="../../../reference.html#reframe.core.systems.System">[docs]</a><span class="k">class</span> <span class="nc">System</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A representation of a system inside ReFrame.&quot;&quot;&quot;</span>
-    <span class="n">_name</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">NonWhitespaceField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">)</span>
+    <span class="n">_name</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">)</span>
     <span class="n">_descr</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
     <span class="n">_hostnames</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_hostnames&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">_partitions</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_partitions&#39;</span><span class="p">,</span> <span class="n">SystemPartition</span><span class="p">)</span>
-    <span class="n">_modules_system</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">AlphanumericField</span><span class="p">(</span><span class="s1">&#39;_modules_system&#39;</span><span class="p">,</span>
-                                               <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_modules_system</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_modules_system&#39;</span><span class="p">,</span>
+                                                <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">prefix</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;prefix&#39;</span><span class="p">)</span>
-    <span class="n">stagedir</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">outputdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;outputdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">logdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;logdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="c1">#: Global resources directory for this system</span>
-    <span class="c1">#:</span>
-    <span class="c1">#: You may use this directory for storing large resource files of your</span>
-    <span class="c1">#: regression tests.</span>
-    <span class="c1">#: See `here &lt;configure.html#system-configuration&gt;`__ on how to configure this.</span>
-    <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`str`</span>
-    <span class="n">resourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;resourcesdir&#39;</span><span class="p">)</span>
+    <span class="n">_prefix</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
+    <span class="n">_stagedir</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_outputdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_outputdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_logdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_logdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_resourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_resourcesdir&#39;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">partitions</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">stagedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -346,15 +326,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_hostnames</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hostnames</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">partitions</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_modules_system</span> <span class="o">=</span> <span class="n">modules_system</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stagedir</span> <span class="o">=</span> <span class="n">stagedir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">outputdir</span> <span class="o">=</span> <span class="n">outputdir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logdir</span> <span class="o">=</span> <span class="n">logdir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">resourcesdir</span> <span class="o">=</span> <span class="n">resourcesdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span> <span class="o">=</span> <span class="n">stagedir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_outputdir</span> <span class="o">=</span> <span class="n">outputdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logdir</span> <span class="o">=</span> <span class="n">logdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resourcesdir</span> <span class="o">=</span> <span class="n">resourcesdir</span>
 
         <span class="c1"># Set parent system for the given partitions</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">partitions</span><span class="p">:</span>
             <span class="n">p</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The name of this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">descr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -363,36 +348,51 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">hostnames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The hostname patterns associated with this system.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hostnames</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">modules_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The modules system name associated with this system.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules_system</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The name of this system.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+    <span class="k">def</span> <span class="nf">prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The ReFrame prefix associated with this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stagedir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The ReFrame stage directory prefix associated with this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">outputdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The ReFrame output directory prefix associated with this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outputdir</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">logdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The ReFrame log directory prefix associated with this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logdir</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resourcesdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Global resources directory for this system.</span>
+
+<span class="sd">        You may use this directory for storing large resource files of your</span>
+<span class="sd">        regression tests.</span>
+<span class="sd">        See `here &lt;configure.html#system-configuration&gt;`__ on how to configure</span>
+<span class="sd">        this.</span>
+
+<span class="sd">        :type: :class:`str`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resourcesdir</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">partitions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get all the active partitions of this system.</span>
-
-<span class="sd">        :returns: a list of :class:`SystemPartition`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">active</span><span class="p">]</span>
-
-<div class="viewcode-block" id="System.partition"><a class="viewcode-back" href="../../../reference.html#reframe.core.systems.System.partition">[docs]</a>    <span class="k">def</span> <span class="nf">partition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get system partition with ``name``.</span>
-
-<span class="sd">        :returns: the requested :class:`SystemPartition`, or :class:`None` if</span>
-<span class="sd">            not found.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">p</span>
-
-        <span class="k">return</span> <span class="kc">None</span></div>
+        <span class="sd">&quot;&quot;&quot;All the system partitions associated with this system.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span>
 
     <span class="k">def</span> <span class="nf">add_partition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">):</span>
         <span class="n">partition</span><span class="o">.</span><span class="n">_system</span> <span class="o">=</span> <span class="bp">self</span>
@@ -493,6 +493,8 @@
             <dd><a href="../../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../../v2.12-dev0/index.html">v2.12-dev0</a></dd>
             <dd><a href="../../../../v2.12-dev1/index.html">v2.12-dev1</a></dd>
+            <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
+            <dd><a href="../../../../v2.13-dev0/index.html">v2.13-dev0</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.8.1/index.html">v2.8.1</a></dd>
@@ -511,7 +513,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.12',
+            VERSION:'2.13',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -525,10 +527,7 @@
 
   
 
-  
-  
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {

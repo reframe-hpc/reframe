@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.12 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.13 documentation</title>
   
 
   
@@ -26,8 +26,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="_static/banner.css" type="text/css" />
     <link rel="author" title="About these documents" href="about.html" />
@@ -64,7 +63,7 @@
             
             
               <div class="version">
-                2.12
+                2.13
               </div>
             
           
@@ -114,8 +113,17 @@
 <li class="toctree-l2"><a class="reference internal" href="#controlling-the-execution-of-regression-tests">Controlling the Execution of Regression Tests</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configuring-reframe-directories">Configuring ReFrame Directories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#configuring-logging">Configuring logging</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#performance-logging">Performance Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuring-logging">Configuring Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#common-log-handler-attributes">Common Log Handler Attributes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#file-log-handlers">File log handlers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#stream-log-handlers">Stream log handlers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-logging">Performance Logging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#file-based-performance-logging">File-based Performance Logging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#performance-logging-using-graylog">Performance Logging Using Graylog</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#asynchronous-execution-of-regression-checks">Asynchronous Execution of Regression Checks</a></li>
@@ -223,44 +231,57 @@ An example listing of checks is the following that lists all the tests found und
 </div>
 <p>The output looks like:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -l
-Reframe version: 2.7
-Launched by user: karakasv
+Reframe version: 2.13-dev0
+Launched by user: USER
 Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
     Check search path : &#39;tutorial/&#39;
-    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-    Output dir prefix : /users/karakasv/Devel/reframe/output/
-    Logging dir       : /users/karakasv/Devel/reframe/logs
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
 List of matched checks
 ======================
-  * example1_check (Simple matrix-vector multiplication example)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example2a_check (Matrix-vector multiplication example with OpenMP)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example2b_check (Matrix-vector multiplication example with OpenMP)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example3_check (Matrix-vector multiplication example with MPI)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example4_check (Matrix-vector multiplication example with OpenACC)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example5_check (Matrix-vector multiplication example with Cuda)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example6_check (Matrix-vector multiplication with L2 norm check)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example7_check (Matrix-vector multiplication example with Cuda)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_serial_check (Serial matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_openmp_check (OpenMP matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_mpi_check (MPI matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_openacc_check (OpenACC matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_cuda_check (Cuda matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
+  * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+        descr: Matrix-vector multiplication example with CUDA
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+        descr: Simple matrix-vector multiplication example
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+        descr: Matrix-vector multiplication example with OpenACC
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: Serial matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: OpenMP matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * MPITest (found in /path/to/reframe/tutorial/example8.py)
+        descr: MPI matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: OpenACC matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: CUDA matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+        descr: Matrix-vector multiplication example with MPI
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+        descr: Matrix-vector multiplication (CUDA performance test)
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+        descr: Matrix-vector multiplication with L2 norm check
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+        descr: Matrix-vector multiplication example with OpenMP
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+        descr: Matrix-vector multiplication example with OpenMP
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 13 check(s).
 </pre></div>
 </div>
@@ -275,53 +296,53 @@ These checks will be just skipped if you try to run them.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">The listing action takes precedence over the execution, meaning that if you specify both <code class="docutils literal"><span class="pre">-l</span> <span class="pre">-r</span></code>, only the listing action will be performed.</p>
 </div>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
 </pre></div>
 </div>
 <p>The output of the regression run looks like the following:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/example1.py -r
-Reframe version: 2.7
-Launched by user: karakasv
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
+Reframe version: 2.13-dev0
+Launched by user: USER
 Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
     Check search path : &#39;tutorial/example1.py&#39;
-    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-    Output dir prefix : /users/karakasv/Devel/reframe/output/
-    Logging dir       : /users/karakasv/Devel/reframe/logs
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
 [==========] Running 1 check(s)
-[==========] Started on Tue Oct 24 18:13:33 2017
+[==========] Started on Sat May 26 00:34:34 2018
 
-[----------] started processing example1_check (Simple matrix-vector multiplication example)
-[ RUN      ] example1_check on daint:mc using PrgEnv-cray
-[       OK ] example1_check on daint:mc using PrgEnv-cray
-[ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-[       OK ] example1_check on daint:mc using PrgEnv-gnu
-[ RUN      ] example1_check on daint:mc using PrgEnv-intel
-[       OK ] example1_check on daint:mc using PrgEnv-intel
-[ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-[       OK ] example1_check on daint:mc using PrgEnv-pgi
-[ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-[       OK ] example1_check on daint:gpu using PrgEnv-cray
-[ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-[       OK ] example1_check on daint:gpu using PrgEnv-gnu
-[ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-[       OK ] example1_check on daint:gpu using PrgEnv-intel
-[ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-[       OK ] example1_check on daint:gpu using PrgEnv-pgi
-[ RUN      ] example1_check on daint:login using PrgEnv-cray
-[       OK ] example1_check on daint:login using PrgEnv-cray
-[ RUN      ] example1_check on daint:login using PrgEnv-gnu
-[       OK ] example1_check on daint:login using PrgEnv-gnu
-[ RUN      ] example1_check on daint:login using PrgEnv-intel
-[       OK ] example1_check on daint:login using PrgEnv-intel
-[ RUN      ] example1_check on daint:login using PrgEnv-pgi
-[       OK ] example1_check on daint:login using PrgEnv-pgi
-[----------] finished processing example1_check (Simple matrix-vector multiplication example)
+[----------] started processing Example1Test (Simple matrix-vector multiplication example)
+[ RUN      ] Example1Test on daint:login using PrgEnv-cray
+[       OK ] Example1Test on daint:login using PrgEnv-cray
+[ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+[       OK ] Example1Test on daint:login using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:login using PrgEnv-intel
+[       OK ] Example1Test on daint:login using PrgEnv-intel
+[ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+[       OK ] Example1Test on daint:login using PrgEnv-pgi
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+[       OK ] Example1Test on daint:gpu using PrgEnv-cray
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+[       OK ] Example1Test on daint:gpu using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+[       OK ] Example1Test on daint:gpu using PrgEnv-intel
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+[       OK ] Example1Test on daint:gpu using PrgEnv-pgi
+[ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+[       OK ] Example1Test on daint:mc using PrgEnv-cray
+[ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+[       OK ] Example1Test on daint:mc using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+[       OK ] Example1Test on daint:mc using PrgEnv-intel
+[ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+[       OK ] Example1Test on daint:mc using PrgEnv-pgi
+[----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
 [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-[==========] Finished on Tue Oct 24 18:15:06 2017
+[==========] Finished on Sat May 26 00:35:39 2018
 </pre></div>
 </div>
 </div>
@@ -353,15 +374,15 @@ The <code class="docutils literal"><span class="pre">-c</span></code>option acce
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/my/new/test.py -r
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<div class="versionadded">
-<p><span class="versionmodified">New in version 2.12.</span></p>
-</div>
-<p class="last">The names of the loaded tests must be unique.
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p>The names of the loaded tests must be unique.
 Trying to load two or more tests with the same name will produce an error.
 You may ignore the error by using the <code class="docutils literal"><span class="pre">--ignore-check-conflicts</span></code> option.
 In this case, any conflicting test will not be loaded and a warning will be issued.</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.12.</span></p>
+</div>
 </div>
 </div>
 <div class="section" id="filtering-of-regression-tests">
@@ -395,66 +416,79 @@ The list of tags associated with a check can be viewed in the listing output whe
 <div class="section" id="selecting-tests-by-name">
 <h3>Selecting tests by name<a class="headerlink" href="#selecting-tests-by-name" title="Permalink to this headline">¶</a></h3>
 <p>It is possible to select or exclude tests by name through the <code class="docutils literal"><span class="pre">--name</span></code> or <code class="docutils literal"><span class="pre">-n</span></code> and <code class="docutils literal"><span class="pre">--exclude</span></code> or <code class="docutils literal"><span class="pre">-x</span></code> options.
-For example, you can select only the <code class="docutils literal"><span class="pre">example7_check</span></code> from the tutorial as follows:</p>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial n example7_check -l
+For example, you can select only the <code class="docutils literal"><span class="pre">Example7Test</span></code> from the tutorial as follows:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial/ -n Example7Test -l
 </pre></div>
 </div>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -n example7_check -l
-Reframe version: 2.7
-Launched by user: karakasv
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
+Reframe version: 2.13-dev0
+Launched by user: USER
 Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
-    Check search path : &#39;tutorial/&#39;
-    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-    Output dir prefix : /users/karakasv/Devel/reframe/output/
-    Logging dir       : /users/karakasv/Devel/reframe/logs
+    Check search path : &#39;tutorial&#39;
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
 List of matched checks
 ======================
-  * example7_check (Matrix-vector multiplication example with Cuda)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
+  * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+        descr: Matrix-vector multiplication (CUDA performance test)
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 1 check(s).
 </pre></div>
 </div>
-<p>Similarly, you can exclude this test by passing the <code class="docutils literal"><span class="pre">-x</span> <span class="pre">example7_check</span></code> option:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -x example7_check -l
-Reframe version: 2.7
-Launched by user: karakasv
+<p>Similarly, you can exclude this test by passing the <code class="docutils literal"><span class="pre">-x</span> <span class="pre">Example7Test</span></code> option:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial -x Example7Test -l
+Reframe version: 2.13-dev0
+Launched by user: USER
 Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
-    Check search path : &#39;tutorial/&#39;
-    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-    Output dir prefix : /users/karakasv/Devel/reframe/output/
-    Logging dir       : /users/karakasv/Devel/reframe/logs
+    Check search path : &#39;tutorial&#39;
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
 List of matched checks
 ======================
-  * example1_check (Simple matrix-vector multiplication example)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example2a_check (Matrix-vector multiplication example with OpenMP)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example2b_check (Matrix-vector multiplication example with OpenMP)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example3_check (Matrix-vector multiplication example with MPI)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example4_check (Matrix-vector multiplication example with OpenACC)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example5_check (Matrix-vector multiplication example with Cuda)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example6_check (Matrix-vector multiplication with L2 norm check)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_serial_check (Serial matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_openmp_check (OpenMP matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_mpi_check (MPI matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_openacc_check (OpenACC matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  * example8_cuda_check (Cuda matrix-vector multiplication)
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
+  * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+        descr: Matrix-vector multiplication example with CUDA
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+        descr: Simple matrix-vector multiplication example
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+        descr: Matrix-vector multiplication example with OpenACC
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: Serial matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: OpenMP matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * MPITest (found in /path/to/reframe/tutorial/example8.py)
+        descr: MPI matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: OpenACC matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+        descr: CUDA matrix-vector multiplication
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+        descr: Matrix-vector multiplication example with MPI
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+        descr: Matrix-vector multiplication with L2 norm check
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+        descr: Matrix-vector multiplication example with OpenMP
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
+  * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+        descr: Matrix-vector multiplication example with OpenMP
+        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 12 check(s).
 </pre></div>
 </div>
@@ -511,7 +545,7 @@ For example, if you know that a tests supports only <code class="docutils litera
 </div>
 <div class="section" id="configuring-reframe-directories">
 <h2>Configuring ReFrame Directories<a class="headerlink" href="#configuring-reframe-directories" title="Permalink to this headline">¶</a></h2>
-<p>ReFrame uses three basic directories during the execution of tests:</p>
+<p>ReFrame uses two basic directories during the execution of tests:</p>
 <ol class="arabic simple">
 <li>The stage directory</li>
 </ol>
@@ -532,20 +566,11 @@ By default these are the standard output, standard error and the generated job s
 A regression test may also specify to keep additional files.</li>
 </ul>
 </div></blockquote>
-<ol class="arabic simple" start="3">
-<li>The log directory</li>
-</ol>
-<blockquote>
-<div><ul class="simple">
-<li>This is where the performance log files of the individual performance tests are placed (see <a class="reference external" href="#logging">Logging</a> for more information)</li>
-</ul>
-</div></blockquote>
-<p>By default, all these directories are placed under a common prefix, which defaults to <code class="docutils literal"><span class="pre">.</span></code>.
+<p>By default, these directories are placed under a common prefix, which defaults to <code class="docutils literal"><span class="pre">.</span></code>.
 The rest of the directories are organized as follows:</p>
 <ul class="simple">
 <li>Stage directory: <code class="docutils literal"><span class="pre">${prefix}/stage/&lt;timestamp&gt;</span></code></li>
 <li>Output directory: <code class="docutils literal"><span class="pre">${prefix}/output/&lt;timestamp&gt;</span></code></li>
-<li>Performance log directory: <code class="docutils literal"><span class="pre">${prefix}/logs</span></code></li>
 </ul>
 <p>You can optionally append a timestamp directory component to the above paths (except the logs directory), by using the <code class="docutils literal"><span class="pre">--timestamp</span></code> option.
 This options takes an optional argument to specify the timestamp format.
@@ -555,25 +580,24 @@ The default <a class="reference external" href="http://man7.org/linux/man-pages/
 <li><code class="docutils literal"><span class="pre">--prefix</span> <span class="pre">DIR</span></code>: set prefix to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">--output</span> <span class="pre">DIR</span></code>: set output directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">--stage</span> <span class="pre">DIR</span></code>: set stage directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
-<li><code class="docutils literal"><span class="pre">--logdir</span> <span class="pre">DIR</span></code>: set performance log directory to <code class="docutils literal"><span class="pre">DIR</span></code>.</li>
 </ul>
 <p>The stage and output directories are created only when you run a regression test.
 However you can view the directories that will be created even when you do a listing of the available checks with the <code class="docutils literal"><span class="pre">-l</span></code> option.
 This is useful if you want to check the directories that ReFrame will create.</p>
-<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --prefix /foo -l
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
 </pre></div>
 </div>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe --prefix /foo -t foo -l
-Reframe version: 2.7
-Launched by user: karakasv
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
+Reframe version: 2.13-dev0
+Launched by user: USER
 Launched on host: daint103
 Reframe paths
 =============
-    Check prefix      : /users/karakasv/Devel/reframe
+    Check prefix      : /path/to/reframe
 (R) Check search path : &#39;checks/&#39;
-    Stage dir prefix  : /foo/stage/
-    Output dir prefix : /foo/output/
-    Logging dir       : /foo/logs
+    Stage dir prefix     : /foo/stage/
+    Output dir prefix    : /foo/output/
+    Perf. logging prefix : /Users/karakasv/Repositories/reframe/logs
 List of matched checks
 ======================
 Found 0 check(s).
@@ -591,130 +615,300 @@ ReFrame creates two files inside the current working directory every time it is 
 <li><code class="docutils literal"><span class="pre">reframe.log</span></code>: This file stores more detailed of information on ReFrame’s actions.</li>
 </ul>
 <p>By default, the output in <code class="docutils literal"><span class="pre">reframe.log</span></code> looks like the following:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>[2018-03-01T20:03:13] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
-[2018-03-01T20:03:13] debug: example7_check: entering stage: setup
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading environment for the current partition
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show daint-gpu
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load daint-gpu
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading test&#39;s environment
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show cudatoolkit
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load cudatoolkit
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up paths
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up the job descriptor
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: job scheduler backend: local
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up performance logging
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: compile
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: copying /users/karakasv/Devel/reframe/tutorial/src to stage directory (/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv
--cray)
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: symlinking files: []
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: Staged sourcepath: /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
-[2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: nvcc  -O3 -I/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray /users/karakasv/Devel/reframe/s
-tage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu -o /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/./example7_check
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stdout:
+<div class="highlight-none"><div class="highlight"><pre><span></span>2018-05-26T00:30:39] info: reframe: [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
+[2018-05-26T00:30:39] debug: Example7Test: entering stage: setup
+[2018-05-26T00:30:39] debug: Example7Test: loading environment for the current partition
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show daint-gpu
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load daint-gpu
+[2018-05-26T00:30:39] debug: Example7Test: loading test&#39;s environment
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show PrgEnv-cray
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python unload PrgEnv-gnu
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load PrgEnv-cray
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show cudatoolkit
+[2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load cudatoolkit
+[2018-05-26T00:30:39] debug: Example7Test: setting up paths
+[2018-05-26T00:30:40] debug: Example7Test: setting up the job descriptor
+[2018-05-26T00:30:40] debug: Example7Test: job scheduler backend: local
+[2018-05-26T00:30:40] debug: Example7Test: setting up performance logging
+[2018-05-26T00:30:40] debug: Example7Test: entering stage: compile
+[2018-05-26T00:30:40] debug: Example7Test: copying /path/to/reframe/tutorial/src to stage directory (/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray)
+[2018-05-26T00:30:40] debug: Example7Test: symlinking files: []
+[2018-05-26T00:30:40] debug: Example7Test: Staged sourcepath: /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
+[2018-05-26T00:30:40] debug: Example7Test: executing OS command: nvcc  -O3 -I/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/e
+xample_matrix_vector_multiplication_cuda.cu -o /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/./Example7Test
+[2018-05-26T00:30:40] debug: Example7Test: compilation stdout:
 
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stderr:
+[2018-05-26T00:30:40] debug: Example7Test: compilation stderr:
 nvcc warning : The &#39;compute_20&#39;, &#39;sm_20&#39;, and &#39;sm_21&#39; architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation finished
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: run
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: sbatch /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example7_check_daint_gpu_PrgEnv-cray
-.sh
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: spawned job (jobid=6224537)
-[2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: wait
+[2018-05-26T00:30:40] debug: Example7Test: compilation finished
+[2018-05-26T00:30:40] debug: Example7Test: entering stage: run
+[2018-05-26T00:30:40] debug: Example7Test: executing OS command: sbatch /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/Example7Test_daint_gpu_PrgEnv-cray.sh
+[2018-05-26T00:30:40] debug: Example7Test: spawned job (jobid=746641)
+[2018-05-26T00:30:40] debug: Example7Test: entering stage: wait
+[2018-05-26T00:30:40] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+[2018-05-26T00:30:40] debug: Example7Test: job state not matched (stdout follows)
+JobID|State|ExitCode
+
+[2018-05-26T00:30:41] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+[2018-05-26T00:30:44] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+[2018-05-26T00:30:47] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+[2018-05-26T00:30:47] debug: Example7Test: spawned job finished
+[2018-05-26T00:30:47] debug: Example7Test: entering stage: sanity
+[2018-05-26T00:30:47] debug: Example7Test: entering stage: performance
+[2018-05-26T00:30:47] debug: Example7Test: entering stage: cleanup
+[2018-05-26T00:30:47] debug: Example7Test: copying interesting files to output directory
+[2018-05-26T00:30:47] debug: Example7Test: removing stage directory
+[2018-05-26T00:30:47] info: reframe: [       OK ] Example7Test on daint:gpu using PrgEnv-cray
 </pre></div>
 </div>
 <p>Each line starts with a timestamp, the level of the message (<code class="docutils literal"><span class="pre">info</span></code>, <code class="docutils literal"><span class="pre">debug</span></code> etc.), the context in which the framework is currently executing (either <code class="docutils literal"><span class="pre">reframe</span></code> or the name of the current test and, finally, the actual message.</p>
 <p>Every time ReFrame is run, both <code class="docutils literal"><span class="pre">reframe.out</span></code> and <code class="docutils literal"><span class="pre">reframe.log</span></code> files will be rewritten.
 However, you can ask ReFrame to copy them to the output directory before exiting by passing it the <code class="docutils literal"><span class="pre">--save-log-files</span></code> option.</p>
 <div class="section" id="configuring-logging">
-<h3>Configuring logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
+<h3>Configuring Logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
 <p>You can configure several aspects of logging in ReFrame and even how the output will look like.
 ReFrame’s logging mechanism is built upon Python’s <a class="reference external" href="https://docs.python.org/3.6/library/logging.html">logging</a> framework adding extra logging levels and more formatting capabilities.</p>
-<p>Logging in ReFrame is configured by the <code class="docutils literal"><span class="pre">_logging_config</span></code> variable in the <code class="docutils literal"><span class="pre">reframe/settings.py</span></code> file.
+<p>Logging in ReFrame is configured by the <code class="docutils literal"><span class="pre">logging_config</span></code> variable in the <code class="docutils literal"><span class="pre">reframe/settings.py</span></code> file.
 The default configuration looks as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">_logging_config</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">logging_config</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;reframe.log&#39;</span> <span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(levelname)s</span><span class="s1">: &#39;</span>
-                          <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;append&#39;</span>    <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+    <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;file&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;reframe.log&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;[</span><span class="si">%(asctime)s</span><span class="s1">] </span><span class="si">%(levelname)s</span><span class="s1">: &#39;</span>
+                      <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">},</span>
 
         <span class="c1"># Output handling</span>
-        <span class="s1">&#39;&amp;1&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;stream&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;stdout&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span>
         <span class="p">},</span>
-        <span class="s1">&#39;reframe.out&#39;</span> <span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;level&#39;</span>     <span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;format&#39;</span>    <span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;append&#39;</span>    <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;file&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;reframe.out&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">}</span>
-    <span class="p">}</span>
+    <span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>Note that this configuration dictionary is not the same as the one used by Python’s logging framework.
 It is a simplified version adapted to the needs of ReFrame.</p>
-<p>The <code class="docutils literal"><span class="pre">_logging_config</span></code> dictionary has two main key entries:</p>
+<p>The <code class="docutils literal"><span class="pre">logging_config</span></code> dictionary has two main key entries:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'INFO'</span></code>): This is the lowest level of messages that will be passed down to the different log record handlers.
+<li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'INFO'</span></code>):
+This is the lowest level of messages that will be passed down to the different log record handlers.
 Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
 ReFrame defines the following logging levels with a decreasing severity: <code class="docutils literal"><span class="pre">CRITICAL</span></code>, <code class="docutils literal"><span class="pre">ERROR</span></code>, <code class="docutils literal"><span class="pre">WARNING</span></code>, <code class="docutils literal"><span class="pre">INFO</span></code>, <code class="docutils literal"><span class="pre">VERBOSE</span></code> and <code class="docutils literal"><span class="pre">DEBUG</span></code>.
 Note that the level name is <em>not</em> case sensitive in ReFrame.</li>
-<li><code class="docutils literal"><span class="pre">handlers</span></code>: A dictionary defining the properties of the handlers that are attached to ReFrame’s logging mechanism.
-The key is either a filename or a special character combination denoting standard output (<code class="docutils literal"><span class="pre">&amp;1</span></code>) or standard error (<code class="docutils literal"><span class="pre">&amp;2</span></code>).
+<li><code class="docutils literal"><span class="pre">handlers</span></code>:
+A list of log record handlers that are attached to ReFrame’s logging mechanism.
 You can attach as many handlers as you like.
-The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.</li>
+For example, by default ReFrame uses three handlers: (a) a handler that logs debug information into <code class="docutils literal"><span class="pre">reframe.log</span></code>, (b) a handler that controls the actual output of the framework to the standart output, which does not print any debug messages, and (c) a handler that writes the same output to a file <code class="docutils literal"><span class="pre">reframe.out</span></code>.</li>
 </ul>
-<p>The configurable properties of a log record handler are the following:</p>
+<p>Each handler is configured by another dictionary that holds its properties as string key/value pairs.
+For standard ReFrame logging there are currently two types of handlers, which recognize different properties.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>New syntax for handlers is introduced.
+The old syntax is still valid, but users are advised to update their logging configuration to the new syntax.</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.13.</span></p>
+</div>
+</div>
+<div class="section" id="common-log-handler-attributes">
+<h4>Common Log Handler Attributes<a class="headerlink" href="#common-log-handler-attributes" title="Permalink to this headline">¶</a></h4>
+<p>All handlers accept the following set of attributes (keys) in their configuration:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">level</span></code> (default: <code class="docutils literal"><span class="pre">'debug'</span></code>): The lowest level of log records that this handler can process.</li>
+<li><code class="docutils literal"><span class="pre">type</span></code>: (required) the type of the handler.
+There are two types of handlers used for standard logging in ReFrame<ol class="arabic">
+<li><code class="docutils literal"><span class="pre">file</span></code>: a handler that writes log records in file.</li>
+<li><code class="docutils literal"><span class="pre">stream</span></code>: a handler that writes log records in a file stream.</li>
+</ol>
+</li>
+<li><code class="docutils literal"><span class="pre">level</span></code>: (default: <code class="docutils literal"><span class="pre">DEBUG</span></code>) The lowest level of log records that this handler can process.</li>
 <li><code class="docutils literal"><span class="pre">format</span></code> (default: <code class="docutils literal"><span class="pre">'%(message)s'</span></code>): Format string for the printout of the log record.
 ReFrame supports all the <a class="reference external" href="https://docs.python.org/3.6/library/logging.html#logrecord-attributes">format strings</a> from Python’s logging library and provides the following additional ones:<ul>
-<li><code class="docutils literal"><span class="pre">check_name</span></code>: Prints the name of the regression test on behalf of which ReFrame is currently executing.
-If ReFrame is not in the context of regression test, <code class="docutils literal"><span class="pre">reframe</span></code> will be printed.</li>
-<li><code class="docutils literal"><span class="pre">check_jobid</span></code>: Prints the job or process id of the job or process associated with currently executing regression test.
-If a job or process is not yet created, <code class="docutils literal"><span class="pre">-1</span></code> will be printed.</li>
+<li><code class="docutils literal"><span class="pre">check_environ</span></code>: The programming environment a test is currently executing for.</li>
 <li><code class="docutils literal"><span class="pre">check_info</span></code>: Print live information of the currently executing check.
 By default this field has the form <code class="docutils literal"><span class="pre">&lt;check_name&gt;</span> <span class="pre">on</span> <span class="pre">&lt;current_partition&gt;</span> <span class="pre">using</span> <span class="pre">&lt;current_environment&gt;</span></code>.
-It can be configured on a per test basis by overriding the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.info" title="reframe.core.pipeline.RegressionTest.info"><code class="xref py py-func docutils literal"><span class="pre">info</span></code></a> method in your regression test.</li>
+It can be configured on a per test basis by overriding the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.info" title="reframe.core.pipeline.RegressionTest.info"><code class="xref py py-func docutils literal"><span class="pre">info</span></code></a> method of a specific regression test.</li>
+<li><code class="docutils literal"><span class="pre">check_jobid</span></code>: Prints the job or process id of the job or process associated with the currently executing regression test.
+If a job or process is not yet created, <code class="docutils literal"><span class="pre">-1</span></code> will be printed.</li>
+<li><code class="docutils literal"><span class="pre">check_name</span></code>: Prints the name of the regression test on behalf of which ReFrame is currently executing.
+If ReFrame is not in the context of regression test, <code class="docutils literal"><span class="pre">reframe</span></code> will be printed.</li>
+<li><code class="docutils literal"><span class="pre">check_outputdir</span></code>: The output directory associated with the currently executing test.</li>
+<li><code class="docutils literal"><span class="pre">check_partition</span></code>: The system partition where this test is currently executing.</li>
+<li><code class="docutils literal"><span class="pre">check_stagedir</span></code>: The stage directory associated with the currently executing test.</li>
+<li><code class="docutils literal"><span class="pre">check_system</span></code>: The host system where this test is currently executing.</li>
+<li><code class="docutils literal"><span class="pre">check_tags</span></code>: The tags associated with this test.</li>
+<li><code class="docutils literal"><span class="pre">osuser</span></code>: The name of the OS user running ReFrame.</li>
+<li><code class="docutils literal"><span class="pre">osgroup</span></code>: The group name of the OS user running ReFrame.</li>
+<li><code class="docutils literal"><span class="pre">version</span></code>: The ReFrame version.</li>
 </ul>
 </li>
 <li><code class="docutils literal"><span class="pre">datefmt</span></code> (default: <code class="docutils literal"><span class="pre">'%FT%T'</span></code>) The format that will be used for outputting timestamps (i.e., the <code class="docutils literal"><span class="pre">%(asctime)s</span></code> field).
 Acceptable formats must conform to standard library’s <a class="reference external" href="https://docs.python.org/3.6/library/time.html#time.strftime">time.strftime()</a> function.</li>
-<li><code class="docutils literal"><span class="pre">append</span></code> (default: <code class="xref py py-class docutils literal"><span class="pre">False</span></code>) Controls whether ReFrame should append to this file or not.
-This is ignored for the standard output/error handlers.</li>
-<li><code class="docutils literal"><span class="pre">timestamp</span></code> (default: <code class="xref py py-class docutils literal"><span class="pre">None</span></code>): Append a timestamp to this log filename.
-This property may accept any date format as the <code class="docutils literal"><span class="pre">datefmt</span></code> property.
-If set for a <code class="docutils literal"><span class="pre">filename.log</span></code> handler entry, the resulting log file name will be <code class="docutils literal"><span class="pre">filename_&lt;timestamp&gt;.log</span></code>.
-This property is ignored for the standard output/error handlers.</li>
 </ul>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
+<div class="admonition caution">
+<p class="first admonition-title">Caution</p>
+<p>The <code class="docutils literal"><span class="pre">testcase_name</span></code> logging attribute is replaced with the <code class="docutils literal"><span class="pre">check_info</span></code>, which is now also configurable</p>
 <div class="last versionchanged">
-<p><span class="versionmodified">Changed in version 2.10: </span>The <code class="docutils literal"><span class="pre">testcase_name</span></code> logging attribute was replaced with the <code class="docutils literal"><span class="pre">check_info</span></code>, which is now also configurable</p>
+<p><span class="versionmodified">Changed in version 2.10.</span></p>
 </div>
+</div>
+</div>
+<div class="section" id="file-log-handlers">
+<h4>File log handlers<a class="headerlink" href="#file-log-handlers" title="Permalink to this headline">¶</a></h4>
+<p>In addition to the common log handler attributes, file log handlers accept the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">name</span></code>: (required) The name of the file where log records will be written.</li>
+<li><code class="docutils literal"><span class="pre">append</span></code> (default: <code class="xref py py-class docutils literal"><span class="pre">False</span></code>) Controls whether ReFrame should append to this file or not.</li>
+<li><code class="docutils literal"><span class="pre">timestamp</span></code> (default: <code class="xref py py-class docutils literal"><span class="pre">None</span></code>): Append a timestamp to this log filename.
+This property may accept any date format that is accepted also by the <code class="docutils literal"><span class="pre">datefmt</span></code> property.
+If the name of the file is <code class="docutils literal"><span class="pre">filename.log</span></code> and this attribute is set to <code class="docutils literal"><span class="pre">True</span></code>, the resulting log file name will be <code class="docutils literal"><span class="pre">filename_&lt;timestamp&gt;.log</span></code>.</li>
+</ul>
+</div>
+<div class="section" id="stream-log-handlers">
+<h4>Stream log handlers<a class="headerlink" href="#stream-log-handlers" title="Permalink to this headline">¶</a></h4>
+<p>In addition to the common log handler attributes, file log handlers accept the following:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">name</span></code>: (default <code class="docutils literal"><span class="pre">stdout</span></code>) The symbolic name of the log stream to use.
+Available values: <code class="docutils literal"><span class="pre">stdout</span></code> for standard output and <code class="docutils literal"><span class="pre">stderr</span></code> for standard error.</li>
+</ul>
 </div>
 </div>
 <div class="section" id="performance-logging">
 <h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
-<p>ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
-For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame’s <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test’s performance is recorded.
-The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(check_info)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
-Currently, it is not possible for users to configure performance logging.</p>
-<p>The resulting log file looks like the following:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>[2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-pgi (jobid=6224525): value: 49.637615, reference: (50.0, -0.1, 0.1)
-[2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-cray (jobid=6224523): value: 49.931819, reference: (50.0, -0.1, 0.1)
-[2018-03-01T20:01:21] reframe 2.10: example7_check on daint:gpu using PrgEnv-gnu (jobid=6224524): value: 49.428855, reference: (50.0, -0.1, 0.1)
+<p>ReFrame supports an additional logging facility for recording performance values, in order to be able to keep historical performance data.
+This is configured by the <code class="docutils literal"><span class="pre">perf_logging_config</span></code> variables, whose syntax is the same as for the <code class="docutils literal"><span class="pre">logging_config</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">perf_logging_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;filelog&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="si">%(check_system)s</span><span class="s1">/</span><span class="si">%(check_partition)s</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">|reframe </span><span class="si">%(version)s</span><span class="s1">|&#39;</span>
+                <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1">|jobid=</span><span class="si">%(check_jobid)s</span><span class="s1">|&#39;</span>
+                <span class="s1">&#39;</span><span class="si">%(check_perf_var)s</span><span class="s1">=</span><span class="si">%(check_perf_value)s</span><span class="s1">|&#39;</span>
+                <span class="s1">&#39;ref=</span><span class="si">%(check_perf_ref)s</span><span class="s1"> &#39;</span>
+                <span class="s1">&#39;(l=</span><span class="si">%(check_perf_lower_thres)s</span><span class="s1">, &#39;</span>
+                <span class="s1">&#39;u=</span><span class="si">%(check_perf_upper_thres)s</span><span class="s1">)&#39;</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Performance logging introduces two new log record handlers, specifically designed for this purpose.</p>
+<div class="section" id="file-based-performance-logging">
+<h4>File-based Performance Logging<a class="headerlink" href="#file-based-performance-logging" title="Permalink to this headline">¶</a></h4>
+<p>The type of this handler is <code class="docutils literal"><span class="pre">filelog</span></code> and logs the performance of a regression test in one or more files.
+The attributes of this handler are the following:</p>
+<ul>
+<li><p class="first"><code class="docutils literal"><span class="pre">prefix</span></code>: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
+This attribute accepts any of the check-specific formatting placeholders described <a class="reference external" href="#common-log-handler-attributes">above</a>.
+This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
+This dynamic prefix is appended to the “global” performance log directory prefix, configurable through the <code class="docutils literal"><span class="pre">--perflogdir</span></code> option.
+The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>{PERFLOG_PREFIX}/
+   system1/
+       partition1/
+           test_name.log
+       partition2/
+           test_name.log
+       ...
+   system2/
+   ...
+</pre></div>
+</div>
+<p>A log file, named after the test’s name, is generated in different directories, which are themselves named after the system and partition names that this test has run on.
+The <code class="docutils literal"><span class="pre">PERFLOG_PREFIX</span></code> will have the value of <code class="docutils literal"><span class="pre">--perflogdir</span></code> option, if specified, otherwise it will default to <code class="docutils literal"><span class="pre">{REFRAME_PREFIX}/perflogs</span></code>.
+You can always check its value by looking into the paths printed by ReFrame at the beginning of its output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./reframe.py --prefix=/foo --system=generic -l
+Reframe version: 2.13-dev0
+Launched by user: USER
+Launched on host: HOSTNAME
+Reframe paths
+=============
+    Check prefix      : /Users/karakasv/Repositories/reframe
+(R) Check search path : &#39;checks/&#39;
+    Stage dir prefix     : /foo/stage/
+    Output dir prefix    : /foo/output/
+    Perf. logging prefix : /foo/perflogs
+List of matched checks
+======================
+Found 0 check(s).
+</pre></div>
+</div>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">format</span></code>: The syntax of this attribute is the same as of the standard logging facility, except that it adds a couple more performance-specific formatting placeholders:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">check_perf_lower_thres</span></code>: The lower threshold of the difference from the reference value expressed as a fraction of the reference.</li>
+<li><code class="docutils literal"><span class="pre">check_perf_upper_thres</span></code>: The upper threshold of the difference from the reference value expressed as a fraction of the reference.</li>
+<li><code class="docutils literal"><span class="pre">check_perf_ref</span></code>: The reference performance value of a certain performance variable.</li>
+<li><code class="docutils literal"><span class="pre">check_perf_value</span></code>: The performance value obtained by this test for a certain performance variable.</li>
+<li><code class="docutils literal"><span class="pre">check_perf_var</span></code>: The name of the <a class="reference external" href="tutorial.html#writing-a-performance-test">performance variable</a>, whose value is logged.</li>
+</ul>
+</li>
+</ul>
+<p>Using the default performance log format, the resulting log entries look like the following:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-gnu|jobid=749667|perf=49.152408|ref=50.0 (l=-0.1, u=0.1)
+2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-pgi|jobid=749668|perf=48.930356|ref=50.0 (l=-0.1, u=0.1)
+2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-cray|jobid=749666|perf=48.914735|ref=50.0 (l=-0.1, u=0.1)
 </pre></div>
 </div>
 <p>The interpretation of the performance values depends on the individual tests.
-The above output is from the CUDA performance test we presented in the <a class="reference external" href="tutorial.html#writing-a-performance-test">tutorial</a>, so the value refers to the achieved Gflop/s.
-The reference value is a three-element tuple of the form <code class="docutils literal"><span class="pre">(&lt;reference&gt;,</span> <span class="pre">&lt;lower-threshold&gt;,</span> <span class="pre">&lt;upper-threshold&gt;)</span></code>, where the <code class="docutils literal"><span class="pre">lower-threshold</span></code> and <code class="docutils literal"><span class="pre">upper-threshold</span></code> are the acceptable tolerance thresholds expressed in percentages.
-For example, the performance check shown above has a reference value of 50 Gflop/s ± 10%.</p>
+The above output is from the CUDA performance test we presented in the <a class="reference external" href="tutorial.html#writing-a-performance-test">tutorial</a>, so the value refers to the achieved Gflop/s.</p>
+</div>
+<div class="section" id="performance-logging-using-graylog">
+<h4>Performance Logging Using Graylog<a class="headerlink" href="#performance-logging-using-graylog" title="Permalink to this headline">¶</a></h4>
+<p>The type of this handler is <code class="docutils literal"><span class="pre">graylog</span></code> and it logs performance data to a <a class="reference external" href="https://www.graylog.org/">Graylog</a> server.
+Graylog is a distributed enterprise log management service.
+An example configuration of such a handler is the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;graylog&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;host&#39;</span><span class="p">:</span> <span class="s1">&#39;my.graylog.server&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="mi">12345</span><span class="p">,</span>
+    <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;INFO&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1">|reframe </span><span class="si">%(version)s</span><span class="s1">|&#39;</span>
+        <span class="s1">&#39;</span><span class="si">%(check_info)s</span><span class="s1">|jobid=</span><span class="si">%(check_jobid)s</span><span class="s1">|&#39;</span>
+        <span class="s1">&#39;</span><span class="si">%(check_perf_var)s</span><span class="s1">=</span><span class="si">%(check_perf_value)s</span><span class="s1">|&#39;</span>
+        <span class="s1">&#39;ref=</span><span class="si">%(check_perf_ref)s</span><span class="s1"> &#39;</span>
+        <span class="s1">&#39;(l=</span><span class="si">%(check_perf_lower_thres)s</span><span class="s1">, &#39;</span>
+        <span class="s1">&#39;u=</span><span class="si">%(check_perf_upper_thres)s</span><span class="s1">)&#39;</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;extras&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;facility&#39;</span><span class="p">:</span> <span class="s1">&#39;reframe&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">},</span>
+</pre></div>
+</div>
+<p>This handler introduces three new attributes:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">host</span></code>: (required) The Graylog server that accepts the log messages.</li>
+<li><code class="docutils literal"><span class="pre">port</span></code>: (required) The port where the Graylog server accepts connections.</li>
+<li><code class="docutils literal"><span class="pre">extras</span></code>: (optional) A set of optional user attributes to be passed with each log record to the server.
+These may depend on the server configuration.</li>
+</ul>
+<p>This log handler uses internally <a class="reference external" href="https://pypi.org/project/pygelf/">pygelf</a>, so this Python module must be available, otherwise this log handler will be ignored.
+<a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html">GELF</a> is a format specification for log messages that are sent over the network.
+The ReFrame’s <code class="docutils literal"><span class="pre">graylog</span></code> handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
+More details on this log format may be found <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification">here</a></p>
+</div>
 </div>
 </div>
 <div class="section" id="asynchronous-execution-of-regression-checks">
@@ -729,68 +923,80 @@ As soon as the concurrency limit of a partition is reached, ReFrame will hold th
 <p>When executing in asynchronous mode, ReFrame’s output differs from the sequential execution.
 The final result of the tests will be printed at the end and additional messages may be printed to indicate that a test is held.
 Here is an example output of ReFrame using asynchronous execution policy:</p>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./reframe.py -c tutorial/ --exec-policy=async -r
-Reframe version: 2.7
-Launched by user: karakasv
-Launched on host: daint104
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
+Reframe version: 2.13-dev0
+Launched by user: USER
+Launched on host: daint103
 Reframe paths
 =============
     Check prefix      :
     Check search path : &#39;tutorial/&#39;
-    Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-    Output dir prefix : /users/karakasv/Devel/reframe/output/
-    Logging dir       : /users/karakasv/Devel/reframe/logs
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
 [==========] Running 13 check(s)
-[==========] Started on Sun Nov  5 19:37:09 2017
+[==========] Started on Sat May 26 00:48:03 2018
 
-[----------] started processing example1_check (Simple matrix-vector multiplication example)
-[ RUN      ] example1_check on daint:login using PrgEnv-cray
-[ RUN      ] example1_check on daint:login using PrgEnv-gnu
-[ RUN      ] example1_check on daint:login using PrgEnv-intel
-[ RUN      ] example1_check on daint:login using PrgEnv-pgi
-[ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-[ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-[ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-[ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-[ RUN      ] example1_check on daint:mc using PrgEnv-cray
-[ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-[ RUN      ] example1_check on daint:mc using PrgEnv-intel
-[ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-[----------] finished processing example1_check (Simple matrix-vector multiplication example)
+[----------] started processing Example1Test (Simple matrix-vector multiplication example)
+[ RUN      ] Example1Test on daint:login using PrgEnv-cray
+[ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:login using PrgEnv-intel
+[ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+[ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+[ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+[ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+[ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+[ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+[----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
-...
+[----------] started processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+[ RUN      ] Example2aTest on daint:login using PrgEnv-cray
+[ RUN      ] Example2aTest on daint:login using PrgEnv-gnu
+[ RUN      ] Example2aTest on daint:login using PrgEnv-intel
+[ RUN      ] Example2aTest on daint:login using PrgEnv-pgi
+[ RUN      ] Example2aTest on daint:gpu using PrgEnv-cray
+[ RUN      ] Example2aTest on daint:gpu using PrgEnv-gnu
+[ RUN      ] Example2aTest on daint:gpu using PrgEnv-intel
+[ RUN      ] Example2aTest on daint:gpu using PrgEnv-pgi
+[ RUN      ] Example2aTest on daint:mc using PrgEnv-cray
+[ RUN      ] Example2aTest on daint:mc using PrgEnv-gnu
+[ RUN      ] Example2aTest on daint:mc using PrgEnv-intel
+[ RUN      ] Example2aTest on daint:mc using PrgEnv-pgi
+[----------] finished processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+&lt;output omitted&gt;
+[----------] waiting for spawned checks to finish
+[       OK ] MPITest on daint:gpu using PrgEnv-pgi
+[       OK ] MPITest on daint:gpu using PrgEnv-gnu
+[       OK ] OpenMPTest on daint:mc using PrgEnv-pgi
+[       OK ] OpenMPTest on daint:mc using PrgEnv-gnu
+[       OK ] OpenMPTest on daint:gpu using PrgEnv-pgi
+[       OK ] OpenMPTest on daint:gpu using PrgEnv-gnu
+&lt;output omitted&gt;
+[       OK ] Example1Test on daint:login using PrgEnv-cray
+[       OK ] MPITest on daint:mc using PrgEnv-cray
+[       OK ] MPITest on daint:gpu using PrgEnv-cray
+[       OK ] OpenMPTest on daint:mc using PrgEnv-cray
+[       OK ] OpenMPTest on daint:gpu using PrgEnv-cray
+[       OK ] SerialTest on daint:login using PrgEnv-pgi
+[       OK ] MPITest on daint:mc using PrgEnv-gnu
+[       OK ] OpenMPTest on daint:mc using PrgEnv-intel
+[       OK ] OpenMPTest on daint:login using PrgEnv-gnu
+[       OK ] OpenMPTest on daint:gpu using PrgEnv-intel
+[       OK ] MPITest on daint:gpu using PrgEnv-intel
+[       OK ] CudaTest on daint:gpu using PrgEnv-gnu
+[       OK ] OpenACCTest on daint:gpu using PrgEnv-pgi
+[       OK ] MPITest on daint:mc using PrgEnv-intel
+[       OK ] CudaTest on daint:gpu using PrgEnv-cray
+[       OK ] MPITest on daint:mc using PrgEnv-pgi
+[       OK ] OpenACCTest on daint:gpu using PrgEnv-cray
+[       OK ] CudaTest on daint:gpu using PrgEnv-pgi
+[----------] all spawned checks have finished
 
-[----------] started processing example8_cuda_check (Cuda matrix-vector multiplication)
-[   SKIP   ] skipping daint:login
-[ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-cray
-[ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-[   SKIP   ] skipping PrgEnv-intel for daint:gpu
-[ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-[   SKIP   ] skipping daint:mc
-[----------] finished processing example8_cuda_check (Cuda matrix-vector multiplication)
-
-[----------] waiting for spawned checks
-[       OK ] example1_check on daint:login using PrgEnv-cray
-[       OK ] example1_check on daint:login using PrgEnv-gnu
-[       OK ] example1_check on daint:login using PrgEnv-intel
-[       OK ] example1_check on daint:login using PrgEnv-pgi
-[       OK ] example1_check on daint:gpu using PrgEnv-cray
-[       OK ] example1_check on daint:gpu using PrgEnv-gnu
-[       OK ] example1_check on daint:gpu using PrgEnv-intel
-[       OK ] example1_check on daint:gpu using PrgEnv-pgi
-[       OK ] example1_check on daint:mc using PrgEnv-cray
-[       OK ] example1_check on daint:mc using PrgEnv-gnu
-[       OK ] example1_check on daint:mc using PrgEnv-intel
-[       OK ] example1_check on daint:mc using PrgEnv-pgi
-...
-[       OK ] example8_openacc_check on daint:gpu using PrgEnv-cray
-[       OK ] example8_openacc_check on daint:gpu using PrgEnv-pgi
-[       OK ] example8_cuda_check on daint:gpu using PrgEnv-cray
-[       OK ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-[       OK ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-[----------] all spawned checks finished
-[  PASSED  ] Ran 97 test case(s) from 13 check(s) (0 failure(s))
-[==========] Finished on Sun Nov  5 19:42:23 2017
+[  PASSED  ] Ran 101 test case(s) from 13 check(s) (0 failure(s))
+[==========] Finished on Sat May 26 00:52:02 2018
 </pre></div>
 </div>
 <p>The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
@@ -847,7 +1053,7 @@ foobar: cudatoolkit
 </div>
 <p>If you now try to run a test that loads the module <cite>cudatoolkit</cite>, the following error will be yielded:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>------------------------------------------------------------------------------
-FAILURE INFO for example7_check
+FAILURE INFO for Example7Test
   * System partition: daint:gpu
   * Environment: PrgEnv-gnu
   * Stage directory: None
@@ -950,6 +1156,8 @@ FAILURE INFO for example7_check
             <dd><a href="../v2.12/running.html">v2.12</a></dd>
             <dd><a href="../v2.12-dev0/running.html">v2.12-dev0</a></dd>
             <dd><a href="../v2.12-dev1/running.html">v2.12-dev1</a></dd>
+            <dd><a href="../v2.13/running.html">v2.13</a></dd>
+            <dd><a href="../v2.13-dev0/running.html">v2.13-dev0</a></dd>
             <dd><a href="../v2.7/running.html">v2.7</a></dd>
             <dd><a href="../v2.8/running.html">v2.8</a></dd>
             <dd><a href="../v2.8.1/running.html">v2.8.1</a></dd>
@@ -968,7 +1176,7 @@ FAILURE INFO for example7_check
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.12',
+            VERSION:'2.13',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -982,10 +1190,7 @@ FAILURE INFO for example7_check
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.12 documentation</title>
+  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.13 documentation</title>
   
 
   
@@ -26,8 +26,7 @@
 
   
 
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
   <link rel="stylesheet" href="_static/banner.css" type="text/css" />
     <link rel="author" title="About these documents" href="about.html" />
@@ -64,7 +63,7 @@
             
             
               <div class="version">
-                2.12
+                2.13
               </div>
             
           
@@ -96,7 +95,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuring ReFrame For Your Site</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-configuration-file">The Configuration File</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#system-configuration">System Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#partition-configuration">Partition Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#partition-configuration">Partition Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#supported-scheduler-backends">Supported scheduler backends</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-parallel-launchers">Supported parallel launchers</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#environments-configuration">Environments Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#system-auto-detection">System Auto-Detection</a></li>
 </ul>
@@ -262,8 +265,13 @@ The valid attributes of a system are the following:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">descr</span></code>: A detailed description of the system (default is the system name).</li>
 <li><code class="docutils literal"><span class="pre">hostnames</span></code>: This is a list of hostname patterns that will be used by ReFrame when it tries to <a class="reference external" href="#system-auto-detection">auto-detect</a> the current system (default <code class="docutils literal"><span class="pre">[]</span></code>).</li>
-<li><code class="docutils literal"><span class="pre">modules_system</span></code>: The modules system that should be used for loading environment modules on this system.
-The only available modules system backend is currently <code class="docutils literal"><span class="pre">tmod</span></code>, which corresponds to the <a class="reference external" href="http://modules.sourceforge.net/">TCL implementation</a> of the environment modules (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">modules_system</span></code>: The modules system that should be used for loading environment modules on this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).
+Three types of modules systems are currently supported:<ul>
+<li><code class="docutils literal"><span class="pre">tmod</span></code>: The classic Tcl implementation of the <a class="reference external" href="https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/">environment modules</a>.</li>
+<li><code class="docutils literal"><span class="pre">tmod4</span></code>: The version 4 of the Tcl implementation of the <a class="reference external" href="http://modules.sourceforge.net/">environment modules</a>.</li>
+<li><code class="docutils literal"><span class="pre">lmod</span></code>: The Lua implementation of the <a class="reference external" href="https://lmod.readthedocs.io/en/latest/">environment modules</a>.</li>
+</ul>
+</li>
 <li><code class="docutils literal"><span class="pre">prefix</span></code>: Default regression prefix for this system (default <code class="docutils literal"><span class="pre">.</span></code>).</li>
 <li><code class="docutils literal"><span class="pre">stagedir</span></code>: Default stage directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
 <li><code class="docutils literal"><span class="pre">outputdir</span></code>: Default output directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
@@ -292,31 +300,8 @@ The available partition attributes are the following:</p>
 <li><p class="first"><code class="docutils literal"><span class="pre">descr</span></code>: A detailed description of the partition (default is the partition name).</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">scheduler</span></code>: The job scheduler and parallel program launcher combination that is used on this partition to launch jobs.
-The syntax of this attribute is <code class="docutils literal"><span class="pre">&lt;scheduler&gt;+&lt;launcher&gt;</span></code>. The available values for the job scheduler are the following:</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">slurm</span></code>: Jobs on this partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>.
-This scheduler relies on job accounting (<code class="docutils literal"><span class="pre">sacct</span></code> command) in order to reliably query the job status.</li>
-<li><code class="docutils literal"><span class="pre">squeue</span></code>: Jobs on this partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>, but no job accounting is required.
-The job status is obtained using the <code class="docutils literal"><span class="pre">squeue</span></code> command.
-This scheduler is less reliable than the one based on the <code class="docutils literal"><span class="pre">sacct</span></code> command, but the framework does its best to query the job state as reliably as possible.</li>
-<li><code class="docutils literal"><span class="pre">local</span></code>: Jobs on this partition will be launched locally as OS processes.</li>
-</ul>
-<p>The available values for the parallel program launchers are the following:</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">srun</span></code>: Programs on this partition will be launched using a bare <code class="docutils literal"><span class="pre">srun</span></code> command <em>without</em> any job allocation options passed to it.
-This launcher may only be used with the <code class="docutils literal"><span class="pre">slurm</span></code> scheduler.</li>
-<li><code class="docutils literal"><span class="pre">srunalloc</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">srun</span></code> command <em>with</em> job allocation options passed automatically to it.
-This launcher may also be used with the <code class="docutils literal"><span class="pre">local</span></code> scheduler.</li>
-<li><code class="docutils literal"><span class="pre">alps</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">aprun</span></code> command.</li>
-<li><code class="docutils literal"><span class="pre">mpirun</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">mpirun</span></code> command.</li>
-<li><code class="docutils literal"><span class="pre">mpiexec</span></code>: Programs on this partition will be launched using the <code class="docutils literal"><span class="pre">mpiexec</span></code> command.</li>
-<li><code class="docutils literal"><span class="pre">local</span></code>: Programs on this partition will be launched as-is without using any parallel program launcher.</li>
-</ul>
-<p>There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">nativeslurm</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">slurm+srun</span></code>.</li>
-<li><code class="docutils literal"><span class="pre">local</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">local+local</span></code>.</li>
-</ul>
+The syntax of this attribute is <code class="docutils literal"><span class="pre">&lt;scheduler&gt;+&lt;launcher&gt;</span></code>.
+A list of the supported <a class="reference external" href="#supported-scheduler-backends">schedulers</a> and <a class="reference external" href="#supported-parallel-launchers">parallel launchers</a> can be found at the end of this section.</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">access</span></code>: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default <code class="docutils literal"><span class="pre">[]</span></code>).</p>
 </li>
@@ -383,22 +368,51 @@ One could then define DataWarp related resources as follows:</p>
 </ul>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
+<p class="last">For the <a class="reference external" href="#supported-scheduler-backends">PBS</a> backend, options accepted in the <code class="docutils literal"><span class="pre">access</span></code> and <code class="docutils literal"><span class="pre">resources</span></code> attributes may either refer to actual <code class="docutils literal"><span class="pre">qsub</span></code> options or be just resources specifications to be passed to the <code class="docutils literal"><span class="pre">-l</span> <span class="pre">select</span></code> option.
+The backend assumes a <code class="docutils literal"><span class="pre">qsub</span></code> option, if the options passed in these attributes start with a <code class="docutils literal"><span class="pre">-</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
 <div class="last versionchanged">
 <p><span class="versionmodified">Changed in version 2.8: </span>A new syntax for the <code class="docutils literal"><span class="pre">scheduler</span></code> values was introduced as well as more parallel program launchers.
-The old values for the <code class="docutils literal"><span class="pre">scheduler</span></code> key will continue to be supported.</p>
-</div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<div class="last versionadded">
-<p><span class="versionmodified">New in version 2.8.1: </span>The <code class="docutils literal"><span class="pre">squeue</span></code> backend scheduler was added.</p>
-</div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<div class="last versionchanged">
+  The old values for the <code class="docutils literal"><span class="pre">scheduler</span></code> key will continue to be supported.</p>
+<div class="versionchanged">
 <p><span class="versionmodified">Changed in version 2.9: </span>Better support for custom job resources.</p>
 </div>
+</div>
+</div>
+<div class="section" id="supported-scheduler-backends">
+<h3>Supported scheduler backends<a class="headerlink" href="#supported-scheduler-backends" title="Permalink to this headline">¶</a></h3>
+<p>ReFrame supports the following job schedulers:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">slurm</span></code>: Jobs on the configured partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>.
+This scheduler relies on job accounting (<code class="docutils literal"><span class="pre">sacct</span></code> command) in order to reliably query the job status.</li>
+<li><code class="docutils literal"><span class="pre">squeue</span></code>: <em>[new in 2.8.1]</em>
+Jobs on the configured partition will be launched using <a class="reference external" href="https://www.schedmd.com/">Slurm</a>, but no job accounting is required.
+The job status is obtained using the <code class="docutils literal"><span class="pre">squeue</span></code> command.
+This scheduler is less reliable than the one based on the <code class="docutils literal"><span class="pre">sacct</span></code> command, but the framework does its best to query the job state as reliably as possible.</li>
+<li><code class="docutils literal"><span class="pre">pbs</span></code>: <em>[new in 2.13]</em> Jobs on the configured partition will be launched using a <a class="reference external" href="https://en.wikipedia.org/wiki/Portable_Batch_System">PBS-based</a> scheduler.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: Jobs on the configured partition will be launched locally as OS processes.</li>
+</ul>
+</div>
+<div class="section" id="supported-parallel-launchers">
+<h3>Supported parallel launchers<a class="headerlink" href="#supported-parallel-launchers" title="Permalink to this headline">¶</a></h3>
+<p>ReFrame supports the following parallel job launchers:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">srun</span></code>: Programs on the configured partition will be launched using a bare <code class="docutils literal"><span class="pre">srun</span></code> command <em>without</em> any job allocation options passed to it.
+This launcher may only be used with the <code class="docutils literal"><span class="pre">slurm</span></code> scheduler.</li>
+<li><code class="docutils literal"><span class="pre">srunalloc</span></code>: Programs on the configured partition will be launched using the <code class="docutils literal"><span class="pre">srun</span></code> command <em>with</em> job allocation options passed automatically to it.
+This launcher may also be used with the <code class="docutils literal"><span class="pre">local</span></code> scheduler.</li>
+<li><code class="docutils literal"><span class="pre">alps</span></code>: Programs on the configured partition will be launched using the <code class="docutils literal"><span class="pre">aprun</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">mpirun</span></code>: Programs on the configured partition will be launched using the <code class="docutils literal"><span class="pre">mpirun</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">mpiexec</span></code>: Programs on the configured partition will be launched using the <code class="docutils literal"><span class="pre">mpiexec</span></code> command.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: Programs on the configured partition will be launched as-is without using any parallel program launcher.</li>
+</ul>
+<p>There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">nativeslurm</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">slurm+srun</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">local</span></code>: This is equivalent to <code class="docutils literal"><span class="pre">local+local</span></code>.</li>
+</ul>
 </div>
 </div>
 <div class="section" id="environments-configuration">
@@ -549,6 +563,8 @@ You can override completely the auto-detection process by specifying a system or
             <dd><a href="v2.12/configure.html">v2.12</a></dd>
             <dd><a href="v2.12-dev0/configure.html">v2.12-dev0</a></dd>
             <dd><a href="v2.12-dev1/configure.html">v2.12-dev1</a></dd>
+            <dd><a href="v2.13/configure.html">v2.13</a></dd>
+            <dd><a href="v2.13-dev0/configure.html">v2.13-dev0</a></dd>
             <dd><a href="v2.7/configure.html">v2.7</a></dd>
             <dd><a href="v2.8/configure.html">v2.8</a></dd>
             <dd><a href="v2.8.1/configure.html">v2.8.1</a></dd>
@@ -567,7 +583,7 @@ You can override completely the auto-detection process by specifying a system or
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.12',
+            VERSION:'2.13',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
@@ -581,10 +597,7 @@ You can override completely the auto-detection process by specifying a system or
 
   
 
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
