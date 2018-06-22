@@ -6,7 +6,7 @@ with open('README.md') as read_me:
     long_description = ''.join(read_me.readlines()[2:])
 
 setuptools.setup(
-    name='ReFrame',
+    name='ReFrame-HPC',
     version=VERSION,
     author='CSCS Swiss National Supercomputing Center',
     description='ReFrame is a new framework for writing regression tests '
