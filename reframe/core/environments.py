@@ -1,7 +1,8 @@
+import collections
 import errno
+import itertools
 import os
 
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, SpawnedProcessError,
@@ -23,7 +24,8 @@ class Environment:
     def __init__(self, name, modules=[], variables={}, **kwargs):
         self._name = name
         self._modules = list(modules)
-        self._variables = dict(variables)
+        self._variables = collections.OrderedDict()
+        self._variables.update(variables)
         self._loaded = False
         self._saved_variables = {}
         self._conflicted = []
@@ -115,23 +117,36 @@ class Environment:
 
         self._loaded = False
 
-    def emit_load_instructions(self, builder):
-        for stmt in self._load_stmts:
-            builder.verbatim(stmt)
+    def emit_load_commands(self):
+        rt = runtime()
+        if self.is_loaded:
+            ret = self._load_stmts
+        else:
+            ret = list(
+                itertools.chain(*(rt.modules_system.emit_load_commands(m)
+                                  for m in self.modules))
+            )
 
         for k, v in self._variables.items():
-            builder.set_variable(k, v, export=True)
+            ret.append('export %s=%s' % (k, v))
 
-    # FIXME: Does not correspond to the actual process in unload()
-    def emit_unload_instructions(self, builder):
-        for k, v in self._variables.items():
-            builder.unset_variable(k)
+        return ret
 
-        for m in self._modules:
-            builder.verbatim('module unload %s' % m)
+    def emit_unload_commands(self):
+        rt = runtime()
+        ret = []
+        for var in self._variables.keys():
+            ret.append('unset %s' % var)
 
-        for m in self._conflicted:
-            builder.verbatim('module load %s' % m)
+        ret += list(
+            itertools.chain(*(rt.modules_system.emit_unload_commands(m)
+                              for m in reversed(self._modules)))
+        )
+        ret += list(
+            itertools.chain(*(rt.modules_system.emit_load_commands(m)
+                              for m in self._conflicted))
+        )
+        return ret
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -140,9 +155,6 @@ class Environment:
         return (self._name == other._name and
                 set(self._modules) == set(other._modules) and
                 self._variables == other._variables)
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def __str__(self):
         ret = "{0}(name='{1}', modules={2}, variables={3})"
@@ -320,15 +332,15 @@ class ProgEnvironment(Environment):
                  ldflags=None,
                  **kwargs):
         super().__init__(name, modules, variables)
-        self._cc  = cc
+        self._cc = cc
         self._cxx = cxx
         self._ftn = ftn
         self._nvcc = nvcc
         self._cppflags = cppflags
-        self._cflags   = cflags
+        self._cflags = cflags
         self._cxxflags = cxxflags
-        self._fflags   = fflags
-        self._ldflags  = ldflags
+        self._fflags = fflags
+        self._ldflags = ldflags
         self._include_search_path = []
         self._propagate = True
 

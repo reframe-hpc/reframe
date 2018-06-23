@@ -16,6 +16,7 @@ import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.core.shell as shell
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
@@ -26,7 +27,6 @@ from reframe.core.exceptions import (PipelineError, SanityError,
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.shell import BashScriptBuilder
 from reframe.core.systems import SystemPartition
 from reframe.utility.sanity import assert_reference
 
@@ -647,7 +647,7 @@ class RegressionTest:
 
         :type: :class:`str`.
         """
-        return self._stdout
+        return self._job.stdout
 
     @property
     @deferrable
@@ -661,7 +661,7 @@ class RegressionTest:
 
         :type: :class:`str`.
         """
-        return self._stderr
+        return self._job.stderr
 
     @property
     @deferrable
@@ -762,19 +762,13 @@ class RegressionTest:
         self.logger.debug('setting up paths')
         try:
             self._stagedir = rt.runtime().resources.make_stagedir(
-                self._current_partition.name,
-                self.name,
-                self._current_environ.name)
-
+                self.current_system.name, self._current_partition.name,
+                self._current_environ.name, self.name)
             self.outputdir = rt.runtime().resources.make_outputdir(
-                self._current_partition.name,
-                self.name,
-                self._current_environ.name)
+                self.current_system.name, self._current_partition.name,
+                self._current_environ.name, self.name)
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
-
-        self._stdout = os.path.join(self._stagedir, '%s.out' % self.name)
-        self._stderr = os.path.join(self._stagedir, '%s.err' % self.name)
 
     def _setup_job(self, **job_opts):
         """Setup the job related to this check."""
@@ -799,20 +793,9 @@ class RegressionTest:
             scheduler_type = self._current_partition.scheduler
             launcher_type  = self._current_partition.launcher
 
-        job_name = '%s_%s_%s_%s' % (self.name,
-                                    self.current_system.name,
-                                    self._current_partition.name,
-                                    self._current_environ.name)
-        job_script_filename = os.path.join(self._stagedir, job_name + '.sh')
-
         self._job = scheduler_type(
-            name=job_name,
-            command=' '.join([self.executable] + self.executable_opts),
+            name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
-            environs=[
-                self._current_partition.local_env,
-                self._current_environ
-            ],
             workdir=self._stagedir,
             num_tasks=self.num_tasks,
             num_tasks_per_node=self.num_tasks_per_node,
@@ -821,9 +804,6 @@ class RegressionTest:
             num_cpus_per_task=self.num_cpus_per_task,
             use_smt=self.use_multithreading,
             time_limit=self.time_limit,
-            script_filename=job_script_filename,
-            stdout=self._stdout,
-            stderr=self._stderr,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -895,16 +875,6 @@ class RegressionTest:
         self.logger.debug('cloning URL %s to stage directory (%s)' %
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
-
-    def prebuild(self):
-        for cmd in self.prebuild_cmd:
-            self.logger.debug('executing prebuild commands')
-            os_ext.run_command(cmd, check=True, shell=True)
-
-    def postbuild(self):
-        for cmd in self.postbuild_cmd:
-            self.logger.debug('executing postbuild commands')
-            os_ext.run_command(cmd, check=True, shell=True)
 
     def compile(self, **compile_opts):
         """The compilation phase of the regression test pipeline.
@@ -979,17 +949,16 @@ class RegressionTest:
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
+        environs = [self._current_partition.local_env, self._current_environ]
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
             launcher=getlauncher('local')(),
-            command='\n'.join(build_commands),
-            environs=[self._current_partition.local_env,
-                      self._current_environ],
             workdir=self._stagedir)
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._build_job.prepare(BashScriptBuilder())
+                self._build_job.prepare(build_commands, environs,
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1016,12 +985,13 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        # FIXME: Temporary fix to support multiple run steps
-        self._job._pre_run  += self.pre_run
-        self._job._post_run += self.post_run
+        exec_cmd = [self.job.launcher.run_command(self.job),
+                    self.executable, *self.executable_opts]
+        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        environs = [self._current_partition.local_env, self._current_environ]
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(BashScriptBuilder(login=True))
+                self._job.prepare(commands, environs, login=True)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
@@ -1103,18 +1073,28 @@ class RegressionTest:
                     )
                 evaluate(assert_reference(value, ref, low_thres, high_thres))
 
+    def _copy_job_files(self, job, dst):
+        if job is None:
+            return
+
+        stdout = os.path.join(self._stagedir, job.stdout)
+        stderr = os.path.join(self._stagedir, job.stderr)
+        script = os.path.join(self._stagedir, job.script_filename)
+        shutil.copy(stdout, dst)
+        shutil.copy(stderr, dst)
+        shutil.copy(script, dst)
+
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
         self.logger.debug('copying interesting files to output directory')
-        shutil.copy(self._stdout, self.outputdir)
-        shutil.copy(self._stderr, self.outputdir)
-        if self._job:
-            shutil.copy(self._job.script_filename, self.outputdir)
+        self._copy_job_files(self._job, self.outputdir)
+        self._copy_job_files(self._build_job, self.outputdir)
 
         # Copy files specified by the user
         for f in self.keep_files:
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
+
             shutil.copy(f, self.outputdir)
 
     def cleanup(self, remove_files=False, unload_env=True):
@@ -1213,14 +1193,15 @@ class CompileOnlyRegressionTest(RegressionTest):
         self._setup_environ(environ)
         self._setup_paths()
 
-    def compile_wait(self):
-        try:
-            super().compile_wait()
-        except PipelineError:
-            raise
-        finally:
-            self._stdout = self._build_job.stdout
-            self._stderr = self._build_job.stderr
+    @property
+    @deferrable
+    def stdout(self):
+        return self._build_job.stdout
+
+    @property
+    @deferrable
+    def stderr(self):
+        return self._build_job.stderr
 
     def run(self):
         """The run stage of the regression test pipeline.

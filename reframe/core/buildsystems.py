@@ -156,8 +156,6 @@ class Make(BuildSystem):
         if self.options:
             cmd_parts += self.options
 
-        # Cause script to exit immediately if compilation fails
-        cmd_parts += ['|| exit 1']
         return [' '.join(cmd_parts)]
 
 
@@ -236,8 +234,6 @@ class SingleSource(BuildSystem):
             BuildSystemError('could not guess language of file: %s' %
                              self.srcfile)
 
-        # Cause script to exit immediately if compilation fails
-        cmd_parts += ['|| exit 1']
         return [' '.join(cmd_parts)]
 
     def _guess_language(self, filename):

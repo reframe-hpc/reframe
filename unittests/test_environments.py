@@ -165,68 +165,76 @@ class TestEnvironment(unittest.TestCase):
         self.assertFalse(self.environ.is_loaded)
         self.assertTrue(self.environ_other.is_loaded)
 
+    @fixtures.switch_to_user_runtime
+    def test_emit_load_commands(self):
+        self.setup_modules_system()
+        rt = runtime()
+        expected_commands = [
+            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            'export _fookey1=value3',
+            'export _fookey2=value2',
+            'export _fookey3b=$_fookey1b',
+            'export _fookey4b=${_fookey2b}',
+        ]
+        self.assertEqual(expected_commands, self.environ.emit_load_commands())
 
-class _TestProgEnvironment:
-    def setUp(self):
-        self.environ_save = renv.EnvironmentSnapshot()
-        self.executable = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'hello')
+    @fixtures.switch_to_user_runtime
+    def test_emit_load_commands_with_confict(self):
+        self.setup_modules_system()
 
-    def tearDown(self):
-        # Remove generated executable ingoring file-not-found errors
-        os_ext.force_remove_file(self.executable)
-        self.environ_save.load()
+        # Load a conflicting module
+        self.modules_system.load_module('testmod_bar')
 
-    def assertHelloMessage(self, executable=None):
-        if not executable:
-            executable = self.executable
+        # When the environment is not loaded, the conflicting module does not
+        # make a difference
+        self.test_emit_load_commands()
 
-        self.assertTrue(os_ext.grep_command_output(cmd=executable,
-                                                   pattern='Hello, World\!'))
-        os_ext.force_remove_file(executable)
+        self.environ.load()
+        rt = runtime()
+        expected_commands = [
+            rt.modules_system.emit_unload_commands('testmod_bar')[0],
+            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            'export _fookey1=value3',
+            'export _fookey2=value2',
+            'export _fookey3b=$_fookey1b',
+            'export _fookey4b=${_fookey2b}',
+        ]
+        self.assertEqual(expected_commands, self.environ.emit_load_commands())
 
-    def compile_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'src')
-        env.cxxflags = '-O2'
-        env.load()
-        env.compile(sourcepath=os.path.join(srcdir, 'hello.c'),
-                    executable=self.executable)
-        self.assertHelloMessage()
+    @fixtures.switch_to_user_runtime
+    def test_emit_unload_commands(self):
+        self.setup_modules_system()
+        rt = runtime()
+        expected_commands = [
+            'unset _fookey1',
+            'unset _fookey2',
+            'unset _fookey3b',
+            'unset _fookey4b',
+            rt.modules_system.emit_unload_commands('testmod_foo')[0],
+        ]
+        self.assertEqual(expected_commands,
+                         self.environ.emit_unload_commands())
 
-        env.compile(sourcepath=os.path.join(srcdir, 'hello.cpp'),
-                    executable=self.executable)
-        self.assertHelloMessage()
+    @fixtures.switch_to_user_runtime
+    def test_emit_unload_commands_with_confict(self):
+        self.setup_modules_system()
 
-        if not skip_fortran:
-            env.compile(sourcepath=os.path.join(srcdir, 'hello.f90'),
-                        executable=self.executable)
-            self.assertHelloMessage()
+        # Load a conflicting module
+        self.modules_system.load_module('testmod_bar')
 
-        env.unload()
+        # When the environment is not loaded, the conflicting module does not
+        # make a difference
+        self.test_emit_unload_commands()
 
-    def compile_dir_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES_CHECKS, 'src')
-        env.cxxflags = '-O3'
-        env.load()
-
-        executables = ['hello_c', 'hello_cpp']
-        if skip_fortran:
-            env.compile(srcdir, makefile='Makefile.nofort')
-        else:
-            env.compile(srcdir)
-            executables.append('hello_fort')
-
-        for e in executables:
-            self.assertHelloMessage(os.path.join(srcdir, e))
-
-        env.compile(sourcepath=srcdir, options='clean')
-        env.unload()
-
-    def test_compile(self):
-        # Compile a 'Hello, World' with the builtin gcc/g++
-        env = renv.ProgEnvironment(name='builtin-gcc',
-                                   cc='gcc', cxx='g++', ftn=None)
-        try:
-            self.compile_with_env(env, skip_fortran=True)
-            self.compile_dir_with_env(env, skip_fortran=True)
-        except CompilationError as e:
-            self.fail("Compilation failed\n")
+        self.environ.load()
+        rt = runtime()
+        expected_commands = [
+            'unset _fookey1',
+            'unset _fookey2',
+            'unset _fookey3b',
+            'unset _fookey4b',
+            rt.modules_system.emit_unload_commands('testmod_foo')[0],
+            rt.modules_system.emit_load_commands('testmod_bar')[0],
+        ]
+        self.assertEqual(expected_commands,
+                         self.environ.emit_unload_commands())

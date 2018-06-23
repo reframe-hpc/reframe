@@ -49,7 +49,7 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
             "make -f Makefile_foo -C foodir -j 32 CC='gcc' CXX='g++' "
             "FC='gfortran' NVCC='nvcc' CPPFLAGS='-DNDEBUG' "
             "CFLAGS='-Wall -std=c99' CXXFLAGS='-Wall -std=c++11' "
-            "FFLAGS='-Wall' LDFLAGS='-dynamic' FOO=1 || exit 1"
+            "FFLAGS='-Wall' LDFLAGS='-dynamic' FOO=1"
         ]
         self.assertEqual(expected,
                          self.build_system.emit_build_commands(self.environ))
@@ -64,14 +64,14 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
             "make -f Makefile_foo -C foodir -j CC='cc' CXX='CC' FC='ftn' "
             "NVCC='clang' CPPFLAGS='-DFOO' CFLAGS='-Wall -std=c99 -O3' "
             "CXXFLAGS='-Wall -std=c++11 -O3' FFLAGS='-Wall -O3' "
-            "LDFLAGS='-static' FOO=1 || exit 1"
+            "LDFLAGS='-static' FOO=1"
         ]
         self.assertEqual(expected,
                          self.build_system.emit_build_commands(self.environ))
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['make -j || exit 1'],
+        self.assertEqual(['make -j'],
                          self.build_system.emit_build_commands(self.environ))
 
 
@@ -114,8 +114,8 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
             ldflags = '-dynamic'
             expected = [
                 '%s -DNDEBUG -I foodir/include -I bardir/include %s %s '
-                '-o foo.e %s || exit 1' % (comp, flags,
-                                           self.build_system.srcfile, ldflags)
+                '-o foo.e %s' % (comp, flags,
+                                 self.build_system.srcfile, ldflags)
             ]
             self.assertEqual(expected,
                              self.build_system.emit_build_commands(self.environ))
@@ -146,8 +146,8 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
             ldflags = '-static'
             expected = [
                 '%s -DFOO -I foodir/include -I bardir/include %s %s '
-                '-o foo.e %s || exit 1' % (comp, flags,
-                                           self.build_system.srcfile, ldflags)
+                '-o foo.e %s' % (comp, flags,
+                                 self.build_system.srcfile, ldflags)
             ]
             self.assertEqual(expected,
                              self.build_system.emit_build_commands(self.environ))

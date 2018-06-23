@@ -4,7 +4,7 @@
 
 
 class ReframeSettings:
-    _reframe_module = 'reframe'
+    _reframe_module = None
     _job_poll_intervals = [1, 2, 3]
     _job_submit_timeout = 60
     _checks_path = ['checks/']

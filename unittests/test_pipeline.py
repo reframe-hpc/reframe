@@ -31,11 +31,13 @@ class TestRegressionTest(unittest.TestCase):
 
     def setUp(self):
         self.setup_local_execution()
-        self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader = RegressionCheckLoader(['unittests/resources/checks'])
 
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
     def tearDown(self):
-        shutil.rmtree(self.resourcesdir, ignore_errors=True)
+        shutil.rmtree(rt.runtime().resources.prefix, ignore_errors=True)
         shutil.rmtree('.rfm_testing', ignore_errors=True)
 
     def replace_prefix(self, filename, new_prefix):
