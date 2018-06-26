@@ -467,7 +467,6 @@ class RegressionTest:
     _stagedir = fields.StringField('_stagedir', allow_none=True)
     _stdout = fields.StringField('_stdout', allow_none=True)
     _stderr = fields.StringField('_stderr', allow_none=True)
-    _perf_logfile = fields.StringField('_perf_logfile', allow_none=True)
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, allow_none=True)
     _current_environ = fields.TypedField('_current_environ', Environment,
@@ -555,6 +554,7 @@ class RegressionTest:
 
         # Dynamic paths of the regression check; will be set in setup()
         self._stagedir = None
+        self._outputdir = None
         self._stdout = None
         self._stderr = None
 
@@ -565,7 +565,6 @@ class RegressionTest:
 
         # Performance logging
         self._perf_logger = logging.null_logger
-        self._perf_logfile = None
 
     # Export read-only views to interesting fields
     @property
@@ -634,6 +633,18 @@ class RegressionTest:
         :type: :class:`str`.
         """
         return self._stagedir
+
+    @property
+    def outputdir(self):
+        """The output directory of the test.
+
+        This is set during the :func:`setup` phase.
+
+        .. versionadded:: 2.13
+
+        :type: :class:`str`.
+        """
+        return self._outputdir
 
     @property
     @deferrable
@@ -818,32 +829,9 @@ class RegressionTest:
         self._job.options = (self._current_partition.access +
                              resources_opts + self._job.options)
 
-    # FIXME: This is a temporary solution to address issue #157
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
-        self._perf_logfile = os.path.join(
-            rt.runtime().resources.make_perflogdir(
-                self._current_partition.name),
-            self.name + '.log'
-        )
-
-        perf_logging_config = {
-            'level': 'INFO',
-            'handlers': {
-                self._perf_logfile: {
-                    'level': 'DEBUG',
-                    'format': '[%(asctime)s] reframe %(version)s: '
-                              '%(check_info)s '
-                              '(jobid=%(check_jobid)s): %(message)s',
-                    'append': True,
-                }
-            }
-        }
-
-        self._perf_logger = logging.LoggerAdapter(
-            logger=logging.load_from_dict(perf_logging_config),
-            check=self
-        )
+        self._perf_logger = logging.getperflogger(self)
 
     def setup(self, partition, environ, **job_opts):
         """The setup phase of the regression test pipeline.
@@ -1062,15 +1050,13 @@ class RegressionTest:
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 try:
                     ref, low_thres, high_thres = self.reference[key]
-                    self._perf_logger.info(
-                        'value: %s, reference: %s' %
-                        (value, self.reference[key])
-                    )
                 except KeyError:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname)
-                    )
+                        (tag, self._current_partition.fullname))
+
+                self._perf_logger.log_performance(logging.INFO, tag, value,
+                                                  ref, low_thres, high_thres)
                 evaluate(assert_reference(value, ref, low_thres, high_thres))
 
     def _copy_job_files(self, job, dst):
@@ -1105,7 +1091,7 @@ class RegressionTest:
         :arg unload_env: If :class:`True`, the environment that was used to run
             this test will be unloaded.
         """
-        aliased = os.path.samefile(self._stagedir, self.outputdir)
+        aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
             self.logger.debug('skipping copy to output dir '
                               'since they alias each other')
@@ -1124,9 +1110,9 @@ class RegressionTest:
     def __str__(self):
         return ('%s (found in %s)\n'
                 '        descr: %s\n'
-                '        tags: %s, maintainers: %s' %
+                '        tags: {%s}, maintainers: %s' %
                 (self.name, inspect.getfile(type(self)),
-                 self.descr, self.tags, self.maintainers))
+                 self.descr, ','.join(self.tags), self.maintainers))
 
 
 class RunOnlyRegressionTest(RegressionTest):

@@ -4,12 +4,12 @@
 
 
 class ReframeSettings:
-    _reframe_module = 'reframe'
-    _job_poll_intervals = [1, 2, 3]
-    _job_submit_timeout = 60
-    _checks_path = ['checks/']
-    _checks_path_recurse = True
-    _site_configuration = {
+    reframe_module = 'reframe'
+    job_poll_intervals = [1, 2, 3]
+    job_submit_timeout = 60
+    checks_path = ['checks/']
+    checks_path_recurse = True
+    site_configuration = {
         'systems': {
             'dom': {
                 'descr': 'Dom TDS',
@@ -102,10 +102,12 @@ class ReframeSettings:
         },
     }
 
-    _logging_config = {
+    logging_config = {
         'level': 'DEBUG',
-        'handlers': {
-            'reframe.log': {
+        'handlers': [
+            {
+                'type': 'file',
+                'name': 'reframe.log',
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
                           '%(check_info)s: %(message)s',
@@ -113,49 +115,41 @@ class ReframeSettings:
             },
 
             # Output handling
-            '&1': {
+            {
+                'type': 'stream',
+                'name': 'stdout',
                 'level': 'INFO',
                 'format': '%(message)s'
             },
-            'reframe.out': {
+            {
+                'type': 'file',
+                'name': 'reframe.out',
                 'level': 'INFO',
                 'format': '%(message)s',
                 'append': False,
             }
-        }
+        ]
     }
 
-    @property
-    def version(self):
-        return self._version
-
-    @property
-    def reframe_module(self):
-        return self._reframe_module
-
-    @property
-    def job_poll_intervals(self):
-        return self._job_poll_intervals
-
-    @property
-    def job_submit_timeout(self):
-        return self._job_submit_timeout
-
-    @property
-    def checks_path(self):
-        return self._checks_path
-
-    @property
-    def checks_path_recurse(self):
-        return self._checks_path_recurse
-
-    @property
-    def site_configuration(self):
-        return self._site_configuration
-
-    @property
-    def logging_config(self):
-        return self._logging_config
+    perf_logging_config = {
+        'level': 'DEBUG',
+        'handlers': [
+            {
+                'type': 'filelog',
+                'prefix': '%(check_system)s/%(check_partition)s',
+                'level': 'INFO',
+                'format': (
+                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_info)s|jobid=%(check_jobid)s|'
+                    '%(check_perf_var)s=%(check_perf_value)s|'
+                    'ref=%(check_perf_ref)s '
+                    '(l=%(check_perf_lower_thres)s, '
+                    'u=%(check_perf_upper_thres)s)'
+                ),
+                'append': True
+            }
+        ]
+    }
 
 
 settings = ReframeSettings()

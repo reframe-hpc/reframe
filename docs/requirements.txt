@@ -9,12 +9,13 @@ imagesize>=0.7.1
 Jinja2>=2.9.6
 livereload>=2.5.1
 pathtools>=0.1.2
-port-for>=0.3.1
+port-for==0.3.1
 Pygments>=2.2.0
 pytz>=2017.2
 PyYAML>=3.12
 recommonmark>=0.4.0
 requests>=2.18.4
+setuptools>=31.0.1
 six>=1.11.0
 snowballstemmer>=1.2.1
 Sphinx<=1.6.7

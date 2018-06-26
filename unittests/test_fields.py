@@ -423,12 +423,6 @@ class TestFields(unittest.TestCase):
         self.assertRaises(TypeError, exec, 'tester.value = {1, 2}',
                           globals(), locals())
 
-    def test_settings(self):
-        self.assertRaises(AttributeError, exec,
-                          "from reframe.settings import settings\n"
-                          "settings.checks_path = ['/foo']",
-                          globals(), locals())
-
     def test_deprecated_field(self):
         from reframe.core.exceptions import ReframeDeprecationWarning
 

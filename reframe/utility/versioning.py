@@ -1,5 +1,9 @@
+import abc
 import functools
 import sys
+import re
+
+from itertools import takewhile
 
 
 @functools.total_ordering
@@ -26,7 +30,7 @@ class Version:
             raise ValueError('invalid version string: %s' % version) from None
 
     def _value(self):
-        return 1000*self._major + 100*self._minor + self._patch_level
+        return 10000*self._major + 100*self._minor + self._patch_level
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -61,3 +65,81 @@ class Version:
             return base
 
         return base + '-dev%s' % self._dev_number
+
+
+class _ValidatorImpl:
+    """Abstract base class for the validation of version ranges."""
+    @abc.abstractmethod
+    def validate(version):
+        pass
+
+
+class _IntervalValidator(_ValidatorImpl):
+    """Class for the validation of version intervals.
+
+    This class takes an interval of versions "v1..v2" and its method
+    ``validate`` returns ``True`` if a given version string is inside
+    the interval including the endpoints.
+    """
+    def __init__(self, condition):
+        try:
+            min_version_str, max_version_str = condition.split('..')
+        except ValueError:
+            raise ValueError("invalid format of version interval: %s" %
+                             condition) from None
+
+        if min_version_str and max_version_str:
+            self._min_version = Version(min_version_str)
+            self._max_version = Version(max_version_str)
+        else:
+            raise ValueError("missing bound on version interval %s" %
+                             condition)
+
+    def validate(self, version):
+        version = Version(version)
+        return ((version >= self._min_version) and
+                (version <= self._max_version))
+
+
+class _RelationalValidator(_ValidatorImpl):
+    """Class for the validation of Boolean relations of versions.
+
+    This class takes a Boolean relation of versions with the form
+    ``<bool_operator><version>``, and its method ``validate`` returns
+    ``True`` if a given version string satisfies the relation.
+    """
+    def __init__(self, condition):
+        self._op_actions = {
+            ">":  lambda x, y: x > y,
+            ">=": lambda x, y: x >= y,
+            "<":  lambda x, y: x < y,
+            "<=": lambda x, y: x <= y,
+            "==": lambda x, y: x == y,
+            "!=": lambda x, y: x != y,
+        }
+        cond_match = re.match(r'(\W{0,2})(\S+)', condition)
+        if not cond_match:
+            raise ValueError("invalid condition: '%s'" % condition)
+
+        self._ref_version = Version(cond_match.group(2))
+        op = cond_match.group(1)
+        if not op:
+            op = '=='
+
+        if op not in self._op_actions.keys():
+            raise ValueError("invalid boolean operator: '%s'" % op)
+        else:
+            self._operator = op
+
+    def validate(self, version):
+        do_validate = self._op_actions[self._operator]
+        return do_validate(Version(version), self._ref_version)
+
+
+class VersionValidator:
+    """Class factory for the validation of version ranges."""
+    def __new__(cls, condition):
+        if '..' in condition:
+            return _IntervalValidator(condition)
+        else:
+            return _RelationalValidator(condition)
