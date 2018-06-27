@@ -775,7 +775,7 @@ class RegressionTest:
             self._stagedir = rt.runtime().resources.make_stagedir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
-            self.outputdir = rt.runtime().resources.make_outputdir(
+            self._outputdir = rt.runtime().resources.make_outputdir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
         except OSError as e:
