@@ -12,6 +12,7 @@ from reframe.core.exceptions import SpawnedProcessError
 class TestShellScriptGenerator(unittest.TestCase):
     def setUp(self):
         self.script_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        self.script_file.close()
         os.chmod(self.script_file.name,
                  os.stat(self.script_file.name).st_mode | stat.S_IEXEC)
 
@@ -75,7 +76,7 @@ echo "C()"
 
     def test_trap_error(self):
         with shell.generate_script(self.script_file.name,
-                                   'bash', trap_errors=True) as gen:
+                                   trap_errors=True) as gen:
             gen.write('false')
             gen.write('echo hello')
 
@@ -90,7 +91,7 @@ echo "C()"
 
     def test_trap_exit(self):
         with shell.generate_script(self.script_file.name,
-                                   'bash', trap_exit=True) as gen:
+                                   trap_exit=True) as gen:
             gen.write('echo hello')
 
         completed = os_ext.run_command(self.script_file.name, check=True)
@@ -101,7 +102,7 @@ echo "C()"
 
     def test_trap_signal(self):
         with shell.generate_script(self.script_file.name,
-                                   'bash', trap_signals=True) as gen:
+                                   trap_signals=True) as gen:
             gen.write('sleep 10')
             gen.write('echo hello')
 
