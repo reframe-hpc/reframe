@@ -7,8 +7,7 @@ class FlexibleCudaMemtest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray']
         self.descr = 'Flexible Cuda Memtest'
         self.maintainers = ['TM', 'VK']
         self.num_tasks_per_node = 1
@@ -44,5 +43,6 @@ class FlexibleCudaMemtest(rfm.RegressionTest):
 
     def compile(self):
         # Here we set the target executable since by default the Makefile
-        # builds both cuda_memtest_sm13 and cuda_memtest_sm20
+        # builds both cuda_memtest_sm13 and cuda_memtest_sm20.
+        # sm20 is the maximum gpu architecture supported by cuda memtest.
         super().compile(options='cuda_memtest_sm20')
