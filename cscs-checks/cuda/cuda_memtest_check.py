@@ -10,9 +10,7 @@ class FlexibleCudaMemtest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.descr = 'Flexible Cuda Memtest'
-        self.executable = 'osu_alltoall'
         self.maintainers = ['TM', 'VK']
-        self.tags = {'maintenance'}
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.num_gpus_per_node = 1
@@ -20,16 +18,20 @@ class FlexibleCudaMemtest(rfm.RegressionTest):
         self.sourcesdir = None
         src_url = ('https://downloads.sourceforge.net/project/cudagpumemtest/'
                    'cuda_memtest-1.2.3.tar.gz')
-        self.prebuild_cmd = ['wget %s' % src_url,
-                             'tar -xzf cuda_memtest-1.2.3.tar.gz '
-                             '--strip-components=1']
+        self.prebuild_cmd = [
+            'wget %s' % src_url,
+            'tar -xzf cuda_memtest-1.2.3.tar.gz --strip-components=1'
+        ]
         self.executable = 'cuda_memtest_sm20'
         self.executable_opts = ['--disable_test', '6', '--num_passes', '1']
 
-        valid_test_ids = [i for i in range(11) if i not in {6, 9}]
-        assert_finished_tests = [sn.assert_eq(sn.count(sn.findall(
-            'Test%s finished' % test_id, self.stdout)),
-            self.num_tasks_assigned) for test_id in valid_test_ids]
+        valid_test_ids = {i for i in range(11) if i not in {6, 9}}
+        assert_finished_tests = [
+            sn.assert_eq(
+                sn.count(sn.findall('Test%s finished' % test_id, self.stdout)),
+                self.num_tasks_assigned)
+            for test_id in valid_test_ids
+        ]
         self.sanity_patterns = sn.all([
             *assert_finished_tests,
             sn.assert_not_found('(?i)ERROR', self.stdout),
