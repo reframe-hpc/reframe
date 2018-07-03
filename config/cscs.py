@@ -124,10 +124,8 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
                                      'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
-                                     'PrgEnv-pgi_16', 'PrgEnv-pgi_17',
-                                     'PrgEnv-pgi_18', 'PrgEnv-pgi_17_aj',
-                                     'PrgEnv-pgi_18_aj', 'PrgEnv-cray_aj',
-                                     'PrgEnv-cray_aj_b'],
+                                     'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
+                                     'PrgEnv-cray_aj', 'PrgEnv-cray_aj_b'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -208,42 +206,21 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_aj'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi_16': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/16.10'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi_17': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-pgi_18': {
+                'PrgEnv-pgi_17.10_gdr': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.4'],
+                    'modules': ['PrgEnv-pgi/17.10_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-pgi_17_aj': {
+                'PrgEnv-pgi_18.4_gdr': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_aj'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi_18_aj': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.4_aj'],
+                    'modules': ['PrgEnv-pgi/18.4_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
