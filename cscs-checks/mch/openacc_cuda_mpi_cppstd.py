@@ -2,13 +2,13 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['mpi'], ['nompi'])
-class OpenaccCudaMpiCppstd(rfm.RegressionTest):
+@rfm.parameterized_test([True], [False])
+class OpenaccCudaMpiNoMPICppstd(rfm.RegressionTest):
     def __init__(self, withmpi):
         super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self._pgi_flags = '-O2 -acc -ta=tesla:cc60 -Mnorpath -lstdc++'
@@ -24,6 +24,7 @@ class OpenaccCudaMpiCppstd(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia35']
             self._pgi_flags = '-O2 -acc -ta=tesla,cc35,cuda8.0'
             self._env_variables = {
+                'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
             }
@@ -32,8 +33,8 @@ class OpenaccCudaMpiCppstd(rfm.RegressionTest):
             self.num_gpus_per_node = 8
             self._nvidia_sm = '37'
 
-        if withmpi == 'mpi':
-            self.mpiflag = ' -DUSEMPI'
+        if withmpi:
+            self.mpiflag = ' -DUSE_MPI'
         else:
             self.mpiflag = ''
             self.num_tasks_per_node = 1
