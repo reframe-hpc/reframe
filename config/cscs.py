@@ -130,7 +130,9 @@ class ReframeSettings:
                                      'PrgEnv-cray_aj_b'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                            'distribution': ['--distribution=block:block'],
+                            'cpu_bind' : ['--cpu_bind=q']
                         }
                     }
                 }
