@@ -11,16 +11,16 @@ As soon as a new system with its programming environments is configured, adaptin
 The Configuration File
 ----------------------
 
-The configuration of systems and programming environments is performed by a special Python dictionary called ``_site_configuration`` defined inside the file ``<install-dir>/reframe/settings.py``.
+The configuration of systems and programming environments is performed by a special Python dictionary called ``site_configuration`` defined inside the file ``<install-dir>/reframe/settings.py``.
 
-The ``_site_configuration`` dictionary should define two entries, ``systems`` and ``environments``.
+The ``site_configuration`` dictionary should define two entries, ``systems`` and ``environments``.
 The former defines the systems that ReFrame may recognize, whereas the latter defines the available programming environments.
 
 The following example shows a minimal configuration for the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS:
 
 .. code-block:: python
 
-   _site_configuration = {
+   site_configuration = {
        'systems': {
            'daint': {
                'descr': 'Piz Daint',
@@ -134,7 +134,7 @@ The available partition attributes are the following:
 * ``access``: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default ``[]``).
 
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
-  The environment names must be resolved inside the ``environments`` section of the ``_site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+  The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
 
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 
@@ -259,7 +259,7 @@ There exist also the following aliases for specific combinations of job schedule
 Environments Configuration
 --------------------------
 
-The environments available for testing in different systems are defined under the ``environments`` key of the top-level ``_site_configuration`` dictionary.
+The environments available for testing in different systems are defined under the ``environments`` key of the top-level ``site_configuration`` dictionary.
 The ``environments`` key is associated to a special dictionary that defines scopes for looking up an environment. The ``*`` denotes the global scope and all environments defined there can be used by any system.
 Instead of ``*``, you can define scopes for specific systems or specific partitions by using the name of the system or partition.
 For example, an entry ``daint`` will define a scope for a system called ``daint``, whereas an entry ``daint:gpu`` will define a scope for a virtual partition named ``gpu`` on the system ``daint``.
