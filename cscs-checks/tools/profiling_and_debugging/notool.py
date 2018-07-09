@@ -1,15 +1,17 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
 from reframe.core.pipeline import RegressionTest
 
 
+@rfm.parameterized_test(['C'], ['C++'], ['F90'])
 class JacobiNoToolHybrid(RegressionTest):
-    def __init__(self, lang, **kwargs):
-        super().__init__('jacobi_%s' % lang.replace('+', 'p'),
-                         os.path.dirname(__file__), **kwargs)
+    def __init__(self, lang):
+        super().__init__()
 
+        self.name = 'jacobi_%s' % lang.replace('+', 'p')
         self.language = lang
         self.descr = '%s check' % lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
@@ -40,11 +42,16 @@ class JacobiNoToolHybrid(RegressionTest):
         }
 
         self.openmp_versions = ScopedDict({
-            'PrgEnv-cray': {'version': 201307},
-            'PrgEnv-gnu': {'version': 201307},
-            'PrgEnv-intel': {'version': 201511},
-            'PrgEnv-pgi': {'version': 201307},
-            'PrgEnv-pgi:C++': {'version': 200805},
+            'daint:PrgEnv-cray': {'version': 201307},
+            'daint:PrgEnv-gnu': {'version': 201307},
+            'daint:PrgEnv-intel': {'version': 201511},
+            'daint:PrgEnv-pgi': {'version': 201307},
+            'daint:PrgEnv-pgi:C++': {'version': 200805},
+            'dom:PrgEnv-cray': {'version': 201511},
+            'dom:PrgEnv-gnu': {'version': 201511},
+            'dom:PrgEnv-gnu:F90': {'version': 201307},
+            'dom:PrgEnv-intel': {'version': 201611},
+            'dom:PrgEnv-pgi': {'version': 201307},
         })
         # a scopedict is better than this:
         # if (self.language == 'C++' and
@@ -52,7 +59,7 @@ class JacobiNoToolHybrid(RegressionTest):
         #    self.omp_versions['PrgEnv-pgi'] = '200805'
 
         self.perf_patterns = {
-            'elapsed_time': sn.extractsingle('Elapsed Time\s*:\s+(\S+)',
+            'elapsed_time': sn.extractsingle(r'Elapsed Time\s*:\s+(\S+)',
                                              self.stdout, 1, float)
         }
 
@@ -81,21 +88,15 @@ class JacobiNoToolHybrid(RegressionTest):
         self.current_environ.ldflags = '-lm '
         super().compile()
 
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
-
+    def setup(self, partition, environ, **job_opts):
+        super().setup(partition, environ, **job_opts)
         found_version = sn.extractsingle(
             r'OpenMP-\s*(\d+)', self.stdout, 1, int)
-        ompversion_key = '%s:%s:version' % (
-            self.current_environ.name, self.language)
-
+        ompversion_key = '%s:%s:%s:version' % (
+            self.current_system.name, self.current_environ.name, self.language)
         self.sanity_patterns = sn.all([
             sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
             sn.assert_found('SUCCESS', self.stdout),
         ])
-
-        self.reference['*:elapsed_time'] = self.reference_prgenv[self.current_environ.name]
-
-
-def _get_checks(**kwargs):
-    return [JacobiNoToolHybrid(lang, **kwargs) for lang in ('C', 'C++', 'F90')]
+        environ_name = self.current_environ.name
+        self.reference['*:elapsed_time'] = self.reference_prgenv[environ_name]
