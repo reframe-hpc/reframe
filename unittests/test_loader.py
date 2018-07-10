@@ -58,3 +58,8 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_error(self):
         self.assertRaises(OSError, self.loader.load_from_file,
                           'unittests/resources/checks/foo.py')
+
+    def test_load_bad_required_version(self):
+        with self.assertRaises(ValueError):
+            self.loader.load_from_file('unittests/resources/checks_unlisted/'
+                                       'no_required_version.py')

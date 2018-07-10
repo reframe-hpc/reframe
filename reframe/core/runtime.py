@@ -95,14 +95,12 @@ class HostResources:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
     stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
-    perflogdir = fields.AbsolutePathField('perflogdir', allow_none=True)
 
     def __init__(self, prefix=None, stagedir=None,
-                 outputdir=None, perflogdir=None, timefmt=None):
+                 outputdir=None, timefmt=None):
         self.prefix = prefix or '.'
         self.stagedir  = stagedir
         self.outputdir = outputdir
-        self.perflogdir = perflogdir
         self._timestamp = datetime.now()
         self.timefmt = timefmt
 
@@ -134,22 +132,11 @@ class HostResources:
         else:
             return os.path.join(self.stagedir, self.timestamp)
 
-    @property
-    def perflog_prefix(self):
-        """The prefix directory of the performance logs of ReFrame."""
-        if self.perflogdir is None:
-            return os.path.join(self.prefix, 'logs')
-        else:
-            return self.perflogdir
-
     def make_stagedir(self, *dirs, wipeout=True):
         return self._makedir(self.stage_prefix, *dirs, wipeout=wipeout)
 
     def make_outputdir(self, *dirs, wipeout=True):
         return self._makedir(self.output_prefix, *dirs, wipeout=wipeout)
-
-    def make_perflogdir(self, *dirs, wipeout=False):
-        return self._makedir(self.perflog_prefix, *dirs, wipeout=wipeout)
 
 
 class RuntimeContext:

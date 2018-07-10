@@ -25,7 +25,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
 
     captured_stdout = StringIO()
     captured_stderr = StringIO()
-    print(sys.argv)
+    print(*sys.argv)
     with redirect_stdout(captured_stdout):
         with redirect_stderr(captured_stderr):
             try:
@@ -72,6 +72,9 @@ class TestFrontend(unittest.TestCase):
         if self.ignore_check_conflicts:
             ret += ['--ignore-check-conflicts']
 
+        if self.perflogdir:
+            ret += ['--perflogdir', self.perflogdir]
+
         ret += self.more_options
         return ret
 
@@ -85,11 +88,13 @@ class TestFrontend(unittest.TestCase):
         self.more_options = []
         self.mode = None
         self.config_file = 'unittests/resources/settings.py'
-        self.logfile = '.reframe_unittest.log'
+        self.logfile = '.rfm_unittest.log'
         self.ignore_check_conflicts = True
+        self.perflogdir = '.rfm-perflogs'
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
+        shutil.rmtree(self.perflogdir, ignore_errors=True)
         os_ext.force_remove_file(self.logfile)
 
     def _run_reframe(self):
@@ -106,20 +111,22 @@ class TestFrontend(unittest.TestCase):
 
         return True
 
-    def _perflog_exists(self, check_name, partitions):
-        logdir = os.path.join(self.prefix, 'logs')
-        for p in partitions:
-            logfile = os.path.join(logdir, p, check_name + '.log')
-            if not os.path.exists(logfile):
-                return False
-
-        return True
+    def _perflog_exists(self, check_name):
+        logfile = '.rfm-perflogs/generic/login/%s.log' % check_name
+        return os.path.exists(logfile)
 
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(os.path.exists(
             os.path.join(outputdir, os.path.basename(self.logfile))))
+
+    def test_default_settings(self):
+        # Simply make sure that a default settings file exists
+        try:
+            import reframe.settings as settings
+        except ImportError:
+            self.fail('default settings file find could not be found')
 
     def test_check_success(self):
         self.more_options = ['--save-log-files']
@@ -207,8 +214,7 @@ class TestFrontend(unittest.TestCase):
         self.assertNotEqual(0, returncode)
         self.assertTrue(self._stage_exists('PerformanceFailureCheck',
                                            ['login'], self.environs))
-        self.assertTrue(self._perflog_exists('PerformanceFailureCheck',
-                                             ['login']))
+        self.assertTrue(self._perflog_exists('PerformanceFailureCheck'))
 
     def test_skip_system_check_option(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -258,19 +264,19 @@ class TestFrontend(unittest.TestCase):
         self.checkpath = []
         returncode, stdout, _ = self._run_reframe()
         num_checks_default = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
 
         self.checkpath = ['checks/']
         self.more_options = ['-R']
         returncode, stdout, _ = self._run_reframe()
         num_checks_in_checkdir = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual(num_checks_in_checkdir, num_checks_default)
 
         self.more_options = []
         returncode, stdout, stderr = self._run_reframe()
         num_checks_in_checkdir = re.search(
-            'Found (\d+) check', stdout, re.MULTILINE).group(1)
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual('0', num_checks_in_checkdir)
 
     def test_same_output_stage_dir(self):
@@ -305,3 +311,43 @@ class TestFrontend(unittest.TestCase):
         self.action = 'list'
         returncode, *_ = self._run_reframe()
         self.assertNotEqual(0, returncode)
+
+    def test_timestamp_option(self):
+        from datetime import datetime
+
+        self.checkpath = ['unittests/resources/checks']
+        self.more_options = ['-R']
+        self.ignore_check_conflicts = False
+        self.action = 'list'
+        self.more_options = ['--timestamp=xxx_%F']
+        timefmt = datetime.now().strftime('xxx_%F')
+        returncode, stdout, _ = self._run_reframe()
+        self.assertNotEqual(0, returncode)
+        self.assertIn(timefmt, stdout)
+
+    def test_list_empty_prgenvs_check_and_options(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = []
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_check_with_empty_prgenvs(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = ['foo']
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_empty_prgenvs_in_check_and_options(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list'
+        self.environs = []
+        self.more_options = ['-n', 'NoPrgEnvCheck']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)

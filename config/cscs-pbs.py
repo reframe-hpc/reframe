@@ -1,5 +1,5 @@
 #
-# Minimal settings for ReFrame tutorial on Piz Daint
+# Minimal CSCS configuration for testing the PBS backend
 #
 
 
@@ -11,10 +11,11 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
-            'daint': {
-                'descr': 'Piz Daint',
-                'hostnames': ['daint'],
+            'dom': {
+                'descr': 'Dom TDS',
+                'hostnames': ['dom'],
                 'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/regression/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -27,23 +28,36 @@ class ReframeSettings:
                     },
 
                     'gpu': {
-                        'scheduler': 'nativeslurm',
+                        'scheduler': 'pbs+mpiexec',
                         'modules': ['daint-gpu'],
-                        'access':  ['--constraint=gpu'],
+                        'access':  ['proc=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
-                        'max_jobs': 100
+                        'max_jobs': 100,
                     },
 
                     'mc': {
-                        'scheduler': 'nativeslurm',
+                        'scheduler': 'pbs+mpiexec',
                         'modules': ['daint-mc'],
-                        'access':  ['--constraint=mc'],
+                        'access':  ['proc=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
-                        'max_jobs': 100
+                        'max_jobs': 100,
+                    },
+                }
+            },
+
+            'generic': {
+                'descr': 'Generic example system',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'modules': [],
+                        'access': [],
+                        'environs': ['builtin-gcc'],
+                        'descr': 'Login nodes'
                     }
                 }
             }
@@ -55,6 +69,7 @@ class ReframeSettings:
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
+
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
@@ -68,9 +83,23 @@ class ReframeSettings:
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
+                },
+
+                'builtin': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'cc',
+                    'cxx': '',
+                    'ftn': '',
+                },
+
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 }
             }
-        }
+        },
     }
 
     logging_config = {
@@ -81,7 +110,7 @@ class ReframeSettings:
                 'name': 'reframe.log',
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
-                          '%(check_name)s: %(message)s',
+                          '%(check_info)s: %(message)s',
                 'append': False,
             },
 

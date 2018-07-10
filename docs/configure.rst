@@ -11,16 +11,16 @@ As soon as a new system with its programming environments is configured, adaptin
 The Configuration File
 ----------------------
 
-The configuration of systems and programming environments is performed by a special Python dictionary called ``_site_configuration`` defined inside the file ``<install-dir>/reframe/settings.py``.
+The configuration of systems and programming environments is performed by a special Python dictionary called ``site_configuration`` defined inside the file ``<install-dir>/reframe/settings.py``.
 
-The ``_site_configuration`` dictionary should define two entries, ``systems`` and ``environments``.
+The ``site_configuration`` dictionary should define two entries, ``systems`` and ``environments``.
 The former defines the systems that ReFrame may recognize, whereas the latter defines the available programming environments.
 
 The following example shows a minimal configuration for the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS:
 
 .. code-block:: python
 
-   _site_configuration = {
+   site_configuration = {
        'systems': {
            'daint': {
                'descr': 'Piz Daint',
@@ -128,36 +128,14 @@ The available partition attributes are the following:
 * ``descr``: A detailed description of the partition (default is the partition name).
 
 * ``scheduler``: The job scheduler and parallel program launcher combination that is used on this partition to launch jobs.
-  The syntax of this attribute is ``<scheduler>+<launcher>``. The available values for the job scheduler are the following:
-
-  * ``slurm``: Jobs on this partition will be launched using `Slurm <https://www.schedmd.com/>`__.
-    This scheduler relies on job accounting (``sacct`` command) in order to reliably query the job status.
-  * ``squeue``: Jobs on this partition will be launched using `Slurm <https://www.schedmd.com/>`__, but no job accounting is required.
-    The job status is obtained using the ``squeue`` command.
-    This scheduler is less reliable than the one based on the ``sacct`` command, but the framework does its best to query the job state as reliably as possible.
-  * ``local``: Jobs on this partition will be launched locally as OS processes.
-
-  The available values for the parallel program launchers are the following:
-
-  * ``srun``: Programs on this partition will be launched using a bare ``srun`` command *without* any job allocation options passed to it.
-    This launcher may only be used with the ``slurm`` scheduler.
-
-  * ``srunalloc``: Programs on this partition will be launched using the ``srun`` command *with* job allocation options passed automatically to it.
-    This launcher may also be used with the ``local`` scheduler.
-  * ``alps``: Programs on this partition will be launched using the ``aprun`` command.
-  * ``mpirun``: Programs on this partition will be launched using the ``mpirun`` command.
-  * ``mpiexec``: Programs on this partition will be launched using the ``mpiexec`` command.
-  * ``local``: Programs on this partition will be launched as-is without using any parallel program launcher.
-
-  There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:
-
-  * ``nativeslurm``: This is equivalent to ``slurm+srun``.
-  * ``local``: This is equivalent to ``local+local``.
+  The syntax of this attribute is ``<scheduler>+<launcher>``.
+  A list of the supported `schedulers <#supported-scheduler-backends>`__ and `parallel launchers <#supported-parallel-launchers>`__ can be found at the end of this section.
 
 * ``access``: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default ``[]``).
 
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
-  The environment names must be resolved inside the ``environments`` section of the ``_site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+  The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 
 * ``variables``: A set of environment variables to be set before running a regression test on that partition (default ``{}``).
@@ -228,23 +206,60 @@ The available partition attributes are the following:
     }
 
 .. note::
+   For the `PBS <#supported-scheduler-backends>`__ backend, options accepted in the ``access`` and ``resources`` attributes may either refer to actual ``qsub`` options or be just resources specifications to be passed to the ``-l select`` option.
+   The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
+
+.. note::
   .. versionchanged:: 2.8
      A new syntax for the ``scheduler`` values was introduced as well as more parallel program launchers.
      The old values for the ``scheduler`` key will continue to be supported.
 
-.. note::
-  .. versionadded:: 2.8.1
-     The ``squeue`` backend scheduler was added.
-
-.. note::
    .. versionchanged:: 2.9
       Better support for custom job resources.
+
+
+
+Supported scheduler backends
+============================
+
+ReFrame supports the following job schedulers:
+
+
+* ``slurm``: Jobs on the configured partition will be launched using `Slurm <https://www.schedmd.com/>`__.
+  This scheduler relies on job accounting (``sacct`` command) in order to reliably query the job status.
+* ``squeue``: *[new in 2.8.1]*
+  Jobs on the configured partition will be launched using `Slurm <https://www.schedmd.com/>`__, but no job accounting is required.
+  The job status is obtained using the ``squeue`` command.
+  This scheduler is less reliable than the one based on the ``sacct`` command, but the framework does its best to query the job state as reliably as possible.
+
+* ``pbs``: *[new in 2.13]* Jobs on the configured partition will be launched using a `PBS-based <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+* ``local``: Jobs on the configured partition will be launched locally as OS processes.
+
+
+Supported parallel launchers
+============================
+
+ReFrame supports the following parallel job launchers:
+
+* ``srun``: Programs on the configured partition will be launched using a bare ``srun`` command *without* any job allocation options passed to it.
+  This launcher may only be used with the ``slurm`` scheduler.
+* ``srunalloc``: Programs on the configured partition will be launched using the ``srun`` command *with* job allocation options passed automatically to it.
+  This launcher may also be used with the ``local`` scheduler.
+* ``alps``: Programs on the configured partition will be launched using the ``aprun`` command.
+* ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
+* ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
+* ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
+
+There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:
+
+* ``nativeslurm``: This is equivalent to ``slurm+srun``.
+* ``local``: This is equivalent to ``local+local``.
 
 
 Environments Configuration
 --------------------------
 
-The environments available for testing in different systems are defined under the ``environments`` key of the top-level ``_site_configuration`` dictionary.
+The environments available for testing in different systems are defined under the ``environments`` key of the top-level ``site_configuration`` dictionary.
 The ``environments`` key is associated to a special dictionary that defines scopes for looking up an environment. The ``*`` denotes the global scope and all environments defined there can be used by any system.
 Instead of ``*``, you can define scopes for specific systems or specific partitions by using the name of the system or partition.
 For example, an entry ``daint`` will define a scope for a system called ``daint``, whereas an entry ``daint:gpu`` will define a scope for a virtual partition named ``gpu`` on the system ``daint``.
