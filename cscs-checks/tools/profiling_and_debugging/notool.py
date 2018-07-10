@@ -3,17 +3,16 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
-from reframe.core.pipeline import RegressionTest
 
 
 @rfm.parameterized_test(['C'], ['C++'], ['F90'])
-class JacobiNoToolHybrid(RegressionTest):
+class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
 
         self.name = 'jacobi_%s' % lang.replace('+', 'p')
-        self.language = lang
         self.descr = '%s check' % lang
+        self.language = lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -92,11 +91,11 @@ class JacobiNoToolHybrid(RegressionTest):
         super().setup(partition, environ, **job_opts)
         found_version = sn.extractsingle(
             r'OpenMP-\s*(\d+)', self.stdout, 1, int)
+        environ_name = self.current_environ.name
         ompversion_key = '%s:%s:%s:version' % (
-            self.current_system.name, self.current_environ.name, self.language)
+            self.current_system.name, environ_name, self.language)
         self.sanity_patterns = sn.all([
             sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
             sn.assert_found('SUCCESS', self.stdout),
         ])
-        environ_name = self.current_environ.name
         self.reference['*:elapsed_time'] = self.reference_prgenv[environ_name]
