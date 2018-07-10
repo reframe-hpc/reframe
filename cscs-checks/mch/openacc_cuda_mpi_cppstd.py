@@ -3,9 +3,11 @@ import reframe.utility.sanity as sn
 
 
 @rfm.parameterized_test([True], [False])
-class OpenaccCudaMpiNoMPICppstd(rfm.RegressionTest):
+class OpenaccCudaCpp(rfm.RegressionTest):
     def __init__(self, withmpi):
         super().__init__()
+        name_suffix = 'WithMPI' if withmpi else 'WithoutMPI'
+        self.name = 'OpenaccCudaCPP' + name_suffix
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
