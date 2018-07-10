@@ -23,7 +23,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
-                'G2G': '1',
             }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
