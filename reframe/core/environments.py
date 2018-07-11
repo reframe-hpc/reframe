@@ -5,8 +5,7 @@ import os
 
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (EnvironError, SpawnedProcessError,
-                                     CompilationError)
+from reframe.core.exceptions import EnvironError, SpawnedProcessError
 from reframe.core.runtime import runtime
 
 

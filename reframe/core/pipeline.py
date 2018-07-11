@@ -22,7 +22,7 @@ import reframe.utility.os_ext as os_ext
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment
-from reframe.core.exceptions import (PipelineError, SanityError,
+from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
                                      user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
@@ -962,7 +962,7 @@ class RegressionTest:
 
         # FIXME: this check is not reliable for certain scheduler backends
         if self._build_job.exitcode != 0:
-            raise PipelineError('compilation failed')
+            raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     def run(self):
         """The run phase of the regression test pipeline.
@@ -1132,7 +1132,6 @@ class RunOnlyRegressionTest(RegressionTest):
         """Wait for compilation phase to finish.
 
         This is a no-op for this type of test.
-        .. versionadded:: 2.13
         """
 
     def run(self):

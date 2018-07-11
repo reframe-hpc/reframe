@@ -98,6 +98,19 @@ class BuildSystemError(ReframeError):
     """Raised when a build system is not configured properly."""
 
 
+class BuildError(ReframeError):
+    """Raised when a build fails."""
+
+    def __init__(self, stdout, stderr):
+        self._stdout = stdout
+        self._stderr = stderr
+
+    def __str__(self):
+        return ("standard error can be found in `%s', "
+                "standard output can be found in `%s'" % (self._stderr,
+                                                          self._stdout))
+
+
 class SpawnedProcessError(ReframeError):
     """Raised when a spawned OS command has failed."""
 
@@ -166,10 +179,6 @@ class SpawnedProcessTimeout(SpawnedProcessError):
         return self._timeout
 
 
-class CompilationError(SpawnedProcessError):
-    """Raised by compilation commands"""
-
-
 class JobError(ReframeError):
     """Job related errors."""
 
@@ -235,6 +244,9 @@ def format_exception(exc_type, exc_value, tb):
 
     if isinstance(exc_value, AbortTaskError):
         return 'aborted due to %s' % type(exc_value.__cause__).__name__
+
+    if isinstance(exc_value, BuildError):
+        return 'build failure: %s' % exc_value
 
     if isinstance(exc_value, ReframeError):
         return 'caught framework exception: %s' % exc_value

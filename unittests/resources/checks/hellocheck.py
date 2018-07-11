@@ -12,7 +12,7 @@ class HelloTest(rfm.RegressionTest):
         # All available systems are supported
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sourcepath = 'hello.c'
+        self.sourcepath = 'compiler_failure.c'
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']
