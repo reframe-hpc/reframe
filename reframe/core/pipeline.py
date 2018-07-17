@@ -1045,7 +1045,7 @@ class RegressionTest:
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   ref, low_thres, high_thres)
 
-            for val, reference in self.perf_values:
+            for val, reference in perf_values:
                 refval, low_thres, high_thres = reference
                 evaluate(assert_reference(val, refval, low_thres, high_thres))
 
