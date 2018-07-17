@@ -15,7 +15,7 @@ class ReframeSettings:
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -59,7 +59,7 @@ class ReframeSettings:
                 'descr': 'Dom TDS',
                 'hostnames': ['dom'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -103,7 +103,7 @@ class ReframeSettings:
                 'descr': 'Kesch MCH',
                 'hostnames': ['keschln-\d+'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -138,7 +138,7 @@ class ReframeSettings:
                 'descr': 'Leone',
                 'hostnames': ['leone'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -161,7 +161,7 @@ class ReframeSettings:
                 'descr': 'Monch PASC',
                 'hostnames': ['monch'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
