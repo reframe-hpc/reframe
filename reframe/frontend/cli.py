@@ -179,7 +179,7 @@ def main():
         help='Apply module mappings defined in FILE')
     misc_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
-        help='Perform a `module purge\' before setup')
+        help="Perform a `module purge' before setup")
     misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
