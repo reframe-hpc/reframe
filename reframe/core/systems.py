@@ -159,12 +159,13 @@ class System:
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
                  prefix='.', stagedir=None, outputdir=None, logdir=None,
-                 resourcesdir='.', modules_system=None):
+                 resourcesdir='.', modules_system=None, modules_system_purge=False):
         self._name  = name
         self._descr = descr or name
         self._hostnames  = list(hostnames)
         self._partitions = list(partitions)
         self._modules_system = modules_system
+        self._modules_system_purge = modules_system_purge
         self._prefix = prefix
         self._stagedir = stagedir
         self._outputdir = outputdir
@@ -194,6 +195,11 @@ class System:
     def modules_system(self):
         """The modules system name associated with this system."""
         return self._modules_system
+
+    @property
+    def modules_system_purge(self):
+        """If the modules system should purge before each call."""
+        return self._modules_system_purge
 
     @property
     def prefix(self):

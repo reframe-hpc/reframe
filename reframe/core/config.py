@@ -143,6 +143,7 @@ class SiteConfiguration:
             sys_logdir = config.get('logdir', None)
             sys_resourcesdir = config.get('resourcesdir', '.')
             sys_modules_system = config.get('modules_system', None)
+            sys_modules_system_purge = config.get('modules_system_purge', False)
 
             # Expand variables
             if sys_prefix:
@@ -168,7 +169,8 @@ class SiteConfiguration:
                             outputdir=sys_outputdir,
                             logdir=sys_logdir,
                             resourcesdir=sys_resourcesdir,
-                            modules_system=sys_modules_system)
+                            modules_system=sys_modules_system,
+                            modules_system_purge=sys_modules_system_purge)
             for part_name, partconfig in config.get('partitions', {}).items():
                 if not isinstance(partconfig, collections.abc.Mapping):
                     raise TypeError("partition `%s' not configured "

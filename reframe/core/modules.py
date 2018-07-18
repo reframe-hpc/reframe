@@ -294,6 +294,10 @@ class ModulesSystem:
         return [self._backend.emit_unload_instr(Module(name))
                 for name in reversed(self.resolve_module(name))]
 
+    def emit_unload_all(self):
+        """Return the appropriate shell command for unloading all modules."""
+        return self._backend.emit_unload_all()
+
     def __str__(self):
         return str(self._backend)
 
@@ -363,6 +367,10 @@ class ModulesSystemImpl(abc.ABC):
     @abc.abstractmethod
     def emit_unload_instr(self, module):
         """Emit the instruction that unloads module."""
+    
+    @abc.abstractmethod
+    def emit_unload_all(self):
+        """Emit the instruction that unloads all modules."""
 
     def __repr__(self):
         return type(self).__name__ + '()'
@@ -474,6 +482,8 @@ class TModImpl(ModulesSystemImpl):
     def emit_unload_instr(self, module):
         return 'module unload %s' % module
 
+    def emit_unload_all(self):
+        return 'module purge'
 
 class TMod4Impl(TModImpl):
     """Module system for TMod 4."""
@@ -580,6 +590,9 @@ class LModImpl(TModImpl):
         # we forcefully unload everything.
         self._exec_module_command('--force', 'purge')
 
+    def emit_unload_all(self):
+        return 'module --force purge'
+
 
 class NoModImpl(ModulesSystemImpl):
     """A convenience class that implements a no-op a modules system."""
@@ -626,3 +639,7 @@ class NoModImpl(ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
+
+    def emit_unload_all(self):
+        return ''
+
