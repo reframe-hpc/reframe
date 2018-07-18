@@ -40,7 +40,7 @@ To make a test visible to the framework, you must decorate your final test class
 Let's see in more detail how the ``Example1Test`` is defined:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 5-8
+  :lines: 4-7
 
 The ``__init__()`` method is the constructor of your test.
 It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
@@ -60,7 +60,7 @@ You may change the name of the test later in the constructor by setting the :att
 The next line sets a more detailed description of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 9
+  :lines: 8
   :dedent: 8
 
 This is optional and it defaults to the auto-generated test's name, if not specified.
@@ -71,7 +71,7 @@ This is optional and it defaults to the auto-generated test's name, if not speci
 The next two lines specify the systems and the programming environments that this test is valid for:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 10-11
+  :lines: 9-10
   :dedent: 8
 
 Both of these variables accept a list of system names or environment names, respectively.
@@ -87,7 +87,7 @@ If only a system name (without a partition) is specified in the :attr:`self.vali
 The next line specifies the source file that needs to be compiled:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 12
+  :lines: 11
   :dedent: 8
 
 ReFrame expects any source files, or generally resources, of the test to be inside an ``src/`` directory, which is at the same level as the regression test file.
@@ -109,7 +109,7 @@ A user can associate compilers with programming environments in the ReFrame's `s
 The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 13
+  :lines: 12
   :dedent: 8
 
 Notice that you do not need to specify the executable name.
@@ -119,7 +119,7 @@ We will see in the `"Customizing Further A ReFrame Regression Test" <advanced.ht
 The next lines specify what should be checked for assessing the sanity of the result of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 14-15
+  :lines: 13-14
   :dedent: 8
 
 This expression simply asks ReFrame to look for ``time for single matrix vector multiplication`` in the standard output of the test.
@@ -140,7 +140,7 @@ You can also use the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>
 The last two lines of the regression test are optional, but serve a good role in a production environment:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 16-17
+  :lines: 15-16
   :dedent: 8
 
 In the :attr:`maintainers <reframe.core.pipeline.RegressionTest.maintainers>` attribute you may store a list of people responsible for the maintenance of this test.
