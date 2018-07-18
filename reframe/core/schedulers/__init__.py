@@ -8,7 +8,7 @@ import reframe.core.debug as debug
 import reframe.core.fields as fields
 from reframe.core.exceptions import JobNotStartedError
 from reframe.core.launchers import JobLauncher
-
+from reframe.core.runtime import runtime
 
 class JobState:
     def __init__(self, state):
@@ -212,6 +212,10 @@ class Job(abc.ABC):
         return self._sched_exclusive_access
 
     def emit_environ(self, builder):
+        rt = runtime()
+        if rt.system.modules_system_purge:
+            builder.verbatim('%s' % rt.modules_system.emit_unload_all())
+
         for e in self._environs:
             e.emit_load_instructions(builder)
 

@@ -268,6 +268,9 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
 
     def emit_unload_instr(self, module):
         return ''
+    
+    def emit_unload_all(self):
+        return ''
 
 
 class TestModuleMapping(unittest.TestCase):
