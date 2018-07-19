@@ -15,7 +15,7 @@ class ReframeSettings:
                 'descr': 'Dom TDS',
                 'hostnames': ['dom'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
