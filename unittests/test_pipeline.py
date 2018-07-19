@@ -605,3 +605,39 @@ class TestSanityPatterns(unittest.TestCase):
             }
         }
         self.test.check_performance()
+
+    def test_perf_var_evaluation(self):
+        # All performance values must be evaluated, despite the first one
+        # failing To test this, we need an extract function that will have a
+        # side effect when evaluated, whose result we will check after calling
+        # `check_performance()`.
+        logfile = 'perf.log'
+
+        @sn.sanity_function
+        def extract_perf(patt, tag):
+            val = sn.evaluate(
+                sn.extractsingle(patt, self.perf_file.name, tag, float))
+
+            with open('perf.log', 'a') as fp:
+                fp.write('%s=%s' % (tag, val))
+
+            return val
+
+        self.test.perf_patterns = {
+            'value1': extract_perf(r'performance1 = (?P<v1>\S+)', 'v1'),
+            'value2': extract_perf(r'performance2 = (?P<v2>\S+)', 'v2'),
+            'value3': extract_perf(r'performance3 = (?P<v3>\S+)', 'v3')
+        }
+        self.write_performance_output(performance1=1.0,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        with self.assertRaises(SanityError) as cm:
+            self.test.check_performance()
+
+        logfile = os.path.join(self.test.stagedir, logfile)
+        with open(logfile) as fp:
+            log_output = fp.read()
+
+        self.assertIn('v1', log_output)
+        self.assertIn('v2', log_output)
+        self.assertIn('v3', log_output)
