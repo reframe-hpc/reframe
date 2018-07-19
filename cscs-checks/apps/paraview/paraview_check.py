@@ -1,40 +1,32 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class ParaViewCheck(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('paraview_gpu_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class ParaViewCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.name = 'paraview_gpu_check'
         self.descr = 'ParaView GPU check'
 
-        # Uncomment and adjust for your site
         self.valid_systems = ['daint:gpu', 'dom:gpu']
 
-        # Uncomment and set the valid prog. environments for your site
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         # Uncomment and adjust to load the ParaView module
         self.modules = ['ParaView']
 
-        # Reset sources dir relative to the SCS apps prefix
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
+
+        # Needed in order to swap from the default version of gcc
+        self.pre_run = ['module swap gcc/6.2.0 gcc/7.1.0']
 
         self.sanity_patterns = sn.assert_found(
             'Vendor:   NVIDIA Corporation', self.stdout)
 
-        # Uncomment and adjust for your site
-        # self.use_multithreading = True
         self.num_tasks = 12
         self.num_tasks_per_node = 12
 
-        # Uncomment and set the maintainers and/or tags
         self.maintainers = ['JF']
         self.tags = {'scs', 'production'}
-
-
-def _get_checks(**kwargs):
-    return [ParaViewCheck(**kwargs)]
