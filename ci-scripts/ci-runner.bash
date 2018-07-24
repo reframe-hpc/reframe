@@ -194,6 +194,12 @@ else
     fi
 
 
+    # FIXME: Do not run modified checks on Daint during the PE upgrade
+    if [[ $(hostname) =~ daint ]]; then
+        exit $CI_EXITCODE
+    fi
+
+
     # Find modified or added user checks
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
