@@ -19,7 +19,9 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
 
-        # Needed in order to swap from the default version of gcc
+        # NOTE: This is needed in order to swap from the default
+        # version of gcc until issue #59 is fixed. Then it should
+        # be moved to the `self.modules` definition.
         self.pre_run = ['module swap gcc/6.2.0 gcc/7.1.0']
 
         self.sanity_patterns = sn.assert_found(
