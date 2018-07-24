@@ -221,7 +221,6 @@ class RuntimeContext:
         return self._modules_system
 
 
-
 # Global resources for the current host
 _runtime_context = None
 

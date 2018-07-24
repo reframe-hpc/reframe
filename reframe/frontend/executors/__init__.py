@@ -70,6 +70,9 @@ class RegressionTask:
     def compile(self):
         self._safe_call(self._check.compile)
 
+    def compile_wait(self):
+        self._safe_call(self._check.compile_wait)
+
     def run(self):
         self._safe_call(self._check.run)
         self._notify_listeners('on_task_run')

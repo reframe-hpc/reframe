@@ -6,9 +6,8 @@ import unittest
 import reframe.core.runtime as rt
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (ReframeError, ReframeSyntaxError,
-                                     PipelineError, SanityError,
-                                     CompilationError)
+from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
+                                     ReframeSyntaxError, SanityError)
 from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
                                    RunOnlyRegressionTest)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -32,11 +31,13 @@ class TestRegressionTest(unittest.TestCase):
 
     def setUp(self):
         self.setup_local_execution()
-        self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader = RegressionCheckLoader(['unittests/resources/checks'])
 
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
     def tearDown(self):
-        shutil.rmtree(self.resourcesdir, ignore_errors=True)
+        shutil.rmtree(rt.runtime().resources.prefix, ignore_errors=True)
         shutil.rmtree('.rfm_testing', ignore_errors=True)
 
     def replace_prefix(self, filename, new_prefix):
@@ -80,6 +81,7 @@ class TestRegressionTest(unittest.TestCase):
     def _run_test(self, test, compile_only=False):
         test.setup(self.partition, self.progenv)
         test.compile()
+        test.compile_wait()
         test.run()
         test.wait()
         test.check_sanity()
@@ -193,13 +195,15 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.setup(self.partition, self.progenv)
-        self.assertRaises(CompilationError, test.compile)
+        test.compile()
+        self.assertRaises(BuildError, test.compile_wait)
 
     def test_compile_only_warning(self):
         test = CompileOnlyRegressionTest('compileonlycheckwarning',
                                          'unittests/resources/checks')
-        test.sourcepath = 'compiler_warning.c'
-        self.progenv.cflags = '-Wall'
+        test.build_system = 'SingleSource'
+        test.build_system.srcfile = 'compiler_warning.c'
+        test.build_system.cflags = ['-Wall']
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.sanity_patterns = sn.assert_found(r'warning', test.stderr)
@@ -283,7 +287,7 @@ class TestRegressionTest(unittest.TestCase):
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        self.assertRaises(CompilationError, self._run_test, test)
+        self.assertRaises(BuildError, self._run_test, test)
 
     def test_sourcesdir_none_run_only(self):
         test = RunOnlyRegressionTest('hellocheck',
