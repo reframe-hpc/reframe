@@ -6,8 +6,8 @@ import unittest
 import reframe.core.runtime as rt
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import (ReframeError, ReframeSyntaxError,
-                                     PipelineError, SanityError)
+from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
+                                     ReframeSyntaxError, SanityError)
 from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
                                    RunOnlyRegressionTest)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -196,7 +196,7 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         test.setup(self.partition, self.progenv)
         test.compile()
-        self.assertRaises(PipelineError, test.compile_wait)
+        self.assertRaises(BuildError, test.compile_wait)
 
     def test_compile_only_warning(self):
         test = CompileOnlyRegressionTest('compileonlycheckwarning',
@@ -287,7 +287,7 @@ class TestRegressionTest(unittest.TestCase):
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        self.assertRaises(PipelineError, self._run_test, test)
+        self.assertRaises(BuildError, self._run_test, test)
 
     def test_sourcesdir_none_run_only(self):
         test = RunOnlyRegressionTest('hellocheck',
