@@ -84,6 +84,7 @@ class Environment:
             for conflict in module_conflicts:
                 stmts = rt.modules_system.emit_unload_commands(conflict)
                 self._load_stmts += stmts
+
             self._load_stmts += rt.modules_system.emit_load_commands(m)
 
         for k, v in self._variables.items():
