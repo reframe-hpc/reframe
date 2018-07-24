@@ -1045,6 +1045,10 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+            # We first evaluate and log all performance values and then we
+            # check them against the reference. This way we always log them
+            # even if the don't meet the reference.
+            perf_values = []
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
@@ -1055,9 +1059,13 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
+                perf_values.append((value, self.reference[key]))
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   ref, low_thres, high_thres)
-                evaluate(assert_reference(value, ref, low_thres, high_thres))
+
+            for val, reference in perf_values:
+                refval, low_thres, high_thres = reference
+                evaluate(assert_reference(val, refval, low_thres, high_thres))
 
     def _copy_job_files(self, job, dst):
         if job is None:

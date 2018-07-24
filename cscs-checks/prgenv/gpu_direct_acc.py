@@ -18,11 +18,11 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.num_tasks_per_node = 1
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            self._pgi_flags = '-acc -ta=tesla:cc35 -Mnorpath'
+            self._pgi_flags = '-acc -ta=tesla:cc35'
             self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
-                'G2G': '1',
+                'G2G': '1'
             }
             self.num_tasks = 8
             self.num_gpus_per_node = 8
@@ -42,12 +42,5 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             environ.fflags = '-hacc -hnoomp'
         elif environ.name.startswith('PrgEnv-pgi'):
             environ.fflags = self._pgi_flags
-
-        if (self.current_system.name in ['kesch']) and \
-                (environ.name.startswith('PrgEnv-pgi')):
-            self.pre_run = [
-                'export LD_PRELOAD='
-                '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
-            ]
 
         super().setup(partition, environ, **job_opts)
