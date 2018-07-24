@@ -79,7 +79,6 @@ class SlurmJob(sched.Job):
     def emit_preamble(self):
         preamble = [
             self._format_option(self.name, '--job-name="{0}"'),
-            self._format_option(self.name, '--job-name="{0}"'),
             self._format_option('%d:%d:%d' % self.time_limit, '--time={0}'),
             self._format_option(self.num_tasks, '--ntasks={0}'),
             self._format_option(self.num_tasks_per_node,
