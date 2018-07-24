@@ -16,7 +16,7 @@ class Environment:
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
     """
-    name = fields.StringPatternField('name', '(\w|-)+')
+    name = fields.StringPatternField('name', r'(\w|-)+')
     modules = fields.TypedListField('modules', str)
     variables = fields.TypedDictField('variables', str, str)
 
@@ -79,11 +79,11 @@ class Environment:
             if rt.modules_system.is_module_loaded(m):
                 self._preloaded.add(m)
 
-            self._conflicted += rt.modules_system.load_module(m, force=True)
-            for conflict in self._conflicted:
+            module_conflicts = rt.modules_system.load_module(m, force=True)
+            self._conflicted += module_conflicts
+            for conflict in module_conflicts:
                 stmts = rt.modules_system.emit_unload_commands(conflict)
                 self._load_stmts += stmts
-
             self._load_stmts += rt.modules_system.emit_load_commands(m)
 
         for k, v in self._variables.items():
