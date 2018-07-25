@@ -79,13 +79,13 @@ class Environment:
             if rt.modules_system.is_module_loaded(m):
                 self._preloaded.add(m)
 
-            module_conflicts = rt.modules_system.load_module(m, force=True)
-            self._conflicted += module_conflicts
-            for conflict in module_conflicts:
-                stmts = rt.modules_system.emit_unload_commands(conflict)
+            conflicted = rt.modules_system.load_module(m, force=True)
+            for c in conflicted:
+                stmts = rt.modules_system.emit_unload_commands(c)
                 self._load_stmts += stmts
 
             self._load_stmts += rt.modules_system.emit_load_commands(m)
+            self._conflicted += conflicted
 
         for k, v in self._variables.items():
             if k in os.environ:
