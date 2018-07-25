@@ -102,10 +102,10 @@ class TestFrontend(unittest.TestCase):
         return run_command_inline(self.argv, cli.main)
 
     def _stage_exists(self, check_name, partitions, environs):
-        stagedir = os.path.join(self.prefix, 'stage')
+        stagedir = os.path.join(self.prefix, 'stage', 'generic')
         for p in partitions:
             for e in environs:
-                path = os.path.join(stagedir, p, check_name, e)
+                path = os.path.join(stagedir, p, e, check_name)
                 if not os.path.exists(path):
                     return False
 

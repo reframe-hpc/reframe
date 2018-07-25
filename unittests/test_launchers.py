@@ -4,7 +4,6 @@ import unittest
 import reframe.core.launchers as launchers
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
-from reframe.core.shell import BashScriptBuilder
 
 
 class FakeJob(Job):
@@ -28,9 +27,7 @@ class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
 
     def setUp(self):
-        self.builder = BashScriptBuilder()
         self.job = FakeJob(name='fake_job',
-                           command='ls -l',
                            launcher=self.launcher,
                            num_tasks=4,
                            num_tasks_per_node=2,
@@ -50,9 +47,7 @@ class _TestLauncher(abc.ABC):
                            sched_exclusive_access='fake_exclude_access',
                            sched_options=['--fake'])
         self.job.options += ['--gres=gpu:4', '#DW jobdw anything']
-        self.minimal_job = FakeJob(name='fake_job',
-                                   command='ls -l',
-                                   launcher=self.launcher)
+        self.minimal_job = FakeJob(name='fake_job', launcher=self.launcher)
 
     @property
     @abc.abstractmethod
@@ -69,14 +64,12 @@ class _TestLauncher(abc.ABC):
     def expected_minimal_command(self):
         """The command expected to be emitted by the launcher."""
 
-    def test_emit_command(self):
-        emitted_command = self.launcher.emit_run_command(self.job,
-                                                         self.builder)
+    def test_run_command(self):
+        emitted_command = self.launcher.run_command(self.job)
         self.assertEqual(self.expected_command, emitted_command)
 
-    def test_emit_minimal_command(self):
-        emitted_command = self.launcher.emit_run_command(self.minimal_job,
-                                                         self.builder)
+    def test_run_minimal_command(self):
+        emitted_command = self.launcher.run_command(self.minimal_job)
         self.assertEqual(self.expected_minimal_command, emitted_command)
 
 
@@ -87,11 +80,11 @@ class TestSrunLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'srun --foo ls -l'
+        return 'srun --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'srun --foo ls -l'
+        return 'srun --foo'
 
 
 class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
@@ -103,7 +96,7 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
     @property
     def expected_command(self):
         return ('srun '
-                '--job-name=rfm_fake_job '
+                '--job-name=fake_job '
                 '--time=0:10:0 '
                 '--output=fake_stdout '
                 '--error=fake_stderr '
@@ -121,19 +114,17 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
                 '--exclude=fake_exclude_nodelist '
                 '--fake '
                 '--gres=gpu:4 '
-                '--foo '
-                'ls -l')
+                '--foo')
 
     @property
     def expected_minimal_command(self):
         return ('srun '
-                '--job-name=rfm_fake_job '
+                '--job-name=fake_job '
                 '--time=0:10:0 '
-                '--output=fake_job.out '
-                '--error=fake_job.err '
+                '--output=./fake_job.out '
+                '--error=./fake_job.err '
                 '--ntasks=1 '
-                '--foo '
-                'ls -l')
+                '--foo')
 
 
 class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
@@ -143,11 +134,11 @@ class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'aprun -B --foo ls -l'
+        return 'aprun -B --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'aprun -B --foo ls -l'
+        return 'aprun -B --foo'
 
 
 class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
@@ -157,11 +148,11 @@ class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'mpirun -np 4 --foo ls -l'
+        return 'mpirun -np 4 --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'mpirun -np 1 --foo ls -l'
+        return 'mpirun -np 1 --foo'
 
 
 class TestMpiexecLauncher(_TestLauncher, unittest.TestCase):
@@ -171,11 +162,11 @@ class TestMpiexecLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'mpiexec -n 4 --foo ls -l'
+        return 'mpiexec -n 4 --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'mpiexec -n 1 --foo ls -l'
+        return 'mpiexec -n 1 --foo'
 
 
 class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
@@ -188,11 +179,11 @@ class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'ddt --offline aprun -B --foo ls -l'
+        return 'ddt --offline aprun -B --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'ddt --offline aprun -B --foo ls -l'
+        return 'ddt --offline aprun -B --foo'
 
 
 class TestLocalLauncher(_TestLauncher, unittest.TestCase):
@@ -202,8 +193,8 @@ class TestLocalLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'ls -l'
+        return ''
 
     @property
     def expected_minimal_command(self):
-        return 'ls -l'
+        return ''
