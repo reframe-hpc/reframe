@@ -4,7 +4,7 @@
 import abc
 
 
-_RFM_TRAP_ERROR = '''
+_RFM_TRAP_ERROR = r'''
 _onerror()
 {
     exitcode=$?
@@ -98,8 +98,10 @@ class ShellScriptGenerator:
         self.write(s, 'body')
 
     def finalize(self):
-        ret = '\n'.join([self.shebang, *self._prolog,
-                         *self._body, *self._epilog])
+        # Here empty strings are filtered out before joining
+        stripped_shell = filter(None, [self.shebang, *self._prolog,
+                                       *self._body, *self._epilog])
+        ret = '\n'.join(stripped_shell)
 
         # end with a new line
         if ret:
