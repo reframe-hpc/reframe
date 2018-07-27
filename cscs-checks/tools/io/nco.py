@@ -59,10 +59,10 @@ class NC4SupportCheck(NCOBaseCheck):
         self.executable = 'ncks'
         self.executable_opts = ['-r']
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'^netCDF4/HDF5 support\s+Yes\W|'
-                            r'^netCDF4/HDF5 available\s+Yes\W', self.stdout),
-            sn.assert_found(r'^netCDF4/HDF5 support\s+Yes\W|'
-                            r'^netCDF4/HDF5 enabled\s+Yes\W', self.stdout)
+            sn.assert_found(r'^netCDF4/HDF5 (support|available)\s+Yes\W',
+                            self.stdout),
+            sn.assert_found(r'^netCDF4/HDF5 (support|enabled)\s+Yes\W',
+                            self.stdout)
         ])
 
 
@@ -113,9 +113,7 @@ class InfoNC4Check(NCOBaseCheck):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r':physics.*"Modified ECMWF physics"|'
-                            r'^Global attribute \d+: CDO, size = 63 NC_CHAR',
-                            self.stdout)
+            sn.assert_found(r'physics.*Modified ECMWF physics.*', self.stdout)
         ])
 
 
@@ -130,9 +128,7 @@ class InfoNC4CCheck(NCOBaseCheck):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r':physics.*"Modified ECMWF physics"|'
-                            r'^Global attribute \d+: CDO, size = 63 NC_CHAR',
-                            self.stdout)
+            sn.assert_found(r'physics.*Modified ECMWF physics.*', self.stdout)
         ])
 
 
