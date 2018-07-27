@@ -74,8 +74,8 @@ class NC4SupportCheck(NCOBaseCheck):
 # define as executable just an echo with no arguments.
 @rfm.simple_test
 class CDOModuleCompatibilityCheck(NCOBaseCheck):
-    def __init__(self, **kwargs):
-        super().__init__('cdo_module_compat', **kwargs)
+    def __init__(self):
+        super().__init__('cdo_module_compat')
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
         self.executable = 'echo'
@@ -90,15 +90,14 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
 
 @rfm.simple_test
 class InfoNCCheck(NCOBaseCheck):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super().__init__('info_nc')
         self.descr = ('verifies reading info of a standard netCDF file')
         self.executable = 'ncks'
         self.executable_opts = ['-M', 'sresa1b_ncar_ccsm3-example.nc']
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'model_name_english.*NCAR CCSM',
-                            self.stdout)
+            sn.assert_found(r'model_name_english.*NCAR CCSM', self.stdout)
         ])
 
 
