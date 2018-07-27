@@ -113,7 +113,7 @@ class InfoNC4Check(NCOBaseCheck):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'physics.*Modified ECMWF physics.*', self.stdout)
+            sn.assert_found(r'physics.*Modified ECMWF physics', self.stdout)
         ])
 
 
@@ -128,7 +128,7 @@ class InfoNC4CCheck(NCOBaseCheck):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'physics.*Modified ECMWF physics.*', self.stdout)
+            sn.assert_found(r'physics.*Modified ECMWF physics', self.stdout)
         ])
 
 
