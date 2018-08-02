@@ -362,6 +362,16 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
 
+    def test_no_empty_lines_in_preamble(self):
+        self.setup_job()
+        self.testjob._sched_nodelist = None
+        self.testjob._sched_exclude_nodelist = None
+        self.testjob._sched_partition = None
+        self.testjob._sched_reservation = None
+        self.testjob._sched_account = None
+        for l in self.testjob.emit_preamble():
+            self.assertNotEqual(l, '')
+
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)

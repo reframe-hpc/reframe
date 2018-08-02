@@ -98,10 +98,8 @@ class ShellScriptGenerator:
         self.write(s, 'body')
 
     def finalize(self):
-        # Here empty strings are filtered out before joining
-        stripped_shell = filter(None, [self.shebang, *self._prolog,
-                                       *self._body, *self._epilog])
-        ret = '\n'.join(stripped_shell)
+        ret = '\n'.join([self.shebang, *self._prolog,
+                         *self._body, *self._epilog])
 
         # end with a new line
         if ret:
