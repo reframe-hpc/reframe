@@ -1,19 +1,16 @@
 import os
+
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class ScaLAPACKTest(RegressionTest):
-    def __init__(self, name, linkage, **kwargs):
-        super().__init__(name+linkage, os.path.dirname(__file__), **kwargs)
-
+class ScaLAPACKTest(rfm.RegressionTest):
+    def __init__(self, name, linkage):
+        super().__init__()
+        self.name = name + linkage
+        self.descr = name + linkage.capitalize()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
-        self.maintainers = ['CB', 'LM', 'MKr']
-        self.tags = {'production'}
-        self.descr = name + linkage.capitalize()
-
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
                               'dom:gpu', 'kesch:cn',  'monch:compute']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -22,22 +19,28 @@ class ScaLAPACKTest(RegressionTest):
         self.num_tasks_per_node = 8
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
 
-        # STATIC LINKING NOT SUPPORTED BY ENVIRONMENTS
+        # NOTE: STATIC LINKING NOT SUPPORTED BY ENVIRONMENTS
         if (self.current_system.name in ['kesch', 'leone', 'monch'] and
             linkage == 'static'):
             self.valid_prog_environs = []
 
-    def compile(self):
-        if (self.current_system.name in ['kesch', 'monch'] and
-            self.current_environ.name == 'PrgEnv-gnu'):
-            self.current_environ.ldflags = '-lscalapack -lopenblas'
-        self.current_environ.fflags = '-O3'
-        super().compile()
+        self.build_system = 'SingleSource'
+        self.build_system.fflags = ['-O3']
+
+        self.maintainers = ['CB', 'LM', 'MKr']
+        self.tags = {'production'}
+
+        def setup(self, environ, partition, **job_opts):
+            super().setup(environ, partition, **job_opts)
+            if (self.current_system.name in ['kesch', 'monch'] and
+                self.current_environ.name == 'PrgEnv-gnu'):
+                self.build_system.ldflags = ['-lscalapack', '-lopenblas']
 
 
+@rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
-    def __init__(self, linkage, **kwargs):
-        super().__init__('scalapack_compile_run_', linkage, **kwargs)
+    def __init__(self, linkage):
+        super().__init__('scalapack_compile_run_', linkage)
         self.sourcepath = 'scalapack_compile_run.f'
 
         def fortran_float(value):
@@ -70,10 +73,10 @@ class ScaLAPACKSanity(ScaLAPACKTest):
             scalapack_sanity(4, 4, 0.1701907253504270)])
 
 
+@rfm.parameterized_test(['dynamic'])
 class ScaLAPACKPerf(ScaLAPACKTest):
-    def __init__(self, linkage, **kwargs):
-        super().__init__('scalapack_performance_compile_run_', linkage,
-                         **kwargs)
+    def __init__(self, linkage):
+        super().__init__('scalapack_performance_compile_run_', linkage)
 
         # FIXME:
         # Currently, this test case is only aimed for the monch acceptance,
@@ -100,9 +103,3 @@ class ScaLAPACKPerf(ScaLAPACKTest):
                 'perf': (24., -0.1, None)
             }
         }
-
-
-def _get_checks(**kwargs):
-    return [ScaLAPACKSanity('dynamic', **kwargs),
-            ScaLAPACKSanity('static', **kwargs),
-            ScaLAPACKPerf('dynamic', **kwargs)]
