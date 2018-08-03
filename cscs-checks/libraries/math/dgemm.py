@@ -1,31 +1,30 @@
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class DGEMMTest(RegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__('DGEMM_' + name, os.path.dirname(__file__), **kwargs)
+class DGEMMTest(rfm.RegressionTest):
+    def __init__(self, name):
+        super().__init__()
+        self.name = 'DGEMM_' + name
         self.descr = 'DGEMM performance test'
         self.sourcepath = 'dgemm.c'
         self.executable_opts = ['5000', '5000', '5000']
-        self.cflags = None
-        self.ldflags = None
+        self.build_system = 'SingleSource'
+        self.build_system.cflags = self.cflags
+        self.build_system.ldflags = self.ldflags
         self.sanity_patterns = sn.assert_found(
-            'Time for \d+ DGEMM operations', self.stdout)
+            r'Time for \d+ DGEMM operations', self.stdout)
         self.maintainers = ['AJ']
         self.tags = {'production'}
 
-    def compile(self):
-        self.current_environ.cflags  = self.cflags
-        self.current_environ.ldflags = self.ldflags
-        super().compile()
 
-
+@rfm.simple_test
 class DGEMMTestMonch(DGEMMTest):
-    def __init__(self, **kwargs):
-        super().__init__('Monch', **kwargs)
+    def __init__(self):
+        self.cflags  = ['-O3', '-I$EBROOTOPENBLAS/include']
+        self.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas', '-lpthread',
+                        '-lgfortran']
+        super().__init__('Monch')
         self.tags = {'monch_acceptance'}
         self.valid_systems = ['monch:compute']
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -35,8 +34,6 @@ class DGEMMTestMonch(DGEMMTest):
         self.num_cpus_per_task = 20
         self.num_tasks_per_socket = 10
         self.use_multithreading = False
-        self.cflags  = '-O3 -I$EBROOTOPENBLAS/include'
-        self.ldflags = '-L$EBROOTOPENBLAS/lib -lopenblas -lpthread -lgfortran'
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'MV2_ENABLE_AFFINITY': '0'
@@ -52,7 +49,3 @@ class DGEMMTestMonch(DGEMMTest):
                 'perf': (350, -0.1, None)
             }
         }
-
-
-def _get_checks(**kwargs):
-    return [DGEMMTestMonch(**kwargs)]
