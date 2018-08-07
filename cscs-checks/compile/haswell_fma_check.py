@@ -13,6 +13,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
+            self.modules = ['craype-haswell']
 
         self.sourcesdir = 'src/haswell_fma'
         self.build_system = 'Make'
