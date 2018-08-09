@@ -166,6 +166,11 @@ class _TestJob:
         self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
+    def test_no_empty_lines_in_preamble(self):
+        self.setup_job()
+        for l in self.testjob.emit_preamble():
+            self.assertNotEqual(l, '')
+
 
 class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
@@ -364,11 +369,6 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def test_no_empty_lines_in_preamble(self):
         self.setup_job()
-        self.testjob._sched_nodelist = None
-        self.testjob._sched_exclude_nodelist = None
-        self.testjob._sched_partition = None
-        self.testjob._sched_reservation = None
-        self.testjob._sched_account = None
         for l in self.testjob.emit_preamble():
             self.assertNotEqual(l, '')
 
