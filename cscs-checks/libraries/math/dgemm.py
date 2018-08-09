@@ -3,15 +3,11 @@ import reframe.utility.sanity as sn
 
 
 class DGEMMTest(rfm.RegressionTest):
-    def __init__(self, name):
+    def __init__(self):
         super().__init__()
-        self.name = 'DGEMM_' + name
         self.descr = 'DGEMM performance test'
         self.sourcepath = 'dgemm.c'
         self.executable_opts = ['5000', '5000', '5000']
-        self.build_system = 'SingleSource'
-        self.build_system.cflags = self.cflags
-        self.build_system.ldflags = self.ldflags
         self.sanity_patterns = sn.assert_found(
             r'Time for \d+ DGEMM operations', self.stdout)
         self.maintainers = ['AJ']
@@ -21,10 +17,7 @@ class DGEMMTest(rfm.RegressionTest):
 @rfm.simple_test
 class DGEMMTestMonch(DGEMMTest):
     def __init__(self):
-        self.cflags  = ['-O3', '-I$EBROOTOPENBLAS/include']
-        self.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas', '-lpthread',
-                        '-lgfortran']
-        super().__init__('Monch')
+        super().__init__()
         self.tags = {'monch_acceptance'}
         self.valid_systems = ['monch:compute']
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -38,6 +31,10 @@ class DGEMMTestMonch(DGEMMTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'MV2_ENABLE_AFFINITY': '0'
         }
+        self.build_system = 'SingleSource'
+        self.build_system.cflags = ['-O3', '-I$EBROOTOPENBLAS/include']
+        self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
+                                     '-lpthread', '-lgfortran']
         self.perf_patterns = {
             'perf': sn.max(
                 sn.extractall(r'Run\s\d\s+:\s+(?P<gflops>\S+)\s\S+',
