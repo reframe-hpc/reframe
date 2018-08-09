@@ -367,11 +367,6 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
 
-    def test_no_empty_lines_in_preamble(self):
-        self.setup_job()
-        for l in self.testjob.emit_preamble():
-            self.assertNotEqual(l, '')
-
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
