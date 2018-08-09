@@ -5,10 +5,8 @@ import reframe.utility.sanity as sn
 
 
 class ScaLAPACKTest(rfm.RegressionTest):
-    def __init__(self, name, linkage):
+    def __init__(self, linkage):
         super().__init__()
-        self.name = name + linkage
-        self.descr = name + linkage.capitalize()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
@@ -26,21 +24,20 @@ class ScaLAPACKTest(rfm.RegressionTest):
 
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O3']
-
         self.maintainers = ['CB', 'LM', 'MKr']
         self.tags = {'production'}
 
-        def setup(self, environ, partition, **job_opts):
-            super().setup(environ, partition, **job_opts)
-            if (self.current_system.name in ['kesch', 'monch'] and
-                self.current_environ.name == 'PrgEnv-gnu'):
-                self.build_system.ldflags = ['-lscalapack', '-lopenblas']
+    def setup(self, environ, partition, **job_opts):
+        super().setup(environ, partition, **job_opts)
+        if (self.current_system.name in ['kesch', 'monch'] and
+            self.current_environ.name == 'PrgEnv-gnu'):
+            self.build_system.ldflags = ['-lscalapack', '-lopenblas']
 
 
 @rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
-        super().__init__('scalapack_compile_run_', linkage)
+        super().__init__(linkage)
         self.sourcepath = 'scalapack_compile_run.f'
 
         def fortran_float(value):
@@ -76,13 +73,12 @@ class ScaLAPACKSanity(ScaLAPACKTest):
 @rfm.parameterized_test(['dynamic'])
 class ScaLAPACKPerf(ScaLAPACKTest):
     def __init__(self, linkage):
-        super().__init__('scalapack_performance_compile_run_', linkage)
+        super().__init__(linkage)
 
         # FIXME:
         # Currently, this test case is only aimed for the monch acceptance,
         # yet it could be interesting to extend it to other systems.
         # NB: The test case is very small, but larger cases did not succeed!
-
         self.tags |= {'monch_acceptance'}
         self.sourcepath = 'scalapack_performance_compile_run.f'
         self.valid_systems = ['monch:compute']
