@@ -167,7 +167,6 @@ class _TestJob:
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
     def test_no_empty_lines_in_preamble(self):
-        self.setup_job()
         for l in self.testjob.emit_preamble():
             self.assertNotEqual(l, '')
 
