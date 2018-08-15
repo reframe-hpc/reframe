@@ -1,13 +1,11 @@
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class StreamTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('stream_benchmark',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class StreamTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         # All available systems are supported
@@ -17,13 +15,13 @@ class StreamTest(RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ' -homp ',
-            'PrgEnv-gnu': ' -fopenmp -O3',
-            'PrgEnv-intel': ' -qopenmp -O3',
-            'PrgEnv-pgi': ' -mp -O3'
+            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-gnu': ['-fopenmp', '-O3'],
+            'PrgEnv-intel': ['-qopenmp', '-O3'],
+            'PrgEnv-pgi': ['-mp', '-O3']
         }
         self.sourcepath = 'stream.c'
-        self.tags = {'production', 'monch_acceptance'}
+        self.build_system = 'SingleSource'
         self.sanity_patterns = sn.assert_found(
             r'Solution Validates: avg error less than', self.stdout)
         self.num_tasks = 1
@@ -82,6 +80,7 @@ class StreamTest(RegressionTest):
                                       self.stdout, 'triad', float)
         }
 
+        self.tags = {'production', 'monch_acceptance'}
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):
@@ -91,16 +90,9 @@ class StreamTest(RegressionTest):
         self.reference = self.stream_bw_reference[self.current_environ.name]
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.current_environ.variables['OMP_NUM_THREADS'] = \
-            str(self.num_cpus_per_task)
+        self.current_environ.variables['OMP_NUM_THREADS'] = str(
+            self.num_cpus_per_task)
         if self.current_environ.name == 'PrgEnv-pgi':
             self.current_environ.variables['OMP_PROC_BIND'] = 'true'
 
-    def compile(self):
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags = prgenv_flags
-        super().compile()
-
-
-def _get_checks(**kwargs):
-    return [StreamTest(**kwargs)]
+        self.build_system.cflags = self.prgenv_flags[self.current_environ.name]
