@@ -2,8 +2,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(*[[lang, linkage] for lang in ['c', 'f90']
-                          for linkage in ['static', 'dynamic']])
+@rfm.parameterized_test(*([lang, linkage] for lang in ['c', 'f90']
+                          for linkage in ['static', 'dynamic']))
 class HDF5Test(rfm.RegressionTest):
     def __init__(self, lang, linkage):
         super().__init__()
@@ -68,10 +68,7 @@ class HDF5Test(rfm.RegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.build_system = 'SingleSource'
-        flags = ['-%s' % linkage]
-        self.build_system.cflags = flags
-        self.build_system.cxxflags = flags
-        self.build_system.fflags = flags
+        self.build_system.ldflags = ['-%s' % linkage]
         self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO']
