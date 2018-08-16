@@ -39,7 +39,7 @@ class StreamTest(rfm.RegressionTest):
 
         self.variables = {
             'OMP_PLACES': 'threads',
-            'OMP_PROC_BIND': 'spread',
+            'OMP_PROC_BIND': 'spread'
         }
         self.stream_bw_reference = {
             'PrgEnv-cray': {
@@ -85,14 +85,13 @@ class StreamTest(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task[partition.fullname]
-        super().setup(partition, environ, **job_opts)
-
-        self.reference = self.stream_bw_reference[self.current_environ.name]
+        self.reference = self.stream_bw_reference[environ.name]
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.current_environ.variables['OMP_NUM_THREADS'] = str(
+        self.variables['OMP_NUM_THREADS'] = str(
             self.num_cpus_per_task)
-        if self.current_environ.name == 'PrgEnv-pgi':
-            self.current_environ.variables['OMP_PROC_BIND'] = 'true'
+        if environ.name == 'PrgEnv-pgi':
+            self.variables['OMP_PROC_BIND'] = 'true'
 
-        self.build_system.cflags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cflags = self.prgenv_flags[environ.name]
+        super().setup(partition, environ, **job_opts)
