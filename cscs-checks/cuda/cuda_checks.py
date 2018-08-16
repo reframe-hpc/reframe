@@ -5,9 +5,8 @@ import reframe.utility.sanity as sn
 
 
 class CudaCheck(rfm.RegressionTest):
-    def __init__(self, name):
+    def __init__(self):
         super().__init__()
-        self.name = 'cuda_%s_check' % name
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
@@ -23,9 +22,9 @@ class CudaCheck(rfm.RegressionTest):
 
 
 @rfm.simple_test
-class MatrixmulCublasCheck(CudaCheck):
+class CudaMatrixmulCublasCheck(CudaCheck):
     def __init__(self):
-        super().__init__('matrixmulcublas')
+        super().__init__()
         self.descr = 'Implements matrix multiplication using CUBLAS'
         self.sourcepath = 'matrixmulcublas.cu'
         self.build_system = 'SingleSource'
@@ -37,9 +36,9 @@ class MatrixmulCublasCheck(CudaCheck):
 
 
 @rfm.simple_test
-class DeviceQueryCheck(CudaCheck):
+class CudaDeviceQueryCheck(CudaCheck):
     def __init__(self):
-        super().__init__('devicequery')
+        super().__init__()
         self.descr = 'Queries the properties of the CUDA devices'
         self.sourcepath = 'devicequery.cu'
         self.build_system = 'SingleSource'
@@ -49,9 +48,9 @@ class DeviceQueryCheck(CudaCheck):
 
 
 @rfm.simple_test
-class ConcurrentKernelsCheck(CudaCheck):
+class CudaConcurrentKernelsCheck(CudaCheck):
     def __init__(self):
-        super().__init__('concurrentkernels')
+        super().__init__()
         self.descr = 'Use of streams for concurrent execution'
         self.sourcepath = 'concurrentkernels.cu'
         self.build_system = 'SingleSource'
@@ -61,9 +60,9 @@ class ConcurrentKernelsCheck(CudaCheck):
 
 
 @rfm.simple_test
-class SimpleMPICheck(CudaCheck):
+class CudaSimpleMPICheck(CudaCheck):
     def __init__(self):
-        super().__init__('simplempi')
+        super().__init__()
         self.descr = 'Simple example demonstrating how to use MPI with CUDA'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'simplempi')
