@@ -95,8 +95,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             datetime.now() - self.compilation_time_seconds).total_seconds()
 
 
-@rfm.parameterized_test(*[[lang, linkage] for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']])
+@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage, **kwargs):
         super().__init__('serial', lang, linkage, **kwargs)
@@ -114,8 +114,8 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
-@rfm.parameterized_test(*[[lang, linkage] for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']])
+@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
@@ -138,8 +138,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         }
 
 
-@rfm.parameterized_test(*[[lang, linkage] for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']])
+@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
@@ -160,8 +160,8 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
-@rfm.parameterized_test(*[[lang, linkage] for lang in ['cpp', 'c', 'f90']
-                          for linkage in ['dynamic', 'static']])
+@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
