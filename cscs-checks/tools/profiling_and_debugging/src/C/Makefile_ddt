@@ -1,17 +1,19 @@
-LD = $(CC)
+RM := rm -f
+EXECUTABLE := jacobi
 
-OBJ            = _jacobi.o _main.o 
-OBJ2 	       = $(subst _,$(PE_ENV)_,$(OBJ))
-LIB            = 
+all: $(EXECUTABLE)
 
+OBJS := _main.o _jacobi.o
 .SUFFIXES: .o .c
 
-%.o: %.c
-	$(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
+$(OBJS):
+	$(PREP) $(CC) $(CFLAGS) -c -o $(@) $(@:.o=.c)
 
-ddt_check: $(OBJ)
-	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@
+$(EXECUTABLE): $(OBJS)
+	$(PREP) $(CC) $(CFLAGS) $(LDFLAGS) -o $(@) $(OBJS)
 
 clean:
-	rm -f *.o o_* *.mod ddt_check_c
-	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf
+	-$(RM) $(OBJS)
+
+distclean:
+	-$(RM) $(OBJS) $(EXECUTABLE)

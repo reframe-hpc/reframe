@@ -1,22 +1,26 @@
+RM := rm -f
+EXECUTABLE := jacobi
+
+all: $(EXECUTABLE)
 LD = $(CC)
 
-OBJ            = _jacobi-cuda-kernel.o _jacobi-cuda.o
-OBJ2 	       = $(subst _,$(PE_ENV)_,$(OBJ))
-LIB            = 
+OBJS = _jacobi-cuda-kernel.o _jacobi-cuda.o
+# OBJ2 = $(subst _,$(PE_ENV)_,$(OBJ))
+LIB  = 
 
-.SUFFIXES: .o .cu
+.SUFFIXES: .o .cu .c
 
 %.o: %.cu
-	nvcc $(NVCCFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
-
-.SUFFIXES: .o .c
+	$(PREP) nvcc $(NVCCFLAGS) $(DDTFLAGS) -c $< -o $@
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
+	$(PREP) $(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $@
 
-ddt_check: $(OBJ)
-	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@
+$(EXECUTABLE): $(OBJS)
+	$(PREP) $(LD) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIB) -o $@
 
 clean:
-	rm -f *.o o_* *.mod ddt_check_cu
-	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf
+	-$(RM) $(OBJS)
+
+distclean:
+	-$(RM) $(OBJS) $(EXECUTABLE)

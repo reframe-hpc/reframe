@@ -1,17 +1,27 @@
-LD = $(FC)
+RM := rm -f
+EXECUTABLE := jacobi
 
-OBJ            = _variableDef.o _jacobiddt.o _main.o 
-OBJ2 	       = $(subst _,$(PE_ENV)_,$(OBJ))
-LIB            = 
+all: jacobi
 
-.SUFFIXES: .o .F90
+OBJS :=  _variableDef.o _jacobi.o _main.o
 
-%.o: %.F90
-	$(FC) $(FFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
+_variableDef.o:
+	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
 
-ddt_check: $(OBJ)
-	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@
+_jacobi.o: _variableDef.o
+	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
+
+_main.o: _variableDef.o _jacobi.o
+	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
+
+$(OBJS2): $(OBJS)
+	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
+
+$(EXECUTABLE): $(OBJS) $(OBJS2)
+	$(PREP) $(FC) $(FFLAGS) $(LDFLAGS) -o $(@) $(OBJS) $(OBJS2)
 
 clean:
-	rm -f *.o o_* *.mod ddt_check_F90
-	rm -fr *.ptx *.opt *.cg *.ap2 *.rpt *.cub *.lst *.xf
+	-$(RM) $(OBJS) *.mod
+
+distclean:
+	-$(RM) $(OBJS) $(EXECUTABLE)
