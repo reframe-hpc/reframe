@@ -28,6 +28,10 @@ class ScorepHybrid(rfm.RegressionTest):
         self.executable = 'jacobi'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_scorep_mpi_omp'
+        # NOTE: Restrict concurrency to allow creation of Fortran modules
+        if lang == 'F90':
+            self.build_system.max_concurrency = 1
+
         self.sourcesdir = 'src/%s' % lang
         self.build_system.srcdir = self.sourcesdir
         self.num_tasks = 3

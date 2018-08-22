@@ -5,17 +5,7 @@ all: jacobi
 
 OBJS :=  _variableDef.o _jacobi.o _main.o
 
-_variableDef.o:
-	@echo 'Compiling: $@'
-	@echo '$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)'
-	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
-
-_jacobi.o: _variableDef.o
-	@echo 'Compiling: $@'
-	@echo '$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)'
-	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
-
-_main.o: _variableDef.o _jacobi.o
+$(OBJS):
 	@echo 'Compiling: $@'
 	@echo '$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)'
 	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
