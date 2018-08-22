@@ -14,7 +14,11 @@ class DdtCheck(rfm.RegressionTest):
         self.lang = lang
         self.extension = extension
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_ddt'
+        self.build_system.makefile = 'Makefile'
+        # NOTE: Restrict concurrency to allow creation of Fortran modules
+        if lang == 'F90':
+            self.build_system.max_concurrency = 1
+
         self.executable = './jacobi'
         self.sourcesdir = os.path.join('src', lang)
         self.valid_prog_environs = ['PrgEnv-gnu']
