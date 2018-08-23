@@ -166,6 +166,10 @@ class _TestJob:
         self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
+    def test_no_empty_lines_in_preamble(self):
+        for l in self.testjob.emit_preamble():
+            self.assertNotEqual(l, '')
+
 
 class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
