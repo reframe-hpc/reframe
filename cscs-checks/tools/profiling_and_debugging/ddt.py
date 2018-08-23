@@ -66,7 +66,7 @@ class DdtCpuCheck(DdtCheck):
                               'dom:gpu', 'dom:mc', 'kesch:cn']
 
         if self.current_system.name == 'kesch' and self.lang == 'C':
-            self.flags += ['-lm']
+            self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
         self.ddt_options = [
