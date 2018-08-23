@@ -121,7 +121,8 @@ class SlurmJob(sched.Job):
             else:
                 preamble.append(opt)
 
-        return preamble
+        # Filter out empty statements before returning
+        return list(filter(None, preamble))
 
     def _run_command(self, cmd, timeout=None):
         """Run command cmd and re-raise any exception as a JobError."""
