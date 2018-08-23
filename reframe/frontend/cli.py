@@ -178,6 +178,9 @@ def main():
         dest='module_map_file',
         help='Apply module mappings defined in FILE')
     misc_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge modules environment before running any tests')
+    misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
     misc_options.add_argument(
@@ -412,6 +415,9 @@ def main():
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:
             rt.modules_system.unload_module(settings.reframe_module)
+
+        if options.purge_env:
+            rt.modules_system.unload_all()
 
         for m in options.user_modules:
             try:
