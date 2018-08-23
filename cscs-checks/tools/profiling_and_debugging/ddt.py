@@ -14,7 +14,6 @@ class DdtCheck(rfm.RegressionTest):
         self.lang = lang
         self.extension = extension
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile'
         # NOTE: Restrict concurrency to allow creation of Fortran modules
         if lang == 'F90':
             self.build_system.max_concurrency = 1
@@ -25,11 +24,10 @@ class DdtCheck(rfm.RegressionTest):
         self.modules = ['ddt']
         self.prgenv_flags = {
             # 'PrgEnv-cray': ' -O2 -homp',
-            'PrgEnv-gnu': ['-O2', '-fopenmp'],
+            'PrgEnv-gnu': ['-g', '-O2', '-fopenmp'],
             # 'PrgEnv-intel': ' -O2 -qopenmp',
             # 'PrgEnv-pgi': ' -O2 -mp'
         }
-        self.flags = ['-g']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
@@ -48,19 +46,18 @@ class DdtCheck(rfm.RegressionTest):
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
         self.post_run = ['ddt -V ; which ddt ;']
-        self.ddt_options = []
         self.keep_files = ['ddtreport.txt']
-
-    def _set_compiler_flags(self):
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.build_system.cflags = self.flags + prgenv_flags
-        self.build_system.cxxflags = self.flags + prgenv_flags
-        self.build_system.fflags = self.flags + prgenv_flags
-        self.build_system.ldflags = self.flags + prgenv_flags
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
-        self._set_compiler_flags()
+        prgenv_flags = self.prgenv_flags[self.current_environ.name]
+        if self.build_system.cflags:
+            self.build_system.cflags += prgenv_flags
+        else:
+            self.build_system.cflags = prgenv_flags
+
+        self.build_system.cxxflags = prgenv_flags
+        self.build_system.fflags = prgenv_flags
         self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
                                             self.ddt_options)
 
@@ -120,12 +117,11 @@ class DdtGpuCheck(DdtCheck):
             '--trace-at _jacobi-cuda-kernel.cu:111,residue'
         ]
 
-        self.flags += ['-DUSE_MPI']
-        self.flags += ['-D_CSCS_ITMAX=5']
+        self.build_system.cflags = ['-DUSE_MPI', '-D_CSCS_ITMAX=5']
 
         if self.current_system.name == 'kesch':
             arch = 'sm_37'
-            self.flags += ['-lm', '-lcudart']
+            self.build_system.ldflags = ['-lm', '-lcudart']
         else:
             arch = 'sm_60'
         self.build_system.options = ['NVCCFLAGS="-g -arch=%s"' % arch]
