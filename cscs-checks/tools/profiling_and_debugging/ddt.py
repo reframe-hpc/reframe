@@ -51,11 +51,7 @@ class DdtCheck(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
         prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        if self.build_system.cflags:
-            self.build_system.cflags += prgenv_flags
-        else:
-            self.build_system.cflags = prgenv_flags
-
+        self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
         self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
@@ -117,7 +113,7 @@ class DdtGpuCheck(DdtCheck):
             '--trace-at _jacobi-cuda-kernel.cu:111,residue'
         ]
 
-        self.build_system.cflags = ['-DUSE_MPI', '-D_CSCS_ITMAX=5']
+        self.build_system.cppflags = ['-DUSE_MPI', '-D_CSCS_ITMAX=5']
 
         if self.current_system.name == 'kesch':
             arch = 'sm_37'
