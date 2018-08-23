@@ -88,8 +88,7 @@ class StreamTest(rfm.RegressionTest):
         self.reference = self.stream_bw_reference[environ.name]
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables['OMP_NUM_THREADS'] = str(
-            self.num_cpus_per_task)
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
         if environ.name == 'PrgEnv-pgi':
             self.variables['OMP_PROC_BIND'] = 'true'
 
