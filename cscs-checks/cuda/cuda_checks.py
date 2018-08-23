@@ -11,7 +11,11 @@ class CudaCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
-        self.modules = ['craype-accel-nvidia60']
+        if self.current_system.name == 'kesch':
+            self.modules = ['craype-accel-nvidia35']
+        else:
+            self.modules = ['craype-accel-nvidia60']
+
         self.num_gpus_per_node = 1
         self.nvidia_sm = '60'
         if self.current_system.name == 'kesch':
