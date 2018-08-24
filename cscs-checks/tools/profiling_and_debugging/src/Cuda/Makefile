@@ -14,7 +14,7 @@ LIB  =
 	$(PREP) nvcc $(NVCCFLAGS) $(DDTFLAGS) -c $< -o $@
 
 %.o: %.c
-	$(PREP) $(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $@
+	$(PREP) $(CC) $(CPPFLAGS) $(CFLAGS) $(DDTFLAGS) -c $< -o $@
 
 $(EXECUTABLE): $(OBJS)
 	$(PREP) $(LD) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LIB) -o $@
