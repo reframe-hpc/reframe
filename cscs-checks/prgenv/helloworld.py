@@ -5,9 +5,8 @@ import reframe.utility.sanity as sn
 
 
 class HelloWorldBaseTest(rfm.RegressionTest):
-    def __init__(self, name, lang, linkage, **kwargs):
+    def __init__(self, name, lang, linkage):
         super().__init__()
-        self.name = 'hello_world_%s_%s_%s' % (name, linkage, lang)
         if self.current_system.name in ['dom', 'daint']:
             self.modules += ['gcc/6.1.0']
 
@@ -95,7 +94,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             datetime.now() - self.compilation_time_seconds).total_seconds()
 
 
-@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage, **kwargs):
@@ -104,17 +104,18 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': [''],
-            'PrgEnv-gnu': [''],
-            'PrgEnv-intel': [''],
-            'PrgEnv-pgi': ['']
+            'PrgEnv-cray': [],
+            'PrgEnv-gnu': [],
+            'PrgEnv-intel': [],
+            'PrgEnv-pgi': []
         }
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
 
 
-@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
@@ -138,7 +139,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         }
 
 
-@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
@@ -146,10 +148,10 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': [''],
-            'PrgEnv-gnu': [''],
-            'PrgEnv-intel': [''],
-            'PrgEnv-pgi': ['']
+            'PrgEnv-cray': [],
+            'PrgEnv-gnu': [],
+            'PrgEnv-intel': [],
+            'PrgEnv-pgi': []
         }
 
         # for the MPI test the self.num_tasks_per_node should always be one. If
@@ -160,7 +162,8 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
-@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
