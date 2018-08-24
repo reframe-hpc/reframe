@@ -38,7 +38,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.tags = {'production', 'monch_acceptance'}
 
     def setup(self, partition, environ, **job_opts):
-
         result = sn.findall(r'Hello World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
                             r'\s*(\d+)', self.stdout)
