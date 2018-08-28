@@ -68,14 +68,14 @@ program openacc_cuda_mpi_cppstd
     !$acc update host(f1,f2,f3)
   
     ! Call a CUDA kernel with host arrays 
-!    call call_cuda_kernel_with_copy(f1, f2, NSIZE)
+    call call_cuda_kernel_with_copy(f1, f2, NSIZE)
 
     ! Call a CUDA kernel without data copy, use device ptr
-!    call call_cuda_kernel_no_copy(f3, f2, NSIZE)
+    call call_cuda_kernel_no_copy(f3, f2, NSIZE)
     !$acc update host(f3)
 
     ! Call a C++ function using STD lib
-!    call call_cpp_std(f2, NSIZE, cpp_std_sum)
+    call call_cpp_std(f2, NSIZE, cpp_std_sum)
     !$acc end data 
   end if
 
@@ -178,4 +178,3 @@ contains
     call cpp_call(c_loc(fp(1)), n, i)
   end subroutine call_cpp_std 
 end program openacc_cuda_mpi_cppstd
-
