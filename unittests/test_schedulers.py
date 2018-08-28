@@ -16,7 +16,6 @@ from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.schedulers.slurm import SlurmNode
-from reframe.core.shell import BashScriptBuilder
 
 
 class _TestJob:
@@ -24,21 +23,27 @@ class _TestJob:
         self.workdir = tempfile.mkdtemp(dir='unittests')
         self.testjob = self.job_type(
             name='testjob',
-            command='hostname',
             launcher=self.launcher,
-            environs=[Environment(name='foo', modules=['testmod_foo'])],
             workdir=self.workdir,
             script_filename=os_ext.mkstemp_path(
                 dir=self.workdir, suffix='.sh'),
             stdout=os_ext.mkstemp_path(dir=self.workdir, suffix='.out'),
             stderr=os_ext.mkstemp_path(dir=self.workdir, suffix='.err'),
-            pre_run=['echo prerun'],
-            post_run=['echo postrun']
         )
-        self.builder = BashScriptBuilder()
+        self.environs = [Environment(name='foo', modules=['testmod_foo'])]
+        self.pre_run = ['echo prerun']
+        self.post_run = ['echo postrun']
+        self.parallel_cmd = 'hostname'
 
     def tearDown(self):
         shutil.rmtree(self.workdir)
+
+    @property
+    def commands(self):
+        runcmd = self.launcher.run_command(self.testjob)
+        return [*self.pre_run,
+                runcmd + ' ' + self.parallel_cmd,
+                *self.post_run]
 
     @property
     def job_type(self):
@@ -95,13 +100,13 @@ class _TestJob:
                                 '#DW stage_in source=/foo']
 
     def test_prepare(self):
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(self.commands, self.environs)
         self.assertScriptSanity(self.testjob.script_filename)
 
     @fixtures.switch_to_user_runtime
     def test_submit(self):
         self.setup_user()
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(self.commands, self.environs)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
@@ -109,9 +114,9 @@ class _TestJob:
     @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
         self.setup_user()
-        self.testjob._command = 'sleep 10'
+        self.parallel_cmd = 'sleep 10'
         self.testjob._time_limit = (0, 0, 2)
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(self.commands, self.environs)
         t_job = datetime.now()
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
@@ -127,8 +132,8 @@ class _TestJob:
     @fixtures.switch_to_user_runtime
     def test_cancel(self):
         self.setup_user()
-        self.testjob._command = 'sleep 30'
-        self.testjob.prepare(self.builder)
+        self.parallel_cmd = 'sleep 30'
+        self.testjob.prepare(self.commands, self.environs)
         t_job = datetime.now()
         self.testjob.submit()
         self.testjob.cancel()
@@ -138,28 +143,32 @@ class _TestJob:
         self.assertLess(t_job.total_seconds(), 30)
 
     def test_cancel_before_submit(self):
-        self.testjob._command = 'sleep 3'
-        self.testjob.prepare(self.builder)
+        self.parallel_cmd = 'sleep 3'
+        self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.cancel)
 
     def test_wait_before_submit(self):
-        self.testjob._command = 'sleep 3'
-        self.testjob.prepare(self.builder)
+        self.parallel_cmd = 'sleep 3'
+        self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.wait)
 
     @fixtures.switch_to_user_runtime
     def test_poll(self):
         self.setup_user()
-        self.testjob._command = 'sleep 2'
-        self.testjob.prepare(self.builder)
+        self.parallel_cmd = 'sleep 2'
+        self.testjob.prepare(self.commands, self.environs)
         self.testjob.submit()
         self.assertFalse(self.testjob.finished())
         self.testjob.wait()
 
     def test_poll_before_submit(self):
-        self.testjob._command = 'sleep 3'
-        self.testjob.prepare(self.builder)
+        self.parallel_cmd = 'sleep 3'
+        self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.finished)
+
+    def test_no_empty_lines_in_preamble(self):
+        for l in self.testjob.emit_preamble():
+            self.assertNotEqual(l, '')
 
 
 class TestLocalJob(_TestJob, unittest.TestCase):
@@ -210,13 +219,13 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         # We also check that the additional spawned process is also killed.
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
-        self.testjob._command = 'sleep 5 &'
+        self.parallel_cmd = 'sleep 5 &'
+        self.pre_run = ['trap -- "" TERM']
+        self.post_run = ['echo $!', 'wait']
         self.testjob._time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
-        self.testjob._pre_run = ['trap -- "" TERM']
-        self.testjob._post_run = ['echo $!', 'wait']
 
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(self.commands, self.environs)
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
@@ -253,12 +262,12 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         #  kills it.
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
 
-        self.testjob._pre_run = []
-        self.testjob._post_run = []
-        self.testjob._command = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
-                                             'src', 'sleep_deeply.sh')
+        self.pre_run = []
+        self.post_run = []
+        self.parallel_cmd = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
+                                         'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(self.commands, self.environs)
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
@@ -301,7 +310,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.setup_job()
         super().test_prepare()
         expected_directives = set([
-            '#SBATCH --job-name="rfm_testjob"',
+            '#SBATCH --job-name="testjob"',
             '#SBATCH --time=0:5:0',
             '#SBATCH --output=%s' % self.testjob.stdout,
             '#SBATCH --error=%s' % self.testjob.stderr,
@@ -414,7 +423,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         num_cpus_per_node = (self.testjob.num_cpus_per_task *
                              self.testjob.num_tasks_per_node)
         expected_directives = set([
-            '#PBS -N "rfm_testjob"',
+            '#PBS -N "testjob"',
             '#PBS -l walltime=0:5:0',
             '#PBS -o %s' % self.testjob.stdout,
             '#PBS -e %s' % self.testjob.stderr,
@@ -441,7 +450,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
         num_cpus_per_node = self.testjob.num_tasks_per_node
         expected_directives = set([
-            '#PBS -N "rfm_testjob"',
+            '#PBS -N "testjob"',
             '#PBS -l walltime=0:5:0',
             '#PBS -o %s' % self.testjob.stdout,
             '#PBS -e %s' % self.testjob.stderr,
@@ -525,15 +534,12 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         slurm_scheduler = getscheduler('slurm')
         self.testjob = slurm_scheduler(
             name='testjob',
-            command='hostname',
             launcher=getlauncher('local')(),
-            environs=[Environment(name='foo')],
             workdir=self.workdir,
             script_filename=os.path.join(self.workdir, 'testjob.sh'),
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        self.builder = BashScriptBuilder()
         # monkey patch `_get_reservation_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob._get_reservation_nodes = self.create_dummy_nodes
@@ -593,7 +599,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertRaises(JobError, self.prepare_job)
 
     def prepare_job(self):
-        self.testjob.prepare(self.builder)
+        self.testjob.prepare(['hostname'])
 
 
 class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):

@@ -70,50 +70,43 @@ class SlurmJob(sched.Job):
         self._is_cancelling = False
         self._update_state_count = 0
 
-    def _emit_job_option(self, var, option, builder):
+    def _format_option(self, var, option):
         if var is not None:
-            builder.verbatim(self._prefix + ' ' + option.format(var))
+            return self._prefix + ' ' + option.format(var)
+        else:
+            return ''
 
-    def _run_command(self, cmd, timeout=None):
-        """Run command cmd and re-raise any exception as a JobError."""
-        try:
-            return os_ext.run_command(cmd, check=True, timeout=timeout)
-        except SpawnedProcessError as e:
-            raise JobError(jobid=self._jobid) from e
+    def emit_preamble(self):
+        preamble = [
+            self._format_option(self.name, '--job-name="{0}"'),
+            self._format_option('%d:%d:%d' % self.time_limit, '--time={0}'),
+            self._format_option(self.num_tasks, '--ntasks={0}'),
+            self._format_option(self.num_tasks_per_node,
+                                '--ntasks-per-node={0}'),
+            self._format_option(self.num_tasks_per_core,
+                                '--ntasks-per-core={0}'),
+            self._format_option(self.num_tasks_per_socket,
+                                '--ntasks-per-socket={0}'),
+            self._format_option(self.num_cpus_per_task, '--cpus-per-task={0}'),
+            self._format_option(self.sched_partition, '--partition={0}'),
+            self._format_option(self.sched_account, '--account={0}'),
+            self._format_option(self.sched_nodelist, '--nodelist={0}'),
+            self._format_option(self.sched_exclude_nodelist, '--exclude={0}'),
+            self._format_option(self.sched_reservation, '--reservation={0}'),
+            self._format_option(self.stdout, '--output={0}'),
+            self._format_option(self.stderr, '--error={0}'),
+        ]
 
-    def emit_preamble(self, builder):
-        self._emit_job_option(self.name, '--job-name="{0}"', builder)
-        self._emit_job_option('%d:%d:%d' % self.time_limit,
-                              '--time={0}', builder)
-        self._emit_job_option(self.num_tasks, '--ntasks={0}', builder)
-        self._emit_job_option(self.num_tasks_per_node,
-                              '--ntasks-per-node={0}', builder)
-        self._emit_job_option(self.num_tasks_per_core,
-                              '--ntasks-per-core={0}', builder)
-        self._emit_job_option(self.num_tasks_per_socket,
-                              '--ntasks-per-socket={0}', builder)
-        self._emit_job_option(self.num_cpus_per_task,
-                              '--cpus-per-task={0}', builder)
-        self._emit_job_option(self.sched_partition, '--partition={0}', builder)
         if self.sched_exclusive_access:
-            self._emit_job_option(self.sched_exclusive_access,
-                                  '--exclusive', builder)
+            preamble.append(self._format_option(
+                self.sched_exclusive_access, '--exclusive'))
 
-        self._emit_job_option(self.sched_account, '--account={0}', builder)
-        self._emit_job_option(self.sched_nodelist, '--nodelist={0}', builder)
-        self._emit_job_option(self.sched_exclude_nodelist,
-                              '--exclude={0}', builder)
         if self.use_smt is None:
             hint = None
         else:
             hint = 'multithread' if self.use_smt else 'nomultithread'
 
-        self._emit_job_option(hint, '--hint={0}', builder)
-        self._emit_job_option(self.sched_reservation,
-                              '--reservation={0}', builder)
-        self._emit_job_option(self.stdout, '--output={0}', builder)
-        self._emit_job_option(self.stderr, '--error={0}', builder)
-
+        preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
         for opt in self.options:
             if not prefix_patt.match(opt):
@@ -123,11 +116,22 @@ class SlurmJob(sched.Job):
                 if (opt.startswith(('-p', '--partition')) and
                     self.sched_partition):
                     continue
-                builder.verbatim('%s %s' % (self._prefix, opt))
-            else:
-                builder.verbatim(opt)
 
-    def prepare(self, builder):
+                preamble.append('%s %s' % (self._prefix, opt))
+            else:
+                preamble.append(opt)
+
+        # Filter out empty statements before returning
+        return list(filter(None, preamble))
+
+    def _run_command(self, cmd, timeout=None):
+        """Run command cmd and re-raise any exception as a JobError."""
+        try:
+            return os_ext.run_command(cmd, check=True, timeout=timeout)
+        except SpawnedProcessError as e:
+            raise JobError(jobid=self._jobid) from e
+
+    def prepare(self, *args, **kwargs):
         if self.num_tasks == 0:
             if self.sched_reservation:
                 nodes = self._get_reservation_nodes()
@@ -147,7 +151,7 @@ class SlurmJob(sched.Job):
                 raise JobError('A reservation has to be specified '
                                'when setting the num_tasks to 0.')
 
-        super().prepare(builder)
+        super().prepare(*args, **kwargs)
 
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename

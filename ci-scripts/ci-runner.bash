@@ -156,9 +156,8 @@ if [ $CI_GENERIC -eq 1 ]; then
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
-    tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
-                   awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
-                   grep -e '^tutorial/(?!config/).*\.py') )
+    tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
+                       grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
         tutorialchecks_path=""
@@ -195,9 +194,14 @@ else
     fi
 
 
+    # FIXME: Do not run modified checks on Daint during the PE upgrade
+    if [[ $(hostname) =~ daint ]]; then
+        exit $CI_EXITCODE
+    fi
+
+
     # Find modified or added user checks
-    userchecks=( $(git log --name-status --oneline --no-merges -1 | \
-                   awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
+    userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
 
     if [ ${#userchecks[@]} -ne 0 ]; then

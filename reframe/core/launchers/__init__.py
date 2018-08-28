@@ -40,9 +40,8 @@ class JobLauncher(abc.ABC):
             executable).
         """
 
-    def emit_run_command(self, job, builder):
-        return builder.verbatim(
-            ' '.join(self.command(job) + self.options + [job.command]))
+    def run_command(self, job):
+        return ' '.join(self.command(job) + self.options)
 
 
 class LauncherWrapper(JobLauncher):
