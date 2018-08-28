@@ -11,6 +11,7 @@ class Example2aTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
+        self.build_system = 'SingleSource'
         self.executable_opts = ['1024', '100']
         self.variables = {
             'OMP_NUM_THREADS': '4'
@@ -20,18 +21,17 @@ class Example2aTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def compile(self):
-        env_name = self.current_environ.name
-        if env_name == 'PrgEnv-cray':
-            self.current_environ.cflags = '-homp'
-        elif env_name == 'PrgEnv-gnu':
-            self.current_environ.cflags = '-fopenmp'
-        elif env_name == 'PrgEnv-intel':
-            self.current_environ.cflags = '-openmp'
-        elif env_name == 'PrgEnv-pgi':
-            self.current_environ.cflags = '-mp'
+    def setup(self, partition, environ, **job_opts):
+        if environ.name == 'PrgEnv-cray':
+            self.build_system.cflags = ['-homp']
+        elif environ.name == 'PrgEnv-gnu':
+            self.build_system.cflags = ['-fopenmp']
+        elif environ.name == 'PrgEnv-intel':
+            self.build_system.cflags = ['-openmp']
+        elif environ.name == 'PrgEnv-pgi':
+            self.build_system.cflags = ['-mp']
 
-        super().compile()
+        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
@@ -43,12 +43,13 @@ class Example2bTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.sourcepath = 'example_matrix_vector_multiplication_openmp.c'
+        self.build_system = 'SingleSource'
         self.executable_opts = ['1024', '100']
         self.prgenv_flags = {
-            'PrgEnv-cray':  '-homp',
-            'PrgEnv-gnu':   '-fopenmp',
-            'PrgEnv-intel': '-openmp',
-            'PrgEnv-pgi':   '-mp'
+            'PrgEnv-cray':  ['-homp'],
+            'PrgEnv-gnu':   ['-fopenmp'],
+            'PrgEnv-intel': ['-openmp'],
+            'PrgEnv-pgi':   ['-mp']
         }
         self.variables = {
             'OMP_NUM_THREADS': '4'
@@ -58,7 +59,6 @@ class Example2bTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def compile(self):
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags = prgenv_flags
-        super().compile()
+    def setup(self, partition, environ, **job_opts):
+        self.build_system.cflags = self.prgenv_flags[environ.name]
+        super().setup(partition, environ, **job_opts)

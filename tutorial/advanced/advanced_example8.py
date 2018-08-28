@@ -10,11 +10,12 @@ class MatrixVectorTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        self.build_system = 'SingleSource'
         self.prgenv_flags = {
-            'PrgEnv-cray':  '-homp',
-            'PrgEnv-gnu':   '-fopenmp',
-            'PrgEnv-intel': '-openmp',
-            'PrgEnv-pgi':   '-mp'
+            'PrgEnv-cray':  ['-homp'],
+            'PrgEnv-gnu':   ['-fopenmp'],
+            'PrgEnv-intel': ['-openmp'],
+            'PrgEnv-pgi':   ['-mp']
         }
 
         if variant == 'MPI':
@@ -45,8 +46,8 @@ class MatrixVectorTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def compile(self):
+    def setup(self, partition, environ, **job_opts):
         if self.prgenv_flags is not None:
-            self.current_environ.cflags = self.prgenv_flags[self.current_environ.name]
+            self.build_system.cflags = self.prgenv_flags[environ.name]
 
-        super().compile()
+        super().setup(partition, environ, **job_opts)
