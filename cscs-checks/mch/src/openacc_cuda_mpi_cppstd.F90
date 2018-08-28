@@ -1,6 +1,6 @@
 program openacc_cuda_mpi_cppstd
   ! This code tests MPI communication on GPU with OpenACC using the
-  ! host_data directive + CUDA call from Frotran as well as C++ function 
+  ! host_data directive + CUDA call from Fortran as well as C++ function 
   ! using std library call
   implicit none
 
@@ -43,7 +43,6 @@ program openacc_cuda_mpi_cppstd
    
 #endif
 
-
 #ifdef USE_MPI
   !$acc data copy(mydata,data_sum)
   !$acc host_data use_device(mydata,data_sum)
@@ -60,6 +59,7 @@ program openacc_cuda_mpi_cppstd
     allocate(f3(NSIZE))
 
     !$acc data pcreate(f1,f2,f3)
+stop
     !$acc parallel loop  
     do i = 1, NSIZE
       f1(i) = i
@@ -69,14 +69,14 @@ program openacc_cuda_mpi_cppstd
     !$acc update host(f1,f2,f3)
   
     ! Call a CUDA kernel with host arrays 
-    call call_cuda_kernel_with_copy(f1, f2, NSIZE)
+!    call call_cuda_kernel_with_copy(f1, f2, NSIZE)
 
     ! Call a CUDA kernel without data copy, use device ptr
-    call call_cuda_kernel_no_copy(f3, f2, NSIZE)
+!    call call_cuda_kernel_no_copy(f3, f2, NSIZE)
     !$acc update host(f3)
 
     ! Call a C++ function using STD lib
-    call call_cpp_std(f2, NSIZE, cpp_std_sum)
+!    call call_cpp_std(f2, NSIZE, cpp_std_sum)
     !$acc end data 
   end if
 

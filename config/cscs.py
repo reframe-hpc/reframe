@@ -126,7 +126,7 @@ class ReframeSettings:
                                      'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
                                      'PrgEnv-pgi_16', 'PrgEnv-pgi_17',
                                      'PrgEnv-pgi_18', 'PrgEnv-pgi_17_aj',
-                                     'PrgEnv-pgi_18_aj', 'PrgEnv-cray_aj',
+                                     'PrgEnv-pgi_18_gdr', 'PrgEnv-cray_aj',
                                      'PrgEnv-cray_aj_b'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
@@ -240,9 +240,9 @@ class ReframeSettings:
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-pgi_18_aj': {
+                'PrgEnv-pgi_18_gdr': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.4_aj'],
+                    'modules': ['PrgEnv-pgi/18.4_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',

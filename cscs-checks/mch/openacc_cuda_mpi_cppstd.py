@@ -37,7 +37,9 @@ class OpenaccCudaMpiNoMPICppstd(rfm.RegressionTest):
             self.mpiflag = ' -DUSE_MPI'
         else:
             self.mpiflag = ''
+            self.num_tasks = 1
             self.num_tasks_per_node = 1
+            self.num_gpus_per_node = 1
 
         self.executable = 'openacc_cuda_mpi_cppstd'
         self.sanity_patterns = sn.assert_found(r'Result:\s+OK', self.stdout)
