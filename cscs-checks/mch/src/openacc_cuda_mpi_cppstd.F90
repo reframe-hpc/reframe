@@ -59,7 +59,6 @@ program openacc_cuda_mpi_cppstd
     allocate(f3(NSIZE))
 
     !$acc data pcreate(f1,f2,f3)
-stop
     !$acc parallel loop  
     do i = 1, NSIZE
       f1(i) = i
