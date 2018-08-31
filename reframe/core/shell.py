@@ -4,7 +4,7 @@
 import abc
 
 
-_RFM_TRAP_ERROR = '''
+_RFM_TRAP_ERROR = r'''
 _onerror()
 {
     exitcode=$?
