@@ -36,8 +36,9 @@ class NetCDFTest(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         # NOTE: Workaround to fix static linking for C++ with PrgEnv-pgi
-        if (environ.name == 'PrgEnv-pgi' and self.lang == 'cpp'
-            and self.linkage == 'static'):
+        if (environ.name == 'PrgEnv-pgi' and
+            self.lang == 'cpp'and
+            self.linkage == 'static'):
             self.build_system.ldflags += ['-lstdc++']
 
         super().setup(partition, environ, **job_opts)
