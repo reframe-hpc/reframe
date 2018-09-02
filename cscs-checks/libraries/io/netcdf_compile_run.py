@@ -1,51 +1,44 @@
 import os
+
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class NetCDFTest(RegressionTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('netcdf_read_write_%s_%s' % (linkage, lang),
-                         os.path.dirname(__file__), **kwargs)
-
-        self.flags = ' -%s ' % linkage
-        self.lang_names = {
+@rfm.parameterized_test(*([lang, linkage] for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
+class NetCDFTest(rfm.RegressionTest):
+    def __init__(self, lang, linkage):
+        super().__init__()
+        lang_names = {
             'c': 'C',
             'cpp': 'C++',
             'f90': 'Fortran 90'
         }
-
-        self.descr = self.lang_names[lang] + ' NetCDF ' + linkage.capitalize()
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'netcdf')
-        self.sourcepath = 'netcdf_read_write.' + lang
+        self.lang = lang
+        self.linkage = linkage
+        self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
-
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'netcdf')
+        self.build_system = 'SingleSource'
+        self.build_system.ldflags = ['-%s' % linkage]
+        self.sourcepath = 'netcdf_read_write.' + lang
         self.modules = ['cray-netcdf']
-        self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
-
         self.num_tasks = 1
         self.num_tasks_per_node = 1
+        self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
 
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
-    def compile(self):
-        self.current_environ.cflags   = self.flags
-        self.current_environ.cxxflags = self.flags
-        self.current_environ.fflags   = self.flags
+    def setup(self, partition, environ, **job_opts):
+        # NOTE: Workaround to fix static linking for C++ with PrgEnv-pgi
+        if (environ.name == 'PrgEnv-pgi' and
+            self.lang == 'cpp'and
+            self.linkage == 'static'):
+            self.build_system.ldflags += ['-lstdc++']
 
-        super().compile()
-
-
-def _get_checks(**kwargs):
-    ret = []
-    for lang in ['cpp', 'c', 'f90']:
-        for linkage in ['dynamic', 'static']:
-            ret.append(NetCDFTest(lang, linkage, **kwargs))
-
-    return ret
+        super().setup(partition, environ, **job_opts)
