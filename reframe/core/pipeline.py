@@ -1108,7 +1108,7 @@ class RegressionTest:
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            shutil.rmtree(self._stagedir)
+            os_ext.rmtree(self._stagedir)
 
         if unload_env:
             self.logger.debug("unloading test's environment")
