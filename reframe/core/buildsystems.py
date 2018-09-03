@@ -110,7 +110,7 @@ class BuildSystem:
 
     @abc.abstractmethod
     def emit_build_commands(self, environ):
-        """Return the list of commands for building with this build system.
+        """Return the list of commands for building using this build system.
 
         The build commands may always assume to be issued from the top-level
         directory of the code that is to be built.
@@ -181,7 +181,7 @@ class Make(BuildSystem):
 
     .. code::
 
-      make [-f MAKEFILE] [-C SRCDIR] [-j N] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FFLAGS='X' LDFLAGS='X' OPTIONS
+      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FFLAGS='X' LDFLAGS='X' OPTIONS
 
     The compiler and compiler flags variables will only be passed if they are
     not :class:`None`.

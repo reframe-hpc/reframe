@@ -127,7 +127,7 @@ class RegressionTest:
 
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
-    #: based on the value the :attr:`sourcepath`.
+    #: based on the value of :attr:`sourcepath`.
     #:
     #: This field may be set using either a string referring to a concrete build
     #: system class name (see `build systems <reference.html#build-systems>`__)

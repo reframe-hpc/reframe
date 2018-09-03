@@ -114,7 +114,7 @@ An example usage is the following:
   self.build_system.cflags = ['-fopenmp']
 
 Users simply set the build system to use in their regression tests and then they configure it.
-If no special configuration is need for the compilation, users may completely ignore the build systems.
+If no special configuration is needed for the compilation, users may completely ignore the build systems.
 ReFrame will automatically pick one based on the regression test attributes and will try to compile the code.
 
 All build systems in ReFrame derive from the abstract base class :class:`reframe.core.buildsystems.BuildSystem`.
