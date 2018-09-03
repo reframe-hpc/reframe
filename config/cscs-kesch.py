@@ -124,7 +124,6 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
                                      'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
-                                     'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
                                      'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3',
                                      'PrgEnv-c2sm-pgi', 'PrgEnv-c2sm-pgi-gpu',
                                      'PrgEnv-c2sm-gnu', 'PrgEnv-c2sm-gnu-gpu',
@@ -237,14 +236,14 @@ class ReframeSettings:
                 'PrgEnv-c2sm-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/cray-env/base'],
-                    'cc': 'cc'
+                    'cc': 'cc',
                     'cxx': 'CC',
                     'ftn': 'ftn -D__CRAY_FORTRAN_',
                 },
                 'PrgEnv-c2sm-cray-gpu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/cray-env/gpu'],
-                    'cc': 'cc'
+                    'cc': 'cc',
                     'cxx': 'CC',
                     'ftn': 'ftn -D__CRAY_FORTRAN_',
                 },
