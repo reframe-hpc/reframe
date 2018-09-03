@@ -189,7 +189,7 @@ def rmtree(*args, max_retries=3, **kwargs):
     If ``onerror``  is specified in  ``kwargs`` and is not  :class:`None`, this
     function is completely equivalent to ``shutil.rmtree()``.
     """
-    if 'onerror' in kwargs:
+    if 'onerror' in kwargs and kwargs['onerror'] is not None:
         shutil.rmtree(*args, **kwargs)
         return
 
