@@ -1,11 +1,11 @@
 import os
-import shutil
 import tempfile
 import unittest
 
 import reframe.core.runtime as rt
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
@@ -27,7 +27,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
 
     def tearDown(self):
-        shutil.rmtree(rt.runtime().resources.prefix, ignore_errors=True)
+        os_ext.rmtree(rt.runtime().resources.prefix)
 
     def _num_failures_stage(self, stage):
         stats = self.runner.stats
