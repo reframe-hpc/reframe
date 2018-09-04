@@ -10,6 +10,8 @@ class Example7Test(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']
         self.sourcepath = 'example_matrix_vector_multiplication_cuda.cu'
+        self.build_system = 'SingleSource'
+        self.build_system.cxxflags = ['-O3']
         self.executable_opts = ['4096', '1000']
         self.modules = ['cudatoolkit']
         self.num_gpus_per_node = 1
@@ -26,7 +28,3 @@ class Example7Test(rfm.RegressionTest):
         }
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
-
-    def compile(self):
-        self.current_environ.cxxflags = '-O3'
-        super().compile()

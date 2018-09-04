@@ -6,19 +6,94 @@ from reframe.core.exceptions import BuildSystemError
 
 
 class BuildSystem:
+    """The abstract base class of any build system.
+
+    Concrete build systems inherit from this class and must override the
+    :func:`emit_build_commands` abstract function.
+    """
+
+    #: The C compiler to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the compiler defined in the current programming environment will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     cc  = fields.StringField('cc', allow_none=True)
+
+    #: The C++ compiler to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the compiler defined in the current programming environment will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     cxx = fields.StringField('cxx', allow_none=True)
+
+    #: The Fortran compiler to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the compiler defined in the current programming environment will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     ftn = fields.StringField('ftn', allow_none=True)
+
+    #: The CUDA compiler to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the compiler defined in the current programming environment will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     nvcc = fields.StringField('nvcc', allow_none=True)
+
+    #: The C compiler flags to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the corresponding flags defined in the current programming environment
+    #: will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     cflags = fields.TypedListField('cflags', str, allow_none=True)
-    cxxflags = fields.TypedListField('cxxflags', str, allow_none=True)
+
+    #: The preprocessor flags to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the corresponding flags defined in the current programming environment
+    #: will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     cppflags = fields.TypedListField('cppflags', str, allow_none=True)
+
+    #: The C++ compiler flags to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the corresponding flags defined in the current programming environment
+    #: will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
+    cxxflags = fields.TypedListField('cxxflags', str, allow_none=True)
+
+    #: The Fortran compiler flags to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the corresponding flags defined in the current programming environment
+    #: will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     fflags  = fields.TypedListField('fflags', str, allow_none=True)
+
+    #: The linker flags to be used.
+    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: the corresponding flags defined in the current programming environment
+    #: will be used.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     ldflags = fields.TypedListField('ldflags', str, allow_none=True)
-    # Set compiler and compiler flags from the programming environment
-    #
-    # :type: :class:`bool`
-    # :default: :class:`True`
+
+    #: Set compiler and compiler flags from the current programming environment
+    #: if not specified otherwise.
+    #:
+    #: :type: :class:`bool`
+    #: :default: :class:`True`
     flags_from_environ = fields.BooleanField('flags_from_environ')
 
     def __init__(self):
@@ -35,13 +110,20 @@ class BuildSystem:
 
     @abc.abstractmethod
     def emit_build_commands(self, environ):
-        """Return a list of commands needed for building using this build system.
+        """Return the list of commands for building using this build system.
 
         The build commands may always assume to be issued from the top-level
         directory of the code that is to be built.
 
         :arg environ: The programming environment for which to emit the build
-        instructions.
+           instructions.
+           The framework passes here the current programming environment.
+        :type environ: :class:`reframe.core.environments.ProgEnvironment`
+        :raises: :class:`BuildSystemError` in case of errors when generating
+          the build instructions.
+
+        .. note::
+            This method is relevant only to developers of new build systems.
         """
 
     def _resolve_flags(self, flags, environ, allow_none=True):
@@ -93,9 +175,55 @@ class BuildSystem:
 
 
 class Make(BuildSystem):
+    """A build system for compiling codes using ``make``.
+
+    The generated build command has the following form:
+
+    .. code::
+
+      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FFLAGS='X' LDFLAGS='X' OPTIONS
+
+    The compiler and compiler flags variables will only be passed if they are
+    not :class:`None`.
+    Their value is determined by the corresponding attributes of
+    :class:`BuildSystem`.
+    If you want to completely disable passing these variables to the ``make``
+    invocation, you should make sure not to set any of the correspoding
+    attributes and set also the :attr:`BuildSystem.flags_from_environ` flag to
+    :class:`False`.
+    """
+
+    #: Append these options to the ``make`` invocation.
+    #: This variable is also useful for passing variables or targets to ``make``.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
     options = fields.TypedListField('options', str)
+
+    #: Instruct build system to use this Makefile.
+    #: This option is useful when having non-standard Makefile names.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     makefile = fields.StringField('makefile', allow_none=True)
+
+    #: The top-level directory of the code.
+    #:
+    #: This is set automatically by the framework based on the
+    #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     srcdir = fields.StringField('srcdir', allow_none=True)
+
+    #: Limit concurrency for ``make`` jobs.
+    #: This attribute controls the ``-j`` option passed to ``make``.
+    #: If not :class:`None`, ``make`` will be invoked as ``make -j
+    #: max_concurrency``.
+    #: Otherwise, it will invoked as ``make -j``.
+    #:
+    #: :type: integer
+    #: :default: :class:`None`
     max_concurrency = fields.IntegerField('max_concurrency', allow_none=True)
 
     def __init__(self):
@@ -160,9 +288,71 @@ class Make(BuildSystem):
 
 
 class SingleSource(BuildSystem):
+    """A build system for compiling a single source file.
+
+    The generated build command will have the following form:
+
+    .. code::
+
+      COMP CPPFLAGS XFLAGS SRCFILE -o EXEC LDFLAGS
+
+    - ``COMP`` is the required compiler for compiling ``SRCFILE``.
+      This build system will automatically detect the programming language of
+      the source file and pick the correct compiler.
+      See also the :attr:`SingleSource.lang` attribute.
+    - ``CPPFLAGS`` are the preprocessor flags and are passed to any compiler.
+    - ``XFLAGS`` is any of ``CFLAGS``, ``CXXFLAGS`` or ``FFLAGS`` depending on
+      the programming language of the source file.
+    - ``SRCFILE`` is the source file to be compiled.
+      This is set up automatically by the framework.
+      See also the :attr:`SingleSource.srcfile` attribute.
+    - ``EXEC`` is the executable to be generated.
+      This is also set automatically by the framework.
+      See also the :attr:`SingleSource.executable` attribute.
+    - ``LDFLAGS`` are the linker flags.
+
+    For CUDA codes, the language assumed is C++ (for the compilation flags) and
+    the compiler used is :attr:`BuildSystem.nvcc`.
+
+    """
+
+    #: The source file to compile.
+    #: This is automatically set by the framework based on the
+    #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
+    #:
+    #: :type: :class:`str` or :class:`None`
     srcfile = fields.StringField('srcfile', allow_none=True)
+
+    #: The executable file to be generated.
+    #:
+    #: This is set automatically by the framework based on the
+    #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
+    #:
+    #: :type: :class:`str` or :class:`None`
     executable = fields.StringField('executable', allow_none=True)
+
+    #: The include path to be used for this compilation.
+    #:
+    #: All the elements of this list will be appended to the
+    #: :attr:`BuildSystem.cppflags`, by prepending to each of them the ``-I``
+    #: option.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
     include_path = fields.TypedListField('include_path', str)
+
+    #: The programming language of the file that needs to be compiled.
+    #: If not specified, the build system will try to figure it out
+    #: automatically based on the extension of the source file.
+    #: The automatically detected extensions are the following:
+    #:
+    #:   - C: `.c`.
+    #:   - C++: `.cc`, `.cp`, `.cxx`, `.cpp`, `.CPP`, `.c++` and `.C`.
+    #:   - Fortran: `.f`, `.for`, `.ftn`, `.F`, `.FOR`, `.fpp`, `.FPP`, `.FTN`,
+    #:     `.f90`, `.f95`, `.f03`, `.f08`, `.F90`, `.F95`, `.F03` and `.F08`.
+    #:   - CUDA: `.cu`.
+    #:
+    #: :type: :class:`str` or :class:`None`
     lang = fields.StringField('lang', allow_none=True)
 
     def __init__(self):

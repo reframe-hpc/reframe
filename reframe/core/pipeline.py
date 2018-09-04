@@ -125,6 +125,20 @@ class RegressionTest:
     #:        Support for Git repositories was added.
     sourcesdir = fields.StringField('sourcesdir', allow_none=True)
 
+    #: The build system to be used for this test.
+    #: If not specified, the framework will try to figure it out automatically
+    #: based on the value of :attr:`sourcepath`.
+    #:
+    #: This field may be set using either a string referring to a concrete build
+    #: system class name (see `build systems <reference.html#build-systems>`__)
+    #: or an instance of :class:`reframe.core.buildsystems.BuildSystem`.
+    #: The former is the recommended way.
+    #:
+    #:
+    #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', allow_none=True)
 
     #: List of shell commands to be executed before compiling.
@@ -1108,7 +1122,7 @@ class RegressionTest:
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            shutil.rmtree(self._stagedir)
+            os_ext.rmtree(self._stagedir)
 
         if unload_env:
             self.logger.debug("unloading test's environment")

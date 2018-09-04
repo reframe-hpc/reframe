@@ -2,6 +2,7 @@
 # OS and shell utility functions
 #
 
+import errno
 import getpass
 import grp
 import os
@@ -170,6 +171,39 @@ def copytree_virtual(src, dst, file_links=[],
     for f in link_targets:
         link_name = f.replace(src, dst)
         os.symlink(f, link_name)
+
+
+def rmtree(*args, max_retries=3, **kwargs):
+    """Persistent version of ``shutil.rmtree()``.
+
+    If ``shutil.rmtree()`` with ``ENOTEMPTY``, retry up to ``max_retries``
+    times to delete the directory.
+
+    This version of ``rmtree()`` is mostly provided to work around a race
+    condition between when ``sacct`` reports a job as completed and when the
+    Slurm epilog runs. See https://github.com/eth-cscs/reframe/issues/291 for
+    more information.
+
+    ``args`` and ``kwargs`` are passed through to ``shutil.rmtree()``.
+
+    If ``onerror``  is specified in  ``kwargs`` and is not  :class:`None`, this
+    function is completely equivalent to ``shutil.rmtree()``.
+    """
+    if 'onerror' in kwargs and kwargs['onerror'] is not None:
+        shutil.rmtree(*args, **kwargs)
+        return
+
+    for i in range(max_retries):
+        try:
+            shutil.rmtree(*args, **kwargs)
+            return
+        except OSError as e:
+            if i == max_retries:
+                raise
+            elif e.errno == errno.ENOTEMPTY:
+                pass
+            else:
+                raise
 
 
 def inpath(entry, pathvar):
