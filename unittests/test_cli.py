@@ -2,7 +2,6 @@ import copy
 import itertools
 import os
 import re
-import shutil
 import sys
 import tempfile
 import unittest
@@ -93,8 +92,8 @@ class TestFrontend(unittest.TestCase):
         self.perflogdir = '.rfm-perflogs'
 
     def tearDown(self):
-        shutil.rmtree(self.prefix)
-        shutil.rmtree(self.perflogdir, ignore_errors=True)
+        os_ext.rmtree(self.prefix)
+        os_ext.rmtree(self.perflogdir, ignore_errors=True)
         os_ext.force_remove_file(self.logfile)
 
     def _run_reframe(self):
