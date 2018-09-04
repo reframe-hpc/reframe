@@ -1,15 +1,12 @@
-import os
 from datetime import datetime
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
 
-class HelloWorldBaseTest(RegressionTest):
-    def __init__(self, name, lang, linkage, **kwargs):
-        super().__init__('hello_world_%s_%s_%s' % (name, linkage, lang),
-                         os.path.dirname(__file__), **kwargs)
-
+class HelloWorldBaseTest(rfm.RegressionTest):
+    def __init__(self, variant, lang, linkage):
+        super().__init__()
         if self.current_system.name in ['dom', 'daint']:
             self.modules += ['gcc/6.1.0']
 
@@ -20,10 +17,9 @@ class HelloWorldBaseTest(RegressionTest):
             'cpp': 'C++',
             'f90': 'Fortran 90'
         }
-
         self.descr = self.lang_names[lang] + ' Hello World'
         self.sourcepath = 'hello_world'
-
+        self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal',
                               'monch:compute']
@@ -49,18 +45,30 @@ class HelloWorldBaseTest(RegressionTest):
         self.sanity_patterns = sn.all(
             sn.chain([sn.assert_eq(sn.count(result), self.num_tasks *
                                    self.num_cpus_per_task)],
-                     sn.map(lambda x: sn.assert_lt(int(x.group(1)), int(x.group(2))),
-                            result),
-                     sn.map(lambda x: sn.assert_lt(int(x.group(3)), int(x.group(4))),
-                            result),
-                     sn.map(lambda x: sn.assert_lt(int(x.group(1)),
-                                                   self.num_cpus_per_task), result),
-                     sn.map(lambda x: sn.assert_eq(int(x.group(2)),
-                                                   self.num_cpus_per_task), result),
-                     sn.map(lambda x: sn.assert_lt(int(x.group(3)),
-                                                   self.num_tasks), result),
-                     sn.map(lambda x: sn.assert_eq(int(x.group(4)), self.num_tasks),
-                            result),
+                     sn.map(
+                         lambda x: sn.assert_lt(int(x.group(1)),
+                                                int(x.group(2))),
+                         result),
+                     sn.map(
+                         lambda x: sn.assert_lt(int(x.group(3)),
+                                                int(x.group(4))),
+                         result),
+                     sn.map(
+                         lambda x: sn.assert_lt(int(x.group(1)),
+                                                self.num_cpus_per_task),
+                         result),
+                     sn.map(
+                         lambda x: sn.assert_eq(int(x.group(2)),
+                                                self.num_cpus_per_task),
+                         result),
+                     sn.map(
+                         lambda x: sn.assert_lt(int(x.group(3)),
+                                                self.num_tasks),
+                         result),
+                     sn.map(
+                         lambda x: sn.assert_eq(int(x.group(4)),
+                                                self.num_tasks),
+                         result),
                      )
         )
 
@@ -73,19 +81,21 @@ class HelloWorldBaseTest(RegressionTest):
             }
         }
         super().setup(partition, environ, **job_opts)
+        prgenv_flags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cflags = prgenv_flags
+        self.build_system.cxxflags = prgenv_flags
+        self.build_system.fflags = prgenv_flags
 
     def compile(self):
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags = prgenv_flags
-        self.current_environ.cxxflags = prgenv_flags
-        self.current_environ.fflags = prgenv_flags
-
         self.compilation_time_seconds = datetime.now()
         super().compile()
         self.compilation_time_seconds = (
             datetime.now() - self.compilation_time_seconds).total_seconds()
 
 
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage, **kwargs):
         super().__init__('serial', lang, linkage, **kwargs)
@@ -93,26 +103,29 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': '',
-            'PrgEnv-gnu': '',
-            'PrgEnv-intel': '',
-            'PrgEnv-pgi': ''
+            'PrgEnv-cray': [],
+            'PrgEnv-gnu': [],
+            'PrgEnv-intel': [],
+            'PrgEnv-pgi': []
         }
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
 
 
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('openmp', lang, linkage, **kwargs)
+    def __init__(self, lang, linkage):
+        super().__init__('openmp', lang, linkage)
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
-            'PrgEnv-cray': ' -homp ',
-            'PrgEnv-gnu': ' -fopenmp ',
-            'PrgEnv-intel': ' -qopenmp ',
-            'PrgEnv-pgi': ' -mp '
+            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-gnu': ['-fopenmp'],
+            'PrgEnv-intel': ['-qopenmp'],
+            'PrgEnv-pgi': ['-mp']
         }
         self.num_tasks = 1
         self.num_tasks_per_node = 1
@@ -125,16 +138,19 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         }
 
 
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPI(HelloWorldBaseTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('mpi', lang, linkage, **kwargs)
+    def __init__(self, lang, linkage):
+        super().__init__('mpi', lang, linkage)
         self.sourcepath += '_mpi.' + lang
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': '',
-            'PrgEnv-gnu': '',
-            'PrgEnv-intel': '',
-            'PrgEnv-pgi': ''
+            'PrgEnv-cray': [],
+            'PrgEnv-gnu': [],
+            'PrgEnv-intel': [],
+            'PrgEnv-pgi': []
         }
 
         # for the MPI test the self.num_tasks_per_node should always be one. If
@@ -145,16 +161,19 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
+@rfm.parameterized_test(*([lang, linkage]
+                          for lang in ['cpp', 'c', 'f90']
+                          for linkage in ['dynamic', 'static']))
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('mpi_openmp', lang, linkage, **kwargs)
+    def __init__(self, lang, linkage):
+        super().__init__('mpi_openmp', lang, linkage)
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': ' -homp ',
-            'PrgEnv-gnu': ' -fopenmp ',
-            'PrgEnv-intel': ' -qopenmp ',
-            'PrgEnv-pgi': ' -mp '
+            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-gnu': ['-fopenmp'],
+            'PrgEnv-intel': ['-qopenmp'],
+            'PrgEnv-pgi': ['-mp']
         }
         self.num_tasks = 6
         self.num_tasks_per_node = 3
@@ -165,22 +184,3 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
-
-
-class HelloWorldTestFactory():
-    def create(lang, variant, linkage, **kwargs):
-        if variant == 'serial':
-            return HelloWorldTestSerial(lang, linkage, **kwargs)
-        elif variant == 'openmp':
-            return HelloWorldTestOpenMP(lang, linkage, **kwargs)
-        elif variant == 'mpi':
-            return HelloWorldTestMPI(lang, linkage, **kwargs)
-        elif variant == 'mpi_openmp':
-            return HelloWorldTestMPIOpenMP(lang, linkage, **kwargs)
-
-
-def _get_checks(**kwargs):
-    return [HelloWorldTestFactory.create(lang, variant, linkage, **kwargs)
-            for lang in ['cpp', 'c', 'f90']
-            for variant in ['serial', 'openmp', 'mpi', 'mpi_openmp']
-            for linkage in ['dynamic', 'static']]
