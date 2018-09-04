@@ -8,7 +8,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*',
-                                    'PrgEnv-gnu']
+                                    'PrgEnv-gnu',
+                                    'PrgEnv-c2sm-pgi', 'PrgEnv-c2sm-cray']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self._pgi_flags = '-acc -ta=tesla:cc60 -Mnorpath'
@@ -60,6 +61,15 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         elif environ.name.startswith('PrgEnv-gnu'):
             environ.fflags = '-O2'
             key = 'PrgEnv-gnu'
+        elif environ.name.startswith('PrgEnv-c2sm-gnu'):
+            environ.fflags = '-O2'
+            key = 'PrgEnv-gnu'
+        elif environ.name.startswith('PrgEnv-c2sm-pgi'):
+            environ.fflags = '-O2'
+            key = 'PrgEnv-pgi'
+        elif environ.name.startswith('PrgEnv-c2sm-cray'):
+            environ.fflags = '-O2'
+            key = 'PrgEnv-cray'
 
         self.reference = self.arrays_reference[key]
         super().setup(partition, environ, **job_opts)
