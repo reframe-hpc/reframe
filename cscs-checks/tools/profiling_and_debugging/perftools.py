@@ -29,10 +29,10 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.executable = 'perftools_check'
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-h nomessage=3140', '-homp'],
-            'PrgEnv-gnu': ['-fopenmp'],
-            'PrgEnv-intel': ['-openmp'],
-            'PrgEnv-pgi': ['-mp']
+            'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp'],
+            'PrgEnv-gnu': ['-g', '-fopenmp'],
+            'PrgEnv-intel': ['-g', '-openmp'],
+            'PrgEnv-pgi': ['-g', '-mp']
         }
         if self.current_system.name == 'kesch':
             # `-lcudart -lm` must be passed explicitly on kesch
@@ -40,9 +40,13 @@ class PerftoolsCheck(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
                                                self.stdout)
+
         self.modules = ['perftools-lite', 'craype-accel-nvidia60']
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_perftools'
+        self.build_system.cppflags = ['-D_CSCS_ITMAX=1', '-DUSE_MPI']
+        self.build_system.options = ['NVCCFLAGS="-arch=sm_60"']
+
         if lang == 'Cpp':
             self.sourcesdir = os.path.join('src', 'C++')
         else:
@@ -64,9 +68,7 @@ class PerftoolsCheck(rfm.RegressionTest):
     def setup(self, environ, partition, **job_opts):
         super().setup(environ, partition, **job_opts)
         flags = self.prgenv_flags[self.current_environ.name]
-        flags += ['-g', '-D_CSCS_ITMAX=1', '-DUSE_MPI']
         self.build_system.cflags = flags
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
         self.build_system.ldflags = flags
-        self.build_system.options = ['NVCCFLAGS="-arch=sm_60"']
