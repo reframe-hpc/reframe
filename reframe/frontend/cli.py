@@ -319,7 +319,7 @@ def main():
         for d in options.checkpath:
             d = os.path.expandvars(d)
             if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
+                printer.warning("%s: path `%s' does not exist. Skipping..." %
                              (argparser.prog, d))
                 continue
 
