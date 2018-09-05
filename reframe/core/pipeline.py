@@ -766,6 +766,8 @@ class RegressionTest:
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
         self.logger.debug("loading test's environment")
         self._current_environ.load()
         environ_save.load()
