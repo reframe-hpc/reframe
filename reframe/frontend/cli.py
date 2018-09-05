@@ -320,7 +320,7 @@ def main():
             d = os.path.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
-                             (argparser.prog, d))
+                                (argparser.prog, d))
                 continue
 
             load_path.append(d)
