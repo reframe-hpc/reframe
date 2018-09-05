@@ -124,10 +124,8 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
                                      'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
-                                     'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3',
-                                     'PrgEnv-c2sm-pgi', 'PrgEnv-c2sm-pgi-gpu',
-                                     'PrgEnv-c2sm-gnu', 'PrgEnv-c2sm-gnu-gpu',
-                                     'PrgEnv-c2sm-cray', 'PrgEnv-c2sm-cray-gpu'],
+                                     'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
+                                     'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -207,56 +205,21 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/17.10'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-pgi_17.10_gdr': {
+                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-c2sm-gnu': {
+                'PrgEnv-pgi_18.4_gdr': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/gnu-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-c2sm-gnu-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/gnu-env/gpu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-c2sm-gnu-cpp': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/gnu_for_cpp'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-c2sm-cray': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/cray-env/base'],
-                    'cc': 'cc',
-                    'cxx': 'CC',
-                    'ftn': 'ftn -D__CRAY_FORTRAN_',
-                },
-                'PrgEnv-c2sm-cray-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray', '/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/cray-env/gpu'],
-                    'cc': 'cc',
-                    'cxx': 'CC',
-                    'ftn': 'ftn -D__CRAY_FORTRAN_',
-                },
-                'PrgEnv-c2sm-pgi': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/pgi-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-c2sm-pgi-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['/apps/common/UES/sandbox/kraushm/c2sm-rcm-env/env', 'c2sm/pgi-env/gpu'],
+                    'modules': ['PrgEnv-pgi/18.4_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
@@ -264,9 +227,6 @@ class ReframeSettings:
                 'PrgEnv-cray_gdr': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray/1.0.2_gdr'],
-                    'cc': 'cc',
-                    'cxx': 'CC',
-                    'ftn': 'ftn',
                 },
                 'PrgEnv-cray_gdr_2.3': {
                     'type': 'ProgEnvironment',
