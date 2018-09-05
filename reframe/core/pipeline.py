@@ -775,13 +775,13 @@ class RegressionTest:
         for k, v in self.variables.items():
             self._current_environ.set_variable(k, v)
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
         environ_save = EnvironmentSnapshot()
         # First load the local environment of the partition
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
-        # Temporarily load the test's environment to record the actual module
-        # load/unload sequence
         self.logger.debug("loading test's environment")
         self._current_environ.load()
         environ_save.load()
