@@ -1,17 +1,15 @@
-import os
-import itertools
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class AlltoallBaseTest(RegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__(name,
-                         os.path.dirname(__file__), **kwargs)
+class AlltoallBaseTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'Alltoall osu microbenchmark'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
         # The -x option controls the number of warm-up iterations
         # The -i option controls the number of iterations
@@ -38,13 +36,11 @@ class AlltoallBaseTest(RegressionTest):
             }
         }
 
-    def compile(self):
-        super().compile(makefile='Makefile_alltoall')
 
-
+@rfm.simple_test
 class AlltoallProdTest(AlltoallBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('alltoall_osu_microbenchmark', **kwargs)
+    def __init__(self):
+        super().__init__()
         self.tags = {'production'}
         self.reference = {
             'dom:gpu': {
@@ -56,10 +52,10 @@ class AlltoallProdTest(AlltoallBaseTest):
         }
 
 
+@rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
 class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
-    def __init__(self, num_tasks, **kwargs):
-        super().__init__('alltoall_osu_microbenchmark_monch_%s'
-                         % num_tasks, **kwargs)
+    def __init__(self, num_tasks):
+        super().__init__()
         self.valid_systems = ['monch:compute']
         self.num_tasks = num_tasks
         reference_by_node = {
@@ -82,15 +78,16 @@ class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
         self.tags = {'monch_acceptance'}
 
 
-class G2GBaseTest(RegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__('g2g_osu_microbenchmark_p2p_%s' % name,
-                         os.path.dirname(__file__), **kwargs)
+class Pt2PtBaseTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
         self.num_tasks_per_node = 1
-        self.descr = 'G2G microbenchmark P2P ' + name.upper()
+        self.descr = 'Point to point microbenchmark '
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_pt2pt'
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
@@ -114,15 +111,13 @@ class G2GBaseTest(RegressionTest):
 
         super().setup(partition, environ, **job_opts)
         if self.num_gpus_per_node >= 1:
-            self.current_environ.cflags = ' -D_ENABLE_CUDA_ -DCUDA_ENABLED '
-
-    def compile(self):
-        super().compile(makefile='Makefile_g2g')
+            self.build_system.cflags = ['-D_ENABLE_CUDA_', '-DCUDA_ENABLED']
 
 
-class G2GCPUBandwidthTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('cpu_bandwidth', **kwargs)
+@rfm.simple_test
+class Pt2PtCPUBandwidthTest(Pt2PtBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'monch:compute',
@@ -130,7 +125,7 @@ class G2GCPUBandwidthTest(G2GBaseTest):
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-cray']
 
-        self.executable = './g2g_osu_bw'
+        self.executable = './pt2pt_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.reference = {
@@ -160,9 +155,10 @@ class G2GCPUBandwidthTest(G2GBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-class G2GCPULatencyTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('cpu_latency', **kwargs)
+@rfm.simple_test
+class Pt2PtCPULatencyTest(Pt2PtBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'monch:compute',
@@ -171,7 +167,7 @@ class G2GCPULatencyTest(G2GBaseTest):
             self.valid_prog_environs = ['PrgEnv-cray']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
-        self.executable = './g2g_osu_latency'
+        self.executable = './pt2pt_osu_latency'
         self.reference = {
             'daint:gpu': {
                 'latency': (1.16, None, 1.0)
@@ -199,15 +195,16 @@ class G2GCPULatencyTest(G2GBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-class G2GCUDABandwidthTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('gpu_bandwidth', **kwargs)
+@rfm.simple_test
+class Pt2PtCUDABandwidthTest(Pt2PtBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-cray']
 
         self.num_gpus_per_node = 1
-        self.executable = './g2g_osu_bw'
+        self.executable = './pt2pt_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -228,15 +225,16 @@ class G2GCUDABandwidthTest(G2GBaseTest):
         }
 
 
-class G2GCUDALatencyTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('gpu_latency', **kwargs)
+@rfm.simple_test
+class Pt2PtCUDALatencyTest(Pt2PtBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-cray']
 
         self.num_gpus_per_node = 1
-        self.executable = './g2g_osu_latency'
+        self.executable = './pt2pt_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -255,14 +253,3 @@ class G2GCUDALatencyTest(G2GBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-
-
-def _get_checks(**kwargs):
-    fixed_tests = [AlltoallProdTest(**kwargs),
-                   G2GCPUBandwidthTest(**kwargs),
-                   G2GCPULatencyTest(**kwargs),
-                   G2GCUDABandwidthTest(**kwargs),
-                   G2GCUDALatencyTest(**kwargs)]
-    return list(itertools.chain(fixed_tests,
-                                map(lambda n: AlltoallMonchAcceptanceTest(
-                                    n, **kwargs), range(2, 10, 2))))

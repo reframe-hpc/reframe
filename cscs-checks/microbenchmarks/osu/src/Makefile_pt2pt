@@ -1,4 +1,4 @@
-EXECUTABLES := g2g_osu_bw g2g_osu_latency
+EXECUTABLES := pt2pt_osu_bw pt2pt_osu_latency
 
 all: $(EXECUTABLES)
 
@@ -14,10 +14,10 @@ OBJS := $(SRCS:.c=.o)
 $(OBJS):
 	$(CC) $(CFLAGS) -o $(@) -c $(@:.o=.c)
 
-g2g_osu_bw: $(OBJS_BW)
+pt2pt_osu_bw: $(OBJS_BW)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_BW) -o $(@)
 
-g2g_osu_latency: $(OBJS_LT)
+pt2pt_osu_latency: $(OBJS_LT)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS_LT) -o $(@)
 
 clean:
