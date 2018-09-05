@@ -11,10 +11,8 @@ class MakefileTest(rfm.RegressionTest):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.executable = './advanced_example1'
+        self.build_system = 'Make'
+        self.build_system.cppflags = ['-DMESSAGE']
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-    def compile(self):
-        self.current_environ.cppflags = '-DMESSAGE'
-        super().compile()
