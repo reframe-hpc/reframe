@@ -12,7 +12,7 @@ LIB            =
 .SUFFIXES: .o .c
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DDTFLAGS) -c $< -o $(PE_ENV)$@
 
 perftools_check: $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@

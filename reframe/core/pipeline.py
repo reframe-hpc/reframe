@@ -21,7 +21,7 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment
+from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
                                      user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
@@ -775,12 +775,16 @@ class RegressionTest:
         for k, v in self.variables.items():
             self._current_environ.set_variable(k, v)
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
+        environ_save = EnvironmentSnapshot()
         # First load the local environment of the partition
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
         self.logger.debug("loading test's environment")
         self._current_environ.load()
+        environ_save.load()
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
