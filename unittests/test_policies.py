@@ -1,11 +1,11 @@
 import os
-import shutil
 import tempfile
 import unittest
 
-import reframe.core.runtime as runtime
+import reframe.core.runtime as rt
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 from unittests.resources.checks.hellocheck import HelloTest
@@ -16,7 +16,6 @@ from unittests.resources.checks.frontend_checks import (
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
-        self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader = RegressionCheckLoader(['unittests/resources/checks'],
                                             ignore_conflicts=True)
 
@@ -24,8 +23,11 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner = executors.Runner(policies.SerialExecutionPolicy())
         self.checks = self.loader.load_all()
 
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
     def tearDown(self):
-        shutil.rmtree(self.resourcesdir, ignore_errors=True)
+        os_ext.rmtree(rt.runtime().resources.prefix)
 
     def _num_failures_stage(self, stage):
         stats = self.runner.stats
@@ -219,7 +221,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runner.policy.task_listeners.append(self.monitor)
 
     def set_max_jobs(self, value):
-        for p in runtime.runtime().system.partitions:
+        for p in rt.runtime().system.partitions:
             p._max_jobs = value
 
     def read_timestamps(self, tasks):

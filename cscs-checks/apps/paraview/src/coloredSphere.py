@@ -29,7 +29,11 @@ pidscal = ProcessIdScalars(sphere)
 
 rep = Show(pidscal)
 
-from vtkPVClientServerCoreCorePython import vtkProcessModule
+if(GetParaViewVersion() >= 5.5):
+  from vtkmodules.vtkPVClientServerCoreCorePython import vtkProcessModule
+else:
+  from vtkPVClientServerCoreCorePython import vtkProcessModule
+
 print("rank=", vtkProcessModule.GetProcessModule().GetPartitionId())
 print("total=", vtkProcessModule.GetProcessModule().GetNumberOfLocalPartitions())
 nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()

@@ -33,7 +33,7 @@ class PbsJob(sched.Job):
         # Optional part of the job id refering to the PBS server
         self._pbs_server = None
 
-    def _emit_lselect_option(self, builder):
+    def _emit_lselect_option(self):
         num_tasks_per_node = self._num_tasks_per_node or 1
         num_cpus_per_task = self._num_cpus_per_task or 1
         num_nodes = self._num_tasks // num_tasks_per_node
@@ -53,15 +53,12 @@ class PbsJob(sched.Job):
             else:
                 select_opt += ':' + opt
 
-        self._emit_job_option(select_opt, builder)
-        for opt in rem_opts:
-            self._emit_job_option(opt, builder)
+        return [self._format_option(select_opt),
+                *(self._format_option(opt) for opt in rem_opts),
+                *verb_opts]
 
-        for opt in verb_opts:
-            builder.verbatim(opt)
-
-    def _emit_job_option(self, option, builder):
-        builder.verbatim(self._prefix + ' ' + option)
+    def _format_option(self, option):
+        return self._prefix + ' ' + option
 
     def _run_command(self, cmd, timeout=None):
         """Run command cmd and re-raise any exception as a JobError."""
@@ -70,19 +67,22 @@ class PbsJob(sched.Job):
         except SpawnedProcessError as e:
             raise JobError(jobid=self._jobid) from e
 
-    def emit_preamble(self, builder):
-        self._emit_job_option('-N "%s"' % self.name, builder)
-        self._emit_lselect_option(builder)
-        self._emit_job_option('-l walltime=%d:%d:%d' % self.time_limit,
-                              builder)
+    def emit_preamble(self):
+        preamble = [
+            self._format_option('-N "%s"' % self.name),
+            self._format_option('-l walltime=%d:%d:%d' % self.time_limit),
+            self._format_option('-o %s' % self.stdout),
+            self._format_option('-e %s' % self.stderr),
+        ]
         if self.sched_partition:
-            self._emit_job_option('-q %s' % self.sched_partition, builder)
+            preamble.append(
+                self._format_option('-q %s' % self.sched_partition))
 
-        self._emit_job_option('-o %s' % self.stdout, builder)
-        self._emit_job_option('-e %s' % self.stderr, builder)
+        preamble += self._emit_lselect_option()
 
         # PBS starts the job in the home directory by default
-        builder.verbatim('cd %s' % self.workdir)
+        preamble.append('cd %s' % self.workdir)
+        return preamble
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS

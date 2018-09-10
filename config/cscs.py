@@ -15,7 +15,7 @@ class ReframeSettings:
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -59,7 +59,7 @@ class ReframeSettings:
                 'descr': 'Dom TDS',
                 'hostnames': ['dom'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -103,7 +103,7 @@ class ReframeSettings:
                 'descr': 'Kesch MCH',
                 'hostnames': ['keschln-\d+'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -125,7 +125,7 @@ class ReframeSettings:
                         'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
                                      'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
                                      'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
-                                     'PrgEnv-cray_aj', 'PrgEnv-cray_aj_b'],
+                                     'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -138,7 +138,7 @@ class ReframeSettings:
                 'descr': 'Leone',
                 'hostnames': ['leone'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -161,7 +161,7 @@ class ReframeSettings:
                 'descr': 'Monch PASC',
                 'hostnames': ['monch'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -224,13 +224,13 @@ class ReframeSettings:
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-cray_aj': {
+                'PrgEnv-cray_gdr': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_aj'],
+                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
                 },
-                'PrgEnv-cray_aj_b': {
+                'PrgEnv-cray_gdr_2.3': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_aj_b'],
+                    'modules': ['PrgEnv-cray/1.0.2_gdr_2.3'],
                 },
                 'PrgEnv-gnu-gdr': {
                     'type': 'ProgEnvironment',

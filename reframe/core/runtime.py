@@ -5,7 +5,6 @@
 import os
 import functools
 import re
-import shutil
 import socket
 from datetime import datetime
 
@@ -107,7 +106,7 @@ class HostResources:
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
         if wipeout:
-            shutil.rmtree(ret, True)
+            os_ext.rmtree(ret, ignore_errors=True)
 
         os.makedirs(ret, exist_ok=True)
         return ret
@@ -219,7 +218,6 @@ class RuntimeContext:
         :type: :class:`reframe.core.modules.ModulesSystem`.
         """
         return self._modules_system
-
 
 
 # Global resources for the current host

@@ -1,20 +1,37 @@
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 from reframe.core.launchers import LauncherWrapper
 
 
-class CudaGdbCheck(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('check_cuda_gdb',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class CudaGdbCheck(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_gpus_per_node  = 1
+        self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
         self.executable = 'cuda-gdb cuda_gdb_check'
+        if self.current_system.name == 'kesch':
+            self.modules = ['cudatoolkit']
+        else:
+            self.modules = ['craype-accel-nvidia60']
+
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_cuda_gdb'
+        self.build_system.cflags = ['-g', '-D_CSCS_ITMAX=1', '-DUSE_MPI',
+                                    '-fopenmp']
+        nvidia_sm = '37' if self.current_system.name == 'kesch' else '60'
+        self.build_system.cxxflags = ['-g', '-G', '-arch=sm_%s' % nvidia_sm]
+        self.build_system.ldflags = ['-g', '-fopenmp']
+
+        # FIXME: workaround until the kesch programming environment is fixed
+        if self.current_system.name == 'kesch':
+            self.build_system.ldflags = ['-g', '-fopenmp', '-lcublas',
+                                         '-lcudart', '-lm']
+
         self.sanity_patterns = sn.all([
             sn.assert_found(r'^\(cuda-gdb\) Breakpoint 1 at .*: file ',
                             self.stdout),
@@ -25,8 +42,7 @@ class CudaGdbCheck(RegressionTest):
                 r'^\(cuda-gdb\)\s+\$1\s+=\s+(?P<result>\S+)', self.stdout,
                 'result', float)), 1e-5)
         ])
-        self.modules  = ['cudatoolkit']
-        self.makefile = 'Makefile_cuda_gdb'
+
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
 
@@ -38,18 +54,3 @@ class CudaGdbCheck(RegressionTest):
                 r"run\n", r"print *residue_d'", ' | '
             ]
         )
-
-    def compile(self):
-        self.current_environ.cflags = '-g -D_CSCS_ITMAX=1 -DUSE_MPI -fopenmp'
-        nvidia_sm = '37' if self.current_system.name == 'kesch' else '60'
-        self.current_environ.cxxflags = '-g -G -arch=sm_%s ' % nvidia_sm
-        self.current_environ.ldflags  = '-g -fopenmp'
-        # FIXME: workaround until the kesch programming environment is fixed
-        if self.current_system.name == 'kesch':
-            self.current_environ.ldflags = '-g -fopenmp -lcublas -lcudart -lm'
-
-        super().compile(makefile=self.makefile)
-
-
-def _get_checks(**kwargs):
-    return [CudaGdbCheck(**kwargs)]

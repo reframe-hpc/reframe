@@ -16,15 +16,17 @@ import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
+import reframe.core.shell as shell
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment
-from reframe.core.exceptions import PipelineError, SanityError
+from reframe.core.environments import Environment, EnvironmentSnapshot
+from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
+                                     user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.shell import BashScriptBuilder
 from reframe.core.systems import SystemPartition
 from reframe.utility.sanity import assert_reference
 
@@ -122,6 +124,22 @@ class RegressionTest:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
     sourcesdir = fields.StringField('sourcesdir', allow_none=True)
+
+    #: The build system to be used for this test.
+    #: If not specified, the framework will try to figure it out automatically
+    #: based on the value of :attr:`sourcepath`.
+    #:
+    #: This field may be set using either a string referring to a concrete build
+    #: system class name (see `build systems <reference.html#build-systems>`__)
+    #: or an instance of :class:`reframe.core.buildsystems.BuildSystem`.
+    #: The former is the recommended way.
+    #:
+    #:
+    #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.14
+    build_system = BuildSystemField('build_system', allow_none=True)
 
     #: List of shell commands to be executed before compiling.
     #:
@@ -468,6 +486,7 @@ class RegressionTest:
     _current_environ = fields.TypedField('_current_environ', Environment,
                                          allow_none=True)
     _job = fields.TypedField('_job', Job, allow_none=True)
+    _build_job = fields.TypedField('_build_job', Job, allow_none=True)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -554,7 +573,9 @@ class RegressionTest:
         self._stderr = None
 
         # Compilation process output
+        self._build_job = None
         self._compile_proc = None
+        self.build_system = None
 
         # Performance logging
         self._perf_logger = logging.null_logger
@@ -651,7 +672,7 @@ class RegressionTest:
 
         :type: :class:`str`.
         """
-        return self._stdout
+        return self._job.stdout
 
     @property
     @deferrable
@@ -665,7 +686,17 @@ class RegressionTest:
 
         :type: :class:`str`.
         """
-        return self._stderr
+        return self._job.stderr
+
+    @property
+    @deferrable
+    def build_stdout(self):
+        return self._build_job.stdout
+
+    @property
+    @deferrable
+    def build_stderr(self):
+        return self._build_job.stderr
 
     def __repr__(self):
         return debug.repr(self)
@@ -744,31 +775,29 @@ class RegressionTest:
         for k, v in self.variables.items():
             self._current_environ.set_variable(k, v)
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
+        environ_save = EnvironmentSnapshot()
         # First load the local environment of the partition
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
         self.logger.debug("loading test's environment")
         self._current_environ.load()
+        environ_save.load()
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
         try:
             self._stagedir = rt.runtime().resources.make_stagedir(
-                self._current_partition.name,
-                self.name,
-                self._current_environ.name)
-
+                self.current_system.name, self._current_partition.name,
+                self._current_environ.name, self.name)
             self._outputdir = rt.runtime().resources.make_outputdir(
-                self._current_partition.name,
-                self.name,
-                self._current_environ.name)
+                self.current_system.name, self._current_partition.name,
+                self._current_environ.name, self.name)
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
-
-        self._stdout = os.path.join(self._stagedir, '%s.out' % self.name)
-        self._stderr = os.path.join(self._stagedir, '%s.err' % self.name)
 
     def _setup_job(self, **job_opts):
         """Setup the job related to this check."""
@@ -793,20 +822,9 @@ class RegressionTest:
             scheduler_type = self._current_partition.scheduler
             launcher_type  = self._current_partition.launcher
 
-        job_name = '%s_%s_%s_%s' % (self.name,
-                                    self.current_system.name,
-                                    self._current_partition.name,
-                                    self._current_environ.name)
-        job_script_filename = os.path.join(self._stagedir, job_name + '.sh')
-
         self._job = scheduler_type(
-            name=job_name,
-            command=' '.join([self.executable] + self.executable_opts),
+            name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
-            environs=[
-                self._current_partition.local_env,
-                self._current_environ
-            ],
             workdir=self._stagedir,
             num_tasks=self.num_tasks,
             num_tasks_per_node=self.num_tasks_per_node,
@@ -815,9 +833,6 @@ class RegressionTest:
             num_cpus_per_task=self.num_cpus_per_task,
             use_smt=self.use_multithreading,
             time_limit=self.time_limit,
-            script_filename=job_script_filename,
-            stdout=self._stdout,
-            stderr=self._stderr,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -867,16 +882,6 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
-    def prebuild(self):
-        for cmd in self.prebuild_cmd:
-            self.logger.debug('executing prebuild commands')
-            os_ext.run_command(cmd, check=True, shell=True)
-
-    def postbuild(self):
-        for cmd in self.postbuild_cmd:
-            self.logger.debug('executing postbuild commands')
-            os_ext.run_command(cmd, check=True, shell=True)
-
     def compile(self, **compile_opts):
         """The compilation phase of the regression test pipeline.
 
@@ -897,8 +902,8 @@ class RegressionTest:
 
             if commonpath:
                 self.logger.warn(
-                    "sourcepath (`%s') seems to be a subdirectory of "
-                    "sourcesdir (`%s'), but it will be interpreted "
+                    "sourcepath `%s' seems to be a subdirectory of "
+                    "sourcesdir `%s', but it will be interpreted "
                     "as relative to it." % (self.sourcepath, self.sourcesdir))
 
             if os_ext.is_url(self.sourcesdir):
@@ -918,34 +923,64 @@ class RegressionTest:
 
         staged_sourcepath = os.path.join(self._stagedir, self.sourcepath)
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
+        if os.path.isdir(staged_sourcepath):
+            if not self.build_system:
+                self.build_system = 'Make'
 
-        # Remove source and executable from compile_opts
-        compile_opts.pop('source', None)
-        compile_opts.pop('executable', None)
+            self.build_system.srcdir = self.sourcepath
+        else:
+            if not self.build_system:
+                self.build_system = 'SingleSource'
 
-        # Change working dir to stagedir although absolute paths are used
-        # everywhere in the compilation process. This is done to ensure that
-        # any other files (besides the executable) generated during the the
-        # compilation will remain in the stage directory
+            self.build_system.srcfile = self.sourcepath
+            self.build_system.executable = self.executable
+
+        if compile_opts:
+            user_deprecation_warning(
+                'passing options to the compile() method is deprecated; '
+                'please use a build system.')
+
+            # Remove source and executable from compile_opts
+            compile_opts.pop('source', None)
+            compile_opts.pop('executable', None)
+            try:
+                self.build_system.makefile = compile_opts['makefile']
+                self.build_system.options  = compile_opts['options']
+            except KeyError:
+                pass
+
+        # Prepare build job
+        build_commands = [
+            *self.prebuild_cmd,
+            *self.build_system.emit_build_commands(self._current_environ),
+            *self.postbuild_cmd
+        ]
+        environs = [self._current_partition.local_env, self._current_environ]
+        self._build_job = getscheduler('local')(
+            name='rfm_%s_build' % self.name,
+            launcher=getlauncher('local')(),
+            workdir=self._stagedir)
+
         with os_ext.change_dir(self._stagedir):
-            self.prebuild()
-            if os.path.isdir(staged_sourcepath):
-                includedir = staged_sourcepath
-            else:
-                includedir = os.path.dirname(staged_sourcepath)
+            try:
+                self._build_job.prepare(build_commands, environs,
+                                        trap_errors=True)
+            except OSError as e:
+                raise PipelineError('failed to prepare build job') from e
 
-            self._current_environ.include_search_path.append(includedir)
-            self._compile_proc = self._current_environ.compile(
-                sourcepath=staged_sourcepath,
-                executable=os.path.join(self._stagedir, self.executable),
-                **compile_opts)
-            self.logger.debug('compilation stdout:\n%s' %
-                              self._compile_proc.stdout)
-            self.logger.debug('compilation stderr:\n%s' %
-                              self._compile_proc.stderr)
-            self.postbuild()
+            self._build_job.submit()
 
+    def compile_wait(self):
+        """Wait for compilation phase to finish.
+
+        .. versionadded:: 2.13
+        """
+        self._build_job.wait()
         self.logger.debug('compilation finished')
+
+        # FIXME: this check is not reliable for certain scheduler backends
+        if self._build_job.exitcode != 0:
+            raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     def run(self):
         """The run phase of the regression test pipeline.
@@ -956,12 +991,13 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        # FIXME: Temporary fix to support multiple run steps
-        self._job._pre_run  += self.pre_run
-        self._job._post_run += self.post_run
+        exec_cmd = [self.job.launcher.run_command(self.job),
+                    self.executable, *self.executable_opts]
+        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        environs = [self._current_partition.local_env, self._current_environ]
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(BashScriptBuilder(login=True))
+                self._job.prepare(commands, environs, login=True)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
@@ -1027,6 +1063,10 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+            # We first evaluate and log all performance values and then we
+            # check them against the reference. This way we always log them
+            # even if the don't meet the reference.
+            perf_values = []
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
@@ -1037,23 +1077,37 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
+                perf_values.append((value, self.reference[key]))
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   ref, low_thres, high_thres)
-                evaluate(assert_reference(value, ref, low_thres, high_thres))
+
+            for val, reference in perf_values:
+                refval, low_thres, high_thres = reference
+                evaluate(assert_reference(val, refval, low_thres, high_thres))
+
+    def _copy_job_files(self, job, dst):
+        if job is None:
+            return
+
+        stdout = os.path.join(self._stagedir, job.stdout)
+        stderr = os.path.join(self._stagedir, job.stderr)
+        script = os.path.join(self._stagedir, job.script_filename)
+        shutil.copy(stdout, dst)
+        shutil.copy(stderr, dst)
+        shutil.copy(script, dst)
 
     def _copy_to_outputdir(self):
         """Copy checks interesting files to the output directory."""
         self.logger.debug('copying interesting files to output directory')
-        shutil.copy(self._stdout, self._outputdir)
-        shutil.copy(self._stderr, self._outputdir)
-        if self._job:
-            shutil.copy(self._job.script_filename, self._outputdir)
+        self._copy_job_files(self._job, self.outputdir)
+        self._copy_job_files(self._build_job, self.outputdir)
 
         # Copy files specified by the user
         for f in self.keep_files:
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
-            shutil.copy(f, self._outputdir)
+
+            shutil.copy(f, self.outputdir)
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
@@ -1072,7 +1126,7 @@ class RegressionTest:
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            shutil.rmtree(self._stagedir)
+            os_ext.rmtree(self._stagedir)
 
         if unload_env:
             self.logger.debug("unloading test's environment")
@@ -1096,6 +1150,12 @@ class RunOnlyRegressionTest(RegressionTest):
 
     def compile(self, **compile_opts):
         """The compilation phase of the regression test pipeline.
+
+        This is a no-op for this type of test.
+        """
+
+    def compile_wait(self):
+        """Wait for compilation phase to finish.
 
         This is a no-op for this type of test.
         """
@@ -1144,22 +1204,15 @@ class CompileOnlyRegressionTest(RegressionTest):
         self._setup_environ(environ)
         self._setup_paths()
 
-    def compile(self, **compile_opts):
-        """The compilation stage of the regression test pipeline.
+    @property
+    @deferrable
+    def stdout(self):
+        return self._build_job.stdout
 
-        The standard output and standard error of this stage will be used as
-        the standard output and error of the test.
-        """
-        super().compile(**compile_opts)
-
-        try:
-            with open(self._stdout, 'w') as f:
-                f.write(self._compile_proc.stdout)
-
-            with open(self._stderr, 'w') as f:
-                f.write(self._compile_proc.stderr)
-        except OSError as e:
-            raise PipelineError('could not write stdout/stderr') from e
+    @property
+    @deferrable
+    def stderr(self):
+        return self._build_job.stderr
 
     def run(self):
         """The run stage of the regression test pipeline.

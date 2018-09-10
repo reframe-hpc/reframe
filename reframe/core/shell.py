@@ -1,60 +1,121 @@
 #
 # Shell script generators
 #
+import abc
 
-import reframe.core.debug as debug
+
+_RFM_TRAP_ERROR = r'''
+_onerror()
+{
+    exitcode=$?
+    echo "-reframe: command \`$BASH_COMMAND' failed (exit code: $exitcode)"
+    exit $exitcode
+}
+
+trap _onerror ERR
+'''
 
 
-class ShellScriptBuilder:
-    def __init__(self, name='default', login=False):
-        self._name = name
-        if login:
-            self._header = '#!/bin/sh -l'
-        else:
-            self._header = '#!/bin/sh'
+_RFM_TRAP_EXIT = '''
+_onexit()
+{
+    exitcode=$?
+    echo "-reframe: script exiting with exit code: $exitcode"
+    exit $exitcode
+}
 
-        self.statements = []
+trap _onexit EXIT
+'''
 
-    def __repr__(self):
-        return debug.repr(self)
+_RFM_TRAP_SIGNALS = '''
+_onsignal()
+{
+    exitcode=$?
+    ((signal = exitcode - 128))
+    echo "-reframe: script caught signal: $signal"
+    exit $exitcode
+}
+
+trap _onsignal $(seq 1 15) $(seq 24 27)
+'''
+
+
+class ShellScriptGenerator:
+    def __init__(self, login=False, trap_errors=False,
+                 trap_exit=False, trap_signals=False):
+        self.login = login
+        self.trap_errors = trap_errors
+        self.trap_exit = trap_exit
+        self.trap_signals = trap_signals
+        self._prolog = []
+        self._epilog = []
+        self._body = []
+        if self.trap_errors:
+            self._body.append(_RFM_TRAP_ERROR)
+
+        if self.trap_exit:
+            self._body.append(_RFM_TRAP_EXIT)
+
+        if self.trap_signals:
+            self._body.append(_RFM_TRAP_SIGNALS)
 
     @property
-    def name():
-        return self._name
+    def prolog(self):
+        return self._prolog
 
-    def verbatim(self, stmt, suppress=False):
-        """Append statement stmt verbatim.
+    @property
+    def epilog(self):
+        return self._epilog
 
-        If suppress=True, stmt will not be in the generated script file but it
-        will be returned from this function. This feature is useful when you
-        want only the command that would be generated but you don't want it to
-        be actually generated in the scipt file."""
-        if not suppress:
-            self.statements.append(stmt)
+    @property
+    def body(self):
+        return self._body
 
-        return stmt
+    @property
+    def shebang(self):
+        ret = '#!/bin/bash'
+        if self.login:
+            ret += ' -l'
 
-    def set_variable(self, name, value, export=False, suppress=False):
-        if export:
-            export_keyword = 'export '
+        return ret
+
+    def write(self, s, where='body'):
+        section = getattr(self, '_' + where)
+        if isinstance(s, str):
+            section.append(s)
+        elif isinstance(s, list):
+            section += s
         else:
-            export_keyword = ''
+            section.append(str(s))
 
-        return self.verbatim(
-            '%s%s=%s' % (export_keyword, name, value), suppress
-        )
+    def write_prolog(self, s):
+        self.write(s, 'prolog')
 
-    def unset_variable(self, name, suppress=False):
-        return self.verbatim('unset %s' % name, suppress)
+    def write_epilog(self, s):
+        self.write(s, 'epilog')
 
-    def finalise(self):
-        return '%s\n' % self._header + '\n'.join(self.statements) + '\n'
+    def write_body(self, s):
+        self.write(s, 'body')
+
+    def finalize(self):
+        ret = '\n'.join([self.shebang, *self._prolog,
+                         *self._body, *self._epilog])
+
+        # end with a new line
+        if ret:
+            ret += '\n'
+
+        return ret
 
 
-class BashScriptBuilder(ShellScriptBuilder):
-    def __init__(self, name='bash', login=False):
-        super().__init__(name, login)
-        if login:
-            self._header = '#!/bin/bash -l'
-        else:
-            self._header = '#!/bin/bash'
+class generate_script:
+    def __init__(self, filename, *args, **kwargs):
+        self._shgen = ShellScriptGenerator(*args, **kwargs)
+        self._file = open(filename, 'wt')
+
+    def __enter__(self):
+        return self._shgen
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._file.write(self._shgen.finalize())
+        self._file.close()
