@@ -444,8 +444,36 @@ class SingleSource(BuildSystem):
 
 
 class CMake(BuildSystem):
+    """A build system for compiling CMake-based projects.
+
+    This build system will emit the following commands:
+
+    1. Create a build directory if :attr:`builddir` is not :class:`None` and
+       change to it.
+    2. Invoke ``cmake`` to configure the project by setting the corresponding
+       CMake flags for compilers and compiler flags.
+    3. Issue ``make`` to compile the code.
+    """
+
+    #: The top-level directory of the code.
+    #:
+    #: This is set automatically by the framework based on the
+    #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     srcdir = fields.StringField('srcdir', allow_none=True)
+
+    #: The CMake build directory, where all the generated files will be placed.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
     builddir = fields.StringField('builddir', allow_none=True)
+
+    #: Additional configuration options to be passed to the CMake invocation.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
     config_opts = fields.TypedListField('config_opts', str)
 
     def __init__(self):

@@ -93,9 +93,13 @@ class RegressionTest:
     #: subfolder or a file contained in :attr:`sourcesdir`. This applies also
     #: in the case where :attr:`sourcesdir` is a Git repository.
     #:
-    #: If it refers to a regular file, this file will be compiled (its language
-    #: will be automatically recognized).
-    #: If it refers to a directory, ``make`` will be invoked in that directory.
+    #: If it refers to a regular file, this file will be compiled using the
+    #: :class:`SingleSource <reframe.core.buildsystems.SingleSource>` build
+    #: system.
+    #: If it refers to a directory, ReFrame will try to infer the build system
+    #: to use for the project and will fall back in using the :class:`Make
+    #: <reframe.core.buildsystems.Make>` build system, if it cannot find a more
+    #: specific one.
     #:
     #: :type: :class:`str`
     #: :default: ``''``
