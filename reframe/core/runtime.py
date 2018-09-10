@@ -94,14 +94,16 @@ class HostResources:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
     stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
+    perflogdir = fields.AbsolutePathField('perflogdir', allow_none=True)
 
     def __init__(self, prefix=None, stagedir=None,
-                 outputdir=None, timefmt=None):
+                 outputdir=None, perflogdir=None, timefmt=None):
         self.prefix = prefix or '.'
         self.stagedir  = stagedir
         self.outputdir = outputdir
-        self._timestamp = datetime.now()
+        self.perflogdir = perflogdir
         self.timefmt = timefmt
+        self._timestamp = datetime.now()
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
@@ -130,6 +132,13 @@ class HostResources:
             return os.path.join(self.prefix, 'stage', self.timestamp)
         else:
             return os.path.join(self.stagedir, self.timestamp)
+
+    @property
+    def perflog_prefix(self):
+        if self.perflogdir is None:
+            return os.path.join(self.prefix, 'perflogs')
+        else:
+            return self.perflogdir
 
     def make_stagedir(self, *dirs, wipeout=True):
         return self._makedir(self.stage_prefix, *dirs, wipeout=wipeout)
@@ -165,7 +174,7 @@ class RuntimeContext:
 
         self._resources = HostResources(
             self._system.prefix, self._system.stagedir,
-            self._system.outputdir, self._system.logdir)
+            self._system.outputdir, self._system.perflogdir)
         self._modules_system = ModulesSystem.create(
             self._system.modules_system)
 

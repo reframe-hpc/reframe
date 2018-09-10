@@ -103,7 +103,8 @@ The valid attributes of a system are the following:
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
-* ``logdir``: Default performance logging directory for this system (default :class:`None`).
+* ``perflogdir``: Default directory prefix for storing performance logs for this system (default :class:`None`).
+* ``logdir``: `Deprecated since version 2.14 please use` ``perflogdir`` `instead.`
 * ``resourcesdir``: Default directory for storing large resources (e.g., input data files, etc.) needed by regression tests for this system (default ``.``).
 * ``partitions``: A set of key/value pairs defining the partitions of this system and their properties (default ``{}``).
   Partition configuration is discussed in the `next section <#partition-configuration>`__.
@@ -112,7 +113,7 @@ The valid attributes of a system are the following:
   .. versionadded:: 2.8
     The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
 
-For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` and ``logdir`` directories, please refer to the `"Running ReFrame" <running.html#configuring-reframe-directories>`__ section.
+For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` and ``perflogdir`` directories, please refer to the `"Configuring ReFrame Directories" <running.html#configuring-reframe-directories>`__ and `"Performance Logging" <running.html#performance-logging>`__ sections.
 
 Partition Configuration
 -----------------------

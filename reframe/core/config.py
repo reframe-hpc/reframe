@@ -4,7 +4,10 @@ import collections.abc
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
-from reframe.core.exceptions import ConfigError, ReframeError, ReframeFatalError
+from reframe.core.exceptions import (ConfigError,
+                                     ReframeError,
+                                     ReframeFatalError,
+                                     user_deprecation_warning)
 
 
 _settings = None
@@ -135,11 +138,12 @@ class SiteConfiguration:
             # The System's constructor provides also reasonable defaults, but
             # since we are going to set them anyway from the values provided by
             # the configuration, we should set default values here. The stage,
-            # output and log directories default to None, since they are
-            # going to be set dynamically by the ResourcesManager
+            # output and log directories default to None, since they are going
+            # to be set dynamically by the runtime.
             sys_prefix = config.get('prefix', '.')
             sys_stagedir = config.get('stagedir', None)
             sys_outputdir = config.get('outputdir', None)
+            sys_perflogdir = config.get('perflogdir', None)
             sys_logdir = config.get('logdir', None)
             sys_resourcesdir = config.get('resourcesdir', '.')
             sys_modules_system = config.get('modules_system', None)
@@ -155,7 +159,14 @@ class SiteConfiguration:
                 sys_outputdir = os.path.expandvars(sys_outputdir)
 
             if sys_logdir:
-                sys_logdir = os.path.expandvars(sys_logdir)
+                user_deprecation_warning(
+                    "`logdir' attribute in system config is deprecated; "
+                    "please use `perflogdir' instead"
+                )
+                sys_perflogdir = os.path.expandvars(sys_logdir)
+
+            if sys_perflogdir:
+                sys_perflogdir = os.path.expandvars(sys_perflogdir)
 
             if sys_resourcesdir:
                 sys_resourcesdir = os.path.expandvars(sys_resourcesdir)
@@ -166,7 +177,7 @@ class SiteConfiguration:
                             prefix=sys_prefix,
                             stagedir=sys_stagedir,
                             outputdir=sys_outputdir,
-                            logdir=sys_logdir,
+                            perflogdir=sys_perflogdir,
                             resourcesdir=sys_resourcesdir,
                             modules_system=sys_modules_system)
             for part_name, partconfig in config.get('partitions', {}).items():
