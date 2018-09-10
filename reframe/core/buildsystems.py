@@ -443,6 +443,86 @@ class SingleSource(BuildSystem):
             return 'CUDA'
 
 
+class CMake(BuildSystem):
+    srcdir = fields.StringField('srcdir', allow_none=True)
+    builddir = fields.StringField('builddir', allow_none=True)
+    config_opts = fields.TypedListField('config_opts', str)
+
+    def __init__(self):
+        super().__init__()
+        self.srcdir = None
+        self.builddir = None
+        self.config_opts = []
+        self.max_concurrency = None
+
+    def _combine_flags(self, cppflags, xflags):
+        if cppflags is None:
+            return xflags
+
+        ret = list(cppflags)
+        if xflags:
+            ret += xflags
+
+        return ret
+
+    def emit_build_commands(self, environ):
+        prepare_cmd = []
+        if self.srcdir:
+            prepare_cmd += ['cd %s' % self.srcdir]
+
+        if self.builddir:
+            prepare_cmd += ['mkdir -p %s' % self.builddir,
+                            'cd %s' % self.builddir]
+
+        cmake_cmd = ['cmake']
+        cc = self._cc(environ)
+        cxx = self._cxx(environ)
+        ftn = self._ftn(environ)
+        nvcc = self._nvcc(environ)
+        cppflags = self._cppflags(environ)
+        cflags   = self._combine_flags(cppflags, self._cflags(environ))
+        cxxflags = self._combine_flags(cppflags, self._cxxflags(environ))
+        fflags   = self._combine_flags(cppflags, self._fflags(environ))
+        ldflags  = self._ldflags(environ)
+        if cc is not None:
+            cmake_cmd += ["-DCMAKE_C_COMPILER='%s'" % cc]
+
+        if cxx is not None:
+            cmake_cmd += ["-DCMAKE_CXX_COMPILER='%s'" % cxx]
+
+        if ftn is not None:
+            cmake_cmd += ["-DCMAKE_Fortran_COMPILER='%s'" % ftn]
+
+        if nvcc is not None:
+            cmake_cmd += ["-DCMAKE_CUDA_COMPILER='%s'" % nvcc]
+
+        if cflags is not None:
+            cmake_cmd += ["-DCMAKE_C_FLAGS='%s'" % ' '.join(cflags)]
+
+        if cxxflags is not None:
+            cmake_cmd += ["-DCMAKE_CXX_FLAGS='%s'" % ' '.join(cxxflags)]
+
+        if fflags is not None:
+            cmake_cmd += ["-DCMAKE_Fortran_FLAGS='%s'" % ' '.join(fflags)]
+
+        if ldflags is not None:
+            cmake_cmd += ["-DCMAKE_EXE_LINKER_FLAGS='%s'" % ' '.join(ldflags)]
+
+        if self.config_opts:
+            cmake_cmd += self.config_opts
+
+        if self.builddir:
+            cmake_cmd += [os.path.relpath('.', self.builddir)]
+        else:
+            cmake_cmd += ['.']
+
+        make_cmd = ['make -j']
+        if self.max_concurrency is not None:
+            make_cmd += [str(self.max_concurrency)]
+
+        return prepare_cmd + [' '.join(cmake_cmd), ' '.join(make_cmd)]
+
+
 class BuildSystemField(fields.TypedField):
     """A field representing a build system.
 

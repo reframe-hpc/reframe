@@ -925,9 +925,15 @@ class RegressionTest:
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
-                self.build_system = 'Make'
+                # Try to guess the build system
+                if os.path.exists(os.path.join(staged_sourcepath,
+                                               'CMakeLists.txt')):
+                    self.build_system = 'CMake'
+                    self.build_system.builddir = 'rfm_build'
+                else:
+                    self.build_system = 'Make'
 
-            self.build_system.srcdir = self.sourcepath
+                self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
