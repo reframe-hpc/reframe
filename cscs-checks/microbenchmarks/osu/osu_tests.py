@@ -2,8 +2,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class AlltoallBaseTest(rfm.RegressionTest):
-    def __init__(self):
+@rfm.parameterized_test([['production']])
+class AlltoallTest(rfm.RegressionTest):
+    def __init__(self, tags):
         super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
@@ -22,6 +23,15 @@ class AlltoallBaseTest(rfm.RegressionTest):
             'perf': sn.extractsingle(r'^8\s+(?P<perf>\S+)',
                                      self.stdout, 'perf', float)
         }
+        self.tags = set(tags)
+        self.reference = {
+            'dom:gpu': {
+                'perf': (8.23, None, 0.1)
+            },
+            'daint:gpu': {
+                'perf': (20.73, None, 2.0)
+            },
+        }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
         if self.current_system.name == 'dom':
@@ -37,25 +47,10 @@ class AlltoallBaseTest(rfm.RegressionTest):
         }
 
 
-@rfm.simple_test
-class AlltoallProdTest(AlltoallBaseTest):
-    def __init__(self):
-        super().__init__()
-        self.tags = {'production'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (8.23, None, 0.1)
-            },
-            'daint:gpu': {
-                'perf': (20.73, None, 2.0)
-            },
-        }
-
-
 @rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
-class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
+class AlltoallMonchAcceptanceTest(AlltoallTest):
     def __init__(self, num_tasks):
-        super().__init__()
+        super().__init__('monch_acceptance')
         self.valid_systems = ['monch:compute']
         self.num_tasks = num_tasks
         reference_by_node = {
@@ -75,21 +70,23 @@ class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
         self.reference = {
             'monch:compute': reference_by_node[self.num_tasks]
         }
-        self.tags = {'monch_acceptance'}
 
 
-class Pt2PtBaseTest(rfm.RegressionTest):
+class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
         self.num_tasks_per_node = 1
-        self.descr = 'Point to point microbenchmark '
+        self.descr = 'P2P microbenchmark '
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_pt2pt'
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel']
+        self.build_system.makefile = 'Makefile_p2p'
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-cray']
+        else:
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
         self.tags = {'production'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
@@ -100,32 +97,16 @@ class Pt2PtBaseTest(rfm.RegressionTest):
             }
         }
 
-    def setup(self, partition, environ, **job_opts):
-        if partition.name == 'gpu':
-            self.num_gpus_per_node  = 1
-            self.modules = ['cudatoolkit']
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-
-        if partition.name == 'cn':
-            self.variables = {'MV2_USE_CUDA': '1'}
-
-        super().setup(partition, environ, **job_opts)
-        if self.num_gpus_per_node >= 1:
-            self.build_system.cflags = ['-D_ENABLE_CUDA_', '-DCUDA_ENABLED']
-
 
 @rfm.simple_test
-class Pt2PtCPUBandwidthTest(Pt2PtBaseTest):
+class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'monch:compute',
                               'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
-        self.executable = './pt2pt_osu_bw'
+        self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.reference = {
@@ -156,18 +137,16 @@ class Pt2PtCPUBandwidthTest(Pt2PtBaseTest):
 
 
 @rfm.simple_test
-class Pt2PtCPULatencyTest(Pt2PtBaseTest):
+class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'monch:compute',
                               'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
-        self.executable = './pt2pt_osu_latency'
+        self.executable = './p2p_osu_latency'
         self.reference = {
             'daint:gpu': {
                 'latency': (1.16, None, 1.0)
@@ -196,15 +175,12 @@ class Pt2PtCPULatencyTest(Pt2PtBaseTest):
 
 
 @rfm.simple_test
-class Pt2PtCUDABandwidthTest(Pt2PtBaseTest):
+class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
         self.num_gpus_per_node = 1
-        self.executable = './pt2pt_osu_bw'
+        self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -223,18 +199,24 @@ class Pt2PtCUDABandwidthTest(Pt2PtBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
+        if self.current_system.name in ['daint', 'dom']:
+            self.num_gpus_per_node  = 1
+            self.modules = ['craype-accel-nvidia60']
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+
+        if self.current_system.name == 'kesch':
+            self.variables = {'MV2_USE_CUDA': '1'}
+
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
 @rfm.simple_test
-class Pt2PtCUDALatencyTest(Pt2PtBaseTest):
+class GPGLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
         self.num_gpus_per_node = 1
-        self.executable = './pt2pt_osu_latency'
+        self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -253,3 +235,12 @@ class Pt2PtCUDALatencyTest(Pt2PtBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
+        if self.current_system.name in ['daint', 'dom']:
+            self.num_gpus_per_node  = 1
+            self.modules = ['craype-accel-nvidia60']
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+
+        if self.current_system.name == 'kesch':
+            self.variables = {'MV2_USE_CUDA': '1'}
+
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
