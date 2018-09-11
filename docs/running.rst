@@ -625,7 +625,7 @@ The attributes of this handler are the following:
 * ``prefix``: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
   This attribute accepts any of the check-specific formatting placeholders described `above <#common-log-handler-attributes>`__.
   This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
-  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option.
+  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option or the ``perflogdir`` attribute of the `system configuration <configuring.html#system-configuration>`__.
   The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:
 
   .. code-block:: none
@@ -719,7 +719,7 @@ This handler introduces three new attributes:
 This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this Python module must be available, otherwise this log handler will be ignored.
 `GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
 The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
-More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__
+More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
 
 
 Asynchronous Execution of Regression Checks
