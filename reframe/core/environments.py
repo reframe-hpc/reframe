@@ -120,7 +120,7 @@ class Environment:
     def emit_load_commands(self):
         rt = runtime()
         if self.is_loaded:
-            ret = self._load_stmts
+            ret = self._load_stmts.copy()
         else:
             ret = list(
                 itertools.chain(*(rt.modules_system.emit_load_commands(m)
