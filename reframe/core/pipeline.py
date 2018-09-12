@@ -21,7 +21,7 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment
+from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
                                      user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
@@ -93,9 +93,13 @@ class RegressionTest:
     #: subfolder or a file contained in :attr:`sourcesdir`. This applies also
     #: in the case where :attr:`sourcesdir` is a Git repository.
     #:
-    #: If it refers to a regular file, this file will be compiled (its language
-    #: will be automatically recognized).
-    #: If it refers to a directory, ``make`` will be invoked in that directory.
+    #: If it refers to a regular file, this file will be compiled using the
+    #: :class:`SingleSource <reframe.core.buildsystems.SingleSource>` build
+    #: system.
+    #: If it refers to a directory, ReFrame will try to infer the build system
+    #: to use for the project and will fall back in using the :class:`Make
+    #: <reframe.core.buildsystems.Make>` build system, if it cannot find a more
+    #: specific one.
     #:
     #: :type: :class:`str`
     #: :default: ``''``
@@ -775,12 +779,16 @@ class RegressionTest:
         for k, v in self.variables.items():
             self._current_environ.set_variable(k, v)
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
+        environ_save = EnvironmentSnapshot()
         # First load the local environment of the partition
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
         self.logger.debug("loading test's environment")
         self._current_environ.load()
+        environ_save.load()
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
@@ -921,9 +929,15 @@ class RegressionTest:
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
-                self.build_system = 'Make'
+                # Try to guess the build system
+                if os.path.exists(os.path.join(staged_sourcepath,
+                                               'CMakeLists.txt')):
+                    self.build_system = 'CMake'
+                    self.build_system.builddir = 'rfm_build'
+                else:
+                    self.build_system = 'Make'
 
-            self.build_system.srcdir = self.sourcepath
+                self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'

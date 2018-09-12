@@ -154,11 +154,11 @@ class System:
     _prefix = fields.StringField('_prefix')
     _stagedir  = fields.StringField('_stagedir', allow_none=True)
     _outputdir = fields.StringField('_outputdir', allow_none=True)
-    _logdir = fields.StringField('_logdir', allow_none=True)
+    _perflogdir = fields.StringField('_perflogdir', allow_none=True)
     _resourcesdir = fields.StringField('_resourcesdir')
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
-                 prefix='.', stagedir=None, outputdir=None, logdir=None,
+                 prefix='.', stagedir=None, outputdir=None, perflogdir=None,
                  resourcesdir='.', modules_system=None):
         self._name  = name
         self._descr = descr or name
@@ -168,7 +168,7 @@ class System:
         self._prefix = prefix
         self._stagedir = stagedir
         self._outputdir = outputdir
-        self._logdir = logdir
+        self._perflogdir = perflogdir
         self._resourcesdir = resourcesdir
 
         # Set parent system for the given partitions
@@ -211,9 +211,9 @@ class System:
         return self._outputdir
 
     @property
-    def logdir(self):
+    def perflogdir(self):
         """The ReFrame log directory prefix associated with this system."""
-        return self._logdir
+        return self._perflogdir
 
     @property
     def resourcesdir(self):

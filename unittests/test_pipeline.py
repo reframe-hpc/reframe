@@ -69,11 +69,9 @@ class TestRegressionTest(unittest.TestCase):
         test.local = True
 
         test.setup(self.partition, self.progenv)
-        for m in test.modules:
-            self.assertTrue(rt.runtime().modules_system.is_module_loaded(m))
 
-        for k, v in test.variables.items():
-            self.assertEqual(os.environ[k], v)
+        for k in test.variables.keys():
+            self.assertNotIn(k, os.environ)
 
         # Manually unload the environment
         self.progenv.unload()

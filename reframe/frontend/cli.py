@@ -297,11 +297,10 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.expandvars(options.perflogdir))
-    else:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.join(rt.resources.prefix, 'perflogs'))
+        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+
+    logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
+                                                          perflog_prefix)
 
     if hasattr(settings, 'perf_logging_config'):
         try:
@@ -319,8 +318,8 @@ def main():
         for d in options.checkpath:
             d = os.path.expandvars(d)
             if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
-                             (argparser.prog, d))
+                printer.warning("%s: path `%s' does not exist. Skipping..." %
+                                (argparser.prog, d))
                 continue
 
             load_path.append(d)
