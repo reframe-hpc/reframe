@@ -33,7 +33,6 @@ class _BuildSystemTest:
         self.build_system.cxxflags = ['-Wall', '-std=c++11', '-O3']
         self.build_system.fflags = ['-Wall', '-O3']
         self.build_system.ldflags = ['-static']
-        self.build_system.flags_from_environ = False
 
 
 class TestMake(_BuildSystemTest, unittest.TestCase):
@@ -54,7 +53,7 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
         self.assertEqual(expected,
                          self.build_system.emit_build_commands(self.environ))
 
-    def test_emit_no_env(self):
+    def test_emit_from_buildsystem(self):
         super().setup_base_buildsystem()
         self.build_system.makefile = 'Makefile_foo'
         self.build_system.srcdir = 'foodir'
@@ -72,6 +71,59 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
         self.assertEqual(['make -j'],
+                         self.build_system.emit_build_commands(self.environ))
+
+
+class TestCMake(_BuildSystemTest, unittest.TestCase):
+    def create_build_system(self):
+        return bs.CMake()
+
+    def test_emit_from_env(self):
+        self.build_system.srcdir = 'src'
+        self.build_system.builddir = 'build/foo'
+        self.build_system.config_opts = ['-DFOO=1']
+        self.build_system.max_concurrency = 32
+        expected = [
+            "cd src",
+            "mkdir -p build/foo",
+            "cd build/foo",
+            "cmake -DCMAKE_C_COMPILER='gcc' -DCMAKE_CXX_COMPILER='g++' "
+            "-DCMAKE_Fortran_COMPILER='gfortran' "
+            "-DCMAKE_CUDA_COMPILER='nvcc' "
+            "-DCMAKE_C_FLAGS='-DNDEBUG -Wall -std=c99' "
+            "-DCMAKE_CXX_FLAGS='-DNDEBUG -Wall -std=c++11' "
+            "-DCMAKE_Fortran_FLAGS='-DNDEBUG -Wall' "
+            "-DCMAKE_EXE_LINKER_FLAGS='-dynamic' -DFOO=1 ../..",
+            "make -j 32"
+
+        ]
+        self.assertEqual(expected,
+                         self.build_system.emit_build_commands(self.environ))
+
+    def test_emit_from_buildsystem(self):
+        super().setup_base_buildsystem()
+        self.build_system.builddir = 'build/foo'
+        self.build_system.config_opts = ['-DFOO=1']
+        self.build_system.max_concurrency = None
+        expected = [
+            "mkdir -p build/foo",
+            "cd build/foo",
+            "cmake -DCMAKE_C_COMPILER='cc' -DCMAKE_CXX_COMPILER='CC' "
+            "-DCMAKE_Fortran_COMPILER='ftn' -DCMAKE_CUDA_COMPILER='clang' "
+            "-DCMAKE_C_FLAGS='-DFOO -Wall -std=c99 -O3' "
+            "-DCMAKE_CXX_FLAGS='-DFOO -Wall -std=c++11 -O3' "
+            "-DCMAKE_Fortran_FLAGS='-DFOO -Wall -O3' "
+            "-DCMAKE_EXE_LINKER_FLAGS='-static' -DFOO=1 ../..",
+            "make -j"
+
+        ]
+        print(self.build_system.emit_build_commands(self.environ))
+        self.assertEqual(expected,
+                         self.build_system.emit_build_commands(self.environ))
+
+    def test_emit_no_env_defaults(self):
+        self.build_system.flags_from_environ = False
+        self.assertEqual(['cmake .', 'make -j'],
                          self.build_system.emit_build_commands(self.environ))
 
 
