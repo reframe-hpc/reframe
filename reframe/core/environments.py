@@ -128,7 +128,10 @@ class Environment:
             )
 
         for k, v in self._variables.items():
-            ret.append('export %s=%s' % (k, v))
+            if any("export %s" % k in s for s in ret):
+                pass
+            else:
+                ret.append('export %s=%s' % (k, v))
 
         return ret
 
