@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
-    def __init__(self, tag):
+    def __init__(self, variant):
         super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
@@ -23,7 +23,7 @@ class AlltoallTest(rfm.RegressionTest):
             'perf': sn.extractsingle(r'^8\s+(?P<perf>\S+)',
                                      self.stdout, 'perf', float)
         }
-        self.tags = {tag}
+        self.tags = {variant}
         self.reference = {
             'dom:gpu': {
                 'perf': (8.23, None, 0.1)
