@@ -82,6 +82,7 @@ class TestCMake(_BuildSystemTest, unittest.TestCase):
         self.build_system.srcdir = 'src'
         self.build_system.builddir = 'build/foo'
         self.build_system.config_opts = ['-DFOO=1']
+        self.build_system.make_opts = ['install']
         self.build_system.max_concurrency = 32
         expected = [
             "cd src",
@@ -94,7 +95,7 @@ class TestCMake(_BuildSystemTest, unittest.TestCase):
             "-DCMAKE_CXX_FLAGS='-DNDEBUG -Wall -std=c++11' "
             "-DCMAKE_Fortran_FLAGS='-DNDEBUG -Wall' "
             "-DCMAKE_EXE_LINKER_FLAGS='-dynamic' -DFOO=1 ../..",
-            "make -j 32"
+            "make -j 32 install"
 
         ]
         self.assertEqual(expected,
@@ -135,6 +136,7 @@ class TestAutotools(_BuildSystemTest, unittest.TestCase):
         self.build_system.srcdir = 'src'
         self.build_system.builddir = 'build/foo'
         self.build_system.config_opts = ['FOO=1']
+        self.build_system.make_opts = ['check']
         self.build_system.max_concurrency = 32
         expected = [
             "cd src",
@@ -144,7 +146,7 @@ class TestAutotools(_BuildSystemTest, unittest.TestCase):
             "CPPFLAGS='-DNDEBUG' CFLAGS='-Wall -std=c99' "
             "CXXFLAGS='-Wall -std=c++11' FCFLAGS='-Wall' "
             "LDFLAGS='-dynamic' FOO=1",
-            "make -j 32"
+            "make -j 32 check"
 
         ]
         self.assertEqual(expected,

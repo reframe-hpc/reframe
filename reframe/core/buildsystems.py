@@ -467,6 +467,12 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: :default: ``[]``
     config_opts = fields.TypedListField('config_opts', str)
 
+    #: Options to be passed to the subsequent ``make`` invocation.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
+    make_opts = fields.TypedListField('make_opts', str)
+
     #: Same as for the :attr:`Make` build system.
     #:
     #: :type: integer
@@ -478,6 +484,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
         self.srcdir = None
         self.builddir = None
         self.config_opts = []
+        self.make_opts = []
         self.max_concurrency = None
 
 
@@ -558,6 +565,9 @@ class CMake(ConfigureBasedBuildSystem):
         if self.max_concurrency is not None:
             make_cmd += [str(self.max_concurrency)]
 
+        if self.make_opts:
+            make_cmd += self.make_opts
+
         return prepare_cmd + [' '.join(cmake_cmd), ' '.join(make_cmd)]
 
 
@@ -627,6 +637,9 @@ class Autotools(ConfigureBasedBuildSystem):
         make_cmd = ['make -j']
         if self.max_concurrency is not None:
             make_cmd += [str(self.max_concurrency)]
+
+        if self.make_opts:
+            make_cmd += self.make_opts
 
         return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
 
