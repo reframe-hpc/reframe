@@ -211,7 +211,7 @@ class G2GBandwidthTest(P2PBaseTest):
 
 
 @rfm.simple_test
-class GPGLatencyTest(P2PBaseTest):
+class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']

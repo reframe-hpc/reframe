@@ -12,13 +12,13 @@ OBJS_LT = osu_util.o osu_latency.o
 OBJS := $(SRCS:.c=.o)
 
 $(OBJS):
-	$(CC) $(CPPFLAGS) -o $(@) -c $(@:.o=.c)
+	$(CC) $(CXXFLAGS) $(CPPFLAGS) -o $(@) -c $(@:.o=.c)
 
 p2p_osu_bw: $(OBJS_BW)
-	$(CC) $(CPPFLAGS) $(LDFLAGS) $(OBJS_BW) -o $(@)
+	$(CC) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS_BW) -o $(@)
 
 p2p_osu_latency: $(OBJS_LT)
-	$(CC) $(CPPFLAGS) $(LDFLAGS) $(OBJS_LT) -o $(@)
+	$(CC) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS_LT) -o $(@)
 
 clean:
 	rm -f $(OBJS) $(EXECUTABLES)
