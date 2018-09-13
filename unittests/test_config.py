@@ -22,6 +22,9 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
         system = self.site_config.systems['testsys']
         self.assertEqual(2, len(system.partitions))
+        self.assertEqual('.rfm_testing', system.prefix)
+        self.assertEqual('.rfm_testing/resources', system.resourcesdir)
+        self.assertEqual('.rfm_testing/perflogs', system.perflogdir)
 
         part_login = self.get_partition(system, 'login')
         part_gpu = self.get_partition(system, 'gpu')

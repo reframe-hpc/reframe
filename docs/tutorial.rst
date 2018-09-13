@@ -354,7 +354,7 @@ Assuming our test supported only GCC, we could simply add the following lines in
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-fopenmp']
 
-The ``SingleSource`` build system that we use here supports the compilation of a single file only.
+The :class:`SingleSource <reframe.core.buildsystems.SingleSource>` build system that we use here supports the compilation of a single file only.
 Each build system type defines a set of variables that the user can set.
 Based on the selected build system, ReFrame will generate a build script that will be used for building the code.
 The generated build script can be found in `the stage or the output directory of the test <running.html#configuring-reframe-directories>`__, along with the output of the compilation.
