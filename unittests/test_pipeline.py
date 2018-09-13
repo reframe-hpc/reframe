@@ -1,9 +1,9 @@
 import os
-import shutil
 import tempfile
 import unittest
 
 import reframe.core.runtime as rt
+import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
@@ -37,8 +37,8 @@ class TestRegressionTest(unittest.TestCase):
         rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
 
     def tearDown(self):
-        shutil.rmtree(rt.runtime().resources.prefix, ignore_errors=True)
-        shutil.rmtree('.rfm_testing', ignore_errors=True)
+        os_ext.rmtree(rt.runtime().resources.prefix)
+        os_ext.rmtree('.rfm_testing', ignore_errors=True)
 
     def replace_prefix(self, filename, new_prefix):
         basename = os.path.basename(filename)
@@ -69,11 +69,9 @@ class TestRegressionTest(unittest.TestCase):
         test.local = True
 
         test.setup(self.partition, self.progenv)
-        for m in test.modules:
-            self.assertTrue(rt.runtime().modules_system.is_module_loaded(m))
 
-        for k, v in test.variables.items():
-            self.assertEqual(os.environ[k], v)
+        for k in test.variables.keys():
+            self.assertNotIn(k, os.environ)
 
         # Manually unload the environment
         self.progenv.unload()
@@ -477,7 +475,7 @@ class TestSanityPatterns(unittest.TestCase):
         self.output_file.close()
         os.remove(self.perf_file.name)
         os.remove(self.output_file.name)
-        shutil.rmtree(self.resourcesdir)
+        os_ext.rmtree(self.resourcesdir)
 
     def write_performance_output(self, fp=None, **kwargs):
         if not fp:

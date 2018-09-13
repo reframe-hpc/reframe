@@ -1,7 +1,6 @@
 import abc
 import os
 import re
-import shutil
 import tempfile
 import time
 import unittest
@@ -36,7 +35,7 @@ class _TestJob:
         self.parallel_cmd = 'hostname'
 
     def tearDown(self):
-        shutil.rmtree(self.workdir)
+        os_ext.rmtree(self.workdir)
 
     @property
     def commands(self):
@@ -165,6 +164,10 @@ class _TestJob:
         self.parallel_cmd = 'sleep 3'
         self.testjob.prepare(self.commands, self.environs)
         self.assertRaises(JobNotStartedError, self.testjob.finished)
+
+    def test_no_empty_lines_in_preamble(self):
+        for l in self.testjob.emit_preamble():
+            self.assertNotEqual(l, '')
 
 
 class TestLocalJob(_TestJob, unittest.TestCase):
@@ -543,7 +546,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._num_tasks = 0
 
     def tearDown(self):
-        shutil.rmtree(self.workdir)
+        os_ext.rmtree(self.workdir)
 
     def test_valid_constraint(self, expected_num_tasks=8):
         self.testjob._sched_reservation = 'Foo'

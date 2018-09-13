@@ -73,6 +73,26 @@ class TestOSTools(unittest.TestCase):
 
         shutil.rmtree(dst_path)
 
+    def _test_rmtree(self, *args, **kwargs):
+        testdir = tempfile.mkdtemp()
+        with open(os.path.join(testdir, 'foo.txt'), 'w') as fp:
+            fp.write('hello\n')
+
+        os_ext.rmtree(testdir, *args, **kwargs)
+        self.assertFalse(os.path.exists(testdir))
+
+    def test_rmtree(self):
+        self._test_rmtree()
+
+    def test_rmtree_onerror(self):
+        self._test_rmtree(onerror=lambda *args: None)
+
+    def test_rmtree_error(self):
+        # Try to remove an inexistent directory
+        testdir = tempfile.mkdtemp()
+        os.rmdir(testdir)
+        self.assertRaises(OSError, os_ext.rmtree, testdir)
+
     def test_inpath(self):
         self.assertTrue(os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin'))
         self.assertFalse(os_ext.inpath('/foo/bin', '/bin:/usr/local/bin'))
