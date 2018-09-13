@@ -181,7 +181,7 @@ class Make(BuildSystem):
 
     .. code::
 
-      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FFLAGS='X' LDFLAGS='X' OPTIONS
+      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FCFLAGS='X' LDFLAGS='X' OPTIONS
 
     The compiler and compiler flags variables will only be passed if they are
     not :class:`None`.
@@ -276,7 +276,7 @@ class Make(BuildSystem):
             cmd_parts += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
 
         if fflags is not None:
-            cmd_parts += ["FFLAGS='%s'" % ' '.join(fflags)]
+            cmd_parts += ["FCFLAGS='%s'" % ' '.join(fflags)]
 
         if ldflags is not None:
             cmd_parts += ["LDFLAGS='%s'" % ' '.join(ldflags)]
@@ -301,7 +301,7 @@ class SingleSource(BuildSystem):
       the source file and pick the correct compiler.
       See also the :attr:`SingleSource.lang` attribute.
     - ``CPPFLAGS`` are the preprocessor flags and are passed to any compiler.
-    - ``XFLAGS`` is any of ``CFLAGS``, ``CXXFLAGS`` or ``FFLAGS`` depending on
+    - ``XFLAGS`` is any of ``CFLAGS``, ``CXXFLAGS`` or ``FCFLAGS`` depending on
       the programming language of the source file.
     - ``SRCFILE`` is the source file to be compiled.
       This is set up automatically by the framework.
@@ -443,17 +443,8 @@ class SingleSource(BuildSystem):
             return 'CUDA'
 
 
-class CMake(BuildSystem):
-    """A build system for compiling CMake-based projects.
-
-    This build system will emit the following commands:
-
-    1. Create a build directory if :attr:`builddir` is not :class:`None` and
-       change to it.
-    2. Invoke ``cmake`` to configure the project by setting the corresponding
-       CMake flags for compilers and compiler flags.
-    3. Issue ``make`` to compile the code.
-    """
+class ConfigureBasedBuildSystem(BuildSystem):
+    """Abstract base class for configured-based build systems."""
 
     #: The top-level directory of the code.
     #:
@@ -476,12 +467,38 @@ class CMake(BuildSystem):
     #: :default: ``[]``
     config_opts = fields.TypedListField('config_opts', str)
 
+    #: Options to be passed to the subsequent ``make`` invocation.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
+    make_opts = fields.TypedListField('make_opts', str)
+
+    #: Same as for the :attr:`Make` build system.
+    #:
+    #: :type: integer
+    #: :default: :class:`None`
+    max_concurrency = fields.IntegerField('max_concurrency', allow_none=True)
+
     def __init__(self):
         super().__init__()
         self.srcdir = None
         self.builddir = None
         self.config_opts = []
+        self.make_opts = []
         self.max_concurrency = None
+
+
+class CMake(ConfigureBasedBuildSystem):
+    """A build system for compiling CMake-based projects.
+
+    This build system will emit the following commands:
+
+    1. Create a build directory if :attr:`builddir` is not :class:`None` and
+       change to it.
+    2. Invoke ``cmake`` to configure the project by setting the corresponding
+       CMake flags for compilers and compiler flags.
+    3. Issue ``make`` to compile the code.
+    """
 
     def _combine_flags(self, cppflags, xflags):
         if cppflags is None:
@@ -548,7 +565,83 @@ class CMake(BuildSystem):
         if self.max_concurrency is not None:
             make_cmd += [str(self.max_concurrency)]
 
+        if self.make_opts:
+            make_cmd += self.make_opts
+
         return prepare_cmd + [' '.join(cmake_cmd), ' '.join(make_cmd)]
+
+
+class Autotools(ConfigureBasedBuildSystem):
+    """A build system for compiling Autotools-based projects.
+
+    This build system will emit the following commands:
+
+    1. Create a build directory if :attr:`builddir` is not :class:`None` and
+       change to it.
+    2. Invoke ``configure`` to configure the project by setting the corresponding
+       flags for compilers and compiler flags.
+    3. Issue ``make`` to compile the code.
+    """
+
+    def emit_build_commands(self, environ):
+        prepare_cmd = []
+        if self.srcdir:
+            prepare_cmd += ['cd %s' % self.srcdir]
+
+        if self.builddir:
+            prepare_cmd += ['mkdir -p %s' % self.builddir,
+                            'cd %s' % self.builddir]
+
+        if self.builddir:
+            configure_cmd = [os.path.join(
+                os.path.relpath('.', self.builddir), 'configure')]
+        else:
+            configure_cmd = ['./configure']
+
+        cc = self._cc(environ)
+        cxx = self._cxx(environ)
+        ftn = self._ftn(environ)
+        nvcc = self._nvcc(environ)
+        cppflags = self._cppflags(environ)
+        cflags   = self._cflags(environ)
+        cxxflags = self._cxxflags(environ)
+        fflags   = self._fflags(environ)
+        ldflags  = self._ldflags(environ)
+        if cc is not None:
+            configure_cmd += ["CC='%s'" % cc]
+
+        if cxx is not None:
+            configure_cmd += ["CXX='%s'" % cxx]
+
+        if ftn is not None:
+            configure_cmd += ["FC='%s'" % ftn]
+
+        if cppflags is not None:
+            configure_cmd += ["CPPFLAGS='%s'" % ' '.join(cppflags)]
+
+        if cflags is not None:
+            configure_cmd += ["CFLAGS='%s'" % ' '.join(cflags)]
+
+        if cxxflags is not None:
+            configure_cmd += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
+
+        if fflags is not None:
+            configure_cmd += ["FCFLAGS='%s'" % ' '.join(fflags)]
+
+        if ldflags is not None:
+            configure_cmd += ["LDFLAGS='%s'" % ' '.join(ldflags)]
+
+        if self.config_opts:
+            configure_cmd += self.config_opts
+
+        make_cmd = ['make -j']
+        if self.max_concurrency is not None:
+            make_cmd += [str(self.max_concurrency)]
+
+        if self.make_opts:
+            make_cmd += self.make_opts
+
+        return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
 
 
 class BuildSystemField(fields.TypedField):

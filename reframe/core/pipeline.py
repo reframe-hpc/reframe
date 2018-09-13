@@ -930,9 +930,15 @@ class RegressionTest:
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
                 # Try to guess the build system
-                if os.path.exists(os.path.join(staged_sourcepath,
-                                               'CMakeLists.txt')):
+                cmakelists = os.path.join(staged_sourcepath, 'CMakeLists.txt')
+                configure_ac = os.path.join(staged_sourcepath, 'configure.ac')
+                configure_in = os.path.join(staged_sourcepath, 'configure.in')
+                if os.path.exists(cmakelists):
                     self.build_system = 'CMake'
+                    self.build_system.builddir = 'rfm_build'
+                elif (os.path.exists(configure_ac) or
+                      os.path.exists(configure_in)):
+                    self.build_system = 'Autotools'
                     self.build_system.builddir = 'rfm_build'
                 else:
                     self.build_system = 'Make'
