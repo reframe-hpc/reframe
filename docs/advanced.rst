@@ -123,7 +123,7 @@ Add a configuration step before compiling the code
 
 It is often the case that a configuration step is needed before compiling a code with ``make``.
 To address this kind of projects, ReFrame aims to offer specific abstractions for "configure-make"-style build systems.
-Currently, it supports only `CMake <https://cmake.org/>`__-based projects through its :class:`CMake <reframe.core.buildsystems.CMake>` build system.
+It supports `CMake-based <https://cmake.org/>`__ projects through the :class:`CMake <reframe.core.buildsystems.CMake>` build system, as well as `Autotools-based <https://www.gnu.org/software/automake/>`__ projects through the :class:`Autotools <reframe.core.buildsystems.Autotools>` build system.
 
 For other build systems, you can achieve the same effect using the :class:`Make <reframe.core.buildsystems.Make>` build system and the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` for performing the configuration step.
 The following code snippet will configure a code with ``./custom_configure`` before invoking ``make``:
