@@ -93,9 +93,13 @@ class RegressionTest:
     #: subfolder or a file contained in :attr:`sourcesdir`. This applies also
     #: in the case where :attr:`sourcesdir` is a Git repository.
     #:
-    #: If it refers to a regular file, this file will be compiled (its language
-    #: will be automatically recognized).
-    #: If it refers to a directory, ``make`` will be invoked in that directory.
+    #: If it refers to a regular file, this file will be compiled using the
+    #: :class:`SingleSource <reframe.core.buildsystems.SingleSource>` build
+    #: system.
+    #: If it refers to a directory, ReFrame will try to infer the build system
+    #: to use for the project and will fall back in using the :class:`Make
+    #: <reframe.core.buildsystems.Make>` build system, if it cannot find a more
+    #: specific one.
     #:
     #: :type: :class:`str`
     #: :default: ``''``
@@ -925,9 +929,21 @@ class RegressionTest:
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
-                self.build_system = 'Make'
+                # Try to guess the build system
+                cmakelists = os.path.join(staged_sourcepath, 'CMakeLists.txt')
+                configure_ac = os.path.join(staged_sourcepath, 'configure.ac')
+                configure_in = os.path.join(staged_sourcepath, 'configure.in')
+                if os.path.exists(cmakelists):
+                    self.build_system = 'CMake'
+                    self.build_system.builddir = 'rfm_build'
+                elif (os.path.exists(configure_ac) or
+                      os.path.exists(configure_in)):
+                    self.build_system = 'Autotools'
+                    self.build_system.builddir = 'rfm_build'
+                else:
+                    self.build_system = 'Make'
 
-            self.build_system.srcdir = self.sourcepath
+                self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
