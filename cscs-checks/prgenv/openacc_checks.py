@@ -8,10 +8,11 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         super().__init__()
         if num_tasks == 1:
             self.name = 'openacc_fortran_check'
+            self.descr = 'OpenACC Fortran check'
         else:
             self.name = 'openacc_mpi_fortran_check'
+            self.descr = 'OpenACC+MPI Fortran check'
 
-        self.descr = self.name
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.num_tasks = num_tasks
