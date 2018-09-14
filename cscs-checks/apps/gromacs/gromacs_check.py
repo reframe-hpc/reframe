@@ -27,7 +27,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.sanity_patterns = sn.all([
             sn.assert_found('Finished mdrun', output_file),
-            sn.assert_lt(energy_diff, 1560.1)
+            sn.assert_lt(energy_diff, 3271)
         ])
 
         self.perf_patterns = {
