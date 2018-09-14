@@ -4,11 +4,11 @@ scriptname=`basename $0`
 CI_FOLDER=""
 CI_GENERIC=0
 CI_TUTORIAL=0
+CI_EXITCODE=0
 TERM="${TERM:-xterm}"
 PROFILE=""
 MODULEUSE=""
 
-CI_EXITCODE=0
 
 #
 # This function prints the script usage form
@@ -41,38 +41,26 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe --exec-policy=async --save-log-files -r -t tutorial $@"
+    cmd="./bin/reframe -C tutorial/config/settings.py --exec-policy=async \
+--save-log-files -r -t tutorial $@"
     echo "Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
 
 run_user_checks()
 {
-    cmd="./bin/reframe --exec-policy=async --save-log-files -r -t production $@"
+    cmd="./bin/reframe -C config/cscs.py --exec-policy=async --save-log-files \
+-r -t production $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }
 
 run_serial_user_checks()
 {
-    cmd="./bin/reframe --exec-policy=serial --save-log-files -r -t production-serial $@"
+    cmd="./bin/reframe -C config/cscs.py --exec-policy=serial --save-log-files \
+-r -t production-serial $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
-}
-
-
-save_settings()
-{
-    tempfile=$(mktemp)
-    cp reframe/settings.py $tempfile
-    echo $tempfile
-}
-
-restore_settings()
-{
-    saved=$1
-    cp $saved reframe/settings.py
-    /bin/rm $saved
 }
 
 
@@ -167,13 +155,9 @@ if [ $CI_GENERIC -eq 1 ]; then
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
-    settings_orig=$(save_settings)
-    cp tutorial/config/settings.py reframe/settings.py
-
     # Find modified or added tutorial checks
-    tutorialchecks=( $(git log --name-status --oneline --no-merges -1 | \
-                   awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
-                   grep -e '^tutorial/(?!config/).*\.py') )
+    tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
+                       grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
         tutorialchecks_path=""
@@ -190,21 +174,34 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
             run_tutorial_checks ${tutorialchecks_path} ${invocations[i]}
         done
     fi
-
-    restore_settings $settings_orig
 else
     # Performing the unittests
     echo "=================="
     echo "Running unit tests"
     echo "=================="
-    settings_orig=$(save_settings)
-    cp config/cscs.py reframe/settings.py
 
-    checked_exec ./test_reframe.py
+    checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
+
+    echo "==================================="
+    echo "Running unit tests with PBS backend"
+    echo "==================================="
+
+    if [[ $(hostname) =~ dom ]]; then
+        PATH_save=$PATH
+        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-pbs.py
+        export PATH=$PATH_save
+    fi
+
+
+    # FIXME: Do not run modified checks on Daint during the PE upgrade
+    if [[ $(hostname) =~ daint ]]; then
+        exit $CI_EXITCODE
+    fi
+
 
     # Find modified or added user checks
-    userchecks=( $(git log --name-status --oneline --no-merges -1 | \
-                   awk '/^[AM]/ { print $2 } /^R0[0-9][0-9]/ { print $3 }' | \
+    userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
 
     if [ ${#userchecks[@]} -ne 0 ]; then
@@ -226,7 +223,5 @@ else
             run_serial_user_checks ${userchecks_path} ${invocations[i]}
         done
     fi
-
-    restore_settings $settings_orig
 fi
 exit $CI_EXITCODE

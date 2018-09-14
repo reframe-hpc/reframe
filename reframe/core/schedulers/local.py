@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 import reframe.core.schedulers as sched
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
@@ -26,7 +26,7 @@ class _TimeoutExpired(ReframeError):
     pass
 
 
-@register_scheduler('local')
+@register_scheduler('local', local=True)
 class LocalJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -55,8 +55,8 @@ class LocalJob(sched.Job):
         # Update job info
         self._jobid = self._proc.pid
 
-    def emit_preamble(self, builder):
-        pass
+    def emit_preamble(self):
+        return []
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""

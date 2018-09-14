@@ -2,10 +2,10 @@ import os
 import unittest
 
 import reframe.core.environments as renv
-import reframe.utility.os as os_ext
+import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
-from reframe.core.exceptions import CompilationError, EnvironError
-from reframe.core.modules import get_modules_system
+from reframe.core.runtime import runtime
+from reframe.core.exceptions import EnvironError
 
 
 class TestEnvironment(unittest.TestCase):
@@ -17,21 +17,27 @@ class TestEnvironment(unittest.TestCase):
 
     def assertModulesLoaded(self, modules):
         for m in modules:
-            self.assertTrue(get_modules_system().is_module_loaded(m))
+            self.assertTrue(self.modules_system.is_module_loaded(m))
 
     def assertModulesNotLoaded(self, modules):
         for m in modules:
-            self.assertFalse(get_modules_system().is_module_loaded(m))
+            self.assertFalse(self.modules_system.is_module_loaded(m))
 
-    def setUp(self):
-        get_modules_system().searchpath_add(fixtures.TEST_MODULES)
+    def setup_modules_system(self):
+        if not fixtures.has_sane_modules_system():
+            self.skipTest('no modules system configured')
+
+        self.modules_system = runtime().modules_system
+        self.modules_system.searchpath_add(fixtures.TEST_MODULES)
 
         # Always add a base module; this is a workaround for the modules
         # environment's inconsistent behaviour, that starts with an empty
         # LOADEDMODULES variable and ends up removing it completely if all
         # present modules are removed.
-        get_modules_system().load_module('testmod_base')
+        self.modules_system.load_module('testmod_base')
 
+    def setUp(self):
+        self.modules_system = None
         os.environ['_fookey1'] = 'origfoo'
         os.environ['_fookey1b'] = 'foovalue1'
         os.environ['_fookey2b'] = 'foovalue2'
@@ -48,7 +54,9 @@ class TestEnvironment(unittest.TestCase):
         self.environ_other.set_variable(name='_fookey11', value='value11')
 
     def tearDown(self):
-        get_modules_system().searchpath_remove(fixtures.TEST_MODULES)
+        if self.modules_system is not None:
+            self.modules_system.searchpath_remove(fixtures.TEST_MODULES)
+
         self.environ_save.load()
 
     def test_setup(self):
@@ -97,15 +105,15 @@ class TestEnvironment(unittest.TestCase):
         self.assertEnvironmentVariable(name='_fookey1', value='origfoo')
         if fixtures.has_sane_modules_system():
             self.assertFalse(
-                get_modules_system().is_module_loaded('testmod_foo'))
+                self.modules_system.is_module_loaded('testmod_foo'))
 
-    @unittest.skipIf(not fixtures.has_sane_modules_system(),
-                     'no modules systems supported')
+    @fixtures.switch_to_user_runtime
     def test_load_already_present(self):
-        get_modules_system().load_module('testmod_boo')
+        self.setup_modules_system()
+        self.modules_system.load_module('testmod_boo')
         self.environ.load()
         self.environ.unload()
-        self.assertTrue(get_modules_system().is_module_loaded('testmod_boo'))
+        self.assertTrue(self.modules_system.is_module_loaded('testmod_boo'))
 
     def test_equal(self):
         env1 = renv.Environment('env1', modules=['foo', 'bar'])
@@ -117,37 +125,37 @@ class TestEnvironment(unittest.TestCase):
         env2 = renv.Environment('env2', modules=['foo', 'bar'])
         self.assertNotEqual(env1, env2)
 
-    @unittest.skipIf(not fixtures.has_sane_modules_system(),
-                     'no modules systems supported')
+    @fixtures.switch_to_user_runtime
     def test_conflicting_environments(self):
+        self.setup_modules_system()
         envfoo = renv.Environment(name='envfoo',
                                   modules=['testmod_foo', 'testmod_boo'])
         envbar = renv.Environment(name='envbar', modules=['testmod_bar'])
         envfoo.load()
         envbar.load()
         for m in envbar.modules:
-            self.assertTrue(get_modules_system().is_module_loaded(m))
+            self.assertTrue(self.modules_system.is_module_loaded(m))
 
         for m in envfoo.modules:
-            self.assertFalse(get_modules_system().is_module_loaded(m))
+            self.assertFalse(self.modules_system.is_module_loaded(m))
 
-    @unittest.skipIf(not fixtures.has_sane_modules_system(),
-                     'no modules systems supported')
+    @fixtures.switch_to_user_runtime
     def test_conflict_environ_after_module_load(self):
-        get_modules_system().load_module('testmod_foo')
+        self.setup_modules_system()
+        self.modules_system.load_module('testmod_foo')
         envfoo = renv.Environment(name='envfoo', modules=['testmod_foo'])
         envfoo.load()
         envfoo.unload()
-        self.assertTrue(get_modules_system().is_module_loaded('testmod_foo'))
+        self.assertTrue(self.modules_system.is_module_loaded('testmod_foo'))
 
-    @unittest.skipIf(not fixtures.has_sane_modules_system(),
-                     'no modules systems supported')
+    @fixtures.switch_to_user_runtime
     def test_conflict_environ_after_module_force_load(self):
-        get_modules_system().load_module('testmod_foo')
+        self.setup_modules_system()
+        self.modules_system.load_module('testmod_foo')
         envbar = renv.Environment(name='envbar', modules=['testmod_bar'])
         envbar.load()
         envbar.unload()
-        self.assertTrue(get_modules_system().is_module_loaded('testmod_foo'))
+        self.assertTrue(self.modules_system.is_module_loaded('testmod_foo'))
 
     def test_swap(self):
         from reframe.core.environments import swap_environments
@@ -157,68 +165,76 @@ class TestEnvironment(unittest.TestCase):
         self.assertFalse(self.environ.is_loaded)
         self.assertTrue(self.environ_other.is_loaded)
 
+    @fixtures.switch_to_user_runtime
+    def test_emit_load_commands(self):
+        self.setup_modules_system()
+        rt = runtime()
+        expected_commands = [
+            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            'export _fookey1=value3',
+            'export _fookey2=value2',
+            'export _fookey3b=$_fookey1b',
+            'export _fookey4b=${_fookey2b}',
+        ]
+        self.assertEqual(expected_commands, self.environ.emit_load_commands())
 
-class TestProgEnvironment(unittest.TestCase):
-    def setUp(self):
-        self.environ_save = renv.EnvironmentSnapshot()
-        self.executable = os.path.join(fixtures.TEST_RESOURCES, 'hello')
+    @fixtures.switch_to_user_runtime
+    def test_emit_load_commands_with_confict(self):
+        self.setup_modules_system()
 
-    def tearDown(self):
-        # Remove generated executable ingoring file-not-found errors
-        fixtures.force_remove_file(self.executable)
-        self.environ_save.load()
+        # Load a conflicting module
+        self.modules_system.load_module('testmod_bar')
 
-    def assertHelloMessage(self, executable=None):
-        if not executable:
-            executable = self.executable
+        # When the environment is not loaded, the conflicting module does not
+        # make a difference
+        self.test_emit_load_commands()
 
-        self.assertTrue(os_ext.grep_command_output(cmd=executable,
-                                                   pattern='Hello, World\!'))
-        fixtures.force_remove_file(executable)
+        self.environ.load()
+        rt = runtime()
+        expected_commands = [
+            rt.modules_system.emit_unload_commands('testmod_bar')[0],
+            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            'export _fookey1=value3',
+            'export _fookey2=value2',
+            'export _fookey3b=$_fookey1b',
+            'export _fookey4b=${_fookey2b}',
+        ]
+        self.assertEqual(expected_commands, self.environ.emit_load_commands())
 
-    def compile_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES, 'src')
-        env.cxxflags = '-O2'
-        env.load()
-        env.compile(sourcepath=os.path.join(srcdir, 'hello.c'),
-                    executable=self.executable)
-        self.assertHelloMessage()
+    @fixtures.switch_to_user_runtime
+    def test_emit_unload_commands(self):
+        self.setup_modules_system()
+        rt = runtime()
+        expected_commands = [
+            'unset _fookey1',
+            'unset _fookey2',
+            'unset _fookey3b',
+            'unset _fookey4b',
+            rt.modules_system.emit_unload_commands('testmod_foo')[0],
+        ]
+        self.assertEqual(expected_commands,
+                         self.environ.emit_unload_commands())
 
-        env.compile(sourcepath=os.path.join(srcdir, 'hello.cpp'),
-                    executable=self.executable)
-        self.assertHelloMessage()
+    @fixtures.switch_to_user_runtime
+    def test_emit_unload_commands_with_confict(self):
+        self.setup_modules_system()
 
-        if not skip_fortran:
-            env.compile(sourcepath=os.path.join(srcdir, 'hello.f90'),
-                        executable=self.executable)
-            self.assertHelloMessage()
+        # Load a conflicting module
+        self.modules_system.load_module('testmod_bar')
 
-        env.unload()
+        # When the environment is not loaded, the conflicting module does not
+        # make a difference
+        self.test_emit_unload_commands()
 
-    def compile_dir_with_env(self, env, skip_fortran=False):
-        srcdir = os.path.join(fixtures.TEST_RESOURCES, 'src')
-        env.cxxflags = '-O3'
-        env.load()
-
-        executables = ['hello_c', 'hello_cpp']
-        if skip_fortran:
-            env.compile(srcdir, makefile='Makefile.nofort')
-        else:
-            env.compile(srcdir)
-            executables.append('hello_fort')
-
-        for e in executables:
-            self.assertHelloMessage(os.path.join(srcdir, e))
-
-        env.compile(sourcepath=srcdir, options='clean')
-        env.unload()
-
-    def test_compile(self):
-        # Compile a 'Hello, World' with the builtin gcc/g++
-        env = renv.ProgEnvironment(name='builtin-gcc',
-                                   cc='gcc', cxx='g++', ftn=None)
-        try:
-            self.compile_with_env(env, skip_fortran=True)
-            self.compile_dir_with_env(env, skip_fortran=True)
-        except CompilationError as e:
-            self.fail("Compilation failed\n")
+        self.environ.load()
+        rt = runtime()
+        expected_commands = [
+            'unset _fookey1',
+            'unset _fookey2',
+            'unset _fookey3b',
+            'unset _fookey4b',
+            rt.modules_system.emit_unload_commands('testmod_foo')[0],
+            rt.modules_system.emit_load_commands('testmod_bar')[0],
+        ]
+        self.assertEqual(expected_commands,
+                         self.environ.emit_unload_commands())

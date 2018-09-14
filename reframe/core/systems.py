@@ -7,7 +7,7 @@ from reframe.core.environments import Environment
 class SystemPartition:
     """A representation of a system partition inside ReFrame."""
 
-    _name      = fields.NonWhitespaceField('_name')
+    _name      = fields.StringPatternField('_name', '(\w|-)+')
     _descr     = fields.StringField('_descr')
     _access    = fields.TypedListField('_access', str)
     _environs  = fields.TypedListField('_environs', Environment)
@@ -29,24 +29,13 @@ class SystemPartition:
         self._resources = dict(resources)
         self._max_jobs  = max_jobs
         self._local_env = local_env
-        self._active    = True
 
         # Parent system
         self._system = None
 
-    def enable(self):
-        self._active = True
-
-    def disable(self):
-        self._active = False
-
     @property
     def access(self):
         return self._access
-
-    @property
-    def active(self):
-        return self._active
 
     @property
     def descr(self):
@@ -155,44 +144,41 @@ class SystemPartition:
 
 class System:
     """A representation of a system inside ReFrame."""
-    _name  = fields.NonWhitespaceField('_name')
+    _name  = fields.StringPatternField('_name', '(\w|-)+')
     _descr = fields.StringField('_descr')
     _hostnames  = fields.TypedListField('_hostnames', str)
     _partitions = fields.TypedListField('_partitions', SystemPartition)
-    _modules_system = fields.AlphanumericField('_modules_system',
-                                               allow_none=True)
+    _modules_system = fields.StringPatternField('_modules_system',
+                                                '(\w|-)+', allow_none=True)
 
-    prefix = fields.StringField('prefix')
-    stagedir  = fields.StringField('stagedir', allow_none=True)
-    outputdir = fields.StringField('outputdir', allow_none=True)
-    logdir = fields.StringField('logdir', allow_none=True)
-
-    #: Global resources directory for this system
-    #:
-    #: You may use this directory for storing large resource files of your
-    #: regression tests.
-    #: See `here <configure.html#system-configuration>`__ on how to configure this.
-    #:
-    #: :type: :class:`str`
-    resourcesdir = fields.StringField('resourcesdir')
+    _prefix = fields.StringField('_prefix')
+    _stagedir  = fields.StringField('_stagedir', allow_none=True)
+    _outputdir = fields.StringField('_outputdir', allow_none=True)
+    _perflogdir = fields.StringField('_perflogdir', allow_none=True)
+    _resourcesdir = fields.StringField('_resourcesdir')
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
-                 prefix='.', stagedir=None, outputdir=None, logdir=None,
+                 prefix='.', stagedir=None, outputdir=None, perflogdir=None,
                  resourcesdir='.', modules_system=None):
         self._name  = name
         self._descr = descr or name
         self._hostnames  = list(hostnames)
         self._partitions = list(partitions)
         self._modules_system = modules_system
-        self.prefix = prefix
-        self.stagedir = stagedir
-        self.outputdir = outputdir
-        self.logdir = logdir
-        self.resourcesdir = resourcesdir
+        self._prefix = prefix
+        self._stagedir = stagedir
+        self._outputdir = outputdir
+        self._perflogdir = perflogdir
+        self._resourcesdir = resourcesdir
 
         # Set parent system for the given partitions
         for p in partitions:
             p._system = self
+
+    @property
+    def name(self):
+        """The name of this system."""
+        return self._name
 
     @property
     def descr(self):
@@ -201,36 +187,51 @@ class System:
 
     @property
     def hostnames(self):
+        """The hostname patterns associated with this system."""
         return self._hostnames
 
     @property
     def modules_system(self):
+        """The modules system name associated with this system."""
         return self._modules_system
 
     @property
-    def name(self):
-        """The name of this system."""
-        return self._name
+    def prefix(self):
+        """The ReFrame prefix associated with this system."""
+        return self._prefix
+
+    @property
+    def stagedir(self):
+        """The ReFrame stage directory prefix associated with this system."""
+        return self._stagedir
+
+    @property
+    def outputdir(self):
+        """The ReFrame output directory prefix associated with this system."""
+        return self._outputdir
+
+    @property
+    def perflogdir(self):
+        """The ReFrame log directory prefix associated with this system."""
+        return self._perflogdir
+
+    @property
+    def resourcesdir(self):
+        """Global resources directory for this system.
+
+        You may use this directory for storing large resource files of your
+        regression tests.
+        See `here <configure.html#system-configuration>`__ on how to configure
+        this.
+
+        :type: :class:`str`
+        """
+        return self._resourcesdir
 
     @property
     def partitions(self):
-        """Get all the active partitions of this system.
-
-        :returns: a list of :class:`SystemPartition`.
-        """
-        return [p for p in self._partitions if p.active]
-
-    def partition(self, name):
-        """Get system partition with ``name``.
-
-        :returns: the requested :class:`SystemPartition`, or :class:`None` if
-            not found.
-        """
-        for p in self._partitions:
-            if p.name == name and p.active:
-                return p
-
-        return None
+        """All the system partitions associated with this system."""
+        return self._partitions
 
     def add_partition(self, partition):
         partition._system = self

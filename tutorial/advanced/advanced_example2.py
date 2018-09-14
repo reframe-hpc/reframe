@@ -1,14 +1,11 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class RunOnlyTest(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('run_only_check', os.path.dirname(__file__),
-                         **kwargs)
-
+@rfm.simple_test
+class ExampleRunOnlyTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the class'
                       'RunOnlyRegressionTest')
         self.valid_systems = ['*']
@@ -24,7 +21,3 @@ class RunOnlyTest(RunOnlyRegressionTest):
             lower, upper)
         self.maintainers = ['put-your-name-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [RunOnlyTest(**kwargs)]
