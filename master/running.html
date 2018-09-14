@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.13 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.14 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.13
+                2.14
               </div>
             
           
@@ -821,7 +821,7 @@ The attributes of this handler are the following:</p>
 <li><p class="first"><code class="docutils literal"><span class="pre">prefix</span></code>: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
 This attribute accepts any of the check-specific formatting placeholders described <a class="reference external" href="#common-log-handler-attributes">above</a>.
 This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
-This dynamic prefix is appended to the “global” performance log directory prefix, configurable through the <code class="docutils literal"><span class="pre">--perflogdir</span></code> option.
+This dynamic prefix is appended to the “global” performance log directory prefix, configurable through the <code class="docutils literal"><span class="pre">--perflogdir</span></code> option or the <code class="docutils literal"><span class="pre">perflogdir</span></code> attribute of the <a class="reference external" href="configuring.html#system-configuration">system configuration</a>.
 The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>{PERFLOG_PREFIX}/
    system1/
@@ -907,7 +907,7 @@ These may depend on the server configuration.</li>
 <p>This log handler uses internally <a class="reference external" href="https://pypi.org/project/pygelf/">pygelf</a>, so this Python module must be available, otherwise this log handler will be ignored.
 <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html">GELF</a> is a format specification for log messages that are sent over the network.
 The ReFrame’s <code class="docutils literal"><span class="pre">graylog</span></code> handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
-More details on this log format may be found <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification">here</a></p>
+More details on this log format may be found <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification">here</a>.</p>
 </div>
 </div>
 </div>
@@ -1154,13 +1154,10 @@ FAILURE INFO for Example7Test
             <dd><a href="../v2.10/running.html">v2.10</a></dd>
             <dd><a href="../v2.11/running.html">v2.11</a></dd>
             <dd><a href="../v2.12/running.html">v2.12</a></dd>
-            <dd><a href="../v2.12-dev0/running.html">v2.12-dev0</a></dd>
-            <dd><a href="../v2.12-dev1/running.html">v2.12-dev1</a></dd>
             <dd><a href="../v2.13/running.html">v2.13</a></dd>
-            <dd><a href="../v2.13-dev0/running.html">v2.13-dev0</a></dd>
+            <dd><a href="../v2.14/running.html">v2.14</a></dd>
             <dd><a href="../v2.7/running.html">v2.7</a></dd>
             <dd><a href="../v2.8/running.html">v2.8</a></dd>
-            <dd><a href="../v2.8.1/running.html">v2.8.1</a></dd>
             <dd><a href="../v2.9/running.html">v2.9</a></dd>
         </dl>
         <dl>
@@ -1176,7 +1173,7 @@ FAILURE INFO for Example7Test
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.13',
+            VERSION:'2.14',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',

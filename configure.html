@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.13 documentation</title>
+  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.14 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.13
+                2.14
               </div>
             
           
@@ -186,11 +186,11 @@ This should be enough to let you run ReFrame on a local computer as soon as the 
 <p>As soon as a new system with its programming environments is configured, adapting an existing regression test could be as easy as just adding the system’s name in the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_systems" title="reframe.core.pipeline.RegressionTest.valid_systems"><code class="xref py py-attr docutils literal"><span class="pre">valid_systems</span></code></a> list and its associated programming environments in the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_prog_environs" title="reframe.core.pipeline.RegressionTest.valid_prog_environs"><code class="xref py py-attr docutils literal"><span class="pre">valid_prog_environs</span></code></a> list.</p>
 <div class="section" id="the-configuration-file">
 <h2>The Configuration File<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h2>
-<p>The configuration of systems and programming environments is performed by a special Python dictionary called <code class="docutils literal"><span class="pre">_site_configuration</span></code> defined inside the file <code class="docutils literal"><span class="pre">&lt;install-dir&gt;/reframe/settings.py</span></code>.</p>
-<p>The <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary should define two entries, <code class="docutils literal"><span class="pre">systems</span></code> and <code class="docutils literal"><span class="pre">environments</span></code>.
+<p>The configuration of systems and programming environments is performed by a special Python dictionary called <code class="docutils literal"><span class="pre">site_configuration</span></code> defined inside the file <code class="docutils literal"><span class="pre">&lt;install-dir&gt;/reframe/settings.py</span></code>.</p>
+<p>The <code class="docutils literal"><span class="pre">site_configuration</span></code> dictionary should define two entries, <code class="docutils literal"><span class="pre">systems</span></code> and <code class="docutils literal"><span class="pre">environments</span></code>.
 The former defines the systems that ReFrame may recognize, whereas the latter defines the available programming environments.</p>
 <p>The following example shows a minimal configuration for the <a class="reference external" href="https://www.cscs.ch/computers/piz-daint/">Piz Daint</a> supercomputer at CSCS:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">_site_configuration</span> <span class="o">=</span> <span class="p">{</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">site_configuration</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;systems&#39;</span><span class="p">:</span> <span class="p">{</span>
         <span class="s1">&#39;daint&#39;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s1">&#39;descr&#39;</span><span class="p">:</span> <span class="s1">&#39;Piz Daint&#39;</span><span class="p">,</span>
@@ -275,7 +275,8 @@ Three types of modules systems are currently supported:<ul>
 <li><code class="docutils literal"><span class="pre">prefix</span></code>: Default regression prefix for this system (default <code class="docutils literal"><span class="pre">.</span></code>).</li>
 <li><code class="docutils literal"><span class="pre">stagedir</span></code>: Default stage directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
 <li><code class="docutils literal"><span class="pre">outputdir</span></code>: Default output directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
-<li><code class="docutils literal"><span class="pre">logdir</span></code>: Default performance logging directory for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">perflogdir</span></code>: Default directory prefix for storing performance logs for this system (default <code class="xref py py-class docutils literal"><span class="pre">None</span></code>).</li>
+<li><code class="docutils literal"><span class="pre">logdir</span></code>: <cite>Deprecated since version 2.14 please use</cite> <code class="docutils literal"><span class="pre">perflogdir</span></code> <cite>instead.</cite></li>
 <li><code class="docutils literal"><span class="pre">resourcesdir</span></code>: Default directory for storing large resources (e.g., input data files, etc.) needed by regression tests for this system (default <code class="docutils literal"><span class="pre">.</span></code>).</li>
 <li><code class="docutils literal"><span class="pre">partitions</span></code>: A set of key/value pairs defining the partitions of this system and their properties (default <code class="docutils literal"><span class="pre">{}</span></code>).
 Partition configuration is discussed in the <a class="reference external" href="#partition-configuration">next section</a>.</li>
@@ -286,7 +287,7 @@ Partition configuration is discussed in the <a class="reference external" href="
 <p><span class="versionmodified">New in version 2.8: </span>The <code class="docutils literal"><span class="pre">modules_system</span></code> key was introduced for specifying custom modules systems for different systems.</p>
 </div>
 </div>
-<p>For a more detailed description of the <code class="docutils literal"><span class="pre">prefix</span></code>, <code class="docutils literal"><span class="pre">stagedir</span></code>, <code class="docutils literal"><span class="pre">outputdir</span></code> and <code class="docutils literal"><span class="pre">logdir</span></code> directories, please refer to the <a class="reference external" href="running.html#configuring-reframe-directories">“Running ReFrame”</a> section.</p>
+<p>For a more detailed description of the <code class="docutils literal"><span class="pre">prefix</span></code>, <code class="docutils literal"><span class="pre">stagedir</span></code>, <code class="docutils literal"><span class="pre">outputdir</span></code> and <code class="docutils literal"><span class="pre">perflogdir</span></code> directories, please refer to the <a class="reference external" href="running.html#configuring-reframe-directories">“Configuring ReFrame Directories”</a> and <a class="reference external" href="running.html#performance-logging">“Performance Logging”</a> sections.</p>
 </div>
 <div class="section" id="partition-configuration">
 <h2>Partition Configuration<a class="headerlink" href="#partition-configuration" title="Permalink to this headline">¶</a></h2>
@@ -306,7 +307,7 @@ A list of the supported <a class="reference external" href="#supported-scheduler
 <li><p class="first"><code class="docutils literal"><span class="pre">access</span></code>: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition (default <code class="docutils literal"><span class="pre">[]</span></code>).</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">environs</span></code>: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default <code class="docutils literal"><span class="pre">[]</span></code>).
-The environment names must be resolved inside the <code class="docutils literal"><span class="pre">environments</span></code> section of the <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary (see <a class="reference external" href="#environments-configuration">Environments Configuration</a> for more information).</p>
+The environment names must be resolved inside the <code class="docutils literal"><span class="pre">environments</span></code> section of the <code class="docutils literal"><span class="pre">site_configuration</span></code> dictionary (see <a class="reference external" href="#environments-configuration">Environments Configuration</a> for more information).</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">modules</span></code>: A list of modules to be loaded before running a regression test on that partition (default <code class="docutils literal"><span class="pre">[]</span></code>).</p>
 </li>
@@ -417,7 +418,7 @@ This launcher may also be used with the <code class="docutils literal"><span cla
 </div>
 <div class="section" id="environments-configuration">
 <h2>Environments Configuration<a class="headerlink" href="#environments-configuration" title="Permalink to this headline">¶</a></h2>
-<p>The environments available for testing in different systems are defined under the <code class="docutils literal"><span class="pre">environments</span></code> key of the top-level <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary.
+<p>The environments available for testing in different systems are defined under the <code class="docutils literal"><span class="pre">environments</span></code> key of the top-level <code class="docutils literal"><span class="pre">site_configuration</span></code> dictionary.
 The <code class="docutils literal"><span class="pre">environments</span></code> key is associated to a special dictionary that defines scopes for looking up an environment. The <code class="docutils literal"><span class="pre">*</span></code> denotes the global scope and all environments defined there can be used by any system.
 Instead of <code class="docutils literal"><span class="pre">*</span></code>, you can define scopes for specific systems or specific partitions by using the name of the system or partition.
 For example, an entry <code class="docutils literal"><span class="pre">daint</span></code> will define a scope for a system called <code class="docutils literal"><span class="pre">daint</span></code>, whereas an entry <code class="docutils literal"><span class="pre">daint:gpu</span></code> will define a scope for a virtual partition named <code class="docutils literal"><span class="pre">gpu</span></code> on the system <code class="docutils literal"><span class="pre">daint</span></code>.
@@ -561,13 +562,10 @@ You can override completely the auto-detection process by specifying a system or
             <dd><a href="v2.10/configure.html">v2.10</a></dd>
             <dd><a href="v2.11/configure.html">v2.11</a></dd>
             <dd><a href="v2.12/configure.html">v2.12</a></dd>
-            <dd><a href="v2.12-dev0/configure.html">v2.12-dev0</a></dd>
-            <dd><a href="v2.12-dev1/configure.html">v2.12-dev1</a></dd>
             <dd><a href="v2.13/configure.html">v2.13</a></dd>
-            <dd><a href="v2.13-dev0/configure.html">v2.13-dev0</a></dd>
+            <dd><a href="v2.14/configure.html">v2.14</a></dd>
             <dd><a href="v2.7/configure.html">v2.7</a></dd>
             <dd><a href="v2.8/configure.html">v2.8</a></dd>
-            <dd><a href="v2.8.1/configure.html">v2.8.1</a></dd>
             <dd><a href="v2.9/configure.html">v2.9</a></dd>
         </dl>
         <dl>
@@ -583,7 +581,7 @@ You can override completely the auto-detection process by specifying a system or
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.13',
+            VERSION:'2.14',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',

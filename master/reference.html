@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.13 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.14 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.13
+                2.14
               </div>
             
           
@@ -106,6 +106,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#job-schedulers-and-parallel-launchers">Job schedulers and parallel launchers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-reframe.core.runtime">Runtime services</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#modules-system-api">Modules System API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-systems">Build systems</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="sanity_functions_reference.html">Sanity Functions Reference</a></li>
@@ -304,7 +305,7 @@ specifications are conflicting.</p>
 <span class="target" id="module-reframe.core.pipeline"></span><dl class="class">
 <dt id="reframe.core.pipeline.RegressionTest">
 <em class="property">class </em><code class="descclassname">reframe.core.pipeline.</code><code class="descname">RegressionTest</code><span class="sig-paren">(</span><em>name=None</em>, <em>prefix=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Base class for regression tests.</p>
 <p>All regression tests must eventually inherit from this class.
 This class provides the implementation of the pipeline phases that the
@@ -340,6 +341,31 @@ module.</p>
 <p><span class="versionmodified">Changed in version 2.13.</span></p>
 </div>
 </div>
+<dl class="attribute">
+<dt id="reframe.core.pipeline.RegressionTest.build_system">
+<code class="descname">build_system</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.build_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>The build system to be used for this test.
+If not specified, the framework will try to figure it out automatically
+based on the value of <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">sourcepath</span></code></a>.</p>
+<p>This field may be set using either a string referring to a concrete build
+system class name (see <a class="reference external" href="reference.html#build-systems">build systems</a>)
+or an instance of <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a>.
+The former is the recommended way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.14.</span></p>
+</div>
+</dd></dl>
+
 <dl class="method">
 <dt id="reframe.core.pipeline.RegressionTest.check_performance">
 <code class="descname">check_performance</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.check_performance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.check_performance" title="Permalink to this definition">¶</a></dt>
@@ -406,6 +432,15 @@ environment for compiling the source code of the test.</td>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="reframe.core.pipeline.RegressionTest.compile_wait">
+<code class="descname">compile_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RegressionTest.compile_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.compile_wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for compilation phase to finish.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.13.</span></p>
+</div>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="reframe.core.pipeline.RegressionTest.current_environ">
 <code class="descname">current_environ</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.current_environ" title="Permalink to this definition">¶</a></dt>
@@ -460,7 +495,7 @@ with.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">self.name</span></code></td>
 </tr>
@@ -492,7 +527,7 @@ with.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">os.path.join('.',</span> <span class="pre">self.name)</span></code></td>
 </tr>
@@ -861,7 +896,7 @@ specified reservation if the number of tasks is set to <code class="docutils lit
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -878,7 +913,7 @@ examples.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">A dictionary with keys of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> and deferrable
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">A dictionary with keys of type <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> and deferrable
 expressions (i.e., the result of a <a class="reference internal" href="sanity_functions_reference.html"><span class="doc">sanity function</span></a>) as values.
 <code class="xref py py-class docutils literal"><span class="pre">None</span></code> is also allowed.</td>
 </tr>
@@ -916,7 +951,7 @@ otherwise.<p>If no job descriptor is yet associated with this test,
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -959,7 +994,7 @@ actual job launch command.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -999,7 +1034,7 @@ inside the stage directory. <strong>Each entry in the list spawns a new shell.</
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1113,14 +1148,17 @@ When overriding this method users should always pass through
 <p>It must be a path relative to the <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>, pointing to a
 subfolder or a file contained in <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a>. This applies also
 in the case where <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcesdir" title="reframe.core.pipeline.RegressionTest.sourcesdir"><code class="xref py py-attr docutils literal"><span class="pre">sourcesdir</span></code></a> is a Git repository.</p>
-<p>If it refers to a regular file, this file will be compiled (its language
-will be automatically recognized).
-If it refers to a directory, <code class="docutils literal"><span class="pre">make</span></code> will be invoked in that directory.</p>
+<p>If it refers to a regular file, this file will be compiled using the
+<a class="reference internal" href="#reframe.core.buildsystems.SingleSource" title="reframe.core.buildsystems.SingleSource"><code class="xref py py-class docutils literal"><span class="pre">SingleSource</span></code></a> build
+system.
+If it refers to a directory, ReFrame will try to infer the build system
+to use for the project and will fall back in using the <a class="reference internal" href="#reframe.core.buildsystems.Make" title="reframe.core.buildsystems.Make"><code class="xref py py-class docutils literal"><span class="pre">Make</span></code></a> build system, if it cannot find a more
+specific one.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">''</span></code></td>
 </tr>
@@ -1143,7 +1181,7 @@ directory of the test.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">'src'</span></code></td>
 </tr>
@@ -1170,7 +1208,7 @@ with a compilation phase</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1187,7 +1225,7 @@ expressions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1204,7 +1242,7 @@ expressions.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -1368,6 +1406,13 @@ module.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="reframe.core.pipeline.RunOnlyRegressionTest.compile_wait">
+<code class="descname">compile_wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RunOnlyRegressionTest.compile_wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RunOnlyRegressionTest.compile_wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for compilation phase to finish.</p>
+<p>This is a no-op for this type of test.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="reframe.core.pipeline.RunOnlyRegressionTest.run">
 <code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#RunOnlyRegressionTest.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.RunOnlyRegressionTest.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>The run phase of the regression test pipeline.</p>
@@ -1388,14 +1433,6 @@ regression test pipeline.</p>
 the compilation stage.</p>
 <p>This class is also directly available under the top-level <code class="xref py py-mod docutils literal"><span class="pre">reframe</span></code>
 module.</p>
-<dl class="method">
-<dt id="reframe.core.pipeline.CompileOnlyRegressionTest.compile">
-<code class="descname">compile</code><span class="sig-paren">(</span><em>**compile_opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.compile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.compile" title="Permalink to this definition">¶</a></dt>
-<dd><p>The compilation stage of the regression test pipeline.</p>
-<p>The standard output and standard error of this stage will be used as
-the standard output and error of the test.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="reframe.core.pipeline.CompileOnlyRegressionTest.run">
 <code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/pipeline.html#CompileOnlyRegressionTest.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.pipeline.CompileOnlyRegressionTest.run" title="Permalink to this definition">¶</a></dt>
@@ -1426,7 +1463,7 @@ descriptor is set up for this test.</p>
 <dl class="class">
 <dt id="reframe.core.environments.Environment">
 <em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">Environment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#Environment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.Environment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>This class abstracts away an environment to run regression tests.</p>
 <p>It is simply a collection of modules to be loaded and environment variables
 to be set when this environment is loaded by the framework.
@@ -1446,7 +1483,7 @@ Users may not create or modify directly environments.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1460,7 +1497,7 @@ Users may not create or modify directly environments.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1474,7 +1511,7 @@ Users may not create or modify directly environments.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values.</td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">dictionary of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> keys/values.</td>
 </tr>
 </tbody>
 </table>
@@ -1484,7 +1521,7 @@ Users may not create or modify directly environments.</p>
 
 <dl class="class">
 <dt id="reframe.core.environments.ProgEnvironment">
-<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">ProgEnvironment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>cc='cc'</em>, <em>cxx='CC'</em>, <em>ftn='ftn'</em>, <em>cppflags=None</em>, <em>cflags=None</em>, <em>cxxflags=None</em>, <em>fflags=None</em>, <em>ldflags=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#ProgEnvironment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.ProgEnvironment" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">ProgEnvironment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>cc='cc'</em>, <em>cxx='CC'</em>, <em>ftn='ftn'</em>, <em>nvcc='nvcc'</em>, <em>cppflags=None</em>, <em>cflags=None</em>, <em>cxxflags=None</em>, <em>fflags=None</em>, <em>ldflags=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#ProgEnvironment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.ProgEnvironment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#reframe.core.environments.Environment" title="reframe.core.environments.Environment"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.environments.Environment</span></code></a></p>
 <p>A class representing a programming environment.</p>
 <p>This type of environment adds also attributes for setting the compiler and
@@ -1503,7 +1540,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1517,7 +1554,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1531,7 +1568,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1545,7 +1582,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1559,7 +1596,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1573,7 +1610,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1587,7 +1624,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1601,7 +1638,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1617,7 +1654,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -1631,7 +1668,7 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">True</span></code></td>
 </tr>
@@ -1644,14 +1681,14 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <dl class="class">
 <dt id="reframe.core.environments.save_environment">
 <em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">save_environment</code><a class="reference internal" href="_modules/reframe/core/environments.html#save_environment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.save_environment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>A context manager for saving and restoring the current environment.</p>
 </dd></dl>
 
 <span class="target" id="module-reframe.core.systems"></span><dl class="class">
 <dt id="reframe.core.systems.System">
-<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">System</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>hostnames=[]</em>, <em>partitions=[]</em>, <em>prefix='.'</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>logdir=None</em>, <em>resourcesdir='.'</em>, <em>modules_system=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">System</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>hostnames=[]</em>, <em>partitions=[]</em>, <em>prefix='.'</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>perflogdir=None</em>, <em>resourcesdir='.'</em>, <em>modules_system=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#System"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.System" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>A representation of a system inside ReFrame.</p>
 <dl class="attribute">
 <dt id="reframe.core.systems.System.descr">
@@ -1663,12 +1700,6 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 <dt id="reframe.core.systems.System.hostnames">
 <code class="descname">hostnames</code><a class="headerlink" href="#reframe.core.systems.System.hostnames" title="Permalink to this definition">¶</a></dt>
 <dd><p>The hostname patterns associated with this system.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="reframe.core.systems.System.logdir">
-<code class="descname">logdir</code><a class="headerlink" href="#reframe.core.systems.System.logdir" title="Permalink to this definition">¶</a></dt>
-<dd><p>The ReFrame log directory prefix associated with this system.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1696,6 +1727,12 @@ to the <code class="docutils literal"><span class="pre">make</span></code> invoc
 </dd></dl>
 
 <dl class="attribute">
+<dt id="reframe.core.systems.System.perflogdir">
+<code class="descname">perflogdir</code><a class="headerlink" href="#reframe.core.systems.System.perflogdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ReFrame log directory prefix associated with this system.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="reframe.core.systems.System.prefix">
 <code class="descname">prefix</code><a class="headerlink" href="#reframe.core.systems.System.prefix" title="Permalink to this definition">¶</a></dt>
 <dd><p>The ReFrame prefix associated with this system.</p>
@@ -1713,7 +1750,7 @@ this.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -1730,7 +1767,7 @@ this.</p>
 <dl class="class">
 <dt id="reframe.core.systems.SystemPartition">
 <em class="property">class </em><code class="descclassname">reframe.core.systems.</code><code class="descname">SystemPartition</code><span class="sig-paren">(</span><em>name</em>, <em>descr=None</em>, <em>scheduler=None</em>, <em>launcher=None</em>, <em>access=[]</em>, <em>environs=[]</em>, <em>resources={}</em>, <em>local_env=None</em>, <em>max_jobs=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/systems.html#SystemPartition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.systems.SystemPartition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>A representation of a system partition inside ReFrame.</p>
 <dl class="attribute">
 <dt id="reframe.core.systems.SystemPartition.descr">
@@ -1817,8 +1854,8 @@ launcher combination.</p>
 <h2>Job schedulers and parallel launchers<a class="headerlink" href="#job-schedulers-and-parallel-launchers" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="reframe.core.schedulers.Job">
-<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>command</em>, <em>launcher</em>, <em>environs=[]</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>pre_run=[]</em>, <em>post_run=[]</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
+<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>launcher</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>pre_run=[]</em>, <em>post_run=[]</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job descriptor.</p>
 <div class="admonition caution">
 <p class="first admonition-title">Caution</p>
@@ -1848,7 +1885,7 @@ executable of this job.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1861,7 +1898,7 @@ executable of this job.</p>
 <span class="target" id="module-reframe.core.launchers"></span><dl class="class">
 <dt id="reframe.core.launchers.JobLauncher">
 <em class="property">class </em><code class="descclassname">reframe.core.launchers.</code><code class="descname">JobLauncher</code><span class="sig-paren">(</span><em>options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/launchers.html#JobLauncher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.launchers.JobLauncher" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job launcher.</p>
 <p>A job launcher is the executable that actually launches a distributed
 program to multiple nodes, e.g., <code class="docutils literal"><span class="pre">mpirun</span></code>, <code class="docutils literal"><span class="pre">srun</span></code> etc.</p>
@@ -1905,7 +1942,7 @@ executable).</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -2020,7 +2057,7 @@ registered with that name.</td>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.6)"><strong>ValueError</strong></a> – if a job launcher is already registered with
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.7)"><strong>ValueError</strong></a> – if a job launcher is already registered with
 the same name.</p>
 </td>
 </tr>
@@ -2033,8 +2070,8 @@ the same name.</p>
 <span id="runtime-services"></span><h2>Runtime services<a class="headerlink" href="#module-reframe.core.runtime" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="reframe.core.runtime.HostResources">
-<em class="property">class </em><code class="descclassname">reframe.core.runtime.</code><code class="descname">HostResources</code><span class="sig-paren">(</span><em>prefix=None</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>timefmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/runtime.html#HostResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.runtime.HostResources" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<em class="property">class </em><code class="descclassname">reframe.core.runtime.</code><code class="descname">HostResources</code><span class="sig-paren">(</span><em>prefix=None</em>, <em>stagedir=None</em>, <em>outputdir=None</em>, <em>perflogdir=None</em>, <em>timefmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/runtime.html#HostResources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.runtime.HostResources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Resources associated with ReFrame execution on the current host.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -2057,7 +2094,7 @@ This is always an absolute path.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
 </tr>
 </tbody>
 </table>
@@ -2078,7 +2115,7 @@ This is always an absolute path.</p>
 <dl class="class">
 <dt id="reframe.core.runtime.HostSystem">
 <em class="property">class </em><code class="descclassname">reframe.core.runtime.</code><code class="descname">HostSystem</code><span class="sig-paren">(</span><em>system</em>, <em>partname=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/runtime.html#HostSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.runtime.HostSystem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>The host system of the framework.</p>
 <p>The host system is a representation of the system that the framework
 currently runs on.If the framework is properly configured, the host
@@ -2128,7 +2165,7 @@ directly from this proxy.</p>
 <dl class="class">
 <dt id="reframe.core.runtime.RuntimeContext">
 <em class="property">class </em><code class="descclassname">reframe.core.runtime.</code><code class="descname">RuntimeContext</code><span class="sig-paren">(</span><em>dict_config</em>, <em>sysdescr=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/runtime.html#RuntimeContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.runtime.RuntimeContext" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>The runtime context of the framework.</p>
 <p>This class essentially groups the current host system and the associated
 resources of the framework on the current system.</p>
@@ -2345,6 +2382,560 @@ modules will be unloaded in reverse order.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="build-systems">
+<h2>Build systems<a class="headerlink" href="#build-systems" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.14.</span></p>
+</div>
+<p>ReFrame delegates the compilation of the regression test to a <cite>build system</cite>.
+Build systems in ReFrame are entities that are responsible for generating the necessary shell commands for compiling a code.
+Each build system defines a set of attributes that users may set in order to customize their compilation.
+An example usage is the following:</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Users simply set the build system to use in their regression tests and then they configure it.
+If no special configuration is needed for the compilation, users may completely ignore the build systems.
+ReFrame will automatically pick one based on the regression test attributes and will try to compile the code.</p>
+<p>All build systems in ReFrame derive from the abstract base class <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a>.
+This class defines a set of common attributes, such us compilers, compilation flags etc. that all subclasses inherit.
+It is up to the concrete build system implementations on how to use or not these attributes.</p>
+<span class="target" id="module-reframe.core.buildsystems"></span><dl class="class">
+<dt id="reframe.core.buildsystems.Autotools">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">Autotools</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#Autotools"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.Autotools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem" title="reframe.core.buildsystems.ConfigureBasedBuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.ConfigureBasedBuildSystem</span></code></a></p>
+<p>A build system for compiling Autotools-based projects.</p>
+<p>This build system will emit the following commands:</p>
+<ol class="arabic simple">
+<li>Create a build directory if <code class="xref py py-attr docutils literal"><span class="pre">builddir</span></code> is not <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and
+change to it.</li>
+<li>Invoke <code class="docutils literal"><span class="pre">configure</span></code> to configure the project by setting the corresponding
+flags for compilers and compiler flags.</li>
+<li>Issue <code class="docutils literal"><span class="pre">make</span></code> to compile the code.</li>
+</ol>
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.buildsystems.BuildSystem">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">BuildSystem</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#BuildSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>The abstract base class of any build system.</p>
+<p>Concrete build systems inherit from this class and must override the
+<a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.emit_build_commands" title="reframe.core.buildsystems.BuildSystem.emit_build_commands"><code class="xref py py-func docutils literal"><span class="pre">emit_build_commands()</span></code></a> abstract function.</p>
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.cc">
+<code class="descname">cc</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.cc" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C compiler to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the compiler defined in the current programming environment will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.cflags">
+<code class="descname">cflags</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.cflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C compiler flags to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the corresponding flags defined in the current programming environment
+will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.cppflags">
+<code class="descname">cppflags</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.cppflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The preprocessor flags to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the corresponding flags defined in the current programming environment
+will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.cxx">
+<code class="descname">cxx</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.cxx" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C++ compiler to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the compiler defined in the current programming environment will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.cxxflags">
+<code class="descname">cxxflags</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.cxxflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The C++ compiler flags to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the corresponding flags defined in the current programming environment
+will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.buildsystems.BuildSystem.emit_build_commands">
+<code class="descname">emit_build_commands</code><span class="sig-paren">(</span><em>environ</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/buildsystems.html#BuildSystem.emit_build_commands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.emit_build_commands" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of commands for building using this build system.</p>
+<p>The build commands may always assume to be issued from the top-level
+directory of the code that is to be built.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>environ</strong> (<a class="reference internal" href="#reframe.core.environments.ProgEnvironment" title="reframe.core.environments.ProgEnvironment"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.environments.ProgEnvironment</span></code></a>) – The programming environment for which to emit the build
+instructions.
+The framework passes here the current programming environment.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">BuildSystemError</span></code> in case of errors when generating
+the build instructions.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This method is relevant only to developers of new build systems.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.fflags">
+<code class="descname">fflags</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.fflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Fortran compiler flags to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the corresponding flags defined in the current programming environment
+will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.flags_from_environ">
+<code class="descname">flags_from_environ</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set compiler and compiler flags from the current programming environment
+if not specified otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">True</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.ftn">
+<code class="descname">ftn</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.ftn" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Fortran compiler to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the compiler defined in the current programming environment will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.ldflags">
+<code class="descname">ldflags</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.ldflags" title="Permalink to this definition">¶</a></dt>
+<dd><p>The linker flags to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the corresponding flags defined in the current programming environment
+will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.BuildSystem.nvcc">
+<code class="descname">nvcc</code><a class="headerlink" href="#reframe.core.buildsystems.BuildSystem.nvcc" title="Permalink to this definition">¶</a></dt>
+<dd><p>The CUDA compiler to be used.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">flags_from_environ</span></code></a> is <code class="xref py py-class docutils literal"><span class="pre">True</span></code>,
+the compiler defined in the current programming environment will be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.buildsystems.CMake">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">CMake</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#CMake"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.CMake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem" title="reframe.core.buildsystems.ConfigureBasedBuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.ConfigureBasedBuildSystem</span></code></a></p>
+<p>A build system for compiling CMake-based projects.</p>
+<p>This build system will emit the following commands:</p>
+<ol class="arabic simple">
+<li>Create a build directory if <code class="xref py py-attr docutils literal"><span class="pre">builddir</span></code> is not <code class="xref py py-class docutils literal"><span class="pre">None</span></code> and
+change to it.</li>
+<li>Invoke <code class="docutils literal"><span class="pre">cmake</span></code> to configure the project by setting the corresponding
+CMake flags for compilers and compiler flags.</li>
+<li>Issue <code class="docutils literal"><span class="pre">make</span></code> to compile the code.</li>
+</ol>
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">ConfigureBasedBuildSystem</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#ConfigureBasedBuildSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a></p>
+<p>Abstract base class for configured-based build systems.</p>
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem.builddir">
+<code class="descname">builddir</code><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem.builddir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The CMake build directory, where all the generated files will be placed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem.config_opts">
+<code class="descname">config_opts</code><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem.config_opts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Additional configuration options to be passed to the CMake invocation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem.make_opts">
+<code class="descname">make_opts</code><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem.make_opts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Options to be passed to the subsequent <code class="docutils literal"><span class="pre">make</span></code> invocation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem.max_concurrency">
+<code class="descname">max_concurrency</code><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem.max_concurrency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as for the <a class="reference internal" href="#reframe.core.buildsystems.Make" title="reframe.core.buildsystems.Make"><code class="xref py py-attr docutils literal"><span class="pre">Make</span></code></a> build system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.ConfigureBasedBuildSystem.srcdir">
+<code class="descname">srcdir</code><a class="headerlink" href="#reframe.core.buildsystems.ConfigureBasedBuildSystem.srcdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The top-level directory of the code.</p>
+<p>This is set automatically by the framework based on the
+<a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.sourcepath</span></code></a> attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.buildsystems.Make">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">Make</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#Make"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.Make" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a></p>
+<p>A build system for compiling codes using <code class="docutils literal"><span class="pre">make</span></code>.</p>
+<p>The generated build command has the following form:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="o">-</span><span class="n">j</span> <span class="p">[</span><span class="n">N</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">f</span> <span class="n">MAKEFILE</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">C</span> <span class="n">SRCDIR</span><span class="p">]</span> <span class="n">CC</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">CXX</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">FC</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">NVCC</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">CPPFLAGS</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">CFLAGS</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">CXXFLAGS</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">FCFLAGS</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">LDFLAGS</span><span class="o">=</span><span class="s1">&#39;X&#39;</span> <span class="n">OPTIONS</span>
+</pre></div>
+</div>
+<p>The compiler and compiler flags variables will only be passed if they are
+not <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.
+Their value is determined by the corresponding attributes of
+<a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">BuildSystem</span></code></a>.
+If you want to completely disable passing these variables to the <code class="docutils literal"><span class="pre">make</span></code>
+invocation, you should make sure not to set any of the correspoding
+attributes and set also the <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.flags_from_environ" title="reframe.core.buildsystems.BuildSystem.flags_from_environ"><code class="xref py py-attr docutils literal"><span class="pre">BuildSystem.flags_from_environ</span></code></a> flag to
+<code class="xref py py-class docutils literal"><span class="pre">False</span></code>.</p>
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.Make.makefile">
+<code class="descname">makefile</code><a class="headerlink" href="#reframe.core.buildsystems.Make.makefile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instruct build system to use this Makefile.
+This option is useful when having non-standard Makefile names.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.Make.max_concurrency">
+<code class="descname">max_concurrency</code><a class="headerlink" href="#reframe.core.buildsystems.Make.max_concurrency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Limit concurrency for <code class="docutils literal"><span class="pre">make</span></code> jobs.
+This attribute controls the <code class="docutils literal"><span class="pre">-j</span></code> option passed to <code class="docutils literal"><span class="pre">make</span></code>.
+If not <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, <code class="docutils literal"><span class="pre">make</span></code> will be invoked as <code class="docutils literal"><span class="pre">make</span> <span class="pre">-j</span>
+<span class="pre">max_concurrency</span></code>.
+Otherwise, it will invoked as <code class="docutils literal"><span class="pre">make</span> <span class="pre">-j</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.Make.options">
+<code class="descname">options</code><a class="headerlink" href="#reframe.core.buildsystems.Make.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append these options to the <code class="docutils literal"><span class="pre">make</span></code> invocation.
+This variable is also useful for passing variables or targets to <code class="docutils literal"><span class="pre">make</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.Make.srcdir">
+<code class="descname">srcdir</code><a class="headerlink" href="#reframe.core.buildsystems.Make.srcdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>The top-level directory of the code.</p>
+<p>This is set automatically by the framework based on the
+<a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.sourcepath</span></code></a> attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="reframe.core.buildsystems.SingleSource">
+<em class="property">class </em><code class="descclassname">reframe.core.buildsystems.</code><code class="descname">SingleSource</code><a class="reference internal" href="_modules/reframe/core/buildsystems.html#SingleSource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.buildsystems.SingleSource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem" title="reframe.core.buildsystems.BuildSystem"><code class="xref py py-class docutils literal"><span class="pre">reframe.core.buildsystems.BuildSystem</span></code></a></p>
+<p>A build system for compiling a single source file.</p>
+<p>The generated build command will have the following form:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="n">COMP</span> <span class="n">CPPFLAGS</span> <span class="n">XFLAGS</span> <span class="n">SRCFILE</span> <span class="o">-</span><span class="n">o</span> <span class="n">EXEC</span> <span class="n">LDFLAGS</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">COMP</span></code> is the required compiler for compiling <code class="docutils literal"><span class="pre">SRCFILE</span></code>.
+This build system will automatically detect the programming language of
+the source file and pick the correct compiler.
+See also the <a class="reference internal" href="#reframe.core.buildsystems.SingleSource.lang" title="reframe.core.buildsystems.SingleSource.lang"><code class="xref py py-attr docutils literal"><span class="pre">SingleSource.lang</span></code></a> attribute.</li>
+<li><code class="docutils literal"><span class="pre">CPPFLAGS</span></code> are the preprocessor flags and are passed to any compiler.</li>
+<li><code class="docutils literal"><span class="pre">XFLAGS</span></code> is any of <code class="docutils literal"><span class="pre">CFLAGS</span></code>, <code class="docutils literal"><span class="pre">CXXFLAGS</span></code> or <code class="docutils literal"><span class="pre">FCFLAGS</span></code> depending on
+the programming language of the source file.</li>
+<li><code class="docutils literal"><span class="pre">SRCFILE</span></code> is the source file to be compiled.
+This is set up automatically by the framework.
+See also the <a class="reference internal" href="#reframe.core.buildsystems.SingleSource.srcfile" title="reframe.core.buildsystems.SingleSource.srcfile"><code class="xref py py-attr docutils literal"><span class="pre">SingleSource.srcfile</span></code></a> attribute.</li>
+<li><code class="docutils literal"><span class="pre">EXEC</span></code> is the executable to be generated.
+This is also set automatically by the framework.
+See also the <a class="reference internal" href="#reframe.core.buildsystems.SingleSource.executable" title="reframe.core.buildsystems.SingleSource.executable"><code class="xref py py-attr docutils literal"><span class="pre">SingleSource.executable</span></code></a> attribute.</li>
+<li><code class="docutils literal"><span class="pre">LDFLAGS</span></code> are the linker flags.</li>
+</ul>
+<p>For CUDA codes, the language assumed is C++ (for the compilation flags) and
+the compiler used is <a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.nvcc" title="reframe.core.buildsystems.BuildSystem.nvcc"><code class="xref py py-attr docutils literal"><span class="pre">BuildSystem.nvcc</span></code></a>.</p>
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.SingleSource.executable">
+<code class="descname">executable</code><a class="headerlink" href="#reframe.core.buildsystems.SingleSource.executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>The executable file to be generated.</p>
+<p>This is set automatically by the framework based on the
+<a class="reference internal" href="#reframe.core.pipeline.RegressionTest.executable" title="reframe.core.pipeline.RegressionTest.executable"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.executable</span></code></a> attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.SingleSource.include_path">
+<code class="descname">include_path</code><a class="headerlink" href="#reframe.core.buildsystems.SingleSource.include_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>The include path to be used for this compilation.</p>
+<p>All the elements of this list will be appended to the
+<a class="reference internal" href="#reframe.core.buildsystems.BuildSystem.cppflags" title="reframe.core.buildsystems.BuildSystem.cppflags"><code class="xref py py-attr docutils literal"><span class="pre">BuildSystem.cppflags</span></code></a>, by prepending to each of them the <code class="docutils literal"><span class="pre">-I</span></code>
+option.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.SingleSource.lang">
+<code class="descname">lang</code><a class="headerlink" href="#reframe.core.buildsystems.SingleSource.lang" title="Permalink to this definition">¶</a></dt>
+<dd><p>The programming language of the file that needs to be compiled.
+If not specified, the build system will try to figure it out
+automatically based on the extension of the source file.
+The automatically detected extensions are the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li>C: <cite>.c</cite>.</li>
+<li>C++: <cite>.cc</cite>, <cite>.cp</cite>, <cite>.cxx</cite>, <cite>.cpp</cite>, <cite>.CPP</cite>, <cite>.c++</cite> and <cite>.C</cite>.</li>
+<li>Fortran: <cite>.f</cite>, <cite>.for</cite>, <cite>.ftn</cite>, <cite>.F</cite>, <cite>.FOR</cite>, <cite>.fpp</cite>, <cite>.FPP</cite>, <cite>.FTN</cite>,
+<cite>.f90</cite>, <cite>.f95</cite>, <cite>.f03</cite>, <cite>.f08</cite>, <cite>.F90</cite>, <cite>.F95</cite>, <cite>.F03</cite> and <cite>.F08</cite>.</li>
+<li>CUDA: <cite>.cu</cite>.</li>
+</ul>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="reframe.core.buildsystems.SingleSource.srcfile">
+<code class="descname">srcfile</code><a class="headerlink" href="#reframe.core.buildsystems.SingleSource.srcfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>The source file to compile.
+This is automatically set by the framework based on the
+<a class="reference internal" href="#reframe.core.pipeline.RegressionTest.sourcepath" title="reframe.core.pipeline.RegressionTest.sourcepath"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.sourcepath</span></code></a> attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -2434,13 +3025,10 @@ modules will be unloaded in reverse order.</p>
             <dd><a href="../v2.10/reference.html">v2.10</a></dd>
             <dd><a href="../v2.11/reference.html">v2.11</a></dd>
             <dd><a href="../v2.12/reference.html">v2.12</a></dd>
-            <dd><a href="../v2.12-dev0/reference.html">v2.12-dev0</a></dd>
-            <dd><a href="../v2.12-dev1/reference.html">v2.12-dev1</a></dd>
             <dd><a href="../v2.13/reference.html">v2.13</a></dd>
-            <dd><a href="../v2.13-dev0/reference.html">v2.13-dev0</a></dd>
+            <dd><a href="../v2.14/reference.html">v2.14</a></dd>
             <dd><a href="../v2.7/reference.html">v2.7</a></dd>
             <dd><a href="../v2.8/reference.html">v2.8</a></dd>
-            <dd><a href="../v2.8.1/reference.html">v2.8.1</a></dd>
             <dd><a href="../v2.9/reference.html">v2.9</a></dd>
         </dl>
         <dl>
@@ -2456,7 +3044,7 @@ modules will be unloaded in reverse order.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.13',
+            VERSION:'2.14',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',

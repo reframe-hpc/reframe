@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.schedulers &mdash; ReFrame 2.13 documentation</title>
+  <title>reframe.core.schedulers &mdash; ReFrame 2.14 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.13
+                2.14
               </div>
             
           
@@ -164,9 +164,11 @@
 <span class="c1">#</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
+<span class="kn">import</span> <span class="nn">reframe.core.shell</span> <span class="k">as</span> <span class="nn">shell</span>
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">JobNotStartedError</span>
 <span class="kn">from</span> <span class="nn">reframe.core.launchers</span> <span class="k">import</span> <span class="n">JobLauncher</span>
 
@@ -215,9 +217,7 @@
     <span class="c1"># The sched_* arguments are exposed also to the frontend</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">,</span>
-                 <span class="n">command</span><span class="p">,</span>
                  <span class="n">launcher</span><span class="p">,</span>
-                 <span class="n">environs</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">workdir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span>
                  <span class="n">num_tasks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                  <span class="n">num_tasks_per_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -241,15 +241,9 @@
 
         <span class="c1"># Mutable fields</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sched_options</span><span class="p">)</span>
-
-        <span class="c1"># Commands to be run before and after the job is launched</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pre_run</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pre_run</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_post_run</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">post_run</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">launcher</span> <span class="o">=</span> <span class="n">launcher</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;rfm_&#39;</span> <span class="o">+</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_command</span> <span class="o">=</span> <span class="n">command</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">environs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_workdir</span> <span class="o">=</span> <span class="n">workdir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_num_tasks</span> <span class="o">=</span> <span class="n">num_tasks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_num_tasks_per_node</span> <span class="o">=</span> <span class="n">num_tasks_per_node</span>
@@ -258,8 +252,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_num_cpus_per_task</span> <span class="o">=</span> <span class="n">num_cpus_per_task</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_smt</span> <span class="o">=</span> <span class="n">use_smt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_script_filename</span> <span class="o">=</span> <span class="n">script_filename</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.sh&#39;</span> <span class="o">%</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span> <span class="o">=</span> <span class="n">stdout</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.out&#39;</span> <span class="o">%</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">stderr</span> <span class="ow">or</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.err&#39;</span> <span class="o">%</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stdout</span> <span class="o">=</span> <span class="n">stdout</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workdir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.out&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stderr</span> <span class="o">=</span> <span class="n">stderr</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">workdir</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.err&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_limit</span> <span class="o">=</span> <span class="n">time_limit</span>
 
         <span class="c1"># Backend scheduler related information</span>
@@ -297,16 +291,8 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">command</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command</span>
-
-    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">workdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_workdir</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">environs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">num_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -372,29 +358,19 @@
     <span class="k">def</span> <span class="nf">sched_exclusive_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_exclusive_access</span>
 
-    <span class="k">def</span> <span class="nf">emit_environ</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span><span class="p">:</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">emit_load_instructions</span><span class="p">(</span><span class="n">builder</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">,</span> <span class="n">environs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">gen_opts</span><span class="p">):</span>
+        <span class="n">environs</span> <span class="o">=</span> <span class="n">environs</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="n">shell</span><span class="o">.</span><span class="n">generate_script</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">script_filename</span><span class="p">,</span>
+                                   <span class="o">**</span><span class="n">gen_opts</span><span class="p">)</span> <span class="k">as</span> <span class="n">builder</span><span class="p">:</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">write_prolog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit_preamble</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">environs</span><span class="p">:</span>
+                <span class="n">builder</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">emit_load_commands</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="nf">emit_pre_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pre_run</span><span class="p">:</span>
-            <span class="n">builder</span><span class="o">.</span><span class="n">verbatim</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">emit_post_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_builder</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_run</span><span class="p">:</span>
-            <span class="n">script_builder</span><span class="o">.</span><span class="n">verbatim</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_builder</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emit_preamble</span><span class="p">(</span><span class="n">script_builder</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emit_environ</span><span class="p">(</span><span class="n">script_builder</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emit_pre_run</span><span class="p">(</span><span class="n">script_builder</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">launcher</span><span class="o">.</span><span class="n">emit_run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">script_builder</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">emit_post_run</span><span class="p">(</span><span class="n">script_builder</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">script_filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
-            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">script_builder</span><span class="o">.</span><span class="n">finalise</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">:</span>
+                <span class="n">builder</span><span class="o">.</span><span class="n">write_body</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">emit_preamble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">emit_preamble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
@@ -494,13 +470,10 @@
             <dd><a href="../../../v2.10/index.html">v2.10</a></dd>
             <dd><a href="../../../v2.11/index.html">v2.11</a></dd>
             <dd><a href="../../../v2.12/index.html">v2.12</a></dd>
-            <dd><a href="../../../v2.12-dev0/index.html">v2.12-dev0</a></dd>
-            <dd><a href="../../../v2.12-dev1/index.html">v2.12-dev1</a></dd>
             <dd><a href="../../../v2.13/index.html">v2.13</a></dd>
-            <dd><a href="../../../v2.13-dev0/index.html">v2.13-dev0</a></dd>
+            <dd><a href="../../../v2.14/index.html">v2.14</a></dd>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
-            <dd><a href="../../../v2.8.1/index.html">v2.8.1</a></dd>
             <dd><a href="../../../v2.9/index.html">v2.9</a></dd>
         </dl>
         <dl>
@@ -516,7 +489,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'2.13',
+            VERSION:'2.14',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',

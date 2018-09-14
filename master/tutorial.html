@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ReFrame Tutorial &mdash; ReFrame 2.13 documentation</title>
+  <title>ReFrame Tutorial &mdash; ReFrame 2.14 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.13
+                2.14
               </div>
             
           
@@ -97,6 +97,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">ReFrame Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#the-first-regression-test">The First Regression Test</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#running-the-tutorial-examples">Running the Tutorial Examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inspecting-the-reframe-generated-files">Inspecting the ReFrame Generated Files</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#customizing-the-compilation-phase">Customizing the Compilation Phase</a><ul>
@@ -292,10 +293,10 @@ To make a test visible to the framework, you must decorate your final test class
 <li><code class="docutils literal"><span class="pre">&#64;parameterized_test</span></code>: for registering multiple instantiations of your test.</li>
 </ul>
 <p>Let’s see in more detail how the <code class="docutils literal"><span class="pre">Example1Test</span></code> is defined:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Example1Test</span><span class="p">(</span><span class="n">rfm</span><span class="o">.</span><span class="n">RegressionTest</span><span class="p">):</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@rfm</span><span class="o">.</span><span class="n">simple_test</span>
+<span class="k">class</span> <span class="nc">Example1Test</span><span class="p">(</span><span class="n">rfm</span><span class="o">.</span><span class="n">RegressionTest</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s1">&#39;Simple matrix-vector multiplication example&#39;</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal"><span class="pre">__init__()</span></code> method is the constructor of your test.
@@ -316,7 +317,7 @@ In case of name clashes, it will refuse to load the conflicting test.</div></blo
 </div>
 </div>
 <p>The next line sets a more detailed description of the test:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s1">&#39;Simple matrix-vector multiplication example&#39;</span>
 </pre></div>
 </div>
 <p>This is optional and it defaults to the auto-generated test’s name, if not specified.</p>
@@ -325,8 +326,8 @@ In case of name clashes, it will refuse to load the conflicting test.</div></blo
 <p class="last">If you explicitly set only the name of the test, the description will not be automatically updated and will still keep its default value.</p>
 </div>
 <p>The next two lines specify the systems and the programming environments that this test is valid for:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication.c&#39;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Both of these variables accept a list of system names or environment names, respectively.
@@ -336,7 +337,7 @@ The system and environment names listed in these variables must correspond to na
 For example, given the configuration for our tutorial, <code class="docutils literal"><span class="pre">daint:gpu</span></code> would refer specifically to the <code class="docutils literal"><span class="pre">gpu</span></code> virtual partition of the system <code class="docutils literal"><span class="pre">daint</span></code>.
 If only a system name (without a partition) is specified in the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.valid_systems" title="reframe.core.pipeline.RegressionTest.valid_systems"><code class="xref py py-attr docutils literal"><span class="pre">self.valid_systems</span></code></a> variable, e.g., <code class="docutils literal"><span class="pre">daint</span></code>, it means that this test is valid for any partition of this system.</p>
 <p>The next line specifies the source file that needs to be compiled:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication.c&#39;</span>
 </pre></div>
 </div>
 <p>ReFrame expects any source files, or generally resources, of the test to be inside an <code class="docutils literal"><span class="pre">src/</span></code> directory, which is at the same level as the regression test file.
@@ -353,15 +354,15 @@ The exact compiler that is going to be used depends on the programming environme
 For example, given our configuration, if it is run with <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code>, the Cray C compiler will be used, if it is run with <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>, the GCC compiler will be used etc.
 A user can associate compilers with programming environments in the ReFrame’s <a class="reference external" href="configure.html#the-configuration-file">settings file</a>.</p>
 <p>The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>Notice that you do not need to specify the executable name.
 Since ReFrame compiled it and generated it, it knows the name.
 We will see in the <a class="reference external" href="advanced.html">“Customizing Further A ReFrame Regression Test”</a> section, how you can specify the name of the executable, in cases that ReFrame cannot guess its name.</p>
 <p>The next lines specify what should be checked for assessing the sanity of the result of the test:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>    <span class="sa">r</span><span class="s1">&#39;time for single matrix vector multiplication&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s1">&#39;time for single matrix vector multiplication&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This expression simply asks ReFrame to look for <code class="docutils literal"><span class="pre">time</span> <span class="pre">for</span> <span class="pre">single</span> <span class="pre">matrix</span> <span class="pre">vector</span> <span class="pre">multiplication</span></code> in the standard output of the test.
@@ -380,7 +381,8 @@ You can also use the <a class="reference internal" href="reference.html#reframe.
 The framework will automatically abort the execution of the test, report the error and continue with the next test case.</p>
 </div>
 <p>The last two lines of the regression test are optional, but serve a good role in a production environment:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>In the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.maintainers" title="reframe.core.pipeline.RegressionTest.maintainers"><code class="xref py py-attr docutils literal"><span class="pre">maintainers</span></code></a> attribute you may store a list of people responsible for the maintenance of this test.
@@ -450,6 +452,90 @@ Reframe paths
 <p>Notice how our regression test is run on every partition of the configured system and for every programming environment.</p>
 <p>Now that you have got a first understanding of how a regression test is written in ReFrame, let’s try to expand our example.</p>
 </div>
+<div class="section" id="inspecting-the-reframe-generated-files">
+<h3>Inspecting the ReFrame Generated Files<a class="headerlink" href="#inspecting-the-reframe-generated-files" title="Permalink to this headline">¶</a></h3>
+<p>As described in the <a class="reference external" href="pipeline">regression test pipeline</a> section, ReFrame generates several files during the execution of a test.
+When developing or debugging a regression test it is important to be able to locate them and inspect them.</p>
+<p>As soon as the <cite>setup</cite> stage of the test is executed, a stage directory specific to this test is generated.
+All the required resources for the test are copied to this directory, and this will be the working directory for the compilation, running, sanity and performance checking phases.
+If the test is successful, this stage directory is removed, unless the <code class="docutils literal"><span class="pre">--keep-stage-files</span></code> option is passed in the command line.
+Before removing this directory, ReFrame copies the following files to a dedicated output directory for this test:</p>
+<ul class="simple">
+<li>The generated build script and its standard output and standard error.
+This allows you to inspect exactly how your test was compiled.</li>
+<li>The generated run script and its standard output and standard error.
+This allows you to inspect exactly how your test was run and verify that the sanity checking was correct.</li>
+<li>Any other user-specified files.</li>
+</ul>
+<p>If a regression test fails, its stage directory will not be removed.
+This allows you to reproduce exactly what ReFrame was trying to perform and will help you debug the problem with your test.</p>
+<p>Let’s rerun our first example and instruct ReFrame to keep the stage directory of the test, so that we can inspect it.</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="o">./</span><span class="nb">bin</span><span class="o">/</span><span class="n">reframe</span> <span class="o">-</span><span class="n">C</span> <span class="n">tutorial</span><span class="o">/</span><span class="n">config</span><span class="o">/</span><span class="n">settings</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">c</span> <span class="n">tutorial</span><span class="o">/</span><span class="n">example1</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">r</span> <span class="o">--</span><span class="n">keep</span><span class="o">-</span><span class="n">stage</span><span class="o">-</span><span class="n">files</span>
+</pre></div>
+</div>
+<p>ReFrame creates a stage directory for each test case using the following pattern:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span>$STAGEDIR_PREFIX/&lt;system&gt;/&lt;partition&gt;/&lt;prog-environ&gt;/&lt;test-name&gt;
+</pre></div>
+</div>
+<p>Let’s pick the test case for the <code class="docutils literal"><span class="pre">gpu</span></code> partition and the <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> programming environment from our first test to inspect.
+The default <code class="docutils literal"><span class="pre">STAGEDIR_PREFIX</span></code> is <code class="docutils literal"><span class="pre">./stage</span></code>:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">stage</span><span class="o">/</span><span class="n">daint</span><span class="o">/</span><span class="n">gpu</span><span class="o">/</span><span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span><span class="o">/</span><span class="n">Example1Test</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>If you do a listing in this directory, you will see all the files contained in the <code class="docutils literal"><span class="pre">tutorial/src</span></code> directory, as well as the following files:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="n">rfm_Example1Test_build</span><span class="o">.</span><span class="n">err</span>  <span class="n">rfm_Example1Test_job</span><span class="o">.</span><span class="n">err</span>
+<span class="n">rfm_Example1Test_build</span><span class="o">.</span><span class="n">out</span>  <span class="n">rfm_Example1Test_job</span><span class="o">.</span><span class="n">out</span>
+<span class="n">rfm_Example1Test_build</span><span class="o">.</span><span class="n">sh</span>   <span class="n">rfm_Example1Test_job</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">rfm_Example1Test_build.sh</span></code> is the generated build script and the <code class="docutils literal"><span class="pre">.out</span></code> and <code class="docutils literal"><span class="pre">.err</span></code> are the compilation’s standard output and standard error.
+Here is the generated build script for our first test:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>#!/bin/bash
+
+_onerror()
+{
+    exitcode=$?
+    echo &quot;-reframe: command \`$BASH_COMMAND&#39; failed (exit code: $exitcode)&quot;
+    exit $exitcode
+}
+
+trap _onerror ERR
+
+module load daint-gpu
+module unload PrgEnv-cray
+module load PrgEnv-gnu
+cc example_matrix_vector_multiplication.c -o ./Example1Test
+</pre></div>
+</div>
+<p>Similarly, the <code class="docutils literal"><span class="pre">rfm_Example1Test_job.sh</span></code> is the generated job script and the <code class="docutils literal"><span class="pre">.out</span></code> and <code class="docutils literal"><span class="pre">.err</span></code> files are the corresponding standard output and standard error.
+The generated job script for the test case we are currently inspecting is the following:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash -l</span>
+<span class="c1">#SBATCH --job-name=&quot;rfm_Example1Test_job&quot;</span>
+<span class="c1">#SBATCH --time=0:10:0</span>
+<span class="c1">#SBATCH --ntasks=1</span>
+<span class="c1">#SBATCH --output=/path/to/stage/daint/gpu/PrgEnv-gnu/Example1Test/rfm_Example1Test_job.out</span>
+<span class="c1">#SBATCH --error=/path/to/stage/daint/gpu/PrgEnv-gnu/Example1Test/rfm_Example1Test_job.err</span>
+<span class="c1">#SBATCH --constraint=gpu</span>
+<span class="n">module</span> <span class="n">load</span> <span class="n">daint</span><span class="o">-</span><span class="n">gpu</span>
+<span class="n">module</span> <span class="n">unload</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="n">module</span> <span class="n">load</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+<span class="n">srun</span> <span class="o">./</span><span class="n">Example1Test</span> <span class="mi">1024</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>It is interesting to check here the generated job script for the <code class="docutils literal"><span class="pre">login</span></code> partition of the example system, which does not use a workload manager:</p>
+<div class="code highlight-default"><div class="highlight"><pre><span></span><span class="n">cat</span> <span class="n">stage</span><span class="o">/</span><span class="n">daint</span><span class="o">/</span><span class="n">login</span><span class="o">/</span><span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span><span class="o">/</span><span class="n">Example1Test</span><span class="o">/</span><span class="n">rfm_Example1Test_job</span><span class="o">.</span><span class="n">sh</span>
+</pre></div>
+</div>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash -l</span>
+<span class="n">module</span> <span class="n">unload</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">cray</span>
+<span class="n">module</span> <span class="n">load</span> <span class="n">PrgEnv</span><span class="o">-</span><span class="n">gnu</span>
+ <span class="o">./</span><span class="n">Example1Test</span> <span class="mi">1024</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>This is one of the advantages in using ReFrame:
+You do not have to care about the system-level details of the target system that your test is running.
+Based on its configuration, ReFrame will generate the appropriate commands to run your test.</p>
+</div>
 </div>
 <div class="section" id="customizing-the-compilation-phase">
 <h2>Customizing the Compilation Phase<a class="headerlink" href="#customizing-the-compilation-phase" title="Permalink to this headline">¶</a></h2>
@@ -468,6 +554,7 @@ The full code of this test follows:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
                                     <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_openmp.c&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">:</span> <span class="s1">&#39;4&#39;</span>
@@ -477,18 +564,17 @@ The full code of this test follows:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">env_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span>
-        <span class="k">if</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-homp&#39;</span>
-        <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-fopenmp&#39;</span>
-        <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-openmp&#39;</span>
-        <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-mp&#39;</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This example introduces two new concepts:</p>
@@ -500,42 +586,63 @@ Notice also that we now restrict the validity of our test only to the programmin
 <p>To define environment variables to be set during the execution of a test, you should use the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.variables" title="reframe.core.pipeline.RegressionTest.variables"><code class="xref py py-attr docutils literal"><span class="pre">variables</span></code></a> attribute of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a> class.
 This is a dictionary, whose keys are the names of the environment variables and whose values are the values of the environment variables.
 Notice that both the keys and the values must be strings.</p>
-<p>In order to set the compiler flags for the current programming environment, you have to override either the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup</span></code></a> or the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.compile" title="reframe.core.pipeline.RegressionTest.compile"><code class="xref py py-func docutils literal"><span class="pre">compile</span></code></a> method of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a>.
-As described in <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
-Here we choose to override the <code class="docutils literal"><span class="pre">compile()</span></code> method, since setting compiler flags is simply more relevant to this phase conceptually.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a> implements the six phases of the regression test pipeline in separate methods.
-Individual regression tests may override them to provide alternative implementations, but in all practical cases, only the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup</span></code></a> and the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.compile" title="reframe.core.pipeline.RegressionTest.compile"><code class="xref py py-func docutils literal"><span class="pre">compile</span></code></a> methods may need to be overriden.
-You will hardly ever need to override any of the other methods and, in fact, you should be very careful when doing it.</p>
-</div>
-<p>The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.current_environ" title="reframe.core.pipeline.RegressionTest.current_environ"><code class="xref py py-attr docutils literal"><span class="pre">current_environ</span></code></a> attribute of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a> holds an instance of the current programming environment.
-This variable is available to regression tests after the setup phase. Before it is <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, so you cannot access it safely during the initialization phase.
-Let’s have a closer look at the <code class="docutils literal"><span class="pre">compile()</span></code> method:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">env_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span>
-    <span class="k">if</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-homp&#39;</span>
-    <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-fopenmp&#39;</span>
-    <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-openmp&#39;</span>
-    <span class="k">elif</span> <span class="n">env_name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="s1">&#39;-mp&#39;</span>
-
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+<p>From version 2.14, ReFrame manages compilation of tests through the concept of build systems.
+Any customization of the build process should go through a build system.
+For straightforward cases, as in our first example, where no customization is needed, ReFrame automatically picks the correct build system to build the code.
+In this example, however, we want to set the flags for compiling the OpenMP code.
+Assuming our test supported only GCC, we could simply add the following lines in the <code class="docutils literal"><span class="pre">__init__()</span></code> method of our test:</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>We first take the name of the current programming environment (<code class="docutils literal"><span class="pre">self.current_environ.name</span></code>) and we check it against the set of the known programming environments.
-We then set the compilation flags accordingly.
-Since our target file is a C program, we just set the <code class="docutils literal"><span class="pre">cflags</span></code> of the current programming environment.
-Finally, we call the <code class="docutils literal"><span class="pre">compile()</span></code> method of the base class, in order to perform the actual compilation.</p>
+<p>The <a class="reference internal" href="reference.html#reframe.core.buildsystems.SingleSource" title="reframe.core.buildsystems.SingleSource"><code class="xref py py-class docutils literal"><span class="pre">SingleSource</span></code></a> build system that we use here supports the compilation of a single file only.
+Each build system type defines a set of variables that the user can set.
+Based on the selected build system, ReFrame will generate a build script that will be used for building the code.
+The generated build script can be found in <a class="reference external" href="running.html#configuring-reframe-directories">the stage or the output directory of the test</a>, along with the output of the compilation.
+This way, you may reproduce exactly what ReFrame does in case of any errors.
+More on the build systems feature can be found <a class="reference external" href="reference.html#build-systems">here</a>.</p>
+<p>Getting back to our test, simply setting the <code class="docutils literal"><span class="pre">cflags</span></code> to <code class="docutils literal"><span class="pre">-fopenmp</span></code> globally in the test will make it fail for programming environments other than <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>, since the OpenMP flags vary for the different compilers.
+Ideally, we need to set the <code class="docutils literal"><span class="pre">cflags</span></code> differently for each programming environment.
+To achieve this we need to override the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup</span></code></a> method of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a>.
+As described in <a class="reference external" href="pipeline.html">“The Regression Test Pipeline”</a> section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
+The following lines show the overriden <code class="docutils literal"><span class="pre">setup()</span></code> method:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">environ</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
+
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The current environment is passed as argument by the framework to the <code class="docutils literal"><span class="pre">setup()</span></code> method, so we differentiate the build system’s flags based on its name.
+Finally, we need call the <code class="docutils literal"><span class="pre">setup()</span></code> method of the base class, in order to perform the actual setup of the test.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">The <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest" title="reframe.core.pipeline.RegressionTest"><code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code></a> implements the six phases of the regression test pipeline in separate methods.
+Individual regression tests may override them to provide alternative implementations, but in most practical cases, only the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.setup" title="reframe.core.pipeline.RegressionTest.setup"><code class="xref py py-func docutils literal"><span class="pre">setup</span></code></a> may need to be overriden.
+You will hardly ever need to override any of the other methods and, in fact, you should be very careful when doing it.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>Setting the compiler flags in the programming environment is now deprecated.
+Users are advised to use the build systems feature instead.</p>
+<blockquote class="last">
+<div><div class="versionadded">
+<p><span class="versionmodified">New in version 2.14.</span></p>
+</div>
+</div></blockquote>
+</div>
 <div class="section" id="an-alternative-implementation-using-dictionaries">
 <h3>An alternative implementation using dictionaries<a class="headerlink" href="#an-alternative-implementation-using-dictionaries" title="Permalink to this headline">¶</a></h3>
 <p>Here we present an alternative implementation of the same test using a dictionary to hold the compilation flags for the different programming environments.
 The advantage of this implementation is that you move the different compilation flags in the initialization phase, where also the rest of the test’s specification is, thus making it more concise.</p>
-<p>The <code class="docutils literal"><span class="pre">compile()</span></code> method is now very simple:
-it gets the correct compilation flags from the <code class="docutils literal"><span class="pre">prgenv_flags</span></code> dictionary and applies them to the current programming environment.</p>
+<p>The <code class="docutils literal"><span class="pre">setup()</span></code> method is now very simple:
+it gets the correct compilation flags from the <code class="docutils literal"><span class="pre">prgenv_flags</span></code> dictionary and applies them to the build system.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">reframe</span> <span class="k">as</span> <span class="nn">rfm</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
 
@@ -549,12 +656,13 @@ it gets the correct compilation flags from the <code class="docutils literal"><s
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
                                     <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_openmp.c&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="s1">&#39;-homp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="s1">&#39;-fopenmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="s1">&#39;-openmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="s1">&#39;-mp&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">:</span> <span class="s1">&#39;4&#39;</span>
@@ -564,10 +672,9 @@ it gets the correct compilation flags from the <code class="docutils literal"><s
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">prgenv_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="n">prgenv_flags</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="n">environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="admonition tip">
@@ -598,11 +705,12 @@ The regression test file follows:</p>
                                     <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_mpi_openmp.c&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="s1">&#39;-homp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="s1">&#39;-fopenmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="s1">&#39;-openmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="s1">&#39;-mp&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
             <span class="sa">r</span><span class="s1">&#39;time for single matrix vector multiplication&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
@@ -615,10 +723,9 @@ The regression test file follows:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">prgenv_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="n">prgenv_flags</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="n">environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>This test is pretty much similar to the <a class="reference external" href="#an-alternative-implementation-using-dictionaries">test example</a> for the OpenMP code we have shown before, except that it adds some information about the configuration of the distributed tasks.
@@ -703,22 +810,22 @@ Let’s start with the OpenACC regression test:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daint:gpu&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_openacc.c&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1024&#39;</span><span class="p">,</span> <span class="s1">&#39;100&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;craype-accel-nvidia60&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span> <span class="s1">&#39;-hacc -hnoomp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>  <span class="s1">&#39;-acc -ta=tesla:cc60&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-hacc&#39;</span><span class="p">,</span> <span class="s1">&#39;-hnoomp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-acc&#39;</span><span class="p">,</span> <span class="s1">&#39;-ta=tesla:cc60&#39;</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_found</span><span class="p">(</span>
             <span class="sa">r</span><span class="s1">&#39;time for single matrix vector multiplication&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">prgenv_flags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="n">prgenv_flags</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="n">environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The things to notice in this test are the restricted list of system partitions and programming environments that this test supports and the use of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.modules" title="reframe.core.pipeline.RegressionTest.modules"><code class="xref py py-attr docutils literal"><span class="pre">modules</span></code></a> variable:</p>
@@ -859,6 +966,8 @@ ReFrame offers a flexible way of extracting and manipulating performance data fr
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daint:gpu&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_cuda.cu&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cxxflags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;-O3&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;4096&#39;</span><span class="p">,</span> <span class="s1">&#39;1000&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;cudatoolkit&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="mi">1</span>
@@ -875,10 +984,6 @@ ReFrame offers a flexible way of extracting and manipulating performance data fr
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
-
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cxxflags</span> <span class="o">=</span> <span class="s1">&#39;-O3&#39;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>The are two new variables set in this test that basically enable the performance testing:</p>
@@ -936,6 +1041,7 @@ Here is the final example code that combines all the tests discussed before:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">descr</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> matrix-vector multiplication&#39;</span> <span class="o">%</span> <span class="n">test_version</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span> <span class="o">=</span> <span class="s1">&#39;SingleSource&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">matrix_dim</span> <span class="o">=</span> <span class="mi">1024</span>
@@ -954,11 +1060,11 @@ Here is the final example code that combines all the tests discussed before:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">cflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span><span class="p">[</span><span class="n">environ</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">partition</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="o">**</span><span class="n">job_opts</span><span class="p">)</span>
 
 
 <span class="nd">@rfm</span><span class="o">.</span><span class="n">simple_test</span>
@@ -976,10 +1082,10 @@ Here is the final example code that combines all the tests discussed before:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">,</span>
                                     <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="s1">&#39;-homp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="s1">&#39;-fopenmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="s1">&#39;-openmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="s1">&#39;-mp&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;OMP_NUM_THREADS&#39;</span><span class="p">:</span> <span class="s1">&#39;4&#39;</span>
@@ -995,10 +1101,10 @@ Here is the final example code that combines all the tests discussed before:</p>
                                     <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">,</span> <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sourcepath</span> <span class="o">=</span> <span class="s1">&#39;example_matrix_vector_multiplication_mpi_openmp.c&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="s1">&#39;-homp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="s1">&#39;-fopenmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="s1">&#39;-openmp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="s1">&#39;-mp&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-homp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-gnu&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-fopenmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-intel&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-openmp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;-mp&#39;</span><span class="p">]</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">=</span> <span class="mi">8</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="mi">2</span>
@@ -1018,8 +1124,8 @@ Here is the final example code that combines all the tests discussed before:</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;craype-accel-nvidia60&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_gpus_per_node</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prgenv_flags</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span> <span class="s1">&#39;-hacc -hnoomp&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>  <span class="s1">&#39;-acc -ta=tesla:cc60&#39;</span>
+            <span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;-hacc&#39;</span><span class="p">,</span> <span class="s1">&#39;-hnoomp&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;PrgEnv-pgi&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;-acc&#39;</span><span class="p">,</span> <span class="s1">&#39;-ta=tesla:cc60&#39;</span><span class="p">]</span>
         <span class="p">}</span>
 
 
@@ -1136,13 +1242,10 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
             <dd><a href="../v2.10/tutorial.html">v2.10</a></dd>
             <dd><a href="../v2.11/tutorial.html">v2.11</a></dd>
             <dd><a href="../v2.12/tutorial.html">v2.12</a></dd>
-            <dd><a href="../v2.12-dev0/tutorial.html">v2.12-dev0</a></dd>
-            <dd><a href="../v2.12-dev1/tutorial.html">v2.12-dev1</a></dd>
             <dd><a href="../v2.13/tutorial.html">v2.13</a></dd>
-            <dd><a href="../v2.13-dev0/tutorial.html">v2.13-dev0</a></dd>
+            <dd><a href="../v2.14/tutorial.html">v2.14</a></dd>
             <dd><a href="../v2.7/tutorial.html">v2.7</a></dd>
             <dd><a href="../v2.8/tutorial.html">v2.8</a></dd>
-            <dd><a href="../v2.8.1/tutorial.html">v2.8.1</a></dd>
             <dd><a href="../v2.9/tutorial.html">v2.9</a></dd>
         </dl>
         <dl>
@@ -1158,7 +1261,7 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'2.13',
+            VERSION:'2.14',
             LANGUAGE:'None',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
