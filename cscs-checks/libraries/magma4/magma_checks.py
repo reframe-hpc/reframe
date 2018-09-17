@@ -9,7 +9,8 @@ class MagmaCheck(RegressionTest):
         super().__init__('magma_%s_%s' % (name, version),
                          os.path.dirname(__file__), **kwargs)
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+#        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-intel']
         self.num_gpus_per_node = 1
 #        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
 #                                       'magma')
@@ -18,13 +19,14 @@ class MagmaCheck(RegressionTest):
 
 #        self.modules = ['cudatoolkit/8.0.61_2.4.9-6.0.7.0_17.1__g899857c', '/scratch/snx1600tds/ajocksch/modules/all/CrayGNU/.17.08', '/scratch/snx1600tds/ajocksch/modules/all/magma/2.2.0-CrayGNU-17.08-cuda-8.0']
         self.prebuild_cmd = ['patch < patch.txt']
-        self.modules = ['cudatoolkit', 'magma']
+#        self.modules = ['cudatoolkit', 'magma']
+        self.modules = ['cudatoolkit/9.1.85_3.18-6.0.7.0_5.1__g2eb7c52', 'magma/2.4.0-CrayIntel-18.08-cuda-9.1']
         self.build_system = 'Make'
         self.build_system.makefile = makefile
         # Compile with -O0 since with a higher level the compiler seems to
         # optimise something away
         self.build_system.cflags = ['-O0']
-        self.build_system.cxxflags = ['-O0']
+        self.build_system.cxxflags = ['-O0', '-std=c++11']
         self.build_system.ldflags = ['-lcusparse', '-lcublas', '-lmagma',
                                      '-lmagma_sparse']
 
@@ -271,9 +273,11 @@ def _get_checks(**kwargs):
             MagmaTestingProdZGemm(**kwargs),
             MagmaTestingProdZSymmetrize(**kwargs),
             MagmaTestingProdZTranspose(**kwargs),
-            MagmaTestingProdZUnmbr(**kwargs),
+            #does not compile for magma 2.4
+            #MagmaTestingProdZUnmbr(**kwargs),
             MagmaTestingMaintCblasZ(**kwargs),
             MagmaTestingMaintZGemm(**kwargs),
             MagmaTestingMaintZSymmetrize(**kwargs),
-            MagmaTestingMaintZTranspose(**kwargs),
-            MagmaTestingMaintZUnmbr(**kwargs)]
+            MagmaTestingMaintZTranspose(**kwargs)]
+            #does not compile for magma 2.4
+            #MagmaTestingMaintZUnmbr(**kwargs)]
