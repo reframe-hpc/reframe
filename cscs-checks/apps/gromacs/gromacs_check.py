@@ -23,11 +23,10 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
                                   r'\s+Pressure \(bar\)\s+Constr\. rmsd',
                                   output_file, 'energy', float, item=-1)
         energy_reference = -3270799.9
-        energy_diff = sn.abs(energy - energy_reference)
 
         self.sanity_patterns = sn.all([
             sn.assert_found('Finished mdrun', output_file),
-            sn.assert_lt(energy_diff, 1560.1)
+            sn.assert_reference(energy, energy_reference, -0.001, 0.001)
         ])
 
         self.perf_patterns = {
