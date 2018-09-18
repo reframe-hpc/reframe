@@ -16,7 +16,7 @@ class NvmlCheck(rfm.RegressionTest):
         self.modules = ['craype-accel-nvidia60']
         self.sourcepath = 'nvml.c'
         self.build_system = 'SingleSource'
-        self.build_system.cflags = ['-lnvidia-ml']
+        self.build_system.ldflags = ['-lnvidia-ml']
         self.sanity_patterns = sn.assert_found(
             r"compute\s+mode\s+'Exclusive Process'", self.stdout)
 
