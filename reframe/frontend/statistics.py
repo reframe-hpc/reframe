@@ -1,5 +1,5 @@
 import reframe.core.debug as debug
-
+import reframe.core.runtime as rt
 from reframe.core.exceptions import StatisticsError
 
 
@@ -9,21 +9,15 @@ class TestStats:
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
         self._tasks = [[]]
-        self._current_run = 0
 
     def __repr__(self):
         return debug.repr(self)
 
-    @property
-    def current_run(self):
-        return self._current_run
-
-    def next_run(self):
-        self._current_run += 1
-        self._tasks.append([])
-
     def add_task(self, task):
-        self._tasks[self._current_run].append(task)
+        current_run = rt.runtime().current_run
+        if current_run == len(self._tasks):
+            self._tasks.append([])
+        self._tasks[current_run].append(task)
 
     def get_tasks(self, run=-1):
         try:
@@ -42,7 +36,7 @@ class TestStats:
 
     def retry_report(self):
         # Return an empty report if no retries were done.
-        if not self._current_run:
+        if not rt.runtime().current_run:
             return ''
 
         line_width = 78
@@ -71,14 +65,15 @@ class TestStats:
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        for tf in (t for t in self.get_tasks(self._current_run) if t.failed):
+        current_run = rt.runtime().current_run
+        for tf in (t for t in self.get_tasks(current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
             partname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            retry_info = ('(for the last of %s retries)' % self._current_run
-                          if self._current_run > 0 else '')
+            retry_info = ('(for the last of %s retries)' % current_run
+                          if current_run > 0 else '')
 
             report.append(line_width * '-')
             report.append('FAILURE INFO for %s %s' % (check.name, retry_info))

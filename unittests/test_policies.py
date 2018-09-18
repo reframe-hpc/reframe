@@ -140,7 +140,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test was retried #max_retries times and failed.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(max_retries, rt.runtime().current_run)
         self.assertEqual(1, self.runner.stats.num_failures())
 
     def test_retries_good_check(self):
@@ -151,7 +151,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test passed without retries.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
 
     def test_pass_in_retries(self):
@@ -169,7 +169,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         # Ensure that the test passed after retries in run #run_to_pass.
         self.assertEqual(1, self.runner.stats.num_cases())
         self.assertEqual(1, self.runner.stats.num_failures(run=0))
-        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(run_to_pass, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
         os.remove(fp.name)
 
