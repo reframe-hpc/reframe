@@ -8,6 +8,7 @@ import reframe.frontend.executors.policies as policies
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
+import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     KeyboardInterruptCheck, SleepCheck,
@@ -132,6 +133,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         stats = self.runner.stats
         self.assertEqual(1, stats.num_failures())
 
+    # Retries tests are executed in a different runtime as they modify
+    # the global rt.runtime().current_run what makes subsequent tests fail
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'generic')
     def test_retries_bad_check(self):
         max_retries = 2
         checks = [BadSetupCheck()]
@@ -143,6 +147,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(max_retries, rt.runtime().current_run)
         self.assertEqual(1, self.runner.stats.num_failures())
 
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'generic')
     def test_retries_good_check(self):
         max_retries = 2
         checks = [HelloTest()]
@@ -154,6 +159,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(0, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
 
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'generic')
     def test_pass_in_retries(self):
         max_retries = 3
         run_to_pass = 2
