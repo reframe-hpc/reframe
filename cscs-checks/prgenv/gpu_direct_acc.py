@@ -40,10 +40,10 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         if environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
+            self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
-                self.build_system.fflags = ['-acc', '-ta=tesla:cc60',
-                                            '-Mnorpath']
+                self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
             elif self.current_system.name == 'kesch':
-                self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
+                self.build_system.fflags += ['-ta=tesla:cc35']
 
         super().setup(partition, environ, **job_opts)

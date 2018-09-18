@@ -11,11 +11,11 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'
+        self.build_system.ldflags = ['-lcublas', '-lcudart']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-            self.build_system.cxxflags = ['-ccbin CC', '-lcublas', '-lcudart',
-                                          '-arch=sm_60']
+            self.build_system.cxxflags = ['-ccbin CC', '-arch=sm_60']
         elif self.current_system.name == 'kesch':
             self.modules = ['cudatoolkit']
             self.valid_prog_environs = ['PrgEnv-gnu-gdr']
@@ -24,8 +24,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',
             }
-            self.build_system.cxxflags = ['-ccbin mpicxx', '-lcublas',
-                                          '-lcudart', '-arch=sm_60']
+            self.build_system.cxxflags = ['-ccbin mpicxx', '-arch=sm_47']
 
         self.num_tasks = 2
         self.num_gpus_per_node = 1
