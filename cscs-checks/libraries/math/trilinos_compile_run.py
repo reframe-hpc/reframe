@@ -11,10 +11,11 @@ class TrilinosTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
 
-        # Removed CRAY env in dynamic because of CrayBug/809265
-        if linkage == 'dynamic':
+        # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
+        # PrgEnv-cray seg faults for cray-trilinos/12.12.1.1
+        if linkage == 'static':
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        elif linkage == 'static':
+        else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
 
@@ -29,12 +30,13 @@ class TrilinosTest(rfm.RegressionTest):
             'PrgEnv-pgi': ['-mp', '-w']
         }
         self.sourcepath = 'example_AmesosFactory_HB.cpp'
-        # self.sourcepath = 'trilinos_compile_run.cpp'
         input_file = os.path.join(self.current_system.resourcesdir,
                                   'Trilinos', 'trilinos_compile_run.rua')
         self.executable_opts = input_file.split()
+
+        # NOTE: default cray-trilinos module in PE/18.08 does not work
         self.modules = ['cray-mpich', 'cray-hdf5-parallel',
-                        'cray-tpsl', 'cray-trilinos']
+                        'cray-tpsl', 'cray-trilinos/12.12.1.1']
         self.num_tasks = 2
         self.num_tasks_per_node = 2
         self.variables = {'OMP_NUM_THREADS': '1'}
@@ -49,6 +51,6 @@ class TrilinosTest(rfm.RegressionTest):
         self.build_system.cxxflags += prgenv_flags
         if environ.name == 'PrgEnv-intel':
             # CrayBug/836679
-            self.modules += ['gcc/4.9.3']
+            self.modules += ['gcc']
 
         super().setup(partition, environ, **job_opts)
