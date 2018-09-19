@@ -12,7 +12,6 @@ class TrilinosTest(rfm.RegressionTest):
                               'dom:gpu', 'dom:mc']
 
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
-        # PrgEnv-cray seg faults for cray-trilinos/12.12.1.1
         if linkage == 'static':
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         else:
@@ -20,9 +19,8 @@ class TrilinosTest(rfm.RegressionTest):
                                         'PrgEnv-intel']
 
         self.build_system = 'SingleSource'
-        self.build_system.ldflags = ['-%s' % linkage]
+        self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
-        self.build_system.cxxflags = ['-lparmetis']
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
             'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
@@ -32,7 +30,7 @@ class TrilinosTest(rfm.RegressionTest):
         self.sourcepath = 'example_AmesosFactory_HB.cpp'
         input_file = os.path.join(self.current_system.resourcesdir,
                                   'Trilinos', 'trilinos_compile_run.rua')
-        self.executable_opts = input_file.split()
+        self.executable_opts = [input_file]
 
         # NOTE: default cray-trilinos module in PE/18.08 does not work
         self.modules = ['cray-mpich', 'cray-hdf5-parallel',
@@ -48,7 +46,7 @@ class TrilinosTest(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         prgenv_flags = self.prgenv_flags[environ.name]
-        self.build_system.cxxflags += prgenv_flags
+        self.build_system.cxxflags = prgenv_flags
         if environ.name == 'PrgEnv-intel':
             # CrayBug/836679
             self.modules += ['gcc']
