@@ -219,7 +219,6 @@ class RuntimeContext:
 
     @property
     def current_run(self):
-        # Not publicly documented
         return self._current_run
 
     @property
