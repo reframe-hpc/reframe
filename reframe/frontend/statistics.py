@@ -17,6 +17,7 @@ class TestStats:
         current_run = rt.runtime().current_run
         if current_run == len(self._tasks):
             self._tasks.append([])
+
         self._tasks[current_run].append(task)
 
     def get_tasks(self, run=-1):

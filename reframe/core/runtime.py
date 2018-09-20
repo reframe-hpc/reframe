@@ -128,8 +128,9 @@ class HostResources:
             return os.path.join(self.prefix, 'output' + self._run_suffix(),
                                 self.timestamp)
         else:
-            return os.path.join(os.path.normpath(self.outputdir) +
-                                self._run_suffix(), self.timestamp)
+            return os.path.join(self.outputdir + self._run_suffix(),
+                                self.timestamp)
+
 
     @property
     def stage_prefix(self):
@@ -138,8 +139,8 @@ class HostResources:
             return os.path.join(self.prefix, 'stage' + self._run_suffix(),
                                 self.timestamp)
         else:
-            return os.path.join(os.path.normpath(self.stagedir) +
-                                self._run_suffix(), self.timestamp)
+            return os.path.join(self.stagedir + self._run_suffix(),
+                                self.timestamp)
 
     @property
     def perflog_prefix(self):
@@ -218,10 +219,7 @@ class RuntimeContext:
 
     @property
     def current_run(self):
-        """The current run.
-
-        :type: `integer`
-        """
+        # Not publicly documented
         return self._current_run
 
     @property
