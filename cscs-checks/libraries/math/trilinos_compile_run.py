@@ -12,7 +12,7 @@ class TrilinosTest(rfm.RegressionTest):
                               'dom:gpu', 'dom:mc']
 
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
-        if linkage == 'static':
+        if linkage == 'dynamic':
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
