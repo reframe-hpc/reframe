@@ -58,6 +58,7 @@ class DdtCheck(rfm.RegressionTest):
                                             self.ddt_options)
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['F90', 'F90'], ['C', 'c'], ['C++', 'cc'])
 class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
@@ -87,6 +88,7 @@ class DdtCpuCheck(DdtCheck):
         ])
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['Cuda', 'cu'])
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):

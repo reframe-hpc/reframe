@@ -13,6 +13,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
         self.tags = {'production'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['craype-accel-nvidia20'], ['craype-accel-nvidia35'],
                         ['craype-accel-nvidia60'])
 class Nvidia35ResolveTest(LibSciResolveBaseTest):
@@ -71,6 +72,7 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
         ])
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class MKLResolveTest(LibSciResolveBaseTest):
     def __init__(self):

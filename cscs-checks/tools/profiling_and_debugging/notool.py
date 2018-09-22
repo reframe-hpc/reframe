@@ -5,6 +5,7 @@ import reframe.utility.sanity as sn
 from reframe.core.fields import ScopedDict
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C'], ['C++'], ['F90'])
 class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
