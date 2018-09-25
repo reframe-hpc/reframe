@@ -150,7 +150,6 @@ class Runner:
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
-        self._current_run = 0
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
@@ -207,24 +206,19 @@ class Runner:
             return ret and check.supports_environ(environ.name)
 
     def _retry_failed(self, checks):
+        rt = runtime.runtime()
         while (self._stats.num_failures() and
-               self._current_run < self._max_retries):
+               rt.current_run < self._max_retries):
             failed_checks = [
                 c for c in checks if c.name in
                 set([t.check.name for t in self._stats.tasks_failed()])
             ]
-            self._current_run += 1
-            self._stats.next_run()
-            if self._stats.current_run != self._current_run:
-                raise AssertionError('current_run variable out of sync'
-                                     '(Runner: %d; TestStats: %d)' %
-                                     self._current_run,
-                                     self._stats.current_run)
+            rt.next_run()
 
             self._printer.separator(
                 'short double line',
                 'Retrying %d failed check(s) (retry %d/%d)' %
-                (len(failed_checks), self._current_run, self._max_retries)
+                (len(failed_checks), rt.current_run, self._max_retries)
             )
             self._runall(failed_checks)
 
