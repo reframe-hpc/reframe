@@ -9,7 +9,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         self.build_system = 'SingleSource'
@@ -25,7 +25,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.num_gpus_per_node = 1
         else:
-            self.modules = ['cudatoolkit']
+            self.modules = ['craype-accel-nvidia35']
             self.num_gpus_per_node = 8
 
         self.sanity_patterns = sn.all([
@@ -63,7 +63,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
-    def setup(self, partition, environ, **job_opts):
+    def _setup(self, partition, environ, **job_opts):
         if (self.current_system.name == 'kesch' and
             environ.name == 'PrgEnv-gnu'):
             self.modules = ['craype-accel-nvidia35']

@@ -8,7 +8,7 @@ class CudaCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         if self.current_system.name == 'kesch':
@@ -84,9 +84,3 @@ class CudaSimpleMPICheck(CudaCheck):
         self.build_system = 'Make'
         self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
                                       '-arch=sm_%s' % self.nvidia_sm]
-
-    def setup(self, partition, environ, **job_opts):
-        if (self.current_system.name == 'kesch' and
-            environ.name == 'PrgEnv-gnu'):
-            self.modules = ['mvapich2gdr_gnu/2.2_cuda_8.0']
-        super().setup(partition, environ, **job_opts)

@@ -223,7 +223,7 @@ class ReframeSettings:
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
                     'cc': 'mpicc',
-                    'cxx': 'mpic++',
+                    'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {

@@ -9,8 +9,8 @@ from reframe.core.launchers import LauncherWrapper
 class DdtCheck(rfm.RegressionTest):
     def __init__(self, lang, extension):
         super().__init__()
-        self.name = 'DDtCheck_' + lang.replace('+', 'p')
-        self.descr = 'DDt Check for %s' % lang
+        self.name = 'DdtCheck_' + lang.replace('+', 'p')
+        self.descr = 'DDT check for %s' % lang
         self.lang = lang
         self.extension = extension
         self.build_system = 'Make'
@@ -98,7 +98,7 @@ class DdtGpuCheck(DdtCheck):
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['cudatoolkit']
+            'kesch': ['craype-accel-nvidia35']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])

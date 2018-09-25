@@ -34,10 +34,6 @@ class PerftoolsCheck(rfm.RegressionTest):
             'PrgEnv-intel': ['-g', '-openmp'],
             'PrgEnv-pgi': ['-g', '-mp']
         }
-        if self.current_system.name == 'kesch':
-            # `-lcudart -lm` must be passed explicitly on kesch
-            self.prgenv_flags['PrgEnv-gnu'] = ['-fopenmp', '-lcudart', '-lm']
-
         self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
                                                self.stdout)
 

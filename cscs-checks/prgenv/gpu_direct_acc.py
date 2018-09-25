@@ -8,7 +8,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
@@ -18,7 +18,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
             self.variables = {
-                'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
             }
