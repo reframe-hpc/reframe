@@ -107,7 +107,9 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-cray-nompi', 'PrgEnv-pgi-nompi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
@@ -226,7 +228,7 @@ class ReframeSettings:
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'modules': ['PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
