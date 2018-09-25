@@ -114,7 +114,8 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -122,7 +123,8 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -214,6 +216,20 @@ class ReframeSettings:
                 'PrgEnv-cray-nompi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
+                },
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpic++',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 },
             },
             'leone': {
