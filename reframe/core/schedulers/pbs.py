@@ -13,7 +13,7 @@ from datetime import datetime
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
-from reframe.core.exceptions import (SpawnedProcessError, JobError)
+from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 

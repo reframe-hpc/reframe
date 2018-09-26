@@ -122,6 +122,9 @@ class LocalJob(sched.Job):
         self._time_limit = (0, 0, self.cancel_grace_period)
         self.wait()
 
+    def guess_num_tasks(self):
+        raise JobError('Local job does not support guessing of num_tasks')
+
     def wait(self):
         """Wait for the spawned job to finish.
 
