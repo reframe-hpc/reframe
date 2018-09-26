@@ -22,7 +22,6 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
             self.variables = {
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',
-                'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
             }
             self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_37']
 

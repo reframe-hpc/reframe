@@ -43,6 +43,4 @@ class G2GMeteoswissTest(rfm.RegressionTest):
         self.reference = {
             'kesch:cn': {'time': (3.00, None, 0.2)}
         }
-        self.variables = {'G2G': str(g2g),
-                          'LD_PRELOAD': '$(pkg-config --variable=libdir '
-                                        'mvapich2-gdr)/libmpi.so'}
+        self.variables = {'G2G': str(g2g)}

@@ -97,13 +97,6 @@ class P2PBaseTest(rfm.RegressionTest):
             }
         }
 
-    def setup(self, partition, environ, **job_opts):
-        if (self.current_system.name == 'kesch' and
-            environ.name == 'PrgEnv-gnu'):
-            self.variables['LD_PRELOAD'] = '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
-
-        super().setup(partition, environ, **job_opts)
-
 
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
