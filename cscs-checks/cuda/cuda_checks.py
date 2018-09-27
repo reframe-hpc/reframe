@@ -25,6 +25,7 @@ class CudaCheck(rfm.RegressionTest):
         self.tags = {'production'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaMatrixmulCublasCheck(CudaCheck):
     def __init__(self):
@@ -39,6 +40,7 @@ class CudaMatrixmulCublasCheck(CudaCheck):
             self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaDeviceQueryCheck(CudaCheck):
     def __init__(self):
@@ -51,6 +53,7 @@ class CudaDeviceQueryCheck(CudaCheck):
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaConcurrentKernelsCheck(CudaCheck):
     def __init__(self):
@@ -63,6 +66,7 @@ class CudaConcurrentKernelsCheck(CudaCheck):
         self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaSimpleMPICheck(CudaCheck):
     def __init__(self):
