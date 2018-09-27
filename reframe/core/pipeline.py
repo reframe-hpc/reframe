@@ -406,10 +406,19 @@ class RegressionTest:
     #:
     #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
     #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: If set to :class:`None`, no time limit will be set.
+    #: The default time limit of the system partition's scheduler will be used.
+    #:
     #:
     #: :type: :class:`tuple[int]`
     #: :default: ``(0, 10, 0)``
-    time_limit = fields.TimerField('time_limit')
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 2.15
+    #:
+    #:    This attribute may be set to :class:`None`.
+    #:
+    time_limit = fields.TimerField('time_limit', allow_none=True)
 
     #: Extra resources for this test.
     #:
