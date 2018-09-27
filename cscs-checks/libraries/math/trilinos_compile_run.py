@@ -1,5 +1,3 @@
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -28,9 +26,7 @@ class TrilinosTest(rfm.RegressionTest):
             'PrgEnv-pgi': ['-mp', '-w']
         }
         self.sourcepath = 'example_AmesosFactory_HB.cpp'
-        input_file = os.path.join(self.current_system.resourcesdir,
-                                  'Trilinos', 'trilinos_compile_run.rua')
-        self.executable_opts = [input_file]
+        self.executable_opts = ['add20.rua']
 
         # NOTE: default cray-trilinos module in PE/18.08 does not work
         self.modules = ['cray-mpich', 'cray-hdf5-parallel',
