@@ -41,26 +41,26 @@ class MagmaCheck(rfm.RegressionTest):
 
         if name == 'cblas_z':
             self.perf_patterns = {
-                'value_duration':
-                    sn.extractsingle(r'Duration: (?P<value_duration>\S+)',
-                                     self.stdout, "value_duration", float)
+                'duration':
+                    sn.extractsingle(r'Duration: (?P<duration>\S+)',
+                                     self.stdout, "duration", float)
             }
             if variant == 'prod':
                 self.reference = {
                     'daint:gpu': {
-                        'value_duration': (2.25, None, 0.05),
+                        'duration': (2.25, None, 0.05),
                     },
                     'dom:gpu': {
-                        'value_duration': (2.02, None, 0.05),
+                        'duration': (2.02, None, 0.05),
                     },
                 }
             elif variant == 'maint':
                 self.reference = {
                     'daint:gpu': {
-                        'value_duration': (2.25, None, 0.05),
+                        'duration': (2.25, None, 0.05),
                     },
                     'dom:gpu': {
-                        'value_duration': (2.02, None, 0.05),
+                        'duration': (2.02, None, 0.05),
                     },
                 }
         elif name == 'zgemm':
@@ -73,7 +73,7 @@ class MagmaCheck(rfm.RegressionTest):
                 'cpu': sn.extractsingle(r'CPU GFlops: (?P<cpu_gflops>\S+)',
                                         self.stdout, 'cpu_gflops', float)
             }
-            if variant== 'prod':
+            if variant == 'prod':
                 self.reference = {
                     'daint:gpu': {
                         'magma':  (2151.0, None, 0.2),
