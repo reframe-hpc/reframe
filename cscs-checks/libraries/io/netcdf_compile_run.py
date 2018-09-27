@@ -24,9 +24,10 @@ class NetCDFTest(rfm.RegressionTest):
                                         'PrgEnv-intel', 'PrgEnv-pgi']
         elif self.current_system.name in ['kesch']:
             if lang == 'f90':
-                self.valid_prog_environs = ['PrgEnv-pgi']
+                self.valid_prog_environs = ['PrgEnv-pgi-nompi']
             else:
-                self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+                self.valid_prog_environs = ['PrgEnv-cray-nompi',
+                                            'PrgEnv-pgi-nompi']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')
         self.build_system = 'SingleSource'
@@ -44,28 +45,10 @@ class NetCDFTest(rfm.RegressionTest):
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        if (environ.name == 'PrgEnv-cray'):
+        if (environ.name == 'PrgEnv-cray-nompi'):
             self.modules = ['netcdf/4.4.1.1-gmvolf-17.02',
                             'netcdf-c++/4.3.0-gmvolf-17.02',
                             'netcdf-fortran/4.4.4-gmvolf-17.02'
-                           ]
-            self.build_system.ldflags = ['-I$EBROOTNETCDF/include',
-                                         '-I$EBROOTNETCDFMINCPLUSPLUS/include',
-                                         '-I$EBROOTNETCDFMINFORTRAN/include',
-                                         '-L$EBROOTNETCDF/lib',
-                                         '-L$EBROOTNETCDFMINCPLUSPLUS/lib',
-                                         '-L$EBROOTNETCDFMINFORTRAN/lib',
-                                         '-L$EBROOTNETCDF/lib64',
-                                         '-L$EBROOTNETCDFMINCPLUSPLUS/lib64',
-                                         '-L$EBROOTNETCDFMINFORTRAN/lib64',
-                                         '-lnetcdf',
-                                         '-lnetcdf_c++4',
-                                         '-lnetcdff'
-                                        ]
-        elif (environ.name == 'PrgEnv-pgi'):
-            self.modules = ['pgi/17.10-gcc-5.4.0-2.26', 'netcdf/4.6.1-pgi-17.10-gcc-5.4.0-2.26',
-                            'netcdf-c++/4.3.0-pgi-17.10-gcc-5.4.0-2.26',
-                            'netcdf-fortran/4.4.4-pgi-17.10-gcc-5.4.0-2.26',
                            ]
             self.build_system.ldflags = ['-I$EBROOTNETCDF/include',
                                          '-I$EBROOTNETCDFMINCPLUSPLUS/include',
