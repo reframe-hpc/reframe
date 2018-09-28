@@ -199,6 +199,9 @@ class Job(abc.ABC):
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
+        if self.num_tasks == 0:
+            self._num_tasks = self.guess_num_tasks()
+
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.emit_preamble())
@@ -210,6 +213,10 @@ class Job(abc.ABC):
 
     @abc.abstractmethod
     def emit_preamble(self):
+        pass
+
+    @abc.abstractmethod
+    def guess_num_tasks(self):
         pass
 
     @abc.abstractmethod

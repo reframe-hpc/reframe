@@ -7,7 +7,7 @@ from datetime import datetime
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import JobError, ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
@@ -57,6 +57,10 @@ class LocalJob(sched.Job):
 
     def emit_preamble(self):
         return []
+
+    def guess_num_tasks(self):
+        raise JobError(
+            'The local scheduler does not support guessing of num tasks.')
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""
