@@ -19,12 +19,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def list_supported_systems(systems, printer):
-    printer.info('List of supported systems:')
-    for s in systems:
-        printer.info('    %s' % s)
-
-
 def list_checks(checks, printer):
     printer.info('List of matched checks')
     printer.info('======================')
@@ -389,6 +383,15 @@ def main():
 
         if not options.skip_prgenv_check:
             checks_matched = filter(filter_prgenv, checks_matched)
+
+        # Filter checks by system
+        def filter_system(c):
+            current_systems = ['%s:%s' % (rt.system.name, p)
+                               for p in rt.system.partitions]
+            return any([c.supports_system(s) for s in current_systems])
+
+        if not options.skip_system_check:
+            checks_matched = filter(filter_system, checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
