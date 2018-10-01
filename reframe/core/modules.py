@@ -9,6 +9,7 @@ from collections import OrderedDict
 
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
+import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
 
@@ -77,8 +78,8 @@ class ModulesSystem:
     modules systems implementation.
     """
 
-    module_map = fields.AggregateTypeField('module_map',
-                                           (dict, (str, (list, str))))
+    module_map = fields.TypedField('module_map',
+                                   types.Dict[str, types.List[str]])
 
     @classmethod
     def create(cls, modules_kind=None):

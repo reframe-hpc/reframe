@@ -644,7 +644,7 @@ class Autotools(ConfigureBasedBuildSystem):
         return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
 
 
-class BuildSystemField(fields.TypedField):
+class BuildSystemField(fields.TypedFieldAdapter):
     """A field representing a build system.
 
     You may either assign an instance of :class:`BuildSystem` or a string

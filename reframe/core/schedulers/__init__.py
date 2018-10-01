@@ -51,7 +51,7 @@ class Job(abc.ABC):
 
     _jobid = fields.IntegerField('_jobid', allow_none=True)
     _exitcode = fields.IntegerField('_exitcode', allow_none=True)
-    _state = fields.TypedField('_state', JobState, allow_none=True)
+    _state = fields.TypedField('_state', JobState, None)
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,

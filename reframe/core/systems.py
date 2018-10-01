@@ -1,6 +1,6 @@
 import reframe.core.debug as debug
 import reframe.core.fields as fields
-
+import reframe.utility.typecheck as types
 from reframe.core.environments import Environment
 
 
@@ -11,8 +11,8 @@ class SystemPartition:
     _descr     = fields.StringField('_descr')
     _access    = fields.TypedListField('_access', str)
     _environs  = fields.TypedListField('_environs', Environment)
-    _resources = fields.TypedDictField('_resources', str, (list, str))
-    _local_env = fields.TypedField('_local_env', Environment, allow_none=True)
+    _resources = fields.TypedDictField('_resources', str, types.List[str])
+    _local_env = fields.TypedField('_local_env', Environment, None)
 
     # maximum concurrent jobs
     _max_jobs  = fields.IntegerField('_max_jobs')

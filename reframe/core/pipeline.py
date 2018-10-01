@@ -19,6 +19,7 @@ import reframe.core.runtime as rt
 import reframe.core.shell as shell
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+import reframe.utility.typecheck as types
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
@@ -341,7 +342,7 @@ class RegressionTest:
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
-    reference = fields.ScopedDictField('reference', (tuple, object))
+    reference = fields.ScopedDictField('reference', types.Tuple[object])
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -368,8 +369,8 @@ class RegressionTest:
     #:
     #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
     #:
-    sanity_patterns = fields.TypedField(
-        'sanity_patterns', _DeferredExpression, allow_none=True)
+    sanity_patterns = fields.TypedField('sanity_patterns',
+                                        _DeferredExpression, None)
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -486,8 +487,8 @@ class RegressionTest:
     #:    A new more powerful syntax was introduced
     #:    that allows also custom job script directive prefixes.
     #:
-    extra_resources = fields.AggregateTypeField(
-        'extra_resources', (dict, (str, (dict, (str, object)))))
+    extra_resources = fields.TypedField(
+        'extra_resources', types.Dict[str, types.Dict[str, object]])
 
     # Private properties
     _prefix = fields.StringField('_prefix')
@@ -495,11 +496,10 @@ class RegressionTest:
     _stdout = fields.StringField('_stdout', allow_none=True)
     _stderr = fields.StringField('_stderr', allow_none=True)
     _current_partition = fields.TypedField('_current_partition',
-                                           SystemPartition, allow_none=True)
-    _current_environ = fields.TypedField('_current_environ', Environment,
-                                         allow_none=True)
-    _job = fields.TypedField('_job', Job, allow_none=True)
-    _build_job = fields.TypedField('_build_job', Job, allow_none=True)
+                                           SystemPartition, None)
+    _current_environ = fields.TypedField('_current_environ', Environment, None)
+    _job = fields.TypedField('_job', Job, None)
+    _build_job = fields.TypedField('_build_job', Job, None)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)

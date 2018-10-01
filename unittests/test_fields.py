@@ -54,8 +54,7 @@ class TestFields(unittest.TestCase):
 
         class FieldTester:
             field = fields.TypedField('field', ClassA)
-            field_maybe_none = fields.TypedField('field_maybe_none', ClassA,
-                                                 allow_none=True)
+            field_any = fields.TypedField('field_any', ClassA, str, None)
 
             def __init__(self, value):
                 self.field = value
@@ -69,150 +68,11 @@ class TestFields(unittest.TestCase):
         self.assertEqual(10, tester.field.value)
         self.assertRaises(TypeError, exec, 'tester.field = None',
                           globals(), locals())
-        tester.field_maybe_none = None
-
-    def test_aggregate_typed_field(self):
-        class FieldTester:
-            simple_int  = fields.AggregateTypeField('simple_int', int)
-            int_list    = fields.AggregateTypeField('int_list', (list, int))
-            tuple_list  = fields.AggregateTypeField('tuple_list',
-                                                    (list, (tuple, int)))
-            mixed_tuple = fields.AggregateTypeField(
-                'mixed_tuple', (tuple, ((int, float, int),)))
-            float_tuple = fields.AggregateTypeField('float_tuple',
-                                                    (tuple, float))
-            dict_list   = fields.AggregateTypeField('dict_list',
-                                                    (list, (dict, (str, int))))
-            multilevel_dict = fields.AggregateTypeField(
-                'multilevel_dict', (dict, (str, (dict, (str, int))))
-            )
-            complex_dict = fields.AggregateTypeField(
-                'complex_dict',
-                (dict, (str, (dict, (str, (list, (
-                    tuple, ((str, (callable, None), (callable, None)),))
-                )))))
-            )
-
-            # Fields allowing None's
-            int_list_none = fields.AggregateTypeField('int_list_none',
-                                                      (list, (int, None)))
-
-            dict_list_none = fields.AggregateTypeField(
-                'dict_list_none',
-                (list, ((dict, (str, int)), None))
-            )
-            multilevel_dict_none = fields.AggregateTypeField(
-                'multilevel_dict_none',
-                (dict, (str, ((dict, (str, (int, None))), None)))
-            )
-            mixed_tuple_none = fields.AggregateTypeField(
-                'mixed_tuple',
-                (tuple, ((int, (float, None), (int, None)),))
-            )
-
-        int_list = [1, 2, 3]
-        int_list_none = [1, None, 3]
-        tuple_list = [(1, 2, 3), (4, 5, 6)]
-        dict_list = [
-            {'a': 1, 'b': 2},
-            {'a': 3, 'b': 4}
-        ]
-        typed_tuple = (1, 2.2, 'foo')
-        float_tuple = (2.3, 1.2, 5.6, 9.8)
-        mixed_tuple = (1, 2.3, 3)
-        multilevel_dict = {
-            'foo': {
-                'a': 1,
-                'b': 2,
-            },
-            'bar': {
-                'c': 3,
-                'd': 4,
-            }
-        }
-        complex_dict = {
-            '-': {
-                'pattern': [
-                    ('foo', int, int),
-                    ('bar', None, float),
-                ],
-                'patt': [
-                    ('foobar', int, None),
-                ]
-            }
-        }
-        dict_list_none = [
-            {'a': 1, 'b': 2},
-            None
-        ]
-
-        # Test valid assignments
-        tester = FieldTester()
-        tester.simple_int = 1
-        tester.int_list = int_list
-        tester.int_list_none = int_list_none
-        tester.tuple_list = tuple_list
-        tester.dict_list = dict_list
-        tester.multilevel_dict = multilevel_dict
-        tester.float_tuple = float_tuple
-        tester.complex_dict = complex_dict
-        tester.mixed_tuple = mixed_tuple
-        tester.mixed_tuple_none = (1, None, 3)
-        tester.mixed_tuple_none = (1, 2.3, None)
-        tester.dict_list_none = dict_list_none
-
-        self.assertIsInstance(FieldTester.simple_int,
-                              fields.AggregateTypeField)
-        self.assertEqual(1, tester.simple_int)
-        self.assertEqual(int_list, tester.int_list)
-        self.assertEqual(tuple_list, tester.tuple_list)
-        self.assertEqual(dict_list, tester.dict_list)
-        self.assertEqual(multilevel_dict, tester.multilevel_dict)
-        self.assertEqual(float_tuple, tester.float_tuple)
-        self.assertEqual(complex_dict, tester.complex_dict)
-        self.assertEqual(dict_list_none, tester.dict_list_none)
-        self.assertEqual(int_list_none, tester.int_list_none)
-
-        # Test empty containers
-        tester.int_list = []
-        tester.tuple_list = []
-        tester.dict_list = [{'a': 1, 'b': 2}, {}]
-        tester.multilevel_dict = {
-            'foo': {},
-            'bar': {
-                'c': 3,
-                'd': 4,
-            }
-        }
-
-        # Test invalid assignments
-        self.assertRaises(TypeError, exec,
-                          "tester.int_list = ['a', 'b']",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.int_list = int_list_none",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.int_list = tuple_list",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.dict_list = multilevel_dict",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.dict_list = dict_list_none",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.dict_list = 4",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.float_tuple = mixed_tuple",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.mixed_tuple = float_tuple",
-                          globals(), locals())
-        self.assertRaises(TypeError, exec,
-                          "tester.complex_dict = multilevel_dict",
-                          globals(), locals())
+        tester.field_any = None
+        tester.field_any = 'foo'
+        tester.field_any = ClassA(5)
+        with self.assertRaises(TypeError):
+            tester.field_any = 3
 
     def test_string_field(self):
         class FieldTester:
@@ -237,10 +97,11 @@ class TestFields(unittest.TestCase):
         tester = FieldTester('foo123')
         self.assertIsInstance(FieldTester.field, fields.StringPatternField)
         self.assertEqual('foo123', tester.field)
-        self.assertRaises(TypeError, exec, 'tester.field = 13',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "foo 123"',
-                          globals(), locals())
+        with self.assertRaises(TypeError):
+            tester.field = 13
+
+        with self.assertRaises(TypeError):
+            tester.field = 'foo 123'
 
     def test_integer_field(self):
         class FieldTester:
@@ -282,21 +143,6 @@ class TestFields(unittest.TestCase):
         self.assertRaises(TypeError, FieldTester, [1, 'foo'])
         with self.assertRaises(TypeError):
             tester.field = 'foo'
-
-    def test_typed_sequence_field(self):
-        class FieldTester:
-            field  = fields.TypedSequenceField('field', str)
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester(['a', 'b', 'c'])
-        self.assertEqual(['a', 'b', 'c'], tester.field)
-
-        # strings are valid sequences
-        tester.field = 'foo'
-        self.assertEqual('foo', tester.field)
-        self.assertRaises(TypeError, FieldTester, [1, 'foo'])
 
     def test_typed_set_field(self):
         class FieldTester:
@@ -403,26 +249,6 @@ class TestFields(unittest.TestCase):
         self.assertEqual(3, t.a)
         self.assertEqual(4, t.b)
 
-    def test_any_field(self):
-        class FieldTester:
-            value = fields.AnyField('field',
-                                    [(fields.IntegerField,),
-                                     (fields.TypedListField, int)],
-                                    allow_none=True)
-
-            def __init__(self, value):
-                self.value = value
-
-        tester = FieldTester(1)
-        tester.value = 2
-        tester.value = [1, 2]
-        tester.value = None
-        self.assertIsInstance(FieldTester.value, fields.AnyField)
-        self.assertRaises(TypeError, exec, 'tester.value = 1.2',
-                          globals(), locals())
-        self.assertRaises(TypeError, exec, 'tester.value = {1, 2}',
-                          globals(), locals())
-
     def test_deprecated_field(self):
         from reframe.core.exceptions import ReframeDeprecationWarning
 
@@ -485,8 +311,8 @@ class TestFields(unittest.TestCase):
 
         # This should not raise
         tester.value = None
-        self.assertRaises(TypeError, exec, 'tester.value = 1',
-                          globals(), locals())
+        with self.assertRaises(TypeError):
+            tester.value = 1
 
     def test_scoped_dict_field(self):
         class FieldTester:
