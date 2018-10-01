@@ -27,14 +27,12 @@ class MagmaCheck(rfm.RegressionTest):
                                      '-lmagma_sparse']
         if libversion == '2.2':
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['cudatoolkit',
-                            'magma/2.2.0-CrayGNU-18.08-cuda-9.1']
-            self.sourcesdir = 'magma2'
+            self.modules = ['magma/2.2.0-CrayGNU-18.08-cuda-9.1']
+            self.sourcesdir = 'magma-2.2'
         elif libversion == '2.4':
             self.valid_prog_environs = ['PrgEnv-intel']
-            self.modules = ['cudatoolkit',
-                            'magma/2.4.0-CrayIntel-18.08-cuda-9.1']
-            self.sourcesdir = 'magma4'
+            self.modules = ['magma/2.4.0-CrayIntel-18.08-cuda-9.1']
+            self.sourcesdir = 'magma-2.4'
 
         if variant == 'prod':
             self.tags |= {'production'}
