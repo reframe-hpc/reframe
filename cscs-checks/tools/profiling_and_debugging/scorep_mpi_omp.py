@@ -1,7 +1,10 @@
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C'], ['C++'], ['F90'])
 class ScorepHybrid(rfm.RegressionTest):
     def __init__(self, lang):
@@ -32,8 +35,7 @@ class ScorepHybrid(rfm.RegressionTest):
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
-        self.sourcesdir = 'src/%s' % lang
-        self.build_system.srcdir = self.sourcesdir
+        self.sourcesdir = os.path.join('src', lang)
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4

@@ -70,10 +70,14 @@ class PbsJob(sched.Job):
     def emit_preamble(self):
         preamble = [
             self._format_option('-N "%s"' % self.name),
-            self._format_option('-l walltime=%d:%d:%d' % self.time_limit),
             self._format_option('-o %s' % self.stdout),
             self._format_option('-e %s' % self.stderr),
         ]
+
+        if self.time_limit is not None:
+            preamble.append(
+                self._format_option('-l walltime=%d:%d:%d' % self.time_limit))
+
         if self.sched_partition:
             preamble.append(
                 self._format_option('-q %s' % self.sched_partition))

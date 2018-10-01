@@ -107,25 +107,26 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
-                                     'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
-                                     'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -196,48 +197,41 @@ class ReframeSettings:
 
         'environments': {
             'kesch': {
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi': {
+                'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
-                'PrgEnv-pgi_17.10_gdr': {
+                'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-pgi_18.4_gdr': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.4_gdr'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-cray_gdr': {
+                'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray/1.0.2_gdr'],
                 },
-                'PrgEnv-cray_gdr_2.3': {
+                'PrgEnv-cray-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr_2.3'],
+                    'modules': ['PrgEnv-cray'],
                 },
-                'PrgEnv-gnu-gdr': {
+                'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpic++',
                     'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 },
             },
             'leone': {

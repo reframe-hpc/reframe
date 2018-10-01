@@ -133,8 +133,12 @@ class LocalJob(sched.Job):
             return
 
         # Convert job's time_limit to seconds
-        h, m, s = self.time_limit
-        timeout = h * 3600 + m * 60 + s
+        if self.time_limit is not None:
+            h, m, s = self.time_limit
+            timeout = h * 3600 + m * 60 + s
+        else:
+            timeout = 0
+
         try:
             self._wait_all(timeout)
             self._exitcode = self._proc.returncode
