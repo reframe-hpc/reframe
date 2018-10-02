@@ -14,6 +14,7 @@ class DGEMMTest(rfm.RegressionTest):
         self.tags = {'production'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class DGEMMTestMonch(DGEMMTest):
     def __init__(self):

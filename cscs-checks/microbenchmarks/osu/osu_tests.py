@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
@@ -98,6 +99,7 @@ class P2PBaseTest(rfm.RegressionTest):
         }
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -136,6 +138,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
@@ -174,6 +177,7 @@ class P2PCPULatencyTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -210,6 +214,7 @@ class G2GBandwidthTest(P2PBaseTest):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):

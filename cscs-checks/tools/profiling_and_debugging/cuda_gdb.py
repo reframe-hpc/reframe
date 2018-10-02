@@ -4,6 +4,7 @@ import reframe.utility.sanity as sn
 from reframe.core.launchers import LauncherWrapper
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
