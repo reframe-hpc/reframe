@@ -386,9 +386,8 @@ def main():
 
         # Filter checks by system
         def filter_system(c):
-            current_systems = ['%s:%s' % (rt.system.name, p)
-                               for p in rt.system.partitions]
-            return any([c.supports_system(s) for s in current_systems])
+            return any([c.supports_system(s.fullname)
+                        for s in rt.system.partitions])
 
         if not options.skip_system_check:
             checks_matched = filter(filter_system, checks_matched)
