@@ -29,9 +29,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
                 self._has_import = True
 
     def visit_ImportFrom(self, node):
-        if not node.module:
-            self._has_import = False
-        elif node.module.startswith('reframe'):
+        if node.module is not None and node.module.startswith('reframe'):
             self._has_import = True
 
 
