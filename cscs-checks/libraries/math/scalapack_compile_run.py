@@ -36,6 +36,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         super().setup(partition, environ, **job_opts)
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
@@ -72,6 +73,7 @@ class ScaLAPACKSanity(ScaLAPACKTest):
             scalapack_sanity(4, 4, 0.1701907253504270)])
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['dynamic'])
 class ScaLAPACKPerf(ScaLAPACKTest):
     def __init__(self, linkage):

@@ -94,6 +94,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             datetime.now() - self.compilation_time_seconds).total_seconds()
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -118,6 +119,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
                                          'PrgEnv-gnu-nompi']
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -148,6 +150,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         }
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
@@ -171,6 +174,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
         self.num_cpus_per_task = 1
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))

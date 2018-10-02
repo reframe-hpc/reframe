@@ -1,9 +1,8 @@
-import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
@@ -28,9 +27,9 @@ class TrilinosTest(rfm.RegressionTest):
             'PrgEnv-pgi': ['-mp', '-w']
         }
         self.sourcepath = 'example_AmesosFactory_HB.cpp'
-        input_file = os.path.join(self.current_system.resourcesdir,
-                                  'Trilinos', 'trilinos_compile_run.rua')
-        self.executable_opts = [input_file]
+        self.pre_run = ['wget ftp://math.nist.gov/pub/MatrixMarket2/'
+                        'misc/hamm/add20.rua.gz', 'gunzip add20.rua.gz']
+        self.executable_opts = ['add20.rua']
 
         # NOTE: default cray-trilinos module in PE/18.08 does not work
         self.modules = ['cray-mpich', 'cray-hdf5-parallel',

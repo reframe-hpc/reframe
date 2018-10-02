@@ -4,6 +4,7 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
