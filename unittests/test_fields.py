@@ -74,111 +74,6 @@ class TestFields(unittest.TestCase):
         with self.assertRaises(TypeError):
             tester.field_any = 3
 
-    def test_string_field(self):
-        class FieldTester:
-            field = fields.StringField('field')
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester('foo')
-        self.assertIsInstance(FieldTester.field, fields.StringField)
-        self.assertEqual('foo', tester.field)
-        self.assertRaises(TypeError, exec, 'tester.field = 13',
-                          globals(), locals())
-
-    def test_string_pattern_field(self):
-        class FieldTester:
-            field = fields.StringPatternField('field', '\S+')
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester('foo123')
-        self.assertIsInstance(FieldTester.field, fields.StringPatternField)
-        self.assertEqual('foo123', tester.field)
-        with self.assertRaises(TypeError):
-            tester.field = 13
-
-        with self.assertRaises(TypeError):
-            tester.field = 'foo 123'
-
-    def test_integer_field(self):
-        class FieldTester:
-            field  = fields.IntegerField('field')
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester(5)
-        self.assertIsInstance(FieldTester.field, fields.IntegerField)
-        self.assertEqual(5, tester.field)
-        self.assertRaises(TypeError, FieldTester, 'foo')
-        self.assertRaises(TypeError, exec, "tester.field = 'foo'",
-                          globals(), locals())
-
-    def test_boolean_field(self):
-        class FieldTester:
-            field  = fields.BooleanField('field')
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester(True)
-        self.assertIsInstance(FieldTester.field, fields.BooleanField)
-        self.assertEqual(True, tester.field)
-        self.assertRaises(TypeError, FieldTester, 'foo')
-        self.assertRaises(TypeError, exec, 'tester.field = 3',
-                          globals(), locals())
-
-    def test_typed_list_field(self):
-        class FieldTester:
-            field  = fields.TypedListField('field', str)
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester(['a', 'b', 'c'])
-        self.assertEqual(['a', 'b', 'c'], tester.field)
-        self.assertRaises(TypeError, FieldTester, [1, 'foo'])
-        with self.assertRaises(TypeError):
-            tester.field = 'foo'
-
-    def test_typed_set_field(self):
-        class FieldTester:
-            field  = fields.TypedSetField('field', int)
-
-            def __init__(self, value):
-                self.field = value
-
-        tester = FieldTester({1, 2, 3})
-        self.assertIsInstance(FieldTester.field, fields.TypedSetField)
-        self.assertEqual({1, 2, 3}, tester.field)
-        self.assertRaises(TypeError, FieldTester, {1, 'foo'})
-        self.assertRaises(TypeError, exec, 'tester.field = [1, 2]',
-                          globals(), locals())
-
-    def test_typed_dict_field(self):
-        class FieldTester:
-            field  = fields.TypedDictField('field', str, int)
-
-            def __init__(self, value):
-                self.field = value
-
-        user_dict = {
-            'foo': 1,
-            'bar': 2,
-            'foobar': 3
-        }
-
-        tester = FieldTester(user_dict)
-        self.assertIsInstance(FieldTester.field, fields.TypedDictField)
-        self.assertEqual(user_dict, tester.field)
-        self.assertRaises(TypeError, FieldTester, {1: 'foo'})
-        self.assertRaises(TypeError, FieldTester, {'foo': 1.3})
-        self.assertRaises(TypeError, exec, 'tester.field = [1, 2]',
-                          globals(), locals())
-
     def test_timer_field(self):
         class FieldTester:
             field = fields.TimerField('field')
@@ -253,14 +148,14 @@ class TestFields(unittest.TestCase):
         from reframe.core.exceptions import ReframeDeprecationWarning
 
         class FieldTester:
-            value = fields.DeprecatedField(fields.IntegerField('value'),
+            value = fields.DeprecatedField(fields.TypedField('value', int),
                                            'value field is deprecated')
-            _value = fields.IntegerField('value')
-            ro = fields.DeprecatedField(fields.IntegerField('ro'),
+            _value = fields.TypedField('value', int)
+            ro = fields.DeprecatedField(fields.TypedField('ro', int),
                                         'value field is deprecated',
                                         fields.DeprecatedField.OP_SET)
-            _ro = fields.IntegerField('ro')
-            wo = fields.DeprecatedField(fields.IntegerField('wo'),
+            _ro = fields.TypedField('ro', int)
+            wo = fields.DeprecatedField(fields.TypedField('wo', int),
                                         'value field is deprecated',
                                         fields.DeprecatedField.OP_GET)
 

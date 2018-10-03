@@ -8,6 +8,7 @@ import os
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.shell as shell
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobNotStartedError
 from reframe.core.launchers import JobLauncher
 
@@ -39,9 +40,9 @@ class Job(abc.ABC):
 
     #: Options to be passed to the backend job scheduler.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     #: The parallel program launcher that will be used to launch the parallel
     #: executable of this job.
@@ -49,8 +50,8 @@ class Job(abc.ABC):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
 
-    _jobid = fields.IntegerField('_jobid', allow_none=True)
-    _exitcode = fields.IntegerField('_exitcode', allow_none=True)
+    _jobid = fields.TypedField('_jobid', int, None)
+    _exitcode = fields.TypedField('_exitcode', int, None)
     _state = fields.TypedField('_state', JobState, None)
 
     # The sched_* arguments are exposed also to the frontend

@@ -70,65 +70,6 @@ class TypedField(Field):
         super().__set__(obj, value)
 
 
-class TypedFieldAdapter(TypedField):
-    """Adapter class for enabling the old interface."""
-
-    def __init__(self, fieldname, fieldtype, allow_none=False):
-        if allow_none:
-            super().__init__(fieldname, fieldtype, None)
-        else:
-            super().__init__(fieldname, fieldtype)
-
-
-class StringField(TypedFieldAdapter):
-    """Stores a standard string object."""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, str, allow_none)
-
-
-class StringPatternField(TypedFieldAdapter):
-    """Stores a string that must follow a specific pattern."""
-
-    def __init__(self, fieldname, pattern, allow_none=False):
-        super().__init__(fieldname, types.Str[pattern], allow_none)
-
-
-class IntegerField(TypedFieldAdapter):
-    """Stores an integer object."""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, int, allow_none)
-
-
-class BooleanField(TypedFieldAdapter):
-    """Stores a boolean object."""
-
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, bool, allow_none)
-
-
-class TypedListField(TypedFieldAdapter):
-    """Stores a list of objects of the same type."""
-
-    def __init__(self, fieldname, elemtype, allow_none=False):
-        super().__init__(fieldname, types.List[elemtype], allow_none)
-
-
-class TypedSetField(TypedFieldAdapter):
-    """Stores a list of objects of the same type."""
-
-    def __init__(self, fieldname, elemtype, allow_none=False):
-        super().__init__(fieldname, types.Set[elemtype], allow_none)
-
-
-class TypedDictField(TypedFieldAdapter):
-    """Stores a dictionary with keys and values of specific types."""
-
-    def __init__(self, fieldname, keytype, valuetype, allow_none=False):
-        super().__init__(fieldname, types.Dict[keytype, valuetype], allow_none)
-
-
 class CopyOnWriteField(Field):
     """Holds a copy of the variable that is assigned to it the first time"""
 
@@ -157,11 +98,14 @@ class ConstantField(Field):
         raise ValueError('attempt to set a read-only variable')
 
 
-class TimerField(TypedFieldAdapter):
+class TimerField(TypedField):
     """Stores a timer in the form of a tuple '(hh, mm, ss)'"""
 
     def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, types.Tuple[int, int, int], allow_none)
+        if allow_none:
+            super().__init__(fieldname, types.Tuple[int, int, int], None)
+        else:
+            super().__init__(fieldname, types.Tuple[int, int, int])
 
     def __set__(self, obj, value):
         self._check_type(value)
@@ -180,11 +124,17 @@ class TimerField(TypedFieldAdapter):
         Field.__set__(self, obj, value)
 
 
-class AbsolutePathField(StringField):
+class AbsolutePathField(TypedField):
     """A string field that stores an absolute path.
 
     Any string assigned to such a field, will be converted to an absolute path.
     """
+
+    def __init__(self, fieldname, allow_none=False):
+        if allow_none:
+            super().__init__(fieldname, str, None)
+        else:
+            super().__init__(fieldname, str)
 
     def __set__(self, obj, value):
         self._check_type(value)
