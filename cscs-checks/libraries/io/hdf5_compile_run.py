@@ -1,21 +1,18 @@
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class HDF5Test(RegressionTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('hdf5_read_write_%s_%s' % (linkage, lang),
-                         os.path.dirname(__file__), **kwargs)
-
-        self.flags = ' -%s ' % linkage
-        self.lang_names = {
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(*([lang, linkage] for lang in ['c', 'f90']
+                          for linkage in ['static', 'dynamic']))
+class HDF5Test(rfm.RegressionTest):
+    def __init__(self, lang, linkage):
+        super().__init__()
+        lang_names = {
             'c': 'C',
             'f90': 'Fortran 90'
         }
-
-        self.descr = self.lang_names[lang] + ' HDF5 ' + linkage.capitalize()
+        self.descr = lang_names[lang] + ' HDF5 ' + linkage.capitalize()
         self.sourcepath = 'h5ex_d_chunk.' + lang
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
@@ -71,23 +68,9 @@ class HDF5Test(RegressionTest):
 
         self.num_tasks = 1
         self.num_tasks_per_node = 1
+        self.build_system = 'SingleSource'
+        self.build_system.ldflags = ['-%s' % linkage]
+        self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO']
         self.tags = {'production'}
-
-        self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
-
-    def compile(self):
-        self.current_environ.cflags = self.flags
-        self.current_environ.cxxflags = self.flags
-        self.current_environ.fflags = self.flags
-        super().compile()
-
-
-def _get_checks(**kwargs):
-    ret = []
-    for lang in ['c', 'f90']:
-        for linkage in ['dynamic', 'static']:
-            ret.append(HDF5Test(lang, linkage, **kwargs))
-
-    return ret

@@ -19,12 +19,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def list_supported_systems(systems, printer):
-    printer.info('List of supported systems:')
-    for s in systems:
-        printer.info('    %s' % s)
-
-
 def list_checks(checks, printer):
     printer.info('List of matched checks')
     printer.info('======================')
@@ -178,6 +172,9 @@ def main():
         dest='module_map_file',
         help='Apply module mappings defined in FILE')
     misc_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge modules environment before running any tests')
+    misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
     misc_options.add_argument(
@@ -294,11 +291,10 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.expandvars(options.perflogdir))
-    else:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.join(rt.resources.prefix, 'perflogs'))
+        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+
+    logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
+                                                          perflog_prefix)
 
     if hasattr(settings, 'perf_logging_config'):
         try:
@@ -316,8 +312,8 @@ def main():
         for d in options.checkpath:
             d = os.path.expandvars(d)
             if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
-                             (argparser.prog, d))
+                printer.warning("%s: path `%s' does not exist. Skipping..." %
+                                (argparser.prog, d))
                 continue
 
             load_path.append(d)
@@ -388,6 +384,14 @@ def main():
         if not options.skip_prgenv_check:
             checks_matched = filter(filter_prgenv, checks_matched)
 
+        # Filter checks by system
+        def filter_system(c):
+            return any([c.supports_system(s.fullname)
+                        for s in rt.system.partitions])
+
+        if not options.skip_system_check:
+            checks_matched = filter(filter_system, checks_matched)
+
         # Filter checks further
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
@@ -412,6 +416,9 @@ def main():
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:
             rt.modules_system.unload_module(settings.reframe_module)
+
+        if options.purge_env:
+            rt.modules_system.unload_all()
 
         for m in options.user_modules:
             try:

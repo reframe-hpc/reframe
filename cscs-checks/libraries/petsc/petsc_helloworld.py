@@ -1,24 +1,14 @@
-import filecmp
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-@sn.sanity_function
-def sanity_filecmp(output, reference):
-    return sn.assert_true(
-        filecmp.cmp(output, reference, shallow=False),
-        msg="files are not the same: `%s', `%s'" % (output, reference)
-    )
-
-
-class PetscPoisson2DCheck(RegressionTest):
-    def __init__(self, variant, **kwargs):
-        super().__init__('petsc_2dpoisson_%s' % variant,
-                         os.path.dirname(__file__), **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(['dynamic'], ['static'])
+class PetscPoisson2DCheck(rfm.RegressionTest):
+    def __init__(self, variant):
+        super().__init__()
         self.descr = ('Compile/run PETSc 2D Poisson example with cray-petsc '
-                      '(%s linking case)') % variant
+                      '(%s linking)') % variant
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -27,22 +17,16 @@ class PetscPoisson2DCheck(RegressionTest):
         self.modules = ['cray-petsc']
         self.num_tasks = 16
         self.num_tasks_per_node = 8
-        self.dynamic = True if variant == 'dynamic' else False
-        self.executable_opts = ['-da_grid_x 4', '-da_grid_y 4', '-mat_view',
-                                '> petsc_poisson2d.out']
+        self.build_system = 'SingleSource'
+        if variant == 'dynamic':
+            self.build_system.cflags = ['-dynamic']
 
-        self.maintainers = ['WS', 'AJ']
+        self.executable_opts = ['-da_grid_x 4', '-da_grid_y 4', '-ksp_monitor']
+
+        # Check the final residual norm for convergence
+        norm = sn.extractsingle(r'\s+\d+\s+KSP Residual norm\s+(?P<norm>\S+)',
+                                self.stdout, 'norm', float, -1)
+        self.sanity_patterns = sn.assert_lt(norm, 1.0e-5)
+
         self.tags = {'production'}
-
-        self.sanity_patterns = sanity_filecmp(
-            'petsc_poisson2d.out', 'petsc_poisson2d.ref')
-
-    def compile(self):
-        if self.dynamic:
-            self.current_environ.cxxflags = '-dynamic'
-        super().compile()
-
-
-def _get_checks(**kwargs):
-    return [PetscPoisson2DCheck('dynamic', **kwargs),
-            PetscPoisson2DCheck('static',  **kwargs)]
+        self.maintainers = ['WS', 'AJ', 'TM']

@@ -1,13 +1,14 @@
 import os
-import shutil
 import tempfile
 import unittest
 
-import reframe.core.runtime as runtime
+import reframe.core.runtime as rt
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
+import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     KeyboardInterruptCheck, SleepCheck,
@@ -16,7 +17,6 @@ from unittests.resources.checks.frontend_checks import (
 
 class TestSerialExecutionPolicy(unittest.TestCase):
     def setUp(self):
-        self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         self.loader = RegressionCheckLoader(['unittests/resources/checks'],
                                             ignore_conflicts=True)
 
@@ -24,8 +24,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner = executors.Runner(policies.SerialExecutionPolicy())
         self.checks = self.loader.load_all()
 
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+        # Reset current_run
+        rt.runtime()._current_run = 0
+
     def tearDown(self):
-        shutil.rmtree(self.resourcesdir, ignore_errors=True)
+        os_ext.rmtree(rt.runtime().resources.prefix)
 
     def _num_failures_stage(self, stage):
         stats = self.runner.stats
@@ -138,7 +144,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test was retried #max_retries times and failed.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(max_retries, rt.runtime().current_run)
         self.assertEqual(1, self.runner.stats.num_failures())
 
     def test_retries_good_check(self):
@@ -149,7 +155,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test passed without retries.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
 
     def test_pass_in_retries(self):
@@ -167,7 +173,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         # Ensure that the test passed after retries in run #run_to_pass.
         self.assertEqual(1, self.runner.stats.num_cases())
         self.assertEqual(1, self.runner.stats.num_failures(run=0))
-        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(run_to_pass, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
         os.remove(fp.name)
 
@@ -219,7 +225,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runner.policy.task_listeners.append(self.monitor)
 
     def set_max_jobs(self, value):
-        for p in runtime.runtime().system.partitions:
+        for p in rt.runtime().system.partitions:
             p._max_jobs = value
 
     def read_timestamps(self, tasks):

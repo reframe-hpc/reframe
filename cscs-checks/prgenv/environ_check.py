@@ -1,14 +1,12 @@
-import os
+import reframe as rfm
 
-from reframe.core.pipeline import RunOnlyRegressionTest
 from reframe.core.runtime import runtime
 
 
-class DefaultPrgEnvCheck(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('default_prgenv_check',
-                         os.path.dirname(__file__), **kwargs)
-
+@rfm.simple_test
+class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Ensure PrgEnv-cray is loaded by default'
         self.valid_prog_environs = ['PrgEnv-cray']
         self.valid_systems = ['daint:login', 'dom:login']
@@ -37,10 +35,10 @@ class DefaultPrgEnvCheck(RunOnlyRegressionTest):
         pass
 
 
-class EnvironmentCheck(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('environ_load_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class EnvironmentCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Ensure programming environment is loaded correctly'
         self.valid_systems = ['daint:login', 'dom:login', 'kesch:login']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
@@ -55,7 +53,3 @@ class EnvironmentCheck(RunOnlyRegressionTest):
     def check_sanity(self):
         return runtime().modules_system.is_module_loaded(
             self.current_environ.name)
-
-
-def _get_checks(**kwargs):
-    return [DefaultPrgEnvCheck(**kwargs), EnvironmentCheck(**kwargs)]

@@ -3,9 +3,11 @@
 #
 
 import abc
+import os
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
+import reframe.core.shell as shell
 from reframe.core.exceptions import JobNotStartedError
 from reframe.core.launchers import JobLauncher
 
@@ -54,9 +56,7 @@ class Job(abc.ABC):
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
                  name,
-                 command,
                  launcher,
-                 environs=[],
                  workdir='.',
                  num_tasks=1,
                  num_tasks_per_node=None,
@@ -64,7 +64,7 @@ class Job(abc.ABC):
                  num_tasks_per_socket=None,
                  num_cpus_per_task=None,
                  use_smt=None,
-                 time_limit=(0, 10, 0),
+                 time_limit=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
@@ -80,15 +80,9 @@ class Job(abc.ABC):
 
         # Mutable fields
         self.options = list(sched_options)
-
-        # Commands to be run before and after the job is launched
-        self._pre_run  = list(pre_run)
-        self._post_run = list(post_run)
         self.launcher = launcher
 
-        self._name = 'rfm_' + name
-        self._command = command
-        self._environs = list(environs)
+        self._name = name
         self._workdir = workdir
         self._num_tasks = num_tasks
         self._num_tasks_per_node = num_tasks_per_node
@@ -97,8 +91,8 @@ class Job(abc.ABC):
         self._num_cpus_per_task = num_cpus_per_task
         self._use_smt = use_smt
         self._script_filename = script_filename or '%s.sh' % name
-        self._stdout = stdout or '%s.out' % name
-        self._stderr = stderr or '%s.err' % name
+        self._stdout = stdout or os.path.join(workdir, '%s.out' % name)
+        self._stderr = stderr or os.path.join(workdir, '%s.err' % name)
         self._time_limit = time_limit
 
         # Backend scheduler related information
@@ -136,16 +130,8 @@ class Job(abc.ABC):
         return self._name
 
     @property
-    def command(self):
-        return self._command
-
-    @property
     def workdir(self):
         return self._workdir
-
-    @property
-    def environs(self):
-        return self._environs
 
     @property
     def num_tasks(self):
@@ -211,29 +197,19 @@ class Job(abc.ABC):
     def sched_exclusive_access(self):
         return self._sched_exclusive_access
 
-    def emit_environ(self, builder):
-        for e in self._environs:
-            e.emit_load_instructions(builder)
+    def prepare(self, commands, environs=None, **gen_opts):
+        environs = environs or []
+        with shell.generate_script(self.script_filename,
+                                   **gen_opts) as builder:
+            builder.write_prolog(self.emit_preamble())
+            for e in environs:
+                builder.write(e.emit_load_commands())
 
-    def emit_pre_run(self, builder):
-        for c in self._pre_run:
-            builder.verbatim(c)
-
-    def emit_post_run(self, script_builder):
-        for c in self._post_run:
-            script_builder.verbatim(c)
-
-    def prepare(self, script_builder):
-        self.emit_preamble(script_builder)
-        self.emit_environ(script_builder)
-        self.emit_pre_run(script_builder)
-        self.launcher.emit_run_command(self, script_builder)
-        self.emit_post_run(script_builder)
-        with open(self.script_filename, 'w') as fp:
-            fp.write(script_builder.finalise())
+            for c in commands:
+                builder.write_body(c)
 
     @abc.abstractmethod
-    def emit_preamble(self, builder):
+    def emit_preamble(self):
         pass
 
     @abc.abstractmethod

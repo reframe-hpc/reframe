@@ -4,7 +4,7 @@
 
 
 class ReframeSettings:
-    reframe_module = 'reframe'
+    reframe_module = None
     job_poll_intervals = [1, 2, 3]
     job_submit_timeout = 60
     checks_path = ['checks/']
@@ -31,8 +31,9 @@ class ReframeSettings:
                 # order to test different aspects of the framework.
                 'descr': 'Fake system for unit tests',
                 'hostnames': ['testsys'],
-                'prefix': '.rfm_testing/install',
+                'prefix': '.rfm_testing',
                 'resourcesdir': '.rfm_testing/resources',
+                'perflogdir': '.rfm_testing/perflogs',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
