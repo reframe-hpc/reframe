@@ -419,7 +419,7 @@ class RegressionTest:
     #:
     #:    This attribute may be set to :class:`None`.
     #:
-    time_limit = fields.TimerField('time_limit', allow_none=True)
+    time_limit = fields.TimerField('time_limit', type(None))
 
     #: Extra resources for this test.
     #:

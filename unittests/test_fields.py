@@ -199,11 +199,11 @@ class TestFields(unittest.TestCase):
                 self.value = value
 
         tester = FieldTester('foo')
-        self.assertEquals(os.path.abspath('foo'), tester.value)
+        self.assertEqual(os.path.abspath('foo'), tester.value)
 
         # Test set with an absolute path already
         tester.value = os.path.abspath('foo')
-        self.assertEquals(os.path.abspath('foo'), tester.value)
+        self.assertEqual(os.path.abspath('foo'), tester.value)
 
         # This should not raise
         tester.value = None
