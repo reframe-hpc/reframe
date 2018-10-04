@@ -10,17 +10,25 @@ class Alltoallv(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-            self._pgi_flags = '-acc -ta=tesla:cc60 -Mnorpath'
+            self._pgi_flags = ['-acc', '-ta=tesla:cc60', '-Mnorpath']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            self._pgi_flags = '-O2 -ta=tesla,cc35,cuda8.0'
+            self._pgi_flags = ['-O2', '-ta=tesla,cc35,cuda8.0']
 
         self.num_tasks = 144
         self.num_gpus_per_node = 16
         self.num_tasks_per_node = 16
         self.num_tasks_per_socket = 8
-        self.executable = 'src/comm_overlap_benchmark %s' % exec_parameter
-        self.sourcesdir = ('https://github.com/cosunae/comm_overlap_bench')
+        self.build_system = 'CMake'
+        self.build_system.builddir = 'build'
+        self.build_system.config_opts = ['-DMPI_VENDOR=mvapich2',
+                                         '-DCUDA_COMPUTE_CAPABILITY="sm_37"',
+                                         '-DCMAKE_BUILD_TYPE=Release',
+                                         '-DENABLE_MPI_TIMER=ON']
+        self.executable = 'build/src/comm_overlap_benchmark'
+        self.executable_opts = [exec_parameter]
+        self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
+        self.prebuild_cmd = ['git checkout alltoallv']
         self.sourcepath = 'src'
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
@@ -47,26 +55,17 @@ class Alltoallv(rfm.RegressionTest):
                 },
             }
 
-        self.modules += ['craype-haswell', 'craype-network-infiniband', 'mvapich2gdr_gnu/2.2_cuda_8.0', 'cray-libsci_acc/17.03.1', 'cmake']
+        self.modules += [
+            'craype-haswell', 'craype-network-infiniband',
+            'mvapich2gdr_gnu/2.2_cuda_8.0', 'cray-libsci_acc/17.03.1', 'cmake'
+        ]
 
         self.variables = {
             'G2G': '1',
             'jobs': '144',
             'RDMA_FAST_PATH': '0',
-            'MV2_USE_CUDA': '1',
+            'MV2_USE_CUDA': '1'
         }
-
-        # Checkout to the branch alltoallv
-        self.prebuild_cmd = [
-            'git checkout alltoallv',
-            'mkdir build_kesch_mvapich22',
-            'pushd build_kesch_mvapich22 &>/dev/null',
-            'cmake . \
-             -DMPI_VENDOR=mvapich2 \
-             -DCUDA_COMPUTE_CAPABILITY="sm_37" \
-             -DCMAKE_BUILD_TYPE=Release \
-             -DENABLE_MPI_TIMER=ON'
-        ]
 
         self.pre_run = [
             'export BOOST_LIBRARY_PATH=/apps/escha/UES/PrgEnv-gnu-17.02/modulefiles/boost/1.63.0-gmvolf-17.02-python-2.7.13/lib',
@@ -86,10 +85,10 @@ class Alltoallv(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
-            environ.fflags = '-O2 -hacc -hnoomp'
+            self.build_system.fflags = ['-O2', '-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
-            environ.fflags = self._pgi_flags
+            self.build_system.fflags = self._pgi_flags
         elif environ.name.startswith('PrgEnv-gnu'):
-            environ.fflags = '-O2'
+            self.build_system.fflags = ['-O2']
 
         super().setup(partition, environ, **job_opts)
