@@ -68,8 +68,6 @@ class Alltoallv(rfm.RegressionTest):
         }
 
         self.pre_run = [
-            'export BOOST_LIBRARY_PATH=/apps/escha/UES/PrgEnv-gnu-17.02/modulefiles/boost/1.63.0-gmvolf-17.02-python-2.7.13/lib',
-            'export LD_LIBRARY_PATH=$BOOST_LIBRARY_PATH:$LD_LIBRARY_PATH',
             'export XXX_LIBRARY_PATH=/apps/escha/UES/RH7.3_experimental/pgi/17.10/linux86-64/17.10/REDIST',
             'export LD_LIBRARY_PATH=$XXX_LIBRARY_PATH:$LD_LIBRARY_PATH',
             'export LD_PRELOAD=/opt/mvapich2/gdr/2.3a/mcast/no-openacc/cuda8.0/mofed3.4/mpirun/pgi17.10/lib64/libmpi.so',
