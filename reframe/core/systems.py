@@ -12,7 +12,7 @@ class SystemPartition:
     _access    = fields.TypedField('_access', typ.List[str])
     _environs  = fields.TypedField('_environs', typ.List[Environment])
     _resources = fields.TypedField('_resources', typ.Dict[str, typ.List[str]])
-    _local_env = fields.TypedField('_local_env', Environment, None)
+    _local_env = fields.TypedField('_local_env', Environment, type(None))
 
     # maximum concurrent jobs
     _max_jobs  = fields.TypedField('_max_jobs', int)
@@ -149,12 +149,12 @@ class System:
     _hostnames  = fields.TypedField('_hostnames', typ.List[str])
     _partitions = fields.TypedField('_partitions', typ.List[SystemPartition])
     _modules_system = fields.TypedField('_modules_system',
-                                        typ.Str[r'(\w|-)+'], None)
+                                        typ.Str[r'(\w|-)+'], type(None))
 
     _prefix = fields.TypedField('_prefix', str)
-    _stagedir  = fields.TypedField('_stagedir', str, None)
-    _outputdir = fields.TypedField('_outputdir', str, None)
-    _perflogdir = fields.TypedField('_perflogdir', str, None)
+    _stagedir  = fields.TypedField('_stagedir', str, type(None))
+    _outputdir = fields.TypedField('_outputdir', str, type(None))
+    _perflogdir = fields.TypedField('_perflogdir', str, type(None))
     _resourcesdir = fields.TypedField('_resourcesdir', str)
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],

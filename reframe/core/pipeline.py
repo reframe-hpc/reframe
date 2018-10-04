@@ -129,7 +129,7 @@ class RegressionTest:
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
-    sourcesdir = fields.TypedField('sourcesdir', str, None)
+    sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
@@ -145,7 +145,7 @@ class RegressionTest:
     #: :default: :class:`None`.
     #:
     #: .. versionadded:: 2.14
-    build_system = BuildSystemField('build_system', allow_none=True)
+    build_system = BuildSystemField('build_system', type(None))
 
     #: List of shell commands to be executed before compiling.
     #:
@@ -279,7 +279,8 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = fields.TypedField('num_tasks_per_node', int, None)
+    num_tasks_per_node = fields.TypedField('num_tasks_per_node',
+                                           int, type(None))
 
     #: Number of GPUs per node required by this test.
     #:
@@ -293,7 +294,7 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = fields.TypedField('num_cpus_per_task', int, None)
+    num_cpus_per_task = fields.TypedField('num_cpus_per_task', int, type(None))
 
     #: Number of tasks per core required by this test.
     #:
@@ -301,7 +302,8 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core  = fields.TypedField('num_tasks_per_core', int, None)
+    num_tasks_per_core  = fields.TypedField('num_tasks_per_core',
+                                            int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -309,7 +311,8 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket', int, None)
+    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
+                                             int, type(None))
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -317,7 +320,8 @@ class RegressionTest:
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = fields.TypedField('use_multithreading', bool, None)
+    use_multithreading = fields.TypedField('use_multithreading',
+                                           bool, type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
@@ -366,7 +370,7 @@ class RegressionTest:
     #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
     #:
     sanity_patterns = fields.TypedField('sanity_patterns',
-                                        _DeferredExpression, None)
+                                        _DeferredExpression, type(None))
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -380,8 +384,8 @@ class RegressionTest:
     #:     </sanity_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = fields.TypedField('perf_patterns',
-                                      typ.Dict[str, _DeferredExpression], None)
+    perf_patterns = fields.TypedField(
+        'perf_patterns', typ.Dict[str, _DeferredExpression], type(None))
 
     #: List of modules to be loaded before running this test.
     #:
@@ -488,14 +492,15 @@ class RegressionTest:
 
     # Private properties
     _prefix = fields.TypedField('_prefix', str)
-    _stagedir = fields.TypedField('_stagedir', str, None)
-    _stdout = fields.TypedField('_stdout', str, None)
-    _stderr = fields.TypedField('_stderr', str, None)
+    _stagedir = fields.TypedField('_stagedir', str, type(None))
+    _stdout = fields.TypedField('_stdout', str, type(None))
+    _stderr = fields.TypedField('_stderr', str, type(None))
     _current_partition = fields.TypedField('_current_partition',
-                                           SystemPartition, None)
-    _current_environ = fields.TypedField('_current_environ', Environment, None)
-    _job = fields.TypedField('_job', Job, None)
-    _build_job = fields.TypedField('_build_job', Job, None)
+                                           SystemPartition, type(None))
+    _current_environ = fields.TypedField('_current_environ',
+                                         Environment, type(None))
+    _job = fields.TypedField('_job', Job, type(None))
+    _build_job = fields.TypedField('_build_job', Job, type(None))
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)

@@ -232,65 +232,70 @@ class ProgEnvironment(Environment):
     #: The C++ compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cxx = fields.DeprecatedField(fields.TypedField('cxx', str, None),
+    cxx = fields.DeprecatedField(fields.TypedField('cxx', str, type(None)),
                                  'setting this field is deprecated; '
                                  'please set it through a build system',
                                  fields.DeprecatedField.OP_SET)
-    _cxx = fields.TypedField('cxx', str, None)
+    _cxx = fields.TypedField('cxx', str, type(None))
 
     #: The Fortran compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    ftn = fields.DeprecatedField(fields.TypedField('ftn', str, None),
+    ftn = fields.DeprecatedField(fields.TypedField('ftn', str, type(None)),
                                  'setting this field is deprecated; '
                                  'please set it through a build system',
                                  fields.DeprecatedField.OP_SET)
-    _ftn = fields.TypedField('ftn', str, None)
+    _ftn = fields.TypedField('ftn', str, type(None))
 
     #: The preprocessor flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cppflags = fields.DeprecatedField(fields.TypedField('cppflags', str, None),
-                                      'setting this field is deprecated; '
-                                      'please set it through a build system',
-                                      fields.DeprecatedField.OP_SET)
-    _cppflags = fields.TypedField('cppflags', str, None)
+    cppflags = fields.DeprecatedField(
+        fields.TypedField('cppflags', str, type(None)),
+        'setting this field is deprecated; '
+        'please set it through a build system',
+        fields.DeprecatedField.OP_SET)
+    _cppflags = fields.TypedField('cppflags', str, type(None))
 
     #: The C compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cflags = fields.DeprecatedField(fields.TypedField('cflags', str, None),
-                                    'setting this field is deprecated; '
-                                    'please set it through a build system',
-                                    fields.DeprecatedField.OP_SET)
-    _cflags = fields.TypedField('cflags', str, None)
+    cflags = fields.DeprecatedField(
+        fields.TypedField('cflags', str, type(None)),
+        'setting this field is deprecated; '
+        'please set it through a build system',
+        fields.DeprecatedField.OP_SET)
+    _cflags = fields.TypedField('cflags', str, type(None))
 
     #: The C++ compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cxxflags = fields.DeprecatedField(fields.TypedField('cxxflags', str, None),
-                                      'setting this field is deprecated; '
-                                      'please set it through a build system',
-                                      fields.DeprecatedField.OP_SET)
-    _cxxflags = fields.TypedField('cxxflags', str, None)
+    cxxflags = fields.DeprecatedField(
+        fields.TypedField('cxxflags', str, type(None)),
+        'setting this field is deprecated; '
+        'please set it through a build system',
+        fields.DeprecatedField.OP_SET)
+    _cxxflags = fields.TypedField('cxxflags', str, type(None))
 
     #: The Fortran compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    fflags = fields.DeprecatedField(fields.TypedField('fflags', str, None),
-                                    'setting this field is deprecated; '
-                                    'please set it through a build system',
-                                    fields.DeprecatedField.OP_SET)
-    _fflags = fields.TypedField('fflags', str, None)
+    fflags = fields.DeprecatedField(
+        fields.TypedField('fflags', str, type(None)),
+        'setting this field is deprecated; '
+        'please set it through a build system',
+        fields.DeprecatedField.OP_SET)
+    _fflags = fields.TypedField('fflags', str, type(None))
 
     #: The linker flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    ldflags = fields.DeprecatedField(fields.TypedField('ldflags', str, None),
-                                     'setting this field is deprecated; '
-                                     'please set it through a build system',
-                                     fields.DeprecatedField.OP_SET)
-    _ldflags = fields.TypedField('ldflags', str, None)
+    ldflags = fields.DeprecatedField(
+        fields.TypedField('ldflags', str, type(None)),
+        'setting this field is deprecated; '
+        'please set it through a build system',
+        fields.DeprecatedField.OP_SET)
+    _ldflags = fields.TypedField('ldflags', str, type(None))
 
     #: The include search path of this programming environment.
     #:

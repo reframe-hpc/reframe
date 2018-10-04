@@ -50,9 +50,9 @@ class Job(abc.ABC):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
 
-    _jobid = fields.TypedField('_jobid', int, None)
-    _exitcode = fields.TypedField('_exitcode', int, None)
-    _state = fields.TypedField('_state', JobState, None)
+    _jobid = fields.TypedField('_jobid', int, type(None))
+    _exitcode = fields.TypedField('_exitcode', int, type(None))
+    _state = fields.TypedField('_state', JobState, type(None))
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,

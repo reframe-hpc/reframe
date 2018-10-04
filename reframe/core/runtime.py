@@ -92,9 +92,9 @@ class HostResources:
     #:    Users may not set this field.
     #:
     prefix = fields.AbsolutePathField('prefix')
-    outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
-    stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
-    perflogdir = fields.AbsolutePathField('perflogdir', allow_none=True)
+    outputdir = fields.AbsolutePathField('outputdir', type(None))
+    stagedir  = fields.AbsolutePathField('stagedir', type(None))
+    perflogdir = fields.AbsolutePathField('perflogdir', type(None))
 
     def __init__(self, prefix=None, stagedir=None,
                  outputdir=None, perflogdir=None, timefmt=None):
@@ -130,7 +130,6 @@ class HostResources:
         else:
             return os.path.join(self.outputdir + self._run_suffix(),
                                 self.timestamp)
-
 
     @property
     def stage_prefix(self):

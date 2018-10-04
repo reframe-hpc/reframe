@@ -55,8 +55,10 @@ class TypedField(Field):
 
     def __init__(self, fieldname, main_type, *other_types):
         super().__init__(fieldname)
-        self._types = tuple(map(lambda t: type(t) if t is None else t,
-                                itertools.chain((main_type,), other_types)))
+        self._types = (main_type,) + other_types
+        if not all(isinstance(t, type) for t in self._types):
+            raise TypeError('{0} is not a sequence of types'.
+                            format(self._types))
 
     def _check_type(self, value):
         if not any(isinstance(value, t) for t in self._types):
@@ -101,11 +103,8 @@ class ConstantField(Field):
 class TimerField(TypedField):
     """Stores a timer in the form of a tuple '(hh, mm, ss)'"""
 
-    def __init__(self, fieldname, allow_none=False):
-        if allow_none:
-            super().__init__(fieldname, types.Tuple[int, int, int], None)
-        else:
-            super().__init__(fieldname, types.Tuple[int, int, int])
+    def __init__(self, fieldname, *other_types):
+        super().__init__(fieldname, types.Tuple[int, int, int], *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
@@ -130,11 +129,8 @@ class AbsolutePathField(TypedField):
     Any string assigned to such a field, will be converted to an absolute path.
     """
 
-    def __init__(self, fieldname, allow_none=False):
-        if allow_none:
-            super().__init__(fieldname, str, None)
-        else:
-            super().__init__(fieldname, str)
+    def __init__(self, fieldname, *other_types):
+        super().__init__(fieldname, str, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
@@ -150,15 +146,10 @@ class ScopedDictField(TypedField):
 
     It also handles implicit conversions from ordinary dicts."""
 
-    def __init__(self, fieldname, valuetype, allow_none=False):
-        if allow_none:
-            super().__init__(fieldname,
-                             types.Dict[str, types.Dict[str, valuetype]],
-                             ScopedDict, None)
-        else:
-            super().__init__(fieldname,
-                             types.Dict[str, types.Dict[str, valuetype]],
-                             ScopedDict)
+    def __init__(self, fieldname, valuetype, *other_types):
+        super().__init__(fieldname,
+                         types.Dict[str, types.Dict[str, valuetype]],
+                         ScopedDict, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)

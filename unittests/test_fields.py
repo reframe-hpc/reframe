@@ -54,7 +54,7 @@ class TestFields(unittest.TestCase):
 
         class FieldTester:
             field = fields.TypedField('field', ClassA)
-            field_any = fields.TypedField('field_any', ClassA, str, None)
+            field_any = fields.TypedField('field_any', ClassA, str, type(None))
 
             def __init__(self, value):
                 self.field = value
@@ -66,8 +66,9 @@ class TestFields(unittest.TestCase):
 
         tester.field = ClassB()
         self.assertEqual(10, tester.field.value)
-        self.assertRaises(TypeError, exec, 'tester.field = None',
-                          globals(), locals())
+        with self.assertRaises(TypeError):
+            tester.field = None
+
         tester.field_any = None
         tester.field_any = 'foo'
         tester.field_any = ClassA(5)
@@ -77,8 +78,8 @@ class TestFields(unittest.TestCase):
     def test_timer_field(self):
         class FieldTester:
             field = fields.TimerField('field')
-            field_maybe_none = fields.TimerField('field_maybe_none',
-                                                 allow_none=True)
+            field_maybe_none = fields.TimerField(
+                'field_maybe_none', type(None))
 
         tester = FieldTester()
         tester.field = (65, 22, 47)
@@ -192,7 +193,7 @@ class TestFields(unittest.TestCase):
 
     def test_absolute_path_field(self):
         class FieldTester:
-            value = fields.AbsolutePathField('value', allow_none=True)
+            value = fields.AbsolutePathField('value', type(None))
 
             def __init__(self, value):
                 self.value = value
@@ -212,8 +213,8 @@ class TestFields(unittest.TestCase):
     def test_scoped_dict_field(self):
         class FieldTester:
             field = fields.ScopedDictField('field', int)
-            field_maybe_none = fields.ScopedDictField('field_maybe_none',
-                                                      int, allow_none=True)
+            field_maybe_none = fields.ScopedDictField(
+                'field_maybe_none', int, type(None))
 
         tester = FieldTester()
 
