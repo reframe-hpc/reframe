@@ -90,6 +90,7 @@ stage('Unittest') {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
+                          . ~/.bashrc
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
                 }
             }
