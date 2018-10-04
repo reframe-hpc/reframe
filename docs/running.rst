@@ -98,8 +98,7 @@ The output looks like:
 
 
 The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
-Note that this listing may also contain checks that are not supported by the current system.
-These checks will be just skipped if you try to run them.
+Note that this listing only contains checks that are supported by the current system.
 
 Execution of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -212,7 +211,8 @@ Filtering of Regression Tests
 -----------------------------
 
 At this phase you can select which regression tests should be run or listed.
-There are several ways to select regression tests, which we describe in more detail here:
+All selections are preceded by a filtering over the tests that are supported by the
+current system. There are several ways to select regression tests, which we describe in more detail here:
 
 Selecting tests by programming environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -226,7 +226,7 @@ To select tests by the programming environment, use the ``-p`` or ``--prgenv`` o
 This will select all the checks that support the ``PrgEnv-gnu`` environment.
 
 You can also specify multiple times the ``-p`` option, in which case a test will be selected if it support all the programming environments specified in the command line.
-For example the following will select all the checks that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu``:
+For example the following will select all the checks supported by the current system that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu``:
 
 .. code-block:: bash
 
@@ -238,7 +238,7 @@ Selecting tests by tags
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags. Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
-For example the following will list all the tests that have a ``maintenance`` tag:
+For example the following will list all the tests supported by the current system that have a ``maintenance`` tag:
 
 .. code-block:: bash
 
