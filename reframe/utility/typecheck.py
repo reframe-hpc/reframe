@@ -1,3 +1,62 @@
+"""Dynamic recursive type checking of aggregate data structures.
+
+This module defines types for aggregate data structures, such as lists,
+dictionaries etc. that you can use with the ``isinstance`` builtin function to
+recursively check of all the elements of an aggregate data structure.
+Suppose you have a list of integers, suchs as ``[1, 2, 3]``, the following
+checks should hold:
+
+::
+    l = [1, 2, 3]
+    assert isinstance(l, List[int]) == True
+    assert isinstance(l, List[false]) == False
+
+
+Aggregate types can be combined in an arbitrary depth, so that can type check
+any complex data strcture:
+
+::
+    d = {'a': [1, 2], 'b': [3, 4]}
+    assert isisntance(d, Dict) == True
+    assert isisntance(d, Dict[str, List[int]]) == True
+
+
+This module offers aggregate types:
+
+- ``List[T]``: This corresponds to a list with elements of type ``T``.
+- ``Set[T]``: This corresponds to a set with elements of type ``T``.
+- ``Dict[K,V]``: This corresponds to a dictionary with keys of type ``K`` and
+  values of type ``V``.
+- ``Tuple[T]``: This corresponds to a tuple with elements of type ``T``.
+- ``Tuple[T1,T2,...,Tn]``: This corresponds to a tuple with ``n`` elements,
+  whose types are exactly ``T1``, ``T2``, ..., ``Tn`` and in that order.
+- ``Str[patt]``: This corresponds to a string type, whose members are all the
+  strings matching the regular expression ``patt``.
+
+This modules internally leverages metaclasses and the ``__isinstancecheck__()``
+method to customize the behaviour of the ``isinstance()`` builtin.
+By implementing also the ``__getitem__`` accessor method, it follows the
+look-and-feel of the type hints proposed in PEP484.
+This method returns a new type that is a subtype of the base container type.
+Using the facilities of ``abc.ABCMeta``, builtin types, such as ``list``,
+``str`` etc. are registered as subtypes of the base container types offered by
+this module.
+The type hierarchy of the types defined in this module is the following
+(example shown for List, but it is analogous for the rest of the types):
+
+::
+          List
+        /   |
+       /    |
+      /     |
+    list  List[T]
+
+
+In the above example ``T`` may refer to any type, so that ``List[List[int]]``
+is an instance of ``List``, but not an instance of ``List[int]``.
+
+"""
+
 import abc
 import collections
 import re
@@ -9,7 +68,12 @@ class _TypeFactory(abc.ABCMeta):
             cls.register(t)
 
 
-class ContainerType(_TypeFactory):
+# Metaclasses that implement the isinstance logic for the different aggregate
+# types
+
+class _ContainerType(_TypeFactory):
+    """A metaclass for containers with uniformly typed elements."""
+
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
         cls._elem_type = None
@@ -34,15 +98,20 @@ class ContainerType(_TypeFactory):
             raise TypeError('invalid type specification for container type: '
                             'expected ContainerType[elem_type]')
 
-        ret = ContainerType('%s[%s]' % (cls.__name__, elem_type.__name__),
-                            cls._bases, cls._namespace)
+        ret = _ContainerType('%s[%s]' % (cls.__name__, elem_type.__name__),
+                             cls._bases, cls._namespace)
         ret._elem_type = elem_type
         ret.register_subtypes()
         cls.register(ret)
         return ret
 
 
-class TupleType(ContainerType):
+class _TupleType(_ContainerType):
+    """A metaclass for tuples.
+
+    Tuples may contain uniformly-typed elements or non-uniformly typed ones.
+    """
+
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
             return False
@@ -72,14 +141,16 @@ class TupleType(ContainerType):
         cls_name = '%s[%s]' % (
             cls.__name__, ','.join(c.__name__ for c in elem_types)
         )
-        ret = TupleType(cls_name, cls._bases, cls._namespace)
+        ret = _TupleType(cls_name, cls._bases, cls._namespace)
         ret._elem_type = elem_types
         ret.register_subtypes()
         cls.register(ret)
         return ret
 
 
-class MappingType(_TypeFactory):
+class _MappingType(_TypeFactory):
+    """A metaclass for type checking mapping types."""
+
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
         cls._key_type = None
@@ -116,7 +187,7 @@ class MappingType(_TypeFactory):
 
         cls_name = '%s[%s,%s]' % (cls.__name__, key_type.__name__,
                                   value_type.__name__)
-        ret = MappingType(cls_name, cls._bases, cls._namespace)
+        ret = _MappingType(cls_name, cls._bases, cls._namespace)
         ret._key_type = key_type
         ret._value_type = value_type
         ret.register_subtypes()
@@ -124,7 +195,9 @@ class MappingType(_TypeFactory):
         return ret
 
 
-class StrType(ContainerType):
+class StrType(_ContainerType):
+    """A metaclass for type checking string types."""
+
     def __instancecheck__(cls, inst):
         return False
 
@@ -151,15 +224,15 @@ class StrType(ContainerType):
         return ret
 
 
-class Dict(metaclass=MappingType):
+class Dict(metaclass=_MappingType):
     _subtypes = (dict,)
 
 
-class List(metaclass=ContainerType):
+class List(metaclass=_ContainerType):
     _subtypes = (list,)
 
 
-class Set(metaclass=ContainerType):
+class Set(metaclass=_ContainerType):
     _subtypes = (set,)
 
 
@@ -167,5 +240,5 @@ class Str(metaclass=StrType):
     _subtypes = (str,)
 
 
-class Tuple(metaclass=TupleType):
+class Tuple(metaclass=_TupleType):
     _subtypes = (tuple,)
