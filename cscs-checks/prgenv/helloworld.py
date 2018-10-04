@@ -21,8 +21,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal',
-                              'monch:compute']
+                              'kesch:cn', 'leone:normal', 'monch:compute']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
@@ -80,11 +79,13 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 'compilation_time': (60, None, 0.1)
             }
         }
-        super().setup(partition, environ, **job_opts)
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
+
+        envname = environ.name.replace('-nompi', '')
+        prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
+        super().setup(partition, environ, **job_opts)
 
     def compile(self):
         self.compilation_time_seconds = datetime.now()
@@ -100,7 +101,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage, **kwargs):
         super().__init__('serial', lang, linkage, **kwargs)
-
+        self.valid_systems += ['kesch:pn']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
@@ -112,6 +113,10 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
+        if self.current_system.name == 'kesch' and linkage == 'dynamic':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-pgi-nompi',
+                                         'PrgEnv-gnu-nompi']
 
 
 @rfm.required_version('>=2.14')
@@ -121,6 +126,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
+        self.valid_systems += ['kesch:pn']
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
@@ -132,6 +138,10 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
+        if self.current_system.name == 'kesch' and linkage == 'dynamic':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-pgi-nompi',
+                                         'PrgEnv-gnu-nompi']
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
