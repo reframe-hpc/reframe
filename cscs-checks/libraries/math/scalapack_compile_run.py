@@ -27,11 +27,13 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.maintainers = ['CB', 'LM', 'MKr']
         self.tags = {'production'}
 
-    def setup(self, environ, partition, **job_opts):
-        super().setup(environ, partition, **job_opts)
+    def setup(self, partition, environ, **job_opts):
         if (self.current_system.name in ['kesch', 'monch'] and
-            self.current_environ.name == 'PrgEnv-gnu'):
+            environ.name == 'PrgEnv-gnu'):
+            #            self.modules += ['scalapack']
             self.build_system.ldflags = ['-lscalapack', '-lopenblas']
+
+        super().setup(partition, environ, **job_opts)
 
 
 @rfm.required_version('>=2.14')
