@@ -134,12 +134,15 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
+echo "CC=$(which CC)"
 module load reframe
 
 echo "=============="
 echo "Loaded Modules"
 echo "=============="
 module list
+
+echo "CC=$(which CC)"
 
 
 cd ${CI_FOLDER}
