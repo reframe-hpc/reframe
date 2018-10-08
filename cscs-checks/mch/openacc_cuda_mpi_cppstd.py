@@ -13,7 +13,6 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
-        self.build_system.ldflags = ['-lcublas', '-lcudart']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {
@@ -23,7 +22,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             self.num_tasks = 12
             self.num_tasks_per_node = 12
             self.num_gpus_per_node = 1
-            self.build_system.options = ['NVCC_FLAGS="-arch=sm60"']
+            self.build_system.options = ['NVCC_FLAGS="-arch=compute_60"']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
             self.variables = {
@@ -33,11 +32,15 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
-            self.build_system.options = ['NVCC_FLAGS="-arch=sm37"']
+            self.build_system.options = ['NVCC_FLAGS="-arch=compute_37"']
 
         if withmpi:
             self.build_system.cppflags = ['-DUSE_MPI']
         else:
+            if self.current_system.name == 'kesch':
+                self.valid_prog_environs = ['PrgEnv-cray-nompi',
+                                            'PrgEnv-pgi-nompi']
+
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_gpus_per_node = 1
@@ -53,9 +56,14 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         elif environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
             if self.current_system.name in ['daint', 'dom']:
-                self.build_system.fflags += ['-ta:tesla:cc60', '-Mnorpath']
-                self.build_system.ldflags += ['-lstdc++']
+                self.build_system.fflags += ['-ta:tesla:cc60']
+                self.build_system.ldflags = ['-acc', '-ta:tesla:cc60',
+                                             '-Mnorpath', '-lstdc++']
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
+                self.build_system.ldflags = [
+                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
+                    '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
+                    '-lcublas', '-lcudart']
 
         super().setup(partition, environ, **job_opts)

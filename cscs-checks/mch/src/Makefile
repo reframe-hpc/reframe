@@ -11,16 +11,16 @@ LIB  =
 .SUFFIXES: .o .cu .cpp .F90
 
 %.o: %.cu
-	$(PREP) nvcc $(CPPFLAGS) $(NVCC_FLAGS) -c $< -o $@
+	$(NVCC) $(CPPFLAGS) $(NVCC_FLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(PREP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.F90
-	$(PREP) $(FC) $(FCFLAGS) -c $< -o $@
+	$(FC) $(CPPFLAGS) $(FCFLAGS) -c $< -o $@
 
 $(EXECUTABLE): $(OBJS)
-	$(PREP) $(LD) $(OBJS) -o $@ $(LDFLAGS) $(LIB)
+	$(LD) $(OBJS) -o $@ $(LDFLAGS) $(LIB)
 
 clean:
 	-$(RM) $(OBJS)
