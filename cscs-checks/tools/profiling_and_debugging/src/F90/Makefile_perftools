@@ -7,7 +7,7 @@ LIB            =
 .SUFFIXES: .o .F90
 
 %.o: %.F90
-	$(FC) $(FFLAGS) -c $< -o $(PE_ENV)$@
+	$(FC) $(CPPFLAGS) $(FCFLAGS) -c $< -o $(PE_ENV)$@
 
 perftools_check: $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ2) $(LIB) -o $@

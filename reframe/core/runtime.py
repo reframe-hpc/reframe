@@ -5,7 +5,6 @@
 import os
 import functools
 import re
-import shutil
 import socket
 from datetime import datetime
 
@@ -95,22 +94,28 @@ class HostResources:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
     stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
+    perflogdir = fields.AbsolutePathField('perflogdir', allow_none=True)
 
     def __init__(self, prefix=None, stagedir=None,
-                 outputdir=None, timefmt=None):
+                 outputdir=None, perflogdir=None, timefmt=None):
         self.prefix = prefix or '.'
         self.stagedir  = stagedir
         self.outputdir = outputdir
-        self._timestamp = datetime.now()
+        self.perflogdir = perflogdir
         self.timefmt = timefmt
+        self._timestamp = datetime.now()
 
     def _makedir(self, *dirs, wipeout=False):
         ret = os.path.join(*dirs)
         if wipeout:
-            shutil.rmtree(ret, True)
+            os_ext.rmtree(ret, ignore_errors=True)
 
         os.makedirs(ret, exist_ok=True)
         return ret
+
+    def _run_suffix(self):
+        current_run = runtime().current_run
+        return '_%s' % current_run if current_run > 0 else ''
 
     @property
     def timestamp(self):
@@ -120,17 +125,29 @@ class HostResources:
     def output_prefix(self):
         """The output prefix directory of ReFrame."""
         if self.outputdir is None:
-            return os.path.join(self.prefix, 'output', self.timestamp)
+            return os.path.join(self.prefix, 'output' + self._run_suffix(),
+                                self.timestamp)
         else:
-            return os.path.join(self.outputdir, self.timestamp)
+            return os.path.join(self.outputdir + self._run_suffix(),
+                                self.timestamp)
+
 
     @property
     def stage_prefix(self):
         """The stage prefix directory of ReFrame."""
         if self.stagedir is None:
-            return os.path.join(self.prefix, 'stage', self.timestamp)
+            return os.path.join(self.prefix, 'stage' + self._run_suffix(),
+                                self.timestamp)
         else:
-            return os.path.join(self.stagedir, self.timestamp)
+            return os.path.join(self.stagedir + self._run_suffix(),
+                                self.timestamp)
+
+    @property
+    def perflog_prefix(self):
+        if self.perflogdir is None:
+            return os.path.join(self.prefix, 'perflogs')
+        else:
+            return self.perflogdir
 
     def make_stagedir(self, *dirs, wipeout=True):
         return self._makedir(self.stage_prefix, *dirs, wipeout=wipeout)
@@ -166,9 +183,10 @@ class RuntimeContext:
 
         self._resources = HostResources(
             self._system.prefix, self._system.stagedir,
-            self._system.outputdir, self._system.logdir)
+            self._system.outputdir, self._system.perflogdir)
         self._modules_system = ModulesSystem.create(
             self._system.modules_system)
+        self._current_run = 0
 
     def _autodetect_system(self):
         """Auto-detect system."""
@@ -195,6 +213,13 @@ class RuntimeContext:
             return self._site_config.modes[name]
         except KeyError:
             raise ConfigError('unknown execution mode: %s' % name) from None
+
+    def next_run(self):
+        self._current_run += 1
+
+    @property
+    def current_run(self):
+        return self._current_run
 
     @property
     def system(self):

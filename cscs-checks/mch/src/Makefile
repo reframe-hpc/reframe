@@ -6,21 +6,21 @@ LD = $(FC)
 
 OBJS = compute_cuda.o openacc_cuda_mpi_cppstd.o std_cpp_call.o
 # OBJ2 = $(subst _,$(PE_ENV)_,$(OBJ))
-LIB  = 
+LIB  =
 
 .SUFFIXES: .o .cu .cpp .F90
 
 %.o: %.cu
-	$(PREP) nvcc $(CXXFLAGS) $(DDTFLAGS) -c $< -o $@
+	$(PREP) nvcc $(CPPFLAGS) $(NVCC_FLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(PREP) $(CXX) $(CFLAGS) $(DDTFLAGS) -c $< -o $@
+	$(PREP) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 %.o: %.F90
-	$(PREP) $(FC) $(FFLAGS) $(DDTFLAGS) -c $< -o $@
+	$(PREP) $(FC) $(FCFLAGS) -c $< -o $@
 
 $(EXECUTABLE): $(OBJS)
-	$(PREP) $(LD) $(FFLAGS) $(LDFLAGS) $(OBJS) $(LIB) -o $@
+	$(PREP) $(LD) $(OBJS) -o $@ $(LDFLAGS) $(LIB)
 
 clean:
 	-$(RM) $(OBJS)

@@ -31,8 +31,9 @@ class ReframeSettings:
                 # order to test different aspects of the framework.
                 'descr': 'Fake system for unit tests',
                 'hostnames': ['testsys'],
-                'prefix': '.rfm_testing/install',
+                'prefix': '.rfm_testing',
                 'resourcesdir': '.rfm_testing/resources',
+                'perflogdir': '.rfm_testing/perflogs',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',

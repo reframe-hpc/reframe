@@ -10,35 +10,34 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.name = 'OpenaccCudaCPP' + name_suffix
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-pgi*']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.build_system = 'Make'
+        self.build_system.fflags = ['-O2']
+        self.build_system.ldflags = ['-lcublas', '-lcudart']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-            self._pgi_flags = '-O2 -acc -ta=tesla:cc60 -Mnorpath -lstdc++'
-            self._env_variables = {
+            self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
                 'CRAY_CUDA_MPS': '1'
             }
             self.num_tasks = 12
             self.num_tasks_per_node = 12
             self.num_gpus_per_node = 1
-            self._nvidia_sm = '60'
+            self.build_system.options = ['NVCC_FLAGS="-arch=sm60"']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            self._pgi_flags = '-O2 -acc -ta=tesla,cc35,cuda8.0'
-            self._env_variables = {
-                'MPICH_RDMA_ENABLED_CUDA': '1',
+            self.variables = {
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
             }
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
-            self._nvidia_sm = '37'
+            self.build_system.options = ['NVCC_FLAGS="-arch=sm37"']
 
         if withmpi:
-            self.mpiflag = ' -DUSE_MPI'
+            self.build_system.cppflags = ['-DUSE_MPI']
         else:
-            self.mpiflag = ''
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_gpus_per_node = 1
@@ -49,13 +48,14 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        # Set nvcc flags
-        environ.cxxflags = '-lcublas -lcudart -arch=sm_%s' % self._nvidia_sm
         if environ.name.startswith('PrgEnv-cray'):
-            environ.fflags = '-O2 -hacc -hnoomp'
+            self.build_system.fflags += ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
-            environ.fflags = self._pgi_flags
+            self.build_system.fflags += ['-acc']
+            if self.current_system.name in ['daint', 'dom']:
+                self.build_system.fflags += ['-ta:tesla:cc60', '-Mnorpath']
+                self.build_system.ldflags += ['-lstdc++']
+            elif self.current_system.name == 'kesch':
+                self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
 
-        self.variables = self._env_variables
-        environ.fflags += self.mpiflag
         super().setup(partition, environ, **job_opts)

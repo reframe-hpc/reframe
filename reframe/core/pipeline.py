@@ -21,7 +21,7 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment
+from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
                                      user_deprecation_warning)
 from reframe.core.launchers.registry import getlauncher
@@ -93,9 +93,13 @@ class RegressionTest:
     #: subfolder or a file contained in :attr:`sourcesdir`. This applies also
     #: in the case where :attr:`sourcesdir` is a Git repository.
     #:
-    #: If it refers to a regular file, this file will be compiled (its language
-    #: will be automatically recognized).
-    #: If it refers to a directory, ``make`` will be invoked in that directory.
+    #: If it refers to a regular file, this file will be compiled using the
+    #: :class:`SingleSource <reframe.core.buildsystems.SingleSource>` build
+    #: system.
+    #: If it refers to a directory, ReFrame will try to infer the build system
+    #: to use for the project and will fall back in using the :class:`Make
+    #: <reframe.core.buildsystems.Make>` build system, if it cannot find a more
+    #: specific one.
     #:
     #: :type: :class:`str`
     #: :default: ``''``
@@ -125,6 +129,20 @@ class RegressionTest:
     #:        Support for Git repositories was added.
     sourcesdir = fields.StringField('sourcesdir', allow_none=True)
 
+    #: The build system to be used for this test.
+    #: If not specified, the framework will try to figure it out automatically
+    #: based on the value of :attr:`sourcepath`.
+    #:
+    #: This field may be set using either a string referring to a concrete build
+    #: system class name (see `build systems <reference.html#build-systems>`__)
+    #: or an instance of :class:`reframe.core.buildsystems.BuildSystem`.
+    #: The former is the recommended way.
+    #:
+    #:
+    #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', allow_none=True)
 
     #: List of shell commands to be executed before compiling.
@@ -388,10 +406,19 @@ class RegressionTest:
     #:
     #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
     #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: If set to :class:`None`, no time limit will be set.
+    #: The default time limit of the system partition's scheduler will be used.
+    #:
     #:
     #: :type: :class:`tuple[int]`
     #: :default: ``(0, 10, 0)``
-    time_limit = fields.TimerField('time_limit')
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 2.15
+    #:
+    #:    This attribute may be set to :class:`None`.
+    #:
+    time_limit = fields.TimerField('time_limit', allow_none=True)
 
     #: Extra resources for this test.
     #:
@@ -761,12 +788,16 @@ class RegressionTest:
         for k, v in self.variables.items():
             self._current_environ.set_variable(k, v)
 
+        # Temporarily load the test's environment to record the actual module
+        # load/unload sequence
+        environ_save = EnvironmentSnapshot()
         # First load the local environment of the partition
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
         self.logger.debug("loading test's environment")
         self._current_environ.load()
+        environ_save.load()
 
     def _setup_paths(self):
         """Setup the check's dynamic paths."""
@@ -907,9 +938,21 @@ class RegressionTest:
         self.logger.debug('Staged sourcepath: %s' % staged_sourcepath)
         if os.path.isdir(staged_sourcepath):
             if not self.build_system:
-                self.build_system = 'Make'
+                # Try to guess the build system
+                cmakelists = os.path.join(staged_sourcepath, 'CMakeLists.txt')
+                configure_ac = os.path.join(staged_sourcepath, 'configure.ac')
+                configure_in = os.path.join(staged_sourcepath, 'configure.in')
+                if os.path.exists(cmakelists):
+                    self.build_system = 'CMake'
+                    self.build_system.builddir = 'rfm_build'
+                elif (os.path.exists(configure_ac) or
+                      os.path.exists(configure_in)):
+                    self.build_system = 'Autotools'
+                    self.build_system.builddir = 'rfm_build'
+                else:
+                    self.build_system = 'Make'
 
-            self.build_system.srcdir = self.sourcepath
+                self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
@@ -1108,7 +1151,7 @@ class RegressionTest:
 
         if remove_files:
             self.logger.debug('removing stage directory')
-            shutil.rmtree(self._stagedir)
+            os_ext.rmtree(self._stagedir)
 
         if unload_env:
             self.logger.debug("unloading test's environment")

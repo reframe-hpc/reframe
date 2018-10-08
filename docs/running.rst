@@ -43,7 +43,7 @@ The output looks like:
 .. code-block:: none
 
    Command line: ./bin/reframe -c tutorial/ -l
-   Reframe version: 2.13-dev0
+   Reframe version: 2.15-dev0
    Launched by user: USER
    Launched on host: daint103
    Reframe paths
@@ -97,9 +97,14 @@ The output looks like:
    Found 13 check(s).
 
 
-The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
-Note that this listing may also contain checks that are not supported by the current system.
-These checks will be just skipped if you try to run them.
+By default, this listing shows all the tests supported by the current system and contains the name of the check, its description, the tags associated with it and a list of its maintainers.
+
+.. note::
+   .. versionchanged:: 2.15
+
+      Test listing lists only tests supported by the current system.
+      Previous versions were showing all the found tests.
+
 
 Execution of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -214,6 +219,36 @@ Filtering of Regression Tests
 At this phase you can select which regression tests should be run or listed.
 There are several ways to select regression tests, which we describe in more detail here:
 
+Selecting tests by system
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.15
+
+
+By default, ReFrame always selects the tests that are supported by the current system.
+If you want to list the tests supported by a different system, you may achieve that by passing the ``--system`` option:
+
+.. code-block:: bash
+
+  ./bin/reframe --system=kesch -l
+
+
+This example lists all the tests that are supported by the system named ``kesch``.
+It is also possible to list only the tests that are supported by a specific system partition.
+The following example will list only the tests suported by the ``login`` partition of the ``kesch`` system:
+
+.. code-block:: bash
+
+  ./bin/reframe --system=kesch:login -l
+
+
+Finally, in order to list all the tests found regardless of their supported systems, you should pass the ``--skip-system-check`` option:
+
+.. code-block:: bash
+
+  ./bin/reframe --skip-system-check -l
+
+
 Selecting tests by programming environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -226,7 +261,7 @@ To select tests by the programming environment, use the ``-p`` or ``--prgenv`` o
 This will select all the checks that support the ``PrgEnv-gnu`` environment.
 
 You can also specify multiple times the ``-p`` option, in which case a test will be selected if it support all the programming environments specified in the command line.
-For example the following will select all the checks that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu``:
+For example the following will select all the checks that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu`` on the current system:
 
 .. code-block:: bash
 
@@ -238,7 +273,7 @@ Selecting tests by tags
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags. Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
-For example the following will list all the tests that have a ``maintenance`` tag:
+For example the following will list all the tests that have a ``maintenance`` tag and can run on the current system:
 
 .. code-block:: bash
 
@@ -625,7 +660,7 @@ The attributes of this handler are the following:
 * ``prefix``: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
   This attribute accepts any of the check-specific formatting placeholders described `above <#common-log-handler-attributes>`__.
   This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
-  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option.
+  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option or the ``perflogdir`` attribute of the `system configuration <configuring.html#system-configuration>`__.
   The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:
 
   .. code-block:: none
@@ -719,7 +754,7 @@ This handler introduces three new attributes:
 This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this Python module must be available, otherwise this log handler will be ignored.
 `GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
 The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
-More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__
+More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
 
 
 Asynchronous Execution of Regression Checks

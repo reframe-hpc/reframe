@@ -1,25 +1,32 @@
 import os
 
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
+import reframe as rfm
 
 
-class GpuBandwidthCheck(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('gpu_bandwidth_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class GpuBandwidthCheck(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-
+        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
+        self.build_system = 'SingleSource'
         self.sourcepath = 'bandwidthTest.cu'
         self.executable = 'gpu_bandwidth_check.x'
-        self.executable_opts = ['device', 'all']
+
+        # NOTE: Perform a range of bandwidth tests from 2MB to 32MB
+        # with 2MB increments to avoid initialization overhead in bandwidth
+        self.executable_opts = ['device', 'all', '--mode=range',
+                                '--start=2097152', '--increment=2097152',
+                                '--end=33554432']
         if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['cudatoolkit']
+            self.modules = ['craype-accel-nvidia60']
             self.num_gpus_per_node = 1
         else:
+            self.modules = ['craype-accel-nvidia35']
             self.num_gpus_per_node = 8
 
         self.sanity_patterns = sn.all([
@@ -33,7 +40,7 @@ class GpuBandwidthCheck(RegressionTest):
             for device in range(self.num_gpus_per_node):
                 self.perf_patterns['perf_%s_%i' % (xfer_kind, device)] = \
                     sn.extractsingle(self._xfer_pattern(xfer_kind, device),
-                                     self.stdout, 2, float, 0)
+                                     self.stdout, 3, float, 0)
 
         self.reference = {}
         for d in range(self.num_gpus_per_node):
@@ -51,21 +58,11 @@ class GpuBandwidthCheck(RegressionTest):
         nvidia_sm = '60'
         if self.current_system.name == 'kesch':
             nvidia_sm = '37'
-        self._flags = ('-m64 -arch=sm_%s' % nvidia_sm)
+
+        self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm]
 
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
-
-    def setup(self, partition, environ, **job_opts):
-        if (self.current_system.name == 'kesch' and
-            environ.name == 'PrgEnv-gnu'):
-            self.modules = ['craype-accel-nvidia35']
-
-        super().setup(partition, environ, **job_opts)
-
-    def compile(self):
-        self.current_environ.cxxflags = self._flags
-        super().compile()
 
     def _xfer_pattern(self, xfer_kind, devno):
         """generates search pattern for performance analysis"""
@@ -75,9 +72,8 @@ class GpuBandwidthCheck(RegressionTest):
             first_part = 'Device to Host Bandwidth'
         else:
             first_part = 'Device to Device Bandwidth'
-        return (r'^ *%s([^\n]*\n){%i}^ *Device Id:'
-                r' %i[^\n]*\n^\s*\d+\s+(\S+)' % (first_part, 3+3*devno, devno))
 
-
-def _get_checks(**kwargs):
-    return [GpuBandwidthCheck(**kwargs)]
+        # Extract the bandwidth corresponding to the 32MB message (16th value)
+        return (r'^ *%s([^\n]*\n){%i}^ *Device Id: %i\s+'
+                r'([^\n]*\n){15}'
+                r'\s+\d+\s+(\S+)' % (first_part, 3+18*devno, devno))

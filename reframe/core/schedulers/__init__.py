@@ -64,7 +64,7 @@ class Job(abc.ABC):
                  num_tasks_per_socket=None,
                  num_cpus_per_task=None,
                  use_smt=None,
-                 time_limit=(0, 10, 0),
+                 time_limit=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,

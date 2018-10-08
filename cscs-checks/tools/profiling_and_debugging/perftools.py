@@ -1,13 +1,14 @@
 import os
+
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class PerftoolsCheck(RegressionTest):
-    def __init__(self, lang, **kwargs):
-        super().__init__('perftools_check_' + lang.replace('+', 'p'),
-                         os.path.dirname(__file__), **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(*([lang] for lang in ['C', 'Cpp', 'F90', 'Cuda']))
+class PerftoolsCheck(rfm.RegressionTest):
+    def __init__(self, lang):
+        super().__init__()
         if lang == 'Cuda':
             self.valid_systems = ['daint:gpu', 'dom:gpu']
         else:
@@ -22,27 +23,35 @@ class PerftoolsCheck(RegressionTest):
             # FIXME: PGI Fortran is hanging after completion
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
+        # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
+        # is correct, the batch job uses all the time.
+        self.time_limit = (0, 1, 0)
+
         self.num_gpus_per_node = 1
         self.executable = 'perftools_check'
-
         self.prgenv_flags = {
-            'PrgEnv-cray':  ' -h nomessage=3140 -homp ',
-            'PrgEnv-gnu':   ' -fopenmp ',
-            'PrgEnv-intel': ' -openmp ',
-            'PrgEnv-pgi':   ' -mp ',
+            'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp'],
+            'PrgEnv-gnu': ['-g', '-fopenmp'],
+            'PrgEnv-intel': ['-g', '-openmp'],
+            'PrgEnv-pgi': ['-g', '-mp']
         }
-
-        if self.current_system.name == 'kesch':
-            # `-lcudart -lm` must be passed explicitly on kesch
-            self.prgenv_flags['PrgEnv-gnu'] = ' -fopenmp -lcudart -lm '
-
         self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
                                                self.stdout)
-        self.modules  = ['perftools-base', 'perftools-lite', 'cudatoolkit']
-        self.makefile = 'Makefile_perftools'
-        self.sourcesdir = os.path.join('src', lang)
-        self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+
+        self.modules = ['perftools-lite', 'craype-accel-nvidia60']
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_perftools'
+        self.build_system.cppflags = ['-D_CSCS_ITMAX=1', '-DUSE_MPI']
+        self.build_system.options = ['NVCCFLAGS="-arch=sm_60"']
+
+        if lang == 'Cpp':
+            self.sourcesdir = os.path.join('src', 'C++')
+        else:
+            self.sourcesdir = os.path.join('src', lang)
+
+        # NOTE: Restrict concurrency to allow creation of Fortran modules
+        if lang == 'F90':
+            self.build_system.max_concurrency = 1
 
         if lang != 'Cuda':
             self.num_tasks_per_node = 2
@@ -50,20 +59,13 @@ class PerftoolsCheck(RegressionTest):
         else:
             self.num_tasks_per_node = 1
 
-    def compile(self):
-        self.flags = ' -g -D_CSCS_ITMAX=1 -DUSE_MPI '
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags    = self.flags + prgenv_flags
-        self.current_environ.cxxflags  = self.flags + prgenv_flags
-        self.current_environ.fflags    = self.flags + prgenv_flags
-        self.current_environ.ldflags   = self.flags + prgenv_flags
-        super().compile(makefile=self.makefile,
-                        options='NVCCFLAGS="-arch=sm_60"')
+        self.maintainers = ['MK', 'JG']
+        self.tags = {'production'}
 
-
-def _get_checks(**kwargs):
-    ret = []
-    for lang in ['C', 'C++', 'F90', 'Cuda']:
-        ret.append(PerftoolsCheck(lang, **kwargs))
-
-    return ret
+    def setup(self, environ, partition, **job_opts):
+        super().setup(environ, partition, **job_opts)
+        flags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cflags = flags
+        self.build_system.cxxflags = flags
+        self.build_system.fflags = flags
+        self.build_system.ldflags = flags

@@ -19,12 +19,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def list_supported_systems(systems, printer):
-    printer.info('List of supported systems:')
-    for s in systems:
-        printer.info('    %s' % s)
-
-
 def list_checks(checks, printer):
     printer.info('List of matched checks')
     printer.info('======================')
@@ -297,11 +291,10 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.expandvars(options.perflogdir))
-    else:
-        logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (
-            os.path.join(rt.resources.prefix, 'perflogs'))
+        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+
+    logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
+                                                          perflog_prefix)
 
     if hasattr(settings, 'perf_logging_config'):
         try:
@@ -319,8 +312,8 @@ def main():
         for d in options.checkpath:
             d = os.path.expandvars(d)
             if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
-                             (argparser.prog, d))
+                printer.warning("%s: path `%s' does not exist. Skipping..." %
+                                (argparser.prog, d))
                 continue
 
             load_path.append(d)
@@ -390,6 +383,14 @@ def main():
 
         if not options.skip_prgenv_check:
             checks_matched = filter(filter_prgenv, checks_matched)
+
+        # Filter checks by system
+        def filter_system(c):
+            return any([c.supports_system(s.fullname)
+                        for s in rt.system.partitions])
+
+        if not options.skip_system_check:
+            checks_matched = filter(filter_system, checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
