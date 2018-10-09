@@ -288,6 +288,11 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
 
+    def test_guess_num_tasks(self):
+        self.testjob._num_tasks = 0
+        with self.assertRaises(JobError):
+            self.testjob.guess_num_tasks()
+
 
 class TestSlurmJob(_TestJob, unittest.TestCase):
     @property
@@ -471,6 +476,11 @@ class TestPbsJob(_TestJob, unittest.TestCase):
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
         self.skipTest("PBS minimum time limit is 60s")
+
+    def test_guess_num_tasks(self):
+        self.testjob._num_tasks = 0
+        with self.assertRaises(JobError):
+            self.testjob.guess_num_tasks()
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):

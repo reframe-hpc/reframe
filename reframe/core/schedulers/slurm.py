@@ -146,8 +146,8 @@ class SlurmJob(sched.Job):
             getlogger().debug('automatically setting num_tasks to %s' %
                               self.num_tasks)
         else:
-            raise JobError('A reservation has to be specified '
-                           'when setting the num_tasks to 0.')
+            raise JobError('flexible num tasks can only be used with a '
+                           'reservation')
 
         return num_tasks
 

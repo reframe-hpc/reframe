@@ -60,7 +60,7 @@ class LocalJob(sched.Job):
 
     def guess_num_tasks(self):
         raise JobError(
-            'The local scheduler does not support guessing of num tasks.')
+            'local scheduler does not support flexible number of tasks')
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""

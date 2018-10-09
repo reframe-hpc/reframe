@@ -90,7 +90,7 @@ class PbsJob(sched.Job):
 
     def guess_num_tasks(self):
         raise JobError(
-            'The PBS scheduler does not support guessing of num tasks.')
+            'pbs scheduler does not support flexible number of tasks')
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS
