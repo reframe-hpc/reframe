@@ -1,13 +1,12 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class LAMMPSBaseCheck(RunOnlyRegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, os.path.dirname(__file__), **kwargs)
-
+class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['LAMMPS']
 
@@ -27,27 +26,24 @@ class LAMMPSBaseCheck(RunOnlyRegressionTest):
             sn.assert_found(r'Total wall time:', self.stdout),
             sn.assert_lt(energy_diff, 6e-4)
         ])
-        self.maintainers = ['TR', 'VH']
         self.strict_check = False
-        self.tags = {'scs'}
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
             }
         }
 
+        self.tags = {'scs'}
+        self.maintainers = ['TR', 'VH']
+
 
 class LAMMPSGPUCheck(LAMMPSBaseCheck):
-    def __init__(self, variant, **kwargs):
-        super().__init__('lammps_gpu_%s_check' % variant, **kwargs)
-
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.descr = 'LAMMPS GPU check'
-
         self.executable = 'lmp_mpi'
         self.executable_opts = '-sf gpu -pk gpu 1 -in in.lj.gpu'.split()
         self.variables = {'CRAY_CUDA_MPS': '1'}
-
         self.num_gpus_per_node = 1
         if self.current_system.name == 'dom':
             self.num_tasks = 12
@@ -57,44 +53,44 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
             self.num_tasks_per_node = 2
 
 
+@rfm.simple_test
 class LAMMPSGPUMaintCheck(LAMMPSGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__(variant='maint', **kwargs)
-        self.tags |= {'maintenance'}
+    def __init__(self):
+        super().__init__()
         self.reference = {
             'dom:gpu': {
-                'perf': (3457.0, -0.05, None)
+                'perf': (3457.0, -0.10, None)
             },
             'daint:gpu': {
                 'perf': (4718.0, -0.10, None)
             },
         }
 
+        self.tags |= {'maintenance'}
 
+
+@rfm.simple_test
 class LAMMPSGPUProdCheck(LAMMPSGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__(variant='prod', **kwargs)
-        self.tags |= {'production'}
+    def __init__(self):
+        super().__init__()
         self.reference = {
             'dom:gpu': {
-                'perf': (3360.0, -0.05, None)
+                'perf': (3360.0, -0.10, None)
             },
             'daint:gpu': {
                 'perf': (2382.0, -0.50, None)
             },
         }
 
+        self.tags |= {'production'}
+
 
 class LAMMPSCPUCheck(LAMMPSBaseCheck):
-    def __init__(self, variant, **kwargs):
-        super().__init__('lammps_cpu_%s_check' % variant, **kwargs)
-
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:mc', 'dom:mc']
-        self.descr = 'LAMMPS CPU check'
-
         self.executable = 'lmp_omp'
         self.executable_opts = '-sf omp -pk omp 1 -in in.lj.cpu'.split()
-
         if self.current_system.name == 'dom':
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -103,10 +99,11 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
             self.num_tasks = 576
 
 
+@rfm.simple_test
 class LAMMPSCPUProdCheck(LAMMPSCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
+    def __init__(self):
+        super().__init__()
+        self.descr = self.name
         self.reference = {
             'dom:mc': {
                 'perf': (4454.0, -0.05, None)
@@ -116,8 +113,4 @@ class LAMMPSCPUProdCheck(LAMMPSCPUCheck):
             },
         }
 
-
-def _get_checks(**kwargs):
-    return [LAMMPSGPUMaintCheck(**kwargs),
-            LAMMPSGPUProdCheck(**kwargs),
-            LAMMPSCPUProdCheck(**kwargs)]
+        self.tags |= {'production'}
