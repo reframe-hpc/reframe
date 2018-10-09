@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
@@ -17,14 +18,13 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             self.build_system.cxxflags = ['-ccbin CC', '-arch=sm_60']
         elif self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit']
-            self.valid_prog_environs = ['PrgEnv-gnu-gdr']
+            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.modules = ['craype-accel-nvidia35']
             self.variables = {
-                'MPICH_RDMA_ENABLED_CUDA': '1',
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',
             }
-            self.build_system.cxxflags = ['-ccbin mpicxx', '-arch=sm_37']
+            self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_37']
 
         self.num_tasks = 2
         self.num_gpus_per_node = 1
@@ -32,10 +32,5 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         result = sn.extractsingle(r'Result :\s+(?P<result>\d+\.?\d*)',
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
-        self.pre_run = [
-            'export LD_PRELOAD='
-            '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
-        ]
-
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
