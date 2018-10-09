@@ -103,7 +103,6 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
 class LAMMPSCPUProdCheck(LAMMPSCPUCheck):
     def __init__(self):
         super().__init__()
-        self.descr = self.name
         self.reference = {
             'dom:mc': {
                 'perf': (4454.0, -0.05, None)
