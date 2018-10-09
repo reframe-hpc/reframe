@@ -9,7 +9,7 @@ checks should hold:
 ::
     l = [1, 2, 3]
     assert isinstance(l, List[int]) == True
-    assert isinstance(l, List[false]) == False
+    assert isinstance(l, List[float]) == False
 
 
 Aggregate types can be combined in an arbitrary depth, so that can type check
@@ -197,9 +197,6 @@ class _MappingType(_TypeFactory):
 
 class StrType(_ContainerType):
     """A metaclass for type checking string types."""
-
-    def __instancecheck__(cls, inst):
-        return False
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
