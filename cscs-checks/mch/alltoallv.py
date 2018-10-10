@@ -2,92 +2,82 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test([''], ['--nocomm'], ['--nocomp'])
+@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
 class Alltoallv(rfm.RegressionTest):
-    def __init__(self, exec_parameter):
+    def __init__(self, variant):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        if self.current_system.name in ['daint', 'dom']:
-            self.modules = ['craype-accel-nvidia60']
-            self._pgi_flags = ['-acc', '-ta=tesla:cc60', '-Mnorpath']
-        elif self.current_system.name in ['kesch']:
-            self.modules = ['craype-accel-nvidia35']
-            self._pgi_flags = ['-O2', '-ta=tesla,cc35,cuda8.0']
+        self.variables = {'G2G': '1'}
+        self.executable = 'build/src/comm_overlap_benchmark'
+        if variant != 'default':
+            self.executable_opts = ['--' + variant]
 
-        self.num_tasks = 144
-        self.num_gpus_per_node = 16
-        self.num_tasks_per_node = 16
-        self.num_tasks_per_socket = 8
-        self.executable = ('build/src/comm_overlap_benchmark '
-                           '%s' % exec_parameter)
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         # Checkout to the branch alltoallv
         self.prebuild_cmd = ['git checkout alltoallv']
         self.build_system = 'CMake'
         self.build_system.builddir = 'build'
-        self.build_system.config_opts = ['-DMPI_VENDOR=mvapich2',
-                                         '-DCUDA_COMPUTE_CAPABILITY="sm_37"',
-                                         '-DCMAKE_BUILD_TYPE=Release',
+        self.build_system.config_opts = ['-DCMAKE_BUILD_TYPE=Release',
                                          '-DENABLE_MPI_TIMER=ON']
-        self.build_system.max_concurrency = 1
+
+        if self.current_system.name == 'kesch':
+            self.num_tasks = 144
+            self.num_gpus_per_node = 16
+            self.num_tasks_per_node = 16
+            self.num_tasks_per_socket = 8
+            self.modules = ['craype-accel-nvidia35', 'cmake']
+            self.variables['MV2_USE_CUDA'] = '1'
+            self.build_system.config_opts += ['-DMPI_VENDOR=mvapich2',
+                                              '-DCUDA_COMPUTE_CAPABILITY="sm_37"']
+            self.build_system.max_concurrency = 1
+        else:
+            self.num_tasks = 4
+            self.num_gpus_per_node = 1
+            self.num_tasks_per_node = 1
+            self.modules = ['craype-accel-nvidia60', 'CMake']
+            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
+            self.build_system.config_opts += ['-DMPI_VENDOR=mvapich2',
+                                              '-DCUDA_COMPUTE_CAPABILITY="sm_60"']
+            self.build_system.max_concurrency = 8
+
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
-            'elapsed_time':
-            sn.extractsingle(r'ELAPSED TIME:\s+(?P<elapsed_time>\S+)',
-                             self.stdout, 'elapsed_time', float, 1)
+            'elapsed_time': sn.extractsingle(r'ELAPSED TIME:\s+(\S+)',
+                                             self.stdout, 1, float, 1)
         }
+        ref_values = {
+            'kesch': {
+                'nocomm':  5.7878,
+                'nocomp':  5.62155,
+                'default': 5.53777
+            },
+            'daint': {
+                'nocomm':  0.0171947,
+                'nocomp':  0.0137893,
+                'default': 0.0138493
+            }
+        }
+        if self.current_system.name == 'dom':
+            sysname = 'daint'
+        else:
+            sysname = self.current_system.name
 
-        if not exec_parameter:
-            ref = 5.53777
-        elif exec_parameter == '--nocomm':
-            ref = 5.7878
-        elif exec_parameter == '--nocomp':
-            ref = 5.62155
-
+        ref = ref_values[sysname][variant]
         self.reference = {
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
-        }
-
-        self.modules += [
-            'craype-haswell', 'craype-network-infiniband',
-            'mvapich2gdr_gnu/2.2_cuda_8.0', 'cray-libsci_acc/17.03.1', 'cmake'
-        ]
-
-        self.variables = {
-            'G2G': '1',
-            'jobs': '144',
-            'RDMA_FAST_PATH': '0',
-            'MV2_USE_CUDA': '1'
-        }
-
-        self.pre_run = [
-            'export BOOST_LIBRARY_PATH=/apps/escha/UES/PrgEnv-gnu-17.02'\
-            '/modulefiles/boost/1.63.0-gmvolf-17.02-python-2.7.13/lib',
-            'export LD_LIBRARY_PATH=$BOOST_LIBRARY_PATH:$LD_LIBRARY_PATH',
-            'export XXX_LIBRARY_PATH=/apps/escha/UES/RH7.3_experimental/pgi'\
-            '/17.10/linux86-64/17.10/REDIST',
-            'export LD_LIBRARY_PATH=$XXX_LIBRARY_PATH:$LD_LIBRARY_PATH',
-            'export LD_PRELOAD=/opt/mvapich2/gdr/2.3a/mcast/no-openacc'\
-            '/cuda8.0/mofed3.4/mpirun/pgi17.10/lib64/libmpi.so',
-        ]
-
-        self.extra_resources = {
-            'distribution': {},
-            'cpu_bind': {}
+            '*': {
+                'elapsed_time': (ref, None, 0.15)
+            }
         }
 
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
-            self.build_system.fflags = ['-O2', '-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-pgi'):
-            self.build_system.fflags = [self._pgi_flags]
-        elif environ.name.startswith('PrgEnv-gnu'):
-            self.build_system.fflags = ['-O2']
-
-        super().setup(partition, environ, **job_opts)
+    def setup(self, *args, **kwargs):
+        super().setup(*args, **kwargs)
+        if self.current_system.name == 'kesch':
+            self.job.launcher.options = ['--distribution=block:block',
+                                         '--cpu_bind=q']
