@@ -10,10 +10,10 @@ class Alltoallv(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-            self._pgi_flags = '-acc -ta=tesla:cc60 -Mnorpath'
+            self._pgi_flags = ['-acc', '-ta=tesla:cc60', '-Mnorpath']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            self._pgi_flags = '-O2 -ta=tesla,cc35,cuda8.0'
+            self._pgi_flags = ['-O2', '-ta=tesla,cc35,cuda8.0']
 
         self.num_tasks = 144
         self.num_gpus_per_node = 16
@@ -60,7 +60,7 @@ class Alltoallv(rfm.RegressionTest):
             'G2G': '1',
             'jobs': '144',
             'RDMA_FAST_PATH': '0',
-            'MV2_USE_CUDA': '1',
+            'MV2_USE_CUDA': '1'
         }
 
         self.pre_run = [
