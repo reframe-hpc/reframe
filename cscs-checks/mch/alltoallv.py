@@ -19,35 +19,42 @@ class Alltoallv(rfm.RegressionTest):
         self.num_gpus_per_node = 16
         self.num_tasks_per_node = 16
         self.num_tasks_per_socket = 8
-        self.executable = 'src/comm_overlap_benchmark %s' % exec_parameter
-        self.sourcesdir = ('https://github.com/cosunae/comm_overlap_bench')
-        self.sourcepath = 'src'
+        self.executable = ('build/src/comm_overlap_benchmark '
+                           '%s' % exec_parameter)
+        self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
+        # Checkout to the branch alltoallv
+        self.prebuild_cmd = ['git checkout alltoallv']
+        self.build_system = 'CMake'
+        self.build_system.builddir = 'build'
+        self.build_system.config_opts = ['-DMPI_VENDOR=mvapich2',
+                                         '-DCUDA_COMPUTE_CAPABILITY="sm_37"',
+                                         '-DCMAKE_BUILD_TYPE=Release',
+                                         '-DENABLE_MPI_TIMER=ON']
+        self.build_system.max_concurrency = 1
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'ELAPSED TIME:\s+(?P<perf>\S+)',
-                                     self.stdout, 'perf', float, 1)
+            'elapsed_time':
+            sn.extractsingle(r'ELAPSED TIME:\s+(?P<elapsed_time>\S+)',
+                             self.stdout, 'elapsed_time', float, 1)
         }
 
-        if exec_parameter == '':
-            self.reference = {
-                'kesch:cn': {
-                    'perf': (5.53777, None, 0.15)
-                },
-            }
+        if not exec_parameter:
+            ref = 5.53777
         elif exec_parameter == '--nocomm':
-            self.reference = {
-                'kesch:cn': {
-                    'perf': (5.7878, None, 0.15)
-                },
-            }
+            ref = 5.7878
         elif exec_parameter == '--nocomp':
-            self.reference = {
-                'kesch:cn': {
-                    'perf': (5.62155, None, 0.15)
-                },
-            }
+            ref = 5.62155
 
-        self.modules += ['craype-haswell', 'craype-network-infiniband', 'mvapich2gdr_gnu/2.2_cuda_8.0', 'cray-libsci_acc/17.03.1', 'cmake']
+        self.reference = {
+            'kesch:cn': {
+                'elapsed_time': (ref, None, 0.15)
+            },
+        }
+
+        self.modules += [
+            'craype-haswell', 'craype-network-infiniband',
+            'mvapich2gdr_gnu/2.2_cuda_8.0', 'cray-libsci_acc/17.03.1', 'cmake'
+        ]
 
         self.variables = {
             'G2G': '1',
@@ -56,24 +63,15 @@ class Alltoallv(rfm.RegressionTest):
             'MV2_USE_CUDA': '1',
         }
 
-        # Checkout to the branch alltoallv
-        self.prebuild_cmd = [
-            'git checkout alltoallv',
-            'mkdir build_kesch_mvapich22',
-            'pushd build_kesch_mvapich22 &>/dev/null',
-            'cmake . \
-             -DMPI_VENDOR=mvapich2 \
-             -DCUDA_COMPUTE_CAPABILITY="sm_37" \
-             -DCMAKE_BUILD_TYPE=Release \
-             -DENABLE_MPI_TIMER=ON'
-        ]
-
         self.pre_run = [
-            'export BOOST_LIBRARY_PATH=/apps/escha/UES/PrgEnv-gnu-17.02/modulefiles/boost/1.63.0-gmvolf-17.02-python-2.7.13/lib',
+            'export BOOST_LIBRARY_PATH=/apps/escha/UES/PrgEnv-gnu-17.02'\
+            '/modulefiles/boost/1.63.0-gmvolf-17.02-python-2.7.13/lib',
             'export LD_LIBRARY_PATH=$BOOST_LIBRARY_PATH:$LD_LIBRARY_PATH',
-            'export XXX_LIBRARY_PATH=/apps/escha/UES/RH7.3_experimental/pgi/17.10/linux86-64/17.10/REDIST',
+            'export XXX_LIBRARY_PATH=/apps/escha/UES/RH7.3_experimental/pgi'\
+            '/17.10/linux86-64/17.10/REDIST',
             'export LD_LIBRARY_PATH=$XXX_LIBRARY_PATH:$LD_LIBRARY_PATH',
-            'export LD_PRELOAD=/opt/mvapich2/gdr/2.3a/mcast/no-openacc/cuda8.0/mofed3.4/mpirun/pgi17.10/lib64/libmpi.so',
+            'export LD_PRELOAD=/opt/mvapich2/gdr/2.3a/mcast/no-openacc'\
+            '/cuda8.0/mofed3.4/mpirun/pgi17.10/lib64/libmpi.so',
         ]
 
         self.extra_resources = {
@@ -86,10 +84,10 @@ class Alltoallv(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
-            environ.fflags = '-O2 -hacc -hnoomp'
+            self.build_system.fflags = ['-O2', '-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
-            environ.fflags = self._pgi_flags
+            self.build_system.fflags = [self._pgi_flags]
         elif environ.name.startswith('PrgEnv-gnu'):
-            environ.fflags = '-O2'
+            self.build_system.fflags = ['-O2']
 
         super().setup(partition, environ, **job_opts)
