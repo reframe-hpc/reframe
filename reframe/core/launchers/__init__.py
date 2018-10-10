@@ -1,6 +1,7 @@
 import abc
 
-from reframe.core.fields import TypedListField
+import reframe.core.fields as fields
+import reframe.utility.typecheck as typ
 
 
 class JobLauncher(abc.ABC):
@@ -23,7 +24,7 @@ class JobLauncher(abc.ABC):
     #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
-    options = TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     def __init__(self, options=[]):
         self.options = list(options)

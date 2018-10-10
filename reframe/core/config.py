@@ -4,6 +4,7 @@ import collections.abc
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
+import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError,
                                      ReframeError,
                                      ReframeFatalError,
@@ -32,7 +33,7 @@ def settings():
 
 class SiteConfiguration:
     """Holds the configuration of systems and environments"""
-    _modes = fields.ScopedDictField('_modes', (list, str))
+    _modes = fields.ScopedDictField('_modes', types.List[str])
 
     def __init__(self, dict_config=None):
         self._systems = {}

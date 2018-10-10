@@ -224,8 +224,11 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'variables': {
+                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                    },
                     'cc': 'mpicc',
-                    'cxx': 'mpic++',
+                    'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {

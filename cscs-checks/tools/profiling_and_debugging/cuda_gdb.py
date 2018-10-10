@@ -9,14 +9,14 @@ from reframe.core.launchers import LauncherWrapper
 class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
         self.executable = 'cuda-gdb cuda_gdb_check'
         if self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit']
+            self.modules = ['craype-accel-nvidia35']
         else:
             self.modules = ['craype-accel-nvidia60']
 
