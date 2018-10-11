@@ -477,11 +477,6 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         # Skip this test for PBS, since we the minimum time limit is 1min
         self.skipTest("PBS minimum time limit is 60s")
 
-    def test_guess_num_tasks(self):
-        self.testjob._num_tasks = 0
-        with self.assertRaises(JobError):
-            self.testjob.guess_num_tasks()
-
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
     def create_dummy_nodes(obj):
