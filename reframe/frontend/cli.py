@@ -1,4 +1,5 @@
 import os
+import inspect
 import socket
 import sys
 
@@ -19,11 +20,30 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def list_checks(checks, printer):
+def format_check_description(check, detailed):
+    if detailed:
+        return ('  * %s (found in %s)\n'
+                '      - description: %s\n'
+                '      - systems: %s\n'
+                '      - environments: %s\n'
+                '      - modules: %s\n'
+                '      - tags: %s\n'
+                '      - maintainers: %s' %
+                (check.name, inspect.getfile(type(check)), check.descr,
+                 ', '.join(check.valid_systems),
+                 ', '.join(check.valid_prog_environs),
+                 ', '.join(check.modules),
+                 ', '.join(check.tags), ', '.join(check.maintainers)))
+    else:
+        return ('  * %s (found in %s)' %
+                (check.name, inspect.getfile(type(check))))
+
+
+def list_checks(checks, printer, detailed=False):
     printer.info('List of matched checks')
     printer.info('======================')
     for c in checks:
-        printer.info('  * %s' % c)
+        printer.info(format_check_description(c, detailed))
 
     printer.info('Found %d check(s).' % len(checks))
 
@@ -103,7 +123,10 @@ def main():
     # Action options
     action_options.add_argument(
         '-l', '--list', action='store_true',
-        help='list matched regression checks')
+        help='List matched regression checks')
+    action_options.add_argument(
+        '-L', '--list-detailed', action='store_true',
+        help='Detailed description of matched regression checks')
     action_options.add_argument(
         '-r', '--run', action='store_true',
         help='Run regression with the selected checks')
@@ -430,6 +453,9 @@ def main():
         if options.list:
             # List matched checks
             list_checks(list(checks_matched), printer)
+        elif options.list_detailed:
+            # List matched checks with details
+            list_checks(list(checks_matched), printer, detailed=True)
 
         elif options.run:
             # Setup the execution policy
