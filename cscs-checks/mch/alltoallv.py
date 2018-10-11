@@ -28,8 +28,10 @@ class Alltoallv(rfm.RegressionTest):
             self.num_tasks_per_socket = 8
             self.modules = ['craype-accel-nvidia35', 'cmake']
             self.variables['MV2_USE_CUDA'] = '1'
-            self.build_system.config_opts += ['-DMPI_VENDOR=mvapich2',
-                                              '-DCUDA_COMPUTE_CAPABILITY="sm_37"']
+            self.build_system.config_opts += [
+                '-DMPI_VENDOR=mvapich2',
+                '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
+            ]
             self.build_system.max_concurrency = 1
         else:
             self.num_tasks = 4
@@ -37,8 +39,9 @@ class Alltoallv(rfm.RegressionTest):
             self.num_tasks_per_node = 1
             self.modules = ['craype-accel-nvidia60', 'CMake']
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
-            self.build_system.config_opts += ['-DMPI_VENDOR=mvapich2',
-                                              '-DCUDA_COMPUTE_CAPABILITY="sm_60"']
+            self.build_system.config_opts += [
+                '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
+            ]
             self.build_system.max_concurrency = 8
 
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
