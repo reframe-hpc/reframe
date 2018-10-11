@@ -8,6 +8,7 @@ class IorCheck(rfm.RegressionTest):
     def __init__(self, fs_mount_point):
         super().__init__()
         self.descr = 'IOR check (%s)' % fs_mount_point
+        self.tags = {'ops', fs_mount_point}
 
         if fs_mount_point == '/scratch/snx1600':
             self.valid_systems = ['daint:gpu']
@@ -50,8 +51,7 @@ class IorCheck(rfm.RegressionTest):
             self.valid_systems = ['monch:compute']
 
         self.valid_prog_environs = ['PrgEnv-cray']
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'IOR')
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
         self.executable = os.path.join('src', 'C', 'IOR')
         self.build_system = 'Make'
         self.build_system.options = ['posix', 'mpiio']
@@ -104,7 +104,6 @@ class IorCheck(rfm.RegressionTest):
         }
 
         self.maintainers = ['SO', 'MP']
-        self.tags = {'ops', fs_mount_point}
 
 
 @rfm.parameterized_test(['/scratch/snx1600', 'MPIIO'],
@@ -122,11 +121,11 @@ class IorReadCheck(IorCheck):
         if ior_type == 'MPIIO':
             self.executable_opts = ['-r', '-a MPIIO', '-B', '-E', '-F',
                                     '-t 64m', '-b 32g', '-D 300', '-k',
-                                    ' -o %s' % self.test_file]
+                                    '-o', self.test_file]
         elif ior_type == 'POSIX':
             self.executable_opts = ['-r', '-a POSIX', '-B', '-E', '-F',
                                     '-t 1m', '-b 100m', '-D 60', '-k',
-                                    '-o %s' % self.test_file]
+                                    '-o', self.test_file]
 
         self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
         self.perf_patterns = {
@@ -152,11 +151,11 @@ class IorWriteCheck(IorCheck):
         if ior_type == 'MPIIO':
             self.executable_opts = ['-w', '-a MPIIO', '-B', '-E', '-F',
                                     '-t 64m', '-b 46g', '-D 300',
-                                    '-o %s' % self.test_file]
+                                    '-o', self.test_file]
         elif ior_type == 'POSIX':
             self.executable_opts = ['-w', '-a POSIX', '-B', '-E', '-F',
                                     '-t 1m', '-b 100m', '-D 60'
-                                    '-o %s' % self.test_file]
+                                    '-o', self.test_file]
 
         self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
         self.perf_patterns = {
@@ -196,15 +195,15 @@ class IoMonchAcceptanceBase(IorCheck):
         self.tags = {'monch_acceptance'}
 
 
-@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', task]
-                          for task in [40, 80, 160]))
+@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
+                          for num_tasks in [40, 80, 160]))
 class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
     def __init__(self, fs_mount_point, ior_type, num_tasks):
         super().__init__(fs_mount_point, ior_type, num_tasks)
         if ior_type == 'MPIIO':
             self.executable_opts = ['-r', '-a MPIIO', '-B', '-E', '-F',
                                     '-t 16m', '-b 8g', '-D 10', '-k',
-                                    '-o %s' % self.test_file]
+                                    '-o', self.test_file]
         self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
         self.perf_patterns = {
             'read_bw': sn.extractsingle(
@@ -214,15 +213,14 @@ class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
         self.tags |= {'read'}
 
 
-@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', task]
-                          for task in [40, 80, 160]))
+@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
+                          for num_tasks in [40, 80, 160]))
 class IorWriteScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
     def __init__(self, fs_mount_point, ior_type, num_tasks):
         super().__init__(fs_mount_point, ior_type, num_tasks)
         if ior_type == 'MPIIO':
             self.executable_opts = ['-w', '-a MPIIO', '-B', '-E', '-F',
-                                    '-t 16m', '-b 8g',
-                                    '-o %s' % self.test_file]
+                                    '-t 16m', '-b 8g', '-o', self.test_file]
         self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
         self.perf_patterns = {
             'write_bw': sn.extractsingle(
