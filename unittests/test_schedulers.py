@@ -169,6 +169,11 @@ class _TestJob:
         for l in self.testjob.emit_preamble():
             self.assertNotEqual(l, '')
 
+    def test_guess_num_tasks(self):
+        self.testjob._num_tasks = 0
+        with self.assertRaises(JobError):
+            self.testjob.guess_num_tasks()
+
 
 class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
