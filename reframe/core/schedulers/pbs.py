@@ -88,13 +88,17 @@ class PbsJob(sched.Job):
         preamble.append('cd %s' % self.workdir)
         return preamble
 
+    def guess_num_tasks(self):
+        raise JobError(
+            'pbs scheduler does not support flexible number of tasks')
+
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS
         # Slurm wrappers.
         cmd = 'qsub -o %s -e %s %s' % (self.stdout, self.stderr,
                                        self.script_filename)
         completed = self._run_command(cmd, settings().job_submit_timeout)
-        jobid_match = re.search('^(?P<jobid>\S+)', completed.stdout)
+        jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobError('could not retrieve the job id '
                            'of the submitted job')
