@@ -27,6 +27,8 @@ class TrilinosTest(rfm.RegressionTest):
             'PrgEnv-pgi': ['-mp', '-w']
         }
         self.sourcepath = 'example_AmesosFactory_HB.cpp'
+        self.pre_run = ['wget ftp://math.nist.gov/pub/MatrixMarket2/'
+                        'misc/hamm/add20.rua.gz', 'gunzip add20.rua.gz']
         self.executable_opts = ['add20.rua']
 
         # NOTE: default cray-trilinos module in PE/18.08 does not work

@@ -80,11 +80,11 @@ class P2PBaseTest(rfm.RegressionTest):
         self.strict_check = False
         self.num_tasks = 2
         self.num_tasks_per_node = 1
-        self.descr = 'P2P microbenchmark '
+        self.descr = 'P2P microbenchmark'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_p2p'
         if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
@@ -207,8 +207,8 @@ class G2GBandwidthTest(P2PBaseTest):
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-
-        if self.current_system.name == 'kesch':
+        elif self.current_system.name == 'kesch':
+            self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
@@ -244,8 +244,8 @@ class G2GLatencyTest(P2PBaseTest):
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
-
-        if self.current_system.name == 'kesch':
+        elif self.current_system.name == 'kesch':
+            self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']

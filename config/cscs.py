@@ -129,7 +129,7 @@ class ReframeSettings:
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
                     }
                 }
@@ -222,8 +222,11 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'variables': {
+                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                    },
                     'cc': 'mpicc',
-                    'cxx': 'mpic++',
+                    'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {

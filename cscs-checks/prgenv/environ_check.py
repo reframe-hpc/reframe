@@ -1,4 +1,5 @@
 import reframe as rfm
+import reframe.utility.sanity as sn
 
 from reframe.core.runtime import runtime
 
@@ -40,16 +41,18 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'Ensure programming environment is loaded correctly'
-        self.valid_systems = ['daint:login', 'dom:login', 'kesch:login']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-pgi']
+        self.valid_systems = ['daint:login', 'dom:login']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
 
-        if self.current_system.name != 'kesch':
-            # PrgEnv-intel is not present on Kesch
-            self.valid_prog_environs.append('PrgEnv-intel')
-
+        self.executable = 'module'
+        self.executable_opts = ['list', '-t']
+        self.sanity_patterns = sn.assert_found(self.env_module_patt,
+                                               self.stderr)
         self.maintainers = ['VK', 'CB']
         self.tags = {'production'}
 
-    def check_sanity(self):
-        return runtime().modules_system.is_module_loaded(
-            self.current_environ.name)
+    @property
+    @sn.sanity_function
+    def env_module_patt(self):
+        return r'^%s' % self.current_environ.name
