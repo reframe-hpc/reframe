@@ -20,30 +20,27 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def format_check_description(check, detailed):
+def format_check(check, detailed):
+    lines = ['  * %s (found in %s)' % (check.name,
+                                       inspect.getfile(type(check)))]
     if detailed:
-        return ('  * %s (found in %s)\n'
-                '      - description: %s\n'
-                '      - systems: %s\n'
-                '      - environments: %s\n'
-                '      - modules: %s\n'
-                '      - tags: %s\n'
-                '      - maintainers: %s' %
-                (check.name, inspect.getfile(type(check)), check.descr,
-                 ', '.join(check.valid_systems),
-                 ', '.join(check.valid_prog_environs),
-                 ', '.join(check.modules),
-                 ', '.join(check.tags), ', '.join(check.maintainers)))
-    else:
-        return ('  * %s (found in %s)' %
-                (check.name, inspect.getfile(type(check))))
+        lines += [
+            '      - description: %s' % check.descr,
+            '      - systems: %s' % ', '.join(check.valid_systems),
+            '      - environments: %s' % ', '.join(check.valid_prog_environs),
+            '      - modules: %s' % ', '.join(check.modules),
+            '      - tags: %s' % ', '.join(check.tags),
+            '      - maintainers: %s' % ', '.join(check.maintainers)
+        ]
+
+    return '\n'.join(lines)
 
 
 def list_checks(checks, printer, detailed=False):
     printer.info('List of matched checks')
     printer.info('======================')
     for c in checks:
-        printer.info(format_check_description(c, detailed))
+        printer.info(format_check(c, detailed))
 
     printer.info('Found %d check(s).' % len(checks))
 
@@ -126,7 +123,7 @@ def main():
         help='List matched regression checks')
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
-        help='Detailed description of matched regression checks')
+        help='List matched regression checks with a detailed description')
     action_options.add_argument(
         '-r', '--run', action='store_true',
         help='Run regression with the selected checks')

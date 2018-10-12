@@ -1161,7 +1161,7 @@ class RegressionTest:
 
     def __str__(self):
         return ("%s(name='%s', prefix='%s')" %
-                (self.__class__.__name__, self.name, self.prefix))
+                (type(self).__name__, self.name, self.prefix))
 
 
 class RunOnlyRegressionTest(RegressionTest):
