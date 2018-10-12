@@ -1160,8 +1160,8 @@ class RegressionTest:
             self._current_partition.local_env.unload()
 
     def __str__(self):
-        return ("%s(name='%s', prefix='%s')" %
-                (type(self).__name__, self.name, self.prefix))
+        return "%s(name='%s', prefix='%s')" % (type(self).__name__,
+                                               self.name, self.prefix)
 
 
 class RunOnlyRegressionTest(RegressionTest):
