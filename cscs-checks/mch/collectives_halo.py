@@ -2,9 +2,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class Alltoallv(rfm.RegressionTest):
-    def __init__(self, variant):
+class CollectivesBaseTest(rfm.RegressionTest):
+    def __init__(self, variant, bench_reference):
         super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -13,9 +12,6 @@ class Alltoallv(rfm.RegressionTest):
         if variant != 'default':
             self.executable_opts = ['--' + variant]
 
-        self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
-        # Checkout to the branch alltoallv
-        self.prebuild_cmd = ['git checkout alltoallv']
         self.build_system = 'CMake'
         self.build_system.builddir = 'build'
         self.build_system.config_opts = ['-DCMAKE_BUILD_TYPE=Release',
@@ -47,7 +43,7 @@ class Alltoallv(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
             'elapsed_time': sn.extractsingle(r'ELAPSED TIME:\s+(\S+)',
-                                             self.stdout, 1, float, 1)
+                                             self.stdout, 1, float, -1)
         }
         ref_values = {
             'kesch': {
@@ -66,12 +62,15 @@ class Alltoallv(rfm.RegressionTest):
         else:
             sysname = self.current_system.name
 
-        ref = ref_values[sysname][variant]
+        ref = bench_reference[sysname][variant]
         self.reference = {
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
-            '*': {
+            'daint': {
+                'elapsed_time': (ref, None, 0.15)
+            },
+            'dom': {
                 'elapsed_time': (ref, None, 0.15)
             }
         }
@@ -84,3 +83,43 @@ class Alltoallv(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.job.launcher.options = ['--distribution=block:block',
                                          '--cpu_bind=q']
+
+
+@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
+class AlltoallvTest(CollectivesBaseTest):
+    def __init__(self, variant):
+        super().__init__(variant,
+                         {
+                             'kesch': {
+                                 'nocomm':  5.7878,
+                                 'nocomp':  5.62155,
+                                 'default': 5.53777
+                             },
+                             'daint': {
+                                 'nocomm':  0.0171947,
+                                 'nocomp':  0.0137893,
+                                 'default': 0.0138493
+                             }
+                         })
+        self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
+        self.prebuild_cmd = ['git checkout alltoallv']
+
+
+@rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
+class HaloExchangeTest(CollectivesBaseTest):
+    def __init__(self, variant):
+        super().__init__(variant,
+                         {
+                             'kesch': {
+                                 'nocomm':  5.7878,
+                                 'nocomp':  5.62155,
+                                 'default': 5.53777
+                             },
+                             'daint': {
+                                 'nocomm':  0.978306,
+                                 'nocomp':  1.36716,
+                                 'default': 2.53509
+                             }
+                         })
+        self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'
+        self.prebuild_cmd = ['git checkout barebones']
