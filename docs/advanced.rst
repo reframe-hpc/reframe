@@ -356,7 +356,7 @@ The framework will try to generate unique names for the generated tests by strin
 .. code-block:: none
 
    Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
-   Reframe version: 2.13-dev0
+   Reframe version: 2.15-dev0
    Launched by user: XXX
    Launched on host: daint101
    Reframe paths
@@ -369,9 +369,7 @@ The framework will try to generate unique names for the generated tests by strin
    List of matched checks
    ======================
      * MatrixVectorTest_MPI (Matrix-vector multiplication test (MPI))
-           tags: [tutorial], maintainers: [you-can-type-your-email-here]
      * MatrixVectorTest_OpenMP (Matrix-vector multiplication test (OpenMP))
-           tags: [tutorial], maintainers: [you-can-type-your-email-here]
    Found 2 check(s).
 
 

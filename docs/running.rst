@@ -31,7 +31,9 @@ Currently there are only two available actions:
 Listing of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To retrieve a listing of the selected checks, you must specify the ``-l`` or ``--list`` options.
+There are two ways to retrieve a listing of the selected checks. One is by specifying the ``-l`` or ``--list`` option.
+This will provide a list with a brief description of the test containing only the name of the checks and the path to the
+file on which they are defined.
 An example listing of checks is the following that lists all the tests found under the ``tutorial/`` folder:
 
 .. code-block:: bash
@@ -56,48 +58,133 @@ The output looks like:
    List of matched checks
    ======================
      * Example5Test (found in /path/to/reframe/tutorial/example5.py)
-           descr: Matrix-vector multiplication example with CUDA
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example1Test (found in /path/to/reframe/tutorial/example1.py)
-           descr: Simple matrix-vector multiplication example
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example4Test (found in /path/to/reframe/tutorial/example4.py)
-           descr: Matrix-vector multiplication example with OpenACC
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * SerialTest (found in /path/to/reframe/tutorial/example8.py)
-           descr: Serial matrix-vector multiplication
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
-           descr: OpenMP matrix-vector multiplication
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * MPITest (found in /path/to/reframe/tutorial/example8.py)
-           descr: MPI matrix-vector multiplication
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
-           descr: OpenACC matrix-vector multiplication
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * CudaTest (found in /path/to/reframe/tutorial/example8.py)
-           descr: CUDA matrix-vector multiplication
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example3Test (found in /path/to/reframe/tutorial/example3.py)
-           descr: Matrix-vector multiplication example with MPI
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example7Test (found in /path/to/reframe/tutorial/example7.py)
-           descr: Matrix-vector multiplication (CUDA performance test)
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example6Test (found in /path/to/reframe/tutorial/example6.py)
-           descr: Matrix-vector multiplication with L2 norm check
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
-           descr: Matrix-vector multiplication example with OpenMP
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
      * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
-           descr: Matrix-vector multiplication example with OpenMP
-           tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
    Found 13 check(s).
 
+To retrieve a listing with a detailed information about the checks, the options ``-L`` or ``--list-detailed``
+must be specified. As suggested by its name, this options provide a listing with a detailed description of
+each checks. In the example above, using ``-L`` instead of ``-l``, the following will be printed:
 
-By default, this listing shows all the tests supported by the current system and contains the name of the check, its description, the tags associated with it and a list of its maintainers.
+.. code-block:: none
+
+   Command line: ./bin/reframe -c tutorial/ -L
+   Reframe version: 2.15-dev0
+   Launched by user: USER
+   Launched on host: daint103
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/'
+       Stage dir prefix  : /path/to/reframe/stage/
+       Output dir prefix : /path/to/reframe/output/
+       Logging dir       : /path/to/reframe/logs
+   List of matched checks
+   ======================
+     * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+         - description: Matrix-vector multiplication example with CUDA
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+         - description: Simple matrix-vector multiplication example
+         - systems: *
+         - environments: *
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+         - description: Matrix-vector multiplication example with OpenACC
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-pgi
+         - modules: craype-accel-nvidia60
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: Serial matrix-vector multiplication
+         - systems: *
+         - environments: *
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: OpenMP matrix-vector multiplication
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * MPITest (found in /path/to/reframe/tutorial/example8.py)
+         - description: MPI matrix-vector multiplication
+         - systems: daint:gpu, daint:mc
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: OpenACC matrix-vector multiplication
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-pgi
+         - modules: craype-accel-nvidia60
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: CUDA matrix-vector multiplication
+         - systems: daint:gpu
+         - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+         - description: Matrix-vector multiplication example with MPI
+         - systems: daint:gpu, daint:mc
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+         - description: Matrix-vector multiplication (CUDA performance test)
+         - systems: daint:gpu
+         - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+         - description: Matrix-vector multiplication with L2 norm check
+         - systems: *
+         - environments: *
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+         - description: Matrix-vector multiplication example with OpenMP
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+         - description: Matrix-vector multiplication example with OpenMP
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules: 
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+   Found 13 check(s).
+
+By default, both types of listing shows all the tests supported by the current system and contains the name of the check, its description, the tags associated with it and a list of its maintainers.
 
 .. note::
    .. versionchanged:: 2.15
@@ -123,7 +210,7 @@ The output of the regression run looks like the following:
 .. code-block:: none
 
   Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
-  Reframe version: 2.13-dev0
+  Reframe version: 2.15-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -295,7 +382,7 @@ For example, you can select only the ``Example7Test`` from the tutorial as follo
 .. code-block:: none
 
   Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
-  Reframe version: 2.13-dev0
+  Reframe version: 2.15-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -308,8 +395,6 @@ For example, you can select only the ``Example7Test`` from the tutorial as follo
   List of matched checks
   ======================
     * Example7Test (found in /path/to/reframe/tutorial/example7.py)
-          descr: Matrix-vector multiplication (CUDA performance test)
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
   Found 1 check(s).
 
 
@@ -318,7 +403,7 @@ Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
 .. code-block:: none
 
   Command line: ./bin/reframe -c tutorial -x Example7Test -l
-  Reframe version: 2.13-dev0
+  Reframe version: 2.15-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -331,41 +416,17 @@ Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
   List of matched checks
   ======================
     * Example5Test (found in /path/to/reframe/tutorial/example5.py)
-          descr: Matrix-vector multiplication example with CUDA
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example1Test (found in /path/to/reframe/tutorial/example1.py)
-          descr: Simple matrix-vector multiplication example
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example4Test (found in /path/to/reframe/tutorial/example4.py)
-          descr: Matrix-vector multiplication example with OpenACC
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * SerialTest (found in /path/to/reframe/tutorial/example8.py)
-          descr: Serial matrix-vector multiplication
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
-          descr: OpenMP matrix-vector multiplication
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * MPITest (found in /path/to/reframe/tutorial/example8.py)
-          descr: MPI matrix-vector multiplication
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
-          descr: OpenACC matrix-vector multiplication
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * CudaTest (found in /path/to/reframe/tutorial/example8.py)
-          descr: CUDA matrix-vector multiplication
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example3Test (found in /path/to/reframe/tutorial/example3.py)
-          descr: Matrix-vector multiplication example with MPI
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example6Test (found in /path/to/reframe/tutorial/example6.py)
-          descr: Matrix-vector multiplication with L2 norm check
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
-          descr: Matrix-vector multiplication example with OpenMP
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
-          descr: Matrix-vector multiplication example with OpenMP
-          tags: {'tutorial'}, maintainers: ['you-can-type-your-email-here']
   Found 12 check(s).
 
 
@@ -452,7 +513,7 @@ This is useful if you want to check the directories that ReFrame will create.
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
-  Reframe version: 2.13-dev0
+  Reframe version: 2.15-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -682,7 +743,7 @@ The attributes of this handler are the following:
   .. code-block:: none
 
     Command line: ./reframe.py --prefix=/foo --system=generic -l
-    Reframe version: 2.13-dev0
+    Reframe version: 2.15-dev0
     Launched by user: USER
     Launched on host: HOSTNAME
     Reframe paths
@@ -776,7 +837,7 @@ Here is an example output of ReFrame using asynchronous execution policy:
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 2.13-dev0
+  Reframe version: 2.15-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
