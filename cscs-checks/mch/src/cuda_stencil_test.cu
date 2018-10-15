@@ -77,6 +77,8 @@ __global__ void bigstencil(int* in, int* out) {
 
 int main() {
 
+  // CSCS: Initialize CUDA runtime outside measurement region
+  cudaFree(0);
   chrono_clock::time_point time_start, time_end;
   time_start = chrono_clock::now();
 

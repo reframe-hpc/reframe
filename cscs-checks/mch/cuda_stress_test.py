@@ -26,13 +26,13 @@ class CudaStressTest(rfm.RegressionTest):
         }
         self.reference = {
             'daint:gpu': {
-                'time': (1.62076, None, 0.05)
+                'time': (1.41184, None, 0.05)
             },
             'dom:gpu': {
-                'time': (1.56953, None, 0.05)
+                'time': (1.39758, None, 0.05)
             },
             'kesch:cn': {
-                'time': (2.69039, None, 0.05)
+                'time': (2.12769, None, 0.05)
             }
         }
         self.tags = {'production'}
