@@ -356,7 +356,7 @@ The framework will try to generate unique names for the generated tests by strin
 .. code-block:: none
 
    Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
-   Reframe version: 2.15-dev0
+   Reframe version: 2.15-dev1
    Launched by user: XXX
    Launched on host: daint101
    Reframe paths

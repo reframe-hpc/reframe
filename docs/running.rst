@@ -31,9 +31,8 @@ Currently there are only two available actions:
 Listing of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are two ways to retrieve a listing of the selected checks. One is by specifying the ``-l`` or ``--list`` option.
-This will provide a list with a brief description of the test containing only the name of the checks and the path to the
-file on which they are defined.
+To retrieve a listing of the selected checks, you must specify the ``-l`` or ``--list`` options.
+This will provide a list with a brief description for each test containing only its name and the path to the file where it is defined.
 An example listing of checks is the following that lists all the tests found under the ``tutorial/`` folder:
 
 .. code-block:: bash
@@ -45,7 +44,7 @@ The output looks like:
 .. code-block:: none
 
    Command line: ./bin/reframe -c tutorial/ -l
-   Reframe version: 2.15-dev0
+   Reframe version: 2.15-dev1
    Launched by user: USER
    Launched on host: daint103
    Reframe paths
@@ -72,14 +71,13 @@ The output looks like:
      * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
    Found 13 check(s).
 
-To retrieve a listing with a detailed information about the checks, the options ``-L`` or ``--list-detailed``
-must be specified. As suggested by its name, this options provide a listing with a detailed description of
-each checks. In the example above, using ``-L`` instead of ``-l``, the following will be printed:
+You may also retrieve a listing with detailed information about the each check using the option ``-L`` or ``--list-detailed``.
+The following example lists detailed information about the tutorial check:
 
 .. code-block:: none
 
    Command line: ./bin/reframe -c tutorial/ -L
-   Reframe version: 2.15-dev0
+   Reframe version: 2.15-dev1
    Launched by user: USER
    Launched on host: daint103
    Reframe paths
@@ -102,7 +100,7 @@ each checks. In the example above, using ``-L`` instead of ``-l``, the following
          - description: Simple matrix-vector multiplication example
          - systems: *
          - environments: *
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example4Test (found in /path/to/reframe/tutorial/example4.py)
@@ -116,21 +114,21 @@ each checks. In the example above, using ``-L`` instead of ``-l``, the following
          - description: Serial matrix-vector multiplication
          - systems: *
          - environments: *
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
          - description: OpenMP matrix-vector multiplication
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * MPITest (found in /path/to/reframe/tutorial/example8.py)
          - description: MPI matrix-vector multiplication
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
@@ -151,7 +149,7 @@ each checks. In the example above, using ``-L`` instead of ``-l``, the following
          - description: Matrix-vector multiplication example with MPI
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example7Test (found in /path/to/reframe/tutorial/example7.py)
@@ -165,32 +163,43 @@ each checks. In the example above, using ``-L`` instead of ``-l``, the following
          - description: Matrix-vector multiplication with L2 norm check
          - systems: *
          - environments: *
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
          - description: Matrix-vector multiplication example with OpenMP
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
          - description: Matrix-vector multiplication example with OpenMP
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
-         - modules: 
+         - modules:
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
    Found 13 check(s).
 
-By default, both types of listing shows all the tests supported by the current system and contains the name of the check, its description, the tags associated with it and a list of its maintainers.
+
+The detailed listing shows the description of the test, its supported systems and programming environments (``*`` stands for any system or programming environment), the environment modules that it loads, its tags and its maintainers.
+
+.. warning::
+   The list of modules showed in the detailed listing may not correspond to actual modules loaded by test, if the test customizes its behavior during the setup stage.
+
+
+.. note::
+   .. versionadded:: 2.15
+
+      Support for detailed listings.
+      Standard listing using the ``-l`` option is now shorter.
 
 .. note::
    .. versionchanged:: 2.15
 
       Test listing lists only tests supported by the current system.
-      Previous versions were showing all the found tests.
+      Previous versions were showing all the tests found.
 
 
 Execution of the regression tests
@@ -210,7 +219,7 @@ The output of the regression run looks like the following:
 .. code-block:: none
 
   Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
-  Reframe version: 2.15-dev0
+  Reframe version: 2.13-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -382,7 +391,7 @@ For example, you can select only the ``Example7Test`` from the tutorial as follo
 .. code-block:: none
 
   Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
-  Reframe version: 2.15-dev0
+  Reframe version: 2.15-dev1
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -403,7 +412,7 @@ Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
 .. code-block:: none
 
   Command line: ./bin/reframe -c tutorial -x Example7Test -l
-  Reframe version: 2.15-dev0
+  Reframe version: 2.15-dev1
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -513,7 +522,7 @@ This is useful if you want to check the directories that ReFrame will create.
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
-  Reframe version: 2.15-dev0
+  Reframe version: 2.13-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
@@ -743,7 +752,7 @@ The attributes of this handler are the following:
   .. code-block:: none
 
     Command line: ./reframe.py --prefix=/foo --system=generic -l
-    Reframe version: 2.15-dev0
+    Reframe version: 2.13-dev0
     Launched by user: USER
     Launched on host: HOSTNAME
     Reframe paths
@@ -837,7 +846,7 @@ Here is an example output of ReFrame using asynchronous execution policy:
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 2.15-dev0
+  Reframe version: 2.13-dev0
   Launched by user: USER
   Launched on host: daint103
   Reframe paths
