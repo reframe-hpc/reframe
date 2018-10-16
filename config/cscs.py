@@ -126,7 +126,13 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-cray-c2sm-base',
+                                     'PrgEnv-pgi-c2sm-base',
+                                     'PrgEnv-gnu-c2sm-base',
+                                     'PrgEnv-cray-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu',
+                                     'PrgEnv-cray-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
@@ -236,6 +242,45 @@ class ReframeSettings:
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
+                'PrgEnv-cray-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/cray-env/gpu'],
+                },
+                'PrgEnv-pgi-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/pgi-env/gpu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/gnu-env/gpu'],
+                    'variables': {
+                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                    },
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-cray-c2sm-base': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/cray-env/base'],
+                },
+                'PrgEnv-pgi-c2sm-base': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/pgi-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm-base': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/gnu-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
             },
             'leone': {
                 'PrgEnv-gnu': {
@@ -288,7 +333,8 @@ class ReframeSettings:
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
-                }
+                },
+
             }
         },
 
