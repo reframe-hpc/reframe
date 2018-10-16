@@ -129,7 +129,7 @@ class ReframeSettings:
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
                     }
                 }

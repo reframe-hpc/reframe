@@ -14,7 +14,7 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.num_tasks = 1
         self.num_gpus_per_node = 1
-        self.modules = ['TensorFlow/1.7.0-CrayGNU-18.07-cuda-9.1-python3']
+        self.modules = ['TensorFlow/1.7.0-CrayGNU-18.08-cuda-9.1-python3']
 
         # Checkout to the branch corresponding to the module version of
         # TensorFlow

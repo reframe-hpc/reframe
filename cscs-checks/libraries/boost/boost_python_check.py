@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['1.67.0', '18.07', '2.7'], ['1.67.0', '18.07', '3.6'])
+@rfm.parameterized_test(['1.67.0', '18.08', '2.7'], ['1.67.0', '18.08', '3.6'])
 class BoostCrayGnuPythonTest(rfm.RegressionTest):
     def __init__(self, boost_version, cray_gnu_version, python_version):
         super().__init__()
