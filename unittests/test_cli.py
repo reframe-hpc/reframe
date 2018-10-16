@@ -65,7 +65,7 @@ class TestFrontend(unittest.TestCase):
             ret += ['-r']
         elif self.action == 'list':
             ret += ['-l']
-        elif self.action == 'list_with_details':
+        elif self.action == 'list_detailed':
             ret += ['-L']
         elif self.action == 'help':
             ret += ['-h']
@@ -355,7 +355,7 @@ class TestFrontend(unittest.TestCase):
 
     def test_list_with_details(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
-        self.action = 'list_with_details'
+        self.action = 'list_detailed'
         returncode, stdout, stderr = self._run_reframe()
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
