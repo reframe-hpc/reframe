@@ -39,6 +39,8 @@ Publications
 
 * `Presentation <_static/files/reframe-cug17-slides.pdf>`__ @ `CUG 2017 <https://cug.org/cug-2017/>`__
 
+* Presentation(`pdf <https://github.com/eth-cscs/UserLabDay/blob/master/slides/ci_and_regression/ReFrame_CI.pdf>`__/`pptx <https://github.com/eth-cscs/UserLabDay/blob/master/slides/ci_and_regression/ReFrame_CI.pptx>`__) @ `CSCS User Lab Day 2018 <https://github.com/eth-cscs/UserLabDay>`__
+
 
 
 .. toctree::
