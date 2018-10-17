@@ -45,7 +45,7 @@ class PbsJob(sched.Job):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in self.options:
+        for opt in [*self.sched_access, *self.options]:
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
