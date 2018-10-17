@@ -127,9 +127,9 @@ class ReframeSettings:
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm-base',
-                                     'PrgEnv-pgi-c2sm-base',
-                                     'PrgEnv-gnu-c2sm-base',
+                                     'PrgEnv-cray-c2sm',
+                                     'PrgEnv-pgi-c2sm',
+                                     'PrgEnv-gnu-c2sm',
                                      'PrgEnv-cray-c2sm-gpu',
                                      'PrgEnv-gnu-c2sm-gpu',
                                      'PrgEnv-cray-c2sm-gpu'],
@@ -242,9 +242,20 @@ class ReframeSettings:
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
+                'PrgEnv-cray-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/cray-env/base'],
+                },
                 'PrgEnv-cray-c2sm-gpu': {
                     'type': 'ProgEnvironment',
                     'modules': ['env', 'c2sm/cray-env/gpu'],
+                },
+                'PrgEnv-pgi-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/pgi-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
                 },
                 'PrgEnv-pgi-c2sm-gpu': {
                     'type': 'ProgEnvironment',
@@ -253,30 +264,16 @@ class ReframeSettings:
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
+                'PrgEnv-gnu-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/gnu-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
                 'PrgEnv-gnu-c2sm-gpu': {
                     'type': 'ProgEnvironment',
                     'modules': ['env', 'c2sm/gnu-env/gpu'],
-                    'variables': {
-                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
-                    },
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-cray-c2sm-base': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/cray-env/base'],
-                },
-                'PrgEnv-pgi-c2sm-base': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/pgi-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-gnu-c2sm-base': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/gnu-env/base'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
