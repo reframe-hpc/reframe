@@ -386,6 +386,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
+        self.testjob._flex_alloc_tasks = '0'
         self.testjob._get_available_nodes = lambda: set()
         with self.assertRaises(JobError):
             self.testjob.guess_num_tasks()
@@ -581,16 +582,54 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         # monkey patch `_show_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob._show_nodes = self.create_dummy_nodes
+        self.testjob._flex_alloc_tasks = 'all'
         self.testjob._num_tasks_per_node = 4
         self.testjob._num_tasks = 0
 
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
+    def test_not_valid_flex_alloc_tasks(self):
+        self.testjob._flex_alloc_tasks = 'invalid'
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_positive_flex_alloc_tasks(self):
+        self.testjob._flex_alloc_tasks = '12'
+        self.testjob._sched_access = ['--constraint=f1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 48)
+
+    def test_zero_flex_alloc_tasks(self):
+        self.testjob._flex_alloc_tasks = '0'
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_negative_flex_alloc_tasks(self):
+        self.testjob._flex_alloc_tasks = '-4'
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
     def test_sched_access_idle(self):
+        self.testjob._flex_alloc_tasks = 'idle'
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_constraint_idle(self):
+        self.testjob._flex_alloc_tasks = 'idle'
+        self.testjob.options = ['--constraint=f1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_partition_idle(self):
+        self.testjob._flex_alloc_tasks = 'idle'
+        self.testjob._sched_partition = 'p2'
+        with self.assertRaises(JobError):
+            self.prepare_job()
 
     def test_valid_constraint_short(self):
         self.testjob.options = ['-C f1']

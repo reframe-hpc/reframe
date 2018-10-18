@@ -145,16 +145,15 @@ class SlurmJob(sched.Job):
 
     def guess_num_tasks(self):
         available_nodes = self._get_available_nodes()
-        reservations = self._get_last_option({'--reservation'})
-        partitions = self._get_last_option({'-p', '--partition'})
-        nodelist = self._get_last_option({'-w', '--nodelist'})
-        constraints = self._get_last_option({'-C', '--constraint'})
-        exclude_nodes = self._get_last_option({'-x', '--exclude'})
         getlogger().debug('the number of available nodes is %s' %
                           len(available_nodes))
 
-        if any([reservations, partitions, nodelist, constraints,
-                exclude_nodes]):
+        if self.flex_alloc_tasks in {'all', 'idle'}:
+            reservations = self._get_last_option({'--reservation'})
+            partitions = self._get_last_option({'-p', '--partition'})
+            nodelist = self._get_last_option({'-w', '--nodelist'})
+            constraints = self._get_last_option({'-C', '--constraint'})
+            exclude_nodes = self._get_last_option({'-x', '--exclude'})
             if reservations:
                 available_nodes &= self._get_reservation_nodes(reservations)
                 getlogger().debug('the number of available nodes belonging to '
@@ -187,17 +186,34 @@ class SlurmJob(sched.Job):
                 getlogger().debug('the number of available nodes after '
                                   'excluding node(s) %s is %s' %
                                   (exclude_nodes[-1], len(available_nodes)))
-        else:
-            available_nodes = {n for n in available_nodes if n.is_available()}
-            getlogger().debug('the number of available idle nodes is %s' %
-                              len(available_nodes))
 
-        if not available_nodes:
-            raise JobError('could not find any node satisfying the '
-                           'required criteria')
+            available_node_count = len(available_nodes)
+            if available_node_count == 0:
+                raise JobError('could not find any node satisfying the '
+                               'required criteria')
+
+            if self.flex_alloc_tasks == 'idle':
+                available_nodes = {n for n in available_nodes
+                                   if n.is_available()}
+                available_node_count = len(available_nodes)
+                if available_node_count == 0:
+                    raise JobError('could not find any idle available node')
+                else:
+                    getlogger().debug('the number of available idle nodes is '
+                                      '%s' % available_node_count)
+
+        else:
+            try:
+                available_node_count = int(self.flex_alloc_tasks)
+                if available_node_count <= 0:
+                    raise ValueError
+
+            except ValueError:
+                raise JobError('cannot parse "%s" as a valid number '
+                               'of tasks' % self.flex_alloc_tasks)
 
         num_tasks_per_node = self.num_tasks_per_node or 1
-        num_tasks = len(available_nodes) * num_tasks_per_node
+        num_tasks = available_node_count * num_tasks_per_node
         getlogger().debug('automatically setting num_tasks to %s' %
                           num_tasks)
         return num_tasks

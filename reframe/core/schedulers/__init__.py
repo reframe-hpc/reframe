@@ -71,6 +71,7 @@ class Job(abc.ABC):
                  stderr=None,
                  pre_run=[],
                  post_run=[],
+                 flex_alloc_tasks=None,
                  sched_access=[],
                  sched_account=None,
                  sched_partition=None,
@@ -98,6 +99,7 @@ class Job(abc.ABC):
         self._time_limit = time_limit
 
         # Backend scheduler related information
+        self._flex_alloc_tasks = flex_alloc_tasks
         self._sched_access = sched_access
         self._sched_nodelist = sched_nodelist
         self._sched_exclude_nodelist = sched_exclude_nodelist
@@ -175,6 +177,10 @@ class Job(abc.ABC):
     @property
     def use_smt(self):
         return self._use_smt
+
+    @property
+    def flex_alloc_tasks(self):
+        return self._flex_alloc_tasks
 
     @property
     def sched_access(self):
