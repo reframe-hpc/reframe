@@ -65,6 +65,8 @@ class TestFrontend(unittest.TestCase):
             ret += ['-r']
         elif self.action == 'list':
             ret += ['-l']
+        elif self.action == 'list_detailed':
+            ret += ['-L']
         elif self.action == 'help':
             ret += ['-h']
 
@@ -349,4 +351,12 @@ class TestFrontend(unittest.TestCase):
         self.more_options = ['-n', 'NoPrgEnvCheck']
         returncode, stdout, _ = self._run_reframe()
         self.assertIn('Found 0 check(s)', stdout)
+        self.assertEqual(0, returncode)
+
+    def test_list_with_details(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'list_detailed'
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
         self.assertEqual(0, returncode)
