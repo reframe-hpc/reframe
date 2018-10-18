@@ -77,9 +77,9 @@ class DGEMMTest(rfm.RegressionTest):
         ))
         number_of_tested_nodes = len(all_tested_nodes)
 
-        if number_of_tested_nodes != self.num_tasks:
+        if number_of_tested_nodes != self.job.num_tasks:
             failures.append('Requested %s nodes, but found %s nodes)' %
-                            (self.num_tasks, number_of_tested_nodes))
+                            (self.job.num_tasks, number_of_tested_nodes))
             #FIXME: list detected nodes in error message
             sn.assert_false(failures, msg=', '.join(failures))
 
