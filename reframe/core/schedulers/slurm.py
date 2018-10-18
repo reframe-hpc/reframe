@@ -162,14 +162,16 @@ class SlurmJob(sched.Job):
 
             if partitions:
                 available_nodes = {n for n in available_nodes
-                                   if n.partitions >= set(partitions)}
+                                   if n.partitions >= set(partitions.split())}
                 getlogger().debug('the number of available nodes belonging to '
                                   'partition(s) %s is %s' %
                                   (' '.join(partitions), len(available_nodes)))
 
             if constraints:
-                available_nodes = {n for n in available_nodes
-                                   if n.active_features >= set(constraints)}
+                available_nodes = {
+                    n for n in available_nodes
+                    if n.active_features >= set(constraints.split())
+                }
                 getlogger().debug(
                     'the number of available nodes satisfying '
                     'constraint(s) %s is %s' %
@@ -179,13 +181,13 @@ class SlurmJob(sched.Job):
                 available_nodes &= self._get_nodes_by_name(nodelist)
                 getlogger().debug('the number of available nodes belonging to '
                                   'nodelist %s is %s' %
-                                  (nodelist[-1], len(available_nodes)))
+                                  (nodelist, len(available_nodes)))
 
             if exclude_nodes:
                 available_nodes -= self._get_nodes_by_name(exclude_nodes)
                 getlogger().debug('the number of available nodes after '
                                   'excluding node(s) %s is %s' %
-                                  (exclude_nodes[-1], len(available_nodes)))
+                                  (exclude_nodes, len(available_nodes)))
 
             available_node_count = len(available_nodes)
             if available_node_count == 0:
@@ -243,7 +245,7 @@ class SlurmJob(sched.Job):
 
         if supplied_options:
             # NOTE Get the last of the corresponding options
-            return supplied_options[-1].split()
+            return supplied_options[-1]
         else:
             return []
 
@@ -270,7 +272,7 @@ class SlurmJob(sched.Job):
         else:
             raise JobError('could not show the nodes')
 
-        nodes = {SlurmNode(descr) for descr in node_descriptions}
+        return {SlurmNode(descr) for descr in node_descriptions}
 
     def _get_reservation_nodes(self, reservations):
         # NOTE Get the last of the given reservations
