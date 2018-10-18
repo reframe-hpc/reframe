@@ -330,8 +330,7 @@ class ReframeSettings:
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
-                },
-
+                }
             }
         },
 
