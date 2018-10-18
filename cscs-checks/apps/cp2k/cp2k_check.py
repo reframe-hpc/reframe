@@ -35,7 +35,6 @@ class Cp2kCheck(RunOnlyRegressionTest):
         self.tags = {'scs'}
         self.strict_check = False
         self.modules = ['CP2K']
-        self.readonly_files = ['GTH_BASIS_SETS', 'H2O-256.inp', 'POTENTIAL']
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
