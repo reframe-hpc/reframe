@@ -11,8 +11,8 @@ from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
-    KeyboardInterruptCheck, SleepCheck,
-    BadSetupCheck, RetriesCheck, SystemExitCheck)
+    KeyboardInterruptCheck, SleepCheck, SleepCheckPollFail,
+    SleepCheckPollFailLate, BadSetupCheck, RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -359,3 +359,23 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         checks = [SleepCheck(1), SleepCheck(1), SleepCheck(1),
                   KeyboardInterruptCheck(phase='setup')]
         self._run_checks(checks, 2)
+
+    def test_poll_fails_main_loop(self):
+        num_tasks = 3
+        checks = [SleepCheckPollFail(10) for i in range(num_tasks)]
+        num_checks = len(checks)
+        self.set_max_jobs(1)
+        self.runner.runall(checks)
+        stats = self.runner.stats
+        self.assertEqual(num_tasks, stats.num_cases())
+        self.assertEqual(num_tasks, stats.num_failures())
+
+    def test_poll_fails_busy_loop(self):
+        num_tasks = 3
+        checks = [SleepCheckPollFailLate(1/i) for i in range(1, num_tasks+1)]
+        num_checks = len(checks)
+        self.set_max_jobs(1)
+        self.runner.runall(checks)
+        stats = self.runner.stats
+        self.assertEqual(num_tasks, stats.num_cases())
+        self.assertEqual(num_tasks, stats.num_failures())
