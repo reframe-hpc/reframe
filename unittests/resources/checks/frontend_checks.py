@@ -154,6 +154,17 @@ class SleepCheck(BaseFrontendCheck):
         SleepCheck._next_id += 1
 
 
+class SleepCheckPollFail(SleepCheck):
+    def poll(self):
+        raise ValueError
+
+
+class SleepCheckPollFailLate(SleepCheck):
+    def poll(self):
+        if self._job.finished():
+            raise ValueError
+
+
 class RetriesCheck(BaseFrontendCheck):
     def __init__(self, run_to_pass, filename):
         super().__init__()
