@@ -13,8 +13,13 @@ class StreamTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal',
                               'monch:compute']
-        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*',
-                                    'PrgEnv-intel', 'PrgEnv-pgi*']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-pgi-nompi']
+
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
