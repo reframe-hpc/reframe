@@ -155,11 +155,16 @@ class SleepCheck(BaseFrontendCheck):
 
 
 class SleepCheckPollFail(SleepCheck):
+    """Emulate a test failing in the polling phase."""
+
     def poll(self):
         raise ValueError
 
 
 class SleepCheckPollFailLate(SleepCheck):
+    """Emulate a test failing in the polling phase
+    after the test has finished."""
+
     def poll(self):
         if self._job.finished():
             raise ValueError
