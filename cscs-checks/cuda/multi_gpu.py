@@ -10,7 +10,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi']
+
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         self.build_system = 'SingleSource'

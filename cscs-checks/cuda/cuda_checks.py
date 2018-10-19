@@ -8,7 +8,11 @@ class CudaCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi']
+
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         if self.current_system.name == 'kesch':
