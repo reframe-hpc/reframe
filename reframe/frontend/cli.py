@@ -197,9 +197,8 @@ def main():
                               version=reframe.VERSION)
     misc_options.add_argument(
         '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='FLEX', default='idle',
-        help='Strategy to flexibly allocate num_tasks. '
-             'Valid choices are "idle"(default), "all", NUM.')
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
+        help="Strategy for flexible task allocation (default: 'idle').")
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -456,6 +455,17 @@ def main():
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.only_environs = options.prgenv
             exec_policy.keep_stage_files = options.keep_stage_files
+            try:
+                sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
+            except ValueError:
+                if options.flex_alloc_tasks in {'idle', 'all'}:
+                    sched_flex_alloc_tasks = options.flex_alloc_tasks
+                else:
+                    raise ConfigError(
+                        'invalid option: "%s" for --flex-alloc-tasks' %
+                        options.flex_alloc_tasks) from None
+
+            exec_policy.sched_flex_alloc_tasks = options.flex_alloc_tasks
             exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition

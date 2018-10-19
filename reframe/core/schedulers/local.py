@@ -58,9 +58,13 @@ class LocalJob(sched.Job):
     def emit_preamble(self):
         return []
 
-    def guess_num_tasks(self):
+    def get_available_nodes(self):
         raise JobError(
-            'local scheduler does not support flexible number of tasks')
+            'local scheduler does not support listing of available nodes')
+
+    def filter_nodes(self, nodes):
+        raise JobError(
+            'local scheduler does not support filtering of available nodes')
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""
@@ -121,9 +125,6 @@ class LocalJob(sched.Job):
         # killing
         self._time_limit = (0, 0, self.cancel_grace_period)
         self.wait()
-
-    def guess_num_tasks(self):
-        raise JobError('Local job does not support guessing of num_tasks')
 
     def wait(self):
         """Wait for the spawned job to finish.

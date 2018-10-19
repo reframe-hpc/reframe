@@ -1,6 +1,7 @@
 import itertools
 import re
 import time
+from argparse import ArgumentParser
 from datetime import datetime
 
 import reframe.core.schedulers as sched
@@ -70,7 +71,7 @@ class SlurmJob(sched.Job):
         self._is_cancelling = False
         self._update_state_count = 0
 
-    def _format_option(self, var, option, prefix=True):
+    def _format_option(self, var, option):
         if var is not None:
             return self._prefix + ' ' + option.format(var)
         else:
@@ -122,8 +123,8 @@ class SlurmJob(sched.Job):
         else:
             hint = 'multithread' if self.use_smt else 'nomultithread'
 
-        for acc in self.sched_access:
-            preamble.append('%s %s' % (self._prefix, acc))
+        for opt in self.sched_access:
+            preamble.append('%s %s' % (self._prefix, opt))
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
@@ -143,83 +144,6 @@ class SlurmJob(sched.Job):
         except SpawnedProcessError as e:
             raise JobError(jobid=self._jobid) from e
 
-    def guess_num_tasks(self):
-        available_nodes = self._get_available_nodes()
-        getlogger().debug('the number of available nodes is %s' %
-                          len(available_nodes))
-
-        if self.flex_alloc_tasks in {'all', 'idle'}:
-            reservations = self._get_last_option({'--reservation'})
-            partitions = self._get_last_option({'-p', '--partition'})
-            nodelist = self._get_last_option({'-w', '--nodelist'})
-            constraints = self._get_last_option({'-C', '--constraint'})
-            exclude_nodes = self._get_last_option({'-x', '--exclude'})
-            if reservations:
-                available_nodes &= self._get_reservation_nodes(reservations)
-                getlogger().debug('the number of available nodes belonging to '
-                                  'reservation %s is %s' %
-                                  (reservations[-1], len(available_nodes)))
-
-            if partitions:
-                available_nodes = {n for n in available_nodes
-                                   if n.partitions >= set(partitions.split())}
-                getlogger().debug('the number of available nodes belonging to '
-                                  'partition(s) %s is %s' %
-                                  (' '.join(partitions), len(available_nodes)))
-
-            if constraints:
-                available_nodes = {
-                    n for n in available_nodes
-                    if n.active_features >= set(constraints.split())
-                }
-                getlogger().debug(
-                    'the number of available nodes satisfying '
-                    'constraint(s) %s is %s' %
-                    (' '.join(constraints), len(available_nodes)))
-
-            if nodelist:
-                available_nodes &= self._get_nodes_by_name(nodelist)
-                getlogger().debug('the number of available nodes belonging to '
-                                  'nodelist %s is %s' %
-                                  (nodelist, len(available_nodes)))
-
-            if exclude_nodes:
-                available_nodes -= self._get_nodes_by_name(exclude_nodes)
-                getlogger().debug('the number of available nodes after '
-                                  'excluding node(s) %s is %s' %
-                                  (exclude_nodes, len(available_nodes)))
-
-            available_node_count = len(available_nodes)
-            if available_node_count == 0:
-                raise JobError('could not find any node satisfying the '
-                               'required criteria')
-
-            if self.flex_alloc_tasks == 'idle':
-                available_nodes = {n for n in available_nodes
-                                   if n.is_available()}
-                available_node_count = len(available_nodes)
-                if available_node_count == 0:
-                    raise JobError('could not find any idle available node')
-                else:
-                    getlogger().debug('the number of available idle nodes is '
-                                      '%s' % available_node_count)
-
-        else:
-            try:
-                available_node_count = int(self.flex_alloc_tasks)
-                if available_node_count <= 0:
-                    raise ValueError
-
-            except ValueError:
-                raise JobError('cannot parse "%s" as a valid number '
-                               'of tasks' % self.flex_alloc_tasks)
-
-        num_tasks_per_node = self.num_tasks_per_node or 1
-        num_tasks = available_node_count * num_tasks_per_node
-        getlogger().debug('automatically setting num_tasks to %s' %
-                          num_tasks)
-        return num_tasks
-
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
         completed = self._run_command(cmd, settings().job_submit_timeout)
@@ -231,39 +155,6 @@ class SlurmJob(sched.Job):
 
         self._jobid = int(jobid_match.group('jobid'))
 
-    def _get_last_option(self, opt_names):
-        supplied_options = []
-        if self.options:
-            for optstr in self.options:
-                optstr = optstr.strip()
-                if optstr.startswith('--'):
-                    optstr = optstr.replace('=', ' ', 1)
-
-                option, arg = optstr.split(maxsplit=1)
-                if option in opt_names:
-                    supplied_options.append(arg)
-
-        if supplied_options:
-            # NOTE Get the last of the corresponding options
-            return supplied_options[-1]
-        else:
-            return []
-
-    def _get_available_nodes(self):
-        access = set()
-        if self.sched_access:
-            for accstr in self.sched_access:
-                accstr = accstr.strip()
-                if accstr.startswith('--'):
-                    accstr = accstr.replace('=', ' ', 1)
-
-                acc, arg = accstr.split(maxsplit=1)
-                if acc in {'-C', '--constraint'}:
-                    access.update(arg.split())
-
-        nodes = self._show_nodes()
-        return {n for n in nodes if n.active_features >= access}
-
     def _show_nodes(self):
         command = 'scontrol show -o nodes'
         completed = os_ext.run_command(command, check=True)
@@ -274,30 +165,91 @@ class SlurmJob(sched.Job):
 
         return {SlurmNode(descr) for descr in node_descriptions}
 
-    def _get_reservation_nodes(self, reservations):
-        # NOTE Get the last of the given reservations
-        valid_reservation = reservations[-1]
-        command = 'scontrol show res %s' % valid_reservation
+    def get_available_nodes(self):
+        nodes = self._show_nodes()
+        option_parser = ArgumentParser()
+        option_parser.add_argument('-C', '--constraint')
+        parsed_args, _ = option_parser.parse_known_args(self.sched_access)
+        access = parsed_args.constraint
+        if access:
+            access = set(access.strip().split(','))
+            nodes = {n for n in nodes if n.active_features >= access}
+
+        return nodes
+
+    def filter_nodes(self, nodes):
+        option_parser = ArgumentParser()
+        option_parser.add_argument('--reservation')
+        option_parser.add_argument('-p', '--partition')
+        option_parser.add_argument('-w', '--nodelist')
+        option_parser.add_argument('-C', '--constraint')
+        option_parser.add_argument('-x', '--exclude')
+        parsed_args, _ = option_parser.parse_known_args(self.options)
+        reservation = parsed_args.reservation
+        partitions = parsed_args.partition
+        nodelist = parsed_args.nodelist
+        constraints = parsed_args.constraint
+        exclude_nodes = parsed_args.exclude
+
+        if reservation:
+            reservation = reservation.strip()
+            nodes &= self._get_reservation_nodes(reservation)
+            getlogger().debug(
+                'flex_alloc_tasks: filtering nodes by reservation %s: '
+                'available nodes now: %s' % (reservation, len(nodes)))
+
+        if partitions:
+            partitions = set(partitions.strip().split(','))
+            nodes = {n for n in nodes if n.partitions >= partitions}
+            getlogger().debug(
+                'flex_alloc_tasks: filtering nodes by partition(s) %s: '
+                'available nodes now: %s' % (partitions, len(nodes)))
+
+        if constraints:
+            constraints = set(constraints.strip().split(','))
+            nodes = {n for n in nodes if n.active_features >= constraints}
+            getlogger().debug(
+                'flex_alloc_tasks: filtering nodes by constraint(s) %s: '
+                'available nodes now: %s' % (constraints, len(nodes)))
+
+        if nodelist:
+            nodelist = nodelist.strip()
+            nodes &= self._get_nodes_by_name(nodelist)
+            getlogger().debug(
+                'flex_alloc_tasks: filtering nodes by nodelist: %s '
+                'availablenodes now: %s' % (nodelist, len(nodes)))
+
+        if exclude_nodes:
+            exclude_nodes = exclude_nodes.strip()
+            nodes -= self._get_nodes_by_name(exclude_nodes)
+            getlogger().debug(
+                'flex_alloc_tasks: excluding node(s): %s '
+                'available nodes now: %s' % (exclude_nodes, len(nodes)))
+
+        return nodes
+
+    def _get_reservation_nodes(self, reservation):
+        command = 'scontrol show res %s' % reservation
         completed = os_ext.run_command(command, check=True)
         node_match = re.search(r'(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
         else:
             raise JobError("could not extract the nodes names for "
-                           "reservation '%s'" % self.sched_reservation)
+                           "reservation '%s'" % valid_reservation)
 
         completed = os_ext.run_command(
             'scontrol show -o %s' % reservation_nodes, check=True)
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
-    def _get_nodes_by_name(self, node_names):
-        command = 'scontrol show -o node %s' % node_names
+    def _get_nodes_by_name(self, nodespec):
+        command = 'scontrol show -o node %s' % nodespec
         try:
             completed = os_ext.run_command(command, check=True)
         except SpawnedProcessError as e:
             raise JobError('could not retrieve the node description '
-                           'of nodes: %s' % node_names) from e
+                           'of nodes: %s' % nodespec)
 
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}

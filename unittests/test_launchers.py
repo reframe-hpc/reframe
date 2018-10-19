@@ -22,7 +22,10 @@ class FakeJob(Job):
     def finished(self):
         pass
 
-    def guess_num_tasks(self):
+    def get_available_nodes(self):
+        pass
+
+    def filter_nodes(self, nodes):
         pass
 
 

@@ -284,7 +284,7 @@ class ExecutionPolicy:
         self.strict_check = False
 
         # Scheduler options
-        self.flex_alloc_tasks = None
+        self.sched_flex_alloc_tasks = None
         self.sched_account = None
         self.sched_partition = None
         self.sched_reservation = None

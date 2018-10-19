@@ -45,7 +45,7 @@ class PbsJob(sched.Job):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in [*self.sched_access, *self.options]:
+        for opt in (*self.sched_access, *self.options):
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
@@ -88,9 +88,13 @@ class PbsJob(sched.Job):
         preamble.append('cd %s' % self.workdir)
         return preamble
 
-    def guess_num_tasks(self):
+    def get_available_nodes(self):
         raise JobError(
-            'pbs scheduler does not support flexible number of tasks')
+            'pbs scheduler does not support listing of available nodes')
+
+    def filter_nodes(self, nodes):
+        raise JobError(
+            'pbs scheduler does not support filtering of available nodes')
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS

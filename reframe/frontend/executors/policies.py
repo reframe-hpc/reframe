@@ -25,7 +25,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
         self.stats.add_task(task)
         try:
             task.setup(partition, environ,
-                       flex_alloc_tasks=self.flex_alloc_tasks,
+                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
@@ -159,7 +159,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.stats.add_task(task)
         try:
             task.setup(partition, environ,
-                       flex_alloc_tasks=self.flex_alloc_tasks,
+                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
