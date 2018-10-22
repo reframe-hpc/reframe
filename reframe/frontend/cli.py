@@ -465,7 +465,7 @@ def main():
                         'invalid option: "%s" for --flex-alloc-tasks' %
                         options.flex_alloc_tasks) from None
 
-            exec_policy.sched_flex_alloc_tasks = options.flex_alloc_tasks
+            exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
             exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition
