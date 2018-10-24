@@ -160,7 +160,8 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the report succeeds and that the output is as expected.
         report = self.runner.stats.retry_report()
-        self.assertIn("Test BadSetupCheckEarly was retried 2 time(s) and failed.", report)
+        self.assertIn("Test BadSetupCheckEarly was retried 2 time(s) and "
+                      "failed.", report)
 
     def test_retries_good_check(self):
         max_retries = 2
