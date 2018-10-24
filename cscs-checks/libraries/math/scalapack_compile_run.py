@@ -67,16 +67,14 @@ class ScaLAPACKSanity(ScaLAPACKTest):
         ])
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+# NOTE:  The test case is very small, but larger cases did not succeed!
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['dynamic'])
 class ScaLAPACKPerf(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
 
-        # FIXME:
-        # Currently, this test case is only aimed for the monch acceptance,
-        # yet it could be interesting to extend it to other systems.
-        # NB: The test case is very small, but larger cases did not succeed!
         self.tags |= {'monch_acceptance'}
         self.sourcepath = 'scalapack_performance_compile_run.f'
         self.valid_systems = ['monch:compute']

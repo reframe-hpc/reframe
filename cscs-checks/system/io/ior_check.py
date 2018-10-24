@@ -39,16 +39,14 @@ class IorCheck(rfm.RegressionTest):
             self.num_tasks = 720
             self.num_tasks_per_node = 12
         elif fs_mount_point == '/users':
-            self.valid_systems = ['daint:gpu', 'dom:gpu', 'monch:compute']
+            self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.tags |= {'maintenance'}
         elif fs_mount_point == '/apps':
-            self.valid_systems = ['daint:gpu', 'dom:gpu', 'monch:compute']
+            self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.num_tasks = 1
             self.num_tasks_per_node = 1
-        elif fs_mount_point == '/mnt/lnec':
-            self.valid_systems = ['monch:compute']
 
         self.valid_prog_environs = ['PrgEnv-cray']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
@@ -166,6 +164,7 @@ class IorWriteCheck(IorCheck):
         self.tags |= {'write'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 class IoMonchAcceptanceBase(IorCheck):
     def __init__(self, fs_mount_point, ior_type, num_tasks):
         super().__init__(fs_mount_point)
@@ -195,6 +194,7 @@ class IoMonchAcceptanceBase(IorCheck):
         self.tags = {'monch_acceptance'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
                           for num_tasks in [40, 80, 160]))
 class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
@@ -213,6 +213,7 @@ class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
         self.tags |= {'read'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
                           for num_tasks in [40, 80, 160]))
 class IorWriteScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):

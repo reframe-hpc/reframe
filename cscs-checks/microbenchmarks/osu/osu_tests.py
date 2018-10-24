@@ -48,6 +48,7 @@ class AlltoallTest(rfm.RegressionTest):
         }
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
 class AlltoallMonchAcceptanceTest(AlltoallTest):
     def __init__(self, num_tasks):
@@ -105,9 +106,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'monch:compute',
-                              'kesch:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
@@ -144,9 +143,7 @@ class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'monch:compute',
-                              'kesch:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
