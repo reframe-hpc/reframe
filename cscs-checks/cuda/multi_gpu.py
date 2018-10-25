@@ -4,12 +4,17 @@ import reframe.utility.sanity as sn
 import reframe as rfm
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi']
+
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         self.build_system = 'SingleSource'
@@ -25,7 +30,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.num_gpus_per_node = 1
         else:
-            self.modules = ['cudatoolkit']
+            self.modules = ['craype-accel-nvidia35']
             self.num_gpus_per_node = 8
 
         self.sanity_patterns = sn.all([
@@ -62,13 +67,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
 
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
-
-    def setup(self, partition, environ, **job_opts):
-        if (self.current_system.name == 'kesch' and
-            environ.name == 'PrgEnv-gnu'):
-            self.modules = ['craype-accel-nvidia35']
-
-        super().setup(partition, environ, **job_opts)
 
     def _xfer_pattern(self, xfer_kind, devno):
         """generates search pattern for performance analysis"""

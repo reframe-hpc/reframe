@@ -8,6 +8,7 @@ import os
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.shell as shell
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobNotStartedError
 from reframe.core.launchers import JobLauncher
 
@@ -39,9 +40,9 @@ class Job(abc.ABC):
 
     #: Options to be passed to the backend job scheduler.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     #: The parallel program launcher that will be used to launch the parallel
     #: executable of this job.
@@ -49,9 +50,9 @@ class Job(abc.ABC):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
 
-    _jobid = fields.IntegerField('_jobid', allow_none=True)
-    _exitcode = fields.IntegerField('_exitcode', allow_none=True)
-    _state = fields.TypedField('_state', JobState, allow_none=True)
+    _jobid = fields.TypedField('_jobid', int, type(None))
+    _exitcode = fields.TypedField('_exitcode', int, type(None))
+    _state = fields.TypedField('_state', JobState, type(None))
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
@@ -64,7 +65,7 @@ class Job(abc.ABC):
                  num_tasks_per_socket=None,
                  num_cpus_per_task=None,
                  use_smt=None,
-                 time_limit=(0, 10, 0),
+                 time_limit=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
@@ -199,6 +200,9 @@ class Job(abc.ABC):
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
+        if self.num_tasks == 0:
+            self._num_tasks = self.guess_num_tasks()
+
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.emit_preamble())
@@ -210,6 +214,10 @@ class Job(abc.ABC):
 
     @abc.abstractmethod
     def emit_preamble(self):
+        pass
+
+    @abc.abstractmethod
+    def guess_num_tasks(self):
         pass
 
     @abc.abstractmethod

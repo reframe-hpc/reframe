@@ -8,10 +8,11 @@ import reframe.frontend.executors.policies as policies
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
+import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
-    KeyboardInterruptCheck, SleepCheck,
-    BadSetupCheck, RetriesCheck, SystemExitCheck)
+    KeyboardInterruptCheck, SleepCheck, SleepCheckPollFail,
+    SleepCheckPollFailLate, BadSetupCheck, RetriesCheck, SystemExitCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -25,6 +26,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Set runtime prefix
         rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+        # Reset current_run
+        rt.runtime()._current_run = 0
 
     def tearDown(self):
         os_ext.rmtree(rt.runtime().resources.prefix)
@@ -140,7 +144,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test was retried #max_retries times and failed.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(max_retries, self.runner.stats.current_run)
+        self.assertEqual(max_retries, rt.runtime().current_run)
         self.assertEqual(1, self.runner.stats.num_failures())
 
     def test_retries_good_check(self):
@@ -151,7 +155,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Ensure that the test passed without retries.
         self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(0, self.runner.stats.current_run)
+        self.assertEqual(0, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
 
     def test_pass_in_retries(self):
@@ -169,7 +173,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         # Ensure that the test passed after retries in run #run_to_pass.
         self.assertEqual(1, self.runner.stats.num_cases())
         self.assertEqual(1, self.runner.stats.num_failures(run=0))
-        self.assertEqual(run_to_pass, self.runner.stats.current_run)
+        self.assertEqual(run_to_pass, rt.runtime().current_run)
         self.assertEqual(0, self.runner.stats.num_failures())
         os.remove(fp.name)
 
@@ -355,3 +359,23 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         checks = [SleepCheck(1), SleepCheck(1), SleepCheck(1),
                   KeyboardInterruptCheck(phase='setup')]
         self._run_checks(checks, 2)
+
+    def test_poll_fails_main_loop(self):
+        num_tasks = 3
+        checks = [SleepCheckPollFail(10) for i in range(num_tasks)]
+        num_checks = len(checks)
+        self.set_max_jobs(1)
+        self.runner.runall(checks)
+        stats = self.runner.stats
+        self.assertEqual(num_tasks, stats.num_cases())
+        self.assertEqual(num_tasks, stats.num_failures())
+
+    def test_poll_fails_busy_loop(self):
+        num_tasks = 3
+        checks = [SleepCheckPollFailLate(1/i) for i in range(1, num_tasks+1)]
+        num_checks = len(checks)
+        self.set_max_jobs(1)
+        self.runner.runall(checks)
+        stats = self.runner.stats
+        self.assertEqual(num_tasks, stats.num_cases())
+        self.assertEqual(num_tasks, stats.num_failures())

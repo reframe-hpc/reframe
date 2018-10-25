@@ -47,7 +47,7 @@ The important bit here is how we set up the build system for this test:
   :dedent: 4
 
 
-First, we set the build system to ``Make`` and then set the preprocessor flags for the compilation.
+First, we set the build system to :attr:`Make <reframe.core.buildsystems.Make>` and then set the preprocessor flags for the compilation.
 ReFrame will invoke ``make`` as follows:
 
 .. code::
@@ -76,7 +76,7 @@ If you want to limit build concurrency, you can do it as follows:
 
 
 Finally, you may also customize the name of the ``Makefile``.
-You can achieve that by setting the corresponding variable of the ``Make`` build system:
+You can achieve that by setting the corresponding variable of the :class:`Make <reframe.core.buildsystems.Make>` build system:
 
 .. code-block:: python
 
@@ -122,13 +122,15 @@ Add a configuration step before compiling the code
 ==================================================
 
 It is often the case that a configuration step is needed before compiling a code with ``make``.
-Currently, ReFrame does not provide specific abstractions for "configure-make"-style build systems.
-However, you can achieve the same effect using the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` for performing the configuration step.
-The following code snippet will configure a code with ``cmake`` before invoking ``make``:
+To address this kind of projects, ReFrame aims to offer specific abstractions for "configure-make"-style build systems.
+It supports `CMake-based <https://cmake.org/>`__ projects through the :class:`CMake <reframe.core.buildsystems.CMake>` build system, as well as `Autotools-based <https://www.gnu.org/software/automake/>`__ projects through the :class:`Autotools <reframe.core.buildsystems.Autotools>` build system.
+
+For other build systems, you can achieve the same effect using the :class:`Make <reframe.core.buildsystems.Make>` build system and the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` for performing the configuration step.
+The following code snippet will configure a code with ``./custom_configure`` before invoking ``make``:
 
 .. code-block:: python
 
-  self.prebuild_cmd = ['cmake -DUSE_LIBNUMA .']
+  self.prebuild_cmd = ['./custom_configure -with-mylib']
   self.build_system = 'Make'
   self.build_system.cppflags = ['-DHAVE_FOO']
   self.build_system.flags_from_environ = False
@@ -137,7 +139,7 @@ The generated build script then will have the following lines:
 
 .. code-block:: bash
 
-  cmake -DUSE_LIBNUMA .
+  ./custom_configure -with-mylib
   make -j CPPFLAGS='-DHAVE_FOO'
 
 
@@ -354,7 +356,7 @@ The framework will try to generate unique names for the generated tests by strin
 .. code-block:: none
 
    Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
-   Reframe version: 2.13-dev0
+   Reframe version: 2.15-dev1
    Launched by user: XXX
    Launched on host: daint101
    Reframe paths
@@ -367,9 +369,7 @@ The framework will try to generate unique names for the generated tests by strin
    List of matched checks
    ======================
      * MatrixVectorTest_MPI (Matrix-vector multiplication test (MPI))
-           tags: [tutorial], maintainers: [you-can-type-your-email-here]
      * MatrixVectorTest_OpenMP (Matrix-vector multiplication test (OpenMP))
-           tags: [tutorial], maintainers: [you-can-type-your-email-here]
    Found 2 check(s).
 
 

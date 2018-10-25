@@ -22,6 +22,9 @@ class FakeJob(Job):
     def finished(self):
         pass
 
+    def guess_num_tasks(self):
+        pass
+
 
 class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
@@ -120,7 +123,6 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
     def expected_minimal_command(self):
         return ('srun '
                 '--job-name=fake_job '
-                '--time=0:10:0 '
                 '--output=./fake_job.out '
                 '--error=./fake_job.err '
                 '--ntasks=1 '

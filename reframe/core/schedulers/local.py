@@ -7,7 +7,7 @@ from datetime import datetime
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import JobError, ReframeError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
@@ -57,6 +57,10 @@ class LocalJob(sched.Job):
 
     def emit_preamble(self):
         return []
+
+    def guess_num_tasks(self):
+        raise JobError(
+            'local scheduler does not support flexible number of tasks')
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""
@@ -133,8 +137,12 @@ class LocalJob(sched.Job):
             return
 
         # Convert job's time_limit to seconds
-        h, m, s = self.time_limit
-        timeout = h * 3600 + m * 60 + s
+        if self.time_limit is not None:
+            h, m, s = self.time_limit
+            timeout = h * 3600 + m * 60 + s
+        else:
+            timeout = 0
+
         try:
             self._wait_all(timeout)
             self._exitcode = self._proc.returncode

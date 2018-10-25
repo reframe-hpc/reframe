@@ -1,4 +1,5 @@
 import os
+import inspect
 import socket
 import sys
 
@@ -19,17 +20,27 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-def list_supported_systems(systems, printer):
-    printer.info('List of supported systems:')
-    for s in systems:
-        printer.info('    %s' % s)
+def format_check(check, detailed):
+    lines = ['  * %s (found in %s)' % (check.name,
+                                       inspect.getfile(type(check)))]
+    if detailed:
+        lines += [
+            '      - description: %s' % check.descr,
+            '      - systems: %s' % ', '.join(check.valid_systems),
+            '      - environments: %s' % ', '.join(check.valid_prog_environs),
+            '      - modules: %s' % ', '.join(check.modules),
+            '      - tags: %s' % ', '.join(check.tags),
+            '      - maintainers: %s' % ', '.join(check.maintainers)
+        ]
+
+    return '\n'.join(lines)
 
 
-def list_checks(checks, printer):
+def list_checks(checks, printer, detailed=False):
     printer.info('List of matched checks')
     printer.info('======================')
     for c in checks:
-        printer.info('  * %s' % c)
+        printer.info(format_check(c, detailed))
 
     printer.info('Found %d check(s).' % len(checks))
 
@@ -109,7 +120,10 @@ def main():
     # Action options
     action_options.add_argument(
         '-l', '--list', action='store_true',
-        help='list matched regression checks')
+        help='List matched regression checks')
+    action_options.add_argument(
+        '-L', '--list-detailed', action='store_true',
+        help='List matched regression checks with a detailed description')
     action_options.add_argument(
         '-r', '--run', action='store_true',
         help='Run regression with the selected checks')
@@ -390,6 +404,14 @@ def main():
         if not options.skip_prgenv_check:
             checks_matched = filter(filter_prgenv, checks_matched)
 
+        # Filter checks by system
+        def filter_system(c):
+            return any([c.supports_system(s.fullname)
+                        for s in rt.system.partitions])
+
+        if not options.skip_system_check:
+            checks_matched = filter(filter_system, checks_matched)
+
         # Filter checks further
         if options.gpu_only and options.cpu_only:
             printer.error("options `--gpu-only' and `--cpu-only' "
@@ -428,6 +450,9 @@ def main():
         if options.list:
             # List matched checks
             list_checks(list(checks_matched), printer)
+        elif options.list_detailed:
+            # List matched checks with details
+            list_checks(list(checks_matched), printer, detailed=True)
 
         elif options.run:
             # Setup the execution policy

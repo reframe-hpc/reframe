@@ -2,6 +2,7 @@ import abc
 import os
 
 import reframe.core.fields as fields
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
 
 
@@ -18,7 +19,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    cc  = fields.StringField('cc', allow_none=True)
+    cc  = fields.TypedField('cc', str, type(None))
 
     #: The C++ compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -26,7 +27,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    cxx = fields.StringField('cxx', allow_none=True)
+    cxx = fields.TypedField('cxx', str, type(None))
 
     #: The Fortran compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -34,7 +35,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    ftn = fields.StringField('ftn', allow_none=True)
+    ftn = fields.TypedField('ftn', str, type(None))
 
     #: The CUDA compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -42,59 +43,59 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    nvcc = fields.StringField('nvcc', allow_none=True)
+    nvcc = fields.TypedField('nvcc', str, type(None))
 
     #: The C compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cflags = fields.TypedListField('cflags', str, allow_none=True)
+    cflags = fields.TypedField('cflags', typ.List[str], type(None))
 
     #: The preprocessor flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cppflags = fields.TypedListField('cppflags', str, allow_none=True)
+    cppflags = fields.TypedField('cppflags', typ.List[str], type(None))
 
     #: The C++ compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cxxflags = fields.TypedListField('cxxflags', str, allow_none=True)
+    cxxflags = fields.TypedField('cxxflags', typ.List[str], type(None))
 
     #: The Fortran compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    fflags  = fields.TypedListField('fflags', str, allow_none=True)
+    fflags  = fields.TypedField('fflags', typ.List[str], type(None))
 
     #: The linker flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    ldflags = fields.TypedListField('ldflags', str, allow_none=True)
+    ldflags = fields.TypedField('ldflags', typ.List[str], type(None))
 
     #: Set compiler and compiler flags from the current programming environment
     #: if not specified otherwise.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    flags_from_environ = fields.BooleanField('flags_from_environ')
+    flags_from_environ = fields.TypedField('flags_from_environ', bool)
 
     def __init__(self):
         self.cc  = None
@@ -126,7 +127,7 @@ class BuildSystem:
             This method is relevant only to developers of new build systems.
         """
 
-    def _resolve_flags(self, flags, environ, allow_none=True):
+    def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
         if _flags is not None:
             return _flags
@@ -147,16 +148,16 @@ class BuildSystem:
             return flags
 
     def _cc(self, environ):
-        return self._resolve_flags('cc', environ, False)
+        return self._resolve_flags('cc', environ)
 
     def _cxx(self, environ):
-        return self._resolve_flags('cxx', environ, False)
+        return self._resolve_flags('cxx', environ)
 
     def _ftn(self, environ):
-        return self._resolve_flags('ftn', environ, False)
+        return self._resolve_flags('ftn', environ)
 
     def _nvcc(self, environ):
-        return self._resolve_flags('nvcc', environ, False)
+        return self._resolve_flags('nvcc', environ)
 
     def _cppflags(self, environ):
         return self._fix_flags(self._resolve_flags('cppflags', environ))
@@ -181,7 +182,7 @@ class Make(BuildSystem):
 
     .. code::
 
-      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FFLAGS='X' LDFLAGS='X' OPTIONS
+      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FCFLAGS='X' LDFLAGS='X' OPTIONS
 
     The compiler and compiler flags variables will only be passed if they are
     not :class:`None`.
@@ -196,16 +197,16 @@ class Make(BuildSystem):
     #: Append these options to the ``make`` invocation.
     #: This variable is also useful for passing variables or targets to ``make``.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     #: Instruct build system to use this Makefile.
     #: This option is useful when having non-standard Makefile names.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    makefile = fields.StringField('makefile', allow_none=True)
+    makefile = fields.TypedField('makefile', str, type(None))
 
     #: The top-level directory of the code.
     #:
@@ -214,7 +215,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.StringField('srcdir', allow_none=True)
+    srcdir = fields.TypedField('srcdir', str, type(None))
 
     #: Limit concurrency for ``make`` jobs.
     #: This attribute controls the ``-j`` option passed to ``make``.
@@ -224,7 +225,7 @@ class Make(BuildSystem):
     #:
     #: :type: integer
     #: :default: :class:`None`
-    max_concurrency = fields.IntegerField('max_concurrency', allow_none=True)
+    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
 
     def __init__(self):
         super().__init__()
@@ -276,7 +277,7 @@ class Make(BuildSystem):
             cmd_parts += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
 
         if fflags is not None:
-            cmd_parts += ["FFLAGS='%s'" % ' '.join(fflags)]
+            cmd_parts += ["FCFLAGS='%s'" % ' '.join(fflags)]
 
         if ldflags is not None:
             cmd_parts += ["LDFLAGS='%s'" % ' '.join(ldflags)]
@@ -301,7 +302,7 @@ class SingleSource(BuildSystem):
       the source file and pick the correct compiler.
       See also the :attr:`SingleSource.lang` attribute.
     - ``CPPFLAGS`` are the preprocessor flags and are passed to any compiler.
-    - ``XFLAGS`` is any of ``CFLAGS``, ``CXXFLAGS`` or ``FFLAGS`` depending on
+    - ``XFLAGS`` is any of ``CFLAGS``, ``CXXFLAGS`` or ``FCFLAGS`` depending on
       the programming language of the source file.
     - ``SRCFILE`` is the source file to be compiled.
       This is set up automatically by the framework.
@@ -321,7 +322,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    srcfile = fields.StringField('srcfile', allow_none=True)
+    srcfile = fields.TypedField('srcfile', str, type(None))
 
     #: The executable file to be generated.
     #:
@@ -329,7 +330,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    executable = fields.StringField('executable', allow_none=True)
+    executable = fields.TypedField('executable', str, type(None))
 
     #: The include path to be used for this compilation.
     #:
@@ -337,9 +338,9 @@ class SingleSource(BuildSystem):
     #: :attr:`BuildSystem.cppflags`, by prepending to each of them the ``-I``
     #: option.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    include_path = fields.TypedListField('include_path', str)
+    include_path = fields.TypedField('include_path', typ.List[str])
 
     #: The programming language of the file that needs to be compiled.
     #: If not specified, the build system will try to figure it out
@@ -353,7 +354,7 @@ class SingleSource(BuildSystem):
     #:   - CUDA: `.cu`.
     #:
     #: :type: :class:`str` or :class:`None`
-    lang = fields.StringField('lang', allow_none=True)
+    lang = fields.TypedField('lang', str, type(None))
 
     def __init__(self):
         super().__init__()
@@ -443,6 +444,207 @@ class SingleSource(BuildSystem):
             return 'CUDA'
 
 
+class ConfigureBasedBuildSystem(BuildSystem):
+    """Abstract base class for configured-based build systems."""
+
+    #: The top-level directory of the code.
+    #:
+    #: This is set automatically by the framework based on the
+    #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
+    srcdir = fields.TypedField('srcdir', str, type(None))
+
+    #: The CMake build directory, where all the generated files will be placed.
+    #:
+    #: :type: :class:`str`
+    #: :default: :class:`None`
+    builddir = fields.TypedField('builddir', str, type(None))
+
+    #: Additional configuration options to be passed to the CMake invocation.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    config_opts = fields.TypedField('config_opts', typ.List[str])
+
+    #: Options to be passed to the subsequent ``make`` invocation.
+    #:
+    #: :type: :class:`List[str]`
+    #: :default: ``[]``
+    make_opts = fields.TypedField('make_opts', typ.List[str])
+
+    #: Same as for the :attr:`Make` build system.
+    #:
+    #: :type: integer
+    #: :default: :class:`None`
+    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
+
+    def __init__(self):
+        super().__init__()
+        self.srcdir = None
+        self.builddir = None
+        self.config_opts = []
+        self.make_opts = []
+        self.max_concurrency = None
+
+
+class CMake(ConfigureBasedBuildSystem):
+    """A build system for compiling CMake-based projects.
+
+    This build system will emit the following commands:
+
+    1. Create a build directory if :attr:`builddir` is not :class:`None` and
+       change to it.
+    2. Invoke ``cmake`` to configure the project by setting the corresponding
+       CMake flags for compilers and compiler flags.
+    3. Issue ``make`` to compile the code.
+    """
+
+    def _combine_flags(self, cppflags, xflags):
+        if cppflags is None:
+            return xflags
+
+        ret = list(cppflags)
+        if xflags:
+            ret += xflags
+
+        return ret
+
+    def emit_build_commands(self, environ):
+        prepare_cmd = []
+        if self.srcdir:
+            prepare_cmd += ['cd %s' % self.srcdir]
+
+        if self.builddir:
+            prepare_cmd += ['mkdir -p %s' % self.builddir,
+                            'cd %s' % self.builddir]
+
+        cmake_cmd = ['cmake']
+        cc = self._cc(environ)
+        cxx = self._cxx(environ)
+        ftn = self._ftn(environ)
+        nvcc = self._nvcc(environ)
+        cppflags = self._cppflags(environ)
+        cflags   = self._combine_flags(cppflags, self._cflags(environ))
+        cxxflags = self._combine_flags(cppflags, self._cxxflags(environ))
+        fflags   = self._combine_flags(cppflags, self._fflags(environ))
+        ldflags  = self._ldflags(environ)
+        if cc is not None:
+            cmake_cmd += ["-DCMAKE_C_COMPILER='%s'" % cc]
+
+        if cxx is not None:
+            cmake_cmd += ["-DCMAKE_CXX_COMPILER='%s'" % cxx]
+
+        if ftn is not None:
+            cmake_cmd += ["-DCMAKE_Fortran_COMPILER='%s'" % ftn]
+
+        if nvcc is not None:
+            cmake_cmd += ["-DCMAKE_CUDA_COMPILER='%s'" % nvcc]
+
+        if cflags is not None:
+            cmake_cmd += ["-DCMAKE_C_FLAGS='%s'" % ' '.join(cflags)]
+
+        if cxxflags is not None:
+            cmake_cmd += ["-DCMAKE_CXX_FLAGS='%s'" % ' '.join(cxxflags)]
+
+        if fflags is not None:
+            cmake_cmd += ["-DCMAKE_Fortran_FLAGS='%s'" % ' '.join(fflags)]
+
+        if ldflags is not None:
+            cmake_cmd += ["-DCMAKE_EXE_LINKER_FLAGS='%s'" % ' '.join(ldflags)]
+
+        if self.config_opts:
+            cmake_cmd += self.config_opts
+
+        if self.builddir:
+            cmake_cmd += [os.path.relpath('.', self.builddir)]
+        else:
+            cmake_cmd += ['.']
+
+        make_cmd = ['make -j']
+        if self.max_concurrency is not None:
+            make_cmd += [str(self.max_concurrency)]
+
+        if self.make_opts:
+            make_cmd += self.make_opts
+
+        return prepare_cmd + [' '.join(cmake_cmd), ' '.join(make_cmd)]
+
+
+class Autotools(ConfigureBasedBuildSystem):
+    """A build system for compiling Autotools-based projects.
+
+    This build system will emit the following commands:
+
+    1. Create a build directory if :attr:`builddir` is not :class:`None` and
+       change to it.
+    2. Invoke ``configure`` to configure the project by setting the corresponding
+       flags for compilers and compiler flags.
+    3. Issue ``make`` to compile the code.
+    """
+
+    def emit_build_commands(self, environ):
+        prepare_cmd = []
+        if self.srcdir:
+            prepare_cmd += ['cd %s' % self.srcdir]
+
+        if self.builddir:
+            prepare_cmd += ['mkdir -p %s' % self.builddir,
+                            'cd %s' % self.builddir]
+
+        if self.builddir:
+            configure_cmd = [os.path.join(
+                os.path.relpath('.', self.builddir), 'configure')]
+        else:
+            configure_cmd = ['./configure']
+
+        cc = self._cc(environ)
+        cxx = self._cxx(environ)
+        ftn = self._ftn(environ)
+        nvcc = self._nvcc(environ)
+        cppflags = self._cppflags(environ)
+        cflags   = self._cflags(environ)
+        cxxflags = self._cxxflags(environ)
+        fflags   = self._fflags(environ)
+        ldflags  = self._ldflags(environ)
+        if cc is not None:
+            configure_cmd += ["CC='%s'" % cc]
+
+        if cxx is not None:
+            configure_cmd += ["CXX='%s'" % cxx]
+
+        if ftn is not None:
+            configure_cmd += ["FC='%s'" % ftn]
+
+        if cppflags is not None:
+            configure_cmd += ["CPPFLAGS='%s'" % ' '.join(cppflags)]
+
+        if cflags is not None:
+            configure_cmd += ["CFLAGS='%s'" % ' '.join(cflags)]
+
+        if cxxflags is not None:
+            configure_cmd += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
+
+        if fflags is not None:
+            configure_cmd += ["FCFLAGS='%s'" % ' '.join(fflags)]
+
+        if ldflags is not None:
+            configure_cmd += ["LDFLAGS='%s'" % ' '.join(ldflags)]
+
+        if self.config_opts:
+            configure_cmd += self.config_opts
+
+        make_cmd = ['make -j']
+        if self.max_concurrency is not None:
+            make_cmd += [str(self.max_concurrency)]
+
+        if self.make_opts:
+            make_cmd += self.make_opts
+
+        return prepare_cmd + [' '.join(configure_cmd), ' '.join(make_cmd)]
+
+
 class BuildSystemField(fields.TypedField):
     """A field representing a build system.
 
@@ -450,8 +652,8 @@ class BuildSystemField(fields.TypedField):
     representing the name of the concrete class of a build system.
     """
 
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, BuildSystem, allow_none)
+    def __init__(self, fieldname, *other_types):
+        super().__init__(fieldname, BuildSystem, *other_types)
 
     def __set__(self, obj, value):
         if isinstance(value, str):

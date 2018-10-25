@@ -9,8 +9,8 @@ from reframe.core.launchers import LauncherWrapper
 class DdtCheck(rfm.RegressionTest):
     def __init__(self, lang, extension):
         super().__init__()
-        self.name = 'DDtCheck_' + lang.replace('+', 'p')
-        self.descr = 'DDt Check for %s' % lang
+        self.name = 'DdtCheck_' + lang.replace('+', 'p')
+        self.descr = 'DDT check for %s' % lang
         self.lang = lang
         self.extension = extension
         self.build_system = 'Make'
@@ -58,6 +58,7 @@ class DdtCheck(rfm.RegressionTest):
                                             self.ddt_options)
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['F90', 'F90'], ['C', 'c'], ['C++', 'cc'])
 class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
@@ -74,7 +75,6 @@ class DdtCpuCheck(DdtCheck):
             residual_pattern % (
                 self.extension, self.instrumented_linenum[self.lang])
         ]
-
         self.sanity_patterns = sn.all([
             sn.assert_found('MPI implementation', 'ddtreport.txt'),
             sn.assert_found(r'Debugging\s*:\s*srun\s+%s' % self.executable,
@@ -87,6 +87,7 @@ class DdtCpuCheck(DdtCheck):
         ])
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['Cuda', 'cu'])
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):
@@ -94,11 +95,10 @@ class DdtGpuCheck(DdtCheck):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
-
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['cudatoolkit']
+            'kesch': ['craype-accel-nvidia35']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
@@ -112,16 +112,14 @@ class DdtGpuCheck(DdtCheck):
             '--break-at _jacobi-cuda-kernel.cu:59 --evaluate *residue_d ',
             '--trace-at _jacobi-cuda-kernel.cu:111,residue'
         ]
-
         self.build_system.cppflags = ['-DUSE_MPI', '-D_CSCS_ITMAX=5']
-
         if self.current_system.name == 'kesch':
             arch = 'sm_37'
             self.build_system.ldflags = ['-lm', '-lcudart']
         else:
             arch = 'sm_60'
-        self.build_system.options = ['NVCCFLAGS="-g -arch=%s"' % arch]
 
+        self.build_system.options = ['NVCCFLAGS="-g -arch=%s"' % arch]
         self.sanity_patterns = sn.all([
             sn.assert_found('MPI implementation', 'ddtreport.txt'),
             sn.assert_found('Evaluate', 'ddtreport.txt'),

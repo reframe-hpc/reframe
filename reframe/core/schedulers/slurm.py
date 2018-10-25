@@ -79,7 +79,6 @@ class SlurmJob(sched.Job):
     def emit_preamble(self):
         preamble = [
             self._format_option(self.name, '--job-name="{0}"'),
-            self._format_option('%d:%d:%d' % self.time_limit, '--time={0}'),
             self._format_option(self.num_tasks, '--ntasks={0}'),
             self._format_option(self.num_tasks_per_node,
                                 '--ntasks-per-node={0}'),
@@ -88,14 +87,13 @@ class SlurmJob(sched.Job):
             self._format_option(self.num_tasks_per_socket,
                                 '--ntasks-per-socket={0}'),
             self._format_option(self.num_cpus_per_task, '--cpus-per-task={0}'),
-            self._format_option(self.sched_partition, '--partition={0}'),
-            self._format_option(self.sched_account, '--account={0}'),
-            self._format_option(self.sched_nodelist, '--nodelist={0}'),
-            self._format_option(self.sched_exclude_nodelist, '--exclude={0}'),
-            self._format_option(self.sched_reservation, '--reservation={0}'),
             self._format_option(self.stdout, '--output={0}'),
             self._format_option(self.stderr, '--error={0}'),
         ]
+
+        if self.time_limit is not None:
+            preamble.append(self._format_option('%d:%d:%d' % self.time_limit,
+                                                '--time={0}'))
 
         if self.sched_exclusive_access:
             preamble.append(self._format_option(
@@ -106,17 +104,18 @@ class SlurmJob(sched.Job):
         else:
             hint = 'multithread' if self.use_smt else 'nomultithread'
 
+        self.options = [
+            self._format_option(self.sched_partition, '--partition={0}'),
+            self._format_option(self.sched_account, '--account={0}'),
+            self._format_option(self.sched_nodelist, '--nodelist={0}'),
+            self._format_option(self.sched_exclude_nodelist, '--exclude={0}'),
+            self._format_option(self.sched_reservation, '--reservation={0}')
+        ] + self.options
+
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
         for opt in self.options:
             if not prefix_patt.match(opt):
-                # FIXME: Temporary solution to issue #526. Check if a partition
-                #        option is given in site settings which would overwrite
-                #        the corresponding command line option.
-                if (opt.startswith(('-p', '--partition')) and
-                    self.sched_partition):
-                    continue
-
                 preamble.append('%s %s' % (self._prefix, opt))
             else:
                 preamble.append(opt)
@@ -131,27 +130,26 @@ class SlurmJob(sched.Job):
         except SpawnedProcessError as e:
             raise JobError(jobid=self._jobid) from e
 
-    def prepare(self, *args, **kwargs):
-        if self.num_tasks == 0:
-            if self.sched_reservation:
-                nodes = self._get_reservation_nodes()
-                num_nodes = self._count_compatible_nodes(nodes)
-                getlogger().debug(
-                    'found %s available node(s) in reservation %s' %
-                    (num_nodes, self.sched_reservation))
-                if num_nodes == 0:
-                    raise JobError("could not find any node satisfying the "
-                                   "required criteria in reservation '%s'" %
-                                   self.sched_reservation)
-                num_tasks_per_node = self.num_tasks_per_node or 1
-                self._num_tasks = num_nodes * num_tasks_per_node
-                getlogger().debug('automatically setting num_tasks to %s' %
-                                  self.num_tasks)
-            else:
-                raise JobError('A reservation has to be specified '
-                               'when setting the num_tasks to 0.')
+    def guess_num_tasks(self):
+        if self.sched_reservation:
+            nodes = self._get_reservation_nodes()
+            num_nodes = self._count_compatible_nodes(nodes)
+            getlogger().debug('found %s available node(s) in reservation %s' %
+                              (num_nodes, self.sched_reservation))
+            if num_nodes == 0:
+                raise JobError("could not find any node satisfying the "
+                               "required criteria in reservation '%s'" %
+                               self.sched_reservation)
 
-        super().prepare(*args, **kwargs)
+            num_tasks_per_node = self.num_tasks_per_node or 1
+            num_tasks = num_nodes * num_tasks_per_node
+            getlogger().debug('automatically setting num_tasks to %s' %
+                              self.num_tasks)
+        else:
+            raise JobError('flexible num_tasks can only be used with a '
+                           'reservation')
+
+        return num_tasks
 
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
