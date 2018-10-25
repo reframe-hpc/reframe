@@ -11,8 +11,8 @@ from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
-    KeyboardInterruptCheck, SleepCheck, SleepCheckPollFail,
-    SleepCheckPollFailLate, BadSetupCheck, RetriesCheck, SystemExitCheck)
+    KeyboardInterruptCheck, SystemExitCheck, SleepCheck, SleepCheckPollFail,
+    SleepCheckPollFailLate, BadSetupCheck, BadSetupCheckEarly, RetriesCheck)
 
 
 class TestSerialExecutionPolicy(unittest.TestCase):
@@ -138,14 +138,17 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_retries_bad_check(self):
         max_retries = 2
-        checks = [BadSetupCheck()]
+        checks = [BadSetupCheck(), BadSetupCheckEarly()]
         self.runner._max_retries = max_retries
         self.runner.runall(checks)
 
         # Ensure that the test was retried #max_retries times and failed.
-        self.assertEqual(1, self.runner.stats.num_cases())
+        self.assertEqual(2, self.runner.stats.num_cases())
         self.assertEqual(max_retries, rt.runtime().current_run)
-        self.assertEqual(1, self.runner.stats.num_failures())
+        self.assertEqual(2, self.runner.stats.num_failures())
+
+        # Ensure that the report does not raise any exception.
+        self.runner.stats.retry_report()
 
     def test_retries_good_check(self):
         max_retries = 2
