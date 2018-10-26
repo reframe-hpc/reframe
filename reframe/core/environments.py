@@ -121,6 +121,8 @@ class Environment:
     def emit_load_commands(self):
         rt = runtime()
         if self.is_loaded:
+        # FIXME: This is a workaround to prevent redundant export statements -
+        #        revisit environment interface
             ret = list(self._load_stmts)
         else:
             ret = list(
