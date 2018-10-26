@@ -21,20 +21,20 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'leone:normal', 'monch:compute']
+                              'kesch:cn', 'leone:normal']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
 
         # Removing static compilation from kesch
-        if (self.current_system.name in ['kesch', 'leone', 'monch'] and
+        if (self.current_system.name in ['kesch', 'leone'] and
             linkage == 'static'):
             self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
 
         self.maintainers = ['CB', 'VK']
-        self.tags = {'production', 'monch_acceptance'}
+        self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
         result = sn.findall(r'Hello World from thread \s*(\d+) out '

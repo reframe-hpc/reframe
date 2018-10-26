@@ -129,6 +129,7 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         }
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test([1], [2], [4], [6], [8])
 class GromacsCPUMonchAcceptance(GromacsBaseCheck):
     def __init__(self, num_nodes):

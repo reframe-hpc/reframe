@@ -14,6 +14,7 @@ class DGEMMTest(rfm.RegressionTest):
         self.tags = {'production'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.required_version('>=2.14')
 @rfm.simple_test
 class DGEMMTestMonch(DGEMMTest):
