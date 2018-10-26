@@ -121,7 +121,8 @@ class Environment:
     def emit_load_commands(self):
         rt = runtime()
         if self.is_loaded:
-        # FIXME: This is a workaround for issue #423; revisit environment interface
+            # FIXME: This is a workaround for issue #423; the environment
+            #        interface must be revisited (see issue #456)
             ret = list(self._load_stmts)
         else:
             ret = list(
