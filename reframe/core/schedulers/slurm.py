@@ -155,36 +155,28 @@ class SlurmJob(sched.Job):
 
         self._jobid = int(jobid_match.group('jobid'))
 
-    def _show_nodes(self):
-        command = 'scontrol show -o nodes'
-        completed = os_ext.run_command(command, check=True)
-        if completed:
-            node_descriptions = completed.stdout.splitlines()
-        else:
-            raise JobError('could not show the nodes')
+    def _get_all_nodes(self):
+        try:
+            completed = os_ext.run_command('scontrol show -o nodes',
+                                           check=True)
+        except SpawnedProcessError as e:
+            raise JobError('could not retrieve node information') from e
 
+        node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
     def get_available_nodes(self):
-        nodes = self._show_nodes()
-        option_parser = ArgumentParser()
-        option_parser.add_argument('-C', '--constraint')
-        parsed_args, _ = option_parser.parse_known_args(self.sched_access)
-        access = parsed_args.constraint
-        if access:
-            access = set(access.strip().split(','))
-            nodes = {n for n in nodes if n.active_features >= access}
+        nodes = self._get_all_nodes()
+        return self.filter_nodes(nodes, self.sched_access)
 
-        return nodes
-
-    def filter_nodes(self, nodes):
+    def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
         option_parser.add_argument('-p', '--partition')
         option_parser.add_argument('-w', '--nodelist')
         option_parser.add_argument('-C', '--constraint')
         option_parser.add_argument('-x', '--exclude')
-        parsed_args, _ = option_parser.parse_known_args(self.options)
+        parsed_args, _ = option_parser.parse_known_args(options)
         reservation = parsed_args.reservation
         partitions = parsed_args.partition
         nodelist = parsed_args.nodelist
@@ -229,8 +221,8 @@ class SlurmJob(sched.Job):
         return nodes
 
     def _get_reservation_nodes(self, reservation):
-        command = 'scontrol show res %s' % reservation
-        completed = os_ext.run_command(command, check=True)
+        completed = os_ext.run_command('scontrol show res %s' % reservation,
+                                       check=True)
         node_match = re.search(r'(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
@@ -244,12 +236,12 @@ class SlurmJob(sched.Job):
         return {SlurmNode(descr) for descr in node_descriptions}
 
     def _get_nodes_by_name(self, nodespec):
-        command = 'scontrol show -o node %s' % nodespec
         try:
-            completed = os_ext.run_command(command, check=True)
+            completed = os_ext.run_command(
+                'scontrol show -o node %s' % nodespec, check=True)
         except SpawnedProcessError as e:
             raise JobError('could not retrieve the node description '
-                           'of nodes: %s' % nodespec)
+                           'of nodes: %s' % nodespec) from e
 
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}

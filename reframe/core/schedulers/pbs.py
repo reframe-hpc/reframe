@@ -27,7 +27,7 @@ PBS_OUTPUT_WRITEBACK_WAIT = 3
 class PbsJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._prefix  = '#PBS'
+        self._prefix = '#PBS'
         self._time_finished = None
 
         # Optional part of the job id refering to the PBS server
@@ -89,12 +89,12 @@ class PbsJob(sched.Job):
         return preamble
 
     def get_available_nodes(self):
-        raise JobError(
-            'pbs scheduler does not support listing of available nodes')
+        raise NotImplementedError(
+            'listing of available nodes is not supported by the pbs backend')
 
-    def filter_nodes(self, nodes):
-        raise JobError(
-            'pbs scheduler does not support filtering of available nodes')
+    def filter_nodes(self, nodes, options):
+        raise NotImplementedError(
+            'filtering of nodes is not supported by the pbs backend')
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS

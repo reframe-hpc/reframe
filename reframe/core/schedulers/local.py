@@ -59,11 +59,11 @@ class LocalJob(sched.Job):
         return []
 
     def get_available_nodes(self):
-        raise JobError(
+        raise NotImplementedError(
             'local scheduler does not support listing of available nodes')
 
-    def filter_nodes(self, nodes):
-        raise JobError(
+    def filter_nodes(self, nodes, options):
+        raise NotImplementedError(
             'local scheduler does not support filtering of available nodes')
 
     def _kill_all(self):
