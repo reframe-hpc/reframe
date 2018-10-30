@@ -171,7 +171,7 @@ class _TestJob:
 
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
-        with self.assertRaises(JobError):
+        with self.assertRaises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
 
@@ -387,9 +387,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
         self.testjob._sched_flex_alloc_tasks = 'all'
-        # monkey patch `_get_available_nodes` to simulate extraction of
+        # monkey patch `get_partition_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.get_available_nodes = lambda: set()
+        self.testjob.get_partition_nodes = lambda: set()
         with self.assertRaises(JobError):
             self.testjob.guess_num_tasks()
 

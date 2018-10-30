@@ -22,7 +22,7 @@ class FakeJob(Job):
     def finished(self):
         pass
 
-    def get_available_nodes(self):
+    def get_partition_nodes(self):
         pass
 
     def filter_nodes(self, nodes):

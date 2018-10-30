@@ -58,7 +58,7 @@ class LocalJob(sched.Job):
     def emit_preamble(self):
         return []
 
-    def get_available_nodes(self):
+    def get_partition_nodes(self):
         raise NotImplementedError(
             'local scheduler does not support listing of available nodes')
 

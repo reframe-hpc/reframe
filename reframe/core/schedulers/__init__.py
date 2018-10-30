@@ -214,9 +214,13 @@ class Job(abc.ABC):
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks == 0:
-            self._num_tasks = self.guess_num_tasks()
-            getlogger().debug(
-                'flex_alloc_tasks: setting num_tasks to %s' % self._num_tasks)
+            try:
+                self._num_tasks = self.guess_num_tasks()
+                getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+                                  self._num_tasks)
+            except NotImplementedError as e:
+                raise JobError('guessing number of tasks is not implemented '
+                               'by the backend') from e
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
@@ -232,12 +236,7 @@ class Job(abc.ABC):
         pass
 
     def guess_num_tasks(self):
-        try:
-            available_nodes = self.get_available_nodes()
-        except NotImplementedError as e:
-            raise JobError('guessing the number of tasks is not supported '
-                           'by the backend') from e
-
+        available_nodes = self.get_partition_nodes()
         getlogger().debug('flex_alloc_tasks: total available nodes in current '
                           'virtual partition: %s' % len(available_nodes))
         if isinstance(self.sched_flex_alloc_tasks, int):
@@ -247,38 +246,37 @@ class Job(abc.ABC):
 
             return self.sched_flex_alloc_tasks
 
-        # The number of tasks is going to be automatically determined
-        try:
-            available_nodes = self.filter_nodes(available_nodes, self.options)
-        except NotImplementedError as e:
-            raise JobError('guessing the number of tasks is not supported '
-                           'by the backend') from e
-
+        # Try to guess the number of tasks now
+        available_nodes = self.filter_nodes(available_nodes, self.options)
         if not available_nodes:
+            options = ' '.join(self.sched_access + self.options)
             raise JobError('could not find any node satisfying the '
-                           'required criteria: %s' % self.options)
+                           'required criteria: %s' % options)
 
         if self.sched_flex_alloc_tasks == 'idle':
             available_nodes = {n for n in available_nodes
                                if n.is_available()}
             if not available_nodes:
                 raise JobError('could not find any idle nodes')
+
             getlogger().debug(
                 'flex_alloc_tasks: selecting idle nodes: '
                 'available nodes now: %s' % len(available_nodes))
 
         num_tasks_per_node = self.num_tasks_per_node or 1
         num_tasks = len(available_nodes) * num_tasks_per_node
-        getlogger().debug(
-            'flex_alloc_tasks: setting num_tasks to: %s' % num_tasks)
+        getlogger().debug('flex_alloc_tasks: setting num_tasks to: %s' %
+                          num_tasks)
         return num_tasks
 
     @abc.abstractmethod
-    def get_available_nodes(self):
+    def get_partition_nodes(self):
+        # Get all nodes of the current virtual partition
         pass
 
     @abc.abstractmethod
     def filter_nodes(self, nodes, options):
+        # Filter nodes according to the scheduler options
         pass
 
     @abc.abstractmethod

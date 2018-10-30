@@ -88,13 +88,12 @@ class PbsJob(sched.Job):
         preamble.append('cd %s' % self.workdir)
         return preamble
 
-    def get_available_nodes(self):
-        raise NotImplementedError(
-            'listing of available nodes is not supported by the pbs backend')
+    def get_partition_nodes(self):
+        raise NotImplementedError('pbs backend does not support node listing')
 
     def filter_nodes(self, nodes, options):
-        raise NotImplementedError(
-            'filtering of nodes is not supported by the pbs backend')
+        raise NotImplementedError('pbs backend does not support '
+                                  'node filtering')
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS

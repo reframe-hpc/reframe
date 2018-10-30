@@ -456,14 +456,16 @@ def main():
             exec_policy.only_environs = options.prgenv
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
+                errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
                 sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
+                if sched_flex_alloc_tasks <= 0:
+                    raise ConfigError(errmsg.format(options.flex_alloc_tasks))
             except ValueError:
-                if options.flex_alloc_tasks in {'idle', 'all'}:
-                    sched_flex_alloc_tasks = options.flex_alloc_tasks
-                else:
+                if not options.flex_alloc_tasks.lower() in {'idle', 'all'}:
                     raise ConfigError(
-                        'invalid option: "%s" for --flex-alloc-tasks' %
-                        options.flex_alloc_tasks) from None
+                        errmsg.format(options.flex_alloc_tasks)) from None
+
+                sched_flex_alloc_tasks = options.flex_alloc_tasks
 
             exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
             exec_policy.flex_alloc_tasks = options.flex_alloc_tasks

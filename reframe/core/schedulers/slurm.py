@@ -165,7 +165,7 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
-    def get_available_nodes(self):
+    def get_partition_nodes(self):
         nodes = self._get_all_nodes()
         return self.filter_nodes(nodes, self.sched_access)
 
@@ -182,7 +182,6 @@ class SlurmJob(sched.Job):
         nodelist = parsed_args.nodelist
         constraints = parsed_args.constraint
         exclude_nodes = parsed_args.exclude
-
         if reservation:
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
@@ -263,7 +262,6 @@ class SlurmJob(sched.Job):
             return
 
         self._state = SlurmJobState(state_match.group('state'))
-
         if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked()
 
