@@ -75,7 +75,7 @@ class LAMMPSGPUProdCheck(LAMMPSGPUCheck):
         super().__init__()
         self.reference = {
             'dom:gpu': {
-                'perf': (3360.0, -0.10, None)
+                'perf': (3132.0, -0.05, None)
             },
             'daint:gpu': {
                 'perf': (2382.0, -0.50, None)
@@ -105,7 +105,7 @@ class LAMMPSCPUProdCheck(LAMMPSCPUCheck):
         super().__init__()
         self.reference = {
             'dom:mc': {
-                'perf': (4454.0, -0.05, None)
+                'perf': (4394.0, -0.05, None)
             },
             'daint:mc': {
                 'perf': (5310.0, -0.65, None)

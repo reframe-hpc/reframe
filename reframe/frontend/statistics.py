@@ -45,12 +45,18 @@ class TestStats:
         report.append('SUMMARY OF RETRIES')
         report.append(line_width * '-')
         messages = {}
+
         for run in range(1, len(self._tasks)):
             for t in self.get_tasks(run):
-                key = '%s:%s:%s' % (
-                      t.check.name, t.check.current_partition.fullname,
-                      t.check.current_environ.name
-                )
+                partition_name = ''
+                environ_name = ''
+                if t.check.current_partition:
+                    partition_name = t.check.current_partition.fullname
+
+                if t.check.current_environ:
+                    environ_name = t.check.current_environ.name
+
+                key = '%s:%s:%s' % (t.check.name, partition_name, environ_name)
                 # Overwrite entry from previous run if available
                 messages[key] = (
                     '  * Test %s was retried %s time(s) and %s.' %

@@ -1160,11 +1160,8 @@ class RegressionTest:
             self._current_partition.local_env.unload()
 
     def __str__(self):
-        return ('%s (found in %s)\n'
-                '        descr: %s\n'
-                '        tags: {%s}, maintainers: %s' %
-                (self.name, inspect.getfile(type(self)),
-                 self.descr, ','.join(self.tags), self.maintainers))
+        return "%s(name='%s', prefix='%s')" % (type(self).__name__,
+                                               self.name, self.prefix)
 
 
 class RunOnlyRegressionTest(RegressionTest):

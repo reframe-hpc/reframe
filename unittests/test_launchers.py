@@ -22,6 +22,9 @@ class FakeJob(Job):
     def finished(self):
         pass
 
+    def guess_num_tasks(self):
+        pass
+
 
 class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
