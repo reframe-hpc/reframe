@@ -157,6 +157,10 @@ def main():
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Specify the maximum number of times a failed regression test '
              'may be retried (default: 0)')
+    run_options.add_argument(
+        '--flex-alloc-tasks', action='store',
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
+        help="Strategy for flexible task allocation (default: 'idle').")
 
     # Miscellaneous options
     misc_options.add_argument(
@@ -195,10 +199,6 @@ def main():
                                            'reframe/settings.py'))
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
-    misc_options.add_argument(
-        '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
-        help="Strategy for flexible task allocation (default: 'idle').")
 
     if len(sys.argv) == 1:
         argparser.print_help()
