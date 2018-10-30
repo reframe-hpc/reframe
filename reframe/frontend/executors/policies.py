@@ -182,6 +182,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self.printer.status('HOLD', task.check.info(), just='right')
                 self._ready_tasks[partname].append(task)
         except TaskExit:
+            if not task.failed:
+                self._reschedule(task, load_env=False)
             return
         except ABORT_REASONS as e:
             if not task.failed:
@@ -296,7 +298,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     time.sleep(t)
 
             except TaskExit:
-                pass
+                self._reschedule_all()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise

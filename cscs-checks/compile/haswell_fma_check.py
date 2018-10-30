@@ -10,7 +10,8 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.descr = 'check for avx2 instructions'
         self.valid_systems = ['dom:login', 'daint:login', 'kesch:login']
         if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray*', 'PrgEnv-gnu*']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-cray-nompi', 'PrgEnv-gnu-nompi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']

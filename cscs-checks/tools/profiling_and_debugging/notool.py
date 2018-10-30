@@ -40,16 +40,11 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic'
         }
         self.openmp_versions = ScopedDict({
-            'daint:PrgEnv-cray': {'version': 201307},
-            'daint:PrgEnv-gnu': {'version': 201307},
-            'daint:PrgEnv-intel': {'version': 201511},
-            'daint:PrgEnv-pgi': {'version': 201307},
-            'daint:PrgEnv-pgi:C++': {'version': 200805},
-            'dom:PrgEnv-cray': {'version': 201511},
-            'dom:PrgEnv-gnu': {'version': 201511},
-            'dom:PrgEnv-gnu:F90': {'version': 201307},
-            'dom:PrgEnv-intel': {'version': 201611},
-            'dom:PrgEnv-pgi': {'version': 201307},
+            'PrgEnv-cray': {'version': 201511},
+            'PrgEnv-gnu': {'version': 201511},
+            'PrgEnv-gnu:F90': {'version': 201307},
+            'PrgEnv-intel': {'version': 201611},
+            'PrgEnv-pgi': {'version': 201307},
         })
         # a scopedict is better than this:
         # if (self.language == 'C++' and
@@ -86,8 +81,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.ldflags = ['-lm']
         found_version = sn.extractsingle(
             r'OpenMP-\s*(\d+)', self.stdout, 1, int)
-        ompversion_key = '%s:%s:%s:version' % (
-            self.current_system.name, environ_name, self.language)
+        ompversion_key = '%s:%s:version' % (environ_name, self.language)
         self.sanity_patterns = sn.all([
             sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
             sn.assert_found('SUCCESS', self.stdout),
