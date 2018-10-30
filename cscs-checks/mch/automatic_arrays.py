@@ -8,9 +8,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                    'PrgEnv-gnu', 'PrgEnv-cray-c2sm-base',
-                                    'PrgEnv-pgi-c2sm-base', 
-                                    'PrgEnv-gnu-c2sm-base']
+                                    'PrgEnv-gnu', 'PrgEnv-cray-c2sm-gpu',
+                                    'PrgEnv-pgi-c2sm-gpu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['kesch']:
@@ -45,17 +44,17 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'dom:gpu': {'time': (6.3E-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
             },
-            'PrgEnv-cray-c2sm-base': {
+            'PrgEnv-cray-c2sm-gpu': {
                 'daint:gpu': {'time': (5.7E-05, None, 0.15)},
                 'dom:gpu': {'time': (5.8E-05, None, 0.15)},
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
-            'PrgEnv-gnu-c2sm-base': {
+            'PrgEnv-gnu-c2sm-gpu': {
                 'daint:gpu': {'time': (7.0E-03, None, 0.15)},
                 'dom:gpu': {'time': (7.3E-03, None, 0.15)},
                 'kesch:cn': {'time': (6.5E-03, None, 0.15)},
             },
-            'PrgEnv-pgi-c2sm-base': {
+            'PrgEnv-pgi-c2sm-gpu': {
                 'daint:gpu': {'time': (6.4E-05, None, 0.15)},
                 'dom:gpu': {'time': (6.3E-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
@@ -74,10 +73,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
             elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
-
-        # workaround for problem with mvapich library
-        if environ.name == 'PrgEnv-cray':
-            self.variables = {'MV2_USE_CUDA': '1'}
 
         self.reference = self.arrays_reference[environ.name]
         super().setup(partition, environ, **job_opts)

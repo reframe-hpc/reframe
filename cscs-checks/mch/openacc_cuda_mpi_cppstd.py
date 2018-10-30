@@ -10,7 +10,12 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.name = 'OpenaccCudaCPP' + name_suffix
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                    'PrgEnv-cray-c2sm',
+                                    'PrgEnv-cray-c2sm-gpu'
+                                    'PrgEnv-pgi-c2sm',
+                                    'PrgEnv-pgi-c2sm-gpu',
+                                    'PrgEnv-gnu-c2sm']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
         if self.current_system.name in ['daint', 'dom']:

@@ -131,8 +131,8 @@ class ReframeSettings:
                                      'PrgEnv-pgi-c2sm',
                                      'PrgEnv-gnu-c2sm',
                                      'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu',
-                                     'PrgEnv-cray-c2sm-gpu'],
+                                     'PrgEnv-pgi-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
