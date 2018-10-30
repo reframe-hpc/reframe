@@ -171,7 +171,7 @@ class _TestJob:
 
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
-        with self.assertRaises(JobError):
+        with self.assertRaises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
 
@@ -384,6 +384,15 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         super().test_cancel()
         self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
 
+    def test_guess_num_tasks(self):
+        self.testjob._num_tasks = 0
+        self.testjob._sched_flex_alloc_tasks = 'all'
+        # monkey patch `get_partition_nodes()` to simulate extraction of
+        # slurm nodes through the use of `scontrol show`
+        self.testjob.get_partition_nodes = lambda: set()
+        with self.assertRaises(JobError):
+            self.testjob.guess_num_tasks()
+
 
 class TestSqueueJob(TestSlurmJob):
     @property
@@ -497,6 +506,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
                              'ExtSensorsTemp=n/s Reason=Foo/ '
                              'failed [reframe_user@01 Jan 2018]',
+
                              'NodeName=nid00002 Arch=x86_64 CoresPerSocket=12 '
                              'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
                              'AvailableFeatures=f2,f3 ActiveFeatures=f2,f3 '
@@ -514,13 +524,32 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
                              'ExtSensorsTemp=n/s Reason=Foo/ '
                              'failed [reframe_user@01 Jan 2018]',
+
                              'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
                              'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
                              'AvailableFeatures=f1,f3 ActiveFeatures=f1,f3 '
                              'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
                              'NodeHostName=nid00003 Version=10.00 OS=Linux '
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-                             'Sockets=1 Boards=1 State=MAINT+DRAIN '
+                             'Sockets=1 Boards=1 State=IDLE '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p1,p3 '
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ '
+                             'failed [reframe_user@01 Jan 2018]',
+
+                             'NodeName=nid00004 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f1,f4 ActiveFeatures=f1,f4 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
+                             'NodeHostName=nid00003 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=IDLE '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
                              'MCS_label=N/A Partitions=p1,p3 '
                              'BootTime=01 Jan 2018 '
@@ -531,7 +560,15 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
                              'ExtSensorsTemp=n/s Reason=Foo/ '
                              'failed [reframe_user@01 Jan 2018]']
-        return [SlurmNode(desc) for desc in node_descriptions]
+
+        return {SlurmNode(desc) for desc in node_descriptions}
+
+    def create_reservation_nodes(obj, res):
+        return {n for n in obj.create_dummy_nodes() if n.name != 'nid00001'}
+
+    def get_nodes_by_name(obj, node_names):
+        nodes = obj.create_dummy_nodes()
+        return {n for n in nodes if n.name in node_names}
 
     def setUp(self):
         self.workdir = tempfile.mkdtemp(dir='unittests')
@@ -544,123 +581,228 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        # monkey patch `_get_reservation_nodes` to simulate extraction of
+        # monkey patch `_get_all_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob._get_reservation_nodes = self.create_dummy_nodes
+        self.testjob._get_all_nodes = self.create_dummy_nodes
+        self.testjob._sched_flex_alloc_tasks = 'all'
         self.testjob._num_tasks_per_node = 4
         self.testjob._num_tasks = 0
 
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
-    def test_valid_constraint(self, expected_num_tasks=8):
-        self.testjob._sched_reservation = 'Foo'
+    def test_positive_flex_alloc_tasks(self):
+        self.testjob._sched_flex_alloc_tasks = 48
+        self.testjob._sched_access = ['--constraint=f1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 48)
+
+    def test_zero_flex_alloc_tasks(self):
+        self.testjob._sched_flex_alloc_tasks = 0
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_negative_flex_alloc_tasks(self):
+        self.testjob._sched_flex_alloc_tasks = -4
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_sched_access_idle(self):
+        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_access = ['--constraint=f1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_sched_access_constraint_partition(self):
+        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_constraint_idle(self):
+        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob.options = ['--constraint=f1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_partition_idle(self):
+        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_partition = 'p2'
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_valid_constraint_opt(self):
         self.testjob.options = ['-C f1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, 12)
 
-    def test_valid_multiple_constraints(self, expected_num_tasks=4):
-        self.testjob._sched_reservation = 'Foo'
-        self.testjob.options = ['-C f1 f3']
+    def test_valid_multiple_constraints(self):
+        self.testjob.options = ['-C f1,f3']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, 4)
 
-    def test_valid_partition(self, expected_num_tasks=8):
-        self.testjob._sched_reservation = 'Foo'
+    def test_valid_partition_cmd(self):
         self.testjob._sched_partition = 'p2'
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
+        self.assertEqual(self.testjob.num_tasks, 8)
 
-    def test_valid_multiple_partitions(self, expected_num_tasks=4):
-        self.testjob._sched_reservation = 'Foo'
-        self.testjob.options = ['-p p1 p2']
-        if expected_num_tasks:
+    def test_valid_partition_opt(self):
+        self.testjob.options = ['-p p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_valid_multiple_partitions(self):
+        self.testjob.options = ['--partition=p1,p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_valid_constraint_partition(self):
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_not_valid_partition_cmd(self):
+        self.testjob._sched_partition = 'invalid'
+        with self.assertRaises(JobError):
             self.prepare_job()
-            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
-        else:
-            self.assertRaises(JobError, self.prepare_job)
 
-    def test_valid_constraint_partition(self, expected_num_tasks=4):
-        self.testjob._sched_reservation = 'Foo'
-        self.testjob.options = ['-C f1 f2', '--partition=p1 p2']
-        if expected_num_tasks:
+    def test_invalid_partition_opt(self):
+        self.testjob.options = ['--partition=invalid']
+        with self.assertRaises(JobError):
             self.prepare_job()
-            self.assertEqual(self.testjob.num_tasks, expected_num_tasks)
-        else:
-            self.assertRaises(JobError, self.prepare_job)
 
-    def test_not_valid_partition(self):
-        self.testjob._sched_reservation = 'Foo'
-        self.testjob._sched_partition = 'Invalid'
-        self.assertRaises(JobError, self.prepare_job)
-
-    def test_not_valid_constraint(self):
-        self.testjob._sched_reservation = 'Foo'
+    def test_invalid_constraint(self):
         self.testjob.options = ['--constraint=invalid']
-        self.assertRaises(JobError, self.prepare_job)
+        with self.assertRaises(JobError):
+            self.prepare_job()
 
-    def test_noreservation(self):
-        self.assertRaises(JobError, self.prepare_job)
+    def test_valid_reservation_cmd(self):
+        self.testjob._sched_access = ['--constraint=f2']
+        self.testjob._sched_reservation = 'dummy'
+        # monkey patch `_get_reservation_nodes` to simulate extraction of
+        # reservation slurm nodes through the use of `scontrol show`
+        self.testjob._get_reservation_nodes = self.create_reservation_nodes
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_valid_reservation_option(self):
+        self.testjob._sched_access = ['--constraint=f2']
+        self.testjob.options = ['--reservation=dummy']
+        self.testjob._get_reservation_nodes = self.create_reservation_nodes
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_exclude_nodes_cmd(self):
+        self.testjob._sched_access = ['--constraint=f1']
+        self.testjob._sched_exclude_nodelist = 'nid00001'
+        self.testjob._get_nodes_by_name = self.get_nodes_by_name
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_exclude_nodes_opt(self):
+        self.testjob._sched_access = ['--constraint=f1']
+        self.testjob.options = ['-x nid00001']
+        self.testjob._get_nodes_by_name = self.get_nodes_by_name
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 8)
 
     def prepare_job(self):
         self.testjob.prepare(['hostname'])
 
 
-class TestSlurmFlexibleNodeAllocationExclude(TestSlurmFlexibleNodeAllocation):
-    def create_dummy_exclude_nodes(obj):
-        return [obj.create_dummy_nodes()[0].name]
-
-    def setUp(self):
-        super().setUp()
-        self.testjob._sched_exclude_nodelist = 'nid00001'
-        # monkey patch `_get_exclude_nodes` to simulate extraction of
-        # slurm nodes through the use of `scontrol show`
-        self.testjob._get_excluded_node_names = self.create_dummy_exclude_nodes
-
-    def test_valid_constraint(self):
-        super().test_valid_constraint(expected_num_tasks=4)
-        self.assertEqual(self.testjob.num_tasks, 4)
-
-    def test_valid_multiple_constraints(self):
-        super().test_valid_multiple_constraints(expected_num_tasks=4)
-
-    def test_valid_partition(self):
-        super().test_valid_partition(expected_num_tasks=4)
-
-    def test_valid_multiple_partitions(self):
-        super().test_valid_multiple_partitions(expected_num_tasks=None)
-
-    def test_valid_constraint_partition(self):
-        super().test_valid_constraint_partition(expected_num_tasks=None)
-
-
 class TestSlurmNode(unittest.TestCase):
     def setUp(self):
-        node_description = ('NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
-                            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
-                            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
-                            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
-                            'NodeHostName=nid00001 Version=10.00 OS=Linux '
-                            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
-                            'Sockets=1 Boards=1 State=MAINT+DRAIN '
-                            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                            'MCS_label=N/A Partitions=p1,p2 '
-                            'BootTime=01 Jan 2018 '
-                            'SlurmdStartTime=01 Jan 2018 '
-                            'CfgTRES=cpu=24,mem=32220M '
-                            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
-                            'LowestJoules=100000000 ConsumedJoules=0 '
-                            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
-                            'ExtSensorsTemp=n/s Reason=Foo/ '
-                            'failed [reframe_user@01 Jan 2018]')
-        self.node = SlurmNode(node_description)
+        allocated_node_description = (
+            'NodeName=nid00001 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=ALLOCATED '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p1,p2 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]'
+        )
+
+        idle_node_description = (
+            'NodeName=nid00002 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=IDLE '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p1,p2 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]'
+        )
+
+        idle_drained_node_description = (
+            'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=IDLE+DRAIN '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p1,p2 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]'
+        )
+
+        self.allocated_node = SlurmNode(allocated_node_description)
+        self.allocated_node_copy = SlurmNode(allocated_node_description)
+        self.idle_node = SlurmNode(idle_node_description)
+        self.idle_drained = SlurmNode(idle_drained_node_description)
+
+    def test_state(self):
+        self.assertEqual(self.allocated_node.state, 'ALLOCATED')
+        self.assertEqual(self.idle_node.state, 'IDLE')
+        self.assertEqual(self.idle_drained.state, 'IDLE+DRAIN')
+
+    def test_equals(self):
+        self.assertEqual(self.allocated_node, self.allocated_node_copy)
+        self.assertNotEqual(self.allocated_node, self.idle_node)
+
+    def test_hash(self):
+        self.assertEqual(hash(self.allocated_node),
+                         hash(self.allocated_node_copy))
 
     def test_attributes(self):
-        self.assertEqual(self.node.name, 'nid00001')
-        self.assertEqual(self.node.partitions,
+        self.assertEqual(self.allocated_node.name, 'nid00001')
+        self.assertEqual(self.allocated_node.partitions,
                          {'p1', 'p2'})
-        self.assertEqual(self.node.active_features,
+        self.assertEqual(self.allocated_node.active_features,
                          {'f1', 'f2'})
 
     def test_str(self):
-        self.assertEqual('nid00001', str(self.node))
+        self.assertEqual('nid00001', str(self.allocated_node))
+
+    def test_is_available(self):
+        self.assertFalse(self.allocated_node.is_available())
+        self.assertTrue(self.idle_node.is_available())
+        self.assertFalse(self.idle_drained.is_available())

@@ -847,6 +847,7 @@ class RegressionTest:
             num_cpus_per_task=self.num_cpus_per_task,
             use_smt=self.use_multithreading,
             time_limit=self.time_limit,
+            sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -858,8 +859,7 @@ class RegressionTest:
             resources_opts.extend(
                 self._current_partition.get_resource(r, **v))
 
-        self._job.options = (self._current_partition.access +
-                             resources_opts + self._job.options)
+        self._job.options = resources_opts + self._job.options
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')

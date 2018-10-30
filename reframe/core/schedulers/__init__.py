@@ -9,8 +9,9 @@ import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.shell as shell
 import reframe.utility.typecheck as typ
-from reframe.core.exceptions import JobNotStartedError
+from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
+from reframe.core.logging import getlogger
 
 
 class JobState:
@@ -71,6 +72,8 @@ class Job(abc.ABC):
                  stderr=None,
                  pre_run=[],
                  post_run=[],
+                 sched_flex_alloc_tasks=None,
+                 sched_access=[],
                  sched_account=None,
                  sched_partition=None,
                  sched_reservation=None,
@@ -97,6 +100,8 @@ class Job(abc.ABC):
         self._time_limit = time_limit
 
         # Backend scheduler related information
+        self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
+        self._sched_access = sched_access
         self._sched_nodelist = sched_nodelist
         self._sched_exclude_nodelist = sched_exclude_nodelist
         self._sched_partition = sched_partition
@@ -175,6 +180,14 @@ class Job(abc.ABC):
         return self._use_smt
 
     @property
+    def sched_flex_alloc_tasks(self):
+        return self._sched_flex_alloc_tasks
+
+    @property
+    def sched_access(self):
+        return self._sched_access
+
+    @property
     def sched_nodelist(self):
         return self._sched_nodelist
 
@@ -201,7 +214,13 @@ class Job(abc.ABC):
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks == 0:
-            self._num_tasks = self.guess_num_tasks()
+            try:
+                self._num_tasks = self.guess_num_tasks()
+                getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+                                  self._num_tasks)
+            except NotImplementedError as e:
+                raise JobError('guessing number of tasks is not implemented '
+                               'by the backend') from e
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
@@ -216,8 +235,48 @@ class Job(abc.ABC):
     def emit_preamble(self):
         pass
 
-    @abc.abstractmethod
     def guess_num_tasks(self):
+        available_nodes = self.get_partition_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes in current '
+                          'virtual partition: %s' % len(available_nodes))
+        if isinstance(self.sched_flex_alloc_tasks, int):
+            if self.sched_flex_alloc_tasks <= 0:
+                raise JobError('invalid number of flex_alloc_tasks: %s' %
+                               self.sched_flex_alloc_tasks)
+
+            return self.sched_flex_alloc_tasks
+
+        # Try to guess the number of tasks now
+        available_nodes = self.filter_nodes(available_nodes, self.options)
+        if not available_nodes:
+            options = ' '.join(self.sched_access + self.options)
+            raise JobError('could not find any node satisfying the '
+                           'required criteria: %s' % options)
+
+        if self.sched_flex_alloc_tasks == 'idle':
+            available_nodes = {n for n in available_nodes
+                               if n.is_available()}
+            if not available_nodes:
+                raise JobError('could not find any idle nodes')
+
+            getlogger().debug(
+                'flex_alloc_tasks: selecting idle nodes: '
+                'available nodes now: %s' % len(available_nodes))
+
+        num_tasks_per_node = self.num_tasks_per_node or 1
+        num_tasks = len(available_nodes) * num_tasks_per_node
+        getlogger().debug('flex_alloc_tasks: setting num_tasks to: %s' %
+                          num_tasks)
+        return num_tasks
+
+    @abc.abstractmethod
+    def get_partition_nodes(self):
+        # Get all nodes of the current virtual partition
+        pass
+
+    @abc.abstractmethod
+    def filter_nodes(self, nodes, options):
+        # Filter nodes according to the scheduler options
         pass
 
     @abc.abstractmethod
