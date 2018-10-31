@@ -8,7 +8,7 @@ class NamdBaseCheck(RunOnlyRegressionTest):
     def __init__(self, variant, **kwargs):
         super().__init__('namd_%s_check' % variant,
                          os.path.dirname(__file__), **kwargs)
-        self.descr = 'NAMD 2.11 check (%s)' % variant
+        self.descr = 'NAMD (%s) check' % variant
 
         self.valid_prog_environs = ['PrgEnv-intel']
 
