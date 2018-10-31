@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
@@ -34,7 +35,7 @@ class NvprofCheck(rfm.RegressionTest):
         # FIXME temporary workaround
         # the programming environment should be adapted / fixed
         if self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit']
+            self.modules = ['craype-accel-nvidia35']
             self.build_system.ldflags += ['-lcudart', '-lm']
         else:
             self.modules = ['craype-accel-nvidia60']

@@ -5,6 +5,7 @@ import os
 
 import reframe.core.fields as fields
 import reframe.utility.os_ext as os_ext
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import EnvironError, SpawnedProcessError
 from reframe.core.runtime import runtime
 
@@ -16,9 +17,9 @@ class Environment:
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
     """
-    name = fields.StringPatternField('name', r'(\w|-)+')
-    modules = fields.TypedListField('modules', str)
-    variables = fields.TypedDictField('variables', str, str)
+    name = fields.TypedField('name', typ.Str[r'(\w|-)+'])
+    modules = fields.TypedField('modules', typ.List[str])
+    variables = fields.TypedField('variables', typ.Dict[str, str])
 
     def __init__(self, name, modules=[], variables={}, **kwargs):
         self._name = name
@@ -120,7 +121,9 @@ class Environment:
     def emit_load_commands(self):
         rt = runtime()
         if self.is_loaded:
-            ret = self._load_stmts
+            # FIXME: This is a workaround for issue #423; the environment
+            #        interface must be revisited (see issue #456)
+            ret = list(self._load_stmts)
         else:
             ret = list(
                 itertools.chain(*(rt.modules_system.emit_load_commands(m)
@@ -222,100 +225,101 @@ class ProgEnvironment(Environment):
     #: The C compiler of this programming environment.
     #:
     #: :type: :class:`str`
-    cc = fields.DeprecatedField(fields.StringField('cc'),
+    cc = fields.DeprecatedField(fields.TypedField('cc', str),
                                 'setting this field is deprecated; '
                                 'please set it through a build system',
                                 fields.DeprecatedField.OP_SET)
-    _cc = fields.StringField('cc')
+    _cc = fields.TypedField('cc', str)
 
     #: The C++ compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    cxx = fields.DeprecatedField(fields.StringField('cxx', allow_none=True),
+    cxx = fields.DeprecatedField(fields.TypedField('cxx', str, type(None)),
                                  'setting this field is deprecated; '
                                  'please set it through a build system',
                                  fields.DeprecatedField.OP_SET)
-    _cxx = fields.StringField('cxx', allow_none=True)
+    _cxx = fields.TypedField('cxx', str, type(None))
 
     #: The Fortran compiler of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
-    ftn = fields.DeprecatedField(fields.StringField('ftn', allow_none=True),
+    ftn = fields.DeprecatedField(fields.TypedField('ftn', str, type(None)),
                                  'setting this field is deprecated; '
                                  'please set it through a build system',
                                  fields.DeprecatedField.OP_SET)
-    _ftn = fields.StringField('ftn', allow_none=True)
+    _ftn = fields.TypedField('ftn', str, type(None))
 
     #: The preprocessor flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
     cppflags = fields.DeprecatedField(
-        fields.StringField('cppflags', allow_none=True),
+        fields.TypedField('cppflags', str, type(None)),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _cppflags = fields.StringField('cppflags', allow_none=True)
+    _cppflags = fields.TypedField('cppflags', str, type(None))
 
     #: The C compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
     cflags = fields.DeprecatedField(
-        fields.StringField('cflags', allow_none=True),
+        fields.TypedField('cflags', str, type(None)),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _cflags = fields.StringField('cflags', allow_none=True)
+    _cflags = fields.TypedField('cflags', str, type(None))
 
     #: The C++ compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
     cxxflags = fields.DeprecatedField(
-        fields.StringField('cxxflags', allow_none=True),
+        fields.TypedField('cxxflags', str, type(None)),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _cxxflags = fields.StringField('cxxflags', allow_none=True)
+    _cxxflags = fields.TypedField('cxxflags', str, type(None))
 
     #: The Fortran compiler flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
     fflags = fields.DeprecatedField(
-        fields.StringField('fflags', allow_none=True),
+        fields.TypedField('fflags', str, type(None)),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _fflags = fields.StringField('fflags', allow_none=True)
+    _fflags = fields.TypedField('fflags', str, type(None))
 
     #: The linker flags of this programming environment.
     #:
     #: :type: :class:`str` or :class:`None`
     ldflags = fields.DeprecatedField(
-        fields.StringField('ldflags', allow_none=True),
+        fields.TypedField('ldflags', str, type(None)),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _ldflags = fields.StringField('ldflags', allow_none=True)
+    _ldflags = fields.TypedField('ldflags', str, type(None))
 
     #: The include search path of this programming environment.
     #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
     include_search_path = fields.DeprecatedField(
-        fields.TypedListField('include_search_path', str),
+        fields.TypedField('include_search_path', typ.List[str]),
         'setting this field is deprecated; '
         'please set it through a build system',
         fields.DeprecatedField.OP_SET)
-    _include_search_path = fields.TypedListField('include_search_path', str)
+    _include_search_path = fields.TypedField('include_search_path',
+                                             typ.List[str])
 
     #: Propagate the compilation flags to the ``make`` invocation.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    propagate = fields.DeprecatedField(fields.BooleanField('propagate'),
+    propagate = fields.DeprecatedField(fields.TypedField('propagate', bool),
                                        'setting this field is deprecated; '
                                        'please set it through a build system',
                                        fields.DeprecatedField.OP_SET)
-    _propagate = fields.BooleanField('propagate')
+    _propagate = fields.TypedField('propagate', bool)
 
     def __init__(self,
                  name,

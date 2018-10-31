@@ -25,6 +25,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
         self.stats.add_task(task)
         try:
             task.setup(partition, environ,
+                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
@@ -158,6 +159,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.stats.add_task(task)
         try:
             task.setup(partition, environ,
+                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
@@ -180,6 +182,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self.printer.status('HOLD', task.check.info(), just='right')
                 self._ready_tasks[partname].append(task)
         except TaskExit:
+            if not task.failed:
+                self._reschedule(task, load_env=False)
             return
         except ABORT_REASONS as e:
             if not task.failed:
@@ -294,7 +298,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     time.sleep(t)
 
             except TaskExit:
-                pass
+                self._reschedule_all()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise

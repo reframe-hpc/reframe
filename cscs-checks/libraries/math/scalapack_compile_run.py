@@ -10,30 +10,26 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
-                              'dom:gpu', 'kesch:cn',  'monch:compute']
+                              'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.num_tasks = 16
         self.num_tasks_per_node = 8
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
 
-        # NOTE: STATIC LINKING NOT SUPPORTED BY ENVIRONMENTS
-        if (self.current_system.name in ['kesch', 'leone', 'monch'] and
-            linkage == 'static'):
-            self.valid_prog_environs = []
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-cray']
+            if linkage == 'static':
+                # Static linkage not supported on Kesch
+                self.valid_prog_environs = []
 
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O3']
         self.maintainers = ['CB', 'LM', 'MKr']
         self.tags = {'production'}
 
-    def setup(self, environ, partition, **job_opts):
-        super().setup(environ, partition, **job_opts)
-        if (self.current_system.name in ['kesch', 'monch'] and
-            self.current_environ.name == 'PrgEnv-gnu'):
-            self.build_system.ldflags = ['-lscalapack', '-lopenblas']
 
-
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
 class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
@@ -67,18 +63,18 @@ class ScaLAPACKSanity(ScaLAPACKTest):
             scalapack_sanity(4, 1, 0.8626176298213052),
             scalapack_sanity(4, 2, 0.4064822185450869),
             scalapack_sanity(4, 3, 0.2483911184660867),
-            scalapack_sanity(4, 4, 0.1701907253504270)])
+            scalapack_sanity(4, 4, 0.1701907253504270)
+        ])
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+# NOTE:  The test case is very small, but larger cases did not succeed!
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['dynamic'])
 class ScaLAPACKPerf(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
 
-        # FIXME:
-        # Currently, this test case is only aimed for the monch acceptance,
-        # yet it could be interesting to extend it to other systems.
-        # NB: The test case is very small, but larger cases did not succeed!
         self.tags |= {'monch_acceptance'}
         self.sourcepath = 'scalapack_performance_compile_run.f'
         self.valid_systems = ['monch:compute']

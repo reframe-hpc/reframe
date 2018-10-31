@@ -17,31 +17,31 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class NCOBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, sub_check):
+class NCOBaseTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
         super().__init__()
-        self.name = 'NCO_' + sub_check + '_check'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.modules = ['nco']
+        else:
+            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.modules = ['NCO']
+
         self.maintainers = ['SO']
         self.tags = {'production'}
-
-    def setup(self, partition, environ, **job_opts):
-        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
-        self.modules = [nco_name]
-        super().setup(partition, environ, **job_opts)
 
 
 # Check that the netCDF loaded by the NCO module supports the nc4 filetype
 # (nc4 support must be explicitly activated when the netCDF library is
 # compiled...).
 @rfm.simple_test
-class DependencyCheck(NCOBaseCheck):
+class NCO_DependencyTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('dependency')
+        super().__init__()
         self.descr = ('verifies that the netCDF loaded by the NCO module '
                       'supports the nc4 filetype')
         self.sourcesdir = None
@@ -51,9 +51,9 @@ class DependencyCheck(NCOBaseCheck):
 
 
 @rfm.simple_test
-class NC4SupportCheck(NCOBaseCheck):
+class NCO_NC4SupportTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('nc4_support')
+        super().__init__()
         self.descr = ('verifies that the NCO supports the nc4 filetype')
         self.sourcesdir = None
         self.executable = 'ncks'
@@ -66,16 +66,16 @@ class NC4SupportCheck(NCOBaseCheck):
         ])
 
 
-# All NCO check load the NCO module (see NCOBaseCheck). This test tries to load
+# All NCO check load the NCO module (see NCOBaseTest). This test tries to load
 # then the CDO module to see if there appear any conflicts. If there are no
 # conflicts then self.stdout and self.stderr are empty. Note that the command
 # 'module load CDO' cannot be passed via self.executable to srun as 'module'
 # is not an executable. Thus, we run the command as a pre_run command and
 # define as executable just an echo with no arguments.
 @rfm.simple_test
-class CDOModuleCompatibilityCheck(NCOBaseCheck):
+class NCO_CDOModuleCompatibilityTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('cdo_module_compat')
+        super().__init__()
         self.descr = ('verifies compatibility with the CDO module')
         self.sourcesdir = None
         self.executable = 'echo'
@@ -89,9 +89,9 @@ class CDOModuleCompatibilityCheck(NCOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNCCheck(NCOBaseCheck):
+class NCO_InfoNCTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('info_nc')
+        super().__init__()
         self.descr = ('verifies reading info of a standard netCDF file')
         self.executable = 'ncks'
         self.executable_opts = ['-M', 'sresa1b_ncar_ccsm3-example.nc']
@@ -102,9 +102,9 @@ class InfoNCCheck(NCOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNC4Check(NCOBaseCheck):
+class NCO_InfoNC4Test(NCOBaseTest):
     def __init__(self):
-        super().__init__('info_nc4')
+        super().__init__()
         self.descr = ('verifies reading info of a netCDF-4 file')
         self.executable = 'ncks'
         self.executable_opts = [
@@ -117,9 +117,9 @@ class InfoNC4Check(NCOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNC4CCheck(NCOBaseCheck):
+class NCO_InfoNC4CTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('info_nc4c')
+        super().__init__()
         self.descr = ('verifies reading info of a compressed netCDF-4 file')
         self.executable = 'ncks'
         self.executable_opts = [
@@ -132,9 +132,9 @@ class InfoNC4CCheck(NCOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNCCheck(NCOBaseCheck):
+class NCO_MergeNCTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('merge_nc')
+        super().__init__()
         self.descr = ('verifies merging of two standard netCDF files')
         self.executable = 'ncks'
         self.executable_opts = ['-A',
@@ -153,9 +153,9 @@ class MergeNCCheck(NCOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNC4Check(NCOBaseCheck):
+class NCO_MergeNC4Test(NCOBaseTest):
     def __init__(self):
-        super().__init__('merge_nc4')
+        super().__init__()
         self.descr = ('verifies merging of two netCDF-4 files')
         self.executable = 'ncks'
         self.executable_opts = ['-A',
@@ -174,9 +174,9 @@ class MergeNC4Check(NCOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNC4CCheck(NCOBaseCheck):
+class NCO_MergeNC4CTest(NCOBaseTest):
     def __init__(self):
-        super().__init__('merge_nc4c')
+        super().__init__()
         self.descr = ('verifies merging and compressing of two compressed '
                       'netCDF-4 files')
         self.executable = 'ncks'

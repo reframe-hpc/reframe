@@ -2,6 +2,7 @@ import abc
 import os
 
 import reframe.core.fields as fields
+import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
 
 
@@ -18,7 +19,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    cc  = fields.StringField('cc', allow_none=True)
+    cc  = fields.TypedField('cc', str, type(None))
 
     #: The C++ compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -26,7 +27,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    cxx = fields.StringField('cxx', allow_none=True)
+    cxx = fields.TypedField('cxx', str, type(None))
 
     #: The Fortran compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -34,7 +35,7 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    ftn = fields.StringField('ftn', allow_none=True)
+    ftn = fields.TypedField('ftn', str, type(None))
 
     #: The CUDA compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -42,59 +43,59 @@ class BuildSystem:
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    nvcc = fields.StringField('nvcc', allow_none=True)
+    nvcc = fields.TypedField('nvcc', str, type(None))
 
     #: The C compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cflags = fields.TypedListField('cflags', str, allow_none=True)
+    cflags = fields.TypedField('cflags', typ.List[str], type(None))
 
     #: The preprocessor flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cppflags = fields.TypedListField('cppflags', str, allow_none=True)
+    cppflags = fields.TypedField('cppflags', typ.List[str], type(None))
 
     #: The C++ compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    cxxflags = fields.TypedListField('cxxflags', str, allow_none=True)
+    cxxflags = fields.TypedField('cxxflags', typ.List[str], type(None))
 
     #: The Fortran compiler flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    fflags  = fields.TypedListField('fflags', str, allow_none=True)
+    fflags  = fields.TypedField('fflags', typ.List[str], type(None))
 
     #: The linker flags to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
-    #: :type: :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: :class:`None`
-    ldflags = fields.TypedListField('ldflags', str, allow_none=True)
+    ldflags = fields.TypedField('ldflags', typ.List[str], type(None))
 
     #: Set compiler and compiler flags from the current programming environment
     #: if not specified otherwise.
     #:
     #: :type: :class:`bool`
     #: :default: :class:`True`
-    flags_from_environ = fields.BooleanField('flags_from_environ')
+    flags_from_environ = fields.TypedField('flags_from_environ', bool)
 
     def __init__(self):
         self.cc  = None
@@ -126,7 +127,7 @@ class BuildSystem:
             This method is relevant only to developers of new build systems.
         """
 
-    def _resolve_flags(self, flags, environ, allow_none=True):
+    def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
         if _flags is not None:
             return _flags
@@ -147,16 +148,16 @@ class BuildSystem:
             return flags
 
     def _cc(self, environ):
-        return self._resolve_flags('cc', environ, False)
+        return self._resolve_flags('cc', environ)
 
     def _cxx(self, environ):
-        return self._resolve_flags('cxx', environ, False)
+        return self._resolve_flags('cxx', environ)
 
     def _ftn(self, environ):
-        return self._resolve_flags('ftn', environ, False)
+        return self._resolve_flags('ftn', environ)
 
     def _nvcc(self, environ):
-        return self._resolve_flags('nvcc', environ, False)
+        return self._resolve_flags('nvcc', environ)
 
     def _cppflags(self, environ):
         return self._fix_flags(self._resolve_flags('cppflags', environ))
@@ -196,16 +197,16 @@ class Make(BuildSystem):
     #: Append these options to the ``make`` invocation.
     #: This variable is also useful for passing variables or targets to ``make``.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     #: Instruct build system to use this Makefile.
     #: This option is useful when having non-standard Makefile names.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    makefile = fields.StringField('makefile', allow_none=True)
+    makefile = fields.TypedField('makefile', str, type(None))
 
     #: The top-level directory of the code.
     #:
@@ -214,7 +215,7 @@ class Make(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.StringField('srcdir', allow_none=True)
+    srcdir = fields.TypedField('srcdir', str, type(None))
 
     #: Limit concurrency for ``make`` jobs.
     #: This attribute controls the ``-j`` option passed to ``make``.
@@ -224,7 +225,7 @@ class Make(BuildSystem):
     #:
     #: :type: integer
     #: :default: :class:`None`
-    max_concurrency = fields.IntegerField('max_concurrency', allow_none=True)
+    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
 
     def __init__(self):
         super().__init__()
@@ -321,7 +322,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.sourcepath` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    srcfile = fields.StringField('srcfile', allow_none=True)
+    srcfile = fields.TypedField('srcfile', str, type(None))
 
     #: The executable file to be generated.
     #:
@@ -329,7 +330,7 @@ class SingleSource(BuildSystem):
     #: :attr:`reframe.core.pipeline.RegressionTest.executable` attribute.
     #:
     #: :type: :class:`str` or :class:`None`
-    executable = fields.StringField('executable', allow_none=True)
+    executable = fields.TypedField('executable', str, type(None))
 
     #: The include path to be used for this compilation.
     #:
@@ -337,9 +338,9 @@ class SingleSource(BuildSystem):
     #: :attr:`BuildSystem.cppflags`, by prepending to each of them the ``-I``
     #: option.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    include_path = fields.TypedListField('include_path', str)
+    include_path = fields.TypedField('include_path', typ.List[str])
 
     #: The programming language of the file that needs to be compiled.
     #: If not specified, the build system will try to figure it out
@@ -353,7 +354,7 @@ class SingleSource(BuildSystem):
     #:   - CUDA: `.cu`.
     #:
     #: :type: :class:`str` or :class:`None`
-    lang = fields.StringField('lang', allow_none=True)
+    lang = fields.TypedField('lang', str, type(None))
 
     def __init__(self):
         super().__init__()
@@ -453,31 +454,31 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    srcdir = fields.StringField('srcdir', allow_none=True)
+    srcdir = fields.TypedField('srcdir', str, type(None))
 
     #: The CMake build directory, where all the generated files will be placed.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
-    builddir = fields.StringField('builddir', allow_none=True)
+    builddir = fields.TypedField('builddir', str, type(None))
 
     #: Additional configuration options to be passed to the CMake invocation.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    config_opts = fields.TypedListField('config_opts', str)
+    config_opts = fields.TypedField('config_opts', typ.List[str])
 
     #: Options to be passed to the subsequent ``make`` invocation.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    make_opts = fields.TypedListField('make_opts', str)
+    make_opts = fields.TypedField('make_opts', typ.List[str])
 
     #: Same as for the :attr:`Make` build system.
     #:
     #: :type: integer
     #: :default: :class:`None`
-    max_concurrency = fields.IntegerField('max_concurrency', allow_none=True)
+    max_concurrency = fields.TypedField('max_concurrency', int, type(None))
 
     def __init__(self):
         super().__init__()
@@ -651,8 +652,8 @@ class BuildSystemField(fields.TypedField):
     representing the name of the concrete class of a build system.
     """
 
-    def __init__(self, fieldname, allow_none=False):
-        super().__init__(fieldname, BuildSystem, allow_none)
+    def __init__(self, fieldname, *other_types):
+        super().__init__(fieldname, BuildSystem, *other_types)
 
     def __set__(self, obj, value):
         if isinstance(value, str):

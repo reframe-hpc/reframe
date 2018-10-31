@@ -22,6 +22,12 @@ class FakeJob(Job):
     def finished(self):
         pass
 
+    def get_partition_nodes(self):
+        pass
+
+    def filter_nodes(self, nodes):
+        pass
+
 
 class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
@@ -120,7 +126,6 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
     def expected_minimal_command(self):
         return ('srun '
                 '--job-name=fake_job '
-                '--time=0:10:0 '
                 '--output=./fake_job.out '
                 '--error=./fake_job.err '
                 '--ntasks=1 '
