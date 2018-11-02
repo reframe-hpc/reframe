@@ -2,8 +2,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-# FIXME: The 'dynamic' version of the tests gets stuck in compitation for
-#        both PrgEnv-gnu and PrgEnv-intel
+# NOTE: The 'dynamic' version of the tests gets stuck in compilation for
+#       both PrgEnv-gnu and PrgEnv-intel
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'])
 class TrilinosTest(rfm.RegressionTest):
