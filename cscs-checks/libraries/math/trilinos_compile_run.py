@@ -2,8 +2,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+# FIXME: The 'dynamic' version of the tests gets stuck in compitation for
+#        both PrgEnv-gnu and PrgEnv-intel
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['static'], ['dynamic'])
+@rfm.parameterized_test(['static'])
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
         super().__init__()
@@ -11,11 +13,9 @@ class TrilinosTest(rfm.RegressionTest):
                               'dom:gpu', 'dom:mc']
 
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
-        if linkage == 'dynamic':
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        else:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel']
+        # NOTE: PrgEnv-cray in static produces segmentation fault,
+        #       Cray Case #222133
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
 
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
