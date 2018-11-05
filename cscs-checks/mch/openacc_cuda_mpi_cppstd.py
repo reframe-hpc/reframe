@@ -11,29 +11,20 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                    'PrgEnv-cray-c2sm',
-                                    'PrgEnv-cray-c2sm-gpu'
-                                    'PrgEnv-pgi-c2sm',
+                                    'PrgEnv-gnu',
+                                    'PrgEnv-cray-c2sm-gpu',
                                     'PrgEnv-pgi-c2sm-gpu',
-                                    'PrgEnv-gnu-c2sm']
+                                    'PrgEnv-gnu-c2sm-gpu']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-            self.variables = {
-                'MPICH_RDMA_ENABLED_CUDA': '1',
-                'CRAY_CUDA_MPS': '1'
-            }
             self.num_tasks = 12
             self.num_tasks_per_node = 12
             self.num_gpus_per_node = 1
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_60"']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            self.variables = {
-                'MV2_USE_CUDA': '1',
-                'G2G': '1'
-            }
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
@@ -41,10 +32,24 @@ class OpenaccCudaCpp(rfm.RegressionTest):
 
         if withmpi:
             self.build_system.cppflags = ['-DUSE_MPI']
+            if self.current_system.name in ['daint', 'dom']:
+                self.variables = {
+                    'MPICH_RDMA_ENABLED_CUDA': '1',
+                    'CRAY_CUDA_MPS': '1'
+                }
+            elif self.current_system.name in ['kesch']:
+                self.variables = {
+                    'MV2_USE_CUDA': '1',
+                    'G2G': '1'
+                }
         else:
             if self.current_system.name == 'kesch':
                 self.valid_prog_environs = ['PrgEnv-cray-nompi',
-                                            'PrgEnv-pgi-nompi']
+                                            'PrgEnv-pgi-nompi',
+                                            'PrgEnv-gnu-nompi',
+                                            'PrgEnv-cray-c2sm',
+                                            'PrgEnv-pgi-c2sm',
+                                            'PrgEnv-gnu-c2sm']
 
             self.num_tasks = 1
             self.num_tasks_per_node = 1
@@ -68,6 +73,12 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
+                    '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
+                    '-lcublas', '-lcudart']
+        elif environ.name.startswith('PrgEnv-gnu'):
+            self.build_system.ldflags = ['-lstdc++']
+            if self.current_system.name == 'kesch':
+                self.build_system.ldflags += [
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
                     '-lcublas', '-lcudart']
 
