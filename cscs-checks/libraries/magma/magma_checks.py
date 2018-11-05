@@ -7,7 +7,8 @@ import reframe.utility.sanity as sn
                                        'ztranspose', 'zunmbr']
                           for libversion in ['2.2', '2.4']
                           for variant in ['prod', 'maint']
-                          if (name, libversion, variant)[:2] != ('zunmbr', '2.4')))
+                          if (name, libversion, variant)[:2] != ('zunmbr',
+                                                                 '2.4')))
 class MagmaCheck(rfm.RegressionTest):
     def __init__(self, name, libversion, variant):
         super().__init__()
@@ -27,11 +28,13 @@ class MagmaCheck(rfm.RegressionTest):
                                      '-lmagma_sparse']
         if libversion == '2.2':
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['magma/2.2.0-CrayGNU-18.08-cuda-9.1']
+            self.modules = ['cudatoolkit',
+                            'magma/2.2.0-CrayGNU-18.08-cuda-9.1']
             self.sourcesdir = 'magma-2.2'
         elif libversion == '2.4':
             self.valid_prog_environs = ['PrgEnv-intel']
-            self.modules = ['magma/2.4.0-CrayIntel-18.08-cuda-9.1']
+            self.modules = ['cudatoolkit',
+                            'magma/2.4.0-CrayIntel-18.08-cuda-9.1']
             self.sourcesdir = 'magma-2.4'
 
         if variant == 'prod':
