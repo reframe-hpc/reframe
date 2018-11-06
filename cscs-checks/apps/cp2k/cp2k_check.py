@@ -1,5 +1,5 @@
 import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.pipeline import RunOnlyRegressionTest
 
@@ -43,8 +43,9 @@ class Cp2kCheck(RunOnlyRegressionTest):
 
 
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, **kwargs):
-        super().__init__('cp2k_cpu_check', 'CP2K check CPU', **kwargs)
+    def __init__(self, variant, **kwargs):
+        super().__init__('cp2k_cpu_%s_check' % variant,
+                         'CP2K check CPU', **kwargs)
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.num_gpus_per_node = 0
         if self.current_system.name == 'dom':
@@ -53,6 +54,28 @@ class Cp2kCpuCheck(Cp2kCheck):
             self.num_tasks = 576
 
         self.num_tasks_per_node = 36
+
+
+@rfm.simple_test
+class Cp2kCpuMaintCheck(Cp2kCpuCheck):
+    def __init__(self, **kwargs):
+        super().__init__('maint', **kwargs)
+        self.tags |= {'maintenance'}
+        self.reference = {
+            'dom:mc': {
+                'perf': (182.6, None, 0.05)
+            },
+            'daint:mc': {
+                'perf': (106.8, None, 0.10)
+            },
+        }
+
+
+@rfm.simple_test
+class Cp2kCpuProdCheck(Cp2kCpuCheck):
+    def __init__(self, **kwargs):
+        super().__init__('prod', **kwargs)
+        self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
                 'perf': (174.5, None, 0.05)
@@ -61,7 +84,6 @@ class Cp2kCpuCheck(Cp2kCheck):
                 'perf': (113.0, None, 0.25)
             },
         }
-        self.tags |= {'maintenance', 'production'}
 
 
 class Cp2kGpuCheck(Cp2kCheck):
@@ -80,20 +102,22 @@ class Cp2kGpuCheck(Cp2kCheck):
         self.num_tasks_per_node = 12
 
 
+@rfm.simple_test
 class Cp2kGpuMaintCheck(Cp2kGpuCheck):
     def __init__(self, **kwargs):
         super().__init__('maint', **kwargs)
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
-                'perf': (258.0, None, 0.15)
+                'perf': (251.8, None, 0.15)
             },
             'daint:gpu': {
-                'perf': (139.0, None, 0.10)
+                'perf': (182.3, None, 0.10)
             },
         }
 
 
+@rfm.simple_test
 class Cp2kGpuProdCheck(Cp2kGpuCheck):
     def __init__(self, **kwargs):
         super().__init__('prod', **kwargs)
@@ -106,9 +130,3 @@ class Cp2kGpuProdCheck(Cp2kGpuCheck):
                 'perf': (195.0, None, 0.10)
             },
         }
-
-
-def _get_checks(**kwargs):
-    return [Cp2kCpuCheck(**kwargs),
-            Cp2kGpuMaintCheck(**kwargs),
-            Cp2kGpuProdCheck(**kwargs)]
