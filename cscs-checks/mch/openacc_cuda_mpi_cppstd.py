@@ -13,8 +13,10 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                     'PrgEnv-gnu',
                                     'PrgEnv-cray-c2sm-gpu',
-                                    'PrgEnv-pgi-c2sm-gpu',
-                                    'PrgEnv-gnu-c2sm-gpu']
+# temporary workaround until the mvapich module is fixed
+#                                    'PrgEnv-pgi-c2sm-gpu',
+#                                    'PrgEnv-gnu-c2sm-gpu',
+                                   ]
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
         if self.current_system.name in ['daint', 'dom']:

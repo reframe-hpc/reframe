@@ -14,6 +14,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
+            # workaround
+            self.variables = {'MV2_USE_CUDA': '1'}
 
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
