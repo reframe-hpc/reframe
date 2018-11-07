@@ -4,8 +4,8 @@ import reframe.utility.sanity as sn
 
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, check_name, check_descr, **kwargs):
-        super().__init__(check_name, os.path.dirname(__file__), **kwargs)
+    def __init__(self, check_name, check_descr):
+        super().__init__(check_name, os.path.dirname(__file__))
         self.descr = check_descr
         self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -43,9 +43,9 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
 
 @rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, variant, **kwargs):
+    def __init__(self, variant):
         super().__init__('cp2k_cpu_%s_check' % variant,
-                         'CP2K check CPU', **kwargs)
+                         'CP2K check CPU')
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.num_gpus_per_node = 0
         if self.current_system.name == 'dom':
@@ -79,9 +79,9 @@ class Cp2kCpuCheck(Cp2kCheck):
 
 @rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kGpuCheck(Cp2kCheck):
-    def __init__(self, variant, **kwargs):
+    def __init__(self, variant):
         super().__init__('cp2k_gpu_%s_check' % variant,
-                         'CP2K check GPU', **kwargs)
+                         'CP2K check GPU')
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.modules = ['CP2K']
