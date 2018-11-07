@@ -76,14 +76,14 @@ class MagmaCheck(rfm.RegressionTest):
             if variant == 'prod':
                 self.reference = {
                     'daint:gpu': {
-                        'magma':  (2151.0, None, 0.2),
-                        'cublas': (2411.0, None, 0.45),
-                        'cpu':    (44.1, None, 0.1),
+                        'magma':  (3357.0, None, 0.2),
+                        'cublas': (3775.0, None, 0.45),
+                        'cpu':    (47.01, None, 0.1),
                     },
                     'dom:gpu': {
-                        'magma':  (2532.0, None, 0.1),
-                        'cublas': (3391.0, None, 0.05),
-                        'cpu':    (43.9, None, 0.05),
+                        'magma':  (3330.0, None, 0.1),
+                        'cublas': (3774.0, None, 0.05),
+                        'cpu':    (47.32, None, 0.05),
                     },
                 }
             elif variant == 'maint':
