@@ -397,3 +397,29 @@ Another way, which is quite useful if you want to generate lots of different tes
 
    Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
    We use this technique extensively in our tests.
+
+Flexible allocation of number of tasks
+--------------------------------------
+
+.. versionadded:: 2.15
+
+ReFrame can flexibly allocate the number of tasks of a test based on a number of criteria.
+The following regression test is used to demonstrate this feature:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+
+In order to instruct ReFrame to perform a flexible allocation of the number of tasks :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` has to be set to ``0``:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 13
+  :dedent: 8
+
+In the above regression test the ``hostname`` command is executed once on each allocated node, since ``self.num_tasks_per_node`` equals to 1.
+Thus, the output will consist of separate lines one for each node containing its name.
+ReFrame is going to calculate the number of tasks based on the ``--flex-alloc-tasks`` command line option (see `Flexible task allocation <running.html#flexible-task-allocation>`__).
+To check that everything worked as expected, we test that the number of nodenames included in the output equals the number of allocated tasks.
+Since the number of nodes is decided by ReFrame based on the given criteria as well as the status of the system on which it is running, a new sanity function has to be defined which returns the correct number of tasks assigned as follows:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 22-25
+  :dedent: 4

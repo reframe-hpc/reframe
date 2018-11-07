@@ -460,11 +460,12 @@ They are summarized below:
   In this example, Slurm's policy is that later definitions of options override previous ones.
   So, in this case, way you would override the standard output for all the submitted jobs!
 
+* ``--flex-alloc-tasks {all|idle|NUM}``: Automatically determine the number of tasks allocated for each test.
 * ``--force-local``: Force the local execution of the selected tests.
   No jobs will be submitted.
 * ``--skip-sanity-check``: Skip sanity checking phase.
 * ``--skip-performance-check``: Skip performance verification phase.
-* ``--strict``: Force strict performance checking. Some tests may set their :attr:`strict_check <reframe.core.pipeline.RegressionTest.strick_check>` attribute to :class:`False` (see `"Reference Guide" <reference.html>`__) in order to just let their performance recorded but not yield an error.
+* ``--strict``: Force strict performance checking. Some tests may set their :attr:`strict_check <reframe.core.pipeline.RegressionTest.strick_check>` attribute to :class:`False` (see `"Reference Guide" <running.html#controlling-the-execution-of-regression-tests>`__) in order to just let their performance recorded but not yield an error.
   This option overrides this behavior and forces all tests to be strict.
 * ``--skip-system-check``: Skips the system check and run the selected tests even if they do not support the current system.
   This option is sometimes useful when you need to quickly verify if a regression test supports a new system.
@@ -998,3 +999,20 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
      * Failing phase: setup
      * Reason: caught framework exception: module cyclic dependency: cudatoolkit->foo->bar->foobar->cudatoolkit
    ------------------------------------------------------------------------------
+
+Flexible task allocation
+------------------------
+
+.. versionadded:: 2.15
+
+ReFrame can automatically determine the number of tasks used for a particular test.
+In order to instruct ReFrame that the number of tasks is going to be determined at runtime, :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` has to be set to ``0``.
+This feature is used in conjuction with the ``--flex-alloc-tasks`` command line option.
+Therefore, if ``--flex-alloc-tasks`` is set to ``idle``, ReFrame is going to determine the number of tasks based on the idle nodes matching the ``access`` options of the logical partition (see `"Partition Configuration" <configure.html#partition-configuration>`__) as defined in the ``site_configuration`` dictionary.
+For ``--flex-alloc-tasks`` set to ``all``, ReFrame will determine the number of tasks based on the idle nodes respecting the command line options for ``partition``, ``reservation``, ``nodelist``, ``exclude-nodes`` and their ``job-option`` equivalents (see `"Controlling the Execution of Regression Tests" <running.html#controlling-the-execution-of-regression-tests>`__).
+For both ``idle`` and ``all`` the final number of tasks will be the product of the nodes satisfying the required criteria and :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
+Finally, by specifying a positive integer ReFrame is going to use that number as the number of tasks without doing any additional check on the nodes.
+
+.. note::
+   Flexible allocation of tasks is currently supported only for the Slurm job scheduler.
+   This feature should not be combined with the async execution policy since the nodes satisfying the required criteria will be allocated by the first regression test, while the subsequent tests are going to fail.
