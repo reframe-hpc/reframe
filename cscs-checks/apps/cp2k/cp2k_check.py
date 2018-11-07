@@ -1,10 +1,9 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class Cp2kCheck(RunOnlyRegressionTest):
+class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, check_name, check_descr, **kwargs):
         super().__init__(check_name, os.path.dirname(__file__), **kwargs)
         self.descr = check_descr
@@ -42,6 +41,7 @@ class Cp2kCheck(RunOnlyRegressionTest):
         }
 
 
+@rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kCpuCheck(Cp2kCheck):
     def __init__(self, variant, **kwargs):
         super().__init__('cp2k_cpu_%s_check' % variant,
@@ -55,37 +55,29 @@ class Cp2kCpuCheck(Cp2kCheck):
 
         self.num_tasks_per_node = 36
 
-
-@rfm.simple_test
-class Cp2kCpuMaintCheck(Cp2kCpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:mc': {
-                'perf': (182.6, None, 0.05)
-            },
-            'daint:mc': {
-                'perf': (106.8, None, 0.10)
-            },
-        }
-
-
-@rfm.simple_test
-class Cp2kCpuProdCheck(Cp2kCpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
-        self.reference = {
-            'dom:mc': {
-                'perf': (174.5, None, 0.05)
-            },
-            'daint:mc': {
-                'perf': (113.0, None, 0.25)
-            },
-        }
+        if variant == 'maint':
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:mc': {
+                    'perf': (182.6, None, 0.05)
+                },
+                'daint:mc': {
+                    'perf': (106.8, None, 0.10)
+                },
+            }
+        else:
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:mc': {
+                    'perf': (174.5, None, 0.05)
+                },
+                'daint:mc': {
+                    'perf': (113.0, None, 0.25)
+                },
+            }
 
 
+@rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kGpuCheck(Cp2kCheck):
     def __init__(self, variant, **kwargs):
         super().__init__('cp2k_gpu_%s_check' % variant,
@@ -101,32 +93,23 @@ class Cp2kGpuCheck(Cp2kCheck):
 
         self.num_tasks_per_node = 12
 
-
-@rfm.simple_test
-class Cp2kGpuMaintCheck(Cp2kGpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (251.8, None, 0.15)
-            },
-            'daint:gpu': {
-                'perf': (182.3, None, 0.10)
-            },
-        }
-
-
-@rfm.simple_test
-class Cp2kGpuProdCheck(Cp2kGpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (240.0, None, 0.05)
-            },
-            'daint:gpu': {
-                'perf': (195.0, None, 0.10)
-            },
-        }
+        if variant == 'maint':
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:gpu': {
+                    'perf': (251.8, None, 0.15)
+                },
+                'daint:gpu': {
+                    'perf': (182.3, None, 0.10)
+                },
+            }
+        else:
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:gpu': {
+                    'perf': (240.0, None, 0.05)
+                },
+                'daint:gpu': {
+                    'perf': (195.0, None, 0.10)
+                },
+            }
