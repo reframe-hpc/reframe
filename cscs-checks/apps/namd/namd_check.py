@@ -1,10 +1,10 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class NamdBaseCheck(RunOnlyRegressionTest):
+class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, variant, **kwargs):
         super().__init__('namd_%s_check' % variant,
                          os.path.dirname(__file__), **kwargs)
@@ -57,6 +57,7 @@ class NamdBaseCheck(RunOnlyRegressionTest):
         }
 
 
+@rfm.parameterized_test(['maint'], ['prod'])
 class NamdGPUCheck(NamdBaseCheck):
     def __init__(self, version, **kwargs):
         super().__init__('gpu_%s' % version, **kwargs)
@@ -64,74 +65,52 @@ class NamdGPUCheck(NamdBaseCheck):
         self.executable_opts = '+idlepoll +ppn 23 stmv.namd'.split()
         self.num_cpus_per_task = 24
         self.num_gpus_per_node = 1
+        if version == 'prod':
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:gpu':  {
+                    'days_ns': (0.18, None, 0.05),
+                },
+                'daint:gpu':  {
+                    'days_ns': (0.11, None, 0.05),
+                },
+            }
+        else:
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:gpu':  {
+                    'days_ns': (0.18, None, 0.05),
+                },
+                'daint:gpu':  {
+                    'days_ns': (0.11, None, 0.05),
+                },
+            }
 
 
-class NamdGPUProdCheck(NamdGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
-        self.reference = {
-            'dom:gpu':  {
-                'days_ns': (0.16, None, 0.05),
-            },
-            'daint:gpu':  {
-                'days_ns': (0.07, None, 0.05),
-            },
-        }
-
-
-class NamdGPUMaintCheck(NamdGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:gpu':  {
-                'days_ns': (0.16, None, 0.05),
-            },
-            'daint:gpu':  {
-                'days_ns': (0.07, None, 0.05),
-            },
-        }
-
-
+@rfm.parameterized_test(['maint'], ['prod'])
 class NamdCPUCheck(NamdBaseCheck):
     def __init__(self, version, **kwargs):
         super().__init__('cpu_%s' % version, **kwargs)
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.executable_opts = '+idlepoll +ppn 71 stmv.namd'.split()
         self.num_cpus_per_task = 72
-
-
-class NamdCPUProdCheck(NamdCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
-        self.reference = {
-            'dom:mc': {
-                'days_ns': (0.49, None, 0.05),
-            },
-            'daint:mc': {
-                'days_ns': (0.27, None, 0.05),
-            },
-        }
-
-
-class NamdCPUMaintCheck(NamdCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:mc': {
-                'days_ns': (0.49, None, 0.05),
-            },
-            'daint:mc': {
-                'days_ns': (0.27, None, 0.05),
-            },
-        }
-
-
-def _get_checks(**kwargs):
-    return [NamdCPUProdCheck(**kwargs),
-            NamdCPUMaintCheck(**kwargs),
-            NamdGPUProdCheck(**kwargs),
-            NamdGPUMaintCheck(**kwargs)]
+        if version == 'prod':
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:mc': {
+                    'days_ns': (0.57, None, 0.05),
+                },
+                'daint:mc': {
+                    'days_ns': (0.38, None, 0.05),
+                },
+            }
+        else:
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:mc': {
+                    'days_ns': (0.57, None, 0.05),
+                },
+                'daint:mc': {
+                    'days_ns': (0.37, None, 0.05),
+                },
+            }
