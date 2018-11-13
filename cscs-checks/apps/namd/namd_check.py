@@ -8,7 +8,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, variant, **kwargs):
         super().__init__('namd_%s_check' % variant,
                          os.path.dirname(__file__), **kwargs)
-        self.descr = 'NAMD 2.11 check (%s)' % variant
+        self.descr = 'NAMD (%s) check' % variant
 
         self.valid_prog_environs = ['PrgEnv-intel']
 
@@ -16,7 +16,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'NAMD')
+                                       'NAMD', 'prod')
         self.executable = 'namd2'
 
         self.use_multithreading = True
@@ -67,24 +67,17 @@ class NamdGPUCheck(NamdBaseCheck):
         self.num_gpus_per_node = 1
         if version == 'prod':
             self.tags |= {'production'}
-            self.reference = {
-                'dom:gpu':  {
-                    'days_ns': (0.18, None, 0.05),
-                },
-                'daint:gpu':  {
-                    'days_ns': (0.11, None, 0.05),
-                },
-            }
         else:
             self.tags |= {'maintenance'}
-            self.reference = {
-                'dom:gpu':  {
-                    'days_ns': (0.18, None, 0.05),
-                },
-                'daint:gpu':  {
-                    'days_ns': (0.11, None, 0.05),
-                },
-            }
+
+        self.reference = {
+            'dom:gpu':  {
+                'days_ns': (0.18, None, 0.05),
+            },
+            'daint:gpu':  {
+                'days_ns': (0.11, None, 0.05),
+            },
+        }
 
 
 @rfm.parameterized_test(['maint'], ['prod'])
@@ -96,21 +89,14 @@ class NamdCPUCheck(NamdBaseCheck):
         self.num_cpus_per_task = 72
         if version == 'prod':
             self.tags |= {'production'}
-            self.reference = {
-                'dom:mc': {
-                    'days_ns': (0.57, None, 0.05),
-                },
-                'daint:mc': {
-                    'days_ns': (0.38, None, 0.05),
-                },
-            }
         else:
             self.tags |= {'maintenance'}
-            self.reference = {
-                'dom:mc': {
-                    'days_ns': (0.57, None, 0.05),
-                },
-                'daint:mc': {
-                    'days_ns': (0.37, None, 0.05),
-                },
-            }
+
+        self.reference = {
+            'dom:mc': {
+                'days_ns': (0.57, None, 0.05),
+            },
+            'daint:mc': {
+                'days_ns': (0.38, None, 0.05),
+            },
+        }
