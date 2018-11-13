@@ -113,9 +113,9 @@ class HostResources:
         os.makedirs(ret, exist_ok=True)
         return ret
 
-    def _run_suffix(self):
+    def run_suffix(self):
         current_run = runtime().current_run
-        return '_%s' % current_run if current_run > 0 else ''
+        return '_retry%s' % current_run if current_run > 0 else ''
 
     @property
     def timestamp(self):
@@ -125,21 +125,17 @@ class HostResources:
     def output_prefix(self):
         """The output prefix directory of ReFrame."""
         if self.outputdir is None:
-            return os.path.join(self.prefix, 'output' + self._run_suffix(),
-                                self.timestamp)
+            return os.path.join(self.prefix, 'output', self.timestamp)
         else:
-            return os.path.join(self.outputdir + self._run_suffix(),
-                                self.timestamp)
+            return os.path.join(self.outputdir, self.timestamp)
 
     @property
     def stage_prefix(self):
         """The stage prefix directory of ReFrame."""
         if self.stagedir is None:
-            return os.path.join(self.prefix, 'stage' + self._run_suffix(),
-                                self.timestamp)
+            return os.path.join(self.prefix, 'stage', self.timestamp)
         else:
-            return os.path.join(self.stagedir + self._run_suffix(),
-                                self.timestamp)
+            return os.path.join(self.stagedir, self.timestamp)
 
     @property
     def perflog_prefix(self):

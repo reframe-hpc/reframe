@@ -804,12 +804,13 @@ class RegressionTest:
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
         try:
-            self._stagedir = rt.runtime().resources.make_stagedir(
+            resources = rt.runtime().resources
+            self._stagedir = resources.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
-            self._outputdir = rt.runtime().resources.make_outputdir(
+                self._current_environ.name, self.name + resources.run_suffix())
+            self._outputdir = resources.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
+                self._current_environ.name, self.name + resources.run_suffix())
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
