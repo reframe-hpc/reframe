@@ -21,8 +21,7 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray']
         self.executable = 'ls'
         self.executable_opts = ['-al', '/opt/cray/pe/lib64/libsci_a*']
-        lib_so = lib_name + '.so'
-        self.sanity_patterns = sn.assert_found(lib_so, self.stdout)
+        self.sanity_patterns = sn.assert_found(lib_name + '.so', self.stdout)
 
         self.maintainers = ['AJ']
         self.tags = {'production'}
