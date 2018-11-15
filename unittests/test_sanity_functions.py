@@ -483,6 +483,26 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(0, sn.count(range(0)))
         self.assertEqual(0, sn.count(myrange(0)))
 
+    def test_count_unique(self):
+        # Use a custom generator for testing
+        def my_mod_range(n, mod=2):
+            for i in range(n):
+                yield i % mod
+
+        self.assertEqual(4, sn.count_unique([1, 2, 3, 4, 4, 3, 2, 1]))
+        self.assertEqual(1, sn.count_unique((1, 1, 1)))
+        self.assertEqual(3, sn.count_unique({1, 2, 3, 2, 3}))
+        self.assertEqual(3, sn.count_unique({'a': 1, 'b': 2, 'c': 3}))
+        self.assertEqual(2, sn.count_unique(my_mod_range(10)))
+        self.assertEqual(3, sn.count_unique(my_mod_range(10, 3)))
+
+        # Test empty sequences
+        self.assertEqual(0, sn.count_unique([]))
+        self.assertEqual(0, sn.count_unique({}))
+        self.assertEqual(0, sn.count_unique(set()))
+        self.assertEqual(0, sn.count_unique(my_mod_range(0)))
+        self.assertEqual(0, sn.count_unique(range(0)))
+
     def test_glob(self):
         filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.glob(filepatt))

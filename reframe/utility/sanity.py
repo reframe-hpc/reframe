@@ -710,6 +710,12 @@ def count(iterable):
 
 
 @deferrable
+def count_unique(iterable):
+    """Return the unique element count of ``iterable``."""
+    return builtins.len(set(iterable))
+
+
+@deferrable
 def glob(pathname, *, recursive=False):
     """Replacement for the :func:`glob.glob() <python:glob.glob>` function."""
     return pyglob.glob(pathname, recursive=recursive)
