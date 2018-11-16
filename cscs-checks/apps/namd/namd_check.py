@@ -5,10 +5,10 @@ import reframe.utility.sanity as sn
 
 
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, variant, **kwargs):
-        super().__init__('namd_%s_check' % variant,
-                         os.path.dirname(__file__), **kwargs)
-        self.descr = 'NAMD (%s) check' % variant
+    def __init__(self, version, variant):
+        super().__init__()
+        self.name = 'namd_%s_%s_check' % (version, variant)
+        self.descr = 'NAMD check (%s, %s)' % (version, variant)
 
         self.valid_prog_environs = ['PrgEnv-intel']
 
@@ -59,13 +59,13 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
 @rfm.parameterized_test(['maint'], ['prod'])
 class NamdGPUCheck(NamdBaseCheck):
-    def __init__(self, version, **kwargs):
-        super().__init__('gpu_%s' % version, **kwargs)
+    def __init__(self, variant):
+        super().__init__('gpu', variant)
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.executable_opts = '+idlepoll +ppn 23 stmv.namd'.split()
         self.num_cpus_per_task = 24
         self.num_gpus_per_node = 1
-        if version == 'prod':
+        if variant == 'prod':
             self.tags |= {'production'}
         else:
             self.tags |= {'maintenance'}
@@ -82,12 +82,12 @@ class NamdGPUCheck(NamdBaseCheck):
 
 @rfm.parameterized_test(['maint'], ['prod'])
 class NamdCPUCheck(NamdBaseCheck):
-    def __init__(self, version, **kwargs):
-        super().__init__('cpu_%s' % version, **kwargs)
+    def __init__(self, variant):
+        super().__init__('cpu', variant)
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.executable_opts = '+idlepoll +ppn 71 stmv.namd'.split()
         self.num_cpus_per_task = 72
-        if version == 'prod':
+        if variant == 'prod':
             self.tags |= {'production'}
         else:
             self.tags |= {'maintenance'}
