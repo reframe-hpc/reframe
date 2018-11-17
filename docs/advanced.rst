@@ -398,28 +398,48 @@ Another way, which is quite useful if you want to generate lots of different tes
    Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
    We use this technique extensively in our tests.
 
-Flexible allocation of number of tasks
---------------------------------------
+
+Flexible Regression Tests
+-------------------------
 
 .. versionadded:: 2.15
 
-ReFrame can flexibly allocate the number of tasks of a test based on a number of criteria.
-The following regression test is used to demonstrate this feature:
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+In ReFrame's terminology, such tests are called `flexible`.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted from the command-line.
+Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
+In this example, we demonstrate this feature through a simple test that runs ``hostname``.
+The test will verify that all the nodes print the expected host name:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
 
-In order to instruct ReFrame to perform a flexible allocation of the number of tasks :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` has to be set to ``0``:
+The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` is set to ``0``.
+This is a requirement for flexible tests:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
   :lines: 13
   :dedent: 8
 
-In the above regression test the ``hostname`` command is executed once on each allocated node, since ``self.num_tasks_per_node`` equals to 1.
-Thus, the output will consist of separate lines one for each node containing its name.
-ReFrame is going to calculate the number of tasks based on the ``--flex-alloc-tasks`` command line option (see `Flexible task allocation <running.html#flexible-task-allocation>`__).
-To check that everything worked as expected, we test that the number of nodenames included in the output equals the number of allocated tasks.
-Since the number of nodes is decided by ReFrame based on the given criteria as well as the status of the system on which it is running, a new sanity function has to be defined which returns the correct number of tasks assigned as follows:
+The sanity function of this test simply counts the host names and verifies that they are as many as expected:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 15-18
+  :dedent: 8
+
+Notice, however, that the sanity check does not use :attr:`num_tasks` for verification, but rather a different, custom attribute, the ``num_tasks_assigned``.
+This happens for two reasons:
+
+  a. At the time the sanity check expression is created, :attr:`num_tasks` is ``0``.
+     So the actual number of tasks assigned must be a deferred expression as well.
+  b. When ReFrame will determine and set the number of tasks of the test, it will not set the :attr:`num_tasks` attribute of the :class:`RegressionTest`.
+     It will only set the corresponding attribute of the associated job instance.
+
+Here is how the new deferred attribute is defined:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
   :lines: 22-25
   :dedent: 4
+
+
+The behavior of the flexible task allocation is controlled by the ``--flex-alloc-tasks`` command line option.
+See the corresponding `section <running.html#controlling-the-flexible-task-allocation>`__ for more information.

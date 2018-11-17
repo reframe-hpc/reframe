@@ -1000,19 +1000,32 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
      * Reason: caught framework exception: module cyclic dependency: cudatoolkit->foo->bar->foobar->cudatoolkit
    ------------------------------------------------------------------------------
 
-Flexible task allocation
-------------------------
+Controlling the Flexible Task Allocation
+----------------------------------------
 
 .. versionadded:: 2.15
 
-ReFrame can automatically determine the number of tasks used for a particular test.
-In order to instruct ReFrame that the number of tasks is going to be determined at runtime, :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` has to be set to ``0``.
-This feature is used in conjuction with the ``--flex-alloc-tasks`` command line option.
-Therefore, if ``--flex-alloc-tasks`` is set to ``idle``, ReFrame is going to determine the number of tasks based on the idle nodes matching the ``access`` options of the logical partition (see `"Partition Configuration" <configure.html#partition-configuration>`__) as defined in the ``site_configuration`` dictionary.
-For ``--flex-alloc-tasks`` set to ``all``, ReFrame will determine the number of tasks based on the idle nodes respecting the command line options for ``partition``, ``reservation``, ``nodelist``, ``exclude-nodes`` and their ``job-option`` equivalents (see `"Controlling the Execution of Regression Tests" <running.html#controlling-the-execution-of-regression-tests>`__).
-For both ``idle`` and ``all`` the final number of tasks will be the product of the nodes satisfying the required criteria and :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
-Finally, by specifying a positive integer ReFrame is going to use that number as the number of tasks without doing any additional check on the nodes.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
+This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
+This option accepts three values:
+
+  1. ``idle``: (default) In this case, ReFrame will set the number of tasks to the number of idle nodes of the current logical partition.
+  2. ``all``: In this case, ReFrame will set the number of tasks to the number of all the nodes of the current logical partition.
+  3. Any positive integer: In this case, ReFrame will set the number of tasks to the given value.
+
+The flexible allocation of number of tasks takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as ``--partition``, ``--reservation``, ``--nodelist``, ``--exclude-nodes`` and ``--job-option`` (if the scheduler option passed to the latter imposes a restriction).
+Notice that ReFrame will issue an error if the resulting number of nodes is zero.
+
+For example, using the following options would run a flexible test on all the nodes of reservation ``foo`` except the nodes ``n0[1-5]``:
+
+.. code-block:: bash
+
+  --flex-alloc-tasks=all --exclude-nodes=n0[1-5]
+
 
 .. note::
-   Flexible allocation of tasks is currently supported only for the Slurm job scheduler.
-   This feature should not be combined with the async execution policy since the nodes satisfying the required criteria will be allocated by the first regression test, while the subsequent tests are going to fail.
+   Flexible task allocation is supported only for the Slurm scheduler backend.
+
+.. warning::
+   Test cases resulting from flexible ReFrame tests may not be run using the asynchronous execution policy, because the nodes satisfying the required criteria will be allocated for the first test case, causing all subsequent ones to fail.
