@@ -710,3 +710,9 @@ class TestScopedDict(unittest.TestCase):
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
         self.assertEqual(scoped_dict, scoped_dict_alt)
+
+
+class TestReadOnlyDict(unittest.TestCase):
+    def setUp(self):
+        d = {'a': 1, 'b': 2}
+        rd = ReadOnlyView(d)

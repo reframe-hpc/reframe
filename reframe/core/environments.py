@@ -21,11 +21,10 @@ class Environment:
     modules = fields.TypedField('modules', typ.List[str])
     variables = fields.TypedField('variables', typ.Dict[str, str])
 
-    def __init__(self, name, modules=[], variables={}, **kwargs):
+    def __init__(self, name, modules=[], variables=[]):
         self._name = name
         self._modules = list(modules)
-        self._variables = collections.OrderedDict()
-        self._variables.update(variables)
+        self._variables = collections.OrderedDict(variables)
         self._loaded = False
         self._saved_variables = {}
         self._conflicted = []
@@ -46,6 +45,7 @@ class Environment:
 
         :type: :class:`list` of :class:`str`
         """
+        # FIXME: Return a read-only view
         return self._modules
 
     @property
@@ -54,6 +54,7 @@ class Environment:
 
         :type: dictionary of :class:`str` keys/values.
         """
+        # FIXME: Return a read-only view
         return self._variables
 
     @property
@@ -62,17 +63,6 @@ class Environment:
         :class:`False` otherwise.
         """
         return self._loaded
-
-    # Add module to the list of modules to be loaded.
-    def add_module(self, name):
-        self._modules.append(name)
-
-    # Set environment variable to name.
-    #
-    # If variable exists, its value will be saved internally and restored
-    # during unloading.
-    def set_variable(self, name, value):
-        self._variables[name] = value
 
     def load(self):
         # conflicted module list must be filled at the time of load
@@ -177,19 +167,13 @@ class EnvironmentSnapshot(Environment):
         self._variables = dict(os.environ)
         self._conflicted = []
 
-    def add_module(self, name):
-        raise EnvironError('environment snapshot is read-only')
-
-    def set_variable(self, name, value):
-        raise EnvironError('environment snapshot is read-only')
-
     def load(self):
         os.environ.clear()
         os.environ.update(self._variables)
         self._loaded = True
 
     def unload(self):
-        raise EnvironError('cannot unload an environment snapshot')
+        raise NotImplementedError('cannot unload an environment snapshot')
 
 
 class save_environment:
