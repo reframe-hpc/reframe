@@ -807,10 +807,10 @@ class RegressionTest:
             resources = rt.runtime().resources
             self._stagedir = resources.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name + resources.run_suffix())
+                self._current_environ.name, self.name)
             self._outputdir = resources.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name + resources.run_suffix())
+                self._current_environ.name, self.name)
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 

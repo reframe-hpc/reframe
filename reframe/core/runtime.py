@@ -113,9 +113,18 @@ class HostResources:
         os.makedirs(ret, exist_ok=True)
         return ret
 
-    def run_suffix(self):
+    def _format_dirs(self, *dirs):
+        try:
+            last = dirs[-1]
+        except IndexError:
+            return dirs
+
         current_run = runtime().current_run
-        return '_retry%s' % current_run if current_run > 0 else ''
+        if current_run == 0:
+            return dirs
+
+        last += '@%s' % current_run
+        return (*dirs[:-1], last)
 
     @property
     def timestamp(self):
@@ -145,10 +154,12 @@ class HostResources:
             return self.perflogdir
 
     def make_stagedir(self, *dirs, wipeout=True):
-        return self._makedir(self.stage_prefix, *dirs, wipeout=wipeout)
+        return self._makedir(self.stage_prefix,
+                             *self._format_dirs(*dirs), wipeout=wipeout)
 
     def make_outputdir(self, *dirs, wipeout=True):
-        return self._makedir(self.output_prefix, *dirs, wipeout=wipeout)
+        return self._makedir(self.output_prefix,
+                             *self._format_dirs(*dirs), wipeout=wipeout)
 
 
 class RuntimeContext:
