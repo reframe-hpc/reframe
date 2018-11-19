@@ -255,22 +255,20 @@ class RegressionTest:
 
     #: Number of tasks required by this test.
     #:
-    #: If the number of tasks is set to ``0``, ReFrame will try to use all
-    #: the available nodes of a reservation. A reservation *must* be specified
-    #: through the `--reservation` command-line option, otherwise the
-    #: regression test will fail during submission. ReFrame will try to run the
-    #: test on all the nodes of the reservation that satisfy the selection
-    #: criteria of the current
-    #: `virtual partition <configure.html#partition-configuration>`__
-    #: (i.e., constraints and/or partitions).
+    #: If the number of tasks is set to ``0``, ReFrame will try to flexibly
+    #: allocate the number of tasks, based on the command line option
+    #: ``--flex-alloc-tasks``.
     #:
     #: :type: integral
     #: :default: ``1``
     #:
     #: .. note::
-    #:     .. versionchanged:: 2.9
-    #:        Added support for running the test using all the nodes of the
-    #:        specified reservation if the number of tasks is set to ``0``.
+    #:     .. versionchanged:: 2.15
+    #:        Added support for flexible allocation of the number of tasks
+    #:        according to the ``--flex-alloc-tasks`` command line option
+    #:        (see `Flexible task allocation
+    #:        <running.html#flexible-task-allocation>`__)
+    #:        if the number of tasks is set to ``0``.
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -804,10 +802,11 @@ class RegressionTest:
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
         try:
-            self._stagedir = rt.runtime().resources.make_stagedir(
+            resources = rt.runtime().resources
+            self._stagedir = resources.make_stagedir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
-            self._outputdir = rt.runtime().resources.make_outputdir(
+            self._outputdir = resources.make_outputdir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
         except OSError as e:
@@ -847,6 +846,7 @@ class RegressionTest:
             num_cpus_per_task=self.num_cpus_per_task,
             use_smt=self.use_multithreading,
             time_limit=self.time_limit,
+            sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -858,8 +858,7 @@ class RegressionTest:
             resources_opts.extend(
                 self._current_partition.get_resource(r, **v))
 
-        self._job.options = (self._current_partition.access +
-                             resources_opts + self._job.options)
+        self._job.options = resources_opts + self._job.options
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')

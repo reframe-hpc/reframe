@@ -397,3 +397,49 @@ Another way, which is quite useful if you want to generate lots of different tes
 
    Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
    We use this technique extensively in our tests.
+
+
+Flexible Regression Tests
+-------------------------
+
+.. versionadded:: 2.15
+
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+In ReFrame's terminology, such tests are called `flexible`.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted from the command-line.
+Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
+In this example, we demonstrate this feature through a simple test that runs ``hostname``.
+The test will verify that all the nodes print the expected host name:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+
+The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` is set to ``0``.
+This is a requirement for flexible tests:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 13
+  :dedent: 8
+
+The sanity function of this test simply counts the host names and verifies that they are as many as expected:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 15-18
+  :dedent: 8
+
+Notice, however, that the sanity check does not use :attr:`num_tasks` for verification, but rather a different, custom attribute, the ``num_tasks_assigned``.
+This happens for two reasons:
+
+  a. At the time the sanity check expression is created, :attr:`num_tasks` is ``0``.
+     So the actual number of tasks assigned must be a deferred expression as well.
+  b. When ReFrame will determine and set the number of tasks of the test, it will not set the :attr:`num_tasks` attribute of the :class:`RegressionTest`.
+     It will only set the corresponding attribute of the associated job instance.
+
+Here is how the new deferred attribute is defined:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+  :lines: 22-25
+  :dedent: 4
+
+
+The behavior of the flexible task allocation is controlled by the ``--flex-alloc-tasks`` command line option.
+See the corresponding `section <running.html#controlling-the-flexible-task-allocation>`__ for more information.

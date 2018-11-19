@@ -76,7 +76,7 @@ class GromacsGPUMaintCheck(GromacsGPUCheck):
                 'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (60.2, -0.10, None)
+                'perf': (42.0, -0.10, None)
             },
         }
 
@@ -88,10 +88,10 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (37.5, -0.05, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (55.6, -0.20, None)
+                'perf': (42.0, -0.20, None)
             },
         }
 
@@ -129,6 +129,7 @@ class GromacsCPUProdCheck(GromacsCPUCheck):
         }
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test([1], [2], [4], [6], [8])
 class GromacsCPUMonchAcceptance(GromacsBaseCheck):
     def __init__(self, num_nodes):

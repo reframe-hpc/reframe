@@ -121,7 +121,9 @@ class Environment:
     def emit_load_commands(self):
         rt = runtime()
         if self.is_loaded:
-            ret = self._load_stmts
+            # FIXME: This is a workaround for issue #423; the environment
+            #        interface must be revisited (see issue #456)
+            ret = list(self._load_stmts)
         else:
             ret = list(
                 itertools.chain(*(rt.modules_system.emit_load_commands(m)
