@@ -123,7 +123,7 @@ class HostResources:
         if current_run == 0:
             return dirs
 
-        last += '@%s' % current_run
+        last += '_retry%s' % current_run
         return (*dirs[:-1], last)
 
     @property
