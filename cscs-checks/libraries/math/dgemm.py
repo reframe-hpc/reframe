@@ -17,7 +17,6 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
-        # FIXME: set the num_tasks to zero.
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 1
@@ -55,27 +54,25 @@ class DGEMMTest(rfm.RegressionTest):
 
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'MV2_ENABLE_AFFINITY': '0'
         }
-
-        if environ.name.startswith('PrgEnv-cray'):
-            self.build_system.cflags += ['-hnoomp']
-
         super().setup(partition, environ, **job_opts)
 
 
     @sn.sanity_function
     def eval_sanity(self):
-        all_tested_nodes = sn.evaluate(sn.findall(
+        failure_msg = ""
+
+        all_tested_nodes = sn.evaluate(sn.extractall(
             r'(?P<name>.*):\s+Time for \d+ DGEMM operations',
             self.stdout
         ))
-        number_of_tested_nodes = len(all_tested_nodes)
+        num_tested_nodes = len(all_tested_nodes)
 
-        if number_of_tested_nodes != self.job.num_tasks:
-            failed_nodes.append('Requested %s nodes, but found %s nodes)' %
-                            (self.job.num_tasks, number_of_tested_nodes))
-            sn.assert_false(failed_nodes, msg=', '.join(failed_nodes))
+        # if num_tested_nodes != self.job.num_tasks:
+        if num_tested_nodes != self.job.num_tasks:
+            failure_msg = ('Requested %s nodes, but found %s nodes' %
+                            (self.job.num_tasks, num_tested_nodes))
+            sn.assert_false(failure_msg, msg=failure_msg)
 
         for node in all_tested_nodes:
             nodename  = node.group('name')
@@ -88,4 +85,4 @@ class DGEMMTest(rfm.RegressionTest):
                     r'%s:\s+Flops based on.*:\s+(?P<gflops>.*)\sGFlops\/sec' %
                     nodename, self.stdout, 'gflops', float)
 
-        return sn.assert_false(failed_nodes, msg=', '.join(failures))
+        return sn.assert_false(failure_msg, msg=failure_msg)
