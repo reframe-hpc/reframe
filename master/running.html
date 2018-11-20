@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.14 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -105,6 +105,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#discovery-of-regression-tests">Discovery of Regression Tests</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#filtering-of-regression-tests">Filtering of Regression Tests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-system">Selecting tests by system</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-programming-environment">Selecting tests by programming environment</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-tags">Selecting tests by tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#selecting-tests-by-name">Selecting tests by name</a></li>
@@ -128,6 +129,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#asynchronous-execution-of-regression-checks">Asynchronous Execution of Regression Checks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#manipulating-modules">Manipulating modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#controlling-the-flexible-task-allocation">Controlling the Flexible Task Allocation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usecases.html">Use cases</a></li>
@@ -225,13 +227,14 @@ Currently there are only two available actions:</p>
 <div class="section" id="listing-of-the-regression-tests">
 <h3>Listing of the regression tests<a class="headerlink" href="#listing-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
 <p>To retrieve a listing of the selected checks, you must specify the <code class="docutils literal"><span class="pre">-l</span></code> or <code class="docutils literal"><span class="pre">--list</span></code> options.
+This will provide a list with a brief description for each test containing only its name and the path to the file where it is defined.
 An example listing of checks is the following that lists all the tests found under the <code class="docutils literal"><span class="pre">tutorial/</span></code> folder:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial -l
 </pre></div>
 </div>
 <p>The output looks like:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -l
-Reframe version: 2.13-dev0
+Reframe version: 2.15-dev1
 Launched by user: USER
 Launched on host: daint103
 Reframe paths
@@ -244,50 +247,149 @@ Reframe paths
 List of matched checks
 ======================
   * Example5Test (found in /path/to/reframe/tutorial/example5.py)
-        descr: Matrix-vector multiplication example with CUDA
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example1Test (found in /path/to/reframe/tutorial/example1.py)
-        descr: Simple matrix-vector multiplication example
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example4Test (found in /path/to/reframe/tutorial/example4.py)
-        descr: Matrix-vector multiplication example with OpenACC
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * SerialTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: Serial matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: OpenMP matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * MPITest (found in /path/to/reframe/tutorial/example8.py)
-        descr: MPI matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: OpenACC matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * CudaTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: CUDA matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example3Test (found in /path/to/reframe/tutorial/example3.py)
-        descr: Matrix-vector multiplication example with MPI
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example7Test (found in /path/to/reframe/tutorial/example7.py)
-        descr: Matrix-vector multiplication (CUDA performance test)
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example6Test (found in /path/to/reframe/tutorial/example6.py)
-        descr: Matrix-vector multiplication with L2 norm check
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
-        descr: Matrix-vector multiplication example with OpenMP
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
-        descr: Matrix-vector multiplication example with OpenMP
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 13 check(s).
 </pre></div>
 </div>
-<p>The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
-Note that this listing may also contain checks that are not supported by the current system.
-These checks will be just skipped if you try to run them.</p>
+<p>You may also retrieve a listing with detailed information about the each check using the option <code class="docutils literal"><span class="pre">-L</span></code> or <code class="docutils literal"><span class="pre">--list-detailed</span></code>.
+The following example lists detailed information about the tutorial check:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -L
+Reframe version: 2.15-dev1
+Launched by user: USER
+Launched on host: daint103
+Reframe paths
+=============
+    Check prefix      :
+    Check search path : &#39;tutorial/&#39;
+    Stage dir prefix  : /path/to/reframe/stage/
+    Output dir prefix : /path/to/reframe/output/
+    Logging dir       : /path/to/reframe/logs
+List of matched checks
+======================
+  * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+      - description: Matrix-vector multiplication example with CUDA
+      - systems: daint:gpu
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-pgi
+      - modules: cudatoolkit
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+      - description: Simple matrix-vector multiplication example
+      - systems: *
+      - environments: *
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+      - description: Matrix-vector multiplication example with OpenACC
+      - systems: daint:gpu
+      - environments: PrgEnv-cray, PrgEnv-pgi
+      - modules: craype-accel-nvidia60
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+      - description: Serial matrix-vector multiplication
+      - systems: *
+      - environments: *
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+      - description: OpenMP matrix-vector multiplication
+      - systems: *
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * MPITest (found in /path/to/reframe/tutorial/example8.py)
+      - description: MPI matrix-vector multiplication
+      - systems: daint:gpu, daint:mc
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+      - description: OpenACC matrix-vector multiplication
+      - systems: daint:gpu
+      - environments: PrgEnv-cray, PrgEnv-pgi
+      - modules: craype-accel-nvidia60
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+      - description: CUDA matrix-vector multiplication
+      - systems: daint:gpu
+      - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+      - modules: cudatoolkit
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+      - description: Matrix-vector multiplication example with MPI
+      - systems: daint:gpu, daint:mc
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+      - description: Matrix-vector multiplication (CUDA performance test)
+      - systems: daint:gpu
+      - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+      - modules: cudatoolkit
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+      - description: Matrix-vector multiplication with L2 norm check
+      - systems: *
+      - environments: *
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+      - description: Matrix-vector multiplication example with OpenMP
+      - systems: *
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+  * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+      - description: Matrix-vector multiplication example with OpenMP
+      - systems: *
+      - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+      - modules:
+      - tags: tutorial
+      - maintainers: you-can-type-your-email-here
+Found 13 check(s).
+</pre></div>
+</div>
+<p>The detailed listing shows the description of the test, its supported systems and programming environments (<code class="docutils literal"><span class="pre">*</span></code> stands for any system or programming environment), the environment modules that it loads, its tags and its maintainers.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The list of modules showed in the detailed listing may not correspond to actual modules loaded by test, if the test customizes its behavior during the setup stage.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionadded">
+<p><span class="versionmodified">New in version 2.15: </span>Support for detailed listings.
+Standard listing using the <code class="docutils literal"><span class="pre">-l</span></code> option is now shorter.</p>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.15: </span>Test listing lists only tests supported by the current system.
+Previous versions were showing all the tests found.</p>
+</div>
+</div>
 </div>
 <div class="section" id="execution-of-the-regression-tests">
 <h3>Execution of the regression tests<a class="headerlink" href="#execution-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
@@ -389,6 +491,27 @@ In this case, any conflicting test will not be loaded and a warning will be issu
 <h2>Filtering of Regression Tests<a class="headerlink" href="#filtering-of-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>At this phase you can select which regression tests should be run or listed.
 There are several ways to select regression tests, which we describe in more detail here:</p>
+<div class="section" id="selecting-tests-by-system">
+<h3>Selecting tests by system<a class="headerlink" href="#selecting-tests-by-system" title="Permalink to this headline">¶</a></h3>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.15.</span></p>
+</div>
+<p>By default, ReFrame always selects the tests that are supported by the current system.
+If you want to list the tests supported by a different system, you may achieve that by passing the <code class="docutils literal"><span class="pre">--system</span></code> option:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --system<span class="o">=</span>kesch -l
+</pre></div>
+</div>
+<p>This example lists all the tests that are supported by the system named <code class="docutils literal"><span class="pre">kesch</span></code>.
+It is also possible to list only the tests that are supported by a specific system partition.
+The following example will list only the tests suported by the <code class="docutils literal"><span class="pre">login</span></code> partition of the <code class="docutils literal"><span class="pre">kesch</span></code> system:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --system<span class="o">=</span>kesch:login -l
+</pre></div>
+</div>
+<p>Finally, in order to list all the tests found regardless of their supported systems, you should pass the <code class="docutils literal"><span class="pre">--skip-system-check</span></code> option:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe --skip-system-check -l
+</pre></div>
+</div>
+</div>
 <div class="section" id="selecting-tests-by-programming-environment">
 <h3>Selecting tests by programming environment<a class="headerlink" href="#selecting-tests-by-programming-environment" title="Permalink to this headline">¶</a></h3>
 <p>To select tests by the programming environment, use the <code class="docutils literal"><span class="pre">-p</span></code> or <code class="docutils literal"><span class="pre">--prgenv</span></code> options:</p>
@@ -397,7 +520,7 @@ There are several ways to select regression tests, which we describe in more det
 </div>
 <p>This will select all the checks that support the <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> environment.</p>
 <p>You can also specify multiple times the <code class="docutils literal"><span class="pre">-p</span></code> option, in which case a test will be selected if it support all the programming environments specified in the command line.
-For example the following will select all the checks that can run with both <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code> and <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code>:</p>
+For example the following will select all the checks that can run with both <code class="docutils literal"><span class="pre">PrgEnv-cray</span></code> and <code class="docutils literal"><span class="pre">PrgEnv-gnu</span></code> on the current system:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -p PrgEnv-gnu -p PrgEnv-cray -l
 </pre></div>
 </div>
@@ -406,7 +529,7 @@ For example the following will select all the checks that can run with both <cod
 <div class="section" id="selecting-tests-by-tags">
 <h3>Selecting tests by tags<a class="headerlink" href="#selecting-tests-by-tags" title="Permalink to this headline">¶</a></h3>
 <p>As we have seen in the <a class="reference external" href="tutorial.html">“ReFrame tutorial”</a>, every regression test may be associated with a set of tags. Using the <code class="docutils literal"><span class="pre">-t</span></code> or <code class="docutils literal"><span class="pre">--tag</span></code> option you can select the regression tests associated with a specific tag.
-For example the following will list all the tests that have a <code class="docutils literal"><span class="pre">maintenance</span></code> tag:</p>
+For example the following will list all the tests that have a <code class="docutils literal"><span class="pre">maintenance</span></code> tag and can run on the current system:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -t maintenance -l
 </pre></div>
 </div>
@@ -421,7 +544,7 @@ For example, you can select only the <code class="docutils literal"><span class=
 </pre></div>
 </div>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
-Reframe version: 2.13-dev0
+Reframe version: 2.15-dev1
 Launched by user: USER
 Launched on host: daint103
 Reframe paths
@@ -434,14 +557,12 @@ Reframe paths
 List of matched checks
 ======================
   * Example7Test (found in /path/to/reframe/tutorial/example7.py)
-        descr: Matrix-vector multiplication (CUDA performance test)
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 1 check(s).
 </pre></div>
 </div>
 <p>Similarly, you can exclude this test by passing the <code class="docutils literal"><span class="pre">-x</span> <span class="pre">Example7Test</span></code> option:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -c tutorial -x Example7Test -l
-Reframe version: 2.13-dev0
+Reframe version: 2.15-dev1
 Launched by user: USER
 Launched on host: daint103
 Reframe paths
@@ -454,41 +575,17 @@ Reframe paths
 List of matched checks
 ======================
   * Example5Test (found in /path/to/reframe/tutorial/example5.py)
-        descr: Matrix-vector multiplication example with CUDA
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example1Test (found in /path/to/reframe/tutorial/example1.py)
-        descr: Simple matrix-vector multiplication example
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example4Test (found in /path/to/reframe/tutorial/example4.py)
-        descr: Matrix-vector multiplication example with OpenACC
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * SerialTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: Serial matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: OpenMP matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * MPITest (found in /path/to/reframe/tutorial/example8.py)
-        descr: MPI matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: OpenACC matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * CudaTest (found in /path/to/reframe/tutorial/example8.py)
-        descr: CUDA matrix-vector multiplication
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example3Test (found in /path/to/reframe/tutorial/example3.py)
-        descr: Matrix-vector multiplication example with MPI
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example6Test (found in /path/to/reframe/tutorial/example6.py)
-        descr: Matrix-vector multiplication with L2 norm check
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
-        descr: Matrix-vector multiplication example with OpenMP
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
   * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
-        descr: Matrix-vector multiplication example with OpenMP
-        tags: {&#39;tutorial&#39;}, maintainers: [&#39;you-can-type-your-email-here&#39;]
 Found 12 check(s).
 </pre></div>
 </div>
@@ -519,6 +616,8 @@ So if you redefine one of them, e.g., <code class="docutils literal"><span class
 In this example, Slurm’s policy is that later definitions of options override previous ones.
 So, in this case, way you would override the standard output for all the submitted jobs!</p>
 </li>
+<li><p class="first"><code class="docutils literal"><span class="pre">--flex-alloc-tasks</span> <span class="pre">{all|idle|NUM}</span></code>: Automatically determine the number of tasks allocated for each test.</p>
+</li>
 <li><p class="first"><code class="docutils literal"><span class="pre">--force-local</span></code>: Force the local execution of the selected tests.
 No jobs will be submitted.</p>
 </li>
@@ -526,7 +625,7 @@ No jobs will be submitted.</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">--skip-performance-check</span></code>: Skip performance verification phase.</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">--strict</span></code>: Force strict performance checking. Some tests may set their <code class="xref py py-attr docutils literal"><span class="pre">strict_check</span></code> attribute to <code class="xref py py-class docutils literal"><span class="pre">False</span></code> (see <a class="reference external" href="reference.html">“Reference Guide”</a>) in order to just let their performance recorded but not yield an error.
+<li><p class="first"><code class="docutils literal"><span class="pre">--strict</span></code>: Force strict performance checking. Some tests may set their <code class="xref py py-attr docutils literal"><span class="pre">strict_check</span></code> attribute to <code class="xref py py-class docutils literal"><span class="pre">False</span></code> (see <a class="reference external" href="running.html#controlling-the-execution-of-regression-tests">“Reference Guide”</a>) in order to just let their performance recorded but not yield an error.
 This option overrides this behavior and forces all tests to be strict.</p>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">--skip-system-check</span></code>: Skips the system check and run the selected tests even if they do not support the current system.
@@ -1065,6 +1164,37 @@ FAILURE INFO for Example7Test
 </pre></div>
 </div>
 </div>
+<div class="section" id="controlling-the-flexible-task-allocation">
+<h2>Controlling the Flexible Task Allocation<a class="headerlink" href="#controlling-the-flexible-task-allocation" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.15.</span></p>
+</div>
+<p>ReFrame can automatically set the number of tasks of a particular test, if its <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks" title="reframe.core.pipeline.RegressionTest.num_tasks"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code></a> attribute is set to <code class="docutils literal"><span class="pre">0</span></code>.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
+This behavior can be adjusted using the <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code> command line option.
+This option accepts three values:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><code class="docutils literal"><span class="pre">idle</span></code>: (default) In this case, ReFrame will set the number of tasks to the number of idle nodes of the current logical partition multiplied by the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks_per_node" title="reframe.core.pipeline.RegressionTest.num_tasks_per_node"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks_per_node</span></code></a> attribute of the particular test.</li>
+<li><code class="docutils literal"><span class="pre">all</span></code>: In this case, ReFrame will set the number of tasks to the number of all the nodes of the current logical partition multiplied by the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks_per_node" title="reframe.core.pipeline.RegressionTest.num_tasks_per_node"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks_per_node</span></code></a> attribute of the particular test.</li>
+<li>Any positive integer: In this case, ReFrame will set the number of tasks to the given value.</li>
+</ol>
+</div></blockquote>
+<p>The flexible allocation of number of tasks takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as <code class="docutils literal"><span class="pre">--partition</span></code>, <code class="docutils literal"><span class="pre">--reservation</span></code>, <code class="docutils literal"><span class="pre">--nodelist</span></code>, <code class="docutils literal"><span class="pre">--exclude-nodes</span></code> and <code class="docutils literal"><span class="pre">--job-option</span></code> (if the scheduler option passed to the latter imposes a restriction).
+Notice that ReFrame will issue an error if the resulting number of nodes is zero.</p>
+<p>For example, using the following options would run a flexible test on all the nodes of reservation <code class="docutils literal"><span class="pre">foo</span></code> except the nodes <code class="docutils literal"><span class="pre">n0[1-5]</span></code>:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>--flex-alloc-tasks<span class="o">=</span>all --reservation<span class="o">=</span>foo --exclude-nodes<span class="o">=</span>n0<span class="o">[</span><span class="m">1</span>-5<span class="o">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Flexible task allocation is supported only for the Slurm scheduler backend.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Test cases resulting from flexible ReFrame tests may not be run using the asynchronous execution policy, because the nodes satisfying the required criteria will be allocated for the first test case, causing all subsequent ones to fail.</p>
+</div>
+</div>
 </div>
 
 
@@ -1156,6 +1286,7 @@ FAILURE INFO for Example7Test
             <dd><a href="../v2.12/running.html">v2.12</a></dd>
             <dd><a href="../v2.13/running.html">v2.13</a></dd>
             <dd><a href="../v2.14/running.html">v2.14</a></dd>
+            <dd><a href="../v2.15/running.html">v2.15</a></dd>
             <dd><a href="../v2.7/running.html">v2.7</a></dd>
             <dd><a href="../v2.8/running.html">v2.8</a></dd>
             <dd><a href="../v2.9/running.html">v2.9</a></dd>
@@ -1170,20 +1301,23 @@ FAILURE INFO for Example7Test
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 

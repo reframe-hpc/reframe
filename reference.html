@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.14 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -543,7 +543,7 @@ with.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -604,7 +604,7 @@ The <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.nu
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">dict[str,</span> <span class="pre">dict[str,</span> <span class="pre">object]]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">Dict[str,</span> <span class="pre">Dict[str,</span> <span class="pre">object]]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
 </tr>
@@ -690,7 +690,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -730,7 +730,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -747,7 +747,7 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -806,14 +806,9 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <dt id="reframe.core.pipeline.RegressionTest.num_tasks">
 <code class="descname">num_tasks</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of tasks required by this test.</p>
-<p>If the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>, ReFrame will try to use all
-the available nodes of a reservation. A reservation <em>must</em> be specified
-through the <cite>–reservation</cite> command-line option, otherwise the
-regression test will fail during submission. ReFrame will try to run the
-test on all the nodes of the reservation that satisfy the selection
-criteria of the current
-<a class="reference external" href="configure.html#partition-configuration">virtual partition</a>
-(i.e., constraints and/or partitions).</p>
+<p>If the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>, ReFrame will try to flexibly
+allocate the number of tasks, based on the command line option
+<code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -827,8 +822,10 @@ criteria of the current
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <div class="last versionchanged">
-<p><span class="versionmodified">Changed in version 2.9: </span>Added support for running the test using all the nodes of the
-specified reservation if the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>.</p>
+<p><span class="versionmodified">Changed in version 2.15: </span>Added support for flexible allocation of the number of tasks
+according to the <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code> command line option
+(see <a class="reference external" href="running.html#flexible-task-allocation">Flexible task allocation</a>)
+if the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>.</p>
 </div>
 </div>
 </dd></dl>
@@ -951,7 +948,7 @@ otherwise.<p>If no job descriptor is yet associated with this test,
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -975,7 +972,7 @@ the stage directory. <strong>Each entry in the list spawns a new shell.</strong>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -994,7 +991,7 @@ actual job launch command.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1018,7 +1015,7 @@ inside the stage directory. <strong>Each entry in the list spawns a new shell.</
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1051,7 +1048,7 @@ directory.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1276,7 +1273,7 @@ when invoking ReFrame.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">set[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">Set[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body">an empty set</td>
 </tr>
@@ -1289,7 +1286,9 @@ when invoking ReFrame.</p>
 <code class="descname">time_limit</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.time_limit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time limit for this test.</p>
 <p>Time limit is specified as a three-tuple in the form <code class="docutils literal"><span class="pre">(hh,</span> <span class="pre">mm,</span> <span class="pre">ss)</span></code>,
-with <code class="docutils literal"><span class="pre">hh</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code>, <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">mm</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code> and <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">ss</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code>.</p>
+with <code class="docutils literal"><span class="pre">hh</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code>, <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">mm</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code> and <code class="docutils literal"><span class="pre">0</span> <span class="pre">&lt;=</span> <span class="pre">ss</span> <span class="pre">&lt;=</span> <span class="pre">59</span></code>.
+If set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>, no time limit will be set.
+The default time limit of the system partition’s scheduler will be used.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1300,6 +1299,13 @@ with <code class="docutils literal"><span class="pre">hh</span> <span class="pre
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 2.15.</span></p>
+</div>
+<p class="last">This attribute may be set to <code class="xref py py-class docutils literal"><span class="pre">None</span></code>.</p>
+</div>
 </dd></dl>
 
 <dl class="attribute">
@@ -1327,7 +1333,7 @@ with <code class="docutils literal"><span class="pre">hh</span> <span class="pre
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1350,7 +1356,7 @@ The general syntax for systems is <code class="docutils literal"><span class="pr
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -1367,7 +1373,7 @@ The general syntax for systems is <code class="docutils literal"><span class="pr
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">dict[str,</span> <span class="pre">str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">Dict[str,</span> <span class="pre">str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">{}</span></code></td>
 </tr>
@@ -1854,7 +1860,7 @@ launcher combination.</p>
 <h2>Job schedulers and parallel launchers<a class="headerlink" href="#job-schedulers-and-parallel-launchers" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="reframe.core.schedulers.Job">
-<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>launcher</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=(0</em>, <em>10</em>, <em>0)</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>pre_run=[]</em>, <em>post_run=[]</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.schedulers.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>launcher</em>, <em>workdir='.'</em>, <em>num_tasks=1</em>, <em>num_tasks_per_node=None</em>, <em>num_tasks_per_core=None</em>, <em>num_tasks_per_socket=None</em>, <em>num_cpus_per_task=None</em>, <em>use_smt=None</em>, <em>time_limit=None</em>, <em>script_filename=None</em>, <em>stdout=None</em>, <em>stderr=None</em>, <em>pre_run=[]</em>, <em>post_run=[]</em>, <em>sched_flex_alloc_tasks=None</em>, <em>sched_access=[]</em>, <em>sched_account=None</em>, <em>sched_partition=None</em>, <em>sched_reservation=None</em>, <em>sched_nodelist=None</em>, <em>sched_exclude_nodelist=None</em>, <em>sched_exclusive_access=None</em>, <em>sched_options=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/schedulers.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.schedulers.Job" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></a></p>
 <p>A job descriptor.</p>
 <div class="admonition caution">
@@ -1878,6 +1884,16 @@ executable of this job.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="reframe.core.schedulers.Job.num_tasks">
+<code class="descname">num_tasks</code><a class="headerlink" href="#reframe.core.schedulers.Job.num_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of tasks assigned to this job.</p>
+<p>This attribute is useful in a flexible regression test for determining
+the actual number of tasks that ReFrame assigned to the test.</p>
+<p>For more information on flexible task allocation, please refer to the
+<a class="reference external" href="advanced.html#flexible-regression-tests">tutorial</a>.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="reframe.core.schedulers.Job.options">
 <code class="descname">options</code><a class="headerlink" href="#reframe.core.schedulers.Job.options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Options to be passed to the backend job scheduler.</p>
@@ -1885,7 +1901,7 @@ executable of this job.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -2452,7 +2468,7 @@ will be used.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -2471,7 +2487,7 @@ will be used.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -2508,7 +2524,7 @@ will be used.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -2552,7 +2568,7 @@ will be used.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -2606,7 +2622,7 @@ will be used.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">None</span></code></td>
 </tr>
@@ -2678,7 +2694,7 @@ CMake flags for compilers and compiler flags.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -2694,7 +2710,7 @@ CMake flags for compilers and compiler flags.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -2801,7 +2817,7 @@ This variable is also useful for passing variables or targets to <code class="do
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -2883,7 +2899,7 @@ option.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">list[str]</span></code></td>
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">List[str]</span></code></td>
 </tr>
 <tr class="field-even field"><th class="field-name">Default:</th><td class="field-body"><code class="docutils literal"><span class="pre">[]</span></code></td>
 </tr>
@@ -3027,6 +3043,7 @@ This is automatically set by the framework based on the
             <dd><a href="v2.12/reference.html">v2.12</a></dd>
             <dd><a href="v2.13/reference.html">v2.13</a></dd>
             <dd><a href="v2.14/reference.html">v2.14</a></dd>
+            <dd><a href="v2.15/reference.html">v2.15</a></dd>
             <dd><a href="v2.7/reference.html">v2.7</a></dd>
             <dd><a href="v2.8/reference.html">v2.8</a></dd>
             <dd><a href="v2.9/reference.html">v2.9</a></dd>
@@ -3041,20 +3058,23 @@ This is automatically set by the framework based on the
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 

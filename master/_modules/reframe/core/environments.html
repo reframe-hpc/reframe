@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.environments &mdash; ReFrame 2.14 documentation</title>
+  <title>reframe.core.environments &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -166,6 +166,7 @@
 
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.os_ext</span> <span class="k">as</span> <span class="nn">os_ext</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.typecheck</span> <span class="k">as</span> <span class="nn">typ</span>
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">EnvironError</span><span class="p">,</span> <span class="n">SpawnedProcessError</span>
 <span class="kn">from</span> <span class="nn">reframe.core.runtime</span> <span class="k">import</span> <span class="n">runtime</span>
 
@@ -177,9 +178,9 @@
 <span class="sd">    to be set when this environment is loaded by the framework.</span>
 <span class="sd">    Users may not create or modify directly environments.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;(\w|-)+&#39;</span><span class="p">)</span>
-    <span class="n">modules</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="n">variables</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">Str</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;(\w|-)+&#39;</span><span class="p">])</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;modules&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;variables&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">modules</span><span class="o">=</span><span class="p">[],</span> <span class="n">variables</span><span class="o">=</span><span class="p">{},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
@@ -281,7 +282,9 @@
     <span class="k">def</span> <span class="nf">emit_load_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">rt</span> <span class="o">=</span> <span class="n">runtime</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_loaded</span><span class="p">:</span>
-            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_stmts</span>
+            <span class="c1"># FIXME: This is a workaround for issue #423; the environment</span>
+            <span class="c1">#        interface must be revisited (see issue #456)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_load_stmts</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ret</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
                 <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">rt</span><span class="o">.</span><span class="n">modules_system</span><span class="o">.</span><span class="n">emit_load_commands</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
@@ -383,100 +386,101 @@
     <span class="c1">#: The C compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str`</span>
-    <span class="n">cc</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">),</span>
+    <span class="n">cc</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
                                 <span class="s1">&#39;setting this field is deprecated; &#39;</span>
                                 <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
                                 <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_cc</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">)</span>
+    <span class="n">_cc</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="c1">#: The C++ compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">cxx</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">cxx</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
                                  <span class="s1">&#39;setting this field is deprecated; &#39;</span>
                                  <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
                                  <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_cxx</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_cxx</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cxx&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The Fortran compiler of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
-    <span class="n">ftn</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">ftn</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
                                  <span class="s1">&#39;setting this field is deprecated; &#39;</span>
                                  <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
                                  <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_ftn</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_ftn</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;ftn&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The preprocessor flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="n">cppflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_cppflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_cppflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cppflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The C compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="n">cflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_cflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_cflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The C++ compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="n">cxxflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_cxxflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_cxxflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;cxxflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The Fortran compiler flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="n">fflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_fflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_fflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;fflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The linker flags of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`str` or :class:`None`</span>
     <span class="n">ldflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_ldflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_ldflags</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;ldflags&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1">#: The include search path of this programming environment.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`list` of :class:`str`</span>
     <span class="c1">#: :default: ``[]``</span>
     <span class="n">include_search_path</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]),</span>
         <span class="s1">&#39;setting this field is deprecated; &#39;</span>
         <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_include_search_path</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">_include_search_path</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;include_search_path&#39;</span><span class="p">,</span>
+                                             <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
 
     <span class="c1">#: Propagate the compilation flags to the ``make`` invocation.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: :class:`bool`</span>
     <span class="c1">#: :default: :class:`True`</span>
-    <span class="n">propagate</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">),</span>
+    <span class="n">propagate</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">),</span>
                                        <span class="s1">&#39;setting this field is deprecated; &#39;</span>
                                        <span class="s1">&#39;please set it through a build system&#39;</span><span class="p">,</span>
                                        <span class="n">fields</span><span class="o">.</span><span class="n">DeprecatedField</span><span class="o">.</span><span class="n">OP_SET</span><span class="p">)</span>
-    <span class="n">_propagate</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">)</span>
+    <span class="n">_propagate</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;propagate&#39;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">,</span>
@@ -589,6 +593,7 @@
             <dd><a href="../../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../../v2.14/index.html">v2.14</a></dd>
+            <dd><a href="../../../../v2.15/index.html">v2.15</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.9/index.html">v2.9</a></dd>
@@ -603,20 +608,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../../',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
 
   
 

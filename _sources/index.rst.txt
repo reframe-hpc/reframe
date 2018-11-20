@@ -34,10 +34,9 @@ Publications
 ============
 
 * `Presentation <_static/files/reframe-hpac18-slides.pdf>`__ & `Demo1 <https://asciinema.org/a/kAETsA1ojG6L7dkzow8opEGvr>`__,  `Demo2 <https://asciinema.org/a/LLcOToWYX4gRIfrcb1GpmvkuB>`__ @ `HPC Advisory Council 2018 <http://www.hpcadvisorycouncil.com/events/2018/swiss-workshop/>`__
-
 * `Presentation <_static/files/reframe-bof-sc17-slides.pdf>`__ & `Demo <https://asciinema.org/a/kBZfdV0rmc0PCd84zxk6nAojG>`__ @ `SC17 <https://sc17.supercomputing.org/>`__
-
 * `Presentation <_static/files/reframe-cug17-slides.pdf>`__ @ `CUG 2017 <https://cug.org/cug-2017/>`__
+* Presentation [`pdf <https://github.com/eth-cscs/UserLabDay/blob/master/slides/ci_and_regression/ReFrame_CI.pdf>`__] [`pptx <https://github.com/eth-cscs/UserLabDay/blob/master/slides/ci_and_regression/ReFrame_CI.pptx>`__] @ `CSCS User Lab Day 2018 <https://github.com/eth-cscs/UserLabDay>`__
 
 
 

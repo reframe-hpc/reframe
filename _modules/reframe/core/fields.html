@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.fields &mdash; ReFrame 2.14 documentation</title>
+  <title>reframe.core.fields &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -163,12 +163,11 @@
 <span class="c1"># Useful descriptors for advanced operations on fields</span>
 <span class="c1">#</span>
 
-<span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
 
+<span class="kn">import</span> <span class="nn">reframe.utility.typecheck</span> <span class="k">as</span> <span class="nn">types</span>
 <span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">user_deprecation_warning</span>
 <span class="kn">from</span> <span class="nn">reframe.utility</span> <span class="k">import</span> <span class="n">ScopedDict</span>
 
@@ -212,268 +211,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 
-<span class="k">class</span> <span class="nc">AnyField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Store a value that may be validated by distinct fields.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">fieldtype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="n">allow_none</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">fieldtype</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="c1"># Try the field descriptors in turn until one validates the input</span>
-        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">f</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-                <span class="k">break</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
-                <span class="k">pass</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># All field set attemps have failed</span>
-            <span class="c1"># FIXME: This is not a very informative message.</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;attempt to set a field of different type.&#39;</span><span class="p">)</span>
-
-
 <span class="k">class</span> <span class="nc">TypedField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stores a field of predefined type&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">fieldtype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">main_type</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fieldtype</span> <span class="o">=</span> <span class="n">fieldtype</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_allow_none</span> <span class="o">=</span> <span class="n">allow_none</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_types</span> <span class="o">=</span> <span class="p">(</span><span class="n">main_type</span><span class="p">,)</span> <span class="o">+</span> <span class="n">other_types</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> is not a sequence of types&#39;</span><span class="o">.</span>
+                            <span class="nb">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_allow_none</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fieldtype</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">):</span>
+            <span class="n">typedescr</span> <span class="o">=</span> <span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_types</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;failed to set field &#39;</span><span class="si">%s</span><span class="s2">&#39;: type mismatch: &quot;</span>
+                <span class="s2">&quot;required type is &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">typedescr</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;attempt to set a field of different type. &#39;</span>
-                            <span class="s1">&#39;Required: </span><span class="si">%s</span><span class="s1">, Found: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fieldtype</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">AggregateTypeField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Store a typed container with elements of certain type(s)</span>
-
-<span class="sd">    The typespec has the following syntax:</span>
-<span class="sd">    typespec := type |</span>
-<span class="sd">                (typespec, None) |</span>
-<span class="sd">                (aggr_type, typespec) |</span>
-<span class="sd">                (seq_type, ((typespec, typespec, ...),)) |</span>
-<span class="sd">                (map_type, (typespec, typespec))</span>
-<span class="sd">    aggr_type := list | tuple | set | frozenset | dict</span>
-<span class="sd">    seq_type  := list | tuple</span>
-<span class="sd">    map_type  := dict</span>
-<span class="sd">    type      := &lt;any-python-type&gt; | callable&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">typespec</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_typespec</span> <span class="o">=</span> <span class="n">typespec</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_allow_none</span> <span class="o">=</span> <span class="n">allow_none</span>
-
-    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type_ext</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;attempt to set an aggregate field &#39;</span>
-                            <span class="s1">&#39;of different type. Required typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_typespec</span><span class="p">))</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_check_type_ext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="c1"># Checks also value against None if that&#39;s allowed</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allow_none</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_typespec</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_extract_typeinfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typespec</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Check if a typespec is of the form (type, None)</span>
-
-<span class="sd">        If yes, returns (type, True) else (typespec, False)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">typespec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">typespec</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">typespec</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">typespec</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="n">typespec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">typespec</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">typespec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">True</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_format_typespec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typespec</span><span class="p">):</span>
-        <span class="c1"># Extract the type information and check if None is allowed</span>
-        <span class="n">typespec</span><span class="p">,</span> <span class="n">allow_none</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_typeinfo</span><span class="p">(</span><span class="n">typespec</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">typespec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">typespec</span><span class="o">.</span><span class="vm">__name__</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">typespec</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">typespec</span><span class="p">))</span>
-
-        <span class="n">container_type</span><span class="p">,</span> <span class="n">element_type</span> <span class="o">=</span> <span class="n">typespec</span>
-        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="c1"># non-uniformly typed container</span>
-                <span class="n">elem_types</span> <span class="o">=</span> <span class="n">element_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">ret</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[&#39;</span> <span class="o">%</span> <span class="n">container_type</span><span class="o">.</span><span class="vm">__name__</span>
-                <span class="n">ret</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">elem_types</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">ret</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># uniformly typed container</span>
-                <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span>
-                    <span class="n">container_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="n">element_type</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Set</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">container_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                               <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="n">element_type</span><span class="p">))</span>
-
-        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid mapping typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                                 <span class="nb">str</span><span class="p">(</span><span class="n">element_type</span><span class="p">))</span>
-
-            <span class="n">key_type</span><span class="p">,</span> <span class="n">value_type</span> <span class="o">=</span> <span class="n">element_type</span>
-            <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[</span><span class="si">%s</span><span class="s1">,</span><span class="si">%s</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">container_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="n">key_type</span><span class="p">),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="n">value_type</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
-
-        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
-
-    <span class="k">def</span> <span class="nf">_check_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">typespec</span><span class="p">):</span>
-        <span class="c1"># Extract the type information and check if None is allowed</span>
-        <span class="n">typespec</span><span class="p">,</span> <span class="n">allow_none</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_typeinfo</span><span class="p">(</span><span class="n">typespec</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">allow_none</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">typespec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="c1"># we need to make a special check if typespec == callable</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">callable</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">typespec</span> <span class="o">==</span> <span class="n">callable</span> <span class="k">else</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">typespec</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">typespec</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">typespec</span><span class="p">))</span>
-
-        <span class="n">container_type</span><span class="p">,</span> <span class="n">element_type</span> <span class="o">=</span> <span class="n">typespec</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">container_type</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="c1"># non-uniformly typed container</span>
-                <span class="n">elem_types</span> <span class="o">=</span> <span class="n">element_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elem_types</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-
-                <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">elem_types</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-                        <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># uniformly typed container</span>
-                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
-                        <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Set</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">container_type</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid mapping typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                                 <span class="nb">str</span><span class="p">(</span><span class="n">element_type</span><span class="p">))</span>
-
-            <span class="n">key_type</span><span class="p">,</span> <span class="n">value_type</span> <span class="o">=</span> <span class="n">element_type</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">key_type</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">value_type</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">return</span> <span class="kc">True</span>
-
-
-<span class="k">class</span> <span class="nc">StringField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a standard string object&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">StringPatternField</span><span class="p">(</span><span class="n">StringField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a string that must follow a specific pattern&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">allow_none</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">pattern</span>
-
-    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;a string type is required&#39;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span>
-            <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">ASCII</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;cannot validate string &quot;</span><span class="si">%s</span><span class="s1">&quot; against pattern: &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span>
-                <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="p">))</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores an integer object&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">,</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">BooleanField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a boolean object&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">TypedListField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a list of objects of the same type&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">fieldname</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">),</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">TypedSequenceField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a list of objects of the same type&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">fieldname</span><span class="p">,</span> <span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">),</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">TypedSetField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a list of objects of the same type&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">fieldname</span><span class="p">,</span> <span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Set</span><span class="p">,</span> <span class="n">elemtype</span><span class="p">),</span> <span class="n">allow_none</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">TypedDictField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a list of objects of the same type&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">keytype</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
-                         <span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">,</span> <span class="p">(</span><span class="n">keytype</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">)),</span>
-                         <span class="n">allow_none</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">CopyOnWriteField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
@@ -504,17 +261,14 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;attempt to set a read-only variable&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">TimerField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">TimerField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Stores a timer in the form of a tuple &#39;(hh, mm, ss)&#39;&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="p">((</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">),)),</span> <span class="n">allow_none</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="o">*</span><span class="n">other_types</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type_ext</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;attempt to set a timer field &#39;</span>
-                            <span class="s1">&#39;with a wrong type&#39;</span><span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Check also the values for minutes and seconds</span>
             <span class="n">h</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">value</span>
@@ -530,17 +284,17 @@
         <span class="n">Field</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">AbsolutePathField</span><span class="p">(</span><span class="n">StringField</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">AbsolutePathField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A string field that stores an absolute path.</span>
 
 <span class="sd">    Any string assigned to such a field, will be converted to an absolute path.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;attempt to set a path field with a &#39;</span>
-                            <span class="s1">&#39;non string value: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
@@ -548,32 +302,22 @@
         <span class="n">Field</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ScopedDictField</span><span class="p">(</span><span class="n">AggregateTypeField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores a ScopedDict with a specific type</span>
+<span class="k">class</span> <span class="nc">ScopedDictField</span><span class="p">(</span><span class="n">TypedField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores a ScopedDict with a specific type.</span>
 
 <span class="sd">    It also handles implicit conversions from ordinary dicts.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">fieldname</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">)))),</span> <span class="n">allow_none</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_valuetype</span> <span class="o">=</span> <span class="n">valuetype</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
+                         <span class="n">types</span><span class="o">.</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">valuetype</span><span class="p">]],</span>
+                         <span class="n">ScopedDict</span><span class="p">,</span> <span class="o">*</span><span class="n">other_types</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScopedDict</span><span class="p">):</span>
-            <span class="c1"># value is already a ScopedDict</span>
-            <span class="n">Field</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Try to convert value to a ScopedDict</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_type_ext</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="s1">&#39;attempt to set a ScopedDict with values &#39;</span>
-                    <span class="s1">&#39;of different type. Required typespec: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_format_typespec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_valuetype</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ScopedDict</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">ScopedDict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">value</span>
 
-            <span class="c1"># Call Field&#39;s __set__() method, validation is already performed</span>
-            <span class="n">Field</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span>
-                          <span class="n">ScopedDict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">Field</span><span class="o">.</span><span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">DeprecatedField</span><span class="p">(</span><span class="n">Field</span><span class="p">):</span>
@@ -680,6 +424,7 @@
             <dd><a href="../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../v2.14/index.html">v2.14</a></dd>
+            <dd><a href="../../../v2.15/index.html">v2.15</a></dd>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../v2.9/index.html">v2.9</a></dd>
@@ -694,20 +439,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../../',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
 
   
 

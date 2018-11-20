@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.schedulers &mdash; ReFrame 2.14 documentation</title>
+  <title>reframe.core.schedulers &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -169,8 +169,10 @@
 <span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.core.shell</span> <span class="k">as</span> <span class="nn">shell</span>
-<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">JobNotStartedError</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.typecheck</span> <span class="k">as</span> <span class="nn">typ</span>
+<span class="kn">from</span> <span class="nn">reframe.core.exceptions</span> <span class="k">import</span> <span class="n">JobError</span><span class="p">,</span> <span class="n">JobNotStartedError</span>
 <span class="kn">from</span> <span class="nn">reframe.core.launchers</span> <span class="k">import</span> <span class="n">JobLauncher</span>
+<span class="kn">from</span> <span class="nn">reframe.core.logging</span> <span class="k">import</span> <span class="n">getlogger</span>
 
 
 <span class="k">class</span> <span class="nc">JobState</span><span class="p">:</span>
@@ -200,9 +202,9 @@
 
     <span class="c1">#: Options to be passed to the backend job scheduler.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: :type: :class:`list` of :class:`str`</span>
+    <span class="c1">#: :type: :class:`List[str]`</span>
     <span class="c1">#: :default: ``[]``</span>
-    <span class="n">options</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;options&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
 
     <span class="c1">#: The parallel program launcher that will be used to launch the parallel</span>
     <span class="c1">#: executable of this job.</span>
@@ -210,9 +212,9 @@
     <span class="c1">#: :type: :class:`reframe.core.launchers.JobLauncher`</span>
     <span class="n">launcher</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;launcher&#39;</span><span class="p">,</span> <span class="n">JobLauncher</span><span class="p">)</span>
 
-    <span class="n">_jobid</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;_jobid&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_exitcode</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;_exitcode&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_state</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_state&#39;</span><span class="p">,</span> <span class="n">JobState</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_jobid</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_jobid&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_exitcode</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_exitcode&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_state</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_state&#39;</span><span class="p">,</span> <span class="n">JobState</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1"># The sched_* arguments are exposed also to the frontend</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -225,12 +227,14 @@
                  <span class="n">num_tasks_per_socket</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">num_cpus_per_task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">use_smt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">time_limit</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                 <span class="n">time_limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">script_filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">pre_run</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">post_run</span><span class="o">=</span><span class="p">[],</span>
+                 <span class="n">sched_flex_alloc_tasks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sched_access</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">sched_account</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">sched_partition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">sched_reservation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -257,6 +261,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_time_limit</span> <span class="o">=</span> <span class="n">time_limit</span>
 
         <span class="c1"># Backend scheduler related information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sched_flex_alloc_tasks</span> <span class="o">=</span> <span class="n">sched_flex_alloc_tasks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sched_access</span> <span class="o">=</span> <span class="n">sched_access</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sched_nodelist</span> <span class="o">=</span> <span class="n">sched_nodelist</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sched_exclude_nodelist</span> <span class="o">=</span> <span class="n">sched_exclude_nodelist</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sched_partition</span> <span class="o">=</span> <span class="n">sched_partition</span>
@@ -296,6 +302,14 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">num_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The number of tasks assigned to this job.</span>
+
+<span class="sd">        This attribute is useful in a flexible regression test for determining</span>
+<span class="sd">        the actual number of tasks that ReFrame assigned to the test.</span>
+
+<span class="sd">        For more information on flexible task allocation, please refer to the</span>
+<span class="sd">        `tutorial &lt;advanced.html#flexible-regression-tests&gt;`__.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_tasks</span>
 
     <span class="nd">@property</span>
@@ -335,6 +349,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_smt</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sched_flex_alloc_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_flex_alloc_tasks</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sched_access</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_access</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">sched_nodelist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sched_nodelist</span>
 
@@ -360,6 +382,15 @@
 
     <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="p">,</span> <span class="n">environs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">gen_opts</span><span class="p">):</span>
         <span class="n">environs</span> <span class="o">=</span> <span class="n">environs</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_num_tasks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guess_num_tasks</span><span class="p">()</span>
+                <span class="n">getlogger</span><span class="p">()</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;flex_alloc_tasks: setting num_tasks to </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">_num_tasks</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">NotImplementedError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">JobError</span><span class="p">(</span><span class="s1">&#39;guessing number of tasks is not implemented &#39;</span>
+                               <span class="s1">&#39;by the backend&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
         <span class="k">with</span> <span class="n">shell</span><span class="o">.</span><span class="n">generate_script</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">script_filename</span><span class="p">,</span>
                                    <span class="o">**</span><span class="n">gen_opts</span><span class="p">)</span> <span class="k">as</span> <span class="n">builder</span><span class="p">:</span>
             <span class="n">builder</span><span class="o">.</span><span class="n">write_prolog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">emit_preamble</span><span class="p">())</span>
@@ -371,6 +402,51 @@
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">emit_preamble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">guess_num_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sched_flex_alloc_tasks</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sched_flex_alloc_tasks</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">JobError</span><span class="p">(</span><span class="s1">&#39;invalid number of flex_alloc_tasks: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">sched_flex_alloc_tasks</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sched_flex_alloc_tasks</span>
+
+        <span class="n">available_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_partition_nodes</span><span class="p">()</span>
+        <span class="n">getlogger</span><span class="p">()</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;flex_alloc_tasks: total available nodes in current &#39;</span>
+                          <span class="s1">&#39;virtual partition: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">))</span>
+
+        <span class="c1"># Try to guess the number of tasks now</span>
+        <span class="n">available_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_nodes</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">available_nodes</span><span class="p">:</span>
+            <span class="n">options</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sched_access</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">JobError</span><span class="p">(</span><span class="s1">&#39;could not find any node satisfying the &#39;</span>
+                           <span class="s1">&#39;required criteria: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">options</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sched_flex_alloc_tasks</span> <span class="o">==</span> <span class="s1">&#39;idle&#39;</span><span class="p">:</span>
+            <span class="n">available_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">available_nodes</span>
+                               <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">is_available</span><span class="p">()}</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">available_nodes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">JobError</span><span class="p">(</span><span class="s1">&#39;could not find any idle nodes&#39;</span><span class="p">)</span>
+
+            <span class="n">getlogger</span><span class="p">()</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s1">&#39;flex_alloc_tasks: selecting idle nodes: &#39;</span>
+                <span class="s1">&#39;available nodes now: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">))</span>
+
+        <span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_node</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="n">num_tasks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_tasks_per_node</span>
+        <span class="n">getlogger</span><span class="p">()</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;flex_alloc_tasks: setting num_tasks to: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                          <span class="n">num_tasks</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">num_tasks</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_partition_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Get all nodes of the current virtual partition</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">filter_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+        <span class="c1"># Filter nodes according to the scheduler options</span>
         <span class="k">pass</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
@@ -472,6 +548,7 @@
             <dd><a href="../../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../../v2.14/index.html">v2.14</a></dd>
+            <dd><a href="../../../../v2.15/index.html">v2.15</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.9/index.html">v2.9</a></dd>
@@ -486,20 +563,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../../',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
 
   
 

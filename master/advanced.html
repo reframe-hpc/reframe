@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Customizing Further a Regression Test &mdash; ReFrame 2.14 documentation</title>
+  <title>Customizing Further a Regression Test &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -108,6 +108,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#applying-a-sanity-function-iteratively">Applying a sanity function iteratively</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#customizing-the-generated-job-script">Customizing the Generated Job Script</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#working-with-parameterized-tests">Working with parameterized tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flexible-regression-tests">Flexible Regression Tests</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="deferrables.html">Understanding The Mechanism Of Sanity Functions</a></li>
@@ -726,7 +727,7 @@ Each of the decorator’s arguments corresponds to the constructor arguments of 
 In the example shown, the test will be instantiated twice, once passing <code class="docutils literal"><span class="pre">variant</span></code> as <code class="docutils literal"><span class="pre">MPI</span></code> and a second time with <code class="docutils literal"><span class="pre">variant</span></code> passed as <code class="docutils literal"><span class="pre">OpenMP</span></code>.
 The framework will try to generate unique names for the generated tests by stringifying the arguments passed to the test’s constructor:</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/advanced/advanced_example8.py -l
-Reframe version: 2.13-dev0
+Reframe version: 2.15-dev1
 Launched by user: XXX
 Launched on host: daint101
 Reframe paths
@@ -739,9 +740,7 @@ Reframe paths
 List of matched checks
 ======================
   * MatrixVectorTest_MPI (Matrix-vector multiplication test (MPI))
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
   * MatrixVectorTest_OpenMP (Matrix-vector multiplication test (OpenMP))
-        tags: [tutorial], maintainers: [you-can-type-your-email-here]
 Found 2 check(s).
 </pre></div>
 </div>
@@ -764,6 +763,76 @@ The dictionaries will be converted to keyword arguments and passed to the constr
 <p class="last">Combining parameterized tests and test class hierarchies can offer you a very flexible way for generating multiple related tests at once keeping at the same time the maintenance cost low.
 We use this technique extensively in our tests.</p>
 </div>
+</div>
+<div class="section" id="flexible-regression-tests">
+<h2>Flexible Regression Tests<a class="headerlink" href="#flexible-regression-tests" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.15.</span></p>
+</div>
+<p>ReFrame can automatically set the number of tasks of a particular test, if its <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks" title="reframe.core.pipeline.RegressionTest.num_tasks"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code></a> attribute is set to <code class="docutils literal"><span class="pre">0</span></code>.
+In ReFrame’s terminology, such tests are called <cite>flexible</cite>.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted from the command-line.
+Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
+In this example, we demonstrate this feature through a simple test that runs <code class="docutils literal"><span class="pre">hostname</span></code>.
+The test will verify that all the nodes print the expected host name:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">reframe</span> <span class="k">as</span> <span class="nn">rfm</span>
+<span class="kn">import</span> <span class="nn">reframe.utility.sanity</span> <span class="k">as</span> <span class="nn">sn</span>
+
+
+<span class="nd">@rfm</span><span class="o">.</span><span class="n">simple_test</span>
+<span class="k">class</span> <span class="nc">HostnameCheck</span><span class="p">(</span><span class="n">rfm</span><span class="o">.</span><span class="n">RunOnlyRegressionTest</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_systems</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;daint:gpu&#39;</span><span class="p">,</span> <span class="s1">&#39;daint:mc&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_prog_environs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PrgEnv-cray&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="s1">&#39;hostname&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sourcesdir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_per_node</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_eq</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_assigned</span><span class="p">,</span>
+            <span class="n">sn</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">sn</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;nid\d+&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintainers</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;you-can-type-your-email-here&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;tutorial&#39;</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@sn</span><span class="o">.</span><span class="n">sanity_function</span>
+    <span class="k">def</span> <span class="nf">num_tasks_assigned</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">num_tasks</span>
+</pre></div>
+</div>
+<p>The first thing to notice in this test is that <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks" title="reframe.core.pipeline.RegressionTest.num_tasks"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code></a> is set to <code class="docutils literal"><span class="pre">0</span></code>.
+This is a requirement for flexible tests:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>The sanity function of this test simply counts the host names and verifies that they are as many as expected:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">sanity_patterns</span> <span class="o">=</span> <span class="n">sn</span><span class="o">.</span><span class="n">assert_eq</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks_assigned</span><span class="p">,</span>
+    <span class="n">sn</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">sn</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;nid\d+&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="p">))</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Notice, however, that the sanity check does not use <code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code> for verification, but rather a different, custom attribute, the <code class="docutils literal"><span class="pre">num_tasks_assigned</span></code>.
+This happens for two reasons:</p>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li>At the time the sanity check expression is created, <code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code> is <code class="docutils literal"><span class="pre">0</span></code>.
+So the actual number of tasks assigned must be a deferred expression as well.</li>
+<li>When ReFrame will determine and set the number of tasks of the test, it will not set the <code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code> attribute of the <code class="xref py py-class docutils literal"><span class="pre">RegressionTest</span></code>.
+It will only set the corresponding attribute of the associated job instance.</li>
+</ol>
+</div></blockquote>
+<p>Here is how the new deferred attribute is defined:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@property</span>
+<span class="nd">@sn</span><span class="o">.</span><span class="n">sanity_function</span>
+<span class="k">def</span> <span class="nf">num_tasks_assigned</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">num_tasks</span>
+</pre></div>
+</div>
+<p>The behavior of the flexible task allocation is controlled by the <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code> command line option.
+See the corresponding <a class="reference external" href="running.html#controlling-the-flexible-task-allocation">section</a> for more information.</p>
 </div>
 </div>
 
@@ -856,6 +925,7 @@ We use this technique extensively in our tests.</p>
             <dd><a href="../v2.12/advanced.html">v2.12</a></dd>
             <dd><a href="../v2.13/advanced.html">v2.13</a></dd>
             <dd><a href="../v2.14/advanced.html">v2.14</a></dd>
+            <dd><a href="../v2.15/advanced.html">v2.15</a></dd>
             <dd><a href="../v2.7/advanced.html">v2.7</a></dd>
             <dd><a href="../v2.8/advanced.html">v2.8</a></dd>
             <dd><a href="../v2.9/advanced.html">v2.9</a></dd>
@@ -870,20 +940,23 @@ We use this technique extensively in our tests.</p>
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
 
   
 

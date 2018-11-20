@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.systems &mdash; ReFrame 2.14 documentation</title>
+  <title>reframe.core.systems &mdash; ReFrame 2.15 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.14
+                2.15
               </div>
             
           
@@ -161,22 +161,22 @@
   <h1>Source code for reframe.core.systems</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
-
+<span class="kn">import</span> <span class="nn">reframe.utility.typecheck</span> <span class="k">as</span> <span class="nn">typ</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
 
 
 <div class="viewcode-block" id="SystemPartition"><a class="viewcode-back" href="../../../reference.html#reframe.core.systems.SystemPartition">[docs]</a><span class="k">class</span> <span class="nc">SystemPartition</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A representation of a system partition inside ReFrame.&quot;&quot;&quot;</span>
 
-    <span class="n">_name</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">)</span>
-    <span class="n">_descr</span>     <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
-    <span class="n">_access</span>    <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_access&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="n">_environs</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_environs&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">)</span>
-    <span class="n">_resources</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedDictField</span><span class="p">(</span><span class="s1">&#39;_resources&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
-    <span class="n">_local_env</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_local_env&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_name</span>      <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">Str</span><span class="p">[</span><span class="s1">&#39;(\w|-)+&#39;</span><span class="p">])</span>
+    <span class="n">_descr</span>     <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">_access</span>    <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_access&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
+    <span class="n">_environs</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_environs&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">Environment</span><span class="p">])</span>
+    <span class="n">_resources</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_resources&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span>
+    <span class="n">_local_env</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_local_env&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
     <span class="c1"># maximum concurrent jobs</span>
-    <span class="n">_max_jobs</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="s1">&#39;_max_jobs&#39;</span><span class="p">)</span>
+    <span class="n">_max_jobs</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_max_jobs&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">launcher</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">access</span><span class="o">=</span><span class="p">[],</span> <span class="n">environs</span><span class="o">=</span><span class="p">[],</span> <span class="n">resources</span><span class="o">=</span><span class="p">{},</span> <span class="n">local_env</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -305,18 +305,18 @@
 
 <div class="viewcode-block" id="System"><a class="viewcode-back" href="../../../reference.html#reframe.core.systems.System">[docs]</a><span class="k">class</span> <span class="nc">System</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A representation of a system inside ReFrame.&quot;&quot;&quot;</span>
-    <span class="n">_name</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">)</span>
-    <span class="n">_descr</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">)</span>
-    <span class="n">_hostnames</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_hostnames&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="n">_partitions</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedListField</span><span class="p">(</span><span class="s1">&#39;_partitions&#39;</span><span class="p">,</span> <span class="n">SystemPartition</span><span class="p">)</span>
-    <span class="n">_modules_system</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringPatternField</span><span class="p">(</span><span class="s1">&#39;_modules_system&#39;</span><span class="p">,</span>
-                                                <span class="s1">&#39;(\w|-)+&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_name</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_name&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">Str</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;(\w|-)+&#39;</span><span class="p">])</span>
+    <span class="n">_descr</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_descr&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">_hostnames</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_hostnames&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span>
+    <span class="n">_partitions</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_partitions&#39;</span><span class="p">,</span> <span class="n">typ</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">SystemPartition</span><span class="p">])</span>
+    <span class="n">_modules_system</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_modules_system&#39;</span><span class="p">,</span>
+                                        <span class="n">typ</span><span class="o">.</span><span class="n">Str</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;(\w|-)+&#39;</span><span class="p">],</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
-    <span class="n">_prefix</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">)</span>
-    <span class="n">_stagedir</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_outputdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_outputdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_perflogdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_perflogdir&#39;</span><span class="p">,</span> <span class="n">allow_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_resourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">StringField</span><span class="p">(</span><span class="s1">&#39;_resourcesdir&#39;</span><span class="p">)</span>
+    <span class="n">_prefix</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_prefix&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="n">_stagedir</span>  <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_stagedir&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_outputdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_outputdir&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_perflogdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_perflogdir&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_resourcesdir</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_resourcesdir&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">descr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostnames</span><span class="o">=</span><span class="p">[],</span> <span class="n">partitions</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">stagedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">perflogdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -493,6 +493,7 @@
             <dd><a href="../../../../v2.12/index.html">v2.12</a></dd>
             <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../../v2.14/index.html">v2.14</a></dd>
+            <dd><a href="../../../../v2.15/index.html">v2.15</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.9/index.html">v2.9</a></dd>
@@ -507,20 +508,23 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../../',
-            VERSION:'2.14',
-            LANGUAGE:'None',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../../',
+              VERSION:'2.15',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    
 
   
 
