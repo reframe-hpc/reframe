@@ -1,5 +1,4 @@
 import os
-import re
 
 import reframe.utility.sanity as sn
 import reframe as rfm
@@ -16,12 +15,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-gnu-nompi']
 
-        self.sourcesdir = os.path.join(
-            self.current_system.resourcesdir, 'CUDA', 'essentials'
-        )
-        self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_bandwidth'
-        self.executable = 'gpu_bandwidth_check.sh'
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'CUDA', 'essentials')
+        self.build_system = 'SingleSource'
+        self.sourcepath = 'bandwidthTest.cu'
+        self.executable = 'gpu_bandwidth_check.x'
 
         # NOTE: Perform a range of bandwidth tests from 2MB to 32MB
         # with 2MB increments to avoid initialization overhead in bandwidth
@@ -35,9 +33,18 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia35']
             self.num_gpus_per_node = 8
 
-        self.post_run = ['cat task*.out > alltasks.out']
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Result = PASS', self.stdout),
+            sn.assert_found('Detected devices: %i' % self.num_gpus_per_node,
+                            self.stdout)
+        ])
 
-        self.sanity_patterns = self.eval_sanity()
+        self.perf_patterns = {}
+        for xfer_kind in ['h2d', 'd2h', 'd2d']:
+            for device in range(self.num_gpus_per_node):
+                self.perf_patterns['perf_%s_%i' % (xfer_kind, device)] = \
+                    sn.extractsingle(self._xfer_pattern(xfer_kind, device),
+                                     self.stdout, 3, float, 0)
 
         self.reference = {}
         for d in range(self.num_gpus_per_node):
@@ -61,15 +68,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
-        self.num_tasks_per_node = 1
-        self.num_tasks = 0
-
-#    @property
-#    @sn.sanity_function
-#    def num_tasks_assigned(self):
-#        return self.job.num_tasks
-
-    def _xfer_pattern(self, xfer_kind, devno, nodename):
+    def _xfer_pattern(self, xfer_kind, devno):
         """generates search pattern for performance analysis"""
         if xfer_kind == 'h2d':
             first_part = 'Host to Device Bandwidth'
@@ -79,48 +78,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             first_part = 'Device to Device Bandwidth'
 
         # Extract the bandwidth corresponding to the 32MB message (16th value)
-        return (r'^%s *%s([^\n]*\n){%i}^%s *Device Id: %i\s+'
-                r'(%s[^\n]*\n){15}'
-                r'%s\s+\d+\s+(\S+)' % (nodename, first_part, 3+18*devno, nodename, devno, nodename, nodename))
-
-    @sn.sanity_function
-    def eval_sanity(self):
-        failures = []
-
-        all_tested_nodes = sn.evaluate(sn.findall(
-            r'(?P<name>.*)\s+Detected devices: %i' % self.num_gpus_per_node,
-            'alltasks.out'
-        ))
-        number_of_tested_nodes = len(all_tested_nodes)
-        sanity_detected = set()
-        for i in range(number_of_tested_nodes):
-            sanity_detected.add(re.search(r'(?P<name>[^ ]*)', all_tested_nodes[i].group(0)).group(0))
-
-        if number_of_tested_nodes != self.job.num_tasks:
-            failures.append('Requested %s nodes, but found %s nodes)' %
-                            (self.job.num_tasks, number_of_tested_nodes))
-            failures.append('nodelist %s' % sanity_detected)
-            sn.assert_false(failures, msg=', '.join(failures))
-
-        all_tested_nodes_pass = sn.evaluate(sn.findall(
-            r'(?P<name>.*)\s+.*Result = PASS',
-            'alltasks.out'
-        ))
-        sanity_pass = set()
-        for i in range(len(all_tested_nodes_pass)):
-            sanity_pass.add(re.search(r'(?P<name>[^ ]*)', all_tested_nodes_pass[i].group(0)).group(0))
-        if sanity_detected != sanity_pass:
-            failures.append('nodes %s did not pass' %
-                (sanity_detected - sanity_pass)
-            )
-            sn.assert_false(failures, msg=', '.join(failures))
-
-        for nodename in sanity_detected:
-            self.perf_patterns = {}
-            for xfer_kind in ['h2d', 'd2h', 'd2d']:
-                for device in range(self.num_gpus_per_node):
-                    self.perf_patterns['perf_%s_%i' % (xfer_kind, device)] = \
-                        sn.extractsingle(self._xfer_pattern(xfer_kind, device, nodename),
-                                         'alltasks.out', 3, float, 0)
-
-        return sn.assert_false(failures, msg=', '.join(failures))
+        return (r'^ *%s([^\n]*\n){%i}^ *Device Id: %i\s+'
+                r'([^\n]*\n){15}'
+                r'\s+\d+\s+(\S+)' % (first_part, 3+18*devno, devno))
