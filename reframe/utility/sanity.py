@@ -710,9 +710,9 @@ def count(iterable):
 
 
 @deferrable
-def count_unique(iterable):
+def count_uniq(iterable):
     """Return the unique element count of ``iterable``."""
-    return builtins.len(set(iterable))
+    return builtins.len(builtins.set(iterable))
 
 
 @deferrable
