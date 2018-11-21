@@ -9,10 +9,10 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for CUDA'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu',
-# temporary workaround until the mvapich module is fixed
-#                                    'PrgEnv-c2sm-gpu',
-                                   ]
+        # FIXME: temporary workaround until the mvapich module is fixed
+        # afterwards 'PrgEnv-gnu-c2sm-gpu' will be added which is not
+        # implemented now
+        self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-lcublas', '-lcudart']

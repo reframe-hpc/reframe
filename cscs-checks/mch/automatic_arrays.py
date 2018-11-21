@@ -14,7 +14,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
-            # workaround
+            # FIXME: workaround -- the variable should not be needed since
+            # there is no gpu-direct in the check
             self.variables = {'MV2_USE_CUDA': '1'}
 
         # This tets requires an MPI compiler, although it uses a single task
@@ -46,21 +47,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'dom:gpu': {'time': (6.3E-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
             },
-            'PrgEnv-cray-c2sm-gpu': {
-                'daint:gpu': {'time': (5.7E-05, None, 0.15)},
-                'dom:gpu': {'time': (5.8E-05, None, 0.15)},
-                'kesch:cn': {'time': (2.9E-04, None, 0.15)},
-            },
-            'PrgEnv-gnu-c2sm-gpu': {
-                'daint:gpu': {'time': (7.0E-03, None, 0.15)},
-                'dom:gpu': {'time': (7.3E-03, None, 0.15)},
-                'kesch:cn': {'time': (6.5E-03, None, 0.15)},
-            },
-            'PrgEnv-pgi-c2sm-gpu': {
-                'daint:gpu': {'time': (6.4E-05, None, 0.15)},
-                'dom:gpu': {'time': (6.3E-05, None, 0.15)},
-                'kesch:cn': {'time': (1.4E-04, None, 0.15)},
-            }
         }
 
         self.maintainers = ['AJ', 'VK']
@@ -76,5 +62,14 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
 
-        self.reference = self.arrays_reference[environ.name]
+        if environ.name.startswith('PrgEnv-cray'):
+            envname = 'PrgEnv-cray'
+        elif environ.name.startswith('PrgEnv-gnu'):
+            envname = 'PrgEnv-gnu'
+        elif environ.name.startswith('PrgEnv-pgi'):
+            envname = 'PrgEnv-pgi'
+        else:
+            envname = environ.name
+
+        self.reference = self.arrays_reference[envname]
         super().setup(partition, environ, **job_opts)
