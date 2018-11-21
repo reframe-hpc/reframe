@@ -47,7 +47,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
 
     def setup(self, partition, environ, **job_opts):
         if environ.name == 'PrgEnv-cray':

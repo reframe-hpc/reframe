@@ -25,7 +25,7 @@ class G2GMeteoswissTest(rfm.RegressionTest):
                                          '-DENABLE_MPI_TIMER=ON']
         self.build_system.max_concurrency = 1
         self.maintainers = ['TM', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
         self.num_tasks = 2
         self.num_gpus_per_node  = 2
         cuda_visible_devices = {1: r'CUDA_VISIBLE_DEVICES: '
