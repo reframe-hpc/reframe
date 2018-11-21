@@ -1,30 +1,28 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import CompileOnlyRegressionTest
 
 
-class LibSciResolveBaseTest(CompileOnlyRegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, os.path.dirname(__file__), **kwargs)
+class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.sourcesdir = 'src/libsci_resolve'
         self.sourcepath = 'libsci_resolve.f90'
-        self.valid_systems = ['daint:login', 'dom:login']
+        self.valid_systems = ['daint:login', 'daint:gpu',
+                              'dom:login', 'dom:gpu']
+        self.modules = ['craype-haswell']
         self.maintainers = ['AJ']
         self.tags = {'production'}
 
-    def compile(self):
-        self.current_environ.fflags = self.flags
-        super().compile()
 
-
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(['craype-accel-nvidia20'], ['craype-accel-nvidia35'],
+                        ['craype-accel-nvidia60'])
 class Nvidia35ResolveTest(LibSciResolveBaseTest):
-    def __init__(self, module_name, **kwargs):
-        super().__init__('accel_nvidia35_resolves_to_libsci_acc_%s' %
-                         module_name.replace('-', '_'), **kwargs)
-
+    def __init__(self, module_name):
+        super().__init__()
         self.descr = 'Module %s resolves libsci_acc' % module_name
-        self.flags = ' -Wl,-ypdgemm_ '
+        self.build_system = 'SingleSource'
+        self.build_system.fflags = ['-Wl,-ypdgemm_']
 
         self.module_name = module_name
         self.module_version = {
@@ -37,7 +35,10 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
             'daint': '49',
         }
         self.compiler_version_default = '49'
-        self.modules = [module_name]
+        self.modules = ['craype-haswell', module_name]
+        if module_name == 'craype-accel-nvidia20':
+            self.modules += ['cray-libsci_acc/17.03.1']
+
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
         self.prgenv_names = {
@@ -52,7 +53,6 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
         #                                 libsci_acc_cray_nv35.so
         regex = (r'libsci_acc_(?P<prgenv>[A-Za-z]+)_((?P<cver>[A-Za-z0-9]+)_)?'
                  r'(?P<version>\S+)(?=(\.a)|(\.so))')
-
         prgenv = self.prgenv_names[self.current_environ.name]
         cver = self.compiler_version.get(self.current_system.name,
                                          self.compiler_version_default)
@@ -73,16 +73,15 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
         ])
 
 
+@rfm.required_version('>=2.14')
+@rfm.simple_test
 class MKLResolveTest(LibSciResolveBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('mkl_resolves_to_mkl_intel', **kwargs)
-
+    def __init__(self):
+        super().__init__()
         self.descr = '-mkl Resolves to MKL'
-        self.flags = ' -Wl,-ydgemm_ -mkl'
-
         self.valid_prog_environs = ['PrgEnv-intel']
-        self.maintainers = ['AJ']
-        self.tags = {'production'}
+        self.build_system = 'SingleSource'
+        self.build_system.fflags = ['-Wl,-ydgemm_', '-mkl']
 
         # interesting enough, on Dora the linking here is static.
         # So there is REAL need for the end term (?=(.a)|(.so)).
@@ -96,12 +95,5 @@ class MKLResolveTest(LibSciResolveBaseTest):
                 sn.extractsingle(regex, self.stderr, 'version'), 'lp64')
         ])
 
-
-def _get_checks(**kwargs):
-    ret = [MKLResolveTest(**kwargs)]
-    nvidia_modules = ['craype-accel-nvidia20', 'craype-accel-nvidia35',
-                      'craype-accel-nvidia60']
-    for module_name in nvidia_modules:
-        ret.append(Nvidia35ResolveTest(module_name, **kwargs))
-
-    return ret
+        self.maintainers = ['AJ']
+        self.tags = {'production'}

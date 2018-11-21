@@ -1,6 +1,7 @@
 import abc
 
-from reframe.core.fields import TypedListField
+import reframe.core.fields as fields
+import reframe.utility.typecheck as typ
 
 
 class JobLauncher(abc.ABC):
@@ -23,26 +24,25 @@ class JobLauncher(abc.ABC):
     #:
     #: :type: :class:`list` of :class:`str`
     #: :default: ``[]``
-    options = TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     def __init__(self, options=[]):
         self.options = list(options)
 
     @abc.abstractmethod
     def command(self, job):
-        # The launcher command.
-        #
-        # :arg job: A :class:`reframe.core.schedulers.Job` that may be used by
-        #     this launcher to properly emit its options.
-        #     Subclasses may override this method and emit options according the
-        #     num of tasks associated to the job etc.
-        # :returns: a list of command line arguments (including the launcher
-        #     executable).
-        pass
+        """The launcher command.
 
-    def emit_run_command(self, job, builder):
-        return builder.verbatim(
-            ' '.join(self.command(job) + self.options + [job.command]))
+        :arg job: A :class:`reframe.core.schedulers.Job` that will be used by
+            this launcher to properly emit its options.
+            Subclasses may override this method and emit options according the
+            number of tasks associated to the job etc.
+        :returns: a list of command line arguments (including the launcher
+            executable).
+        """
+
+    def run_command(self, job):
+        return ' '.join(self.command(job) + self.options)
 
 
 class LauncherWrapper(JobLauncher):

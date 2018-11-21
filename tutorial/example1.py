@@ -1,13 +1,10 @@
-import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RegressionTest
 
-
-class SerialTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('example1_check',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class Example1Test(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'Simple matrix-vector multiplication example'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -17,7 +14,3 @@ class SerialTest(RegressionTest):
             r'time for single matrix vector multiplication', self.stdout)
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
-
-
-def _get_checks(**kwargs):
-    return [SerialTest(**kwargs)]

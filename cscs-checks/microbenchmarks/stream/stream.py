@@ -1,29 +1,32 @@
-import os
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class StreamTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('stream_benchmark',
-                         os.path.dirname(__file__), **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class StreamTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         # All available systems are supported
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal',
-                              'monch:compute']
+                              'kesch:cn', 'kesch:pn', 'leone:normal']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-pgi-nompi']
+
         self.prgenv_flags = {
-            'PrgEnv-cray': ' -homp ',
-            'PrgEnv-gnu': ' -fopenmp -O3',
-            'PrgEnv-intel': ' -qopenmp -O3',
-            'PrgEnv-pgi': ' -mp -O3'
+            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-gnu': ['-fopenmp', '-O3'],
+            'PrgEnv-intel': ['-qopenmp', '-O3'],
+            'PrgEnv-pgi': ['-mp', '-O3']
         }
         self.sourcepath = 'stream.c'
-        self.tags = {'production', 'monch_acceptance'}
+        self.build_system = 'SingleSource'
         self.sanity_patterns = sn.assert_found(
             r'Solution Validates: avg error less than', self.stdout)
         self.num_tasks = 1
@@ -41,7 +44,7 @@ class StreamTest(RegressionTest):
 
         self.variables = {
             'OMP_PLACES': 'threads',
-            'OMP_PROC_BIND': 'spread',
+            'OMP_PROC_BIND': 'spread'
         }
         self.stream_bw_reference = {
             'PrgEnv-cray': {
@@ -82,25 +85,22 @@ class StreamTest(RegressionTest):
                                       self.stdout, 'triad', float)
         }
 
+        self.tags = {'production', 'monch_acceptance'}
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task[partition.fullname]
-        super().setup(partition, environ, **job_opts)
+        if self.current_system.name == 'kesch':
+            envname = environ.name.replace('-nompi', '')
+        else:
+            envname = environ.name
 
-        self.reference = self.stream_bw_reference[self.current_environ.name]
+        self.reference = self.stream_bw_reference[envname]
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.current_environ.variables['OMP_NUM_THREADS'] = \
-            str(self.num_cpus_per_task)
-        if self.current_environ.name == 'PrgEnv-pgi':
-            self.current_environ.variables['OMP_PROC_BIND'] = 'true'
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+        if envname == 'PrgEnv-pgi':
+            self.variables['OMP_PROC_BIND'] = 'true'
 
-    def compile(self):
-        prgenv_flags = self.prgenv_flags[self.current_environ.name]
-        self.current_environ.cflags = prgenv_flags
-        super().compile()
-
-
-def _get_checks(**kwargs):
-    return [StreamTest(**kwargs)]
+        self.build_system.cflags = self.prgenv_flags[envname]
+        super().setup(partition, environ, **job_opts)

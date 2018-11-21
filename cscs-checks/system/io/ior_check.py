@@ -1,13 +1,12 @@
 import os
+
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class IorCheck(RegressionTest):
-    def __init__(self, name, fs_mount_point, **kwargs):
-        super().__init__('%s_%s' % (name, os.path.basename(fs_mount_point)),
-                         os.path.dirname(__file__), **kwargs)
+class IorCheck(rfm.RegressionTest):
+    def __init__(self, fs_mount_point):
+        super().__init__()
         self.descr = 'IOR check (%s)' % fs_mount_point
         self.tags = {'ops', fs_mount_point}
 
@@ -40,24 +39,23 @@ class IorCheck(RegressionTest):
             self.num_tasks = 720
             self.num_tasks_per_node = 12
         elif fs_mount_point == '/users':
-            self.valid_systems = ['daint:gpu', 'dom:gpu', 'monch:compute']
+            self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.tags |= {'maintenance'}
         elif fs_mount_point == '/apps':
-            self.valid_systems = ['daint:gpu', 'dom:gpu', 'monch:compute']
+            self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.num_tasks = 1
             self.num_tasks_per_node = 1
-        elif fs_mount_point == '/mnt/lnec':
-            self.valid_systems = ['monch:compute']
 
         self.valid_prog_environs = ['PrgEnv-cray']
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'IOR')
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'IOR')
         self.executable = os.path.join('src', 'C', 'IOR')
+        self.build_system = 'Make'
+        self.build_system.options = ['posix', 'mpiio']
+        self.build_system.max_concurrency = 1
         self.num_gpus_per_node = 0
         self.fs_mount_point = fs_mount_point
-        self.maintainers = ['SO', 'MP']
         self.fs_reference = {
             '/scratch/snx1600': {
                 'read_bw': (64326, -0.2, None),
@@ -103,22 +101,29 @@ class IorCheck(RegressionTest):
             '*': self.fs_reference[self.fs_mount_point]
         }
 
-    def compile(self):
-        super().compile(options='posix mpiio')
+        self.maintainers = ['SO', 'MP']
 
 
+@rfm.parameterized_test(['/scratch/snx1600', 'MPIIO'],
+                        ['/scratch/snx1600tds', 'MPIIO'],
+                        ['/scratch/snx2000', 'MPIIO'],
+                        ['/scratch/snx2000tds', 'MPIIO'],
+                        ['/scratch/snx3000', 'MPIIO'],
+                        ['/users', 'POSIX'],
+                        ['/apps', 'POSIX'])
 class IorReadCheck(IorCheck):
-    def __init__(self, fs_mount_point, ior_type, **kwargs):
-        super().__init__('ior_read_check', fs_mount_point, **kwargs)
-
+    def __init__(self, fs_mount_point, ior_type):
+        super().__init__(fs_mount_point)
         self.test_file = os.path.join(self.fs_mount_point, '.ior', 'read',
                                       'ior_write.dat')
         if ior_type == 'MPIIO':
-            self.executable_opts = ('-r -a MPIIO -B -E -F -t 64m -b 32g '
-                                    '-D 300 -k -o %s' % self.test_file).split()
+            self.executable_opts = ['-r', '-a MPIIO', '-B', '-E', '-F',
+                                    '-t 64m', '-b 32g', '-D 300', '-k',
+                                    '-o', self.test_file]
         elif ior_type == 'POSIX':
-            self.executable_opts = ('-r -a POSIX -B -E -F -t 1m -b 100m -D 60 '
-                                    '-k -o %s' % self.test_file).split()
+            self.executable_opts = ['-r', '-a POSIX', '-B', '-E', '-F',
+                                    '-t 1m', '-b 100m', '-D 60', '-k',
+                                    '-o', self.test_file]
 
         self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
         self.perf_patterns = {
@@ -129,17 +134,26 @@ class IorReadCheck(IorCheck):
         self.tags |= {'read'}
 
 
+@rfm.parameterized_test(['/scratch/snx1600', 'MPIIO'],
+                        ['/scratch/snx1600tds', 'MPIIO'],
+                        ['/scratch/snx2000', 'MPIIO'],
+                        ['/scratch/snx2000tds', 'MPIIO'],
+                        ['/scratch/snx3000', 'MPIIO'],
+                        ['/users', 'POSIX'],
+                        ['/apps', 'POSIX'])
 class IorWriteCheck(IorCheck):
-    def __init__(self, fs_mount_point, ior_type, **kwargs):
-        super().__init__('ior_write_check', fs_mount_point, **kwargs)
+    def __init__(self, fs_mount_point, ior_type):
+        super().__init__(fs_mount_point)
         self.test_file = os.path.join(self.fs_mount_point, '.ior', 'write',
                                       'ior_write.dat')
         if ior_type == 'MPIIO':
-            self.executable_opts = ('-w -a MPIIO -B -E -F -t 64m -b 46g '
-                                    '-D 300  -o %s' % self.test_file).split()
+            self.executable_opts = ['-w', '-a MPIIO', '-B', '-E', '-F',
+                                    '-t 64m', '-b 46g', '-D 300',
+                                    '-o', self.test_file]
         elif ior_type == 'POSIX':
-            self.executable_opts = ('-w -a POSIX -B -E -F -t 1m -b 100m -D 60 '
-                                    ' -o %s' % self.test_file).split()
+            self.executable_opts = ['-w', '-a POSIX', '-B', '-E', '-F',
+                                    '-t 1m', '-b 100m', '-D 60'
+                                    '-o', self.test_file]
 
         self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
         self.perf_patterns = {
@@ -150,9 +164,10 @@ class IorWriteCheck(IorCheck):
         self.tags |= {'write'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
 class IoMonchAcceptanceBase(IorCheck):
-    def __init__(self, name, fs_mount_point, ior_type, num_tasks, **kwargs):
-        super().__init__(name, fs_mount_point, **kwargs)
+    def __init__(self, fs_mount_point, ior_type, num_tasks):
+        super().__init__(fs_mount_point)
         self.test_file = os.path.join(self.fs_mount_point, os.getenv('USER'),
                                       'ior_write.dat')
         self.valid_systems = ['monch:compute']
@@ -179,13 +194,16 @@ class IoMonchAcceptanceBase(IorCheck):
         self.tags = {'monch_acceptance'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
+                          for num_tasks in [40, 80, 160]))
 class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
-    def __init__(self, fs_mount_point, ior_type, num_tasks, **kwargs):
-        super().__init__('ior_read_check_monch_%s_tasks' % num_tasks,
-                         fs_mount_point, ior_type, num_tasks, **kwargs)
+    def __init__(self, fs_mount_point, ior_type, num_tasks):
+        super().__init__(fs_mount_point, ior_type, num_tasks)
         if ior_type == 'MPIIO':
-            self.executable_opts = ('-r -a MPIIO -B -E -F -t 16m -b 8g '
-                                    '-D 10 -k -o %s' % self.test_file).split()
+            self.executable_opts = ['-r', '-a MPIIO', '-B', '-E', '-F',
+                                    '-t 16m', '-b 8g', '-D 10', '-k',
+                                    '-o', self.test_file]
         self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
         self.perf_patterns = {
             'read_bw': sn.extractsingle(
@@ -195,13 +213,15 @@ class IorReadScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
         self.tags |= {'read'}
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test(*(['/mnt/lnec', 'MPIIO', num_tasks]
+                          for num_tasks in [40, 80, 160]))
 class IorWriteScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
-    def __init__(self, fs_mount_point, ior_type, num_tasks, **kwargs):
-        super().__init__('ior_write_check_monch_%s_tasks' % num_tasks,
-                         fs_mount_point, ior_type, num_tasks, **kwargs)
+    def __init__(self, fs_mount_point, ior_type, num_tasks):
+        super().__init__(fs_mount_point, ior_type, num_tasks)
         if ior_type == 'MPIIO':
-            self.executable_opts = ('-w -a MPIIO -B -E -F -t 16m -b 8g '
-                                    '-o %s' % self.test_file).split()
+            self.executable_opts = ['-w', '-a MPIIO', '-B', '-E', '-F',
+                                    '-t 16m', '-b 8g', '-o', self.test_file]
         self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
         self.perf_patterns = {
             'write_bw': sn.extractsingle(
@@ -209,26 +229,3 @@ class IorWriteScratchMonchAcceptanceCheck(IoMonchAcceptanceBase):
                 'write_bw', float)
         }
         self.tags |= {'write'}
-
-
-def _get_checks(**kwargs):
-    ret = [IorReadCheck('/scratch/snx1600', 'MPIIO', **kwargs),
-           IorReadCheck('/scratch/snx1600tds', 'MPIIO', **kwargs),
-           IorReadCheck('/scratch/snx2000', 'MPIIO', **kwargs),
-           IorReadCheck('/scratch/snx2000tds', 'MPIIO', **kwargs),
-           IorReadCheck('/scratch/snx3000', 'MPIIO', **kwargs),
-           IorReadCheck('/users', 'POSIX', **kwargs),
-           IorReadCheck('/apps', 'POSIX', **kwargs),
-           IorWriteCheck('/scratch/snx1600', 'MPIIO', **kwargs),
-           IorWriteCheck('/scratch/snx1600tds', 'MPIIO', **kwargs),
-           IorWriteCheck('/scratch/snx2000', 'MPIIO', **kwargs),
-           IorWriteCheck('/scratch/snx2000tds', 'MPIIO', **kwargs),
-           IorWriteCheck('/scratch/snx3000', 'MPIIO', **kwargs),
-           IorWriteCheck('/users', 'POSIX', **kwargs),
-           IorWriteCheck('/apps', 'POSIX', **kwargs)]
-    for tasks in [40, 80, 160]:
-        ret.append(IorWriteScratchMonchAcceptanceCheck(
-            '/mnt/lnec', 'MPIIO', tasks, **kwargs))
-        ret.append(IorReadScratchMonchAcceptanceCheck(
-            '/mnt/lnec', 'MPIIO', tasks, **kwargs))
-    return ret

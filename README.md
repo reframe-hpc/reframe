@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
+[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe) [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)
 
 # ReFrame
 
@@ -18,6 +18,9 @@ Users can create their own test hierarchies, create test factories for generatin
 
 The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
 It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
+
+* SC18 presentation [[pdf](https://drive.google.com/file/d/1sIecW59E-AvhD-vl6c6QGXM14UKNzgo_/view?usp=sharing)]
+* SC18 Demo [[link](https://asciinema.org/a/6SQJTaRe2zrMInV92X0yb2gTh)]
 
 ### Building the documentation from master
 

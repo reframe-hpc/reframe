@@ -1,14 +1,14 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class NamdBaseCheck(RunOnlyRegressionTest):
-    def __init__(self, variant, **kwargs):
-        super().__init__('namd_%s_check' % variant,
-                         os.path.dirname(__file__), **kwargs)
-        self.descr = 'NAMD 2.11 check (%s)' % variant
+class NamdBaseCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self, version, variant):
+        super().__init__()
+        self.name = 'namd_%s_%s_check' % (version, variant)
+        self.descr = 'NAMD check (%s, %s)' % (version, variant)
 
         self.valid_prog_environs = ['PrgEnv-intel']
 
@@ -16,8 +16,18 @@ class NamdBaseCheck(RunOnlyRegressionTest):
 
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'NAMD')
+                                       'NAMD', 'prod')
         self.executable = 'namd2'
+
+        self.use_multithreading = True
+        self.num_tasks_per_core = 2
+
+        if self.current_system.name == 'dom':
+            self.num_tasks = 6
+            self.num_tasks_per_node = 1
+        else:
+            self.num_tasks = 16
+            self.num_tasks_per_node = 1
 
         energy = sn.avg(sn.extractall(r'ENERGY:(\s+\S+){10}\s+(?P<energy>\S+)',
                         self.stdout, 'energy', float))
@@ -47,91 +57,46 @@ class NamdBaseCheck(RunOnlyRegressionTest):
         }
 
 
+@rfm.parameterized_test(['maint'], ['prod'])
 class NamdGPUCheck(NamdBaseCheck):
-    def __init__(self, version, **kwargs):
-        super().__init__('gpu_%s' % version, **kwargs)
+    def __init__(self, variant):
+        super().__init__('gpu', variant)
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.executable_opts = '+idlepoll +ppn 23 stmv.namd'.split()
-        self.use_multithreading = True
         self.num_cpus_per_task = 24
-        self.num_tasks_per_core = 2
         self.num_gpus_per_node = 1
+        if variant == 'prod':
+            self.tags |= {'production'}
+        else:
+            self.tags |= {'maintenance'}
 
-
-class NamdGPUProdCheck(NamdGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
         self.reference = {
             'dom:gpu':  {
-                'days_ns': (0.16, None, 0.05),
+                'days_ns': (0.18, None, 0.05),
             },
             'daint:gpu':  {
-                'days_ns': (0.07, None, 0.05),
+                'days_ns': (0.11, None, 0.05),
             },
         }
 
 
-class NamdGPUMaintCheck(NamdGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:gpu':  {
-                'days_ns': (0.16, None, 0.05),
-            },
-            'daint:gpu':  {
-                'days_ns': (0.07, None, 0.05),
-            },
-        }
-
-
+@rfm.parameterized_test(['maint'], ['prod'])
 class NamdCPUCheck(NamdBaseCheck):
-    def __init__(self, version, **kwargs):
-        super().__init__('cpu_%s' % version, **kwargs)
+    def __init__(self, variant):
+        super().__init__('cpu', variant)
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.executable_opts = '+idlepoll +ppn 71 stmv.namd'.split()
-        self.use_multithreading = True
         self.num_cpus_per_task = 72
-        self.num_tasks_per_core = 2
-        if self.current_system.name == 'dom':
-            self.num_tasks = 6
-            self.num_tasks_per_node = 1
+        if variant == 'prod':
+            self.tags |= {'production'}
         else:
-            self.num_tasks = 16
-            self.num_tasks_per_node = 1
+            self.tags |= {'maintenance'}
 
-
-class NamdCPUProdCheck(NamdCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'days_ns': (0.49, None, 0.05),
+                'days_ns': (0.57, None, 0.05),
             },
             'daint:mc': {
-                'days_ns': (0.27, None, 0.05),
+                'days_ns': (0.38, None, 0.05),
             },
         }
-
-
-class NamdCPUMaintCheck(NamdCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:mc': {
-                'days_ns': (0.49, None, 0.05),
-            },
-            'daint:mc': {
-                'days_ns': (0.27, None, 0.05),
-            },
-        }
-
-
-def _get_checks(**kwargs):
-    return [NamdCPUProdCheck(**kwargs),
-            NamdCPUMaintCheck(**kwargs),
-            NamdGPUProdCheck(**kwargs),
-            NamdGPUMaintCheck(**kwargs)]

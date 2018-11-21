@@ -4,18 +4,18 @@
 
 
 class ReframeSettings:
-    _reframe_module = 'reframe'
-    _job_poll_intervals = [1, 2, 3]
-    _job_submit_timeout = 60
-    _checks_path = ['checks/']
-    _checks_path_recurse = True
-    _site_configuration = {
+    reframe_module = 'reframe'
+    job_poll_intervals = [1, 2, 3]
+    job_submit_timeout = 60
+    checks_path = ['checks/']
+    checks_path_recurse = True
+    site_configuration = {
         'systems': {
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -59,7 +59,7 @@ class ReframeSettings:
                 'descr': 'Dom TDS',
                 'hostnames': ['dom'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -103,30 +103,39 @@ class ReframeSettings:
                 'descr': 'Kesch MCH',
                 'hostnames': ['keschln-\d+'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-cray-c2sm',
+                                     'PrgEnv-pgi-c2sm',
+                                     'PrgEnv-gnu-c2sm',
+                                     'PrgEnv-cray-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu',
+                                     'PrgEnv-cray-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
                     }
                 }
@@ -136,7 +145,7 @@ class ReframeSettings:
                 'descr': 'Leone',
                 'hostnames': ['leone'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -159,7 +168,7 @@ class ReframeSettings:
                 'descr': 'Monch PASC',
                 'hostnames': ['monch'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/regression/resources',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -178,7 +187,6 @@ class ReframeSettings:
                 }
             },
 
-            # Generic system used for cli unit tests
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
@@ -195,25 +203,79 @@ class ReframeSettings:
 
         'environments': {
             'kesch': {
-                'PrgEnv-gnu': {
+                'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'modules': ['PrgEnv-pgi/17.10'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['/apps/common/regression/prgenv_pgi_17.10_aj'],
+                    'modules': ['PrgEnv-pgi/17.10_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-gnu-gdr': {
+                'PrgEnv-cray': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                },
+                'PrgEnv-cray-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray'],
+                },
+                'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'variables': {
+                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                    },
                     'cc': 'mpicc',
-                    'cxx': 'mpic++',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                },
+                'PrgEnv-cray-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/cray-env/base'],
+                },
+                'PrgEnv-cray-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/cray-env/gpu'],
+                },
+                'PrgEnv-pgi-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/pgi-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-pgi-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/pgi-env/gpu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/gnu-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['env', 'c2sm/gnu-env/gpu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
             },
@@ -278,7 +340,7 @@ class ReframeSettings:
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/maintenance',
-                    '--logdir=$APPS/UES/$USER/regression/maintenance/logs',
+                    '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
                     '--stage=$SCRATCH/regression/maintenance/stage',
                     '--reservation=maintenance',
                     '--save-log-files',
@@ -289,7 +351,7 @@ class ReframeSettings:
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/production',
-                    '--logdir=$APPS/UES/$USER/regression/production/logs',
+                    '--perflogdir=$APPS/UES/$USER/regression/production/logs',
                     '--stage=$SCRATCH/regression/production/stage',
                     '--save-log-files',
                     '--tag=production',
@@ -299,10 +361,12 @@ class ReframeSettings:
         }
     }
 
-    _logging_config = {
+    logging_config = {
         'level': 'DEBUG',
-        'handlers': {
-            'reframe.log': {
+        'handlers': [
+            {
+                'type': 'file',
+                'name': 'reframe.log',
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
                           '%(check_info)s: %(message)s',
@@ -310,49 +374,52 @@ class ReframeSettings:
             },
 
             # Output handling
-            '&1': {
+            {
+                'type': 'stream',
+                'name': 'stdout',
                 'level': 'INFO',
                 'format': '%(message)s'
             },
-            'reframe.out': {
+            {
+                'type': 'file',
+                'name': 'reframe.out',
                 'level': 'INFO',
                 'format': '%(message)s',
                 'append': False,
             }
-        }
+        ]
     }
 
-    @property
-    def version(self):
-        return self._version
-
-    @property
-    def reframe_module(self):
-        return self._reframe_module
-
-    @property
-    def job_poll_intervals(self):
-        return self._job_poll_intervals
-
-    @property
-    def job_submit_timeout(self):
-        return self._job_submit_timeout
-
-    @property
-    def checks_path(self):
-        return self._checks_path
-
-    @property
-    def checks_path_recurse(self):
-        return self._checks_path_recurse
-
-    @property
-    def site_configuration(self):
-        return self._site_configuration
-
-    @property
-    def logging_config(self):
-        return self._logging_config
+    perf_logging_config = {
+        'level': 'DEBUG',
+        'handlers': [
+            #@ {
+            #@     'type': 'graylog',
+            #@     'host': 'your-server-here',
+            #@     'port': 12345,
+            #@     'level': 'INFO',
+            #@     'format': '%(message)s',
+            #@     'extras': {
+            #@         'facility': 'reframe',
+            #@         'data-version': '1.0',
+            #@     }
+            #@ },
+            {
+                'type': 'filelog',
+                'prefix': '%(check_system)s/%(check_partition)s',
+                'level': 'INFO',
+                'format': (
+                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_info)s|jobid=%(check_jobid)s|'
+                    '%(check_perf_var)s=%(check_perf_value)s|'
+                    'ref=%(check_perf_ref)s '
+                    '(l=%(check_perf_lower_thres)s, '
+                    'u=%(check_perf_upper_thres)s)'
+                ),
+                'append': True
+            }
+        ]
+    }
 
 
 settings = ReframeSettings()

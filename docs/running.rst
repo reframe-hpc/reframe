@@ -32,6 +32,7 @@ Listing of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To retrieve a listing of the selected checks, you must specify the ``-l`` or ``--list`` options.
+This will provide a list with a brief description for each test containing only its name and the path to the file where it is defined.
 An example listing of checks is the following that lists all the tests found under the ``tutorial/`` folder:
 
 .. code-block:: bash
@@ -42,50 +43,164 @@ The output looks like:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -l
-  Reframe version: 2.7
-  Launched by user: karakasv
-  Launched on host: daint103
-  Reframe paths
-  =============
-      Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
-  List of matched checks
-  ======================
-    * example1_check (Simple matrix-vector multiplication example)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2a_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2b_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example3_check (Matrix-vector multiplication example with MPI)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example4_check (Matrix-vector multiplication example with OpenACC)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example5_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example6_check (Matrix-vector multiplication with L2 norm check)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example7_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_serial_check (Serial matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openmp_check (OpenMP matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_mpi_check (MPI matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openacc_check (OpenACC matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_cuda_check (Cuda matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-  Found 13 check(s).
+   Command line: ./bin/reframe -c tutorial/ -l
+   Reframe version: 2.15-dev1
+   Launched by user: USER
+   Launched on host: daint103
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/'
+       Stage dir prefix  : /path/to/reframe/stage/
+       Output dir prefix : /path/to/reframe/output/
+       Logging dir       : /path/to/reframe/logs
+   List of matched checks
+   ======================
+     * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+     * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+     * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+     * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+     * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+     * MPITest (found in /path/to/reframe/tutorial/example8.py)
+     * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+     * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+     * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+     * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+     * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+   Found 13 check(s).
 
-The listing contains the name of the check, its description, the tags associated with it and a list of its maintainers.
-Note that this listing may also contain checks that are not supported by the current system.
-These checks will be just skipped if you try to run them.
+You may also retrieve a listing with detailed information about the each check using the option ``-L`` or ``--list-detailed``.
+The following example lists detailed information about the tutorial check:
+
+.. code-block:: none
+
+   Command line: ./bin/reframe -c tutorial/ -L
+   Reframe version: 2.15-dev1
+   Launched by user: USER
+   Launched on host: daint103
+   Reframe paths
+   =============
+       Check prefix      :
+       Check search path : 'tutorial/'
+       Stage dir prefix  : /path/to/reframe/stage/
+       Output dir prefix : /path/to/reframe/output/
+       Logging dir       : /path/to/reframe/logs
+   List of matched checks
+   ======================
+     * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+         - description: Matrix-vector multiplication example with CUDA
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+         - description: Simple matrix-vector multiplication example
+         - systems: *
+         - environments: *
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+         - description: Matrix-vector multiplication example with OpenACC
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-pgi
+         - modules: craype-accel-nvidia60
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: Serial matrix-vector multiplication
+         - systems: *
+         - environments: *
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: OpenMP matrix-vector multiplication
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * MPITest (found in /path/to/reframe/tutorial/example8.py)
+         - description: MPI matrix-vector multiplication
+         - systems: daint:gpu, daint:mc
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: OpenACC matrix-vector multiplication
+         - systems: daint:gpu
+         - environments: PrgEnv-cray, PrgEnv-pgi
+         - modules: craype-accel-nvidia60
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+         - description: CUDA matrix-vector multiplication
+         - systems: daint:gpu
+         - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+         - description: Matrix-vector multiplication example with MPI
+         - systems: daint:gpu, daint:mc
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example7Test (found in /path/to/reframe/tutorial/example7.py)
+         - description: Matrix-vector multiplication (CUDA performance test)
+         - systems: daint:gpu
+         - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
+         - modules: cudatoolkit
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+         - description: Matrix-vector multiplication with L2 norm check
+         - systems: *
+         - environments: *
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+         - description: Matrix-vector multiplication example with OpenMP
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
+         - description: Matrix-vector multiplication example with OpenMP
+         - systems: *
+         - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
+         - modules:
+         - tags: tutorial
+         - maintainers: you-can-type-your-email-here
+   Found 13 check(s).
+
+
+The detailed listing shows the description of the test, its supported systems and programming environments (``*`` stands for any system or programming environment), the environment modules that it loads, its tags and its maintainers.
+
+.. warning::
+   The list of modules showed in the detailed listing may not correspond to actual modules loaded by test, if the test customizes its behavior during the setup stage.
+
+
+.. note::
+   .. versionadded:: 2.15
+
+      Support for detailed listings.
+      Standard listing using the ``-l`` option is now shorter.
+
+.. note::
+   .. versionchanged:: 2.15
+
+      Test listing lists only tests supported by the current system.
+      Previous versions were showing all the tests found.
+
 
 Execution of the regression tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -97,55 +212,56 @@ To run the regression tests you should specify the *run* action though the ``-r`
 
 .. code-block:: bash
 
-  ./bin/reframe --notimestamp -c checks/cuda/cuda_checks.py --prefix . -r
+  ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
 
 The output of the regression run looks like the following:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/example1.py -r
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
+  Reframe version: 2.13-dev0
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
       Check search path : 'tutorial/example1.py'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   [==========] Running 1 check(s)
-  [==========] Started on Tue Oct 24 18:13:33 2017
+  [==========] Started on Sat May 26 00:34:34 2018
 
-  [----------] started processing example1_check (Simple matrix-vector multiplication example)
-  [ RUN      ] example1_check on daint:mc using PrgEnv-cray
-  [       OK ] example1_check on daint:mc using PrgEnv-cray
-  [ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-  [       OK ] example1_check on daint:mc using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:mc using PrgEnv-intel
-  [       OK ] example1_check on daint:mc using PrgEnv-intel
-  [ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-  [       OK ] example1_check on daint:mc using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-  [       OK ] example1_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example1_check on daint:gpu using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-  [       OK ] example1_check on daint:gpu using PrgEnv-intel
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example1_check on daint:gpu using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:login using PrgEnv-cray
-  [       OK ] example1_check on daint:login using PrgEnv-cray
-  [ RUN      ] example1_check on daint:login using PrgEnv-gnu
-  [       OK ] example1_check on daint:login using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:login using PrgEnv-intel
-  [       OK ] example1_check on daint:login using PrgEnv-intel
-  [ RUN      ] example1_check on daint:login using PrgEnv-pgi
-  [       OK ] example1_check on daint:login using PrgEnv-pgi
-  [----------] finished processing example1_check (Simple matrix-vector multiplication example)
+  [----------] started processing Example1Test (Simple matrix-vector multiplication example)
+  [ RUN      ] Example1Test on daint:login using PrgEnv-cray
+  [       OK ] Example1Test on daint:login using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] Example1Test on daint:login using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:login using PrgEnv-intel
+  [       OK ] Example1Test on daint:login using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] Example1Test on daint:login using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+  [       OK ] Example1Test on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+  [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] Example1Test on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+  [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+  [       OK ] Example1Test on daint:mc using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+  [       OK ] Example1Test on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+  [       OK ] Example1Test on daint:mc using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+  [       OK ] Example1Test on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
   [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Tue Oct 24 18:15:06 2017
+  [==========] Finished on Sat May 26 00:35:39 2018
+
 
 Discovery of Regression Tests
 -----------------------------
@@ -184,13 +300,13 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
   ./bin/reframe -c /path/to/my/new/test.py -r
 
-.. note::
-   .. versionadded:: 2.12
-
+.. important::
    The names of the loaded tests must be unique.
    Trying to load two or more tests with the same name will produce an error.
    You may ignore the error by using the ``--ignore-check-conflicts`` option.
    In this case, any conflicting test will not be loaded and a warning will be issued.
+
+   .. versionadded:: 2.12
 
 
 Filtering of Regression Tests
@@ -198,6 +314,36 @@ Filtering of Regression Tests
 
 At this phase you can select which regression tests should be run or listed.
 There are several ways to select regression tests, which we describe in more detail here:
+
+Selecting tests by system
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 2.15
+
+
+By default, ReFrame always selects the tests that are supported by the current system.
+If you want to list the tests supported by a different system, you may achieve that by passing the ``--system`` option:
+
+.. code-block:: bash
+
+  ./bin/reframe --system=kesch -l
+
+
+This example lists all the tests that are supported by the system named ``kesch``.
+It is also possible to list only the tests that are supported by a specific system partition.
+The following example will list only the tests suported by the ``login`` partition of the ``kesch`` system:
+
+.. code-block:: bash
+
+  ./bin/reframe --system=kesch:login -l
+
+
+Finally, in order to list all the tests found regardless of their supported systems, you should pass the ``--skip-system-check`` option:
+
+.. code-block:: bash
+
+  ./bin/reframe --skip-system-check -l
+
 
 Selecting tests by programming environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -211,7 +357,7 @@ To select tests by the programming environment, use the ``-p`` or ``--prgenv`` o
 This will select all the checks that support the ``PrgEnv-gnu`` environment.
 
 You can also specify multiple times the ``-p`` option, in which case a test will be selected if it support all the programming environments specified in the command line.
-For example the following will select all the checks that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu``:
+For example the following will select all the checks that can run with both ``PrgEnv-cray`` and ``PrgEnv-gnu`` on the current system:
 
 .. code-block:: bash
 
@@ -223,7 +369,7 @@ Selecting tests by tags
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags. Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
-For example the following will list all the tests that have a ``maintenance`` tag:
+For example the following will list all the tests that have a ``maintenance`` tag and can run on the current system:
 
 .. code-block:: bash
 
@@ -236,73 +382,62 @@ Selecting tests by name
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to select or exclude tests by name through the ``--name`` or ``-n`` and ``--exclude`` or ``-x`` options.
-For example, you can select only the ``example7_check`` from the tutorial as follows:
+For example, you can select only the ``Example7Test`` from the tutorial as follows:
 
 .. code-block:: bash
 
-  ./bin/reframe -c tutorial n example7_check -l
+  ./bin/reframe -c tutorial/ -n Example7Test -l
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -n example7_check -l
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./bin/reframe -c tutorial/ -n Example7Test -l
+  Reframe version: 2.15-dev1
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Check search path : 'tutorial'
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   List of matched checks
   ======================
-    * example7_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
+    * Example7Test (found in /path/to/reframe/tutorial/example7.py)
   Found 1 check(s).
 
-Similarly, you can exclude this test by passing the ``-x example7_check`` option:
+
+Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
 
 .. code-block:: none
 
-  Command line: ./bin/reframe -c tutorial/ -x example7_check -l
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./bin/reframe -c tutorial -x Example7Test -l
+  Reframe version: 2.15-dev1
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Check search path : 'tutorial'
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   List of matched checks
   ======================
-    * example1_check (Simple matrix-vector multiplication example)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2a_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example2b_check (Matrix-vector multiplication example with OpenMP)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example3_check (Matrix-vector multiplication example with MPI)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example4_check (Matrix-vector multiplication example with OpenACC)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example5_check (Matrix-vector multiplication example with Cuda)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example6_check (Matrix-vector multiplication with L2 norm check)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_serial_check (Serial matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openmp_check (OpenMP matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_mpi_check (MPI matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_openacc_check (OpenACC matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
-    * example8_cuda_check (Cuda matrix-vector multiplication)
-          tags: [tutorial], maintainers: [you-can-type-your-email-here]
+    * Example5Test (found in /path/to/reframe/tutorial/example5.py)
+    * Example1Test (found in /path/to/reframe/tutorial/example1.py)
+    * Example4Test (found in /path/to/reframe/tutorial/example4.py)
+    * SerialTest (found in /path/to/reframe/tutorial/example8.py)
+    * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
+    * MPITest (found in /path/to/reframe/tutorial/example8.py)
+    * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
+    * CudaTest (found in /path/to/reframe/tutorial/example8.py)
+    * Example3Test (found in /path/to/reframe/tutorial/example3.py)
+    * Example6Test (found in /path/to/reframe/tutorial/example6.py)
+    * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
+    * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
   Found 12 check(s).
+
 
 Controlling the Execution of Regression Tests
 ---------------------------------------------
@@ -325,11 +460,12 @@ They are summarized below:
   In this example, Slurm's policy is that later definitions of options override previous ones.
   So, in this case, way you would override the standard output for all the submitted jobs!
 
+* ``--flex-alloc-tasks {all|idle|NUM}``: Automatically determine the number of tasks allocated for each test.
 * ``--force-local``: Force the local execution of the selected tests.
   No jobs will be submitted.
 * ``--skip-sanity-check``: Skip sanity checking phase.
 * ``--skip-performance-check``: Skip performance verification phase.
-* ``--strict``: Force strict performance checking. Some tests may set their :attr:`strict_check <reframe.core.pipeline.RegressionTest.strick_check>` attribute to :class:`False` (see `"Reference Guide" <reference.html>`__) in order to just let their performance recorded but not yield an error.
+* ``--strict``: Force strict performance checking. Some tests may set their :attr:`strict_check <reframe.core.pipeline.RegressionTest.strick_check>` attribute to :class:`False` (see `"Reference Guide" <running.html#controlling-the-execution-of-regression-tests>`__) in order to just let their performance recorded but not yield an error.
   This option overrides this behavior and forces all tests to be strict.
 * ``--skip-system-check``: Skips the system check and run the selected tests even if they do not support the current system.
   This option is sometimes useful when you need to quickly verify if a regression test supports a new system.
@@ -346,7 +482,7 @@ They are summarized below:
 Configuring ReFrame Directories
 -------------------------------
 
-ReFrame uses three basic directories during the execution of tests:
+ReFrame uses two basic directories during the execution of tests:
 
 1. The stage directory
 
@@ -360,16 +496,11 @@ ReFrame uses three basic directories during the execution of tests:
     By default these are the standard output, standard error and the generated job script file.
     A regression test may also specify to keep additional files.
 
-3. The log directory
-
-  * This is where the performance log files of the individual performance tests are placed (see `Logging <#logging>`__ for more information)
-
-By default, all these directories are placed under a common prefix, which defaults to ``.``.
+By default, these directories are placed under a common prefix, which defaults to ``.``.
 The rest of the directories are organized as follows:
 
 * Stage directory: ``${prefix}/stage/<timestamp>``
 * Output directory: ``${prefix}/output/<timestamp>``
-* Performance log directory: ``${prefix}/logs``
 
 You can optionally append a timestamp directory component to the above paths (except the logs directory), by using the ``--timestamp`` option.
 This options takes an optional argument to specify the timestamp format.
@@ -380,7 +511,6 @@ You can override either the default global prefix or any of the default individu
 * ``--prefix DIR``: set prefix to ``DIR``.
 * ``--output DIR``: set output directory to ``DIR``.
 * ``--stage DIR``: set stage directory to ``DIR``.
-* ``--logdir DIR``: set performance log directory to ``DIR``.
 
 The stage and output directories are created only when you run a regression test.
 However you can view the directories that will be created even when you do a listing of the available checks with the ``-l`` option.
@@ -388,24 +518,25 @@ This is useful if you want to check the directories that ReFrame will create.
 
 .. code-block:: bash
 
-  ./bin/reframe --prefix /foo -l
+  ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
 
 .. code-block:: none
 
-  Command line: ./bin/reframe --prefix /foo -t foo -l
-  Reframe version: 2.7
-  Launched by user: karakasv
+  Command line: ./bin/reframe -C tutorial/config/settings.py --prefix /foo -l
+  Reframe version: 2.13-dev0
+  Launched by user: USER
   Launched on host: daint103
   Reframe paths
   =============
-      Check prefix      : /users/karakasv/Devel/reframe
+      Check prefix      : /path/to/reframe
   (R) Check search path : 'checks/'
-      Stage dir prefix  : /foo/stage/
-      Output dir prefix : /foo/output/
-      Logging dir       : /foo/logs
+      Stage dir prefix     : /foo/stage/
+      Output dir prefix    : /foo/output/
+      Perf. logging prefix : /Users/karakasv/Repositories/reframe/logs
   List of matched checks
   ======================
   Found 0 check(s).
+
 
 You can also define different default directories per system by specifying them in the `site configuration <configure.html#the-configuration-file>`__ settings file.
 The command line options, though, take always precedence over any default directory.
@@ -423,36 +554,51 @@ By default, the output in ``reframe.log`` looks like the following:
 
 .. code-block:: none
 
-   [2018-03-01T20:03:13] info: reframe: [ RUN      ] example7_check on daint:gpu using PrgEnv-cray
-   [2018-03-01T20:03:13] debug: example7_check: entering stage: setup
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading environment for the current partition
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show daint-gpu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load daint-gpu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: loading test's environment
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python show cudatoolkit
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: modulecmd python load cudatoolkit
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up paths
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up the job descriptor
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: job scheduler backend: local
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: setting up performance logging
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: compile
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: copying /users/karakasv/Devel/reframe/tutorial/src to stage directory (/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv
-   -cray)
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: symlinking files: []
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: Staged sourcepath: /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
-   [2018-03-01T20:03:13] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: nvcc  -O3 -I/users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray /users/karakasv/Devel/reframe/s
-   tage/gpu/example7_check/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu -o /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/./example7_check
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stdout:
+  2018-05-26T00:30:39] info: reframe: [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: entering stage: setup
+  [2018-05-26T00:30:39] debug: Example7Test: loading environment for the current partition
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show daint-gpu
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load daint-gpu
+  [2018-05-26T00:30:39] debug: Example7Test: loading test's environment
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python unload PrgEnv-gnu
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load PrgEnv-cray
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show cudatoolkit
+  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load cudatoolkit
+  [2018-05-26T00:30:39] debug: Example7Test: setting up paths
+  [2018-05-26T00:30:40] debug: Example7Test: setting up the job descriptor
+  [2018-05-26T00:30:40] debug: Example7Test: job scheduler backend: local
+  [2018-05-26T00:30:40] debug: Example7Test: setting up performance logging
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: compile
+  [2018-05-26T00:30:40] debug: Example7Test: copying /path/to/reframe/tutorial/src to stage directory (/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray)
+  [2018-05-26T00:30:40] debug: Example7Test: symlinking files: []
+  [2018-05-26T00:30:40] debug: Example7Test: Staged sourcepath: /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: nvcc  -O3 -I/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/e
+  xample_matrix_vector_multiplication_cuda.cu -o /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/./Example7Test
+  [2018-05-26T00:30:40] debug: Example7Test: compilation stdout:
 
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation stderr:
-   nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
+  [2018-05-26T00:30:40] debug: Example7Test: compilation stderr:
+  nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
 
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: compilation finished
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: run
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: executing OS command: sbatch /users/karakasv/Devel/reframe/stage/gpu/example7_check/PrgEnv-cray/example7_check_daint_gpu_PrgEnv-cray
-   .sh
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: spawned job (jobid=6224537)
-   [2018-03-01T20:03:14] debug: example7_check on daint:gpu using PrgEnv-cray: entering stage: wait
+  [2018-05-26T00:30:40] debug: Example7Test: compilation finished
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: run
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sbatch /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/Example7Test_daint_gpu_PrgEnv-cray.sh
+  [2018-05-26T00:30:40] debug: Example7Test: spawned job (jobid=746641)
+  [2018-05-26T00:30:40] debug: Example7Test: entering stage: wait
+  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:40] debug: Example7Test: job state not matched (stdout follows)
+  JobID|State|ExitCode
+
+  [2018-05-26T00:30:41] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:44] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:47] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
+  [2018-05-26T00:30:47] debug: Example7Test: spawned job finished
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: sanity
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: performance
+  [2018-05-26T00:30:47] debug: Example7Test: entering stage: cleanup
+  [2018-05-26T00:30:47] debug: Example7Test: copying interesting files to output directory
+  [2018-05-26T00:30:47] debug: Example7Test: removing stage directory
+  [2018-05-26T00:30:47] info: reframe: [       OK ] Example7Test on daint:gpu using PrgEnv-cray
 
 
 Each line starts with a timestamp, the level of the message (``info``, ``debug`` etc.), the context in which the framework is currently executing (either ``reframe`` or the name of the current test and, finally, the actual message.
@@ -460,102 +606,227 @@ Each line starts with a timestamp, the level of the message (``info``, ``debug``
 Every time ReFrame is run, both ``reframe.out`` and ``reframe.log`` files will be rewritten.
 However, you can ask ReFrame to copy them to the output directory before exiting by passing it the ``--save-log-files`` option.
 
-Configuring logging
+Configuring Logging
 ^^^^^^^^^^^^^^^^^^^
 
 You can configure several aspects of logging in ReFrame and even how the output will look like.
 ReFrame's logging mechanism is built upon Python's `logging <https://docs.python.org/3.6/library/logging.html>`__ framework adding extra logging levels and more formatting capabilities.
 
-Logging in ReFrame is configured by the ``_logging_config`` variable in the ``reframe/settings.py`` file.
+Logging in ReFrame is configured by the ``logging_config`` variable in the ``reframe/settings.py`` file.
 The default configuration looks as follows:
 
-.. code-block:: python
-
-  _logging_config = {
-      'level': 'DEBUG',
-      'handlers': {
-          'reframe.log' : {
-              'level'     : 'DEBUG',
-              'format'    : '[%(asctime)s] %(levelname)s: '
-                            '%(check_info)s: %(message)s',
-              'append'    : False,
-          },
-
-          # Output handling
-          '&1': {
-              'level'     : 'INFO',
-              'format'    : '%(message)s'
-          },
-          'reframe.out' : {
-              'level'     : 'INFO',
-              'format'    : '%(message)s',
-              'append'    : False,
-          }
-      }
-  }
+.. literalinclude:: ../reframe/settings.py
+  :lines: 51-78
+  :dedent: 4
 
 Note that this configuration dictionary is not the same as the one used by Python's logging framework.
 It is a simplified version adapted to the needs of ReFrame.
 
-The ``_logging_config`` dictionary has two main key entries:
+The ``logging_config`` dictionary has two main key entries:
 
-* ``level`` (default: ``'INFO'``): This is the lowest level of messages that will be passed down to the different log record handlers.
+* ``level`` (default: ``'INFO'``):
+  This is the lowest level of messages that will be passed down to the different log record handlers.
   Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
   ReFrame defines the following logging levels with a decreasing severity: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``VERBOSE`` and ``DEBUG``.
   Note that the level name is *not* case sensitive in ReFrame.
-* ``handlers``: A dictionary defining the properties of the handlers that are attached to ReFrame's logging mechanism.
-  The key is either a filename or a special character combination denoting standard output (``&1``) or standard error (``&2``).
+* ``handlers``:
+  A list of log record handlers that are attached to ReFrame's logging mechanism.
   You can attach as many handlers as you like.
-  The value of each handler key is another dictionary that holds the properties of the corresponding handler as key/value pairs.
+  For example, by default ReFrame uses three handlers: (a) a handler that logs debug information into ``reframe.log``, (b) a handler that controls the actual output of the framework to the standart output, which does not print any debug messages, and (c) a handler that writes the same output to a file ``reframe.out``.
 
-The configurable properties of a log record handler are the following:
+Each handler is configured by another dictionary that holds its properties as string key/value pairs.
+For standard ReFrame logging there are currently two types of handlers, which recognize different properties.
 
-* ``level`` (default: ``'debug'``): The lowest level of log records that this handler can process.
+.. note::
+   New syntax for handlers is introduced.
+   The old syntax is still valid, but users are advised to update their logging configuration to the new syntax.
+
+   .. versionchanged:: 2.13
+
+
+Common Log Handler Attributes
+"""""""""""""""""""""""""""""
+
+All handlers accept the following set of attributes (keys) in their configuration:
+
+* ``type``: (required) the type of the handler.
+  There are two types of handlers used for standard logging in ReFrame
+
+  1. ``file``: a handler that writes log records in file.
+  2. ``stream``: a handler that writes log records in a file stream.
+
+
+* ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
 * ``format`` (default: ``'%(message)s'``): Format string for the printout of the log record.
   ReFrame supports all the `format strings <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
 
-  * ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
-    If ReFrame is not in the context of regression test, ``reframe`` will be printed.
-  * ``check_jobid``: Prints the job or process id of the job or process associated with currently executing regression test.
-    If a job or process is not yet created, ``-1`` will be printed.
-  * ``check_info``: Print live information of the currently executing check.
+  - ``check_environ``: The programming environment a test is currently executing for.
+  - ``check_info``: Print live information of the currently executing check.
     By default this field has the form ``<check_name> on <current_partition> using <current_environment>``.
-    It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method in your regression test.
+    It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
+  - ``check_jobid``: Prints the job or process id of the job or process associated with the currently executing regression test.
+    If a job or process is not yet created, ``-1`` will be printed.
+  - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
+    If ReFrame is not in the context of regression test, ``reframe`` will be printed.
+  - ``check_outputdir``: The output directory associated with the currently executing test.
+  - ``check_partition``: The system partition where this test is currently executing.
+  - ``check_stagedir``: The stage directory associated with the currently executing test.
+  - ``check_system``: The host system where this test is currently executing.
+  - ``check_tags``: The tags associated with this test.
+  - ``osuser``: The name of the OS user running ReFrame.
+  - ``osgroup``: The group name of the OS user running ReFrame.
+  - ``version``: The ReFrame version.
 
 * ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
   Acceptable formats must conform to standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function.
-* ``append`` (default: :class:`False`) Controls whether ReFrame should append to this file or not.
-  This is ignored for the standard output/error handlers.
-* ``timestamp`` (default: :class:`None`): Append a timestamp to this log filename.
-  This property may accept any date format as the ``datefmt`` property.
-  If set for a ``filename.log`` handler entry, the resulting log file name will be ``filename_<timestamp>.log``.
-  This property is ignored for the standard output/error handlers.
 
-.. note::
+.. caution::
+   The ``testcase_name`` logging attribute is replaced with the ``check_info``, which is now also configurable
+
    .. versionchanged:: 2.10
-      The ``testcase_name`` logging attribute was replaced with the ``check_info``, which is now also configurable
+
+
+
+File log handlers
+"""""""""""""""""
+
+In addition to the common log handler attributes, file log handlers accept the following:
+
+* ``name``: (required) The name of the file where log records will be written.
+* ``append`` (default: :class:`False`) Controls whether ReFrame should append to this file or not.
+* ``timestamp`` (default: :class:`None`): Append a timestamp to this log filename.
+  This property may accept any date format that is accepted also by the ``datefmt`` property.
+  If the name of the file is ``filename.log`` and this attribute is set to ``True``, the resulting log file name will be ``filename_<timestamp>.log``.
+
+
+
+Stream log handlers
+"""""""""""""""""""
+
+In addition to the common log handler attributes, file log handlers accept the following:
+
+* ``name``: (default ``stdout``) The symbolic name of the log stream to use.
+  Available values: ``stdout`` for standard output and ``stderr`` for standard error.
+
 
 
 Performance Logging
 ^^^^^^^^^^^^^^^^^^^
 
-ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
-For each performance test, a log file of the form ``<test-name>.log`` is created under the ReFrame's `log directory <#configuring-reframe-directories>`__ where the test's performance is recorded.
-The default format used for this file is ``'[%(asctime)s] %(check_info)s (jobid=%(check_jobid)s): %(message)s'`` and ReFrame always appends to this file.
-Currently, it is not possible for users to configure performance logging.
+ReFrame supports an additional logging facility for recording performance values, in order to be able to keep historical performance data.
+This is configured by the ``perf_logging_config`` variables, whose syntax is the same as for the ``logging_config``:
 
-The resulting log file looks like the following:
+.. literalinclude:: ../reframe/settings.py
+  :lines: 80-98
+  :dedent: 4
+
+Performance logging introduces two new log record handlers, specifically designed for this purpose.
+
+File-based Performance Logging
+""""""""""""""""""""""""""""""
+
+The type of this handler is ``filelog`` and logs the performance of a regression test in one or more files.
+The attributes of this handler are the following:
+
+* ``prefix``: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
+  This attribute accepts any of the check-specific formatting placeholders described `above <#common-log-handler-attributes>`__.
+  This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
+  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option or the ``perflogdir`` attribute of the `system configuration <configuring.html#system-configuration>`__.
+  The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:
+
+  .. code-block:: none
+
+    {PERFLOG_PREFIX}/
+       system1/
+           partition1/
+               test_name.log
+           partition2/
+               test_name.log
+           ...
+       system2/
+       ...
+
+  A log file, named after the test's name, is generated in different directories, which are themselves named after the system and partition names that this test has run on.
+  The ``PERFLOG_PREFIX`` will have the value of ``--perflogdir`` option, if specified, otherwise it will default to ``{REFRAME_PREFIX}/perflogs``.
+  You can always check its value by looking into the paths printed by ReFrame at the beginning of its output:
+
+  .. code-block:: none
+
+    Command line: ./reframe.py --prefix=/foo --system=generic -l
+    Reframe version: 2.13-dev0
+    Launched by user: USER
+    Launched on host: HOSTNAME
+    Reframe paths
+    =============
+        Check prefix      : /Users/karakasv/Repositories/reframe
+    (R) Check search path : 'checks/'
+        Stage dir prefix     : /foo/stage/
+        Output dir prefix    : /foo/output/
+        Perf. logging prefix : /foo/perflogs
+    List of matched checks
+    ======================
+    Found 0 check(s).
+
+* ``format``: The syntax of this attribute is the same as of the standard logging facility, except that it adds a couple more performance-specific formatting placeholders:
+
+  - ``check_perf_lower_thres``: The lower threshold of the difference from the reference value expressed as a fraction of the reference.
+  - ``check_perf_upper_thres``: The upper threshold of the difference from the reference value expressed as a fraction of the reference.
+  - ``check_perf_ref``: The reference performance value of a certain performance variable.
+  - ``check_perf_value``: The performance value obtained by this test for a certain performance variable.
+  - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
+
+Using the default performance log format, the resulting log entries look like the following:
 
 .. code-block:: none
 
-   [2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-pgi (jobid=6224525): value: 49.637615, reference: (50.0, -0.1, 0.1)
-   [2018-03-01T20:01:20] reframe 2.10: example7_check on daint:gpu using PrgEnv-cray (jobid=6224523): value: 49.931819, reference: (50.0, -0.1, 0.1)
-   [2018-03-01T20:01:21] reframe 2.10: example7_check on daint:gpu using PrgEnv-gnu (jobid=6224524): value: 49.428855, reference: (50.0, -0.1, 0.1)
+  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-gnu|jobid=749667|perf=49.152408|ref=50.0 (l=-0.1, u=0.1)
+  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-pgi|jobid=749668|perf=48.930356|ref=50.0 (l=-0.1, u=0.1)
+  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-cray|jobid=749666|perf=48.914735|ref=50.0 (l=-0.1, u=0.1)
+
 
 The interpretation of the performance values depends on the individual tests.
 The above output is from the CUDA performance test we presented in the `tutorial <tutorial.html#writing-a-performance-test>`__, so the value refers to the achieved Gflop/s.
-The reference value is a three-element tuple of the form ``(<reference>, <lower-threshold>, <upper-threshold>)``, where the ``lower-threshold`` and ``upper-threshold`` are the acceptable tolerance thresholds expressed in percentages.
-For example, the performance check shown above has a reference value of 50 Gflop/s ± 10%.
+
+
+Performance Logging Using Graylog
+"""""""""""""""""""""""""""""""""
+
+The type of this handler is ``graylog`` and it logs performance data to a `Graylog <https://www.graylog.org/>`__ server.
+Graylog is a distributed enterprise log management service.
+An example configuration of such a handler is the following:
+
+.. code-block:: python
+
+  {
+      'type': 'graylog',
+      'host': 'my.graylog.server',
+      'port': 12345,
+      'level': 'INFO',
+      'format': (
+          '%(asctime)s|reframe %(version)s|'
+          '%(check_info)s|jobid=%(check_jobid)s|'
+          '%(check_perf_var)s=%(check_perf_value)s|'
+          'ref=%(check_perf_ref)s '
+          '(l=%(check_perf_lower_thres)s, '
+          'u=%(check_perf_upper_thres)s)'
+      ),
+      'extras': {
+          'facility': 'reframe',
+      }
+  },
+
+This handler introduces three new attributes:
+
+* ``host``: (required) The Graylog server that accepts the log messages.
+* ``port``: (required) The port where the Graylog server accepts connections.
+* ``extras``: (optional) A set of optional user attributes to be passed with each log record to the server.
+  These may depend on the server configuration.
+
+This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this Python module must be available, otherwise this log handler will be ignored.
+`GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
+The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
+More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
+
 
 Asynchronous Execution of Regression Checks
 -------------------------------------------
@@ -575,68 +846,81 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 .. code-block:: none
 
-  Command line: ./reframe.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 2.7
-  Launched by user: karakasv
-  Launched on host: daint104
+  Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
+  Reframe version: 2.13-dev0
+  Launched by user: USER
+  Launched on host: daint103
   Reframe paths
   =============
       Check prefix      :
       Check search path : 'tutorial/'
-      Stage dir prefix  : /users/karakasv/Devel/reframe/stage/
-      Output dir prefix : /users/karakasv/Devel/reframe/output/
-      Logging dir       : /users/karakasv/Devel/reframe/logs
+      Stage dir prefix  : /path/to/reframe/stage/
+      Output dir prefix : /path/to/reframe/output/
+      Logging dir       : /path/to/reframe/logs
   [==========] Running 13 check(s)
-  [==========] Started on Sun Nov  5 19:37:09 2017
+  [==========] Started on Sat May 26 00:48:03 2018
 
-  [----------] started processing example1_check (Simple matrix-vector multiplication example)
-  [ RUN      ] example1_check on daint:login using PrgEnv-cray
-  [ RUN      ] example1_check on daint:login using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:login using PrgEnv-intel
-  [ RUN      ] example1_check on daint:login using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-intel
-  [ RUN      ] example1_check on daint:gpu using PrgEnv-pgi
-  [ RUN      ] example1_check on daint:mc using PrgEnv-cray
-  [ RUN      ] example1_check on daint:mc using PrgEnv-gnu
-  [ RUN      ] example1_check on daint:mc using PrgEnv-intel
-  [ RUN      ] example1_check on daint:mc using PrgEnv-pgi
-  [----------] finished processing example1_check (Simple matrix-vector multiplication example)
+  [----------] started processing Example1Test (Simple matrix-vector multiplication example)
+  [ RUN      ] Example1Test on daint:login using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:login using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
+  [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
-  ...
+  [----------] started processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:login using PrgEnv-pgi
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:gpu using PrgEnv-pgi
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-cray
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-gnu
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-intel
+  [ RUN      ] Example2aTest on daint:mc using PrgEnv-pgi
+  [----------] finished processing Example2aTest (Matrix-vector multiplication example with OpenMP)
+  <output omitted>
+  [----------] waiting for spawned checks to finish
+  [       OK ] MPITest on daint:gpu using PrgEnv-pgi
+  [       OK ] MPITest on daint:gpu using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-pgi
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-pgi
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-gnu
+  <output omitted>
+  [       OK ] Example1Test on daint:login using PrgEnv-cray
+  [       OK ] MPITest on daint:mc using PrgEnv-cray
+  [       OK ] MPITest on daint:gpu using PrgEnv-cray
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-cray
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-cray
+  [       OK ] SerialTest on daint:login using PrgEnv-pgi
+  [       OK ] MPITest on daint:mc using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:mc using PrgEnv-intel
+  [       OK ] OpenMPTest on daint:login using PrgEnv-gnu
+  [       OK ] OpenMPTest on daint:gpu using PrgEnv-intel
+  [       OK ] MPITest on daint:gpu using PrgEnv-intel
+  [       OK ] CudaTest on daint:gpu using PrgEnv-gnu
+  [       OK ] OpenACCTest on daint:gpu using PrgEnv-pgi
+  [       OK ] MPITest on daint:mc using PrgEnv-intel
+  [       OK ] CudaTest on daint:gpu using PrgEnv-cray
+  [       OK ] MPITest on daint:mc using PrgEnv-pgi
+  [       OK ] OpenACCTest on daint:gpu using PrgEnv-cray
+  [       OK ] CudaTest on daint:gpu using PrgEnv-pgi
+  [----------] all spawned checks have finished
 
-  [----------] started processing example8_cuda_check (Cuda matrix-vector multiplication)
-  [   SKIP   ] skipping daint:login
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-cray
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-  [   SKIP   ] skipping PrgEnv-intel for daint:gpu
-  [ RUN      ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-  [   SKIP   ] skipping daint:mc
-  [----------] finished processing example8_cuda_check (Cuda matrix-vector multiplication)
+  [  PASSED  ] Ran 101 test case(s) from 13 check(s) (0 failure(s))
+  [==========] Finished on Sat May 26 00:52:02 2018
 
-  [----------] waiting for spawned checks
-  [       OK ] example1_check on daint:login using PrgEnv-cray
-  [       OK ] example1_check on daint:login using PrgEnv-gnu
-  [       OK ] example1_check on daint:login using PrgEnv-intel
-  [       OK ] example1_check on daint:login using PrgEnv-pgi
-  [       OK ] example1_check on daint:gpu using PrgEnv-cray
-  [       OK ] example1_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example1_check on daint:gpu using PrgEnv-intel
-  [       OK ] example1_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example1_check on daint:mc using PrgEnv-cray
-  [       OK ] example1_check on daint:mc using PrgEnv-gnu
-  [       OK ] example1_check on daint:mc using PrgEnv-intel
-  [       OK ] example1_check on daint:mc using PrgEnv-pgi
-  ...
-  [       OK ] example8_openacc_check on daint:gpu using PrgEnv-cray
-  [       OK ] example8_openacc_check on daint:gpu using PrgEnv-pgi
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-cray
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-gnu
-  [       OK ] example8_cuda_check on daint:gpu using PrgEnv-pgi
-  [----------] all spawned checks finished
-  [  PASSED  ] Ran 97 test case(s) from 13 check(s) (0 failure(s))
-  [==========] Finished on Sun Nov  5 19:42:23 2017
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
 For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.
@@ -706,7 +990,7 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
 .. code-block:: none
 
    ------------------------------------------------------------------------------
-   FAILURE INFO for example7_check
+   FAILURE INFO for Example7Test
      * System partition: daint:gpu
      * Environment: PrgEnv-gnu
      * Stage directory: None
@@ -715,3 +999,34 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
      * Failing phase: setup
      * Reason: caught framework exception: module cyclic dependency: cudatoolkit->foo->bar->foobar->cudatoolkit
    ------------------------------------------------------------------------------
+
+Controlling the Flexible Task Allocation
+----------------------------------------
+
+.. versionadded:: 2.15
+
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
+This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
+This option accepts three values:
+
+  1. ``idle``: (default) In this case, ReFrame will set the number of tasks to the number of idle nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
+  2. ``all``: In this case, ReFrame will set the number of tasks to the number of all the nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
+
+  3. Any positive integer: In this case, ReFrame will set the number of tasks to the given value.
+
+The flexible allocation of number of tasks takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as ``--partition``, ``--reservation``, ``--nodelist``, ``--exclude-nodes`` and ``--job-option`` (if the scheduler option passed to the latter imposes a restriction).
+Notice that ReFrame will issue an error if the resulting number of nodes is zero.
+
+For example, using the following options would run a flexible test on all the nodes of reservation ``foo`` except the nodes ``n0[1-5]``:
+
+.. code-block:: bash
+
+  --flex-alloc-tasks=all --reservation=foo --exclude-nodes=n0[1-5]
+
+
+.. note::
+   Flexible task allocation is supported only for the Slurm scheduler backend.
+
+.. warning::
+   Test cases resulting from flexible ReFrame tests may not be run using the asynchronous execution policy, because the nodes satisfying the required criteria will be allocated for the first test case, causing all subsequent ones to fail.

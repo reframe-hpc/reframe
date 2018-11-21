@@ -1,34 +1,46 @@
 import os
+import inspect
 import socket
 import sys
 
 import reframe
-import reframe.frontend.config as config
+import reframe.core.config as config
 import reframe.core.logging as logging
+import reframe.core.runtime as runtime
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
-                                     ReframeFatalError, format_exception)
-from reframe.core.modules import get_modules_system, init_modules_system
+                                     ReframeFatalError, format_exception,
+                                     SystemAutodetectionError)
 from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
-from reframe.frontend.resources import ResourcesManager
 
 
-def list_supported_systems(systems, printer):
-    printer.info('List of supported systems:')
-    for s in systems:
-        printer.info('    %s' % s)
+def format_check(check, detailed):
+    lines = ['  * %s (found in %s)' % (check.name,
+                                       inspect.getfile(type(check)))]
+    if detailed:
+        lines += [
+            '      - description: %s' % check.descr,
+            '      - systems: %s' % ', '.join(check.valid_systems),
+            '      - environments: %s' % ', '.join(check.valid_prog_environs),
+            '      - modules: %s' % ', '.join(check.modules),
+            '      - tags: %s' % ', '.join(check.tags),
+            '      - maintainers: %s' % ', '.join(check.maintainers)
+        ]
+
+    return '\n'.join(lines)
 
 
-def list_checks(checks, printer):
+def list_checks(checks, printer, detailed=False):
     printer.info('List of matched checks')
     printer.info('======================')
     for c in checks:
-        printer.info('  * %s' % c)
+        printer.info(format_check(c, detailed))
 
     printer.info('Found %d check(s).' % len(checks))
 
@@ -60,7 +72,12 @@ def main():
         help='Set regression stage directory to DIR')
     output_options.add_argument(
         '--logdir', action='store', metavar='DIR',
-        help='Set regression log directory to DIR')
+        help='(deprecated) Use --perflogdir instead.')
+    output_options.add_argument(
+        '--perflogdir', action='store', metavar='DIR',
+        help='Set directory prefix for the performance logs '
+        '(default: ${prefix}/perflogs, '
+        'relevant only if the filelog backend is used)')
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
         help='Keep stage directory even if check is successful')
@@ -103,7 +120,10 @@ def main():
     # Action options
     action_options.add_argument(
         '-l', '--list', action='store_true',
-        help='list matched regression checks')
+        help='List matched regression checks')
+    action_options.add_argument(
+        '-L', '--list-detailed', action='store_true',
+        help='List matched regression checks with a detailed description')
     action_options.add_argument(
         '-r', '--run', action='store_true',
         help='Run regression with the selected checks')
@@ -157,6 +177,10 @@ def main():
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Specify the maximum number of times a failed regression test '
              'may be retried (default: 0)')
+    run_options.add_argument(
+        '--flex-alloc-tasks', action='store',
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
+        help="Strategy for flexible task allocation (default: 'idle').")
 
     # Miscellaneous options
     misc_options.add_argument(
@@ -171,6 +195,9 @@ def main():
         '--module-mappings', action='store', metavar='FILE',
         dest='module_map_file',
         help='Apply module mappings defined in FILE')
+    misc_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge modules environment before running any tests')
     misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
@@ -200,19 +227,23 @@ def main():
     # Parse command line
     options = argparser.parse_args()
 
+    if options.logdir:
+        sys.stderr.write('WARNING: --logdir option is deprecated; '
+                         'please use --perflogdir instead.\n')
+        if not options.perflogdir:
+            options.perflogdir = options.logdir
+
     # Load configuration
     try:
-        settings = config.load_from_file(options.config_file)
+        settings = config.load_settings_from_file(options.config_file)
     except (OSError, ReframeError) as e:
         sys.stderr.write(
             '%s: could not load settings: %s\n' % (sys.argv[0], e))
         sys.exit(1)
 
-    site_config = config.SiteConfiguration()
-    site_config.load_from_dict(settings.site_configuration)
     # Configure logging
     try:
-        logging.configure_logging(settings.logging_config)
+        logging.configure_logging(settings.logging_config),
     except (OSError, ConfigError) as e:
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
@@ -221,62 +252,83 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = options.colorize
 
-    if options.system:
-        try:
-            sysname, sep, partname = options.system.partition(':')
-            system = site_config.systems[sysname]
-            if partname:
-                # Disable all partitions except partname
-                for p in system.partitions:
-                    if p.name != partname:
-                        p.disable()
-
-            if not system.partitions:
-                raise KeyError(options.system)
-
-        except KeyError:
-            printer.error("unknown system specified: `%s'" % options.system)
-            list_supported_systems(site_config.systems.values(), printer)
-            sys.exit(1)
-    else:
-        # Try to autodetect system
-        system = config.autodetect_system(site_config)
-        if not system:
-            printer.error("could not auto-detect system. Please specify "
-                          "it manually using the `--system' option.")
-            list_supported_systems(site_config.systems.values(), printer)
-            sys.exit(1)
-
     try:
-        # Init modules system
-        init_modules_system(system.modules_system)
-    except ReframeError as e:
-        printer.error('could not initialize the modules system: %s' % e)
+        runtime.init_runtime(settings.site_configuration, options.system)
+    except SystemAutodetectionError:
+        printer.error("could not auto-detect system; please use the "
+                      "`--system' option to specify one explicitly")
         sys.exit(1)
 
+    except (ConfigError, OSError) as e:
+        printer.error('configuration error %s' % e)
+        sys.exit(1)
+
+    rt = runtime.runtime()
     try:
         if options.module_map_file:
-            get_modules_system().load_mapping_from_file(
-                options.module_map_file)
+            rt.modules_system.load_mapping_from_file(options.module_map_file)
 
         if options.module_mappings:
             for m in options.module_mappings:
-                get_modules_system().load_mapping(m)
+                rt.modules_system.load_mapping(m)
 
-    except (ReframeError, OSError) as e:
+    except (ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
 
     if options.mode:
         try:
-            mode_args = site_config.modes[options.mode]
+            mode_args = rt.mode(options.mode)
 
             # Parse the mode's options and reparse the command-line
             options = argparser.parse_args(mode_args)
             options = argparser.parse_args(namespace=options)
-        except KeyError:
-            printer.error("no such execution mode: `%s'" % (options.mode))
+        except ConfigError as e:
+            printer.error('could not obtain execution mode: %s' % e)
             sys.exit(1)
+
+    # Adjust system directories
+    if options.prefix:
+        # if prefix is set, reset all other directories
+        rt.resources.prefix = os.path.expandvars(options.prefix)
+        rt.resources.outputdir = None
+        rt.resources.stagedir  = None
+
+    if options.output:
+        rt.resources.outputdir = os.path.expandvars(options.output)
+
+    if options.stage:
+        rt.resources.stagedir = os.path.expandvars(options.stage)
+
+    if (os_ext.samefile(rt.resources.stage_prefix,
+                        rt.resources.output_prefix) and
+        not options.keep_stage_files):
+        printer.error('stage and output refer to the same directory; '
+                      'if this is on purpose, please use also the '
+                      "`--keep-stage-files' option.")
+        sys.exit(1)
+
+    if options.timestamp:
+        rt.resources.timefmt = options.timestamp
+
+    # Configure performance logging
+    # NOTE: we need resources to be configured in order to set the global
+    # perf. logging prefix correctly
+    if options.perflogdir:
+        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+
+    logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
+                                                          perflog_prefix)
+
+    if hasattr(settings, 'perf_logging_config'):
+        try:
+            logging.configure_perflogging(settings.perf_logging_config)
+        except (OSError, ConfigError) as e:
+            printer.error('could not configure performance logging: %s\n' % e)
+            sys.exit(1)
+    else:
+        printer.warning('no performance logging is configured; '
+                        'please check documentation')
 
     # Setup the check loader
     if options.checkpath:
@@ -284,8 +336,8 @@ def main():
         for d in options.checkpath:
             d = os.path.expandvars(d)
             if not os.path.exists(d):
-                printer.info("%s: path `%s' does not exist. Skipping...\n" %
-                             (argparser.prog, d))
+                printer.warning("%s: path `%s' does not exist. Skipping..." %
+                                (argparser.prog, d))
                 continue
 
             load_path.append(d)
@@ -299,41 +351,12 @@ def main():
             prefix=reframe.INSTALL_PREFIX,
             recurse=settings.checks_path_recurse)
 
-    # Adjust system directories
-    if options.prefix:
-        # if prefix is set, reset all other directories
-        system.prefix = os.path.expandvars(options.prefix)
-        system.outputdir = None
-        system.stagedir  = None
-        system.logdir = None
-
-    if options.output:
-        system.outputdir = os.path.expandvars(options.output)
-
-    if options.stage:
-        system.stagedir = os.path.expandvars(options.stage)
-
-    if options.logdir:
-        system.logdir = os.path.expandvars(options.logdir)
-
-    resources = ResourcesManager(prefix=system.prefix,
-                                 output_prefix=system.outputdir,
-                                 stage_prefix=system.stagedir,
-                                 log_prefix=system.logdir,
-                                 timestamp=options.timestamp)
-    if (os_ext.samefile(resources.stage_prefix, resources.output_prefix) and
-        not options.keep_stage_files):
-        printer.error('stage and output refer to the same directory. '
-                      'If this is on purpose, please use also the '
-                      "`--keep-stage-files' option.")
-        sys.exit(1)
-
     printer.log_config(options)
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
     printer.info('Reframe version: '  + reframe.VERSION)
-    printer.info('Launched by user: ' + os.environ['USER'])
+    printer.info('Launched by user: ' + (os_ext.osuser() or '<unknown>'))
     printer.info('Launched on host: ' + socket.gethostname())
 
     # Print important paths
@@ -343,13 +366,15 @@ def main():
     printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
-    printer.info('    Stage dir prefix  : %s' % resources.stage_prefix)
-    printer.info('    Output dir prefix : %s' % resources.output_prefix)
-    printer.info('    Logging dir       : %s' % resources.log_prefix)
+    printer.info('    Stage dir prefix     : %s' % rt.resources.stage_prefix)
+    printer.info('    Output dir prefix    : %s' % rt.resources.output_prefix)
+    printer.info(
+        '    Perf. logging prefix : %s' %
+        os.path.abspath(logging.LOG_CONFIG_OPTS['handlers.filelog.prefix']))
     try:
         # Locate and load checks
         try:
-            checks_found = loader.load_all(system=system, resources=resources)
+            checks_found = loader.load_all()
         except OSError as e:
             raise ReframeError from e
 
@@ -374,12 +399,22 @@ def main():
         )
 
         # Filter checks by prgenv
+        def filter_prgenv(c):
+            if options.prgenv:
+                return util.allx(c.supports_environ(e) for e in options.prgenv)
+            else:
+                return bool(c.valid_prog_environs)
+
         if not options.skip_prgenv_check:
-            checks_matched = filter(
-                lambda c: c if all(c.supports_environ(e)
-                                   for e in options.prgenv) else None,
-                checks_matched
-            )
+            checks_matched = filter(filter_prgenv, checks_matched)
+
+        # Filter checks by system
+        def filter_system(c):
+            return any([c.supports_system(s.fullname)
+                        for s in rt.system.partitions])
+
+        if not options.skip_system_check:
+            checks_matched = filter(filter_system, checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -404,11 +439,14 @@ def main():
 
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:
-            get_modules_system().unload_module(settings.reframe_module)
+            rt.modules_system.unload_module(settings.reframe_module)
+
+        if options.purge_env:
+            rt.modules_system.unload_all()
 
         for m in options.user_modules:
             try:
-                get_modules_system().load_module(m, force=True)
+                rt.modules_system.load_module(m, force=True)
             except EnvironError:
                 printer.info("could not load module `%s': Skipping..." % m)
 
@@ -416,6 +454,9 @@ def main():
         if options.list:
             # List matched checks
             list_checks(list(checks_matched), printer)
+        elif options.list_detailed:
+            # List matched checks with details
+            list_checks(list(checks_matched), printer, detailed=True)
 
         elif options.run:
             # Setup the execution policy
@@ -437,6 +478,20 @@ def main():
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.only_environs = options.prgenv
             exec_policy.keep_stage_files = options.keep_stage_files
+            try:
+                errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
+                sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
+                if sched_flex_alloc_tasks <= 0:
+                    raise ConfigError(errmsg.format(options.flex_alloc_tasks))
+            except ValueError:
+                if not options.flex_alloc_tasks.lower() in {'idle', 'all'}:
+                    raise ConfigError(
+                        errmsg.format(options.flex_alloc_tasks)) from None
+
+                sched_flex_alloc_tasks = options.flex_alloc_tasks
+
+            exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
+            exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition
             exec_policy.sched_reservation = options.reservation
@@ -450,7 +505,7 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
-                runner.runall(checks_matched, system)
+                runner.runall(checks_matched)
             finally:
                 # Print a retry report if we did any retries
                 if runner.stats.num_failures(run=0):
@@ -483,8 +538,8 @@ def main():
     finally:
         try:
             if options.save_log_files:
-                logging.save_log_files(resources.output_prefix)
+                logging.save_log_files(rt.resources.output_prefix)
 
         except OSError as e:
-            printer.error(str(e))
+            printer.error('could not save log file: %s' % e)
             sys.exit(1)

@@ -2,6 +2,9 @@
 # OS and shell utility functions
 #
 
+import errno
+import getpass
+import grp
 import os
 import re
 import shlex
@@ -13,7 +16,6 @@ from urllib.parse import urlparse
 
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
-from reframe.core.logging import getlogger
 
 
 def run_command(cmd, check=False, timeout=None, shell=False):
@@ -63,6 +65,9 @@ def run_command_async(cmd,
                       stderr=subprocess.PIPE,
                       shell=False,
                       **popen_args):
+    # Import logger here to avoid unnecessary circular dependencies
+    from reframe.core.logging import getlogger
+
     getlogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
@@ -73,6 +78,28 @@ def run_command_async(cmd,
                             universal_newlines=True,
                             shell=shell,
                             **popen_args)
+
+
+def osuser():
+    """Return the name of the current OS user.
+
+    If the name cannot be retrieved, :class:`None` will be returned.
+    """
+    try:
+        return getpass.getuser()
+    except BaseException:
+        return None
+
+
+def osgroup():
+    """Return the group name of the current OS user.
+
+    If the name cannot be retrieved, :class:`None` will be returned.
+    """
+    try:
+        return grp.getgrgid(os.getgid()).gr_name
+    except KeyError:
+        return None
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
@@ -146,6 +173,39 @@ def copytree_virtual(src, dst, file_links=[],
         os.symlink(f, link_name)
 
 
+def rmtree(*args, max_retries=3, **kwargs):
+    """Persistent version of ``shutil.rmtree()``.
+
+    If ``shutil.rmtree()`` with ``ENOTEMPTY``, retry up to ``max_retries``
+    times to delete the directory.
+
+    This version of ``rmtree()`` is mostly provided to work around a race
+    condition between when ``sacct`` reports a job as completed and when the
+    Slurm epilog runs. See https://github.com/eth-cscs/reframe/issues/291 for
+    more information.
+
+    ``args`` and ``kwargs`` are passed through to ``shutil.rmtree()``.
+
+    If ``onerror``  is specified in  ``kwargs`` and is not  :class:`None`, this
+    function is completely equivalent to ``shutil.rmtree()``.
+    """
+    if 'onerror' in kwargs and kwargs['onerror'] is not None:
+        shutil.rmtree(*args, **kwargs)
+        return
+
+    for i in range(max_retries):
+        try:
+            shutil.rmtree(*args, **kwargs)
+            return
+        except OSError as e:
+            if i == max_retries:
+                raise
+            elif e.errno == errno.ENOTEMPTY:
+                pass
+            else:
+                raise
+
+
 def inpath(entry, pathvar):
     """Check if entry is in pathvar. pathvar is a string of the form
     `entry1:entry2:entry3`."""
@@ -195,6 +255,14 @@ def mkstemp_path(*args, **kwargs):
     fd, path = tempfile.mkstemp(*args, **kwargs)
     os.close(fd)
     return path
+
+
+def force_remove_file(filename):
+    """Remove filename ignoring errors if the file does not exist."""
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
 
 
 class change_dir:

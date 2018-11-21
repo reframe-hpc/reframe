@@ -3,6 +3,7 @@ import sys
 
 import reframe.core.debug as debug
 import reframe.core.logging as logging
+import reframe.core.runtime as runtime
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
@@ -69,6 +70,9 @@ class RegressionTask:
     def compile(self):
         self._safe_call(self._check.compile)
 
+    def compile_wait(self):
+        self._safe_call(self._check.compile_wait)
+
     def run(self):
         self._safe_call(self._check.run)
         self._notify_listeners('on_task_run')
@@ -110,7 +114,7 @@ class RegressionTask:
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
-            if not self.zombie:
+            if not self.zombie and self._check.job:
                 self._check.job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None))
@@ -139,14 +143,13 @@ class TaskEventListener:
 
 
 class Runner:
-    """Responsible for executing a set of regression tests based on an execution
-    policy."""
+    """Responsible for executing a set of regression tests based on an
+    execution policy."""
 
     def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
         self._printer = printer or PrettyPrinter()
         self._max_retries = max_retries
-        self._current_run = 0
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
@@ -164,15 +167,15 @@ class Runner:
     def stats(self):
         return self._stats
 
-    def runall(self, checks, system):
+    def runall(self, checks):
         try:
             self._printer.separator('short double line',
                                     'Running %d check(s)' % len(checks))
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
-            self._runall(checks, system)
+            self._runall(checks)
             if self._max_retries:
-                self._retry_failed(checks, system)
+                self._retry_failed(checks)
 
         finally:
             # Print the summary line
@@ -202,29 +205,25 @@ class Runner:
         else:
             return ret and check.supports_environ(environ.name)
 
-    def _retry_failed(self, checks, system):
+    def _retry_failed(self, checks):
+        rt = runtime.runtime()
         while (self._stats.num_failures() and
-               self._current_run < self._max_retries):
+               rt.current_run < self._max_retries):
             failed_checks = [
                 c for c in checks if c.name in
                 set([t.check.name for t in self._stats.tasks_failed()])
             ]
-            self._current_run += 1
-            self._stats.next_run()
-            if self._stats.current_run != self._current_run:
-                    raise AssertionError('current_run variable out of sync'
-                                         '(Runner: %d; TestStats: %d)' %
-                                         self._current_run,
-                                         self._stats.current_run)
+            rt.next_run()
 
             self._printer.separator(
                 'short double line',
                 'Retrying %d failed check(s) (retry %d/%d)' %
-                (len(failed_checks), self._current_run, self._max_retries)
+                (len(failed_checks), rt.current_run, self._max_retries)
             )
-            self._runall(failed_checks, system)
+            self._runall(failed_checks)
 
-    def _runall(self, checks, system):
+    def _runall(self, checks):
+        system = runtime.runtime().system
         self._policy.enter()
         for c in checks:
             self._policy.enter_check(c)
@@ -285,6 +284,7 @@ class ExecutionPolicy:
         self.strict_check = False
 
         # Scheduler options
+        self.sched_flex_alloc_tasks = None
         self.sched_account = None
         self.sched_partition = None
         self.sched_reservation = None
@@ -341,6 +341,9 @@ class ExecutionPolicy:
         """
         if self.strict_check:
             c.strict_check = True
+
+        if self.force_local:
+            c.local = True
 
     @abc.abstractmethod
     def getstats(self):

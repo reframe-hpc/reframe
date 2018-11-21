@@ -3,8 +3,10 @@
 #
 
 import inspect
+import os
 import traceback
 import warnings
+import sys
 
 
 class ReframeError(Exception):
@@ -36,11 +38,15 @@ class ReframeFatalError(BaseException):
         return ret
 
 
-class TestSuiteError(ReframeError):
-    """Raised when the regression test suite does not meet certain criteria."""
+class ReframeSyntaxError(ReframeError):
+    """Raised when the syntax of regression tests is not correct."""
 
 
-class NameConflictError(TestSuiteError):
+class RegressionTestLoadError(ReframeError):
+    """Raised when the regression test cannot be loaded."""
+
+
+class NameConflictError(RegressionTestLoadError):
     """Raised when there is a name clash in the test suite."""
 
 
@@ -56,6 +62,18 @@ class AbortTaskError(ReframeError):
 
 class ConfigError(ReframeError):
     """Raised when a configuration error occurs."""
+
+
+class UnknownSystemError(ConfigError):
+    """Raised when the host system cannot be identified."""
+
+
+class SystemAutodetectionError(UnknownSystemError):
+    """Raised when the host system cannot be auto-detected"""
+
+
+class LoggingError(ReframeError):
+    """Raised when an error related to logging has occurred."""
 
 
 class EnvironError(ReframeError):
@@ -74,6 +92,23 @@ class PipelineError(ReframeError):
 
 class StatisticsError(ReframeError):
     """Raised to denote an error in dealing with statistics."""
+
+
+class BuildSystemError(ReframeError):
+    """Raised when a build system is not configured properly."""
+
+
+class BuildError(ReframeError):
+    """Raised when a build fails."""
+
+    def __init__(self, stdout, stderr):
+        self._stdout = stdout
+        self._stderr = stderr
+
+    def __str__(self):
+        return ("standard error can be found in `%s', "
+                "standard output can be found in `%s'" % (self._stderr,
+                                                          self._stdout))
 
 
 class SpawnedProcessError(ReframeError):
@@ -144,10 +179,6 @@ class SpawnedProcessTimeout(SpawnedProcessError):
         return self._timeout
 
 
-class CompilationError(SpawnedProcessError):
-    """Raised by compilation commands"""
-
-
 class JobError(ReframeError):
     """Job related errors."""
 
@@ -188,11 +219,8 @@ def user_frame(tb):
         raise ValueError('could not retrieve frame: argument not a traceback')
 
     for finfo in reversed(inspect.getinnerframes(tb)):
-        module = inspect.getmodule(finfo.frame)
-        if module is None:
-            continue
-
-        if not module.__name__.startswith('reframe'):
+        relpath = os.path.relpath(finfo.filename, sys.path[0])
+        if relpath.split(os.sep)[0] != 'reframe':
             return finfo
 
     return None
@@ -200,7 +228,8 @@ def user_frame(tb):
 
 def format_exception(exc_type, exc_value, tb):
     def format_user_frame(frame):
-        return '%s:%s: %s\n%s' % (frame.filename, frame.lineno,
+        relpath = os.path.relpath(frame.filename)
+        return '%s:%s: %s\n%s' % (relpath, frame.lineno,
                                   exc_value, ''.join(frame.code_context))
 
     if exc_type is None:
@@ -215,6 +244,9 @@ def format_exception(exc_type, exc_value, tb):
 
     if isinstance(exc_value, AbortTaskError):
         return 'aborted due to %s' % type(exc_value.__cause__).__name__
+
+    if isinstance(exc_value, BuildError):
+        return 'build failure: %s' % exc_value
 
     if isinstance(exc_value, ReframeError):
         return 'caught framework exception: %s' % exc_value

@@ -237,4 +237,4 @@ texinfo_documents = [
 
 # Versioning
 scv_whitelist_branches = ('master',)
-scv_whitelist_tags = (re.compile(r'^v\d+\.\d+(\.d+)?[a-z]?'),)
+scv_whitelist_tags = (re.compile(r'^v\d+\.\d+$'),)

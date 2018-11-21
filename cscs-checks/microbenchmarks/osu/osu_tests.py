@@ -1,17 +1,17 @@
-import os
-import itertools
+import reframe as rfm
 import reframe.utility.sanity as sn
 
-from reframe.core.pipeline import RegressionTest
 
-
-class AlltoallBaseTest(RegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__(name,
-                         os.path.dirname(__file__), **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(['production'])
+class AlltoallTest(rfm.RegressionTest):
+    def __init__(self, variant):
+        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'Alltoall osu microbenchmark'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
         # The -x option controls the number of warm-up iterations
         # The -i option controls the number of iterations
@@ -23,6 +23,15 @@ class AlltoallBaseTest(RegressionTest):
         self.perf_patterns = {
             'perf': sn.extractsingle(r'^8\s+(?P<perf>\S+)',
                                      self.stdout, 'perf', float)
+        }
+        self.tags = {variant}
+        self.reference = {
+            'dom:gpu': {
+                'perf': (8.23, None, 0.1)
+            },
+            'daint:gpu': {
+                'perf': (20.73, None, 2.0)
+            },
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
@@ -38,28 +47,12 @@ class AlltoallBaseTest(RegressionTest):
             }
         }
 
-    def compile(self):
-        super().compile(makefile='Makefile_alltoall')
 
-
-class AlltoallProdTest(AlltoallBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('alltoall_osu_microbenchmark', **kwargs)
-        self.tags = {'production'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (8.23, None, 0.1)
-            },
-            'daint:gpu': {
-                'perf': (20.73, None, 2.0)
-            },
-        }
-
-
-class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
-    def __init__(self, num_tasks, **kwargs):
-        super().__init__('alltoall_osu_microbenchmark_monch_%s'
-                         % num_tasks, **kwargs)
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
+class AlltoallMonchAcceptanceTest(AlltoallTest):
+    def __init__(self, num_tasks):
+        super().__init__('monch_acceptance')
         self.valid_systems = ['monch:compute']
         self.num_tasks = num_tasks
         reference_by_node = {
@@ -79,20 +72,23 @@ class AlltoallMonchAcceptanceTest(AlltoallBaseTest):
         self.reference = {
             'monch:compute': reference_by_node[self.num_tasks]
         }
-        self.tags = {'monch_acceptance'}
 
 
-class G2GBaseTest(RegressionTest):
-    def __init__(self, name, **kwargs):
-        super().__init__('g2g_osu_microbenchmark_p2p_%s' % name,
-                         os.path.dirname(__file__), **kwargs)
+class P2PBaseTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
         self.num_tasks_per_node = 1
-        self.descr = 'G2G microbenchmark P2P ' + name.upper()
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel']
+        self.descr = 'P2P microbenchmark'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_p2p'
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        else:
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
         self.tags = {'production'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
@@ -103,34 +99,15 @@ class G2GBaseTest(RegressionTest):
             }
         }
 
-    def setup(self, partition, environ, **job_opts):
-        if partition.name == 'gpu':
-            self.num_gpus_per_node  = 1
-            self.modules = ['cudatoolkit']
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
 
-        if partition.name == 'cn':
-            self.variables = {'MV2_USE_CUDA': '1'}
-
-        super().setup(partition, environ, **job_opts)
-        if self.num_gpus_per_node >= 1:
-            self.current_environ.cflags = ' -D_ENABLE_CUDA_ -DCUDA_ENABLED '
-
-    def compile(self):
-        super().compile(makefile='Makefile_g2g')
-
-
-class G2GCPUBandwidthTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('cpu_bandwidth', **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class P2PCPUBandwidthTest(P2PBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'monch:compute',
-                              'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
-        self.executable = './g2g_osu_bw'
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
+        self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.reference = {
@@ -160,18 +137,16 @@ class G2GCPUBandwidthTest(G2GBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-class G2GCPULatencyTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('cpu_latency', **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class P2PCPULatencyTest(P2PBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'monch:compute',
-                              'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
-        self.executable = './g2g_osu_latency'
+        self.executable = './p2p_osu_latency'
         self.reference = {
             'daint:gpu': {
                 'latency': (1.16, None, 1.0)
@@ -199,15 +174,14 @@ class G2GCPULatencyTest(G2GBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-class G2GCUDABandwidthTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('gpu_bandwidth', **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class G2GBandwidthTest(P2PBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
         self.num_gpus_per_node = 1
-        self.executable = './g2g_osu_bw'
+        self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -226,17 +200,25 @@ class G2GCUDABandwidthTest(G2GBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
+        if self.current_system.name in ['daint', 'dom']:
+            self.num_gpus_per_node  = 1
+            self.modules = ['craype-accel-nvidia60']
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+        elif self.current_system.name == 'kesch':
+            self.modules = ['craype-accel-nvidia35']
+            self.variables = {'MV2_USE_CUDA': '1'}
+
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
-class G2GCUDALatencyTest(G2GBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('gpu_latency', **kwargs)
+@rfm.required_version('>=2.14')
+@rfm.simple_test
+class G2GLatencyTest(P2PBaseTest):
+    def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray']
-
         self.num_gpus_per_node = 1
-        self.executable = './g2g_osu_latency'
+        self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
                                 'cuda', 'D', 'D']
 
@@ -255,14 +237,12 @@ class G2GCUDALatencyTest(G2GBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
+        if self.current_system.name in ['daint', 'dom']:
+            self.num_gpus_per_node  = 1
+            self.modules = ['craype-accel-nvidia60']
+            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+        elif self.current_system.name == 'kesch':
+            self.modules = ['craype-accel-nvidia35']
+            self.variables = {'MV2_USE_CUDA': '1'}
 
-
-def _get_checks(**kwargs):
-    fixed_tests = [AlltoallProdTest(**kwargs),
-                   G2GCPUBandwidthTest(**kwargs),
-                   G2GCPULatencyTest(**kwargs),
-                   G2GCUDABandwidthTest(**kwargs),
-                   G2GCUDALatencyTest(**kwargs)]
-    return list(itertools.chain(fixed_tests,
-                                map(lambda n: AlltoallMonchAcceptanceTest(
-                                    n, **kwargs), range(2, 10, 2))))
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']

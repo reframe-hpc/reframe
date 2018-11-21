@@ -6,12 +6,12 @@ from tempfile import NamedTemporaryFile
 import reframe.core.modules as modules
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
+from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
 
 
-class _TestModulesSystem(unittest.TestCase):
+class _TestModulesSystem:
     def setUp(self):
-        self.modules_system = modules.get_modules_system()
         self.environ_save = EnvironmentSnapshot()
         self.modules_system.searchpath_add(TEST_MODULES)
 
@@ -100,10 +100,10 @@ class _TestModulesSystem(unittest.TestCase):
                          self.modules_system.emit_unload_commands('m0'))
 
 
-class TestTModModulesSystem(_TestModulesSystem):
+class TestTModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system('tmod')
+            self.modules_system = modules.ModulesSystem.create('tmod')
         except ConfigError:
             self.skipTest('tmod not supported')
         else:
@@ -116,10 +116,26 @@ class TestTModModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
-class TestLModModulesSystem(_TestModulesSystem):
+class TestTMod4ModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system('lmod')
+            self.modules_system = modules.ModulesSystem.create('tmod4')
+        except ConfigError:
+            self.skipTest('tmod4 not supported')
+        else:
+            super().setUp()
+
+    def expected_load_instr(self, module):
+        return 'module load %s' % module
+
+    def expected_unload_instr(self, module):
+        return 'module unload %s' % module
+
+
+class TestLModModulesSystem(_TestModulesSystem, unittest.TestCase):
+    def setUp(self):
+        try:
+            self.modules_system = modules.ModulesSystem.create('lmod')
         except ConfigError:
             self.skipTest('lmod not supported')
         else:
@@ -132,10 +148,10 @@ class TestLModModulesSystem(_TestModulesSystem):
         return 'module unload %s' % module
 
 
-class TestNoModModulesSystem(_TestModulesSystem):
+class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
         try:
-            modules.init_modules_system()
+            self.modules_system = modules.ModulesSystem.create()
         except ConfigError:
             self.skipTest('nomod not supported')
         else:
@@ -184,7 +200,8 @@ class TestModule(unittest.TestCase):
 
     def test_equal(self):
         self.assertEqual(modules.Module('foo'), modules.Module('foo'))
-        self.assertEqual(modules.Module('foo/1.2'), modules.Module('foo/1.2'))
+        self.assertEqual(modules.Module('foo/1.2'),
+                         modules.Module('foo/1.2'))
         self.assertEqual(modules.Module('foo'), modules.Module('foo/1.2'))
         self.assertEqual(hash(modules.Module('foo')),
                          hash(modules.Module('foo')))

@@ -107,11 +107,18 @@ class PrettyPrinter:
         else:
             self.info(msg)
 
-    def error(self, msg):
-        self._logger.error('%s: %s' % (sys.argv[0], msg))
-
     def info(self, msg=''):
         self._logger.info(msg)
+
+    def warning(self, msg):
+        msg = AnsiColorizer.colorize('%s: %s' % (sys.argv[0], msg),
+                                     AnsiColorizer.yellow)
+        self._logger.warning(msg)
+
+    def error(self, msg):
+        msg = AnsiColorizer.colorize('%s: %s' % (sys.argv[0], msg),
+                                     AnsiColorizer.red)
+        self._logger.error(msg)
 
     def log_config(self, options):
         opt_list = ['    %s=%s' % (attr, val)

@@ -19,7 +19,7 @@ class EspressoBaseCheck(RunOnlyRegressionTest):
                                   self.stdout, 'energy', float)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
-            sn.assert_reference(energy, -11427.08612278, -1e-10, 1e-10)])
+            sn.assert_reference(energy, -11427.09017162, -1e-10, 1e-10)])
         self.perf_patterns = {
             'sec': sn.extractsingle(r'electrons    :\s+(?P<sec>\S+)s CPU ',
                                     self.stdout, 'sec', float)

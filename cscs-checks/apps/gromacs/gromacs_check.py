@@ -1,13 +1,13 @@
 import itertools
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class GromacsBaseCheck(RunOnlyRegressionTest):
-    def __init__(self, name, output_file, **kwargs):
-        super().__init__(name, os.path.dirname(__file__), **kwargs)
+class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self, output_file):
+        super().__init__()
 
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.executable = 'gmx_mpi'
@@ -18,16 +18,15 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
         self.keep_files = [output_file]
 
         energy = sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'
-                                  r'\s+Temperature\s+Pressure \(bar\)\n'
+                                  r'\s+Conserved En\.\s+Temperature\n'
                                   r'(\s+\S+){2}\s+(?P<energy>\S+)(\s+\S+){2}\n'
-                                  r'\s+Constr\. rmsd',
+                                  r'\s+Pressure \(bar\)\s+Constr\. rmsd',
                                   output_file, 'energy', float, item=-1)
         energy_reference = -3270799.9
-        energy_diff = sn.abs(energy - energy_reference)
 
         self.sanity_patterns = sn.all([
             sn.assert_found('Finished mdrun', output_file),
-            sn.assert_lt(energy_diff, 1560.1)
+            sn.assert_reference(energy, energy_reference, -0.001, 0.001)
         ])
 
         self.perf_patterns = {
@@ -47,12 +46,12 @@ class GromacsBaseCheck(RunOnlyRegressionTest):
 
 
 class GromacsGPUCheck(GromacsBaseCheck):
-    def __init__(self, variant, **kwargs):
-        super().__init__('gromacs_gpu_%s_check' % variant,
-                         'md.log', **kwargs)
+    def __init__(self, variant):
+        super().__init__('md.log')
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'GROMACS GPU check'
+        self.name = 'gromacs_gpu_%s_check' % variant
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme 0 '
                                 '-s herflat.tpr ').split()
         self.variables = {'CRAY_CUDA_MPS': '1'}
@@ -67,41 +66,43 @@ class GromacsGPUCheck(GromacsBaseCheck):
             self.num_tasks_per_node = 12
 
 
+@rfm.simple_test
 class GromacsGPUMaintCheck(GromacsGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
+    def __init__(self):
+        super().__init__('maint')
         self.tags |= {'maintenance'}
         self.reference = {
             'dom:gpu': {
                 'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (60.2, -0.10, None)
+                'perf': (42.0, -0.10, None)
             },
         }
 
 
+@rfm.simple_test
 class GromacsGPUProdCheck(GromacsGPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
+    def __init__(self):
+        super().__init__('prod')
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (32.0, -0.05, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
-                'perf': (47.5, -0.40, None)
+                'perf': (42.0, -0.20, None)
             },
         }
 
 
 class GromacsCPUCheck(GromacsBaseCheck):
-    def __init__(self, variant, **kwargs):
-        super().__init__('gromacs_cpu_%s_check' % variant,
-                         'md.log', **kwargs)
+    def __init__(self, variant):
+        super().__init__('md.log')
 
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.descr = 'GROMACS CPU check'
+        self.name = 'gromacs_cpu_%s_check' % variant
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
                                 '-nb cpu -s herflat.tpr ').split()
 
@@ -113,30 +114,30 @@ class GromacsCPUCheck(GromacsBaseCheck):
             self.num_tasks_per_node = 36
 
 
+@rfm.simple_test
 class GromacsCPUProdCheck(GromacsCPUCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
+    def __init__(self):
+        super().__init__('prod')
         self.tags |= {'production'}
         self.reference = {
             'dom:mc': {
-                'perf': (38.0, -0.05, None)
+                'perf': (42.7, -0.05, None)
             },
             'daint:mc': {
-                'perf': (73.0, -0.50, None)
+                'perf': (70.4, -0.20, None)
             },
         }
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test([1], [2], [4], [6], [8])
 class GromacsCPUMonchAcceptance(GromacsBaseCheck):
-    def __init__(self, num_nodes, **kwargs):
-        nodes_label = 'node' if num_nodes == 1 else 'nodes'
-        super().__init__('gromacs_cpu_monch_%d_%s_check'
-                         % (num_nodes, nodes_label), 'md.log', **kwargs)
+    def __init__(self, num_nodes):
+        super().__init__('md.log')
 
         self.valid_systems = ['monch:compute']
-        self.descr = 'GROMACS CPU check on %d %s on monch' % (num_nodes,
-                                                              nodes_label)
-
+        self.descr = 'GROMACS %d-node CPU check on monch' % num_nodes
+        self.name = 'gromacs_cpu_monch_%d_node_check' % num_nodes
         self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
                                 '-nsteps 5000 -nb cpu -s herflat.tpr ').split()
 
@@ -151,11 +152,3 @@ class GromacsCPUMonchAcceptance(GromacsBaseCheck):
                 'perf': (reference_by_nodes[num_nodes], -0.15, None)
             }
         }
-
-
-def _get_checks(**kwargs):
-    return list(itertools.chain(
-        [GromacsGPUMaintCheck(**kwargs),
-         GromacsGPUProdCheck(**kwargs),
-         GromacsCPUProdCheck(**kwargs)],
-        [GromacsCPUMonchAcceptance(n, **kwargs) for n in [1, 2, 4, 6, 8]]))

@@ -7,10 +7,8 @@ import unittest
 from datetime import datetime
 
 import reframe.core.logging as rlog
-from reframe.core.exceptions import ReframeError
+from reframe.core.exceptions import ConfigError, ReframeError
 from reframe.core.pipeline import RegressionTest
-from reframe.core.systems import System
-from reframe.frontend.resources import ResourcesManager
 
 
 class TestLogger(unittest.TestCase):
@@ -32,10 +30,7 @@ class TestLogger(unittest.TestCase):
 
         # Logger adapter with an associated check
         self.logger_with_check = rlog.LoggerAdapter(
-            self.logger, RegressionTest(
-                'random_check', '.', System('foosys'), ResourcesManager()
-            )
-        )
+            self.logger, RegressionTest('random_check', '.'))
 
     def tearDown(self):
         os.remove(self.logfile)
@@ -100,25 +95,25 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(self.found_in_logfile('foo'))
 
 
-class TestLoggerConfiguration(unittest.TestCase):
+class TestLoggingConfiguration(unittest.TestCase):
     def setUp(self):
         tmpfd, self.logfile = tempfile.mkstemp(dir='.')
         os.close(tmpfd)
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                self.logfile: {
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': self.logfile,
                     'level': 'WARNING',
                     'format': '[%(asctime)s] %(levelname)s: '
                               '%(check_name)s: %(message)s',
                     'datefmt': '%F',
                     'append': True,
                 }
-            }
+            ]
         }
-        self.check = RegressionTest(
-            'random_check', '.', System('gagsys'), ResourcesManager()
-        )
+        self.check = RegressionTest('random_check', '.')
 
     def tearDown(self):
         if os.path.exists(self.logfile):
@@ -153,7 +148,7 @@ class TestLoggerConfiguration(unittest.TestCase):
                           self.logging_config)
 
     def test_empty_handlers(self):
-        self.logging_config['handlers'] = {}
+        self.logging_config['handlers'] = []
         self.assertRaises(ValueError, rlog.configure_logging,
                           self.logging_config)
 
@@ -180,14 +175,16 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_handler_noappend(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                self.logfile: {
+            'handlers': [
+                {
+                    'type': 'file',
+                    'name': self.logfile,
                     'level': 'WARNING',
                     'format': '[%(asctime)s] %(levelname)s: %(message)s',
                     'datefmt': '%F',
                     'append': False,
                 }
-            }
+            ]
         }
 
         rlog.configure_logging(self.logging_config)
@@ -201,18 +198,76 @@ class TestLoggerConfiguration(unittest.TestCase):
         self.assertFalse(self.found_in_logfile('foo'))
         self.assertTrue(self.found_in_logfile('bar'))
 
-    # FIXME: this test is not so robust
     def test_date_format(self):
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().warning('foo')
         self.assertTrue(self.found_in_logfile(datetime.now().strftime('%F')))
 
+    def test_unknown_handler(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [
+                {'type': 'stream', 'name': 'stderr'},
+                {'type': 'foo'}
+            ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_handler_syntax_no_type(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'name': 'stderr'}]
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_handler_convert_syntax(self):
+        old_syntax = {
+            self.logfile: {
+                'level': 'INFO',
+                'format': '%(message)s',
+                'append': False,
+            },
+            '&1': {
+                'level': 'INFO',
+                'format': '%(message)s'
+            },
+            '&2': {
+                'level': 'ERROR',
+                'format': '%(message)s'
+            }
+        }
+
+        new_syntax = [
+            {
+                'type': 'file',
+                'name': self.logfile,
+                'level': 'INFO',
+                'format': '%(message)s',
+                'append': False
+            },
+            {
+                'type': 'stream',
+                'name': 'stdout',
+                'level': 'INFO',
+                'format': '%(message)s'
+            },
+            {
+                'type': 'stream',
+                'name': 'stderr',
+                'level': 'ERROR',
+                'format': '%(message)s'
+            }
+        ]
+
+        self.assertCountEqual(new_syntax,
+                              rlog._convert_handler_syntax(old_syntax))
+
     def test_stream_handler_stdout(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&1': {},
-            }
+            'handlers': [{'type': 'stream', 'name': 'stdout'}],
         }
         rlog.configure_logging(self.logging_config)
         raw_logger = rlog.getlogger().logger
@@ -225,9 +280,7 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_stream_handler_stderr(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&2': {},
-            }
+            'handlers': [{'type': 'stream', 'name': 'stderr'}],
         }
 
         rlog.configure_logging(self.logging_config)
@@ -241,13 +294,41 @@ class TestLoggerConfiguration(unittest.TestCase):
     def test_multiple_handlers(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': {
-                '&1': {},
-                self.logfile: {},
-            }
+            'handlers': [
+                {'type': 'stream', 'name': 'stderr'},
+                {'type': 'file', 'name': self.logfile}
+            ],
         }
         rlog.configure_logging(self.logging_config)
         self.assertEqual(len(rlog.getlogger().logger.handlers), 2)
+
+    def test_file_handler_timestamp(self):
+        self.logging_config['handlers'][0]['timestamp'] = '%F'
+        rlog.configure_logging(self.logging_config)
+        rlog.getlogger().warning('foo')
+        logfile = '%s_%s' % (self.logfile, datetime.now().strftime('%F'))
+        self.assertTrue(os.path.exists(logfile))
+        os.remove(logfile)
+
+    def test_file_handler_syntax_no_name(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [
+                {'type': 'file'}
+            ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_stream_handler_unknown_stream(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [
+                {'type': 'stream', 'name': 'foo'},
+            ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
 
     def test_global_noconfig(self):
         # This is to test the case when no configuration is set, but since the
