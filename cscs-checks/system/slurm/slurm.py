@@ -12,6 +12,9 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops', 'production'}
         self.num_tasks_per_node = 1
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+
         self.maintainers = ['RS', 'VK']
 
     def setup(self, *args, **kwargs):
@@ -32,6 +35,9 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops', 'production'}
         self.num_tasks_per_node = 1
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+
         self.maintainers = ['RS', 'VK']
 
     def setup(self, *args, **kwargs):

@@ -16,7 +16,8 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-        elif self.current_system.name in ['kesch']:
+        elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             self.variables = {
                 'MV2_USE_CUDA': '1',

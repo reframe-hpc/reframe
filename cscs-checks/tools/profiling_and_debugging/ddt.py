@@ -28,6 +28,9 @@ class DdtCheck(rfm.RegressionTest):
             # 'PrgEnv-intel': ' -O2 -qopenmp',
             # 'PrgEnv-pgi': ' -O2 -mp'
         }
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4

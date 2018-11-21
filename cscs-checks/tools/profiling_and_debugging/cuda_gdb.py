@@ -16,6 +16,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.sourcesdir = 'src/Cuda'
         self.executable = 'cuda-gdb cuda_gdb_check'
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
         else:
             self.modules = ['craype-accel-nvidia60']

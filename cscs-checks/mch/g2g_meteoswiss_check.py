@@ -10,6 +10,7 @@ class G2GMeteoswissTest(rfm.RegressionTest):
         self.strict_check = False
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
+        self.exclusive_access = True
         self.modules = ['cmake', 'craype-accel-nvidia35']
         self.pre_run = ["export EXECUTABLE=$(ls src/ | "
                         "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"]

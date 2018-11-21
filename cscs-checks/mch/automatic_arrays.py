@@ -11,7 +11,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                                     'PrgEnv-gnu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['kesch']:
+        elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
 
