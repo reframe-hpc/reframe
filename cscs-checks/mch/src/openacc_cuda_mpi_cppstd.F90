@@ -5,10 +5,8 @@ program openacc_cuda_mpi_cppstd
   implicit none
 
 
-#ifdef USE_MPI
   include 'mpif.h'
   integer :: status(MPI_STATUS_SIZE)
-#endif
 
   integer :: ierr, i
   integer :: cpp_std_sum ! Sum done with C++ call to STD lib
@@ -21,7 +19,6 @@ program openacc_cuda_mpi_cppstd
   real, parameter :: EXPECTED_CUDA_SUM = 110.0
   real, parameter :: EXPECTED_CPP_STD_SUM = 55.0
 
-#ifdef USE_MPI
   call MPI_Init(ierr)
   call MPI_Comm_size(MPI_COMM_WORLD, mpi_size, ierr)
   call MPI_Comm_rank(MPI_COMM_WORLD, mpi_rank, ierr)
@@ -32,24 +29,12 @@ program openacc_cuda_mpi_cppstd
   if (mpi_rank == 0) write(*,*) "MPI test on CPU using ",mpi_size,"tasks"
 #endif
 
-#else
-
-  mpi_rank = 0
-#ifdef _OPENACC
-  write(*,*) "Single node test on GPU with OpenACC"
-#else
-  write(*,*) "Single node test test on CPU"
-#endif
-   
-#endif
-
-#ifdef USE_MPI
   !$acc data copy(mydata,data_sum)
   !$acc host_data use_device(mydata,data_sum)
   call MPI_Reduce(mydata, data_sum, 1, MPI_INTEGER8, MPI_SUM, 0, MPI_COMM_WORLD, ierr)
   !$acc end host_data
   !$acc end data
-#endif
+
 
   if(mpi_rank == 0) then
 
@@ -91,11 +76,9 @@ program openacc_cuda_mpi_cppstd
     else if (sum(f3) /= EXPECTED_CUDA_SUM) then
       write (*,*) "Result : FAIL"
       write (*,*) "Expected value sum(f3): ", EXPECTED_CUDA_SUM, "actual value:", sum(f3)
-#ifdef USE_MPI
     else if (data_sum(1) /= ref_val) then
       write (*,*) "Result : FAIL"
       write (*,*) "Expected value data_sum: ", ref_val, "actual value:", data_sum(1)
-#endif
     else if (cpp_std_sum /= EXPECTED_CPP_STD_SUM) then
       write (*,*) "Result : FAIL"
       write (*,*) "Expected value stdres: ", EXPECTED_CPP_STD_SUM, "actual value:", cpp_std_sum
@@ -111,9 +94,7 @@ program openacc_cuda_mpi_cppstd
     write (*,*) "Result: OK"
   end if
 
-#ifdef USE_MPI
   call MPI_Finalize(ierr);
-#endif
 
 contains
   subroutine call_cuda_kernel_with_copy(f1,f2,n)
