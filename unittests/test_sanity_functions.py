@@ -505,11 +505,7 @@ class TestUtilityFunctions(unittest.TestCase):
 
         # Test deferred expressions
         d = [1, 2, 2, 1]
-        dl = make_deferrable(d)
-        self.assertEqual(2, sn.count_uniq(dl))
-
-        d.extend([3, 4, 3])
-        self.assertEqual(4, sn.count_uniq(dl))
+        self.assertEqual(2, sn.count_uniq(make_deferrable(d)))
 
     def test_glob(self):
         filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
