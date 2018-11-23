@@ -58,9 +58,13 @@ class LocalJob(sched.Job):
     def emit_preamble(self):
         return []
 
-    def guess_num_tasks(self):
-        raise JobError(
-            'local scheduler does not support flexible number of tasks')
+    def get_partition_nodes(self):
+        raise NotImplementedError(
+            'local scheduler does not support listing of available nodes')
+
+    def filter_nodes(self, nodes, options):
+        raise NotImplementedError(
+            'local scheduler does not support filtering of available nodes')
 
     def _kill_all(self):
         """Send SIGKILL to all the processes of the spawned job."""

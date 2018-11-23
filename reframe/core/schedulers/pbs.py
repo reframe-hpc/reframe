@@ -13,7 +13,7 @@ from datetime import datetime
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
-from reframe.core.exceptions import (SpawnedProcessError, JobError)
+from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
@@ -27,7 +27,7 @@ PBS_OUTPUT_WRITEBACK_WAIT = 3
 class PbsJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._prefix  = '#PBS'
+        self._prefix = '#PBS'
         self._time_finished = None
 
         # Optional part of the job id refering to the PBS server
@@ -45,7 +45,7 @@ class PbsJob(sched.Job):
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
         verb_opts = []
-        for opt in self.options:
+        for opt in (*self.sched_access, *self.options):
             if opt.startswith('-'):
                 rem_opts.append(opt)
             elif opt.startswith('#'):
@@ -88,9 +88,12 @@ class PbsJob(sched.Job):
         preamble.append('cd %s' % self.workdir)
         return preamble
 
-    def guess_num_tasks(self):
-        raise JobError(
-            'pbs scheduler does not support flexible number of tasks')
+    def get_partition_nodes(self):
+        raise NotImplementedError('pbs backend does not support node listing')
+
+    def filter_nodes(self, nodes, options):
+        raise NotImplementedError('pbs backend does not support '
+                                  'node filtering')
 
     def submit(self):
         # `-o` and `-e` options are only recognized in command line by the PBS
