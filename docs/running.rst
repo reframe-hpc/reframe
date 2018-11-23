@@ -717,7 +717,7 @@ ReFrame supports an additional logging facility for recording performance values
 This is configured by the ``perf_logging_config`` variables, whose syntax is the same as for the ``logging_config``:
 
 .. literalinclude:: ../reframe/settings.py
-  :lines: 80-98
+  :lines: 80-99
   :dedent: 4
 
 Performance logging introduces two new log record handlers, specifically designed for this purpose.
@@ -774,6 +774,7 @@ The attributes of this handler are the following:
   - ``check_perf_ref``: The reference performance value of a certain performance variable.
   - ``check_perf_value``: The performance value obtained by this test for a certain performance variable.
   - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
+  - ``check_perf_unit``: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
 
 Using the default performance log format, the resulting log entries look like the following:
 
