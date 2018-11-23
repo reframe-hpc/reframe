@@ -15,7 +15,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         elif self.current_system.name in ['kesch']:
             self.modules = ['craype-accel-nvidia35']
             # FIXME: workaround -- the variable should not be needed since
-            # there is no gpu-direct in the check
+            # there is no GPUdirect in this check
             self.variables = {'MV2_USE_CUDA': '1'}
 
         # This tets requires an MPI compiler, although it uses a single task
@@ -46,7 +46,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'daint:gpu': {'time': (6.4E-05, None, 0.15)},
                 'dom:gpu': {'time': (6.3E-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
-            },
+            }
         }
 
         self.maintainers = ['AJ', 'VK']
@@ -54,20 +54,17 @@ class AutomaticArraysCheck(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
+            envname = 'PrgEnv-cray'
             self.build_system.fflags += ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
+            envname = 'PrgEnv-pgi'
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
             elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
-
-        if environ.name.startswith('PrgEnv-cray'):
-            envname = 'PrgEnv-cray'
         elif environ.name.startswith('PrgEnv-gnu'):
             envname = 'PrgEnv-gnu'
-        elif environ.name.startswith('PrgEnv-pgi'):
-            envname = 'PrgEnv-pgi'
         else:
             envname = environ.name
 

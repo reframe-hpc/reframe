@@ -10,13 +10,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.name = 'OpenaccCudaCPP' + name_suffix
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        # FIXME: temporary workaround until the mvapich module is fixed
-        # afterwards 'PrgEnv-pgi-c2sm-gpu' and 'PrgEnv-gnu-c2sm-gpu'
-        # will be added which is not implemented now
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                    'PrgEnv-gnu',
-                                    'PrgEnv-cray-c2sm-gpu',
-                                   ]
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
         if self.current_system.name in ['daint', 'dom']:
@@ -25,12 +19,15 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             self.num_tasks_per_node = 12
             self.num_gpus_per_node = 1
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_60"']
-        elif self.current_system.name in ['kesch']:
+        elif self.current_system.name == 'kesch':
             self.modules = ['craype-accel-nvidia35']
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_37"']
+            # FIXME: temporary workaround until the mvapich module is fixed;
+            #        'PrgEnv-{pgi,gnu}-c2sm-gpu' will be added later
+            self.valid_prog_environs += ['PrgEnv-cray-c2sm-gpu']
 
         if withmpi:
             self.build_system.cppflags = ['-DUSE_MPI']
@@ -73,18 +70,19 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                                              '-Mnorpath', '-lstdc++']
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
-                self.build_system.ldflags = [
-                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++']
+                self.build_system.ldflags = ['-acc', '-ta:tesla:cc35,cuda8.0',
+                                             '-lstdc++']
                 if environ.name == 'PrgEnv-pgi-nompi':
                     self.build_system.ldflags += [
                         '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
-                        '-lcublas', '-lcudart']
+                        '-lcublas', '-lcudart'
+                    ]
         elif environ.name.startswith('PrgEnv-gnu'):
             self.build_system.ldflags = ['-lstdc++']
-            if self.current_system.name == 'kesch' and (environ.name ==
-                'PrgEnv-gnu-nompi' or environ.name == 'PrgEnv-gnu-c2sm'):
+            if self.current_system.name == 'kesch':
                 self.build_system.ldflags += [
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
-                    '-lcublas', '-lcudart']
+                    '-lcublas', '-lcudart'
+                ]
 
         super().setup(partition, environ, **job_opts)
