@@ -20,6 +20,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             self.num_gpus_per_node = 1
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_60"']
         elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             self.num_tasks = 8
             self.num_tasks_per_node = 8

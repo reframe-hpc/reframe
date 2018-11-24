@@ -13,6 +13,7 @@ class GpuBurnTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             # NOTE: The first option indicates the precision (-d for double)
             #       while the seconds is the time (in secs) to run the test.
