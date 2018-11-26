@@ -2,12 +2,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test([True], [False])
+@rfm.simple_test
 class OpenaccCudaCpp(rfm.RegressionTest):
-    def __init__(self, withmpi):
+    def __init__(self):
         super().__init__()
-        name_suffix = 'WithMPI' if withmpi else 'WithoutMPI'
-        self.name = 'OpenaccCudaCPP' + name_suffix
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-gnu']
@@ -30,30 +28,16 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             #        'PrgEnv-{pgi,gnu}-c2sm-gpu' will be added later
             self.valid_prog_environs += ['PrgEnv-cray-c2sm-gpu']
 
-        if withmpi:
-            self.build_system.cppflags = ['-DUSE_MPI']
-            if self.current_system.name in ['daint', 'dom']:
-                self.variables = {
-                    'MPICH_RDMA_ENABLED_CUDA': '1',
-                    'CRAY_CUDA_MPS': '1'
-                }
-            elif self.current_system.name in ['kesch']:
-                self.variables = {
-                    'MV2_USE_CUDA': '1',
-                    'G2G': '1'
-                }
-        else:
-            if self.current_system.name == 'kesch':
-                self.valid_prog_environs = ['PrgEnv-cray-nompi',
-                                            'PrgEnv-pgi-nompi',
-                                            'PrgEnv-gnu-nompi',
-                                            'PrgEnv-cray-c2sm',
-                                            'PrgEnv-pgi-c2sm',
-                                            'PrgEnv-gnu-c2sm']
-
-            self.num_tasks = 1
-            self.num_tasks_per_node = 1
-            self.num_gpus_per_node = 1
+        if self.current_system.name in ['daint', 'dom']:
+            self.variables = {
+                'MPICH_RDMA_ENABLED_CUDA': '1',
+                'CRAY_CUDA_MPS': '1'
+            }
+        elif self.current_system.name in ['kesch']:
+            self.variables = {
+                'MV2_USE_CUDA': '1',
+                'G2G': '1'
+            }
 
         self.executable = 'openacc_cuda_mpi_cppstd'
         self.sanity_patterns = sn.assert_found(r'Result:\s+OK', self.stdout)
