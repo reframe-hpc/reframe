@@ -11,9 +11,9 @@ class HPCGCheck(rfm.RegressionTest):
         super().__init__()
 
         self.descr = 'HPCG check'
-        self.valid_systems = ['daint:gpu']
+        self.valid_systems = ['daint:mc', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        #self.modules = []
+        self.modules = ['craype-hugepages8M']
         #self.sourcesdir = os.path.join(self.current_system.resourcesdir,
         #                               'HPCG')
         self.build_system = 'Make'
@@ -23,7 +23,7 @@ class HPCGCheck(rfm.RegressionTest):
         self.prebuild_cmd = ['git clone https://github.com/hpcg-benchmark/hpcg.git', 'cd hpcg']
 
         self.executable = 'hpcg/bin/xhpcg'
-        #self.prerun = ['chmod +x %s' % self.executable]
+        self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
         output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
         self.sanity_patterns = sn.assert_eq(4, sn.count(
             sn.findall(r'PASSED', output_file)))
@@ -32,16 +32,18 @@ class HPCGCheck(rfm.RegressionTest):
         self.num_cpus_per_task = 1
         self.variables  = {
             #'CXX' : 'CC',
-            #'PMI_NO_FORK': '1',
-            #'MPICH_USE_DMAPP_COLL': '1',
-            'OMP_SCHEDULE': 'static',
+            #'OMP_SCHEDULE': 'static',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             #'HUGETLB_VERBOSE': '0',
-            #'HUGETLB_DEFAULT_PAGE_SIZE': '8M',
+            #'PMI_NO_FORK': '1',
+            #'MPICH_USE_DMAPP_COLL': '1',
         }
         self.reference = {
             'daint:gpu': {
-                'perf': (2.2, -0.1, 0.1)
+                'perf': (7.6, -0.1, 0.1)
+            },
+            'daint:mc': {
+                'perf': (13.4, -0.1, 0.1)
             },
         }
 
