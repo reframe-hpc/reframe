@@ -293,11 +293,24 @@ class SlurmJob(sched.Job):
             reason, reason_details = reason_descr, None
 
         if reason in self._cancel_reasons:
-            # Here we handle the case were the UnavailableNodes list is empty,
-            # which actually means that the job is pending
             if reason == 'ReqNodeNotAvail' and reason_details:
-                if re.match(r'UnavailableNodes:$', reason_details.strip()):
-                    return
+                nodes_match = re.match(
+                    r'UnavailableNodes:(?P<node_names>\S+)?',
+                    reason_details.strip())
+                if nodes_match:
+                    node_names = node_match.group('node_names')
+                    if nodes_names:
+                        # Here we retrieve the info of the unavailable nodes
+                        # and check if they are indeed down
+                        nodes = self._get_nodes_by_name(node_names)
+                        down_nodes = [n for n in nodes if n.is_down()]
+                        if not down_nodes:
+                            return
+                    else:
+                        # Here we handle the case where the UnavailableNodes
+                        # list is empty which actually means that the job
+                        # is pending
+                        return
 
             self.cancel()
             reason_msg = ('job cancelled because it was blocked due to '
@@ -420,6 +433,13 @@ class SlurmNode:
 
     def is_available(self):
         return self._state == 'IDLE'
+
+    def is_down(self):
+        return any(
+            self.in_state(s) for s in ['DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'])
+
+    def in_state(self, state):
+        return state in self._state
 
     @property
     def active_features(self):
