@@ -20,6 +20,7 @@ double test_alloc(size_t n)
     /* time fo fill */
     std::fill(ptr, ptr + n, 0);
     double t2 = wtime();
+    t0 += ptr[0];
     std::free(ptr);
 
     return (t1 - t0) - (t2 - t1);
