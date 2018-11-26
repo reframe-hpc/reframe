@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 class OpenaccCudaCpp(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.name = 'OpenaccCudaCPP'
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-gnu']
