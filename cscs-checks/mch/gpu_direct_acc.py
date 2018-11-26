@@ -9,14 +9,19 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+
+        # FIXME: temporary workaround until the mvapich module is fixed;
+        #        'PrgEnv-pgi-c2sm-gpu' will be added later
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray-c2sm-gpu',
+                                    'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-        elif self.current_system.name in ['kesch']:
+        elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             self.variables = {
                 'MV2_USE_CUDA': '1',

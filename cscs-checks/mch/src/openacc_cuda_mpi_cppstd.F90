@@ -55,9 +55,11 @@ program openacc_cuda_mpi_cppstd
     ! Call a CUDA kernel with host arrays 
     call call_cuda_kernel_with_copy(f1, f2, NSIZE)
 
+#ifdef _OPENACC
     ! Call a CUDA kernel without data copy, use device ptr
     call call_cuda_kernel_no_copy(f3, f2, NSIZE)
     !$acc update host(f3)
+#endif
 
     ! Call a C++ function using STD lib
     call call_cpp_std(f2, NSIZE, cpp_std_sum)
@@ -100,8 +102,8 @@ contains
   subroutine call_cuda_kernel_with_copy(f1,f2,n)
     use, intrinsic :: iso_c_binding
     implicit none
-    real, intent(inout) :: f1(:)
-    real, intent(in) :: f2(:)
+    real, intent(inout), target :: f1(:)
+    real, intent(in), target :: f2(:)
     integer, intent(in) :: n
   
     interface
@@ -118,8 +120,8 @@ contains
   subroutine call_cuda_kernel_no_copy(f1,f2,n)
     use, intrinsic :: iso_c_binding
     implicit none
-    real, intent(inout) :: f1(:)
-    real, intent(in) :: f2(:)
+    real, intent(inout), target :: f1(:)
+    real, intent(in), target :: f2(:)
     integer, intent(in) :: n
   
     interface
