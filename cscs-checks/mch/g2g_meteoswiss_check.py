@@ -9,6 +9,9 @@ class G2GMeteoswissTest(rfm.RegressionTest):
         self.descr = 'G2G Meteoswiss check with G2G=%s' % g2g
         self.strict_check = False
         self.valid_systems = ['kesch:cn']
+
+        # FIXME: temporary workaround until the mvapich module is fixed;
+        #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['cmake', 'craype-accel-nvidia35']
         self.pre_run = ["export EXECUTABLE=$(ls src/ | "

@@ -344,6 +344,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_perf_ref': None,
                 'check_perf_lower_thres': None,
                 'check_perf_upper_thres': None,
+                'check_perf_unit': None,
                 'osuser':  os_ext.osuser()  or '<unknown>',
                 'osgroup': os_ext.osgroup() or '<unknown>',
                 'check_tags': None,
@@ -382,7 +383,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_jobid'] = self.check.job.jobid
 
     def log_performance(self, level, tag, value, ref,
-                        low_thres, upper_thres, msg=None):
+                        low_thres, upper_thres, unit=None, *, msg=None):
 
         # Update the performance-relevant extras and log the message
         self.extra['check_perf_var'] = tag
@@ -390,6 +391,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_perf_ref'] = ref
         self.extra['check_perf_lower_thres'] = low_thres
         self.extra['check_perf_upper_thres'] = upper_thres
+        self.extra['check_perf_unit'] = unit
         if msg is None:
             msg = 'sent by ' + self.extra['osuser']
 
