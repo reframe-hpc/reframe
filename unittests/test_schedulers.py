@@ -779,10 +779,10 @@ class TestSlurmNode(unittest.TestCase):
         self.idle_node = SlurmNode(idle_node_description)
         self.idle_drained = SlurmNode(idle_drained_node_description)
 
-    def test_state(self):
-        self.assertEqual(self.allocated_node.state, 'ALLOCATED')
-        self.assertEqual(self.idle_node.state, 'IDLE')
-        self.assertEqual(self.idle_drained.state, 'IDLE+DRAIN')
+    def test_states(self):
+        self.assertEqual(self.allocated_node.states, {'ALLOCATED'})
+        self.assertEqual(self.idle_node.states, {'IDLE'})
+        self.assertEqual(self.idle_drained.states, {'IDLE', 'DRAIN'})
 
     def test_equals(self):
         self.assertEqual(self.allocated_node, self.allocated_node_copy)

@@ -298,17 +298,15 @@ class SlurmJob(sched.Job):
                     r'UnavailableNodes:(?P<node_names>\S+)?',
                     reason_details.strip())
                 if nodes_match:
-                    node_names = node_match.group('node_names')
+                    node_names = node_match['node_names']
                     if nodes_names:
-                        # Here we retrieve the info of the unavailable nodes
+                        # Retrieve the info of the unavailable nodes
                         # and check if they are indeed down
                         nodes = self._get_nodes_by_name(node_names)
-                        down_nodes = [n for n in nodes if n.is_down()]
-                        if not down_nodes:
+                        if not any(n.is_down() for n in nodes):
                             return
                     else:
-                        # Here we handle the case where the UnavailableNodes
-                        # list is empty which actually means that the job
+                        # List of unavailable nodes is empty; assume job
                         # is pending
                         return
 
@@ -420,7 +418,8 @@ class SlurmNode:
             'Partitions', node_descr).split(','))
         self._active_features = set(self._extract_attribute(
             'ActiveFeatures', node_descr).split(','))
-        self._state = self._extract_attribute('State', node_descr)
+        self._states = set(
+            self._extract_attribute('State', node_descr).split('+'))
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -432,14 +431,13 @@ class SlurmNode:
         return hash(self.name)
 
     def is_available(self):
-        return self._state == 'IDLE'
+        return self._states == {'IDLE'}
 
     def is_down(self):
-        return any(
-            self.in_state(s) for s in ['DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'])
+        return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)
 
     def in_state(self, state):
-        return state in self._state
+        return state in self._states
 
     @property
     def active_features(self):
@@ -454,8 +452,8 @@ class SlurmNode:
         return self._partitions
 
     @property
-    def state(self):
-        return self._state
+    def states(self):
+        return self._states
 
     def _extract_attribute(self, attr_name, node_descr):
         attr_match = re.search(r'%s=(\S+)' % attr_name, node_descr)
