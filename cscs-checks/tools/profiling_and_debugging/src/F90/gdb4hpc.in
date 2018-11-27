@@ -1,0 +1,33 @@
+# this line is mandatory (cray case #224617):
+maint set sync on
+# 1 MPI * x OpenMP:
+launch $tst{1} ./jacobi --sbatch=./gdb4hpc.slm
+break _jacobi.F90:90
+# ----1
+continue
+list 90,91
+print residual
+#printf "(_jacobi.F90:90)] residual:%f\n", residual
+# ----2
+continue
+print residual
+#printf "(_jacobi.F90:90)] residual:%f\n", residual
+# ----3
+continue
+print residual
+#printf "(_jacobi.F90:90)] residual:%f\n", residual
+# ----4
+continue
+print residual
+#printf "(_jacobi.F90:90)] residual:%f\n", residual
+# ----5
+continue
+print residual
+#printf "(_jacobi.F90:90)] residual:%f\n", residual
+quit
+
+# can't use printf with gdb4hpc until this cray case is solved:
+# CASE #227672 - GDB4HPC: PRINTF SUPPORT
+# printf "(_jacobi.F90:90)] residual:%f\n", residual
+
+# TODO: tracepoints

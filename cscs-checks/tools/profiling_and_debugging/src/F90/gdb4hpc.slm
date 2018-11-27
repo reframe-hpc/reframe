@@ -1,0 +1,27 @@
+#!/bin/bash -l
+#SBATCH --job-name="rfm_GDB4HPC_Check_F90_job"
+#SBATCH --time=0:1:0
+
+#SBATCH --ntasks=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --ntasks-per-core=1
+
+#SBATCH --output=o
+#SBATCH --error=o
+#SBATCH --constraint=gpu
+
+module load daint-gpu
+module unload PrgEnv-cray
+module load PrgEnv-gnu
+module load gdb4hpc
+module list -t 
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export ITERATIONS=5
+export OMP_PROC_BIND=true
+
+#cray_debug_start
+srun ./jacobi
+#cray_debug_end
+
