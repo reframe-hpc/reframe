@@ -14,18 +14,18 @@ class SpecAccelCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['cudatoolkit']
-        self.sourcesdir = None
+        #self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'spec-accel-v1.2')
+        self.sourcesdir = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2'
         self.executable = 'runspec '
-	self.executable_opts = ['--config=daint-gpu-cuda8',
+        self.executable_opts = ['--config=daint-gpu-cuda8',
                                 ' --platform NVIDIA',
                                 ' --tune=base',
                                 ' --device GPU',
                                 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
-				'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+                                'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
 
-
-        spec_script = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2/install.sh'
-        self.pre_run = [spec_script + ' -d . -f', 'source ./shrc']
+        #spec_script = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2/install.sh'
+        self.pre_run = ['./install.sh -d . -f', 'source ./shrc']
 
         #pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',
         #                            self.stdout, 'pi', float)
