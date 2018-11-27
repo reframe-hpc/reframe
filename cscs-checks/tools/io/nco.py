@@ -23,7 +23,7 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn', 'kesch:cn']
+                              'kesch:pn']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['nco']
