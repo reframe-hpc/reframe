@@ -11,25 +11,21 @@ class SpecAccelCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'SPEC-accel benchmark'
-        self.valid_systems = ['daint:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['cudatoolkit']
-        #self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'spec-accel-v1.2')
-        self.sourcesdir = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2'
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'SPEC_ACCELv1.2')
+        #self.sourcesdir = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2'
         self.executable = 'runspec '
-        self.executable_opts = ['--config=daint-gpu-cuda8',
+        self.executable_opts = ['--config=daint-gpu',
                                 ' --platform NVIDIA',
                                 ' --tune=base',
                                 ' --device GPU',
                                 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
                                 'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
 
-        #spec_script = '/project/csstaff/sebkelle/spec-accel/SPEC_ACCELv1.2/install.sh'
         self.pre_run = ['./install.sh -d . -f', 'source ./shrc']
 
-        #pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',
-        #                            self.stdout, 'pi', float)
-        #self.sanity_patterns = sn.assert_lt(sn.abs(pi_value - math.pi), 0.01)
         self.sanity_patterns = sn.assert_found(r'Running Benchmarks', self.stdout)
 
         self.maintainers = ['SK']
