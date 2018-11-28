@@ -35,7 +35,7 @@ class DGEMMTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
-        self.tags = {'production'}
+        self.tags = {'diagnostic'}
 
 
     def setup(self, partition, environ, **job_opts):
@@ -53,36 +53,30 @@ class DGEMMTest(rfm.RegressionTest):
                                          '-lpthread', '-lgfortran']
 
         self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
         super().setup(partition, environ, **job_opts)
 
 
     @sn.sanity_function
     def eval_sanity(self):
-        failure_msg = ""
-
         all_tested_nodes = sn.evaluate(sn.extractall(
-            r'(?P<name>.*):\s+Time for \d+ DGEMM operations',
-            self.stdout
-        ))
+            r'(?P<hostname>\S+):\s+Time for \d+ DGEMM operations',
+            self.stdout, 'hostname'))
         num_tested_nodes = len(all_tested_nodes)
 
-        # if num_tested_nodes != self.job.num_tasks:
         if num_tested_nodes != self.job.num_tasks:
-            failure_msg = ('Requested %s nodes, but found %s nodes' %
+            failure_msg = ('Requested %s node(s), but found %s node(s)' %
                             (self.job.num_tasks, num_tested_nodes))
-            sn.assert_false(failure_msg, msg=failure_msg)
+            return sn.assert_false(failure_msg, msg=failure_msg)
 
-        for node in all_tested_nodes:
-            nodename  = node.group('name')
-
+        for hostname in all_tested_nodes:
             if self.sys_reference[self.current_partition.fullname]:
                 partition_name = self.current_partition.fullname
-                ref_name = '%s:%s' % (partition_name, nodename)
+                ref_name = '%s:%s' % (partition_name, hostname)
                 self.reference[ref_name] = self.sys_reference[partition_name]
-                self.perf_patterns[nodename] = sn.extractsingle(
+                self.perf_patterns[hostname] = sn.extractsingle(
                     r'%s:\s+Flops based on.*:\s+(?P<gflops>.*)\sGFlops\/sec' %
-                    nodename, self.stdout, 'gflops', float)
+                    hostname, self.stdout, 'gflops', float)
 
-        return sn.assert_false(failure_msg, msg=failure_msg)
+        return True
