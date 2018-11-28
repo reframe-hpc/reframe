@@ -63,7 +63,7 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_gdr'],
+                    'modules': ['PrgEnv-pgi/18.10'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
