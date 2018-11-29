@@ -3,7 +3,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super().__init__()
 
         self.descr = 'HPCG reference benchmark'
@@ -12,30 +12,34 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.modules = ['craype-hugepages8M']
         self.build_system = 'Make'
         self.build_system.options = ['arch=MPI_GCC_OMP']
-        self.sourcesdir = None
-        self.prebuild_cmd = ['git clone https://github.com/hpcg-benchmark/hpcg.git', 'cd hpcg']
+        self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
 
-        self.executable = 'hpcg/bin/xhpcg'
+        self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
         output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
         self.sanity_patterns = sn.assert_eq(4, sn.count(
             sn.findall(r'PASSED', output_file)))
-        self.num_tasks = 12
-        self.num_tasks_per_node = 12
+
         self.num_cpus_per_task = 1
+        self.system_num_tasks = {
+            'daint:mc':  36,
+            'daint:gpu': 12,
+            'dom:mc':  36,
+            'dom:gpu': 12,
+        }
 
         self.reference = {
             'daint:gpu': {
-                'perf': (7.6, -0.1, 0.1)
+                'perf': (7.6, -0.1, None)
             },
             'daint:mc': {
-                'perf': (13.4, -0.1, 0.1)
+                'perf': (13.4, -0.1, None)
             },
             'dom:gpu': {
-                'perf': (7.6, -0.1, 0.1)
+                'perf': (7.6, -0.1, None)
             },
             'dom:mc': {
-                'perf': (13.4, -0.1, 0.1)
+                'perf': (13.4, -0.1, None)
             },
         }
 
@@ -46,13 +50,18 @@ class HPCGCheckRef(rfm.RegressionTest):
         }
         self.maintainers = ['SK']
 
+    def setup(self, partition, environ, **job_opts):
+        self.num_tasks = self.system_num_tasks[self.current_system.name
+                                               + ":" + partition.name]
+        super().setup(partition, environ, **job_opts)
+
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest):
-    def __init__(self, **kwargs):
+    def __init__(self):
         super().__init__()
 
         self.descr = 'HPCG benchmark Intel MKL implementation'
-        self.valid_systems = ['dom:mc']
+        self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.modules = ['craype-hugepages8M']
         #self.sourcesdir needed for "CrayXC" config file
@@ -84,7 +93,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
             sn.findall(r'PASSED', self.outfile_lazy)))
         self.reference = {
             'dom:mc': {
-                'perf': (22, -0.1, 0.1)
+                'perf': (22, -0.1, None)
             },
         }
 
@@ -104,6 +113,6 @@ class HPCGCheckMKL(rfm.RegressionTest):
     @sn.sanity_function
     def outfile_lazy(self):
         pattern = 'n%d-%dp-%dt-*.yaml' % (self.problem_size,
-                                       self.job.num_tasks,
-                                       self.num_cpus_per_task)
+                                          self.job.num_tasks,
+                                          self.num_cpus_per_task)
         return sn.getitem(sn.glob(pattern), 0)
