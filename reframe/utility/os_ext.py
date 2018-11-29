@@ -21,17 +21,17 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
 def run_command(cmd, check=False, timeout=None, shell=False):
     try:
         proc = run_command_async(cmd, shell=shell, start_new_session=True)
-        proc.wait(timeout=timeout)
+        proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
         raise SpawnedProcessTimeout(e.cmd,
-                                    proc.stdout.read(),
-                                    proc.stderr.read(), timeout) from None
+                                    proc.stdout,
+                                    proc.stderr, timeout) from None
 
     completed = subprocess.CompletedProcess(args=shlex.split(cmd),
                                             returncode=proc.returncode,
-                                            stdout=proc.stdout.read(),
-                                            stderr=proc.stderr.read())
+                                            stdout=proc_stdout,
+                                            stderr=proc_stderr)
 
     if check and proc.returncode != 0:
         raise SpawnedProcessError(completed.args,
