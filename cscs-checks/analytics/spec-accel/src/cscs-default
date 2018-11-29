@@ -1,0 +1,42 @@
+ext           = compsys
+output_format = asc
+#table         = 0
+teeout        = no
+teerunout     = yes
+tune          = base
+
+######################################################################
+# Compiler selection, versions, and dates.
+#
+# sw_compiler<xx> = additional information describing the compiler
+# CC  = how the C Compiler is invoked
+# FC  = how the FORTRAN compiler is invoked
+
+
+default=default=default=default:
+sw_compiler  = Computer System Compiler C and Fortran90
+CC           = cc
+CXX          = CC
+FC           = ftn
+
+strict_rundir_verify = 0
+
+#######################################################################
+# 
+# OPTIMIZE = flags applicable to all compilers
+# COPTIMIZE = flags applicable to the C compiler
+# FOPTIMIZE = flags applicable to the Fortran compiler
+#
+# See your compiler manual for information on the flags available
+# for your compiler
+#
+
+OPTIMIZE       = -O2
+LIBS           = -lOpenCL
+#EXTRA_LIBS     = 
+EXTRA_CXXFLAGS = -std=c++03
+#EXTRA_CFLAGS   = 
+
+#######################################################################
+# End of user-supplied information.  
+#######################################################################

@@ -42,11 +42,11 @@ class SpecAccelCheck(rfm.RegressionTest):
                                         r'Success.*%s' % bn, outfile)
                                           for bn in benchmarks])
 
-        refs = { bench_name : (runtime, -0.1, None)
+        refs = { bench_name : (runtime, None, 0.1
                     for (bench_name, runtime) in
                         zip(benchmarks,
-                            [10.7, 13.5, 17.0, 10.9, 11.91, 27.8, 7.0,
-                             23.1, 10.8, 55.9, 8.7, 24.4, 16.2,
+                            [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
+                             7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
                              15.7, 15.6, 11.1, 20.0, 41.9, 26.2]
                         )
                 }
