@@ -13,6 +13,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-gnu-nompi']
 

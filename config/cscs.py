@@ -131,8 +131,8 @@ class ReframeSettings:
                                      'PrgEnv-pgi-c2sm',
                                      'PrgEnv-gnu-c2sm',
                                      'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu',
-                                     'PrgEnv-cray-c2sm-gpu'],
+                                     'PrgEnv-pgi-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -244,36 +244,42 @@ class ReframeSettings:
                 },
                 'PrgEnv-cray-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/cray-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/base'],
                 },
                 'PrgEnv-cray-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/cray-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/gpu'],
                 },
                 'PrgEnv-pgi-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/pgi-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/base'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-pgi-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/pgi-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/gpu'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/gnu-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/base'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['env', 'c2sm/gnu-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/gpu'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
@@ -414,7 +420,8 @@ class ReframeSettings:
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
-                    'u=%(check_perf_upper_thres)s)'
+                    'u=%(check_perf_upper_thres)s)|'
+                    '%(check_perf_unit)s'
                 ),
                 'append': True
             }
