@@ -11,7 +11,6 @@ class SpecAccelCheck(rfm.RegressionTest):
         self.descr = 'SPEC-accel benchmark'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
-        #self.modules = ['cudatoolkit/9.1.85_3.18-6.0.7.0_5.1__g2eb7c52']
         self.modules = ['craype-accel-nvidia60']
 
         self.configs = {
@@ -19,7 +18,7 @@ class SpecAccelCheck(rfm.RegressionTest):
             'PrgEnv-cray': 'cscs-cray',
         }
 
-        #self.sourcesdir needed for cscs-default config file
+        #self.sourcesdir needed for cscs-* config files
         app_source = os.path.join(self.current_system.resourcesdir,
                                   'SPEC_ACCELv1.2')
         self.prebuild_cmd = ['cp -r %s/* .' % app_source,
