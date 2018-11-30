@@ -31,10 +31,10 @@ strict_rundir_verify = 0
 # for your compiler
 #
 
-OPTIMIZE       = -O2
+OPTIMIZE       = 
 LIBS           = -lOpenCL
 #EXTRA_LIBS     = 
-EXTRA_CXXFLAGS = -std=c++03
+EXTRA_CXXFLAGS = -h std=c++03
 #EXTRA_CFLAGS   = 
 
 #######################################################################

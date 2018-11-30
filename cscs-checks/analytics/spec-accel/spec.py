@@ -10,8 +10,14 @@ class SpecAccelCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'SPEC-accel benchmark'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['cudatoolkit/9.1.85_3.18-6.0.7.0_5.1__g2eb7c52']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+        #self.modules = ['cudatoolkit/9.1.85_3.18-6.0.7.0_5.1__g2eb7c52']
+        self.modules = ['craype-accel-nvidia60']
+
+        self.configs = {
+            'PrgEnv-gnu':  'cscs-gnu',
+            'PrgEnv-cray': 'cscs-cray',
+        }
 
         #self.sourcesdir needed for cscs-default config file
         app_source = os.path.join(self.current_system.resourcesdir,
@@ -25,48 +31,56 @@ class SpecAccelCheck(rfm.RegressionTest):
         self.sourcepath = './benchspec/ACCEL/353.clvrleaf/src/timer_c.c'
         self.build_system.cflags = ['-c']
 
-        self.pre_run = ['source ./shrc', 'mv cscs-default config']
+        self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
+                           'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
+                           'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+        self.runtimes = {
+            'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
+                            7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
+                            15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+            'PrgEnv-cray': [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
+                            7.0, 23.1, 10.8, 24.9, 8.7, 24.4, 16.2,
+                            15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+        }
 
-        benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
-                      'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
-                      'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+        self.refs = {
+            env: { bench_name : (rt, None, 0.1)
+                     for (bench_name, rt) in
+                       zip(self.benchmarks, self.runtimes[env])
+                 }
+            for env in self.valid_prog_environs   
+        }
+
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
 
         self.executable = 'runspec'
-        self.executable_opts = ['--config=cscs-default',
-                                '--platform NVIDIA',
-                                '--tune=base',
-                                '--device GPU'] + benchmarks
 
         outfile = sn.getitem(sn.glob('result/ACCEL.*.log'), 0)
         self.sanity_patterns = sn.all([sn.assert_found(
-                                        r'Success.*%s' % bn, outfile)
-                                          for bn in benchmarks])
-
-        refs = { bench_name : (runtime, None, 0.1
-                    for (bench_name, runtime) in
-                        zip(benchmarks,
-                            [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
-                             7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
-                             15.7, 15.6, 11.1, 20.0, 41.9, 26.2]
-                        )
-                }
-
-        self.reference = {
-            'dom:gpu' : refs,
-            'daint:gpu' : refs
-        }
+                                       r'Success.*%s' % bn, outfile)
+                                       for bn in self.benchmarks
+                                      ])
 
         self.perf_patterns = {
             bench_name: self.extract_average(outfile, bench_name)
-                for bench_name in benchmarks
+                for bench_name in self.benchmarks
         }
 
         self.maintainers = ['SK']
-        self.tags = {'benchmark'}
+        self.tags = {'diagnostic'}
 
     def setup(self, partition, environ, **job_opts):
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
+
+        self.pre_run = ['source ./shrc', 'mv %s config' % self.configs[environ.name]]
+        self.executable_opts = ['--config=%s' % self.configs[environ.name],
+                                '--platform NVIDIA',
+                                '--tune=base',
+                                '--device GPU'] + self.benchmarks
+        self.reference = {
+            'dom:gpu':   self.refs[environ.name],
+            'daint:gpu': self.refs[environ.name]
+        }
 
         super().setup(partition, environ, **job_opts)
         # The job launcher has to be changed since the `runspec`
