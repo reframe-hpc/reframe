@@ -49,6 +49,7 @@ class HPCGCheckRef(rfm.RegressionTest):
                 r'(?P<perf>\S+)', output_file, 'perf',  float)
         }
         self.maintainers = ['SK']
+        self.tags = {'diagnostic'}
 
     def setup(self, partition, environ, **job_opts):
         self.num_tasks = self.system_num_tasks[self.current_system.name
@@ -61,7 +62,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         super().__init__()
 
         self.descr = 'HPCG benchmark Intel MKL implementation'
-        self.valid_systems = ['daint:mc', 'dom:mc']
+        self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.modules = ['craype-hugepages8M']
         #self.sourcesdir needed for "CrayXC" config file
@@ -72,8 +73,6 @@ class HPCGCheckMKL(rfm.RegressionTest):
 
         self.num_tasks = 0
         self.num_tasks_per_core = 2
-        self.num_tasks_per_node = 4
-        self.num_cpus_per_task = 18
         self.problem_size = 104
 
         self.variables  = {
@@ -95,14 +94,19 @@ class HPCGCheckMKL(rfm.RegressionTest):
             'dom:mc': {
                 'perf': (22, -0.1, None)
             },
+            'daint:mc': {
+                'perf': (22, -0.1, None)
+            },
+            'dom:gpu': {
+                'perf': (10.7, -0.1, None)
+            },
+            'daint:gpu': {
+                'perf': (10.7, -0.1, None)
+            },
         }
 
-        self.perf_patterns = {
-            'perf': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-                r'(?P<perf>\S+)', self.outfile_lazy, 'perf',  float) / (self.num_tasks_assigned/self.num_tasks_per_node)
-        }
         self.maintainers = ['SK']
+        self.tags = {'diagnostic'}
 
     @property
     @sn.sanity_function
@@ -116,3 +120,19 @@ class HPCGCheckMKL(rfm.RegressionTest):
                                           self.job.num_tasks,
                                           self.num_cpus_per_task)
         return sn.getitem(sn.glob(pattern), 0)
+
+    def setup(self, partition, environ, **job_opts):
+        if partition.name == 'gpu':
+            self.num_tasks_per_node = 2
+            self.num_cpus_per_task = 12
+        else:
+            self.num_tasks_per_node = 4
+            self.num_cpus_per_task = 18
+
+        self.perf_patterns = {
+            'perf': sn.extractsingle(
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)', self.outfile_lazy, 'perf',  float) / (self.num_tasks_assigned/self.num_tasks_per_node)
+        }
+
+        super().setup(partition, environ, **job_opts)
