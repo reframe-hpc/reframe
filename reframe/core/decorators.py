@@ -7,6 +7,7 @@ __all__ = ['parameterized_test', 'simple_test', 'required_version']
 
 import collections
 import inspect
+import traceback
 
 import reframe
 from reframe.core.exceptions import ReframeSyntaxError
@@ -26,12 +27,18 @@ def _register_test(cls, args=None):
             except AttributeError:
                 mod.__rfm_skip_tests = set()
 
-            if isinstance(args, collections.Sequence):
-                ret.append(cls(*args))
-            elif isinstance(args, collections.Mapping):
-                ret.append(cls(**args))
-            elif args is None:
-                ret.append(cls())
+            try:
+                if isinstance(args, collections.Sequence):
+                    ret.append(cls(*args))
+                elif isinstance(args, collections.Mapping):
+                    ret.append(cls(**args))
+                elif args is None:
+                    ret.append(cls())
+            except Exception as e:
+                getlogger().info('skipping test defined in class %s due '
+                                 'to errors. Please check file %s' %
+                                 (cls.__name__, inspect.getfile(cls)))
+                getlogger().debug(traceback.format_exc())
 
         return ret
 
