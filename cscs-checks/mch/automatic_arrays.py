@@ -12,7 +12,8 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                                     'PrgEnv-pgi-c2sm-gpu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
-        elif self.current_system.name in ['kesch']:
+        elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             # FIXME: workaround -- the variable should not be needed since
             # there is no GPUdirect in this check

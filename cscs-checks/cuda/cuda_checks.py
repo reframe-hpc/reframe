@@ -23,6 +23,7 @@ class CudaCheck(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.nvidia_sm = '60'
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.nvidia_sm = '37'
 
         self.maintainers = ['AJ', 'VK']

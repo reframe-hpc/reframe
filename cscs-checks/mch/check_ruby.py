@@ -9,6 +9,7 @@ class RubyNArray(rfm.RunOnlyRegressionTest):
         self.descr = ('Check NArray for Ruby version 2.2.2')
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+        self.exclusive_access = True
         self.modules = ['ruby/2.2.2-gmvolf-17.02']
         self.executable = 'ruby'
         self.executable_opts = ['NArray.rb']

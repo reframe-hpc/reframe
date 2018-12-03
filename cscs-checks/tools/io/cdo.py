@@ -32,6 +32,7 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn']
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo']
         else:

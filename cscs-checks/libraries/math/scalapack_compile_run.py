@@ -18,6 +18,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
 
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray']
             if linkage == 'static':
                 # Static linkage not supported on Kesch

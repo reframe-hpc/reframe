@@ -35,6 +35,7 @@ class NvprofCheck(rfm.RegressionTest):
         # FIXME temporary workaround
         # the programming environment should be adapted / fixed
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.modules = ['craype-accel-nvidia35']
             self.build_system.ldflags += ['-lcudart', '-lm']
         else:
