@@ -414,12 +414,14 @@ class SlurmNode:
 
     def __init__(self, node_descr):
         self._name = self._extract_attribute('NodeName', node_descr)
-        self._partitions = set(self._extract_attribute(
-            'Partitions', node_descr).split(','))
-        self._active_features = set(self._extract_attribute(
-            'ActiveFeatures', node_descr).split(','))
-        self._states = set(
-            self._extract_attribute('State', node_descr).split('+'))
+        if not self._name:
+            raise JobError('could not extract NodeName from node description')
+
+        self._partitions = self._extract_attribute(
+            'Partitions', node_descr, delim=',')
+        self._active_features = self._extract_attribute(
+            'ActiveFeatures', node_descr, delim=',')
+        self._states = self._extract_attribute('State', node_descr, delim='+')
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -431,7 +433,8 @@ class SlurmNode:
         return hash(self.name)
 
     def is_available(self):
-        return self._states == {'IDLE'}
+        return (self._states == {'IDLE'} and
+                all([self._partitions, self._active_features, self._states]))
 
     def is_down(self):
         return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)
@@ -452,13 +455,15 @@ class SlurmNode:
     def states(self):
         return self._states
 
-    def _extract_attribute(self, attr_name, node_descr):
+    def _extract_attribute(self, attr_name, node_descr, delim=None):
         attr_match = re.search(r'%s=(\S+)' % attr_name, node_descr)
         if attr_match:
-            return attr_match.group(1)
-        else:
-            raise JobError("could not extract attribute '%s' from "
-                           "node description" % attr_name)
+            if delim:
+                return set(attr_match.group(1).split(delim))
+            else:
+                return attr_match.group(1)
+
+        return None
 
     def __str__(self):
         return self._name
