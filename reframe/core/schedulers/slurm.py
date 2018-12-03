@@ -436,9 +436,6 @@ class SlurmNode:
     def is_down(self):
         return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)
 
-    def in_state(self, state):
-        return state in self._states
-
     @property
     def active_features(self):
         return self._active_features

@@ -802,12 +802,6 @@ class TestSlurmNode(unittest.TestCase):
     def test_str(self):
         self.assertEqual('nid00001', str(self.allocated_node))
 
-    def test_in_state(self):
-        self.assertTrue(self.allocated_node.in_state('ALLOCATED'))
-        self.assertFalse(self.idle_node.in_state('MAINT'))
-        self.assertTrue(self.idle_drained.in_state('IDLE'))
-        self.assertTrue(self.idle_drained.in_state('DRAIN'))
-
     def test_is_available(self):
         self.assertFalse(self.allocated_node.is_available())
         self.assertTrue(self.idle_node.is_available())
