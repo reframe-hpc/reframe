@@ -19,6 +19,8 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
+#TODO: adapt to import common rules
+from collections import UserList
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -378,11 +380,22 @@ def main():
         except OSError as e:
             raise ReframeError from e
 
+            # TODO: remove duplicated variable
+            checks_found_ul = UserList(checks_found)
+
         # Filter checks by name
         checks_matched = filter(
             lambda c:
             c if c.name not in options.exclude_names else None,
             checks_found
+        )
+
+        # TODO: remove duplicated code
+        # Filter checks by name
+        checks_matched_ul = filter(
+            lambda c:
+            c if c.name not in options.exclude_names else None,
+            checks_found_ul
         )
 
         if options.names:
@@ -391,11 +404,26 @@ def main():
                 checks_matched
             )
 
+        # TODO: remove duplicated code
+        if options.names:
+            checks_matched_ul = filter(
+                lambda c: c if c.name in options.names else None,
+                checks_matched_ul
+            )
+
         # Filter checks by tags
         user_tags = set(options.tags)
         checks_matched = filter(
             lambda c: c if user_tags.issubset(c.tags) else None,
             checks_matched
+        )
+
+        # TODO: remove duplicated code
+        # Filter checks by tags
+        user_tags = set(options.tags)
+        checks_matched_ul = filter(
+            lambda c: c if user_tags.issubset(c.tags) else None,
+            checks_matched_ul
         )
 
         # Filter checks by prgenv
@@ -408,6 +436,10 @@ def main():
         if not options.skip_prgenv_check:
             checks_matched = filter(filter_prgenv, checks_matched)
 
+        # TODO: remove duplicated code
+        if not options.skip_prgenv_check:
+            checks_matched_ul = filter(filter_prgenv, checks_matched_ul)
+
         # Filter checks by system
         def filter_system(c):
             return any([c.supports_system(s.fullname)
@@ -415,6 +447,10 @@ def main():
 
         if not options.skip_system_check:
             checks_matched = filter(filter_system, checks_matched)
+
+        # TODO: remove duplicated code
+        if not options.skip_system_check:
+            checks_matched_ul = filter(filter_system, checks_matched_ul)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -433,7 +469,27 @@ def main():
                 checks_matched
             )
 
+        # TODO: remove duplicated code
+        if options.gpu_only:
+            checks_matched_ul = filter(
+                lambda c: c if c.num_gpus_per_node > 0 else None,
+                checks_matched_ul
+            )
+        elif options.cpu_only:
+            checks_matched_ul = filter(
+                lambda c: c if c.num_gpus_per_node == 0 else None,
+                checks_matched_ul
+            )
+
         checks_matched = [c for c in checks_matched]
+
+        # TODO: remove duplicated code
+        checks_matched_ul = UserList(checks_matched_ul)
+
+        # TODO: check if lists match each other
+        print('check lists')
+        print(checks_matched_ul == checks_matched)
+        print('check lists done')
 
         # Act on checks
 
