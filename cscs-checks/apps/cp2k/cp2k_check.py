@@ -100,7 +100,7 @@ class Cp2kGpuCheck(Cp2kCheck):
                     'perf': (251.8, None, 0.15)
                 },
                 'daint:gpu': {
-                    'perf': (182.3, None, 0.10)
+                    'perf': (222.6, None, 0.05)
                 },
             }
         else:
@@ -110,6 +110,6 @@ class Cp2kGpuCheck(Cp2kCheck):
                     'perf': (240.0, None, 0.05)
                 },
                 'daint:gpu': {
-                    'perf': (195.0, None, 0.10)
+                    'perf': (222.6, None, 0.05)
                 },
             }

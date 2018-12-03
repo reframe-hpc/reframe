@@ -335,8 +335,26 @@ class RegressionTest:
 
     #: The set of reference values for this test.
     #:
-    #: Refer to the :doc:`ReFrame Tutorial </tutorial>` for concrete usage
-    #: examples.
+    #: The reference values are specified as a scoped dictionary keyed on the
+    #: performance variables defined in :attr:`perf_patterns` and scoped under
+    #: the system/partition combinations.
+    #: The reference itself is a three- or four-tuple that contains the
+    #: reference value, the lower and upper thresholds and, optionally, the
+    #: measurement unit.
+    #: An example follows:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.reference = {
+    #:        'sys0:part0': {
+    #:            'perfvar0': (50, -0.1, 0.1, 'Gflop/s'),
+    #:            'perfvar1': (20, -0.1, 0.1, 'GB/s')
+    #:        },
+    #:        'sys0:part1': {
+    #:            'perfvar0': (100, -0.1, 0.1, 'Gflop/s'),
+    #:            'perfvar1': (40, -0.1, 0.1, 'GB/s')
+    #:        }
+    #:    }
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
@@ -1095,20 +1113,18 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                try:
-                    ref, low_thres, high_thres = self.reference[key]
-                except KeyError:
+                if not key in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
                 perf_values.append((value, self.reference[key]))
                 self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  ref, low_thres, high_thres)
+                                                  *self.reference[key])
 
             for val, reference in perf_values:
-                refval, low_thres, high_thres = reference
-                evaluate(assert_reference(val, refval, low_thres, high_thres))
+                ref, low_thres, high_thres, *_ = reference
+                evaluate(assert_reference(val, ref, low_thres, high_thres))
 
     def _copy_job_files(self, job, dst):
         if job is None:
