@@ -1,0 +1,17 @@
+message:  # Customize the comment made by the bot
+    opened:  # Messages when a new PR is submitted
+        header: "Hello @{name}, Thank you for submitting the Pull Request!"
+        footer: "Do see the ReFrame [Coding Style Guide](https://github.com/eth-cscs/reframe/wiki/coding-style-guide)"
+    updated:
+        header: "Hello @{name}, Thank you for updating!"
+        footer: "Do see the ReFrame [Coding Style Guide](https://github.com/eth-cscs/reframe/wiki/coding-style-guide)"
+scanner:
+    diff_only: True
+pycodestyle:
+    max-line-length: 79
+    ignore:
+        - E129
+        - E221
+        - E226
+        - E241
+        - E272
