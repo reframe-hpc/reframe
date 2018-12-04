@@ -5,6 +5,7 @@ message:  # Customize the comment made by the bot
     updated:
         header: "Hello @{name}, Thank you for updating!"
         footer: "Do see the ReFrame [Coding Style Guide](https://github.com/eth-cscs/reframe/wiki/coding-style-guide)"
+    no_errors: "Cheers! There are no PEP8 issues in this Pull Request!"
 scanner:
     diff_only: True
 pycodestyle:
