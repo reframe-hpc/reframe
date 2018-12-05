@@ -45,6 +45,40 @@ def list_checks(checks, printer, detailed=False):
     printer.info('Found %d check(s).' % len(checks))
 
 
+def partition_supported(check, partition, options):
+    if options.skip_system_check:
+        return True
+
+    return check.supports_system(partition.name)
+
+
+def environ_supported(check, environ, options):
+    ret = True
+    if options.prgenv:
+        ret = environ.name in options.prgenv
+
+    if options.skip_prgenv_check:
+        return ret
+    else:
+        return ret and check.supports_environ(environ.name)
+
+
+def has_testcase(check, options):
+    system = runtime.runtime().system
+    has_testcase = False
+    for partition in system.partitions:
+        if not partition_supported(check, partition, options):
+            continue
+
+        for environ in partition.environs:
+            if not environ_supported(check, environ, options):
+                continue
+
+            has_testcase = True
+
+    return has_testcase
+
+
 def main():
     # Setup command line options
     argparser = ArgumentParser()
@@ -432,6 +466,12 @@ def main():
                 lambda c: c if c.num_gpus_per_node == 0 else None,
                 checks_matched
             )
+
+        # Remove the checks with no testcase to be run.
+        checks_matched = filter(
+            lambda c: c if has_testcase(c, options) else None,
+            checks_matched
+        )
 
         checks_matched = [c for c in checks_matched]
 
