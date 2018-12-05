@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -10,10 +8,9 @@ class AllocSpeedTest(rfm.RegressionTest):
         super().__init__()
 
         self.descr = 'Time to allocate 4096 MB using %s hugepages' % hugepages
-
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-O3']
+        self.build_system.cxxflags = ['-O3', '-std=c++11']
 
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal']

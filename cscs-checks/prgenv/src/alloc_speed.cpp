@@ -1,29 +1,21 @@
-#include <sys/time.h>
+#include <chrono>
 #include <iostream>
 #include <algorithm>
 
-/// Wall-clock time in seconds.
-inline double wtime()
-{
-    timeval t;
-    gettimeofday(&t, NULL);
-    return double(t.tv_sec) + double(t.tv_usec) / 1e6;
-}
-
 double test_alloc(size_t n)
 {
-    double t0 = wtime();
+    auto t0 = std::chrono::system_clock::now();
     /* time to allocate + fill */
     char* ptr = (char*)std::malloc(n);
     std::fill(ptr, ptr + n, 0);
-    double t1 = wtime();
+    auto t1 = std::chrono::system_clock::now();
     /* time fo fill */
     std::fill(ptr, ptr + n, 0);
-    double t2 = wtime();
-    t0 += ptr[0];
+    auto t2 = std::chrono::system_clock::now();
+    t0 += static_cast<std::chrono::seconds>(ptr[0]);
     std::free(ptr);
 
-    return (t1 - t0) - (t2 - t1);
+    return std::chrono::duration_cast<std::chrono::duration<double>>((t1 - t0) - (t2 - t1)).count();
 }
 
 int main(int argn, char** argv)
