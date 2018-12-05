@@ -44,7 +44,7 @@ class SlurmJob(sched.Job):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._prefix  = '#SBATCH'
+        self._prefix = '#SBATCH'
         self._completion_states = [SLURM_JOB_BOOT_FAIL,
                                    SLURM_JOB_CANCELLED,
                                    SLURM_JOB_COMPLETED,
