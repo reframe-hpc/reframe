@@ -6,8 +6,8 @@ import reframe.utility.sanity as sn
 class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.descr = ('Check if a set of environment variables is '
-                      'defined when accessing remotely over SSH')
+        self.descr = ('Check the values of a set of environment variables '
+                      'when accessing remotely over SSH')
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['PrgEnv-cray']
         reference = {
@@ -26,10 +26,11 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
         echo_args = ' '.join('%s=$%s' % (i, i)  for i in reference.keys())
         self.executable_opts = [self.current_system.name,
                                 'echo', "'%s'" % echo_args]
-        # self.sanity_patterns = sn.all([sn.assert_found('CRAY_CPU_TARGET=haswell', self.stdout)])
-        self.sanity_patterns = sn.all(
-            sn.map(lambda x: sn.assert_found(x, self.stdout), ['CRAY_CPU_TARGET=haswell']))
-        # self.sanity_patterns = sn.map(lambda k, v: sn.assert_found('%s=%s' % (k, v), self.stdout),
-        #     reference.keys(), reference.values()))
+        self.sanity_patterns = sn.all(sn.map(self.assert_envvar,
+                                      list(reference.keys()),
+                                      list(reference.values())))
         self.maintainers = ['RS', 'LM']
         self.tags = {'maintenance'}
+
+    def assert_envvar(self, var, value):
+        return sn.assert_found('='.join([var, value]), self.stdout)
