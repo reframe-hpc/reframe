@@ -170,7 +170,7 @@ class Runner:
     def runall(self, checks):
         try:
             self._printer.separator('short double line',
-                                    'Processing %d check(s)' % len(checks))
+                                    'Running %d check(s)' % len(checks))
             self._printer.timestamp('Started on', 'short double line')
             self._printer.info()
             self._runall(checks)
@@ -227,8 +227,6 @@ class Runner:
         self._policy.enter()
         for c in checks:
             self._policy.enter_check(c)
-            is_running = False
-            skip_count = 0
             for p in system.partitions:
                 if not self._partition_supported(c, p):
                     self._printer.status('SKIP',
@@ -247,13 +245,6 @@ class Runner:
                                              level=logging.VERBOSE)
                         continue
 
-                    if not is_running:
-                        is_running = True
-                        self._printer.separator(
-                            'short single line',
-                            'started running %s (%s)' % (c.name, c.descr)
-                        )
-
                     self._sandbox.system  = p
                     self._sandbox.environ = e
                     self._sandbox.check   = c
@@ -269,14 +260,6 @@ class Runner:
                                               self._sandbox.environ)
 
                 self._policy.exit_partition(c, p)
-
-            if is_running:
-                self._printer.separator(
-                    'short single line',
-                    'finished running %s (%s)' % (c.name, c.descr)
-                )
-            else:
-                skip_count += 1
 
             self._policy.exit_check(c)
 
@@ -324,17 +307,15 @@ class ExecutionPolicy:
         pass
 
     def enter_check(self, check):
-        self.printer.status(
+        self.printer.separator(
             'short single line',
-            'started processing %s (%s)' % (check.name, check.descr),
-            level = logging.VERBOSE
+            'started processing %s (%s)' % (check.name, check.descr)
         )
 
     def exit_check(self, check):
-        self.printer.status(
+        self.printer.separator(
             'short single line',
-            'finished processing %s (%s)\n' % (check.name, check.descr),
-            level=logging.VERBOSE
+            'finished processing %s (%s)\n' % (check.name, check.descr)
         )
 
     def enter_partition(self, c, p):
