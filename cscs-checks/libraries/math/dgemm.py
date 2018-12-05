@@ -24,19 +24,19 @@ class DGEMMTest(rfm.RegressionTest):
         self.use_multithreading = False
 
         self.build_system = 'SingleSource'
-        self.build_system.cflags = ['-O3']
+        self.build_system.cflags = ['-O3', '-fopenmp']
 
         self.sys_reference = {
-            'daint:gpu': (460, -0.1, None),
-            'daint:mc': (460, -0.1, None),
-            'dom:gpu': (460, -0.1, None),
-            'dom:mc': (460, -0.1, None),
+            'daint:gpu': (300.0, -0.15, None),
+            'daint:mc': (860.0, -0.15, None),
+            'dom:gpu': (300.0, -0.15, None),
+            'dom:mc': (860.0, -0.15, None),
+            # FIXME update the values for monch
             'monch:compute': (350, -0.1, None),
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
         self.tags = {'diagnostic'}
-
 
     def setup(self, partition, environ, **job_opts):
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
@@ -67,7 +67,7 @@ class DGEMMTest(rfm.RegressionTest):
 
         if num_tested_nodes != self.job.num_tasks:
             failure_msg = ('Requested %s node(s), but found %s node(s)' %
-                            (self.job.num_tasks, num_tested_nodes))
+                           (self.job.num_tasks, num_tested_nodes))
             return sn.assert_false(failure_msg, msg=failure_msg)
 
         for hostname in all_tested_nodes:
@@ -76,7 +76,7 @@ class DGEMMTest(rfm.RegressionTest):
                 ref_name = '%s:%s' % (partition_name, hostname)
                 self.reference[ref_name] = self.sys_reference[partition_name]
                 self.perf_patterns[hostname] = sn.extractsingle(
-                    r'%s:\s+Flops based on.*:\s+(?P<gflops>.*)\sGFlops\/sec' %
-                    hostname, self.stdout, 'gflops', float)
+                    r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
+                    r'\sGFlops/sec' % hostname, self.stdout, 'gflops', float)
 
         return True
