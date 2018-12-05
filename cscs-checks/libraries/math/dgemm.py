@@ -57,7 +57,6 @@ class DGEMMTest(rfm.RegressionTest):
         }
         super().setup(partition, environ, **job_opts)
 
-
     @sn.sanity_function
     def eval_sanity(self):
         all_tested_nodes = sn.evaluate(sn.extractall(
