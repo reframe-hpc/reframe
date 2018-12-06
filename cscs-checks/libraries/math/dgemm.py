@@ -23,14 +23,13 @@ class DGEMMTest(rfm.RegressionTest):
         self.use_multithreading = False
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O3', '-fopenmp']
-        perf_units = 'GFlops/sec'
         self.sys_reference = {
-            'daint:gpu': (300.0, -0.15, None, perf_units),
-            'daint:mc': (860.0, -0.15, None, perf_units),
-            'dom:gpu': (300.0, -0.15, None, perf_units),
-            'dom:mc': (860.0, -0.15, None, perf_units),
+            'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
+            'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
+            'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
+            'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
             # FIXME update the values for monch
-            'monch:compute': (350, -0.1, None, perf_units),
+            'monch:compute': (350, -0.1, None, 'Gflop/s'),
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
@@ -72,6 +71,6 @@ class DGEMMTest(rfm.RegressionTest):
                 self.reference[ref_name] = self.sys_reference[partition_name]
                 self.perf_patterns[hostname] = sn.extractsingle(
                     r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
-                    r'\sGFlops/sec' % hostname, self.stdout, 'gflops', float)
+                    r'\sGflop/s' % hostname, self.stdout, 'gflops', float)
 
         return True

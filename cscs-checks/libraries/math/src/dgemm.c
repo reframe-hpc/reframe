@@ -79,8 +79,8 @@ int main(int argc, char* argv[])
 
 
     printf("\n");
-    printf("%s: Flops based on given dimensions\t:\t%.5f GFlops\n", hostname, gflop);
-    printf("%s: Avg. performance               \t:\t%.5f GFlops/sec\n", hostname, gflop * LOOP_COUNT / time_avg);
+    printf("%s: Flops based on given dimensions\t:\t%.5f Gflops\n", hostname, gflop);
+    printf("%s: Avg. performance               \t:\t%.5f Gflop/s\n", hostname, gflop * LOOP_COUNT / time_avg);
     printf("%s: Avg. time / DGEMM operation\t:\t%f secs \n", hostname, time_avg / LOOP_COUNT);
     printf("%s: Time for %d DGEMM operations\t:\t%f secs \n", hostname, LOOP_COUNT, time_avg);
     printf("\n");
