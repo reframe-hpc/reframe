@@ -9,6 +9,8 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for CUDA'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        # FIXME: temporary workaround until the mvapich module is fixed
+        #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'
@@ -18,6 +20,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
             self.build_system.cxxflags = ['-ccbin CC', '-arch=sm_60']
         elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['craype-accel-nvidia35']
             self.variables = {
@@ -33,4 +36,4 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}

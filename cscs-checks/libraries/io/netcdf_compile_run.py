@@ -25,6 +25,7 @@ class NetCDFTest(rfm.RegressionTest):
                                         'PrgEnv-intel', 'PrgEnv-pgi']
             self.modules = ['cray-netcdf']
         elif self.current_system.name == 'kesch':
+            self.exclusive_access = True
             if linkage == 'dynamic':
                 self.valid_prog_environs = ['PrgEnv-pgi-nompi']
 
