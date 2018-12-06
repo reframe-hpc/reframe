@@ -20,7 +20,8 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 #TODO: adapt to import common rules
-from collections import UserList
+from reframe.frontend.check_list import CheckList #TODO: delete
+from reframe.frontend.check_filters import * #TODO: use correct import rule
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -377,11 +378,9 @@ def main():
         # Locate and load checks
         try:
             checks_found = loader.load_all()
-        except OSError as e:
+            check_found_new = [c for c in checks_found]
+        except OSError as oe:
             raise ReframeError from e
-
-            # TODO: remove duplicated variable
-            checks_found_ul = UserList(checks_found)
 
         # Filter checks by name
         checks_matched = filter(
@@ -390,13 +389,14 @@ def main():
             checks_found
         )
 
-        # TODO: remove duplicated code
         # Filter checks by name
-        checks_matched_ul = filter(
-            lambda c:
-            c if c.name not in options.exclude_names else None,
-            checks_found_ul
-        )
+        check_found_new = list(filter(have_not_name(options.exclude_names), check_found_new))
+
+        print('check1 lists')
+        print(len(check_found_new))
+        print(check_found_new == [c for c in checks_matched])
+        print(len(check_found_new))
+        print('check1 lists done')
 
         if options.names:
             checks_matched = filter(
@@ -405,11 +405,13 @@ def main():
             )
 
         # TODO: remove duplicated code
-        if options.names:
-            checks_matched_ul = filter(
-                lambda c: c if c.name in options.names else None,
-                checks_matched_ul
-            )
+        check_found_new = list(filter(have_name(options.names), check_found_new))
+
+        print('check2 lists')
+        print(len(check_found_new))
+        print(check_found_new == [c for c in checks_matched])
+        print(len(check_found_new))
+        print('check2 lists done')
 
         # Filter checks by tags
         user_tags = set(options.tags)
@@ -419,13 +421,15 @@ def main():
         )
 
         # TODO: remove duplicated code
-        # Filter checks by tags
-        user_tags = set(options.tags)
-        checks_matched_ul = filter(
-            lambda c: c if user_tags.issubset(c.tags) else None,
-            checks_matched_ul
-        )
+        check_found_new = list(filter(have_tag(options.tags), check_found_new))
 
+        print('check3 lists')
+        print(len(check_found_new))
+        print(check_found_new == [c for c in checks_matched])
+        print(len(check_found_new))
+        print('check3 lists done')
+
+        # TODO: should we move this in utils?
         # Filter checks by prgenv
         def filter_prgenv(c):
             if options.prgenv:
@@ -438,7 +442,14 @@ def main():
 
         # TODO: remove duplicated code
         if not options.skip_prgenv_check:
-            checks_matched_ul = filter(filter_prgenv, checks_matched_ul)
+            check_found_new = list(filter(have_prgenv(options.prgenv), check_found_new))
+
+        print('check4 lists')
+        print(len(check_found_new))
+        print(check_found_new == [c for c in checks_matched])
+        print(len(check_found_new))
+        print('check4 lists done')
+
 
         # Filter checks by system
         def filter_system(c):
@@ -450,7 +461,14 @@ def main():
 
         # TODO: remove duplicated code
         if not options.skip_system_check:
-            checks_matched_ul = filter(filter_system, checks_matched_ul)
+            check_found_new = list(filter(have_system(), check_found_new))
+
+        print('check5 lists')
+        print(len(check_found_new))
+        print(check_found_new == [c for c in checks_matched])
+        print(len(check_found_new))
+        print('check5 lists done')
+
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -471,25 +489,19 @@ def main():
 
         # TODO: remove duplicated code
         if options.gpu_only:
-            checks_matched_ul = filter(
-                lambda c: c if c.num_gpus_per_node > 0 else None,
-                checks_matched_ul
-            )
+            check_found_new = list(filter(is_gpu_only(), check_found_new))
         elif options.cpu_only:
-            checks_matched_ul = filter(
-                lambda c: c if c.num_gpus_per_node == 0 else None,
-                checks_matched_ul
-            )
+            check_found_new = list(filter(is_cpu_only(), check_found_new))
 
         checks_matched = [c for c in checks_matched]
 
-        # TODO: remove duplicated code
-        checks_matched_ul = UserList(checks_matched_ul)
-
         # TODO: check if lists match each other
-        print('check lists')
-        print(checks_matched_ul == checks_matched)
-        print('check lists done')
+        print('check5 lists')
+        print(len(check_found_new))
+        print(check_found_new == checks_matched)
+        print(len(check_found_new))
+        print('check5 lists done')
+
 
         # Act on checks
 
