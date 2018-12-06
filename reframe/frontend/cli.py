@@ -260,7 +260,7 @@ def main():
         sys.exit(1)
 
     except (ConfigError, OSError) as e:
-        printer.error('configuration error %s' % e)
+        printer.error('configuration error: %s' % e)
         sys.exit(1)
 
     rt = runtime.runtime()

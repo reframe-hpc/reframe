@@ -141,6 +141,14 @@ class Job(abc.ABC):
 
     @property
     def num_tasks(self):
+        """The number of tasks assigned to this job.
+
+        This attribute is useful in a flexible regression test for determining
+        the actual number of tasks that ReFrame assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        `tutorial <advanced.html#flexible-regression-tests>`__.
+        """
         return self._num_tasks
 
     @property
