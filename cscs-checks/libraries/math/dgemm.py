@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class DGEMMTest(rfm.RegressionTest):
     def __init__(self):
@@ -16,23 +16,21 @@ class DGEMMTest(rfm.RegressionTest):
 
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
-
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 1
         self.num_tasks_per_socket = 1
         self.use_multithreading = False
-
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O3', '-fopenmp']
-
+        perf_units = 'GFlops/sec'
         self.sys_reference = {
-            'daint:gpu': (300.0, -0.15, None),
-            'daint:mc': (860.0, -0.15, None),
-            'dom:gpu': (300.0, -0.15, None),
-            'dom:mc': (860.0, -0.15, None),
+            'daint:gpu': (300.0, -0.15, None, perf_units),
+            'daint:mc': (860.0, -0.15, None, perf_units),
+            'dom:gpu': (300.0, -0.15, None, perf_units),
+            'dom:mc': (860.0, -0.15, None, perf_units),
             # FIXME update the values for monch
-            'monch:compute': (350, -0.1, None),
+            'monch:compute': (350, -0.1, None, perf_units),
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
@@ -63,11 +61,9 @@ class DGEMMTest(rfm.RegressionTest):
             r'(?P<hostname>\S+):\s+Time for \d+ DGEMM operations',
             self.stdout, 'hostname'))
         num_tested_nodes = len(all_tested_nodes)
-
-        if num_tested_nodes != self.job.num_tasks:
-            failure_msg = ('Requested %s node(s), but found %s node(s)' %
-                           (self.job.num_tasks, num_tested_nodes))
-            return sn.assert_false(failure_msg, msg=failure_msg)
+        failure_msg = ('Requested %s node(s), but found %s node(s)' %
+                       (self.job.num_tasks, num_tested_nodes))
+        sn.assert_eq(num_tested_nodes, self.job.num_tasks, msg=failure_msg)
 
         for hostname in all_tested_nodes:
             if self.sys_reference[self.current_partition.fullname]:
