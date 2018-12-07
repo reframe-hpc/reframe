@@ -7,12 +7,14 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
         super().__init__()
         self.sourcesdir = 'src/libsci_resolve'
         self.sourcepath = 'libsci_resolve.f90'
-        self.valid_systems = ['daint:login', 'dom:login']
+        self.valid_systems = ['daint:login', 'daint:gpu',
+                              'dom:login', 'dom:gpu']
         self.modules = ['craype-haswell']
         self.maintainers = ['AJ']
         self.tags = {'production'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['craype-accel-nvidia20'], ['craype-accel-nvidia35'],
                         ['craype-accel-nvidia60'])
 class Nvidia35ResolveTest(LibSciResolveBaseTest):
@@ -71,6 +73,7 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
         ])
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class MKLResolveTest(LibSciResolveBaseTest):
     def __init__(self):

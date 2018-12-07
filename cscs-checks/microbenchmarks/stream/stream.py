@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class StreamTest(rfm.RegressionTest):
     def __init__(self):
@@ -10,10 +11,15 @@ class StreamTest(rfm.RegressionTest):
         self.exclusive_access = True
         # All available systems are supported
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal',
-                              'monch:compute']
+                              'kesch:cn', 'kesch:pn', 'leone:normal']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-pgi-nompi']
+
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
@@ -85,12 +91,17 @@ class StreamTest(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task[partition.fullname]
-        self.reference = self.stream_bw_reference[environ.name]
+        if self.current_system.name == 'kesch':
+            envname = environ.name.replace('-nompi', '')
+        else:
+            envname = environ.name
+
+        self.reference = self.stream_bw_reference[envname]
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-        if environ.name == 'PrgEnv-pgi':
+        if envname == 'PrgEnv-pgi':
             self.variables['OMP_PROC_BIND'] = 'true'
 
-        self.build_system.cflags = self.prgenv_flags[environ.name]
+        self.build_system.cflags = self.prgenv_flags[envname]
         super().setup(partition, environ, **job_opts)

@@ -4,6 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C'], ['C++'], ['F90'])
 class ScorepHybrid(rfm.RegressionTest):
     def __init__(self, lang):
@@ -15,9 +16,9 @@ class ScorepHybrid(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
 
         self.scorep_modules = {
-            'PrgEnv-gnu': ['Score-P/4.0-CrayGNU-18.07'],
-            'PrgEnv-intel': ['Score-P/4.0-CrayIntel-18.07'],
-            'PrgEnv-pgi': ['Score-P/4.0-CrayPGI-18.07']
+            'PrgEnv-gnu': ['Score-P/4.0-CrayGNU-18.08'],
+            'PrgEnv-intel': ['Score-P/4.0-CrayIntel-18.08'],
+            'PrgEnv-pgi': ['Score-P/4.0-CrayPGI-18.08']
         }
 
         self.prgenv_flags = {
@@ -71,7 +72,7 @@ class ScorepHybrid(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.scorep_modules['PrgEnv-gnu'] = [
-                'Score-P/4.0-CrayGNU-18.07-cuda-9.1'
+                'Score-P/4.0-CrayGNU-18.08-cuda-9.1'
             ]
 
         self.modules = self.scorep_modules[environ.name]

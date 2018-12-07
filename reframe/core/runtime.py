@@ -92,9 +92,9 @@ class HostResources:
     #:    Users may not set this field.
     #:
     prefix = fields.AbsolutePathField('prefix')
-    outputdir = fields.AbsolutePathField('outputdir', allow_none=True)
-    stagedir  = fields.AbsolutePathField('stagedir', allow_none=True)
-    perflogdir = fields.AbsolutePathField('perflogdir', allow_none=True)
+    outputdir = fields.AbsolutePathField('outputdir', type(None))
+    stagedir  = fields.AbsolutePathField('stagedir', type(None))
+    perflogdir = fields.AbsolutePathField('perflogdir', type(None))
 
     def __init__(self, prefix=None, stagedir=None,
                  outputdir=None, perflogdir=None, timefmt=None):
@@ -112,6 +112,19 @@ class HostResources:
 
         os.makedirs(ret, exist_ok=True)
         return ret
+
+    def _format_dirs(self, *dirs):
+        try:
+            last = dirs[-1]
+        except IndexError:
+            return dirs
+
+        current_run = runtime().current_run
+        if current_run == 0:
+            return dirs
+
+        last += '_retry%s' % current_run
+        return (*dirs[:-1], last)
 
     @property
     def timestamp(self):
@@ -141,10 +154,12 @@ class HostResources:
             return self.perflogdir
 
     def make_stagedir(self, *dirs, wipeout=True):
-        return self._makedir(self.stage_prefix, *dirs, wipeout=wipeout)
+        return self._makedir(self.stage_prefix,
+                             *self._format_dirs(*dirs), wipeout=wipeout)
 
     def make_outputdir(self, *dirs, wipeout=True):
-        return self._makedir(self.output_prefix, *dirs, wipeout=wipeout)
+        return self._makedir(self.output_prefix,
+                             *self._format_dirs(*dirs), wipeout=wipeout)
 
 
 class RuntimeContext:
@@ -177,6 +192,7 @@ class RuntimeContext:
             self._system.outputdir, self._system.perflogdir)
         self._modules_system = ModulesSystem.create(
             self._system.modules_system)
+        self._current_run = 0
 
     def _autodetect_system(self):
         """Auto-detect system."""
@@ -203,6 +219,13 @@ class RuntimeContext:
             return self._site_config.modes[name]
         except KeyError:
             raise ConfigError('unknown execution mode: %s' % name) from None
+
+    def next_run(self):
+        self._current_run += 1
+
+    @property
+    def current_run(self):
+        return self._current_run
 
     @property
     def system(self):

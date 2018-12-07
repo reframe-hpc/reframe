@@ -21,7 +21,7 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
     @property
     def valid(self):
-        return self._has_import and self._has_regression_test
+        return self._has_import
 
     def visit_Import(self, node):
         for m in node.names:
@@ -29,20 +29,8 @@ class RegressionCheckValidator(ast.NodeVisitor):
                 self._has_import = True
 
     def visit_ImportFrom(self, node):
-        if node.module.startswith('reframe'):
+        if node.module is not None and node.module.startswith('reframe'):
             self._has_import = True
-
-    def visit_ClassDef(self, node):
-        for b in node.bases:
-            try:
-                # Unqualified name as in `class C(RegressionTest)`
-                cls_name = b.id
-            except AttributeError:
-                # Qualified name as in `class C(rfm.RegressionTest)`
-                cls_name = b.attr
-
-            if 'RegressionTest' in cls_name:
-                self._has_regression_test = True
 
 
 class RegressionCheckLoader:

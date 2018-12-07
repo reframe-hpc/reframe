@@ -1,12 +1,11 @@
 import os
-
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class Cp2kCheck(RunOnlyRegressionTest):
-    def __init__(self, check_name, check_descr, **kwargs):
-        super().__init__(check_name, os.path.dirname(__file__), **kwargs)
+class Cp2kCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self, check_name, check_descr):
+        super().__init__(check_name, os.path.dirname(__file__))
         self.descr = check_descr
         self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -35,7 +34,6 @@ class Cp2kCheck(RunOnlyRegressionTest):
         self.tags = {'scs'}
         self.strict_check = False
         self.modules = ['CP2K']
-        self.readonly_files = ['GTH_BASIS_SETS', 'H2O-256.inp', 'POTENTIAL']
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -43,9 +41,11 @@ class Cp2kCheck(RunOnlyRegressionTest):
         }
 
 
+@rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, **kwargs):
-        super().__init__('cp2k_cpu_check', 'CP2K check CPU', **kwargs)
+    def __init__(self, variant):
+        super().__init__('cp2k_cpu_%s_check' % variant,
+                         'CP2K check CPU')
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.num_gpus_per_node = 0
         if self.current_system.name == 'dom':
@@ -54,21 +54,34 @@ class Cp2kCpuCheck(Cp2kCheck):
             self.num_tasks = 576
 
         self.num_tasks_per_node = 36
-        self.reference = {
-            'dom:mc': {
-                'perf': (174.5, None, 0.05)
-            },
-            'daint:mc': {
-                'perf': (113.0, None, 0.25)
-            },
-        }
-        self.tags |= {'maintenance', 'production'}
+
+        if variant == 'maint':
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:mc': {
+                    'perf': (182.6, None, 0.05)
+                },
+                'daint:mc': {
+                    'perf': (106.8, None, 0.10)
+                },
+            }
+        else:
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:mc': {
+                    'perf': (174.5, None, 0.05)
+                },
+                'daint:mc': {
+                    'perf': (113.0, None, 0.25)
+                },
+            }
 
 
+@rfm.parameterized_test(['prod'], ['maint'])
 class Cp2kGpuCheck(Cp2kCheck):
-    def __init__(self, variant, **kwargs):
+    def __init__(self, variant):
         super().__init__('cp2k_gpu_%s_check' % variant,
-                         'CP2K check GPU', **kwargs)
+                         'CP2K check GPU')
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.modules = ['CP2K']
@@ -80,36 +93,23 @@ class Cp2kGpuCheck(Cp2kCheck):
 
         self.num_tasks_per_node = 12
 
-
-class Cp2kGpuMaintCheck(Cp2kGpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('maint', **kwargs)
-        self.tags |= {'maintenance'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (258.0, None, 0.15)
-            },
-            'daint:gpu': {
-                'perf': (139.0, None, 0.10)
-            },
-        }
-
-
-class Cp2kGpuProdCheck(Cp2kGpuCheck):
-    def __init__(self, **kwargs):
-        super().__init__('prod', **kwargs)
-        self.tags |= {'production'}
-        self.reference = {
-            'dom:gpu': {
-                'perf': (240.0, None, 0.05)
-            },
-            'daint:gpu': {
-                'perf': (195.0, None, 0.10)
-            },
-        }
-
-
-def _get_checks(**kwargs):
-    return [Cp2kCpuCheck(**kwargs),
-            Cp2kGpuMaintCheck(**kwargs),
-            Cp2kGpuProdCheck(**kwargs)]
+        if variant == 'maint':
+            self.tags |= {'maintenance'}
+            self.reference = {
+                'dom:gpu': {
+                    'perf': (251.8, None, 0.15)
+                },
+                'daint:gpu': {
+                    'perf': (222.6, None, 0.05)
+                },
+            }
+        else:
+            self.tags |= {'production'}
+            self.reference = {
+                'dom:gpu': {
+                    'perf': (240.0, None, 0.05)
+                },
+                'daint:gpu': {
+                    'perf': (222.6, None, 0.05)
+                },
+            }

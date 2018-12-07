@@ -594,9 +594,12 @@ The ``perf`` subkey will then be searched in the following scopes in this order:
 The first occurrence will be used as the reference value of the ``perf`` performance variable.
 In our example, the ``perf`` key will be resolved in the ``daint:gpu`` scope giving us the reference value.
 
-Reference values in ReFrame are specified as a three-tuple comprising the reference value and lower and upper thresholds.
+Reference values in ReFrame are specified as a three-tuple or four-tuple comprising the reference value, the lower and upper thresholds and, optionally, the measurement unit.
 Thresholds are specified as decimal fractions of the reference value. For nonnegative reference values, the lower threshold must lie in the [-1,0], whereas the upper threshold may be any positive real number or zero.
 In our example, the reference value for this test on ``daint:gpu`` is 50 Gflop/s ±10%. Setting a threshold value to :class:`None` disables the threshold.
+If you specify a measurement unit as well, you will be able to log it the performance logs of the test; this is handy when you are inspecting or plotting the performance values.
+
+
 
 Combining It All Together
 -------------------------

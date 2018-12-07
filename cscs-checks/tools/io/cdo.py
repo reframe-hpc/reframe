@@ -12,7 +12,7 @@
 # can be read and written.
 # The next step to enlarge the CDO verification would probably be to perform
 # the test with different files having different structures and organisation.
-# In fact, the test InfoNC4Check for example fails if the file is changed to
+# In fact, the test InfoNC4Test for example fails if the file is changed to
 # 'test_hgroups.nc4'; it gives the error:
 #   cdo info: Open failed on >test_hgroups.nc4<
 #   Unsupported file structure"
@@ -24,28 +24,30 @@ import reframe.utility.sanity as sn
 from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class CDOBaseCheck(rfm.RunOnlyRegressionTest):
+class CDOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['SO']
-        self.tags = {'production'}
+                              'kesch:pn']
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-gnu-c2sm']
+            self.modules = ['cdo']
+        else:
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-c2sm']
+            self.modules = ['CDO']
 
-    def setup(self, partition, environ, **job_opts):
-        cdo_name = 'cdo' if self.current_system.name == 'kesch' else 'CDO'
-        self.modules = [cdo_name]
-        super().setup(partition, environ, **job_opts)
+        self.maintainers = ['SO']
+        self.tags = {'production', 'mch'}
 
 
 # Check that the netCDF loaded by the CDO module supports the nc4 filetype
 # (nc4 support must be explicitly activated when the netCDF library is
 # compiled...).
 @rfm.simple_test
-class DependencyCheck(CDOBaseCheck):
+class CDO_DependencyTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies that the netCDF loaded by the CDO module '
@@ -57,7 +59,7 @@ class DependencyCheck(CDOBaseCheck):
 
 
 @rfm.simple_test
-class NC4SupportCheck(CDOBaseCheck):
+class CDO_NC4SupportTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies that the CDO supports the nc4 filetype')
@@ -68,14 +70,14 @@ class NC4SupportCheck(CDOBaseCheck):
                                                r'nc4c\W', self.stderr)
 
 
-# All CDO check load the CDO module (see CDOBaseCheck). This test tries to load
+# All CDO check load the CDO module (see CDOBaseTest). This test tries to load
 # then the NCO module to see if there appear any conflicts. If there are no
 # conflicts then self.stdout and self.stderr are empty. Note that the command
 # 'module load NCO' cannot be passed via self.executable to srun as 'module'
 # is not an executable. Thus, we run the command as a pre_run command and
 # define as executable just an echo with no arguments.
 @rfm.simple_test
-class NCOModuleCompatibilityCheck(CDOBaseCheck):
+class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies compatibility with the NCO module')
@@ -91,7 +93,7 @@ class NCOModuleCompatibilityCheck(CDOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNCCheck(CDOBaseCheck):
+class CDO_InfoNCTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies reading info of a standard netCDF file')
@@ -106,7 +108,7 @@ class InfoNCCheck(CDOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNC4Check(CDOBaseCheck):
+class CDO_InfoNC4Test(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies reading info of a netCDF-4 file')
@@ -122,7 +124,7 @@ class InfoNC4Check(CDOBaseCheck):
 
 
 @rfm.simple_test
-class InfoNC4CCheck(CDOBaseCheck):
+class CDO_InfoNC4CTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies reading info of a compressed netCDF-4 file')
@@ -137,7 +139,7 @@ class InfoNC4CCheck(CDOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNCCheck(CDOBaseCheck):
+class CDO_MergeNCTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies merging of 3 standard netCDF files')
@@ -157,7 +159,7 @@ class MergeNCCheck(CDOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNC4Check(CDOBaseCheck):
+class CDO_MergeNC4Test(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies merging of 3 netCDF-4 files')
@@ -177,7 +179,7 @@ class MergeNC4Check(CDOBaseCheck):
 
 
 @rfm.simple_test
-class MergeNC4CCheck(CDOBaseCheck):
+class CDO_MergeNC4CTest(CDOBaseTest):
     def __init__(self):
         super().__init__()
         self.descr = ('verifies merging and compressing of 3 compressed '

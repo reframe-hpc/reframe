@@ -7,12 +7,12 @@ OBJS :=  _variableDef.o _jacobi.o _main.o
 
 $(OBJS):
 	@echo 'Compiling: $@'
-	@echo '$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)'
-	$(PREP) $(FC) $(FFLAGS) -c -o $(@) $(@:.o=.F90)
+	@echo '$(PREP) $(FC) $(FCFLAGS) -c -o $(@) $(@:.o=.F90)'
+	$(PREP) $(FC) $(FCFLAGS) -c -o $(@) $(@:.o=.F90)
 
 $(EXECUTABLE): $(OBJS)
 	@echo 'Linking: $@'
-	$(PREP) $(FC) $(FFLAGS) $(LDFLAGS) -o $(@) $(OBJS)
+	$(PREP) $(FC) $(FCFLAGS) $(LDFLAGS) -o $(@) $(OBJS)
 	@echo 'Finished building: $@'
 	@echo ' '
 

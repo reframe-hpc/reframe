@@ -44,6 +44,7 @@ class HPCGCheck(RunOnlyRegressionTest):
         self.maintainers = ['VK']
 
 
+# FIXME: This test is obsolete; it is kept only for reference
 class HPCGMonchAcceptanceCheck(RegressionTest):
     def __init__(self, num_tasks, **kwargs):
         super().__init__('hpcg_check_%s_nodes' % num_tasks,

@@ -9,6 +9,10 @@ class CudaCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs += ['PrgEnv-cray-nompi',
+                                         'PrgEnv-gnu-nompi']
+
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         if self.current_system.name == 'kesch':
@@ -19,12 +23,14 @@ class CudaCheck(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.nvidia_sm = '60'
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.nvidia_sm = '37'
 
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production'}
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaMatrixmulCublasCheck(CudaCheck):
     def __init__(self):
@@ -39,6 +45,7 @@ class CudaMatrixmulCublasCheck(CudaCheck):
             self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaDeviceQueryCheck(CudaCheck):
     def __init__(self):
@@ -51,6 +58,7 @@ class CudaDeviceQueryCheck(CudaCheck):
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaConcurrentKernelsCheck(CudaCheck):
     def __init__(self):
@@ -63,6 +71,7 @@ class CudaConcurrentKernelsCheck(CudaCheck):
         self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
 
 
+@rfm.required_version('>=2.14')
 @rfm.simple_test
 class CudaSimpleMPICheck(CudaCheck):
     def __init__(self):
@@ -84,9 +93,3 @@ class CudaSimpleMPICheck(CudaCheck):
         self.build_system = 'Make'
         self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
                                       '-arch=sm_%s' % self.nvidia_sm]
-
-    def setup(self, partition, environ, **job_opts):
-        if (self.current_system.name == 'kesch' and
-            environ.name == 'PrgEnv-gnu'):
-            self.modules = ['mvapich2gdr_gnu/2.2_cuda_8.0']
-        super().setup(partition, environ, **job_opts)

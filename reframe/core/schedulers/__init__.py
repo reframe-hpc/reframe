@@ -8,8 +8,10 @@ import os
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.shell as shell
-from reframe.core.exceptions import JobNotStartedError
+import reframe.utility.typecheck as typ
+from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers import JobLauncher
+from reframe.core.logging import getlogger
 
 
 class JobState:
@@ -39,9 +41,9 @@ class Job(abc.ABC):
 
     #: Options to be passed to the backend job scheduler.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    options = fields.TypedListField('options', str)
+    options = fields.TypedField('options', typ.List[str])
 
     #: The parallel program launcher that will be used to launch the parallel
     #: executable of this job.
@@ -49,9 +51,9 @@ class Job(abc.ABC):
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
 
-    _jobid = fields.IntegerField('_jobid', allow_none=True)
-    _exitcode = fields.IntegerField('_exitcode', allow_none=True)
-    _state = fields.TypedField('_state', JobState, allow_none=True)
+    _jobid = fields.TypedField('_jobid', int, type(None))
+    _exitcode = fields.TypedField('_exitcode', int, type(None))
+    _state = fields.TypedField('_state', JobState, type(None))
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,
@@ -64,12 +66,14 @@ class Job(abc.ABC):
                  num_tasks_per_socket=None,
                  num_cpus_per_task=None,
                  use_smt=None,
-                 time_limit=(0, 10, 0),
+                 time_limit=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
                  pre_run=[],
                  post_run=[],
+                 sched_flex_alloc_tasks=None,
+                 sched_access=[],
                  sched_account=None,
                  sched_partition=None,
                  sched_reservation=None,
@@ -96,6 +100,8 @@ class Job(abc.ABC):
         self._time_limit = time_limit
 
         # Backend scheduler related information
+        self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
+        self._sched_access = sched_access
         self._sched_nodelist = sched_nodelist
         self._sched_exclude_nodelist = sched_exclude_nodelist
         self._sched_partition = sched_partition
@@ -135,6 +141,14 @@ class Job(abc.ABC):
 
     @property
     def num_tasks(self):
+        """The number of tasks assigned to this job.
+
+        This attribute is useful in a flexible regression test for determining
+        the actual number of tasks that ReFrame assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        `tutorial <advanced.html#flexible-regression-tests>`__.
+        """
         return self._num_tasks
 
     @property
@@ -174,6 +188,14 @@ class Job(abc.ABC):
         return self._use_smt
 
     @property
+    def sched_flex_alloc_tasks(self):
+        return self._sched_flex_alloc_tasks
+
+    @property
+    def sched_access(self):
+        return self._sched_access
+
+    @property
     def sched_nodelist(self):
         return self._sched_nodelist
 
@@ -199,6 +221,15 @@ class Job(abc.ABC):
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
+        if self.num_tasks == 0:
+            try:
+                self._num_tasks = self.guess_num_tasks()
+                getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+                                  self._num_tasks)
+            except NotImplementedError as e:
+                raise JobError('guessing number of tasks is not implemented '
+                               'by the backend') from e
+
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.emit_preamble())
@@ -210,6 +241,51 @@ class Job(abc.ABC):
 
     @abc.abstractmethod
     def emit_preamble(self):
+        pass
+
+    def guess_num_tasks(self):
+        if isinstance(self.sched_flex_alloc_tasks, int):
+            if self.sched_flex_alloc_tasks <= 0:
+                raise JobError('invalid number of flex_alloc_tasks: %s' %
+                               self.sched_flex_alloc_tasks)
+
+            return self.sched_flex_alloc_tasks
+
+        available_nodes = self.get_partition_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes in current '
+                          'virtual partition: %s' % len(available_nodes))
+
+        # Try to guess the number of tasks now
+        available_nodes = self.filter_nodes(available_nodes, self.options)
+        if not available_nodes:
+            options = ' '.join(self.sched_access + self.options)
+            raise JobError('could not find any node satisfying the '
+                           'required criteria: %s' % options)
+
+        if self.sched_flex_alloc_tasks == 'idle':
+            available_nodes = {n for n in available_nodes
+                               if n.is_available()}
+            if not available_nodes:
+                raise JobError('could not find any idle nodes')
+
+            getlogger().debug(
+                'flex_alloc_tasks: selecting idle nodes: '
+                'available nodes now: %s' % len(available_nodes))
+
+        num_tasks_per_node = self.num_tasks_per_node or 1
+        num_tasks = len(available_nodes) * num_tasks_per_node
+        getlogger().debug('flex_alloc_tasks: setting num_tasks to: %s' %
+                          num_tasks)
+        return num_tasks
+
+    @abc.abstractmethod
+    def get_partition_nodes(self):
+        # Get all nodes of the current virtual partition
+        pass
+
+    @abc.abstractmethod
+    def filter_nodes(self, nodes, options):
+        # Filter nodes according to the scheduler options
         pass
 
     @abc.abstractmethod

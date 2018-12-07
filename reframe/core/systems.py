@@ -1,21 +1,21 @@
 import reframe.core.debug as debug
 import reframe.core.fields as fields
-
+import reframe.utility.typecheck as typ
 from reframe.core.environments import Environment
 
 
 class SystemPartition:
     """A representation of a system partition inside ReFrame."""
 
-    _name      = fields.StringPatternField('_name', '(\w|-)+')
-    _descr     = fields.StringField('_descr')
-    _access    = fields.TypedListField('_access', str)
-    _environs  = fields.TypedListField('_environs', Environment)
-    _resources = fields.TypedDictField('_resources', str, (list, str))
-    _local_env = fields.TypedField('_local_env', Environment, allow_none=True)
+    _name      = fields.TypedField('_name', typ.Str['(\w|-)+'])
+    _descr     = fields.TypedField('_descr', str)
+    _access    = fields.TypedField('_access', typ.List[str])
+    _environs  = fields.TypedField('_environs', typ.List[Environment])
+    _resources = fields.TypedField('_resources', typ.Dict[str, typ.List[str]])
+    _local_env = fields.TypedField('_local_env', Environment, type(None))
 
     # maximum concurrent jobs
-    _max_jobs  = fields.IntegerField('_max_jobs')
+    _max_jobs  = fields.TypedField('_max_jobs', int)
 
     def __init__(self, name, descr=None, scheduler=None, launcher=None,
                  access=[], environs=[], resources={}, local_env=None,
@@ -144,18 +144,18 @@ class SystemPartition:
 
 class System:
     """A representation of a system inside ReFrame."""
-    _name  = fields.StringPatternField('_name', '(\w|-)+')
-    _descr = fields.StringField('_descr')
-    _hostnames  = fields.TypedListField('_hostnames', str)
-    _partitions = fields.TypedListField('_partitions', SystemPartition)
-    _modules_system = fields.StringPatternField('_modules_system',
-                                                '(\w|-)+', allow_none=True)
+    _name  = fields.TypedField('_name', typ.Str[r'(\w|-)+'])
+    _descr = fields.TypedField('_descr', str)
+    _hostnames  = fields.TypedField('_hostnames', typ.List[str])
+    _partitions = fields.TypedField('_partitions', typ.List[SystemPartition])
+    _modules_system = fields.TypedField('_modules_system',
+                                        typ.Str[r'(\w|-)+'], type(None))
 
-    _prefix = fields.StringField('_prefix')
-    _stagedir  = fields.StringField('_stagedir', allow_none=True)
-    _outputdir = fields.StringField('_outputdir', allow_none=True)
-    _perflogdir = fields.StringField('_perflogdir', allow_none=True)
-    _resourcesdir = fields.StringField('_resourcesdir')
+    _prefix = fields.TypedField('_prefix', str)
+    _stagedir  = fields.TypedField('_stagedir', str, type(None))
+    _outputdir = fields.TypedField('_outputdir', str, type(None))
+    _perflogdir = fields.TypedField('_perflogdir', str, type(None))
+    _resourcesdir = fields.TypedField('_resourcesdir', str)
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
                  prefix='.', stagedir=None, outputdir=None, perflogdir=None,

@@ -19,6 +19,7 @@ import reframe.core.runtime as rt
 import reframe.core.shell as shell
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
@@ -62,30 +63,31 @@ class RegressionTest:
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
-    name = fields.StringPatternField('name', '[^\/]+')
+    name = fields.TypedField('name', typ.Str[r'[^\/]+'])
 
     #: List of programming environments supported by this test.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
     #:        Programming environments can now be specified using wildcards.
-    valid_prog_environs = fields.TypedListField('valid_prog_environs', str)
+    valid_prog_environs = fields.TypedField('valid_prog_environs',
+                                            typ.List[str])
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname]``.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedListField('valid_systems', str)
+    valid_systems = fields.TypedField('valid_systems', typ.List[str])
 
     #: A detailed description of the test.
     #:
     #: :type: :class:`str`
     #: :default: ``self.name``
-    descr = fields.StringField('descr')
+    descr = fields.TypedField('descr', str)
 
     #: The path to the source file or source directory of the test.
     #:
@@ -103,7 +105,7 @@ class RegressionTest:
     #:
     #: :type: :class:`str`
     #: :default: ``''``
-    sourcepath = fields.StringField('sourcepath')
+    sourcepath = fields.TypedField('sourcepath', str)
 
     #: The directory containing the test's resources.
     #:
@@ -127,7 +129,7 @@ class RegressionTest:
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
-    sourcesdir = fields.StringField('sourcesdir', allow_none=True)
+    sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
@@ -143,37 +145,37 @@ class RegressionTest:
     #: :default: :class:`None`.
     #:
     #: .. versionadded:: 2.14
-    build_system = BuildSystemField('build_system', allow_none=True)
+    build_system = BuildSystemField('build_system', type(None))
 
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are executed during the compilation phase and from
     #: inside the stage directory. **Each entry in the list spawns a new shell.**
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmd = fields.TypedListField('prebuild_cmd', str)
+    prebuild_cmd = fields.TypedField('prebuild_cmd', typ.List[str])
 
     #: List of shell commands to be executed after a successful compilation.
     #:
     #: These commands are executed during the compilation phase and from inside
     #: the stage directory. **Each entry in the list spawns a new shell.**
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmd = fields.TypedListField('postbuild_cmd', str)
+    postbuild_cmd = fields.TypedField('postbuild_cmd', typ.List[str])
 
     #: The name of the executable to be launched during the run phase.
     #:
     #: :type: :class:`str`
     #: :default: ``os.path.join('.', self.name)``
-    executable = fields.StringField('executable')
+    executable = fields.TypedField('executable', str)
 
     #: List of options to be passed to the :attr:`executable`.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    executable_opts = fields.TypedListField('executable_opts', str)
+    executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
     #: List of shell commands to execute before launching this job.
     #:
@@ -181,23 +183,23 @@ class RegressionTest:
     #: Instead, they are emitted in the generated job script just before the
     #: actual job launch command.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:    .. versionadded:: 2.10
-    pre_run = fields.TypedListField('pre_run', str)
+    pre_run = fields.TypedField('pre_run', typ.List[str])
 
     #: List of shell commands to execute after launching this job.
     #:
     #: See :attr:`pre_run` for a more detailed description of the semantics.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:    .. versionadded:: 2.10
-    post_run = fields.TypedListField('post_run', str)
+    post_run = fields.TypedField('post_run', typ.List[str])
 
     #: List of files to be kept after the test finishes.
     #:
@@ -211,9 +213,9 @@ class RegressionTest:
     #:
     #: Relative path names are resolved against the stage directory.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    keep_files = fields.TypedListField('keep_files', str)
+    keep_files = fields.TypedField('keep_files', typ.List[str])
 
     #: List of files or directories (relative to the :attr:`sourcesdir`) that
     #: will be symlinked in the stage directory and not copied.
@@ -221,25 +223,25 @@ class RegressionTest:
     #: You can use this variable to avoid copying very large files to the stage
     #: directory.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    readonly_files = fields.TypedListField('readonly_files', str)
+    readonly_files = fields.TypedField('readonly_files', typ.List[str])
 
     #: Set of tags associated with this test.
     #:
     #: This test can be selected from the frontend using any of these tags.
     #:
-    #: :type: :class:`set[str]`
+    #: :type: :class:`Set[str]`
     #: :default: an empty set
-    tags = fields.TypedSetField('tags', str)
+    tags = fields.TypedField('tags', typ.Set[str])
 
     #: List of people responsible for this test.
     #:
     #: When the test fails, this contact list will be printed out.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    maintainers = fields.TypedListField('maintainers', str)
+    maintainers = fields.TypedField('maintainers', typ.List[str])
 
     #: Mark this test as a strict performance test.
     #:
@@ -249,27 +251,25 @@ class RegressionTest:
     #:
     #: :type: boolean
     #: :default: :class:`True`
-    strict_check = fields.BooleanField('strict_check')
+    strict_check = fields.TypedField('strict_check', bool)
 
     #: Number of tasks required by this test.
     #:
-    #: If the number of tasks is set to ``0``, ReFrame will try to use all
-    #: the available nodes of a reservation. A reservation *must* be specified
-    #: through the `--reservation` command-line option, otherwise the
-    #: regression test will fail during submission. ReFrame will try to run the
-    #: test on all the nodes of the reservation that satisfy the selection
-    #: criteria of the current
-    #: `virtual partition <configure.html#partition-configuration>`__
-    #: (i.e., constraints and/or partitions).
+    #: If the number of tasks is set to ``0``, ReFrame will try to flexibly
+    #: allocate the number of tasks, based on the command line option
+    #: ``--flex-alloc-tasks``.
     #:
     #: :type: integral
     #: :default: ``1``
     #:
     #: .. note::
-    #:     .. versionchanged:: 2.9
-    #:        Added support for running the test using all the nodes of the
-    #:        specified reservation if the number of tasks is set to ``0``.
-    num_tasks = fields.IntegerField('num_tasks')
+    #:     .. versionchanged:: 2.15
+    #:        Added support for flexible allocation of the number of tasks
+    #:        according to the ``--flex-alloc-tasks`` command line option
+    #:        (see `Flexible task allocation
+    #:        <running.html#flexible-task-allocation>`__)
+    #:        if the number of tasks is set to ``0``.
+    num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
     #:
@@ -277,14 +277,14 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_node = fields.IntegerField('num_tasks_per_node',
-                                             allow_none=True)
+    num_tasks_per_node = fields.TypedField('num_tasks_per_node',
+                                           int, type(None))
 
     #: Number of GPUs per node required by this test.
     #:
     #: :type: integral
     #: :default: ``0``
-    num_gpus_per_node = fields.IntegerField('num_gpus_per_node')
+    num_gpus_per_node = fields.TypedField('num_gpus_per_node', int)
 
     #: Number of CPUs per task required by this test.
     #:
@@ -292,8 +292,7 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_cpus_per_task = fields.IntegerField('num_cpus_per_task',
-                                            allow_none=True)
+    num_cpus_per_task = fields.TypedField('num_cpus_per_task', int, type(None))
 
     #: Number of tasks per core required by this test.
     #:
@@ -301,8 +300,8 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core  = fields.IntegerField('num_tasks_per_core',
-                                              allow_none=True)
+    num_tasks_per_core  = fields.TypedField('num_tasks_per_core',
+                                            int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -310,8 +309,8 @@ class RegressionTest:
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_socket = fields.IntegerField('num_tasks_per_socket',
-                                               allow_none=True)
+    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
+                                             int, type(None))
 
     #: Specify whether this tests needs simultaneous multithreading enabled.
     #:
@@ -319,29 +318,47 @@ class RegressionTest:
     #:
     #: :type: boolean or :class:`None`
     #: :default: :class:`None`
-    use_multithreading = fields.BooleanField('use_multithreading',
-                                             allow_none=True)
+    use_multithreading = fields.TypedField('use_multithreading',
+                                           bool, type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    exclusive_access = fields.BooleanField('exclusive_access')
+    exclusive_access = fields.TypedField('exclusive_access', bool)
 
     #: Always execute this test locally.
     #:
     #: :type: boolean
     #: :default: :class:`False`
-    local = fields.BooleanField('local')
+    local = fields.TypedField('local', bool)
 
     #: The set of reference values for this test.
     #:
-    #: Refer to the :doc:`ReFrame Tutorial </tutorial>` for concrete usage
-    #: examples.
+    #: The reference values are specified as a scoped dictionary keyed on the
+    #: performance variables defined in :attr:`perf_patterns` and scoped under
+    #: the system/partition combinations.
+    #: The reference itself is a three- or four-tuple that contains the
+    #: reference value, the lower and upper thresholds and, optionally, the
+    #: measurement unit.
+    #: An example follows:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.reference = {
+    #:        'sys0:part0': {
+    #:            'perfvar0': (50, -0.1, 0.1, 'Gflop/s'),
+    #:            'perfvar1': (20, -0.1, 0.1, 'GB/s')
+    #:        },
+    #:        'sys0:part1': {
+    #:            'perfvar0': (100, -0.1, 0.1, 'Gflop/s'),
+    #:            'perfvar1': (40, -0.1, 0.1, 'GB/s')
+    #:        }
+    #:    }
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
-    reference = fields.ScopedDictField('reference', (tuple, object))
+    reference = fields.ScopedDictField('reference', typ.Tuple[object])
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -368,8 +385,8 @@ class RegressionTest:
     #:
     #:           self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
     #:
-    sanity_patterns = fields.TypedField(
-        'sanity_patterns', _DeferredExpression, allow_none=True)
+    sanity_patterns = fields.TypedField('sanity_patterns',
+                                        _DeferredExpression, type(None))
 
     #: Patterns for verifying the performance of this test.
     #:
@@ -383,33 +400,42 @@ class RegressionTest:
     #:     </sanity_functions_reference>`) as values.
     #:     :class:`None` is also allowed.
     #: :default: :class:`None`
-    perf_patterns = fields.TypedDictField(
-        'perf_patterns', str, _DeferredExpression, allow_none=True)
+    perf_patterns = fields.TypedField(
+        'perf_patterns', typ.Dict[str, _DeferredExpression], type(None))
 
     #: List of modules to be loaded before running this test.
     #:
     #: These modules will be loaded during the :func:`setup` phase.
     #:
-    #: :type: :class:`list[str]`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
-    modules = fields.TypedListField('modules', str)
+    modules = fields.TypedField('modules', typ.List[str])
 
     #: Environment variables to be set before running this test.
     #:
     #: These variables will be set during the :func:`setup` phase.
     #:
-    #: :type: :class:`dict[str, str]`
+    #: :type: :class:`Dict[str, str]`
     #: :default: ``{}``
-    variables = fields.TypedDictField('variables', str, str)
+    variables = fields.TypedField('variables', typ.Dict[str, str])
 
     #: Time limit for this test.
     #:
     #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
     #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: If set to :class:`None`, no time limit will be set.
+    #: The default time limit of the system partition's scheduler will be used.
+    #:
     #:
     #: :type: :class:`tuple[int]`
     #: :default: ``(0, 10, 0)``
-    time_limit = fields.TimerField('time_limit')
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 2.15
+    #:
+    #:    This attribute may be set to :class:`None`.
+    #:
+    time_limit = fields.TimerField('time_limit', type(None))
 
     #: Extra resources for this test.
     #:
@@ -467,7 +493,7 @@ class RegressionTest:
     #:
     #:     self.extra_resources = {'_rfm_gpu': {'num_gpus_per_node': 2}}
     #:
-    #: :type: :class:`dict[str, dict[str, object]]`
+    #: :type: :class:`Dict[str, Dict[str, object]]`
     #: :default: ``{}``
     #:
     #: .. note::
@@ -477,20 +503,20 @@ class RegressionTest:
     #:    A new more powerful syntax was introduced
     #:    that allows also custom job script directive prefixes.
     #:
-    extra_resources = fields.AggregateTypeField(
-        'extra_resources', (dict, (str, (dict, (str, object)))))
+    extra_resources = fields.TypedField('extra_resources',
+                                        typ.Dict[str, typ.Dict[str, object]])
 
     # Private properties
-    _prefix = fields.StringField('_prefix')
-    _stagedir = fields.StringField('_stagedir', allow_none=True)
-    _stdout = fields.StringField('_stdout', allow_none=True)
-    _stderr = fields.StringField('_stderr', allow_none=True)
+    _prefix = fields.TypedField('_prefix', str)
+    _stagedir = fields.TypedField('_stagedir', str, type(None))
+    _stdout = fields.TypedField('_stdout', str, type(None))
+    _stderr = fields.TypedField('_stderr', str, type(None))
     _current_partition = fields.TypedField('_current_partition',
-                                           SystemPartition, allow_none=True)
-    _current_environ = fields.TypedField('_current_environ', Environment,
-                                         allow_none=True)
-    _job = fields.TypedField('_job', Job, allow_none=True)
-    _build_job = fields.TypedField('_build_job', Job, allow_none=True)
+                                           SystemPartition, type(None))
+    _current_environ = fields.TypedField('_current_environ',
+                                         Environment, type(None))
+    _job = fields.TypedField('_job', Job, type(None))
+    _build_job = fields.TypedField('_build_job', Job, type(None))
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -794,10 +820,11 @@ class RegressionTest:
         """Setup the check's dynamic paths."""
         self.logger.debug('setting up paths')
         try:
-            self._stagedir = rt.runtime().resources.make_stagedir(
+            resources = rt.runtime().resources
+            self._stagedir = resources.make_stagedir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
-            self._outputdir = rt.runtime().resources.make_outputdir(
+            self._outputdir = resources.make_outputdir(
                 self.current_system.name, self._current_partition.name,
                 self._current_environ.name, self.name)
         except OSError as e:
@@ -837,6 +864,7 @@ class RegressionTest:
             num_cpus_per_task=self.num_cpus_per_task,
             use_smt=self.use_multithreading,
             time_limit=self.time_limit,
+            sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
 
@@ -848,8 +876,7 @@ class RegressionTest:
             resources_opts.extend(
                 self._current_partition.get_resource(r, **v))
 
-        self._job.options = (self._current_partition.access +
-                             resources_opts + self._job.options)
+        self._job.options = resources_opts + self._job.options
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
@@ -1086,20 +1113,18 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                try:
-                    ref, low_thres, high_thres = self.reference[key]
-                except KeyError:
+                if not key in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
                 perf_values.append((value, self.reference[key]))
                 self._perf_logger.log_performance(logging.INFO, tag, value,
-                                                  ref, low_thres, high_thres)
+                                                  *self.reference[key])
 
             for val, reference in perf_values:
-                refval, low_thres, high_thres = reference
-                evaluate(assert_reference(val, refval, low_thres, high_thres))
+                ref, low_thres, high_thres, *_ = reference
+                evaluate(assert_reference(val, ref, low_thres, high_thres))
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -1150,11 +1175,8 @@ class RegressionTest:
             self._current_partition.local_env.unload()
 
     def __str__(self):
-        return ('%s (found in %s)\n'
-                '        descr: %s\n'
-                '        tags: {%s}, maintainers: %s' %
-                (self.name, inspect.getfile(type(self)),
-                 self.descr, ','.join(self.tags), self.maintainers))
+        return "%s(name='%s', prefix='%s')" % (type(self).__name__,
+                                               self.name, self.prefix)
 
 
 class RunOnlyRegressionTest(RegressionTest):

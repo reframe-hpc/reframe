@@ -4,6 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang] for lang in ['C', 'Cpp', 'F90', 'Cuda']))
 class PerftoolsCheck(rfm.RegressionTest):
     def __init__(self, lang):
@@ -34,10 +35,6 @@ class PerftoolsCheck(rfm.RegressionTest):
             'PrgEnv-intel': ['-g', '-openmp'],
             'PrgEnv-pgi': ['-g', '-mp']
         }
-        if self.current_system.name == 'kesch':
-            # `-lcudart -lm` must be passed explicitly on kesch
-            self.prgenv_flags['PrgEnv-gnu'] = ['-fopenmp', '-lcudart', '-lm']
-
         self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
                                                self.stdout)
 

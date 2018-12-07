@@ -107,28 +107,41 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-cray-c2sm',
+                                     'PrgEnv-pgi-c2sm',
+                                     'PrgEnv-gnu-c2sm',
+                                     'PrgEnv-cray-c2sm-gpu',
+                                     'PrgEnv-pgi-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu', 'PrgEnv-cray',
-                                     'PrgEnv-pgi', 'PrgEnv-gnu-gdr',
-                                     'PrgEnv-pgi_17.10_gdr', 'PrgEnv-pgi_18.4_gdr',
-                                     'PrgEnv-cray_gdr', 'PrgEnv-cray_gdr_2.3'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-cray-c2sm',
+                                     'PrgEnv-pgi-c2sm',
+                                     'PrgEnv-gnu-c2sm',
+                                     'PrgEnv-cray-c2sm-gpu',
+                                     'PrgEnv-pgi-c2sm-gpu',
+                                     'PrgEnv-gnu-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}']
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
                     }
                 }
@@ -196,47 +209,85 @@ class ReframeSettings:
 
         'environments': {
             'kesch': {
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi': {
+                'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
-                'PrgEnv-pgi_17.10_gdr': {
+                'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi/17.10_gdr'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-pgi_18.4_gdr': {
+                'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.4_gdr'],
+                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                },
+                'PrgEnv-cray-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray'],
+                },
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'variables': {
+                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                    },
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
-                'PrgEnv-cray_gdr': {
+                'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                    'modules': ['PrgEnv-gnu'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 },
-                'PrgEnv-cray_gdr_2.3': {
+                'PrgEnv-cray-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr_2.3'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/base'],
                 },
-                'PrgEnv-gnu-gdr': {
+                'PrgEnv-cray-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/gpu'],
+                },
+                'PrgEnv-pgi-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/base'],
                     'cc': 'mpicc',
-                    'cxx': 'mpic++',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-pgi-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/gpu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/base'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-c2sm-gpu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/gpu'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
             },
@@ -375,7 +426,8 @@ class ReframeSettings:
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
-                    'u=%(check_perf_upper_thres)s)'
+                    'u=%(check_perf_upper_thres)s)|'
+                    '%(check_perf_unit)s'
                 ),
                 'append': True
             }
