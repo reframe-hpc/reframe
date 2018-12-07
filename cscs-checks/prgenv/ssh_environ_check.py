@@ -23,13 +23,13 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
             'XDG_RUNTIME_DIR': r'/run/user/[\d+]'
         }
         self.executable = 'ssh'
-        echo_args = ' '.join('%s=$%s' % (i, i)  for i in reference.keys())
+        echo_args = ' '.join('{0}=${0}'.format(i) for i in reference.keys())
         self.executable_opts = [self.current_system.name,
                                 'echo', "'%s'" % echo_args]
         self.sanity_patterns = sn.all(
             sn.map(self.assert_envvar, list(reference.items())))
         self.maintainers = ['RS', 'LM']
-        self.tags = {'maintenance'}
+        self.tags = {'maintenance', 'production'}
 
     def assert_envvar(self, v):
         return sn.assert_found('='.join(v), self.stdout)
