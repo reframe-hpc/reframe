@@ -13,8 +13,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.exclusive_access = True
-            self.valid_prog_environs += ['PrgEnv-gnu-nompi']
 
         self.sourcesdir = os.path.join(
             self.current_system.resourcesdir, 'CUDA', 'essentials'
@@ -55,9 +55,9 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'dom:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'dom:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
             'dom:gpu:d2d': (485932, -0.1, None, 'MB/s'),
-            'kesch:cn:h2d':   (7213, -0.1, None, 'MB/s'),
-            'kesch:cn:d2h':   (7213, -0.1, None, 'MB/s'),
-            'kesch:cn:d2d': (137347, -0.1, None, 'MB/s')
+            'kesch:cn:h2d':   (7583, -0.1, None, 'MB/s'),
+            'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
+            'kesch:cn:d2d': (137408, -0.1, None, 'MB/s')
         }
         self.tags = {'diagnostic', 'mch'}
         self.maintainers = ['AJ', 'VK']
