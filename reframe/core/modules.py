@@ -421,12 +421,13 @@ class TModImpl(ModulesSystemImpl):
         completed = self._run_module_command(*args)
         if self._module_command_failed(completed):
             if msg is None:
-                msg = 'modules system command failed: '
+                msg = 'modules system command caused problem: '
                 if isinstance(completed.args, str):
                     msg += completed.args
                 else:
                     msg += ' '.join(completed.args)
 
+            msg += ': %s' % completed.stderr
             raise EnvironError(msg)
 
         exec(completed.stdout)
@@ -451,11 +452,11 @@ class TModImpl(ModulesSystemImpl):
 
     def load_module(self, module):
         self._exec_module_command('load', str(module),
-                                  msg='could not load module %s' % module)
+            msg="problem encountered when loading module '%s'" % module)
 
     def unload_module(self, module):
         self._exec_module_command('unload', str(module),
-                                  msg='could not unload module %s' % module)
+            msg='problem encountered when unloading module %s' % module)
 
     def unload_all(self):
         self._exec_module_command('purge')

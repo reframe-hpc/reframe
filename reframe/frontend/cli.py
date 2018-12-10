@@ -448,7 +448,8 @@ def main():
             try:
                 rt.modules_system.load_module(m, force=True)
             except EnvironError:
-                printer.info("could not load module `%s': Skipping..." % m)
+                printer.info("problem encountered when loading module '%s': "
+                             "Skipping..." % m)
 
         success = True
         if options.list:
