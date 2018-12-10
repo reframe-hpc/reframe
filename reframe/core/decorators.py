@@ -35,9 +35,9 @@ def _register_test(cls, args=None):
                 elif args is None:
                     ret.append(cls())
             except Exception as e:
-                getlogger().info('skipping test defined in class %s due '
-                                 'to errors. Please check file %s' %
-                                 (cls.__name__, inspect.getfile(cls)))
+                getlogger().error('%s:%s: skipping due to errors; check log'
+                                  'file for more information.' %
+                                  (inspect.getfile(cls), cls.__name__))
                 getlogger().debug(traceback.format_exc())
 
         return ret
