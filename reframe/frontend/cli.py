@@ -45,6 +45,7 @@ def list_checks(checks, printer, detailed=False):
     printer.info('Found %d check(s).' % len(checks))
 
 
+# FIXME: This function is a duplicate of the corresponding function in the class Runner.
 def partition_supported(check, partition, options):
     if options.skip_system_check:
         return True
@@ -52,6 +53,7 @@ def partition_supported(check, partition, options):
     return check.supports_system(partition.name)
 
 
+# FIXME: This function is a duplicate of the corresponding function in the class Runner.
 def environ_supported(check, environ, options):
     ret = True
     if options.prgenv:
