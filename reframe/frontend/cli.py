@@ -383,51 +383,52 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(
+        checks_matched = list(filter(
             lambda c:
             c if c.name not in options.exclude_names else None,
             checks_found
-        )
+        ))
 
         # Filter checks by name
         check_found_new = list(filter(have_not_name(options.exclude_names), check_found_new))
 
         print('check1 lists')
         print(len(check_found_new))
-        print(check_found_new == [c for c in checks_matched])
-        print(len(check_found_new))
-        print('check1 lists done')
+        print(check_found_new == checks_matched)
+ #       print(len(check_found_new))
+ #       print('check1 lists done')
 
         if options.names:
-            checks_matched = filter(
+            checks_matched = list(filter(
                 lambda c: c if c.name in options.names else None,
                 checks_matched
-            )
+            ))
 
         # TODO: remove duplicated code
-        check_found_new = list(filter(have_name(options.names), check_found_new))
+        if options.names:
+            check_found_new = list(filter(have_name(options.names), check_found_new))
 
         print('check2 lists')
         print(len(check_found_new))
-        print(check_found_new == [c for c in checks_matched])
-        print(len(check_found_new))
-        print('check2 lists done')
+        print(check_found_new == checks_matched)
+ #       print(len(check_found_new))
+ #       print('check2 lists done')
 
         # Filter checks by tags
         user_tags = set(options.tags)
-        checks_matched = filter(
+        checks_matched = list(filter(
             lambda c: c if user_tags.issubset(c.tags) else None,
             checks_matched
-        )
+        ))
 
         # TODO: remove duplicated code
         check_found_new = list(filter(have_tag(options.tags), check_found_new))
 
         print('check3 lists')
         print(len(check_found_new))
-        print(check_found_new == [c for c in checks_matched])
-        print(len(check_found_new))
-        print('check3 lists done')
+        print(check_found_new == checks_matched)
+ #       print(len(check_found_new))
+ #       print('check3 lists done')
 
         # TODO: should we move this in utils?
         # Filter checks by prgenv
@@ -438,7 +439,7 @@ def main():
                 return bool(c.valid_prog_environs)
 
         if not options.skip_prgenv_check:
-            checks_matched = filter(filter_prgenv, checks_matched)
+            checks_matched = list(filter(filter_prgenv, checks_matched))
 
         # TODO: remove duplicated code
         if not options.skip_prgenv_check:
@@ -446,9 +447,9 @@ def main():
 
         print('check4 lists')
         print(len(check_found_new))
-        print(check_found_new == [c for c in checks_matched])
-        print(len(check_found_new))
-        print('check4 lists done')
+        print(check_found_new == checks_matched)
+#        print(len(check_found_new))
+#        print('check4 lists done')
 
 
         # Filter checks by system
@@ -457,7 +458,7 @@ def main():
                         for s in rt.system.partitions])
 
         if not options.skip_system_check:
-            checks_matched = filter(filter_system, checks_matched)
+            checks_matched = list(filter(filter_system, checks_matched))
 
         # TODO: remove duplicated code
         if not options.skip_system_check:
@@ -465,9 +466,9 @@ def main():
 
         print('check5 lists')
         print(len(check_found_new))
-        print(check_found_new == [c for c in checks_matched])
-        print(len(check_found_new))
-        print('check5 lists done')
+        print(check_found_new == checks_matched)
+#        print(len(check_found_new))
+#        print('check5 lists done')
 
 
         # Filter checks further
@@ -488,19 +489,19 @@ def main():
             )
 
         # TODO: remove duplicated code
-        if options.gpu_only:
-            check_found_new = list(filter(is_gpu_only(), check_found_new))
-        elif options.cpu_only:
-            check_found_new = list(filter(is_cpu_only(), check_found_new))
+#        if options.gpu_only:
+#            check_found_new = list(filter(is_gpu_only(), check_found_new))
+#        elif options.cpu_only:
+#            check_found_new = list(filter(is_cpu_only(), check_found_new))
 
         checks_matched = [c for c in checks_matched]
 
         # TODO: check if lists match each other
-        print('check5 lists')
-        print(len(check_found_new))
-        print(check_found_new == checks_matched)
-        print(len(check_found_new))
-        print('check5 lists done')
+#        print('check5 lists')
+#        print(len(check_found_new))
+#        print(check_found_new == checks_matched)
+#        print(len(check_found_new))
+#        print('check5 lists done')
 
 
         # Act on checks

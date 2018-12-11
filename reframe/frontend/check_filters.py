@@ -1,3 +1,5 @@
+import reframe.core.runtime as rt
+
 def have_name(names):
     def _fn(c):
         return c.name in names
@@ -28,7 +30,7 @@ def have_prgenv(prgenv):
 def have_system():
     def _fn(c):
         return any([c.supports_system(s.fullname)
-                    for s in rt.system.partitions])
+                    for s in rt.runtime().system.partitions]) #TODO: fix this
 
     return _fn
 
@@ -40,6 +42,6 @@ def is_gpu_only(): #TODO: check test and change name
 
 def is_cpu_only():
     def _fn(c): #TODO: check test, change name and use gpu only function
-        return c.num_gpus_per_node > 0
+        return c.num_gpus_per_node == 0
     
     return _fn
