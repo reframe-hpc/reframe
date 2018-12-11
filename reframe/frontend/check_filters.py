@@ -1,4 +1,5 @@
 import reframe.core.runtime as rt
+import reframe.utility.sanity as util
 
 def have_name(names):
     def _fn(c):
