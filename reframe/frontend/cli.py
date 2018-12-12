@@ -7,6 +7,7 @@ import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.check_filters as filters
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
@@ -18,9 +19,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
-
-#TODO: adapt to import common rules
-from reframe.frontend.check_filters import * #TODO: use correct import rule
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -381,23 +379,23 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(have_not_name(options.exclude_names), checks_found)
+        checks_matched = filter(filters.have_not_name(options.exclude_names), checks_found)
 
         if options.names:
-            checks_matched = filter(have_name(options.names), checks_matched)
+            checks_matched = filter(filters.have_name(options.names), checks_matched)
 
         # Filter checks by tags
         user_tags = set(options.tags)
-        checks_matched = filter(have_tag(options.tags), checks_matched)
+        checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # TODO: should we move this in utils?
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
-            checks_matched = filter(have_prgenv(options.prgenv), checks_matched)
+            checks_matched = filter(filters.have_prgenv(options.prgenv), checks_matched)
 
         # Filter checks by system
         if not options.skip_system_check:
-            checks_matched = filter(have_system(), checks_matched)
+            checks_matched = filter(filters.have_system(), checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -406,9 +404,9 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            checks_matched = filter(is_gpu_only(), checks_matched)
+            checks_matched = filter(filters.is_gpu_only(), checks_matched)
         elif options.cpu_only:
-            checks_matched = filter(is_cpu_only(), checks_matched)
+            checks_matched = filter(filters.is_cpu_only(), checks_matched)
 
         checks_matched = [c for c in checks_matched]
 
