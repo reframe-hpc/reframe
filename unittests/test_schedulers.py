@@ -774,10 +774,54 @@ class TestSlurmNode(unittest.TestCase):
             'failed [reframe_user@01 Jan 2018]'
         )
 
+        no_partition_node_description = (
+            'NodeName=nid00004 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=IDLE+DRAIN '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]'
+        )
+
+        self.no_name_node_description = (
+            'Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f1,f2 ActiveFeatures=f1,f2 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00001 '
+            'NodeHostName=nid00001 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=IDLE+DRAIN '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p1,p2 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]'
+        )
+
         self.allocated_node = SlurmNode(allocated_node_description)
         self.allocated_node_copy = SlurmNode(allocated_node_description)
         self.idle_node = SlurmNode(idle_node_description)
         self.idle_drained = SlurmNode(idle_drained_node_description)
+        self.no_partition_node = SlurmNode(no_partition_node_description)
+
+    def test_no_node_name(self):
+        with self.assertRaises(JobError):
+            SlurmNode(self.no_name_node_description)
 
     def test_states(self):
         self.assertEqual(self.allocated_node.states, {'ALLOCATED'})
@@ -794,10 +838,11 @@ class TestSlurmNode(unittest.TestCase):
 
     def test_attributes(self):
         self.assertEqual(self.allocated_node.name, 'nid00001')
-        self.assertEqual(self.allocated_node.partitions,
-                         {'p1', 'p2'})
-        self.assertEqual(self.allocated_node.active_features,
-                         {'f1', 'f2'})
+        self.assertEqual(self.allocated_node.partitions, {'p1', 'p2'})
+        self.assertEqual(self.allocated_node.active_features, {'f1', 'f2'})
+        self.assertEqual(self.no_partition_node.name, 'nid00004')
+        self.assertEqual(self.no_partition_node.partitions, None)
+        self.assertEqual(self.no_partition_node.active_features, {'f1', 'f2'})
 
     def test_str(self):
         self.assertEqual('nid00001', str(self.allocated_node))
@@ -806,8 +851,9 @@ class TestSlurmNode(unittest.TestCase):
         self.assertFalse(self.allocated_node.is_available())
         self.assertTrue(self.idle_node.is_available())
         self.assertFalse(self.idle_drained.is_available())
+        self.assertFalse(self.no_partition_node.is_available())
 
     def test_is_down(self):
         self.assertFalse(self.allocated_node.is_down())
         self.assertFalse(self.idle_node.is_down())
-        self.assertTrue(self.idle_drained.is_down())
+        self.assertTrue(self.no_partition_node.is_down())

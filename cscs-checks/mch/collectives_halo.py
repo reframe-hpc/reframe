@@ -102,6 +102,7 @@ class AlltoallvTest(CollectivesBaseTest):
                                  'default': 0.0138493
                              }
                          })
+        self.strict_check = False
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         self.prebuild_cmd = ['git checkout alltoallv']
 
