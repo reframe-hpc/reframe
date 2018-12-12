@@ -447,8 +447,9 @@ def main():
         for m in options.user_modules:
             try:
                 rt.modules_system.load_module(m, force=True)
+                raise EnvironError("test")
             except EnvironError:
-                printer.info("problem encountered when loading module '%s': "
+                printer.info("could not load module '%s' correctly: "
                              "Skipping..." % m)
 
         success = True

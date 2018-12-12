@@ -410,27 +410,41 @@ class TModImpl(ModulesSystemImpl):
     def version(self):
         return self._version
 
-    def _run_module_command(self, *args):
+    def _run_module_command(self, *args, msg=None):
         command = [self._command, *args]
-        return os_ext.run_command(' '.join(command))
+        try:
+            completed = os_ext.run_command(' '.join(command), check=True)
+        except SpawnedProcessError as e:
+            raise EnvironError(msg) from e
+
+        if self._module_command_failed(completed):
+            raise EnvironError(msg) from SpawnedProcessError(completed.command,
+                                                             completed.stdout,
+                                                             completed.stderr,
+                                                             completed.returncode)
+
+        return completed
 
     def _module_command_failed(self, completed):
         return re.search(r'ERROR', completed.stderr) is not None
 
     def _exec_module_command(self, *args, msg=None):
-        completed = self._run_module_command(*args)
-        if self._module_command_failed(completed):
-            if msg is None:
-                msg = 'modules system command caused problem: '
-                if isinstance(completed.args, str):
-                    msg += completed.args
-                else:
-                    msg += ' '.join(completed.args)
-
-            msg += ': %s' % completed.stderr
-            raise EnvironError(msg)
-
+        completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
+
+    def exec_module_command(self, *args, msg=None):
+        try:
+            self._exec_module_command(self, *args, msg=msg)
+        except SpawnedProcessError as e:
+            if msg is None:
+                msg = 'modules system command failed: '
+                if isinstance(e.command, str):
+                    msg += e.command
+                else:
+                    msg += ' '.join(e.command)
+
+            msg += ': %s' % e.stderr
+            raise EnvironError(msg) from e
 
     def loaded_modules(self):
         try:
@@ -451,24 +465,24 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self._exec_module_command('load', str(module),
-            msg="problem encountered when loading module '%s'" % module)
+        self.exec_module_command('load', str(module),
+            msg="could not load module '%s' correctly" % module)
 
     def unload_module(self, module):
-        self._exec_module_command('unload', str(module),
-            msg='problem encountered when unloading module %s' % module)
+        self.exec_module_command('unload', str(module),
+            msg="could not unload module '%s' correctly" % module)
 
     def unload_all(self):
-        self._exec_module_command('purge')
+        self.exec_module_command('purge')
 
     def searchpath(self):
         return os.environ['MODULEPATH'].split(':')
 
     def searchpath_add(self, *dirs):
-        self._exec_module_command('use', *dirs)
+        self.exec_module_command('use', *dirs)
 
     def searchpath_remove(self, *dirs):
-        self._exec_module_command('unuse', *dirs)
+        self.exec_module_command('unuse', *dirs)
 
     def emit_load_instr(self, module):
         return 'module load %s' % module
@@ -580,7 +594,7 @@ class LModImpl(TModImpl):
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so
         # we forcefully unload everything.
-        self._exec_module_command('--force', 'purge')
+        self.exec_module_command('--force', 'purge')
 
 
 class NoModImpl(ModulesSystemImpl):
