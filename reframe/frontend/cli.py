@@ -448,9 +448,10 @@ def main():
             try:
                 rt.modules_system.load_module(m, force=True)
                 raise EnvironError("test")
-            except EnvironError:
-                printer.info("could not load module '%s' correctly: "
+            except EnvironError as e:
+                printer.warning("could not load module '%s' correctly: "
                              "Skipping..." % m)
+                printer.debug(str(e))
 
         success = True
         if options.list:

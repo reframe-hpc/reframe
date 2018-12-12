@@ -411,17 +411,16 @@ class TModImpl(ModulesSystemImpl):
         return self._version
 
     def _run_module_command(self, *args, msg=None):
-        command = [self._command, *args]
+        command = ' '.join([self._command, *args])
         try:
-            completed = os_ext.run_command(' '.join(command), check=True)
+            completed = os_ext.run_command(command, check=True)
         except SpawnedProcessError as e:
             raise EnvironError(msg) from e
 
         if self._module_command_failed(completed):
-            raise EnvironError(msg) from SpawnedProcessError(completed.command,
-                                                             completed.stdout,
-                                                             completed.stderr,
-                                                             completed.returncode)
+            raise EnvironError(msg) from SpawnedProcessError(
+                command, completed.stdout, completed.stderr,
+                completed.returncode)
 
         return completed
 
@@ -431,20 +430,6 @@ class TModImpl(ModulesSystemImpl):
     def _exec_module_command(self, *args, msg=None):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
-
-    def exec_module_command(self, *args, msg=None):
-        try:
-            self._exec_module_command(self, *args, msg=msg)
-        except SpawnedProcessError as e:
-            if msg is None:
-                msg = 'modules system command failed: '
-                if isinstance(e.command, str):
-                    msg += e.command
-                else:
-                    msg += ' '.join(e.command)
-
-            msg += ': %s' % e.stderr
-            raise EnvironError(msg) from e
 
     def loaded_modules(self):
         try:
@@ -456,7 +441,9 @@ class TModImpl(ModulesSystemImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module))
+        completed = self._run_module_command('show', str(module),
+                                             msg="could not show module '%s'" %
+                                             module)
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
@@ -465,24 +452,24 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self.exec_module_command('load', str(module),
+        self._exec_module_command('load', str(module),
             msg="could not load module '%s' correctly" % module)
 
     def unload_module(self, module):
-        self.exec_module_command('unload', str(module),
+        self._exec_module_command('unload', str(module),
             msg="could not unload module '%s' correctly" % module)
 
     def unload_all(self):
-        self.exec_module_command('purge')
+        self._exec_module_command('purge')
 
     def searchpath(self):
         return os.environ['MODULEPATH'].split(':')
 
     def searchpath_add(self, *dirs):
-        self.exec_module_command('use', *dirs)
+        self._exec_module_command('use', *dirs)
 
     def searchpath_remove(self, *dirs):
-        self.exec_module_command('unuse', *dirs)
+        self._exec_module_command('unuse', *dirs)
 
     def emit_load_instr(self, module):
         return 'module load %s' % module
@@ -573,7 +560,9 @@ class LModImpl(TModImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module))
+        completed = self._run_module_command('show', str(module),
+                                             msg="could not show module '%s'" %
+                                             module)
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
@@ -594,7 +583,7 @@ class LModImpl(TModImpl):
     def unload_all(self):
         # Currently, we don't take any provision for sticky modules in Lmod, so
         # we forcefully unload everything.
-        self.exec_module_command('--force', 'purge')
+        self._exec_module_command('--force', 'purge')
 
 
 class NoModImpl(ModulesSystemImpl):

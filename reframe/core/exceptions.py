@@ -122,7 +122,7 @@ class SpawnedProcessError(ReframeError):
         self._exitcode = exitcode
 
     def __str__(self):
-        lines = ["Command '{0}' failed with exit code {1}:".format(
+        lines = ["command '{0}' failed with exit code {1}:".format(
             self._command, self._exitcode)]
         lines.append('=== STDOUT ===')
         if self._stdout:
