@@ -385,7 +385,6 @@ def main():
             checks_matched = filter(filters.have_name(options.names), checks_matched)
 
         # Filter checks by tags
-        user_tags = set(options.tags)
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # TODO: should we move this in utils?
