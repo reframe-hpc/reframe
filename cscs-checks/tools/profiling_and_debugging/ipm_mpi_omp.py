@@ -44,10 +44,14 @@ class Ipm(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
             'PKG_CONFIG_PATH': '$PAT_BUILD_PAPI_BASEDIR/lib64/pkgconfig:$PKG_CONFIG_PATH',
+            # The list of hardware performance counters available depend on the cpu type:
+            #    srun -n1 -t1 -Cgpu papi_avail
+            # More infos: http://ipm-hpc.sourceforge.net/userguide.html
             'IPM_HPM': 'PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM',
         }
         self.txtrpt = 'ipm.rpt'
-        self.post_run  = ['ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt]
+        self.post_run  = ['ipm_parse.pl -h']
+        self.post_run += ['ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt]
         self.post_run += ['ipm_parse.pl -html *.ipm.xml']
         self.post_run += ['cp *ipm.xml_ipm*/index.html .']
         self.maintainers = ['JG']
