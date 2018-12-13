@@ -449,8 +449,8 @@ def main():
                 rt.modules_system.load_module(m, force=True)
                 raise EnvironError("test")
             except EnvironError as e:
-                printer.warning("could not load module '%s' correctly: "
-                             "Skipping..." % m)
+                printer.warning("could not load module '%s' correctly: " 
+                                "Skipping..." % m)
                 printer.debug(str(e))
 
         success = True

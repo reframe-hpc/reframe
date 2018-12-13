@@ -418,9 +418,11 @@ class TModImpl(ModulesSystemImpl):
             raise EnvironError(msg) from e
 
         if self._module_command_failed(completed):
-            raise EnvironError(msg) from SpawnedProcessError(
-                command, completed.stdout, completed.stderr,
-                completed.returncode)
+            err = SpawnedProcessError(command,
+                                      completed.stdout,
+                                      completed.stderr,
+                                      completed.returncode)
+            raise EnvironError(msg) from err
 
         return completed
 
@@ -441,9 +443,8 @@ class TModImpl(ModulesSystemImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module),
-                                             msg="could not show module '%s'" %
-                                             module)
+        completed = self._run_module_command(
+            'show', str(module), msg="could not show module '%s'" % module)
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
@@ -452,11 +453,13 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self._exec_module_command('load', str(module),
+        self._exec_module_command(
+            'load', str(module),
             msg="could not load module '%s' correctly" % module)
 
     def unload_module(self, module):
-        self._exec_module_command('unload', str(module),
+        self._exec_module_command(
+            'unload', str(module),
             msg="could not unload module '%s' correctly" % module)
 
     def unload_all(self):
@@ -560,9 +563,8 @@ class LModImpl(TModImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module),
-                                             msg="could not show module '%s'" %
-                                             module)
+        completed = self._run_module_command(
+            'show', str(module), msg="could not show module '%s'" % module)
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
