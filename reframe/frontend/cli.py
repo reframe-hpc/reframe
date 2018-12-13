@@ -375,7 +375,7 @@ def main():
         # Locate and load checks
         try:
             checks_found = loader.load_all()
-        except OSError as oe:
+        except OSError as e:
             raise ReframeError from e
 
         # Filter checks by name
