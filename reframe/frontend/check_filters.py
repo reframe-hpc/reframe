@@ -35,13 +35,13 @@ def have_system():
 
     return _fn
 
-def is_gpu_only():
+def have_gpu_only():
     def _fn(c):
         return c.num_gpus_per_node > 0
 
     return _fn
 
-def is_cpu_only():
+def have_cpu_only():
     def _fn(c):
         return c.num_gpus_per_node == 0
     

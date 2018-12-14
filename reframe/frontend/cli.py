@@ -403,9 +403,9 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            checks_matched = filter(filters.is_gpu_only(), checks_matched)
+            checks_matched = filter(filters.have_gpu_only(), checks_matched)
         elif options.cpu_only:
-            checks_matched = filter(filters.is_cpu_only(), checks_matched)
+            checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
         checks_matched = [c for c in checks_matched]
 

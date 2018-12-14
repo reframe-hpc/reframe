@@ -34,8 +34,8 @@ class TestCheckFilters(unittest.TestCase):
     def test_system(self):
         self.assertTrue((filters.have_system())(self.check))
 
-    def test_is_gpu_only(self):
-        self.assertTrue((filters.is_gpu_only())(self.check))
+    def test_have_gpu_only(self):
+        self.assertTrue((filters.have_gpu_only())(self.check))
 
-    def test_is_cpu_only(self):
-        self.assertFalse((filters.is_cpu_only())(self.check))
+    def test_have_cpu_only(self):
+        self.assertFalse((filters.have_cpu_only())(self.check))
