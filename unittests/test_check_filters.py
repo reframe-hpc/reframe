@@ -7,7 +7,7 @@ class TestCheckFilters(unittest.TestCase):
     def setUp(self):
         #TODO: use correct initialization and add checks
         self.check = RegressionTest()
-        self.check.name = "check1"
+        self.check.name = 'check1'
         self.check.tags = {'a', 'b', 'c', 'd'} 
         self.check.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.check.valid_systems = ['daint:gpu', 'daint:mc',
