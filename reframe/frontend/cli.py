@@ -1,5 +1,6 @@
 import os
 import inspect
+import json
 import socket
 import sys
 
@@ -217,6 +218,9 @@ def main():
         help='Specify a custom config-file for the machine. '
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
+    misc_options.add_argument(
+        '-S', '--show-config', action='store_true', dest='show_config',
+        help='Print configuration of the current system')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -319,6 +323,12 @@ def main():
 
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
+
+    if options.show_config:
+        #print("Hello, World!")
+        system_info = rt.show_config()
+        print(system_info)
+        sys.exit(0)
 
     if hasattr(settings, 'perf_logging_config'):
         try:

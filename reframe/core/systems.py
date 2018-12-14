@@ -249,5 +249,12 @@ class System:
         return debug.repr(self)
 
     def __str__(self):
-        return '%s (partitions: %s)' % (self._name,
-                                        [str(p) for p in self._partitions])
+        return '- %s:\n'                                                        \
+               '\t- System description:\t%s\n'                                  \
+               '\t- Modules system:\t%s\n'                                      \
+               '\t- Resouces directory:\t%s\n' % (self._name,
+                                              self._descr,
+                                              self._modules_system,
+                                              self._resourcesdir)
+        #return '%s (partitions: %s)' % (self._name,
+        #                                [str(p) for p in self._partitions])

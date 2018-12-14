@@ -251,6 +251,39 @@ class RuntimeContext:
         """
         return self._modules_system
 
+    def show_config(self):
+        """Prepare configuration of the current system for printing"""
+
+#         config_listing[l1][l2[2]] = {}
+#        for p in self.system.partitions:
+#             config_listing[l1][l2[2]][str(p)] = {}
+#             config_listing[l1][l2[2]][str(p)]                                  \
+#                           ['Scheduler: '] = str(p.scheduler.registered_name)
+#             config_listing[l1][l2[2]][str(p)]                                  \
+#                           ['Launcher: '] = str(p.launcher.registered_name)
+#             if p.access:
+#                config_listing[l1][l2[2]][str(p)]                              \
+#                               ['Access: '] = str(p.access)
+#             config_listing[l1][l2[2]][str(p)]                                  \
+#                           ['Max number of jobs: '] = p.max_jobs
+#             config_listing[l1][l2[2]][str(p)]                                  \
+#                           ['Environs: '] = []
+#             for e in p.environs:
+#                config_listing[l1][l2[2]][str(p)]                              \
+#                              ['Environs: '].append(e.name)
+#             if p.resources:
+#                 for r in p.resources:
+#                     config_listing[l1][l2[2]][str(p)]                          \
+#                                   ['Resources: '] = {}
+#                     config_listing[l1][l2[2]][str(p)]                          \
+#                                   ['Resources: '][str(r)] = p.get_resource(r)
+
+
+        return '\nCurrent system configuration\n' +                            \
+               '============================\n\n' +                            \
+               '%s\n' % str(self.system)
+
+
 
 # Global resources for the current host
 _runtime_context = None
