@@ -68,6 +68,10 @@ class TestEnvironment(unittest.TestCase):
         self.environ_other.load()
         self.environ_save.load()
         self.assertEqual(self.environ_save, renv.EnvironmentSnapshot())
+        self.assertFalse(self.environ.is_loaded)
+        self.assertFalse(self.environ_other.is_loaded)
+        with self.assertRaises(NotImplementedError):
+            _ = self.environ_save.is_loaded
 
     def test_environ_snapshot_context_mgr(self):
         with renv.save_environment() as env:
@@ -107,16 +111,35 @@ class TestEnvironment(unittest.TestCase):
         self.environ.unload()
         self.assertTrue(self.modules_system.is_module_loaded('testmod_boo'))
 
+    def test_load_non_overlapping(self):
+        e0 = renv.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
+        e1 = renv.Environment(name='e1', variables=[('c', '3'), ('d', '4')])
+        e0.load()
+        e1.load()
+        self.assertTrue(e0.is_loaded)
+        self.assertTrue(e1.is_loaded)
+
+    def test_load_overlapping(self):
+        e0 = renv.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
+        e1 = renv.Environment(name='e1', variables=[('b', '3'), ('c', '4')])
+        e0.load()
+        e1.load()
+        self.assertFalse(e0.is_loaded)
+        self.assertTrue(e1.is_loaded)
+
     def test_equal(self):
-        env1 = renv.Environment('env1', modules=['foo', 'bar'],
-                                variables={'a': 1, 'b': 2})
-        env2 = renv.Environment('env1', modules=['bar', 'foo'],
-                                variables={'b': 2, 'a': 1})
+        env1 = renv.Environment('env1', modules=['foo', 'bar'])
+        env2 = renv.Environment('env1', modules=['bar', 'foo'])
         self.assertEqual(env1, env2)
 
     def test_not_equal(self):
         env1 = renv.Environment('env1', modules=['foo', 'bar'])
         env2 = renv.Environment('env2', modules=['foo', 'bar'])
+        self.assertNotEqual(env1, env2)
+
+        # Variables are ordered, because they might depend on each other
+        env1 = renv.Environment('env1', variables=[('a', 1), ('b', 2)])
+        env1 = renv.Environment('env1', variables=[('b', 2), ('a', 1)])
         self.assertNotEqual(env1, env2)
 
     @fixtures.switch_to_user_runtime
@@ -158,6 +181,20 @@ class TestEnvironment(unittest.TestCase):
         swap_environments(self.environ, self.environ_other)
         self.assertFalse(self.environ.is_loaded)
         self.assertTrue(self.environ_other.is_loaded)
+
+    def test_immutability(self):
+        # Check emit_load_commands()
+        commands = self.environ.emit_load_commands()
+        self.assertIsNot(commands, self.environ.emit_load_commands())
+        self.assertEqual(commands, self.environ.emit_load_commands())
+
+        # Try to modify the returned list of commands
+        commands.append('foo')
+        self.assertNotIn('foo', self.environ.emit_load_commands())
+
+    def test_immutability_after_load(self):
+        self.environ.load()
+        self.test_immutability()
 
     @fixtures.switch_to_user_runtime
     def test_emit_load_commands(self):
@@ -219,12 +256,12 @@ class TestEnvironment(unittest.TestCase):
 
         self.environ.load()
         rt = runtime()
-        expected_commands = [
-            'unset _var0',
-            'unset _var2',
-            'unset _var3',
-            rt.modules_system.emit_unload_commands('testmod_foo')[0],
-            rt.modules_system.emit_load_commands('testmod_bar')[0],
-        ]
+        load_cmd = rt.modules_system.emit_load_commands
+        unload_cmd = rt.modules_system.emit_unload_commands
+        expected_commands = ['unset _var0',
+                             'unset _var2',
+                             'unset _var3']
+        expected_commands += unload_cmd('testmod_foo')
+        expected_commands += load_cmd('testmod_bar')
         self.assertEqual(expected_commands,
                          self.environ.emit_unload_commands())

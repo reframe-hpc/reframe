@@ -695,14 +695,14 @@ class TestScopedDict(unittest.TestCase):
         )
 
     def test_update(self):
-        scoped_dict = reframe.utility.ScopedDict({
+        scoped_dict = util.ScopedDict({
             'a': {'k1': 1, 'k2': 2},
             'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
-        scoped_dict_alt = reframe.utility.ScopedDict({'a': {'k1': 3, 'k2': 5}})
+        scoped_dict_alt = util.ScopedDict({'a': {'k1': 3, 'k2': 5}})
         scoped_dict_alt.update({
             'a': {'k1': 1, 'k2': 2},
             'a:b': {'k1': 3, 'k3': 4},
@@ -712,7 +712,89 @@ class TestScopedDict(unittest.TestCase):
         self.assertEqual(scoped_dict, scoped_dict_alt)
 
 
-class TestReadOnlyDict(unittest.TestCase):
-    def setUp(self):
-        d = {'a': 1, 'b': 2}
-        rd = ReadOnlyView(d)
+class TestReadOnlyViews(unittest.TestCase):
+    def test_sequence(self):
+        l = util.SequenceView([1, 2, 2])
+        self.assertEqual(1, l[0])
+        self.assertEqual(3, len(l))
+        self.assertIn(2, l)
+        self.assertEqual(list(l), [1, 2, 2])
+        self.assertEqual(list(reversed(l)), [2, 2, 1])
+        self.assertEqual(1, l.index(2))
+        self.assertEqual(2, l.count(2))
+
+        # Assert immutability
+        with self.assertRaises(TypeError):
+            l[1] = 3
+
+        with self.assertRaises(TypeError):
+            l[1:2] = [3]
+
+        with self.assertRaises(TypeError):
+            l += [3, 4]
+
+        with self.assertRaises(TypeError):
+            l *= 3
+
+        with self.assertRaises(TypeError):
+            del l[:1]
+
+        with self.assertRaises(AttributeError):
+            l.append(3)
+
+        with self.assertRaises(AttributeError):
+            l.clear()
+
+        with self.assertRaises(AttributeError):
+            s = l.copy()
+
+        with self.assertRaises(AttributeError):
+            l.extend([3, 4])
+
+        with self.assertRaises(AttributeError):
+            l.insert(1, 4)
+
+        with self.assertRaises(AttributeError):
+            l.pop()
+
+        with self.assertRaises(AttributeError):
+            l.remove(2)
+
+        with self.assertRaises(AttributeError):
+            l.reverse()
+
+    def test_mapping(self):
+        d = util.MappingView({'a': 1, 'b': 2})
+        self.assertEqual(1, d['a'])
+        self.assertEqual(2, len(d))
+        self.assertEqual({'a': 1, 'b': 2}, dict(d))
+        self.assertIn('b', d)
+        self.assertEqual({'a', 'b'}, set(d.keys()))
+        self.assertEqual({1, 2}, set(d.values()))
+        self.assertEqual({('a', 1), ('b', 2)}, set(d.items()))
+        self.assertEqual(2, d.get('b'))
+        self.assertEqual(3, d.get('c', 3))
+        self.assertEqual({'a': 1, 'b': 2}, d)
+        self.assertNotEqual({'a': 1, 'b': 2, 'c': 3}, d)
+
+        # Assert immutability
+        with self.assertRaises(TypeError):
+            d['c'] = 3
+
+        with self.assertRaises(TypeError):
+            del d['b']
+
+        with self.assertRaises(AttributeError):
+            d.pop('a')
+
+        with self.assertRaises(AttributeError):
+            d.popitem()
+
+        with self.assertRaises(AttributeError):
+            d.clear()
+
+        with self.assertRaises(AttributeError):
+            d.update({'a': 4, 'b': 5})
+
+        with self.assertRaises(AttributeError):
+            d.setdefault('c', 3)

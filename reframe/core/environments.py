@@ -1,9 +1,11 @@
 import collections
+import copy
 import errno
 import itertools
 import os
 
 import reframe.core.fields as fields
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import EnvironError, SpawnedProcessError
@@ -29,7 +31,7 @@ class Environment:
         self._saved_variables = {}
         self._conflicted = []
         self._preloaded = set()
-        self._load_stmts = []
+        self._module_ops = []
 
     @property
     def name(self):
@@ -45,8 +47,7 @@ class Environment:
 
         :type: :class:`list` of :class:`str`
         """
-        # FIXME: Return a read-only view
-        return self._modules
+        return util.SequenceView(self._modules)
 
     @property
     def variables(self):
@@ -54,15 +55,17 @@ class Environment:
 
         :type: dictionary of :class:`str` keys/values.
         """
-        # FIXME: Return a read-only view
-        return self._variables
+        return util.MappingView(self._variables)
 
     @property
     def is_loaded(self):
         """:class:`True` if this environment is loaded,
         :class:`False` otherwise.
         """
-        return self._loaded
+        is_module_loaded = runtime().modules_system.is_module_loaded
+        return (all(map(is_module_loaded, self._modules)) and
+                all(os.environ.get(k, None) == os.path.expandvars(v)
+                    for k, v in self._variables.items()))
 
     def load(self):
         # conflicted module list must be filled at the time of load
@@ -73,10 +76,9 @@ class Environment:
 
             conflicted = rt.modules_system.load_module(m, force=True)
             for c in conflicted:
-                stmts = rt.modules_system.emit_unload_commands(c)
-                self._load_stmts += stmts
+                self._module_ops.append(('u', c))
 
-            self._load_stmts += rt.modules_system.emit_load_commands(m)
+            self._module_ops.append(('l', m))
             self._conflicted += conflicted
 
         for k, v in self._variables.items():
@@ -110,16 +112,18 @@ class Environment:
 
     def emit_load_commands(self):
         rt = runtime()
-        if self.is_loaded:
-            # FIXME: This is a workaround for issue #423; the environment
-            #        interface must be revisited (see issue #456)
-            ret = list(self._load_stmts)
-        else:
-            ret = list(
-                itertools.chain(*(rt.modules_system.emit_load_commands(m)
-                                  for m in self.modules))
-            )
+        emit_fn = {
+            'l': rt.modules_system.emit_load_commands,
+            'u': rt.modules_system.emit_unload_commands
+        }
+        module_ops = self._module_ops or [('l', m) for m in self._modules]
 
+        # Emit module commands
+        ret = []
+        for op, m in module_ops:
+            ret += emit_fn[op](m)
+
+        # Emit variable set commands
         for k, v in self._variables.items():
             ret.append('export %s=%s' % (k, v))
 
@@ -127,18 +131,26 @@ class Environment:
 
     def emit_unload_commands(self):
         rt = runtime()
+
+        # Invert the logic of module operations, since we are unloading the
+        # environment
+        emit_fn = {
+            'l': rt.modules_system.emit_unload_commands,
+            'u': rt.modules_system.emit_load_commands
+        }
+
         ret = []
         for var in self._variables.keys():
             ret.append('unset %s' % var)
 
-        ret += list(
-            itertools.chain(*(rt.modules_system.emit_unload_commands(m)
-                              for m in reversed(self._modules)))
-        )
-        ret += list(
-            itertools.chain(*(rt.modules_system.emit_load_commands(m)
-                              for m in self._conflicted))
-        )
+        if self._module_ops:
+            module_ops = reversed(self._module_ops)
+        else:
+            module_ops = (('l', m) for m in reversed(self._modules))
+
+        for op, m in module_ops:
+            ret += emit_fn[op](m)
+
         return ret
 
     def __eq__(self, other):
@@ -171,6 +183,11 @@ class EnvironmentSnapshot(Environment):
         os.environ.clear()
         os.environ.update(self._variables)
         self._loaded = True
+
+    @property
+    def is_loaded(self):
+        raise NotImplementedError('is_loaded is not a valid property '
+                                  'of an environment snapshot')
 
     def unload(self):
         raise NotImplementedError('cannot unload an environment snapshot')
