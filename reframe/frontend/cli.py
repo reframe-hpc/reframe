@@ -394,7 +394,8 @@ def main():
 
         # Filter checks by system
         if not options.skip_system_check:
-            checks_matched = filter(filters.have_system(), checks_matched)
+            checks_matched = filter(filters.have_system(rt.system.partitions), 
+                checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
