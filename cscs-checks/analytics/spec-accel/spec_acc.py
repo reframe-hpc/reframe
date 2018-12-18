@@ -30,17 +30,24 @@ class SpecAccelCheck(rfm.RegressionTest):
         self.sourcepath = './benchspec/ACCEL/353.clvrleaf/src/timer_c.c'
         self.build_system.cflags = ['-c']
 
-        self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
-                           'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
-                           'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+        #self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
+        #                   'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
+        #                   'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+
+        #self.runtimes = {
+        #    'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
+        #                    7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
+        #                    15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+        #    'PrgEnv-cray': [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
+        #                    7.0, 23.1, 10.8, 24.9, 8.7, 24.4, 16.2,
+        #                    15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+        #}
+        self.benchmarks = ['ostencil', 'olbm', 'omriq', 'md', 'ep', 'clvrleaf', 'cg',
+                           'seismic', 'sp', 'csp', 'miniGhost', 'ilbdc', 'swim', 'bt']
 
         self.runtimes = {
-            'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
-                            7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
-                            15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
-            'PrgEnv-cray': [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
-                            7.0, 23.1, 10.8, 24.9, 8.7, 24.4, 16.2,
-                            15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+            'PrgEnv-gnu':  len(self.benchmarks) * [100],
+            'PrgEnv-cray': len(self.benchmarks) * [100],
         }
 
         self.refs = {
