@@ -1,7 +1,11 @@
 import unittest
 
+import reframe.core.runtime as rt
 import reframe.frontend.check_filters as filters
+import unittests.fixtures as fixtures
+from reframe.core.systems import SystemPartition
 from reframe.core.pipeline import RegressionTest
+from reframe.utility.typecheck import Str
 
 class TestCheckFilters(unittest.TestCase):
     def setUp(self):
@@ -10,8 +14,7 @@ class TestCheckFilters(unittest.TestCase):
         self.check.name = 'check1'
         self.check.tags = {'a', 'b', 'c', 'd'} 
         self.check.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        self.check.valid_systems = ['daint:gpu', 'daint:mc',
-            'dom:gpu', 'dom:mc', 'kesch:pn', 'generic:login']
+        self.check.valid_systems = ['testsys:gpu', 'daint:mc']
         self.check.num_gpus_per_node = 1
 
     def test_have_name(self):
@@ -31,8 +34,9 @@ class TestCheckFilters(unittest.TestCase):
         self.assertTrue((filters.have_prgenv(['PrgEnv-cray', 'PrgEnv-gnu']))(self.check))
         self.assertFalse((filters.have_prgenv(['PrgEnv-pgi']))(self.check))
 
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_system(self):
-        self.assertTrue((filters.have_system())(self.check))
+        self.assertTrue((filters.have_system(rt.runtime().system.partitions))(self.check))
 
     def test_have_gpu_only(self):
         self.assertTrue((filters.have_gpu_only())(self.check))
