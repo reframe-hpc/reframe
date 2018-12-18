@@ -88,7 +88,7 @@ class GromacsGPUProdCheck(GromacsGPUCheck):
         self.tags |= {'production'}
         self.reference = {
             'dom:gpu': {
-                'perf': (37.5, -0.05, None)
+                'perf': (29.3, -0.05, None)
             },
             'daint:gpu': {
                 'perf': (42.0, -0.20, None)

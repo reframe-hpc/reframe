@@ -23,7 +23,7 @@ class Example7Test(rfm.RegressionTest):
         }
         self.reference = {
             'daint:gpu': {
-                'perf': (50.0, -0.1, 0.1),
+                'perf': (50.0, -0.1, 0.1, 'Gflop/s'),
             }
         }
         self.maintainers = ['you-can-type-your-email-here']

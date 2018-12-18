@@ -85,6 +85,7 @@ class P2PBaseTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_p2p'
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',

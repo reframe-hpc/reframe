@@ -141,6 +141,14 @@ class Job(abc.ABC):
 
     @property
     def num_tasks(self):
+        """The number of tasks assigned to this job.
+
+        This attribute is useful in a flexible regression test for determining
+        the actual number of tasks that ReFrame assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        `tutorial <advanced.html#flexible-regression-tests>`__.
+        """
         return self._num_tasks
 
     @property
@@ -236,15 +244,16 @@ class Job(abc.ABC):
         pass
 
     def guess_num_tasks(self):
-        available_nodes = self.get_partition_nodes()
-        getlogger().debug('flex_alloc_tasks: total available nodes in current '
-                          'virtual partition: %s' % len(available_nodes))
         if isinstance(self.sched_flex_alloc_tasks, int):
             if self.sched_flex_alloc_tasks <= 0:
                 raise JobError('invalid number of flex_alloc_tasks: %s' %
                                self.sched_flex_alloc_tasks)
 
             return self.sched_flex_alloc_tasks
+
+        available_nodes = self.get_partition_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes in current '
+                          'virtual partition: %s' % len(available_nodes))
 
         # Try to guess the number of tasks now
         available_nodes = self.filter_nodes(available_nodes, self.options)

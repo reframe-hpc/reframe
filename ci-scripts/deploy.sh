@@ -39,7 +39,7 @@ cd $tmpdir
 git clone https://github.com/eth-cscs/reframe.git
 cd reframe
 found_version=$(./reframe.py -V)
-if [ $found_version -ne $version ]; then
+if [ $found_version != $version ]; then
     echo "$0: version mismatch: found $found_version, but required $version" >&2
     exit 1
 fi
