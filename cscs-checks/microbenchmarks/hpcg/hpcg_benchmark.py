@@ -1,6 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest):
@@ -58,6 +59,7 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         super().setup(partition, environ, **job_opts)
 
+
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest):
@@ -78,13 +80,13 @@ class HPCGCheckMKL(rfm.RegressionTest):
         self.num_tasks_per_core = 2
         self.problem_size = 104
 
-        self.variables  = {
+        self.variables = {
             'HUGETLB_VERBOSE': '0',
             'MPICH_MAX_THREAD_SAFETY' : 'multiple',
             'MPICH_USE_DMAPP_COLL': '1',
             'PMI_NO_FORK': '1',
-            'KMP_HW_SUBSET' : '9c,2t',
-            'KMP_AFFINITY' : 'granularity=fine,compact'
+            'KMP_HW_SUBSET': '9c,2t',
+            'KMP_AFFINITY': 'granularity=fine,compact'
         }
 
         self.executable = 'bin/xhpcg_avx2'
