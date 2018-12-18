@@ -387,7 +387,6 @@ def main():
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
-        # TODO: should we move this in utils?
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             checks_matched = filter(filters.have_prgenv(options.prgenv), checks_matched)
