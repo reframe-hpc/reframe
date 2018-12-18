@@ -28,10 +28,10 @@ def have_prgenv(prgenv):
 
     return _fn
 
-def have_system():
+def have_system(partitions):
     def _fn(c):
         return any([c.supports_system(s.fullname)
-                    for s in rt.runtime().system.partitions])
+                    for s in partitions])
 
     return _fn
 
