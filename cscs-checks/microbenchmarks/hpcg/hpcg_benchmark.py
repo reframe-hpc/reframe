@@ -1,6 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest):
     def __init__(self):
@@ -16,6 +17,7 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
+        # use glob to catch the output file suffix dependent on execution time
         output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
         self.sanity_patterns = sn.assert_eq(4, sn.count(
             sn.findall(r'PASSED', output_file)))
@@ -30,21 +32,21 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         self.reference = {
             'daint:gpu': {
-                'perf': (7.6, -0.1, None)
+                'gflops': (7.6, -0.1, None, 'GFLOPs')
             },
             'daint:mc': {
-                'perf': (13.4, -0.1, None)
+                'gflops': (13.4, -0.1, None, 'GFLOPs')
             },
             'dom:gpu': {
-                'perf': (7.6, -0.1, None)
+                'gflops': (7.6, -0.1, None, 'GFLOPs')
             },
             'dom:mc': {
-                'perf': (13.4, -0.1, None)
+                'gflops': (13.4, -0.1, None, 'GFLOPs')
             },
         }
 
         self.perf_patterns = {
-            'perf': sn.extractsingle(
+            'gflops': sn.extractsingle(
                 r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
                 r'(?P<perf>\S+)', output_file, 'perf',  float)
         }
@@ -52,10 +54,11 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.tags = {'diagnostic'}
 
     def setup(self, partition, environ, **job_opts):
-        self.num_tasks = self.system_num_tasks[self.current_system.name
-                                               + ":" + partition.name]
+        self.num_tasks = self.system_num_tasks[partition.fullname]
+
         super().setup(partition, environ, **job_opts)
 
+@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest):
     def __init__(self):
@@ -92,16 +95,16 @@ class HPCGCheckMKL(rfm.RegressionTest):
             sn.findall(r'PASSED', self.outfile_lazy)))
         self.reference = {
             'dom:mc': {
-                'perf': (22, -0.1, None)
+                'gflops': (22, -0.1, None, 'GFLOPs')
             },
             'daint:mc': {
-                'perf': (22, -0.1, None)
+                'gflops': (22, -0.1, None, 'GFLOPs')
             },
             'dom:gpu': {
-                'perf': (10.7, -0.1, None)
+                'gflops': (10.7, -0.1, None, 'GFLOPs')
             },
             'daint:gpu': {
-                'perf': (10.7, -0.1, None)
+                'gflops': (10.7, -0.1, None, 'GFLOPs')
             },
         }
 
@@ -122,17 +125,22 @@ class HPCGCheckMKL(rfm.RegressionTest):
         return sn.getitem(sn.glob(pattern), 0)
 
     def setup(self, partition, environ, **job_opts):
-        if partition.name == 'gpu':
+        if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 12
         else:
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
+        # since this is a flexible test, we divide the extracted
+        # performance by the number of nodes and compare
+        # against a single reference
         self.perf_patterns = {
-            'perf': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-                r'(?P<perf>\S+)', self.outfile_lazy, 'perf',  float) / (self.num_tasks_assigned/self.num_tasks_per_node)
+            'gflops': sn.extractsingle(
+                      r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                      r'(?P<perf>\S+)',
+                      self.outfile_lazy, 'perf',  float) /
+                      (self.num_tasks_assigned/self.num_tasks_per_node)
         }
 
         super().setup(partition, environ, **job_opts)
