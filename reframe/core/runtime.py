@@ -70,7 +70,16 @@ class HostSystem:
         return None
 
     def __str__(self):
-        return str(self._system)
+        partitions = '\n'.join(re.sub('(?m)^', 6*' ', '- ' + str(p))
+                               for p in self.partitions)
+        lines = [
+            '%s [%s]:' % (self._name, self._descr),
+            '    hostnames: ' + ', '.join(self._hostnames),
+            '    modules_system: ' + str(self._modules_system),
+            '    resourcesdir: ' + self._resourcesdir,
+            '    partitions:\n' + partitions,
+        ]
+        return '\n'.join(lines)
 
     def __repr__(self):
         return 'HostSystem(%r, %r)' % (self._system, self._partname)
@@ -93,13 +102,13 @@ class HostResources:
     #:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', type(None))
-    stagedir  = fields.AbsolutePathField('stagedir', type(None))
+    stagedir = fields.AbsolutePathField('stagedir', type(None))
     perflogdir = fields.AbsolutePathField('perflogdir', type(None))
 
     def __init__(self, prefix=None, stagedir=None,
                  outputdir=None, perflogdir=None, timefmt=None):
         self.prefix = prefix or '.'
-        self.stagedir  = stagedir
+        self.stagedir = stagedir
         self.outputdir = outputdir
         self.perflogdir = perflogdir
         self.timefmt = timefmt
@@ -252,37 +261,8 @@ class RuntimeContext:
         return self._modules_system
 
     def show_config(self):
-        """Prepare configuration of the current system for printing"""
-
-#         config_listing[l1][l2[2]] = {}
-#        for p in self.system.partitions:
-#             config_listing[l1][l2[2]][str(p)] = {}
-#             config_listing[l1][l2[2]][str(p)]                                  \
-#                           ['Scheduler: '] = str(p.scheduler.registered_name)
-#             config_listing[l1][l2[2]][str(p)]                                  \
-#                           ['Launcher: '] = str(p.launcher.registered_name)
-#             if p.access:
-#                config_listing[l1][l2[2]][str(p)]                              \
-#                               ['Access: '] = str(p.access)
-#             config_listing[l1][l2[2]][str(p)]                                  \
-#                           ['Max number of jobs: '] = p.max_jobs
-#             config_listing[l1][l2[2]][str(p)]                                  \
-#                           ['Environs: '] = []
-#             for e in p.environs:
-#                config_listing[l1][l2[2]][str(p)]                              \
-#                              ['Environs: '].append(e.name)
-#             if p.resources:
-#                 for r in p.resources:
-#                     config_listing[l1][l2[2]][str(p)]                          \
-#                                   ['Resources: '] = {}
-#                     config_listing[l1][l2[2]][str(p)]                          \
-#                                   ['Resources: '][str(r)] = p.get_resource(r)
-
-
-        return '\nCurrent system configuration\n' +                            \
-               '============================\n\n' +                            \
-               '%s\n' % str(self.system)
-
+        """Return a textual representation of the current runtime."""
+        return str(self._system)
 
 
 # Global resources for the current host
