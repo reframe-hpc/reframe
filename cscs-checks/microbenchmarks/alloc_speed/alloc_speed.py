@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(*([hugepages] for hugepages in ['no', '2M']))
+@rfm.parameterized_test(['no'], ['2M'])
 class AllocSpeedTest(rfm.RegressionTest):
     def __init__(self, hugepages):
         super().__init__()
@@ -11,61 +11,51 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-O3', '-std=c++11']
-
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal']
-
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
-
-        if not hugepages == 'no':
-            if self.current_system.name in ['dom', 'daint']:
-                self.modules = ['craype-hugepages%s' % hugepages]
-            else:
-                self.valid_prog_environs = []
+        if hugepages == 'no':
+            self.valid_systems += ['kesch:cn', 'kesch:pn']
+        else:
+            self.modules = ['craype-hugepages%s' % hugepages]
 
         self.sanity_patterns = sn.assert_found('4096 MB', self.stdout)
-
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'4096 MB, allocation time (?P<perf>\S+)',
-                                     self.stdout, 'perf', float)
+            'time': sn.extractsingle(r'4096 MB, allocation time (?P<time>\S+)',
+                                     self.stdout, 'time', float)
         }
-
         self.sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'perf': (1.80, None, 0.10)
+                    'time': (1.80, None, 0.10, 'sec')
                 },
                 'dom:mc': {
-                    'perf': (2.40, None, 0.10)
+                    'time': (2.00, None, 0.10, 'sec')
                 },
                 'daint:gpu': {
-                    'perf': (1.80, None, 0.10)
+                    'time': (1.80, None, 0.10, 'sec')
                 },
                 'daint:mc': {
-                    'perf': (2.40, None, 0.10)
+                    'time': (2.00, None, 0.10, 'sec')
                 },
                 'kesch:cn': {
-                    'perf': (1.80, None, 0.10)
+                    'time': (1.25, None, 0.10, 'sec')
                 },
                 'kesch:pn': {
-                    'perf': (1.80, None, 0.10)
-                },
-                'leone:normal': {
-                    'perf': (1.80, None, 0.10)
-                },
+                    'time': (0.55, None, 0.10, 'sec')
+                }
             },
             '2M': {
                 'dom:gpu': {
-                    'perf': (0.16, None, 0.10)
+                    'time': (0.11, None, 0.10, 'sec')
                 },
                 'dom:mc': {
-                    'perf': (0.50, None, 0.10)
+                    'time': (0.20, None, 0.10, 'sec')
                 },
                 'daint:gpu': {
-                    'perf': (0.16, None, 0.10)
+                    'time': (0.11, None, 0.10, 'sec')
                 },
                 'daint:mc': {
-                    'perf': (0.50, None, 0.10)
+                    'time': (0.20, None, 0.10, 'sec')
                 },
             },
         }
