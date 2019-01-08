@@ -17,9 +17,9 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['HPX']
         self.executable = '1d_stencil_4'
 
-        self.nt_opts = '100'
-        self.np_opts = '100'
-        self.nx_opts = '10000000'
+        self.nt_opts = '100' # number of time steps
+        self.np_opts = '100' # number of partitions
+        self.nx_opts = '10000000' # number of points per partition
         self.executable_opts = ['--nt', self.nt_opts,
                                 '--np', self.np_opts,
                                 '--nx', self.nx_opts]
@@ -28,22 +28,22 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.use_multithreading = None
 
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'\d+,\s*(?P<perf>\d+.\d+),\s*\d+,'
+            'time': sn.extractsingle(r'\d+,\s*(?P<time>(\d+)?.?\d+),\s*\d+,'
                                      r'\s*\d+,\s*\d+',
-                                     self.stdout, 'perf', float)
+                                     self.stdout, 'time', float)
         }
         self.reference = {
             'dom:gpu': {
-                'perf': (42, None, 0.1, 's')
+                'time': (42, None, 0.1, 's')
             },
             'dom:mc': {
-                'perf': (30, None, 0.1, 's')
+                'time': (30, None, 0.1, 's')
             },
             'daint:gpu': {
-                'perf': (42, None, 0.1, 's')
+                'time': (42, None, 0.1, 's')
             },
             'daint:mc': {
-                'perf': (30, None, 0.1, 's')
+                'time': (30, None, 0.1, 's')
             },
         }
 
@@ -51,7 +51,9 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     def setup(self, partition, environ, **job_opts):
-        result = sn.findall(r'(\d+),\s*(\d+.\d+),\s*(\d+),\s*(\d+),\s*(\d+)',
+        result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
+                            r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
+                            r'\s*(?P<steps>\d+)',
                             self.stdout)
 
         if partition.fullname == 'daint:gpu':
@@ -72,25 +74,20 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 36
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
-        self.sanity_patterns = sn.all(
-            sn.chain(sn.map(
-                         lambda x: sn.assert_eq(int(x.group(1)),
-                                                self.num_cpus_per_task),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(3),
-                                                self.nx_opts),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(4),
-                                                self.np_opts),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(5),
-                                                self.nt_opts),
-                         result),
-                     )
-        )
+        assert_num_threads = sn.map(lambda x: sn.assert_eq(int(x.group('tid')),
+                                    self.num_cpus_per_task), result)
+        assert_num_points = sn.map(lambda x: sn.assert_eq(x.group('pts'),
+                                   self.nx_opts), result)
+        assert_num_parts = sn.map(lambda x: sn.assert_eq(x.group('parts'),
+                                  self.np_opts), result)
+        assert_num_steps = sn.map(lambda x: sn.assert_eq(x.group('steps'),
+                                  self.nt_opts), result)
+
+        self.sanity_patterns = sn.all(sn.chain(assert_num_threads,
+                                               assert_num_points,
+                                               assert_num_parts,
+                                               assert_num_steps))
+
         super().setup(partition, environ, **job_opts)
 
 @rfm.simple_test
@@ -105,9 +102,9 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['HPX']
         self.executable = '1d_stencil_8'
 
-        self.nt_opts = '100'
-        self.np_opts = '100'
-        self.nx_opts = '10000000'
+        self.nt_opts = '100' # number of time steps
+        self.np_opts = '100' # number of partitions
+        self.nx_opts = '10000000' # number of points per partition
         self.executable_opts = ['--nt', self.nt_opts,
                                 '--np', self.np_opts,
                                 '--nx', self.nx_opts]
@@ -116,22 +113,22 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.use_multithreading = None
 
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'\d+,\s*\d+,\s*(?P<perf>\d+.\d+),'
+            'time': sn.extractsingle(r'\d+,\s*\d+,\s*(?P<time>(\d+)?.?\d+),'
                                      r'\s*\d+,\s*\d+,\s*\d+',
-                                     self.stdout, 'perf', float)
+                                     self.stdout, 'time', float)
         }
         self.reference = {
             'dom:gpu': {
-                'perf': (26, None, 0.1, 's')
+                'time': (26, None, 0.1, 's')
             },
             'dom:mc': {
-                'perf': (19, None, 0.1, 's')
+                'time': (19, None, 0.1, 's')
             },
             'daint:gpu': {
-                'perf': (26, None, 0.1, 's')
+                'time': (26, None, 0.1, 's')
             },
             'daint:mc': {
-                'perf': (19, None, 0.1, 's')
+                'time': (19, None, 0.1, 's')
             },
         }
 
@@ -139,8 +136,11 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     def setup(self, partition, environ, **job_opts):
-        result = sn.findall(r'(\d+),\s*(\d+),\s*(\d+.\d+),\s*(\d+),'
-                            r'\s*(\d+),\s*(\d+)', self.stdout)
+        result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
+                            r'\s*(?P<time>(\d+)?.?\d+),'
+                            r'\s*(?P<pts>\d+),'
+                            r'\s*(?P<parts>\d+),'
+                            r'\s*(?P<steps>\d+)', self.stdout)
 
         if partition.fullname == 'daint:gpu':
             self.num_tasks = 2
@@ -163,27 +163,21 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
         num_threads = self.num_tasks * self.num_cpus_per_task
-        self.sanity_patterns = sn.all(
-            sn.chain(sn.map(
-                         lambda x: sn.assert_eq(int(x.group(1)),
-                                                self.num_tasks),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(int(x.group(2)),
-                                                num_threads),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(4),
-                                                self.nx_opts),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(5),
-                                                self.np_opts),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(x.group(6),
-                                                self.nt_opts),
-                         result),
-                     )
-        )
+        assert_num_tasks = sn.map(lambda x: sn.assert_eq(int(x.group('lid')),
+                                  self.num_tasks), result)
+        assert_num_threads = sn.map(lambda x: sn.assert_eq(int(x.group('tid')),
+                                    num_threads), result)
+        assert_num_points = sn.map(lambda x: sn.assert_eq(x.group('pts'),
+                                   self.nx_opts), result)
+        assert_num_parts = sn.map(lambda x: sn.assert_eq(x.group('parts'),
+                                  self.np_opts), result)
+        assert_num_steps = sn.map(lambda x: sn.assert_eq(x.group('steps'),
+                                  self.nt_opts), result)
+
+        self.sanity_patterns = sn.all(sn.chain(assert_num_tasks,
+                                               assert_num_threads,
+                                               assert_num_points,
+                                               assert_num_parts,
+                                               assert_num_steps))
+
         super().setup(partition, environ, **job_opts)
