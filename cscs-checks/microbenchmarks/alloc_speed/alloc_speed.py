@@ -26,36 +26,36 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'time': (1.80, None, 0.10, 'sec')
+                    'time': (1.80, None, 0.10, 's')
                 },
                 'dom:mc': {
-                    'time': (2.00, None, 0.10, 'sec')
+                    'time': (2.00, None, 0.10, 's')
                 },
                 'daint:gpu': {
-                    'time': (1.80, None, 0.10, 'sec')
+                    'time': (1.80, None, 0.10, 's')
                 },
                 'daint:mc': {
-                    'time': (2.00, None, 0.10, 'sec')
+                    'time': (2.00, None, 0.10, 's')
                 },
                 'kesch:cn': {
-                    'time': (1.25, None, 0.10, 'sec')
+                    'time': (1.25, None, 0.10, 's')
                 },
                 'kesch:pn': {
-                    'time': (0.55, None, 0.10, 'sec')
+                    'time': (0.55, None, 0.10, 's')
                 }
             },
             '2M': {
                 'dom:gpu': {
-                    'time': (0.11, None, 0.10, 'sec')
+                    'time': (0.11, None, 0.10, 's')
                 },
                 'dom:mc': {
-                    'time': (0.20, None, 0.10, 'sec')
+                    'time': (0.20, None, 0.10, 's')
                 },
                 'daint:gpu': {
-                    'time': (0.11, None, 0.10, 'sec')
+                    'time': (0.11, None, 0.10, 's')
                 },
                 'daint:mc': {
-                    'time': (0.20, None, 0.10, 'sec')
+                    'time': (0.20, None, 0.10, 's')
                 },
             },
         }
