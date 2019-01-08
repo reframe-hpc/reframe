@@ -161,7 +161,21 @@ class Environment:
                 set(self._modules) == set(other._modules) and
                 self._variables == other._variables)
 
+    def details(self):
+        """Return a detailed description of this environment."""
+        variables = '\n'.join(' '*8 + '- %s=%s' % (k, v)
+                              for k, v in self.variables.items())
+        lines = [
+            self._name + ':',
+            '    modules: ' + ', '.join(self.modules),
+            '    variables:' + ('\n' if variables else '') + variables
+        ]
+        return '\n'.join(lines)
+
     def __str__(self):
+        return self.name
+
+    def __repr__(self):
         ret = "{0}(name='{1}', modules={2}, variables={3})"
         return ret.format(type(self).__name__, self.name,
                           self.modules, self.variables)

@@ -1,5 +1,6 @@
 import os
 import inspect
+import json
 import socket
 import sys
 
@@ -217,6 +218,12 @@ def main():
         help='Specify a custom config-file for the machine. '
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
+    misc_options.add_argument(
+        '--show-config', action='store_true',
+        help='Print configuration of the current system and exit')
+    misc_options.add_argument(
+        '--show-config-env', action='store', metavar='ENV',
+        help='Print configuration of environment ENV and exit')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -319,6 +326,25 @@ def main():
 
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
+
+    # Show configuration after everything is set up
+    if options.show_config:
+        printer.info(rt.show_config())
+        sys.exit(0)
+
+    if options.show_config_env:
+        envname = options.show_config_env
+        for p in rt.system.partitions:
+            env = p.environment(envname)
+            if env:
+                break
+
+        if env is None:
+            printer.error('no such environment: ' + envname)
+            sys.exit(1)
+
+        printer.info(env.details())
+        sys.exit(0)
 
     if hasattr(settings, 'perf_logging_config'):
         try:
