@@ -30,9 +30,10 @@ class SpecAccelCheck(rfm.RegressionTest):
         self.sourcepath = './benchspec/ACCEL/353.clvrleaf/src/timer_c.c'
         self.build_system.cflags = ['-c']
 
-        self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
-                           'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
-                           'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
+        self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft',
+                           'spmv', 'mriq', 'bfs', 'cutcp', 'kmeans',
+                           'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
+                           'ge', 'srad', 'heartwall', 'bplustree']
 
         self.runtimes = {
             'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
@@ -59,9 +60,7 @@ class SpecAccelCheck(rfm.RegressionTest):
 
         outfile = sn.getitem(sn.glob('result/ACCEL.*.log'), 0)
         self.sanity_patterns = sn.all([sn.assert_found(
-                                       r'Success.*%s' % bn, outfile)
-                                       for bn in self.benchmarks
-                                      ])
+            r'Success.*%s' % bn, outfile) for bn in self.benchmarks])
 
         self.perf_patterns = {
             bench_name: self.extract_average(outfile, bench_name)
@@ -91,5 +90,5 @@ class SpecAccelCheck(rfm.RegressionTest):
     @sn.sanity_function
     def extract_average(self, ofile, bench_name):
         runs = sn.extractall(r'Success.*%s.*runtime=(?P<rt>[0-9.]+)'
-                                % bench_name, ofile, 'rt', float)
+            % bench_name, ofile, 'rt', float)
         return sum(runs)/sn.count(runs)
