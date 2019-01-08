@@ -473,8 +473,11 @@ def main():
         for m in options.user_modules:
             try:
                 rt.modules_system.load_module(m, force=True)
-            except EnvironError:
-                printer.info("could not load module `%s': Skipping..." % m)
+                raise EnvironError("test")
+            except EnvironError as e:
+                printer.warning("could not load module '%s' correctly: " 
+                                "Skipping..." % m)
+                printer.debug(str(e))
 
         success = True
         if options.list:
