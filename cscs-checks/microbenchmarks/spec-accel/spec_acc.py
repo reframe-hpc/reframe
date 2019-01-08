@@ -10,15 +10,13 @@ class SpecAccelCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'SPEC-accel benchmark'
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+        self.valid_prog_environs = ['PrgEnv-cray']
         self.modules = ['craype-accel-nvidia60']
 
         self.configs = {
-            'PrgEnv-gnu':  'cscs-gnu',
-            'PrgEnv-cray': 'cscs-cray',
+            'PrgEnv-cray': 'cscs-cray'
         }
 
-        #self.sourcesdir needed for cscs-* config files
         app_source = os.path.join(self.current_system.resourcesdir,
                                   'SPEC_ACCELv1.2')
         self.prebuild_cmd = ['cp -r %s/* .' % app_source,
@@ -30,24 +28,13 @@ class SpecAccelCheck(rfm.RegressionTest):
         self.sourcepath = './benchspec/ACCEL/353.clvrleaf/src/timer_c.c'
         self.build_system.cflags = ['-c']
 
-        #self.benchmarks = ['systest', 'tpacf', 'stencil', 'lbm', 'fft', 'spmv',
-        #                   'mriq', 'bfs', 'cutcp', 'kmeans', 'lavamd', 'cfd', 'nw',
-        #                   'hotspot', 'lud', 'ge', 'srad', 'heartwall', 'bplustree']
-
-        #self.runtimes = {
-        #    'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
-        #                    7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
-        #                    15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
-        #    'PrgEnv-cray': [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
-        #                    7.0, 23.1, 10.8, 24.9, 8.7, 24.4, 16.2,
-        #                    15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
-        #}
-        self.benchmarks = ['ostencil', 'olbm', 'omriq', 'md', 'ep', 'clvrleaf', 'cg',
-                           'seismic', 'sp', 'csp', 'miniGhost', 'ilbdc', 'swim', 'bt']
+        self.benchmarks = ['ostencil', 'olbm', 'omriq', 'md', 'ep',
+                           'clvrleaf', 'cg', 'seismic', 'sp', 'csp',
+                           'miniGhost', 'ilbdc', 'swim', 'bt']
 
         self.runtimes = {
-            'PrgEnv-gnu':  len(self.benchmarks) * [100],
-            'PrgEnv-cray': len(self.benchmarks) * [100],
+            'PrgEnv-cray': [18, 26, 121, 20, 73, 59, 41,
+                            46, 71, 34, 72, 41, 34, 378]
         }
 
         self.refs = {
