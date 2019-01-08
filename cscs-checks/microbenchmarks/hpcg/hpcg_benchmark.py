@@ -33,16 +33,16 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         self.reference = {
             'daint:gpu': {
-                'gflops': (7.6, -0.1, None, 'GFLOPs')
+                'gflops': (7.6, -0.1, None, 'GFLOP/s')
             },
             'daint:mc': {
-                'gflops': (13.4, -0.1, None, 'GFLOPs')
+                'gflops': (13.4, -0.1, None, 'GFLOP/s')
             },
             'dom:gpu': {
-                'gflops': (7.6, -0.1, None, 'GFLOPs')
+                'gflops': (7.6, -0.1, None, 'GFLOP/s')
             },
             'dom:mc': {
-                'gflops': (13.4, -0.1, None, 'GFLOPs')
+                'gflops': (13.4, -0.1, None, 'GFLOP/s')
             },
         }
 
@@ -70,7 +70,6 @@ class HPCGCheckMKL(rfm.RegressionTest):
         self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.modules = ['craype-hugepages8M']
-        #self.sourcesdir needed for "CrayXC" config file
         self.build_system = 'Make'
         self.prebuild_cmd = ['cp -r ${MKLROOT}/benchmarks/hpcg/* .',
                              'mv Make.CrayXC setup',
@@ -97,16 +96,16 @@ class HPCGCheckMKL(rfm.RegressionTest):
             sn.findall(r'PASSED', self.outfile_lazy)))
         self.reference = {
             'dom:mc': {
-                'gflops': (22, -0.1, None, 'GFLOPs')
+                'gflops': (22, -0.1, None, 'GFLOP/s')
             },
             'daint:mc': {
-                'gflops': (22, -0.1, None, 'GFLOPs')
+                'gflops': (22, -0.1, None, 'GFLOP/s')
             },
             'dom:gpu': {
-                'gflops': (10.7, -0.1, None, 'GFLOPs')
+                'gflops': (10.7, -0.1, None, 'GFLOP/s')
             },
             'daint:gpu': {
-                'gflops': (10.7, -0.1, None, 'GFLOPs')
+                'gflops': (10.7, -0.1, None, 'GFLOP/s')
             },
         }
 
@@ -137,12 +136,12 @@ class HPCGCheckMKL(rfm.RegressionTest):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
+        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
-                      r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-                      r'(?P<perf>\S+)',
-                      self.outfile_lazy, 'perf',  float) /
-                      (self.num_tasks_assigned/self.num_tasks_per_node)
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)',
+                self.outfile_lazy, 'perf',  float) / num_nodes
         }
 
         super().setup(partition, environ, **job_opts)
