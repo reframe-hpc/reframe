@@ -315,3 +315,18 @@ If this cannot be found the hostname will be obtained from the standard ``hostna
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
 If the system cannot be auto-detected, ReFrame will fail with an error message.
 You can override completely the auto-detection process by specifying a system or a system partition with the ``--system`` option (e.g., ``--system daint`` or ``--system daint:gpu``).
+
+
+Showing configuration
+---------------------
+
+.. versionadded:: 2.16
+
+It is possible to ask ReFrame to print the configuration of the current system or the configuration of any programming environment defined for the current system.
+There are two command-line options for performing these operations:
+
+* ``--show-config``: This option shows the current system's configuration and exits.
+  It can be combined with the ``--system`` option in order to show the configuration of another system.
+* ``--show-config-env ENV``: This option shows the configuration of the programming environment ``ENV`` and exits.
+  The environment ``ENV`` must be defined for any of the partitions of the current system.
+  This option can also be combined with ``--system`` in order to show the configuration of a programming environment defined for another system.

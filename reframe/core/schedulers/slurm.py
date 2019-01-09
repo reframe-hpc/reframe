@@ -294,12 +294,12 @@ class SlurmJob(sched.Job):
 
         if reason in self._cancel_reasons:
             if reason == 'ReqNodeNotAvail' and reason_details:
-                nodes_match = re.match(
+                node_match = re.match(
                     r'UnavailableNodes:(?P<node_names>\S+)?',
                     reason_details.strip())
-                if nodes_match:
+                if node_match:
                     node_names = node_match['node_names']
-                    if nodes_names:
+                    if node_names:
                         # Retrieve the info of the unavailable nodes
                         # and check if they are indeed down
                         nodes = self._get_nodes_by_name(node_names)

@@ -110,6 +110,9 @@ class PrettyPrinter:
     def info(self, msg=''):
         self._logger.info(msg)
 
+    def debug(self, msg=''):
+        self._logger.debug(msg)
+
     def warning(self, msg):
         msg = AnsiColorizer.colorize('%s: %s' % (sys.argv[0], msg),
                                      AnsiColorizer.yellow)

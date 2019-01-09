@@ -410,25 +410,27 @@ class TModImpl(ModulesSystemImpl):
     def version(self):
         return self._version
 
-    def _run_module_command(self, *args):
-        command = [self._command, *args]
-        return os_ext.run_command(' '.join(command))
+    def _run_module_command(self, *args, msg=None):
+        command = ' '.join([self._command, *args])
+        try:
+            completed = os_ext.run_command(command, check=True)
+        except SpawnedProcessError as e:
+            raise EnvironError(msg) from e
+
+        if self._module_command_failed(completed):
+            err = SpawnedProcessError(command,
+                                      completed.stdout,
+                                      completed.stderr,
+                                      completed.returncode)
+            raise EnvironError(msg) from err
+
+        return completed
 
     def _module_command_failed(self, completed):
         return re.search(r'ERROR', completed.stderr) is not None
 
     def _exec_module_command(self, *args, msg=None):
-        completed = self._run_module_command(*args)
-        if self._module_command_failed(completed):
-            if msg is None:
-                msg = 'modules system command failed: '
-                if isinstance(completed.args, str):
-                    msg += completed.args
-                else:
-                    msg += ' '.join(completed.args)
-
-            raise EnvironError(msg)
-
+        completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
 
     def loaded_modules(self):
@@ -441,7 +443,8 @@ class TModImpl(ModulesSystemImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module))
+        completed = self._run_module_command(
+            'show', str(module), msg="could not show module '%s'" % module)
         return [Module(m.group(1))
                 for m in re.finditer(r'^conflict\s+(\S+)',
                                      completed.stderr, re.MULTILINE)]
@@ -450,12 +453,14 @@ class TModImpl(ModulesSystemImpl):
         return module in self.loaded_modules()
 
     def load_module(self, module):
-        self._exec_module_command('load', str(module),
-                                  msg='could not load module %s' % module)
+        self._exec_module_command(
+            'load', str(module),
+            msg="could not load module '%s' correctly" % module)
 
     def unload_module(self, module):
-        self._exec_module_command('unload', str(module),
-                                  msg='could not unload module %s' % module)
+        self._exec_module_command(
+            'unload', str(module),
+            msg="could not unload module '%s' correctly" % module)
 
     def unload_all(self):
         self._exec_module_command('purge')
@@ -558,7 +563,8 @@ class LModImpl(TModImpl):
 
     def conflicted_modules(self, module):
         conflict_list = []
-        completed = self._run_module_command('show', str(module))
+        completed = self._run_module_command(
+            'show', str(module), msg="could not show module '%s'" % module)
 
         # Lmod accepts both Lua and and Tcl syntax
         # The following test allows incorrect syntax, e.g., `conflict
