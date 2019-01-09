@@ -72,6 +72,7 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
+
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
         assert_num_threads = sn.map(lambda x: sn.assert_eq(int(x.group('tid')),
@@ -160,6 +161,7 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 18
             self.num_tasks_per_socket = 1
+
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
         num_threads = self.num_tasks * self.num_cpus_per_task
