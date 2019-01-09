@@ -70,7 +70,16 @@ class HostSystem:
         return None
 
     def __str__(self):
-        return str(self._system)
+        partitions = '\n'.join(re.sub('(?m)^', 6*' ', '- ' + str(p))
+                               for p in self.partitions)
+        lines = [
+            '%s [%s]:' % (self._name, self._descr),
+            '    hostnames: ' + ', '.join(self._hostnames),
+            '    modules_system: ' + str(self._modules_system),
+            '    resourcesdir: ' + self._resourcesdir,
+            '    partitions:\n' + partitions,
+        ]
+        return '\n'.join(lines)
 
     def __repr__(self):
         return 'HostSystem(%r, %r)' % (self._system, self._partname)
@@ -93,13 +102,13 @@ class HostResources:
     #:
     prefix = fields.AbsolutePathField('prefix')
     outputdir = fields.AbsolutePathField('outputdir', type(None))
-    stagedir  = fields.AbsolutePathField('stagedir', type(None))
+    stagedir = fields.AbsolutePathField('stagedir', type(None))
     perflogdir = fields.AbsolutePathField('perflogdir', type(None))
 
     def __init__(self, prefix=None, stagedir=None,
                  outputdir=None, perflogdir=None, timefmt=None):
         self.prefix = prefix or '.'
-        self.stagedir  = stagedir
+        self.stagedir = stagedir
         self.outputdir = outputdir
         self.perflogdir = perflogdir
         self.timefmt = timefmt
@@ -250,6 +259,10 @@ class RuntimeContext:
         :type: :class:`reframe.core.modules.ModulesSystem`.
         """
         return self._modules_system
+
+    def show_config(self):
+        """Return a textual representation of the current runtime."""
+        return str(self._system)
 
 
 # Global resources for the current host
