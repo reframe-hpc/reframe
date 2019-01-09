@@ -56,7 +56,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
 
         self.pre_run = ['source ./shrc', 'mv %s config' %
-            self.configs[environ.name]]
+                        self.configs[environ.name]]
         self.executable_opts = ['--config=%s' % self.configs[environ.name],
                                 '--platform NVIDIA',
                                 '--tune=base',
@@ -74,7 +74,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
     @sn.sanity_function
     def extract_average(self, ofile, bench_name):
         runs = sn.extractall(r'Success.*%s.*runtime=(?P<rt>[0-9.]+)'
-            % bench_name, ofile, 'rt', float)
+                             % bench_name, ofile, 'rt', float)
         return sum(runs)/sn.count(runs)
 
 
