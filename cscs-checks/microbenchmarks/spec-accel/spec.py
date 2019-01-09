@@ -4,6 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.launchers.registry import getlauncher
 
+
 class SpecAccelCheckBase(rfm.RegressionTest):
     def __init__(self, prg_envs):
         super().__init__()
@@ -28,11 +29,10 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.build_system.cflags = ['-c']
 
         self.refs = {
-            env: { bench_name : (rt, None, 0.1, 'Seconds')
-                     for (bench_name, rt) in
-                       zip(self.benchmarks, self.runtimes[env])
-                 }
-            for env in self.valid_prog_environs   
+            env: {bench_name: (rt, None, 0.1, 'Seconds')
+                  for (bench_name, rt) in
+                  zip(self.benchmarks, self.runtimes[env])}
+            for env in self.valid_prog_environs
         }
 
         self.num_tasks = 12
@@ -47,7 +47,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
         self.perf_patterns = {
             bench_name: self.extract_average(outfile, bench_name)
-                for bench_name in self.benchmarks
+            for bench_name in self.benchmarks
         }
 
         self.maintainers = ['SK']
@@ -55,7 +55,8 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
 
-        self.pre_run = ['source ./shrc', 'mv %s config' % self.configs[environ.name]]
+        self.pre_run = ['source ./shrc', 'mv %s config' %
+            self.configs[environ.name]]
         self.executable_opts = ['--config=%s' % self.configs[environ.name],
                                 '--platform NVIDIA',
                                 '--tune=base',
