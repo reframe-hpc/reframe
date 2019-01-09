@@ -405,22 +405,26 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(filters.have_not_name(options.exclude_names), checks_found)
+        checks_matched = filter(filters.have_not_name(options.exclude_names),
+                                checks_found)
 
         if options.names:
-            checks_matched = filter(filters.have_name(options.names), checks_matched)
+            checks_matched = filter(filters.have_name(options.names),
+                                    checks_matched)
 
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
-            checks_matched = filter(filters.have_prgenv(options.prgenv), checks_matched)
+            checks_matched = filter(filters.have_prgenv(options.prgenv),
+                                    checks_matched)
 
         # Filter checks by system
         if not options.skip_system_check:
-            checks_matched = filter(filters.have_partition(rt.system.partitions), 
-                checks_matched)
+            checks_matched = 
+                filter(filters.have_partition(rt.system.partitions),
+                       checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
