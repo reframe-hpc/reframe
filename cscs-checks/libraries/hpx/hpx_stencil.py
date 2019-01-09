@@ -17,9 +17,9 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['HPX']
         self.executable = '1d_stencil_4'
 
-        self.nt_opts = '100' # number of time steps
-        self.np_opts = '100' # number of partitions
-        self.nx_opts = '10000000' # number of points per partition
+        self.nt_opts = '100'  # number of time steps
+        self.np_opts = '100'  # number of partitions
+        self.nx_opts = '10000000'  # number of points per partition
         self.executable_opts = ['--nt', self.nt_opts,
                                 '--np', self.np_opts,
                                 '--nx', self.nx_opts]
@@ -91,6 +91,7 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
 
         super().setup(partition, environ, **job_opts)
 
+
 @rfm.simple_test
 class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -103,9 +104,9 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['HPX']
         self.executable = '1d_stencil_8'
 
-        self.nt_opts = '100' # number of time steps
-        self.np_opts = '100' # number of partitions
-        self.nx_opts = '10000000' # number of points per partition
+        self.nt_opts = '100'  # number of time steps
+        self.np_opts = '100'  # number of partitions
+        self.nx_opts = '10000000'  # number of points per partition
         self.executable_opts = ['--nt', self.nt_opts,
                                 '--np', self.np_opts,
                                 '--nx', self.nx_opts]
