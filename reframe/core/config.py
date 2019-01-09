@@ -193,7 +193,7 @@ class SiteConfiguration:
                 part_local_env = m_env.Environment(
                     name='__rfm_env_%s' % part_name,
                     modules=partconfig.get('modules', []),
-                    variables=partconfig.get('variables', {})
+                    variables=partconfig.get('variables', {}).items()
                 )
                 part_environs = [
                     create_env(sys_name, part_name, e)
