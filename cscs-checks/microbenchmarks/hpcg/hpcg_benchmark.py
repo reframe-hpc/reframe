@@ -19,10 +19,9 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
         # use glob to catch the output file suffix dependent on execution time
-        output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
-        self.sanity_patterns = sn.assert_eq(4, sn.count(
-            sn.findall(r'PASSED', output_file)))
+        self.output_file = sn.getitem(sn.glob('HPCG*.txt'), 0)
 
+        self.num_tasks = 0
         self.num_cpus_per_task = 1
         self.system_num_tasks = {
             'daint:mc':  36,
@@ -46,16 +45,30 @@ class HPCGCheckRef(rfm.RegressionTest):
             },
         }
 
-        self.perf_patterns = {
-            'gflops': sn.extractsingle(
-                r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
-                r'(?P<perf>\S+)', output_file, 'perf',  float)
-        }
         self.maintainers = ['SK']
         self.tags = {'diagnostic'}
 
+    @property
+    @sn.sanity_function
+    def num_tasks_assigned(self):
+        return self.job.num_tasks
+
     def setup(self, partition, environ, **job_opts):
-        self.num_tasks = self.system_num_tasks[partition.fullname]
+        self.num_tasks_per_node = self.system_num_tasks[partition.fullname]
+
+        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        self.perf_patterns = {
+            'gflops': sn.extractsingle(
+                r'HPCG result is VALID with a GFLOP\/s rating of=\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
+        }
+
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(4, sn.count(
+            sn.findall(r'PASSED', self.output_file))),
+            sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
+        ])
 
         super().setup(partition, environ, **job_opts)
 
@@ -92,8 +105,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         self.executable_opts = ['--nx=%d' % self.problem_size,
                                 '--ny=%d' % self.problem_size,
                                 '--nz=%d' % self.problem_size, '-t2']
-        self.sanity_patterns = sn.assert_eq(4, sn.count(
-            sn.findall(r'PASSED', self.outfile_lazy)))
+
         self.reference = {
             'dom:mc': {
                 'gflops': (22, -0.1, None, 'GFLOP/s')
@@ -143,5 +155,11 @@ class HPCGCheckMKL(rfm.RegressionTest):
                 r'(?P<perf>\S+)',
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
+
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(4, sn.count(
+            sn.findall(r'PASSED', self.outfile_lazy))),
+            sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
+        ])
 
         super().setup(partition, environ, **job_opts)
