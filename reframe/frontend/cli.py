@@ -419,7 +419,7 @@ def main():
 
         # Filter checks by system
         if not options.skip_system_check:
-            checks_matched = filter(filters.have_system(rt.system.partitions), 
+            checks_matched = filter(filters.have_partition(rt.system.partitions), 
                 checks_matched)
 
         # Filter checks further
