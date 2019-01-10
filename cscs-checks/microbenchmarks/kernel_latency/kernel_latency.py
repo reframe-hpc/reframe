@@ -33,8 +33,8 @@ class KernelLatencyTest(rfm.RegressionTest):
                                                self.stdout)
         self.perf_patterns = {
             'latency': sn.extractsingle(
-                        r'Kernel launch latency: (?P<latency>\S+) seconds',
-                        self.stdout, 'latency', float)
+                r'Kernel launch latency: (?P<latency>\S+) seconds',
+                self.stdout, 'latency', float)
         }
         self.sys_reference = {
             'sync': {
