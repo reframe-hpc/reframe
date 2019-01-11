@@ -1,3 +1,5 @@
+import re
+
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
@@ -136,7 +138,17 @@ class SystemPartition:
                 self._local_env == other._local_env)
 
     def __str__(self):
-        return self._name
+        local_env = re.sub('(?m)^', 6*' ', ' - ' + self._local_env.details())
+        lines = [
+            '%s [%s]:' % (self._name, self._descr),
+            '    fullname: ' + self.fullname,
+            '    scheduler: ' + self._scheduler.registered_name,
+            '    launcher: '  + self._launcher.registered_name,
+            '    access: ' + ' '.join(self._access),
+            '    local_env:\n' + local_env,
+            '    environs: ' + ', '.join(str(e) for e in self._environs)
+        ]
+        return '\n'.join(lines)
 
     def __repr__(self):
         return debug.repr(self)
@@ -247,7 +259,3 @@ class System:
 
     def __repr__(self):
         return debug.repr(self)
-
-    def __str__(self):
-        return '%s (partitions: %s)' % (self._name,
-                                        [str(p) for p in self._partitions])
