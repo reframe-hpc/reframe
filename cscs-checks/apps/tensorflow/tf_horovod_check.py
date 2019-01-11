@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+@rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -14,16 +15,16 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.modules = ['Horovod/0.15.0-CrayGNU-18.08-tf-%s.0' % tfshortver]
         self.reference = {
             'dom:gpu': {
-                'img_sec': (1133.6, None, 0.05),
+                'throughput': (1133.6, None, 0.05, 'images/s'),
             },
             'daint:gpu': {
-                'img_sec': (4403.0, None, 0.05)
+                'throughput': (4403.0, None, 0.05, 'images/s')
             },
         }
         self.perf_patterns = {
-            'img_sec': sn.avg(sn.extractall(
-                r'total images/sec:\s+(?P<img_sec>\S+)',
-                self.stdout, 'img_sec', float))
+            'throughput': sn.avg(sn.extractall(
+                r'total images/sec:\s+(?P<throughput>\S+)',
+                self.stdout, 'throughput', float))
         }
         self.sanity_patterns = sn.assert_found(
             r'[\S+\s+] INFO NET\/IB : Using interface ipogif0'
@@ -31,8 +32,7 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         if self.current_system.name == 'dom':
             self.num_tasks = 8
-
-        if self.current_system.name == 'daint':
+        elif self.current_system.name == 'daint':
             self.num_tasks = 32
 
         self.pre_run = ['git checkout cnn_tf_v%s_compatible' % tfshortver]
@@ -42,9 +42,9 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
             'NCCL_IB_CUDA_SUPPORT': '1',
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
-        self.executable = ('python scripts/tf_cnn_benchmarks/'
-                           'tf_cnn_benchmarks.py')
+        self.executable = ('python')
         self.executable_opts = [
+            'scripts/tf_cnn_benchmarks/tf_cnn_benchmarks.py',
             '--model inception3',
             '--batch_size 64',
             '--variable_update horovod',
