@@ -8,6 +8,7 @@ import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.check_filters as filters
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
@@ -19,7 +20,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
-
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -405,42 +405,25 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(
-            lambda c:
-            c if c.name not in options.exclude_names else None,
-            checks_found
-        )
+        checks_matched = filter(filters.have_not_name(options.exclude_names),
+                                checks_found)
 
         if options.names:
-            checks_matched = filter(
-                lambda c: c if c.name in options.names else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_name(options.names),
+                                    checks_matched)
 
         # Filter checks by tags
-        user_tags = set(options.tags)
-        checks_matched = filter(
-            lambda c: c if user_tags.issubset(c.tags) else None,
-            checks_matched
-        )
+        checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # Filter checks by prgenv
-        def filter_prgenv(c):
-            if options.prgenv:
-                return util.allx(c.supports_environ(e) for e in options.prgenv)
-            else:
-                return bool(c.valid_prog_environs)
-
         if not options.skip_prgenv_check:
-            checks_matched = filter(filter_prgenv, checks_matched)
+            checks_matched = filter(filters.have_prgenv(options.prgenv),
+                                    checks_matched)
 
         # Filter checks by system
-        def filter_system(c):
-            return any([c.supports_system(s.fullname)
-                        for s in rt.system.partitions])
-
         if not options.skip_system_check:
-            checks_matched = filter(filter_system, checks_matched)
+            checks_matched = filter(
+                filters.have_partition(rt.system.partitions), checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -449,15 +432,9 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            checks_matched = filter(
-                lambda c: c if c.num_gpus_per_node > 0 else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_gpu_only(), checks_matched)
         elif options.cpu_only:
-            checks_matched = filter(
-                lambda c: c if c.num_gpus_per_node == 0 else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
         checks_matched = [c for c in checks_matched]
 
