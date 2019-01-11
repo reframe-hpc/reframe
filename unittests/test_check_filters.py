@@ -48,13 +48,7 @@ class TestCheckFilters(unittest.TestCase):
                                             self.checks)))
 
     def test_have_not_name(self):
-        self.assertEqual(1, sn.count(filter(filters.have_not_name('check1'),
-                                            self.checks)))
-        self.assertEqual(1, sn.count(filter(filters.have_not_name('check2'),
-                                            self.checks)))
-        self.assertEqual(1, sn.count(filter(filters.have_not_name('check3'),
-                                            self.checks)))
-        self.assertEqual(3, sn.count(filter(filters.have_not_name('check4'),
+        self.assertEqual(2, sn.count(filter(filters.have_not_name('check1'),
                                             self.checks)))
 
     def test_have_tags(self):
@@ -62,13 +56,13 @@ class TestCheckFilters(unittest.TestCase):
                                             self.checks)))
         self.assertEqual(0, sn.count(filter(filters.have_tag(['p', 'q']),
                                             self.checks)))
-        self.assertEqual(3, sn.count(filter(filters.have_tag(['z']),
+        self.assertEqual(2, sn.count(filter(filters.have_tag(['z']),
                                             self.checks)))
 
     def test_have_prgenv(self):
         self.assertEqual(1, sn.count(filter(
             filters.have_prgenv(['env1', 'env2']), self.checks)))
-        self.assertEqual(3, sn.count(filter(filters.have_prgenv(['env3']),
+        self.assertEqual(2, sn.count(filter(filters.have_prgenv(['env3']),
                                             self.checks)))
         self.assertEqual(1, sn.count(filter(filters.have_prgenv(['env4']),
                                             self.checks)))
@@ -78,14 +72,14 @@ class TestCheckFilters(unittest.TestCase):
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_partition(self):
         p = rt.runtime().system.partition('gpu')
-        self.assertEqual(1, sn.count(filter(filters.have_partition([p]),
+        self.assertEqual(2, sn.count(filter(filters.have_partition([p]),
                                             self.checks)))
         p = rt.runtime().system.partition('login')
         self.assertEqual(0, sn.count(filter(filters.have_partition([p]),
                                             self.checks)))
 
     def test_have_gpu_only(self):
-        self.assertEqual(1, sn.count(filter(filters.have_gpu_only(),
+        self.assertEqual(2, sn.count(filter(filters.have_gpu_only(),
                                             self.checks)))
 
     def test_have_cpu_only(self):
