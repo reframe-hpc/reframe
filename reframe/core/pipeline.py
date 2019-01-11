@@ -515,6 +515,7 @@ class RegressionTest:
                                            SystemPartition, type(None))
     _current_environ = fields.TypedField('_current_environ',
                                          Environment, type(None))
+    _user_environ = fields.TypedField('_user_environ', Environment, type(None))
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
 
@@ -591,6 +592,7 @@ class RegressionTest:
         # Runtime information of the test
         self._current_partition = None
         self._current_environ = None
+        self._user_environ = None
 
         # Associated job
         self._job = None
@@ -798,12 +800,9 @@ class RegressionTest:
 
         self._current_environ = environ
 
-        # Add user modules and variables to the environment
-        for m in self.modules:
-            self._current_environ.add_module(m)
-
-        for k, v in self.variables.items():
-            self._current_environ.set_variable(k, v)
+        # Set up user environment
+        self._user_environ = Environment(type(self).__name__, self.modules,
+                                         self.variables.items())
 
         # Temporarily load the test's environment to record the actual module
         # load/unload sequence
@@ -812,8 +811,11 @@ class RegressionTest:
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
-        self.logger.debug("loading test's environment")
+        self.logger.debug("loading current programming environment")
         self._current_environ.load()
+
+        self.logger.debug("loading user's environment")
+        self._user_environ.load()
         environ_save.load()
 
     def _setup_paths(self):
@@ -998,7 +1000,8 @@ class RegressionTest:
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
-        environs = [self._current_partition.local_env, self._current_environ]
+        environs = [self._current_partition.local_env,
+                    self._current_environ, self._user_environ]
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
             launcher=getlauncher('local')(),
@@ -1037,7 +1040,8 @@ class RegressionTest:
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
-        environs = [self._current_partition.local_env, self._current_environ]
+        environs = [self._current_partition.local_env,
+                    self._current_environ, self._user_environ]
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs, login=True)
@@ -1171,6 +1175,7 @@ class RegressionTest:
 
         if unload_env:
             self.logger.debug("unloading test's environment")
+            self._user_environ.unload()
             self._current_environ.unload()
             self._current_partition.local_env.unload()
 

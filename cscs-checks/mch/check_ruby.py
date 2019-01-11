@@ -17,4 +17,4 @@ class RubyNArray(rfm.RunOnlyRegressionTest):
                                                r'\[ 1.0, 2.0, 3.0, 4.0 \]',
                                                self.stdout)
         self.maintainers = ['MKr']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
