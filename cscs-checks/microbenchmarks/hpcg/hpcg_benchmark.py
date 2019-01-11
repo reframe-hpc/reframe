@@ -32,16 +32,16 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         self.reference = {
             'daint:gpu': {
-                'gflops': (7.6, -0.1, None, 'GFLOP/s')
+                'gflops': (7.6, -0.1, None, 'Gflop/s')
             },
             'daint:mc': {
-                'gflops': (13.4, -0.1, None, 'GFLOP/s')
+                'gflops': (13.4, -0.1, None, 'Gflop/s')
             },
             'dom:gpu': {
-                'gflops': (7.6, -0.1, None, 'GFLOP/s')
+                'gflops': (7.6, -0.1, None, 'Gflop/s')
             },
             'dom:mc': {
-                'gflops': (13.4, -0.1, None, 'GFLOP/s')
+                'gflops': (13.4, -0.1, None, 'Gflop/s')
             },
         }
 
@@ -66,7 +66,7 @@ class HPCGCheckRef(rfm.RegressionTest):
 
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
-            sn.findall(r'PASSED', self.output_file))),
+                sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
@@ -94,7 +94,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
 
         self.variables = {
             'HUGETLB_VERBOSE': '0',
-            'MPICH_MAX_THREAD_SAFETY' : 'multiple',
+            'MPICH_MAX_THREAD_SAFETY': 'multiple',
             'MPICH_USE_DMAPP_COLL': '1',
             'PMI_NO_FORK': '1',
             'KMP_HW_SUBSET': '9c,2t',
@@ -108,16 +108,16 @@ class HPCGCheckMKL(rfm.RegressionTest):
 
         self.reference = {
             'dom:mc': {
-                'gflops': (22, -0.1, None, 'GFLOP/s')
+                'gflops': (22, -0.1, None, 'Gflop/s')
             },
             'daint:mc': {
-                'gflops': (22, -0.1, None, 'GFLOP/s')
+                'gflops': (22, -0.1, None, 'Gflop/s')
             },
             'dom:gpu': {
-                'gflops': (10.7, -0.1, None, 'GFLOP/s')
+                'gflops': (10.7, -0.1, None, 'Gflop/s')
             },
             'daint:gpu': {
-                'gflops': (10.7, -0.1, None, 'GFLOP/s')
+                'gflops': (10.7, -0.1, None, 'Gflop/s')
             },
         }
 
@@ -158,7 +158,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
 
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
-            sn.findall(r'PASSED', self.outfile_lazy))),
+                sn.findall(r'PASSED', self.outfile_lazy))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
