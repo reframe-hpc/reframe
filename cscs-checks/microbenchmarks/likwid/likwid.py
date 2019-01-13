@@ -35,13 +35,13 @@ class BandwidthBase(rfm.RegressionTest):
         # Test each level at half capacity times nthreads per domain
         self.system_cache_sizes = {
             'daint:mc':  {'L1': '288kB', 'L2': '2304kB', 'L3': '23MB',
-                          'memory': '100MB'},
+                          'memory': '1800MB'},
             'daint:gpu': {'L1': '192kB', 'L2': '1536kB', 'L3': '15MB',
-                          'memory': '100MB'},
+                          'memory': '1200MB'},
             'dom:mc':    {'L1': '288kB', 'L2': '2304kB', 'L3': '23MB',
-                          'memory': '100MB'},
+                          'memory': '1800MB'},
             'dom:gpu':   {'L1': '192kB', 'L2': '1536kB', 'L3': '15MB',
-                          'memory': '100MB'},
+                          'memory': '1200MB'},
         }
 
         self.maintainers = ['SK']
@@ -62,13 +62,57 @@ class BandwidthBase(rfm.RegressionTest):
                               '\'-g csstaff -o sebkelle\'' % self.stagedir]
 
 
-class AllCores(BandwidthBase):
-    def __init__(self):
+@rfm.required_version('>=2.16-dev0')
+@rfm.parameterized_test(*[[l,k] for l in ['L1', 'L2', 'L3']
+                        for k in ['load_avx', 'store_avx']],
+                        ['memory', 'load_avx'],
+                        ['memory', 'store_mem_avx'])
+class CPUBandwidth(BandwidthBase):
+    def __init__(self, mem_level, kernel_name):
         super().__init__()
+
+        self.descr = 'CPU <- %s %s benchmark' % (mem_level, kernel_name)
 
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
 
+        # the kernel to run in likwid
+        self.kernel_name = kernel_name
+        self.ml = mem_level
+
+        self.refs = {
+            'mc':  {
+                'load_avx': {'L1': 5100000, 'L2': 2000000, 'L3': 900000,
+                             'memory': 130000},
+                'store_avx': {'L1': 2800000, 'L2': 900000, 'L3': 480000},
+                'store_mem_avx': {'memory': 85000},
+            },
+            'gpu': {
+                'load_avx': {'L1': 2100000, 'L2': 850000, 'L3': 360000,
+                             'memory': 65000},
+                'store_avx': {'L1': 1200000, 'L2': 340000, 'L3': 210000},
+                'store_mem_avx': {'memory': 42500},
+            }
+        }
+        ref_proxy = {part: self.refs[part][kernel_name][mem_level]
+                     for part in self.refs.keys()}
+
+        self.reference = {
+            'daint:gpu': {
+                'bandwidth': (ref_proxy['gpu'], -0.1, None, 'MB/s')
+            },
+            'daint:mc': {
+                'bandwidth': (ref_proxy['mc'], -0.1, None, 'MB/s')
+            },
+            'dom:gpu': {
+                'bandwidth': (ref_proxy['gpu'], -0.1, None, 'MB/s')
+            },
+            'dom:mc': {
+                'bandwidth': (ref_proxy['mc'], -0.1, None, 'MB/s')
+            },
+        }
+
     def setup(self, partition, environ, **job_opts):
+        self.data_size = self.system_cache_sizes[partition.fullname][self.ml]
 
         self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
         numa_domains = self.system_numa_domains[partition.fullname]
@@ -83,73 +127,6 @@ class AllCores(BandwidthBase):
                               for dom in numa_domains])
 
         self.executable_opts = ['-t %s' % self.kernel_name, workgroups]
-
-        super().setup(partition, environ, **job_opts)
-
-
-@rfm.required_version('>=2.16-dev0')
-@rfm.simple_test
-class CPUBandwidthWrite(AllCores):
-    def __init__(self):
-        super().__init__()
-
-        self.descr = 'CPU -> main memory write benchmark'
-        # the kernel to run in likwid
-        self.kernel_name = 'store_mem_avx'
-        self.data_size = '100MB'
-
-        self.reference = {
-            'daint:gpu': {
-                'bandwidth': (40000, -0.1, None, 'MB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (80000, -0.1, None, 'MB/s')
-            },
-            'dom:gpu': {
-                'bandwidth': (40000, -0.1, None, 'MB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (80000, -0.1, None, 'MB/s')
-            },
-        }
-
-
-@rfm.required_version('>=2.16-dev0')
-@rfm.parameterized_test(['L1'], ['L2'], ['L3'], ['memory'])
-class CPUBandwidth(AllCores):
-    def __init__(self, mem_level):
-        super().__init__()
-
-        self.descr = 'CPU <- %s read benchmark' % mem_level
-
-        # the kernel to run in likwid
-        self.kernel_name = 'load_avx'
-        self.ml = mem_level
-
-        self.refs = {
-            'mc':  {'L1': 5100000, 'L2': 2100000, 'L3': 900000,
-                    'memory': 130000},
-            'gpu': {'L1': 2100000, 'L2': 900000, 'L3': 360000,
-                    'memory': 65000},
-        }
-
-        self.reference = {
-            'daint:gpu': {
-                'bandwidth': (self.refs['gpu'][mem_level], -0.1, None, 'MB/s')
-            },
-            'daint:mc': {
-                'bandwidth': (self.refs['mc'][mem_level], -0.1, None, 'MB/s')
-            },
-            'dom:gpu': {
-                'bandwidth': (self.refs['gpu'][mem_level], -0.1, None, 'MB/s')
-            },
-            'dom:mc': {
-                'bandwidth': (self.refs['mc'][mem_level], -0.1, None, 'MB/s')
-            },
-        }
-
-    def setup(self, partition, environ, **job_opts):
-        self.data_size = self.system_cache_sizes[partition.fullname][self.ml]
 
         super().setup(partition, environ, **job_opts)
 
