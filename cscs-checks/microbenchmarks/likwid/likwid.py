@@ -137,8 +137,8 @@ class CPUBandwidthCrossSocket(BandwidthBase):
     def __init__(self):
         super().__init__()
 
-        self.descr = 'CPU S0 <- main memory S1 read'
-        ' CPU S1 <- main memory S0 read'
+        self.descr = ("CPU S0 <- main memory S1 read " +
+                      "CPU S1 <- main memory S0 read")
 
         self.valid_systems = ['daint:mc', 'dom:mc']
 
