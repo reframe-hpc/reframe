@@ -31,12 +31,12 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.refs = {
             env: {bench_name: (rt, None, 0.1, 'Seconds')
                   for (bench_name, rt) in
-                  zip(self.benchmarks, self.runtimes[env])}
+                  zip(self.benchmarks, self.exec_times[env])}
             for env in self.valid_prog_environs
         }
 
-        self.num_tasks = 12
-        self.num_tasks_per_node = 12
+        self.num_tasks = 1
+        self.num_tasks_per_node = 1
         self.time_limit = (0, 30, 0)
 
         self.executable = 'runspec'
@@ -46,7 +46,9 @@ class SpecAccelCheckBase(rfm.RegressionTest):
             r'Success.*%s' % bn, outfile) for bn in self.benchmarks])
 
         self.perf_patterns = {
-            bench_name: self.extract_average(outfile, bench_name)
+            bench_name: sn.avg(sn.extractall(
+            r'Success.*%s.*runtime=(?P<rt>[0-9.]+)' % bench_name,
+            outfile, 'rt', float))
             for bench_name in self.benchmarks
         }
 
@@ -71,12 +73,6 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
 
-    @sn.sanity_function
-    def extract_average(self, ofile, bench_name):
-        runs = sn.extractall(r'Success.*%s.*runtime=(?P<rt>[0-9.]+)'
-                             % bench_name, ofile, 'rt', float)
-        return sum(runs)/sn.count(runs)
-
 
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
@@ -90,7 +86,7 @@ class SpecAccelCheckOpenCL(SpecAccelCheckBase):
                            'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
                            'ge', 'srad', 'heartwall', 'bplustree']
 
-        self.runtimes = {
+        self.exec_times = {
             'PrgEnv-gnu':  [10.7, 13.5, 17.0, 10.9, 11.91, 27.8,
                             7.0, 23.1, 10.8, 38.4, 8.7, 24.4, 16.2,
                             15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
@@ -113,7 +109,7 @@ class SpecAccelCheckOpenACC(SpecAccelCheckBase):
                            'clvrleaf', 'cg', 'seismic', 'sp', 'csp',
                            'miniGhost', 'ilbdc', 'swim', 'bt']
 
-        self.runtimes = {
+        self.exec_times = {
             'PrgEnv-cray': [18, 26, 121, 20, 73, 59, 41,
                             50, 71, 34, 72, 41, 34, 378]
         }
