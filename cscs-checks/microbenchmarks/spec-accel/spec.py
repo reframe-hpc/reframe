@@ -47,8 +47,8 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
         self.perf_patterns = {
             bench_name: sn.avg(sn.extractall(
-            r'Success.*%s.*runtime=(?P<rt>[0-9.]+)' % bench_name,
-            outfile, 'rt', float))
+                r'Success.*%s.*runtime=(?P<rt>[0-9.]+)' % bench_name,
+                outfile, 'rt', float))
             for bench_name in self.benchmarks
         }
 
