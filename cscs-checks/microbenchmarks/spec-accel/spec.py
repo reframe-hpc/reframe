@@ -56,7 +56,6 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.tags = {'diagnostic'}
 
     def setup(self, partition, environ, **job_opts):
-
         self.pre_run = ['source ./shrc', 'mv %s config' %
                         self.configs[environ.name]]
         self.executable_opts = ['--config=%s' % self.configs[environ.name],
