@@ -106,6 +106,9 @@ def main():
         '-n', '--name', action='append', dest='names', default=[],
         metavar='NAME', help='Select checks with NAME')
     select_options.add_argument(
+        '-ren', '--regexp_name', action='append', dest='regexp_names', default=[],
+        metavar='NAME', help='Select checks with NAME')
+    select_options.add_argument(
         '-x', '--exclude', action='append', dest='exclude_names',
         metavar='NAME', default=[], help='Exclude checks with NAME')
     select_options.add_argument(
@@ -411,6 +414,10 @@ def main():
         if options.names:
             checks_matched = filter(filters.have_name(options.names),
                                     checks_matched)
+
+        # Filter checks by regular expression for name
+        if options.regexp_names:
+            checks_matched = filter(filters.have_name_regexp(options.regexp_names),checks_matched)
 
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)

@@ -1,3 +1,5 @@
+import re
+
 import reframe.core.runtime as rt
 import reframe.utility.sanity as util
 
@@ -5,6 +7,16 @@ import reframe.utility.sanity as util
 def have_name(names):
     def _fn(c):
         return c.name in names
+
+    return _fn
+
+
+def have_name_regexp(regexp_names):
+    def _fn(c):
+        p = re.compile(regexp_names[0], re.IGNORECASE)
+        m = p.findall(c.name)
+        if m:
+            return c.name
 
     return _fn
 
