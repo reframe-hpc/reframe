@@ -61,6 +61,14 @@ class PrettyPrinter:
     def __repr__(self):
         return debug.repr(self)
 
+    def set_verbose_level(self, number):
+        if not number:
+            self._logger.setLevel(logging.INFO)
+        elif number == 1:
+            self._logger.setLevel(logging.VERBOSE)
+        elif number >= 2:
+            self._logger.setLevel(logging.DEBUG)
+
     def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':
             line = self.status_width * '='

@@ -86,6 +86,9 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Copy the log file from the work dir to the output dir at the '
              'end of the program')
+    output_options.add_argument(
+        '--verbose', '-v', action='count',
+        help='Increase output verbosity level')
 
     # Check discovery options
     locate_options.add_argument(
@@ -258,6 +261,7 @@ def main():
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
+    printer.set_verbose_level(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
@@ -452,7 +456,7 @@ def main():
                 rt.modules_system.load_module(m, force=True)
                 raise EnvironError("test")
             except EnvironError as e:
-                printer.warning("could not load module '%s' correctly: " 
+                printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
