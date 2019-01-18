@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <ratio>
 #include <cuda.h>
 
 __global__ void null_kernel() {
@@ -8,16 +9,20 @@ __global__ void null_kernel() {
 int main(int argc, char* argv[]) {
 
     cudaError_t error;
-    int gpu_count;
+    int gpu_count = 0;
 
     error = cudaGetDeviceCount(&gpu_count);
 
     if (error == cudaSuccess) {
-        std::cout << "Found " << gpu_count << " gpu(s)" << std::endl;
+        if (gpu_count <= 0) {
+            std::cout << "Could not found any gpu\n";
+            return 1;
+        }
+        std::cout << "Found " << gpu_count << " gpu(s)\n";
     }
-    else {
-        std::cout << "Error getting gpu count, exiting..." << std::endl;
-        return -1;
+    else{
+        std::cout << "Error getting gpu count, exiting...\n";
+        return 1;
     }
 
     // Single kernel launch to initialize cuda runtime
@@ -38,7 +43,8 @@ int main(int argc, char* argv[]) {
     #endif
 
     auto t_end = std::chrono::system_clock::now();
+    std::cout << "Kernel launch latency: " << std::chrono::duration_cast<std::chrono::duration<double, std::micro>>(t_end - t_start).count() / kernel_count << " us\n";
 
-    std::cout << "Kernel launch latency: " << std::chrono::duration_cast<std::chrono::duration<double>>(t_end - t_start).count() / kernel_count << " seconds" << std::endl;
+    return 0;
 }
 
