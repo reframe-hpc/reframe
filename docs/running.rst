@@ -1006,7 +1006,9 @@ Controlling the Flexible Task Allocation
 
 .. versionadded:: 2.15
 
-ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value ``<=0``.
+Negative values indicate the minimum number of tasks that is acceptable for this test (a value of ``-4`` indicates a minimum acceptable number of ``4`` tasks).
+A zero value indicates the default minimum number of tasks which is ``1``.
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
 This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
 This option accepts three values:

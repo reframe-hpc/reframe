@@ -708,6 +708,24 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
+    def test_not_enough_idle_nodes(self):
+        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._num_tasks = -12
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_not_enough_nodes_constraint_partition(self):
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.testjob._num_tasks = -8
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_enough_nodes_constraint_partition(self):
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.testjob._num_tasks = -4
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
+
     def prepare_job(self):
         self.testjob.prepare(['hostname'])
 
