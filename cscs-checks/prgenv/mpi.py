@@ -4,24 +4,29 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['single'], ['funneled'], ['serialized'], ['multiple'])
-class Mpi_InitTest(rfm.RegressionTest):
-    '''
-This test checks the value returned by calling MPI_Init_thread:
-Output should look the same for every prgenv (cray, gnu, intel, pgi)
-(mpi_thread_multiple seems to be not supported):
+class MpiInitTest(rfm.RegressionTest):
+    """This test checks the value returned by calling MPI_Init_thread.
+
+    Output should look the same for every prgenv (cray, gnu, intel, pgi)
+    (mpi_thread_multiple seems to be not supported):
+
     # 'single':
     ['mpi_thread_supported=MPI_THREAD_SINGLE
       mpi_thread_queried=MPI_THREAD_SINGLE 0'],
+
     # 'funneled':
     ['mpi_thread_supported=MPI_THREAD_FUNNELED
       mpi_thread_queried=MPI_THREAD_FUNNELED 1'],
+
     # 'serialized':
     ['mpi_thread_supported=MPI_THREAD_SERIALIZED
       mpi_thread_queried=MPI_THREAD_SERIALIZED 2'],
+
     # 'multiple':
     ['mpi_thread_supported=MPI_THREAD_SERIALIZED
       mpi_thread_queried=MPI_THREAD_SERIALIZED 2']
-    '''
+
+    """
 
     def __init__(self, required_thread):
         super().__init__()
