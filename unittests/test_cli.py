@@ -360,3 +360,30 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(0, returncode)
+
+    def test_show_config(self):
+        # Just make sure that this option does not make the frontend crash
+        self.more_options = ['--show-config']
+        self.system = 'testsys'
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertEqual(0, returncode)
+
+    def test_show_env_config(self):
+        # Just make sure that this option does not make the frontend crash
+        self.more_options = ['--show-config-env', 'PrgEnv-gnu']
+        self.system = 'testsys'
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertEqual(0, returncode)
+
+    def test_show_env_config_unknown_env(self):
+        # Just make sure that this option does not make the frontend crash
+        self.more_options = ['--show-config-env', 'foobar']
+        self.system = 'testsys'
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertEqual(1, returncode)

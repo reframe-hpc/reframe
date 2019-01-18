@@ -5,6 +5,7 @@ def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
 def machinesList = ['daint', 'dom', 'kesch']
 def machinesToRun = machinesList
+def runTests = true
 def uniqueID
 
 stage('Initialization') {
@@ -37,6 +38,11 @@ stage('Initialization') {
                 currentBuild.result = 'SUCCESS'
                 return
             }
+            else if (splittedComment[2] == 'none') {
+                runTests = false
+                currentBuild.result = 'SUCCESS'
+                return
+            }
 
             machinesRequested = []
             for (i = 2; i < splittedComment.size(); i++) {
@@ -64,6 +70,11 @@ stage('Initialization') {
             }
         }
     }
+}
+
+if (!runTests) {
+    println "Won't execute any test (${currentBuild.result}). Exiting..."
+    return
 }
 
 if (currentBuild.result != 'SUCCESS') {

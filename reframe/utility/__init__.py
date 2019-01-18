@@ -239,3 +239,74 @@ class ScopedDict(UserDict):
 
     def __missing__(self, key):
         raise KeyError(str(key))
+
+
+class SequenceView(collections.abc.Sequence):
+    """A read-only view of a sequence."""
+
+    def __init__(self, container):
+        if not isinstance(container, collections.abc.Sequence):
+            raise TypeError('container must be of type Sequence')
+
+        self.__container = container
+
+    def count(self, *args, **kwargs):
+        return self.__container.count(*args, **kwargs)
+
+    def index(self, *args, **kwargs):
+        return self.__container.index(*args, **kwargs)
+
+    def __contains__(self, *args, **kwargs):
+        return self.__container.__contains__(*args, **kwargs)
+
+    def __getitem__(self, *args, **kwargs):
+        return self.__container.__getitem__(*args, **kwargs)
+
+    def __iter__(self, *args, **kwargs):
+        return self.__container.__iter__(*args, **kwargs)
+
+    def __len__(self, *args, **kwargs):
+        return self.__container.__len__(*args, **kwargs)
+
+    def __reversed__(self, *args, **kwargs):
+        return self.__container.__reversed__(*args, **kwargs)
+
+
+class MappingView(collections.abc.Mapping):
+    """A read-only view of a mapping."""
+
+    def __init__(self, mapping):
+        if not isinstance(mapping, collections.abc.Mapping):
+            raise TypeError('container must be of type Mapping')
+
+        self.__mapping = mapping
+
+    def get(self, *args, **kwargs):
+        return self.__mapping.get(*args, **kwargs)
+
+    def keys(self, *args, **kwargs):
+        return self.__mapping.keys(*args, **kwargs)
+
+    def items(self, *args, **kwargs):
+        return self.__mapping.items(*args, **kwargs)
+
+    def values(self, *args, **kwargs):
+        return self.__mapping.values(*args, **kwargs)
+
+    def __contains__(self, *args, **kwargs):
+        return self.__mapping.__contains__(*args, **kwargs)
+
+    def __getitem__(self, *args, **kwargs):
+        return self.__mapping.__getitem__(*args, **kwargs)
+
+    def __iter__(self, *args, **kwargs):
+        return self.__mapping.__iter__(*args, **kwargs)
+
+    def __len__(self, *args, **kwargs):
+        return self.__mapping.__len__(*args, **kwargs)
+
+    def __eq__(self, *args, **kwargs):
+        return self.__mapping.__eq__(*args, **kwargs)
+
+    def __ne__(self, *args, **kwargs):
+        return self.__mapping.__ne__(*args, **kwargs)
