@@ -44,7 +44,7 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (6.6, None, 0.10, 'us')
                 },
                 'kesch:cn': {
-                    'latency': (1.2, None, 0.10, 'us')
+                    'latency': (12.0, None, 0.10, 'us')
                 },
             },
             'async': {
