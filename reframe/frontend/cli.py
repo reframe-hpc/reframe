@@ -87,7 +87,7 @@ def main():
         help='Copy the log file from the work dir to the output dir at the '
              'end of the program')
     output_options.add_argument(
-        '--verbose', '-v', action='count',
+        '--verbose', '-v', action='count', default=0,
         help='Increase output verbosity level')
 
     # Check discovery options

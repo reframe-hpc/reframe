@@ -23,12 +23,12 @@ LOG_CONFIG_OPTS = {
 
 
 # Reframe's log levels
-CRITICAL = 50
-ERROR    = 40
-WARNING  = 30
-INFO     = 20
-VERBOSE  = 19
-DEBUG    = 10
+CRITICAL = 6
+ERROR    = 5
+WARNING  = 4
+INFO     = 3
+VERBOSE  = 2
+DEBUG    = 1
 NOTSET   = 0
 
 
@@ -131,6 +131,20 @@ class MultiFileHandler(logging.FileHandler):
             super().close()
 
 
+class StreamHandler(logging.StreamHandler):
+    def __init__(self, stream=None):
+        super().__init__(stream=stream)
+        self.__log_level = 'INFO'
+        self.setLevel('INFO')
+
+    def setLevel(self, level):
+        super().setLevel(level)
+        self.__log_level = level
+
+    def loglevel(self):
+        return self.__log_level
+
+
 def load_from_dict(logging_config):
     if not isinstance(logging_config, collections.abc.Mapping):
         raise TypeError('logging configuration is not a dict')
@@ -199,9 +213,9 @@ def _create_filelog_handler(handler_config):
 def _create_stream_handler(handler_config):
     stream = handler_config.get('name', 'stdout')
     if stream == 'stdout':
-        return logging.StreamHandler(stream=sys.stdout)
+        return StreamHandler(stream=sys.stdout)
     elif stream == 'stderr':
-        return logging.StreamHandler(stream=sys.stderr)
+        return StreamHandler(stream=sys.stderr)
     else:
         raise ConfigError('unknown stream: %s' % stream)
 
@@ -284,12 +298,21 @@ class Logger(logging.Logger):
         # class' check
         super().__init__(name, logging.NOTSET)
         self.level = _check_level(level)
+        self._stream_handlers = []
 
     def __repr__(self):
         return debug.repr(self)
 
     def setLevel(self, level):
         self.level = _check_level(level)
+
+    def addHandler(self, hdlr):
+        if isinstance(hdlr, StreamHandler):
+            self._stream_handlers.append(hdlr)
+        super().addHandler(hdlr)
+
+    def stream_handlers(self):
+        return self._stream_handlers
 
     def makeRecord(self, name, level, fn, lno, msg, args, exc_info,
                    func=None, extra=None, sinfo=None):
@@ -359,6 +382,10 @@ class LoggerAdapter(logging.LoggerAdapter):
     def setLevel(self, level):
         if self.logger:
             super().setLevel(level)
+
+    def stream_handlers(self):
+        if self.logger:
+            return self.logger._stream_handlers
 
     def _update_check_extras(self):
         """Return a dictionary with all the check-specific information."""
