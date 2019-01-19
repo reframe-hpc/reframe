@@ -172,7 +172,7 @@ class Runner:
             self._printer.separator('short double line',
                                     'Running %d check(s)' % len(checks))
             self._printer.timestamp('Started on', 'short double line')
-            self._printer.info()
+            self._printer.info('')
             self._runall(checks)
             if self._max_retries:
                 self._retry_failed(checks)

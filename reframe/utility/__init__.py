@@ -1,3 +1,4 @@
+import abc
 import collections
 import importlib
 import importlib.util
@@ -310,3 +311,47 @@ class MappingView(collections.abc.Mapping):
 
     def __ne__(self, *args, **kwargs):
         return self.__mapping.__ne__(*args, **kwargs)
+
+
+class Colorizer(abc.ABC):
+    """Base class for colorizing strings on the terminal."""
+
+    def __repr__(self):
+        return debug.repr(self)
+
+    @abc.abstractmethod
+    def colorize(string, foreground, background):
+        """Colorize a string.
+
+        Keyword arguments:
+        string -- the string to be colorized
+        foreground -- the foreground color
+        background -- the background color
+        """
+
+
+class AnsiColorizer(Colorizer):
+    """Class for colorizing strings using ANSI meta-characters."""
+
+    escape_seq = '\033'
+    reset_term = '[0m'
+
+    # Escape sequences for fore/background colors
+    fgcolor = '[3'
+    bgcolor = '[4'
+
+    # color values
+    black   = '0m'
+    red     = '1m'
+    green   = '2m'
+    yellow  = '3m'
+    blue    = '4m'
+    magenta = '5m'
+    cyan    = '6m'
+    white   = '7m'
+    default = '9m'
+
+    def colorize(string, foreground, background=None):
+        return (AnsiColorizer.escape_seq +
+                AnsiColorizer.fgcolor + foreground + string +
+                AnsiColorizer.escape_seq + AnsiColorizer.reset_term)

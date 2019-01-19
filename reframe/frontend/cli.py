@@ -8,18 +8,19 @@ import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
                                      SystemAutodetectionError)
-from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
+
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -48,7 +49,7 @@ def list_checks(checks, printer, detailed=False):
 
 def main():
     # Setup command line options
-    argparser = ArgumentParser()
+    argparser = argparse.ArgumentParser()
     output_options = argparser.add_argument_group(
         'Options controlling regression directories')
     locate_options = argparser.add_argument_group(
@@ -255,6 +256,9 @@ def main():
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
+    # Set colors in logger
+    logging.getlogger().colorize = options.colorize
+
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
@@ -377,7 +381,7 @@ def main():
             prefix=reframe.INSTALL_PREFIX,
             recurse=settings.checks_path_recurse)
 
-    printer.log_config(options)
+    printer.debug(argparse.format_options(options))
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
@@ -452,7 +456,7 @@ def main():
                 rt.modules_system.load_module(m, force=True)
                 raise EnvironError("test")
             except EnvironError as e:
-                printer.warning("could not load module '%s' correctly: " 
+                printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
 

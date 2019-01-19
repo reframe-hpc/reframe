@@ -1,65 +1,24 @@
-import abc
 import datetime
 import sys
 
-import reframe.core.debug as debug
 import reframe.core.logging as logging
-
-
-class Colorizer(abc.ABC):
-    def __repr__(self):
-        return debug.repr(self)
-
-    @abc.abstractmethod
-    def colorize(string, foreground, background):
-        """Colorize a string.
-
-        Keyword arguments:
-        string -- the string to be colorized
-        foreground -- the foreground color
-        background -- the background color
-        """
-
-
-class AnsiColorizer(Colorizer):
-    escape_seq = '\033'
-    reset_term = '[0m'
-
-    # Escape sequences for fore/background colors
-    fgcolor = '[3'
-    bgcolor = '[4'
-
-    # color values
-    black   = '0m'
-    red     = '1m'
-    green   = '2m'
-    yellow  = '3m'
-    blue    = '4m'
-    magenta = '5m'
-    cyan    = '6m'
-    white   = '7m'
-    default = '9m'
-
-    def colorize(string, foreground, background=None):
-        return (AnsiColorizer.escape_seq +
-                AnsiColorizer.fgcolor + foreground + string +
-                AnsiColorizer.escape_seq + AnsiColorizer.reset_term)
+from reframe.utility import AnsiColorizer
 
 
 class PrettyPrinter:
     """Pretty printing facility for the framework.
 
-    Final printing is delegated to an internal logger, which is responsible for
-    printing both to standard output and in a special output file."""
+    It takes care of formatting the progress output and adds some more
+    cosmetics to specific levels of messages, such as warnings and errors.
+
+    The actual printing is delegated to an internal logger, which is
+    responsible for printing.
+    """
 
     def __init__(self):
         self.colorize = True
         self.line_width = 78
         self.status_width = 10
-        self._logger = logging.getlogger()
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':
@@ -88,7 +47,7 @@ class PrettyPrinter:
             else:
                 status = AnsiColorizer.colorize(status, AnsiColorizer.green)
 
-        self._logger.log(level, '[ %s ] %s' % (status, message))
+        logging.getlogger().log(level, '[ %s ] %s' % (status, message))
 
     def result(self, check, partition, environ, success):
         if success:
@@ -107,24 +66,14 @@ class PrettyPrinter:
         else:
             self.info(msg)
 
-    def info(self, msg=''):
-        self._logger.info(msg)
-
-    def debug(self, msg=''):
-        self._logger.debug(msg)
+    def __getattr__(self, attr):
+        # delegate all other attribute lookup to the underlying logger
+        return getattr(logging.getlogger(), attr)
 
     def warning(self, msg):
-        msg = AnsiColorizer.colorize('%s: %s' % (sys.argv[0], msg),
-                                     AnsiColorizer.yellow)
-        self._logger.warning(msg)
+        msg = '%s: %s' % (sys.argv[0], msg)
+        logging.getlogger().warning(msg)
 
     def error(self, msg):
-        msg = AnsiColorizer.colorize('%s: %s' % (sys.argv[0], msg),
-                                     AnsiColorizer.red)
-        self._logger.error(msg)
-
-    def log_config(self, options):
-        opt_list = ['    %s=%s' % (attr, val)
-                    for attr, val in sorted(options.__dict__.items())]
-
-        self._logger.debug('configuration\n%s' % '\n'.join(opt_list))
+        msg = '%s: %s' % (sys.argv[0], msg)
+        logging.getlogger().error(msg)
