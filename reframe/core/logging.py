@@ -23,12 +23,12 @@ LOG_CONFIG_OPTS = {
 
 
 # Reframe's log levels
-CRITICAL = 6
-ERROR    = 5
-WARNING  = 4
-INFO     = 3
-VERBOSE  = 2
-DEBUG    = 1
+CRITICAL = 50
+ERROR    = 40
+WARNING  = 30
+INFO     = 20
+VERBOSE  = 19
+DEBUG    = 10
 NOTSET   = 0
 
 

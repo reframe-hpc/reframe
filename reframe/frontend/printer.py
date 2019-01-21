@@ -64,9 +64,15 @@ class PrettyPrinter:
     def set_verbose_level(self, number):
         if number:
             for hdlr in self._logger.stream_handlers():
-                loglevel = hdlr.loglevel()
-                new_level = max(loglevel - number, logging.DEBUG)
-                hdlr.setLevel(new_level)
+                for l in range(0,number):
+                    loglevel = hdlr.loglevel()
+                    if loglevel == logging.INFO:
+                        new_level = max(loglevel - 1, logging.DEBUG)
+                    elif loglevel == logging.VERBOSE:
+                        new_level = max(loglevel - 9, logging.DEBUG)
+                    else:
+                        new_level = max(loglevel - 10, logging.DEBUG)
+                    hdlr.setLevel(new_level)
 
     def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':
