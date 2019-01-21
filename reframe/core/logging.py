@@ -418,12 +418,14 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.log(VERBOSE, message, *args, **kwargs)
 
     def warning(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
         if self.colorize:
             message = AnsiColorizer.colorize(message, AnsiColorizer.yellow)
 
         super().warning(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
         if self.colorize:
             message = AnsiColorizer.colorize(message, AnsiColorizer.red)
 

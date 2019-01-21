@@ -69,11 +69,3 @@ class PrettyPrinter:
     def __getattr__(self, attr):
         # delegate all other attribute lookup to the underlying logger
         return getattr(logging.getlogger(), attr)
-
-    def warning(self, msg):
-        msg = '%s: %s' % (sys.argv[0], msg)
-        logging.getlogger().warning(msg)
-
-    def error(self, msg):
-        msg = '%s: %s' % (sys.argv[0], msg)
-        logging.getlogger().error(msg)
