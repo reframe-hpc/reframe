@@ -2,7 +2,7 @@ import datetime
 import sys
 
 import reframe.core.logging as logging
-from reframe.utility import AnsiColorizer
+import reframe.utility.color as color
 
 
 class PrettyPrinter:
@@ -41,11 +41,11 @@ class PrettyPrinter:
         if self.colorize:
             status_stripped = status.strip().lower()
             if status_stripped == 'skip':
-                status = AnsiColorizer.colorize(status, AnsiColorizer.yellow)
+                status = color.colorize(status, color.YELLOW)
             elif status_stripped in ['fail', 'failed']:
-                status = AnsiColorizer.colorize(status, AnsiColorizer.red)
+                status = color.colorize(status, color.RED)
             else:
-                status = AnsiColorizer.colorize(status, AnsiColorizer.green)
+                status = color.colorize(status, color.GREEN)
 
         logging.getlogger().log(level, '[ %s ] %s' % (status, message))
 

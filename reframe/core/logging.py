@@ -11,10 +11,10 @@ import warnings
 from datetime import datetime
 
 import reframe
+import reframe.utility.color as color
 import reframe.core.debug as debug
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
-from reframe.utility import AnsiColorizer
 
 
 # Global configuration options for logging
@@ -420,14 +420,14 @@ class LoggerAdapter(logging.LoggerAdapter):
     def warning(self, message, *args, **kwargs):
         message = '%s: %s' % (sys.argv[0], message)
         if self.colorize:
-            message = AnsiColorizer.colorize(message, AnsiColorizer.yellow)
+            message = color.colorize(message, color.YELLOW)
 
         super().warning(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
         message = '%s: %s' % (sys.argv[0], message)
         if self.colorize:
-            message = AnsiColorizer.colorize(message, AnsiColorizer.red)
+            message = color.colorize(message, color.RED)
 
         super().error(message, *args, **kwargs)
 
