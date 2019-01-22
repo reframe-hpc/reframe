@@ -11,6 +11,7 @@ import warnings
 from datetime import datetime
 
 import reframe
+import reframe.utility.color as color
 import reframe.core.debug as debug
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
@@ -352,6 +353,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             }
         )
         self.check = check
+        self.colorize = False
 
     def __repr__(self):
         return debug.repr(self)
@@ -414,6 +416,21 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
+
+    def warning(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
+        if self.colorize:
+            message = color.colorize(message, color.YELLOW)
+
+        super().warning(message, *args, **kwargs)
+
+    def error(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
+        if self.colorize:
+            message = color.colorize(message, color.RED)
+
+        super().error(message, *args, **kwargs)
+
 
 
 # A logger that doesn't log anything
