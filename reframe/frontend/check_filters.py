@@ -45,6 +45,17 @@ def have_prgenv(prgenv):
     return _fn
 
 
+def have_prgenv_regexp(regexp_prgenv):
+    def _fn(c):
+        if regexp_prgenv:
+            p = re.compile(regexp_prgenv, re.IGNORECASE)
+            return any(len(p.findall(prgenv)) > 0 for prgenv in c.valid_prog_environs)
+        else:
+            return bool(c.valid_prog_environs)
+
+    return _fn
+
+
 def have_partition(partitions):
     def _fn(c):
         return any([c.supports_system(s.fullname) for s in partitions])

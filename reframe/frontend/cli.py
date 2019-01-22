@@ -115,6 +115,9 @@ def main():
         '-p', '--prgenv', action='append', default=[],
         help='Select tests for PRGENV programming environment only')
     select_options.add_argument(
+        '-rep', '--regexp_prgenv', action='append', default=[],
+        help='Select tests for PRGENV programming environment only')
+    select_options.add_argument(
         '--gpu-only', action='store_true',
         help='Select only GPU tests')
     select_options.add_argument(
@@ -417,7 +420,7 @@ def main():
 
         # Filter checks by regular expression for name
         if options.regexp_names:
-            checks_matched = filter(filters.have_name_regexp(options.regexp_names),checks_matched)
+            checks_matched = filter(filters.have_name_regexp(options.regexp_names[0]),checks_matched)
 
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
@@ -425,6 +428,11 @@ def main():
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             checks_matched = filter(filters.have_prgenv(options.prgenv),
+                                    checks_matched)
+
+        # Filter checks by regular expression for prgenv
+        if not options.skip_prgenv_check:
+            checks_matched = filter(filters.have_prgenv_regexp(options.regexp_prgenv[0]),
                                     checks_matched)
 
         # Filter checks by system
