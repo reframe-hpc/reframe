@@ -265,7 +265,7 @@ def main():
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
-    printer.set_verbose_level(options.verbose)
+    printer.set_verbosity(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)

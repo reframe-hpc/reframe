@@ -20,11 +20,11 @@ class PrettyPrinter:
         self.line_width = 78
         self.status_width = 10
 
-    def set_verbose_level(self, number):
+    def set_verbosity(self, number):
         if number:
-            for hdlr in self._logger.stream_handlers():
+            for hdlr in self.stream_handlers():
                 for l in range(0,number):
-                    loglevel = hdlr.loglevel()
+                    loglevel = hdlr.level
                     if loglevel == logging.INFO:
                         new_level = max(loglevel - 1, logging.DEBUG)
                     elif loglevel == logging.VERBOSE:
