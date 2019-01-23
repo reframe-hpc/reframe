@@ -2,6 +2,7 @@
 # CSCS ReFrame settings
 #
 
+
 class ReframeSettings:
     reframe_module = 'reframe'
     job_poll_intervals = [1, 2, 3]
@@ -10,9 +11,97 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
+            'daint': {
+                'descr': 'Piz Daint',
+                'hostnames': ['daint'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'modules': [],
+                        'access':  [],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+
+                    'gpu': {
+                        'scheduler': 'nativeslurm',
+                        'modules': ['daint-gpu'],
+                        'access':  ['--constraint=gpu'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Hybrid nodes (Haswell/P100)',
+                        'max_jobs': 100,
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
+                    },
+
+                    'mc': {
+                        'scheduler': 'nativeslurm',
+                        'modules': ['daint-mc'],
+                        'access':  ['--constraint=mc'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Multicore nodes (Broadwell)',
+                        'max_jobs': 100,
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
+                    }
+                }
+            },
+
+            'dom': {
+                'descr': 'Dom TDS',
+                'hostnames': ['dom'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'modules': [],
+                        'access':  [],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+
+                    'gpu': {
+                        'scheduler': 'nativeslurm',
+                        'modules': ['daint-gpu'],
+                        'access':  ['--constraint=gpu'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Hybrid nodes (Haswell/P100)',
+                        'max_jobs': 100,
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
+                    },
+
+                    'mc': {
+                        'scheduler': 'nativeslurm',
+                        'modules': ['daint-mc'],
+                        'access':  ['--constraint=mc'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Multicore nodes (Broadwell)',
+                        'max_jobs': 100,
+                        'resources': {
+                            'switches': ['--switches={num_switches}']
+                        }
+                    },
+                }
+            },
+
             'kesch': {
-                'descr': 'Kesch MCH TDS',
-                'hostnames': ['keschcn-0012','keschln-\d+'],
+                'descr': 'Kesch MCH',
+                'hostnames': ['keschln-\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
@@ -23,17 +112,77 @@ class ReframeSettings:
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch login nodes',
                     },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Kesch post-processing nodes'
+                    },
+
                     'cn': {
                         'scheduler': 'nativeslurm',
-                        'access': ['--partition=test'],
-                        'environs': ['PrgEnv-cray-c2sm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-cray-c2sm',
+                                     'PrgEnv-pgi-c2sm',
                                      'PrgEnv-gnu-c2sm',
                                      'PrgEnv-cray-c2sm-gpu',
+                                     'PrgEnv-pgi-c2sm-gpu',
                                      'PrgEnv-gnu-c2sm-gpu'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
+                    }
+                }
+            },
+
+            'leone': {
+                'descr': 'Leone',
+                'hostnames': ['leone'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Leone login nodes',
+                        'max_jobs': 1
+                    },
+
+                    'normal': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': ('Leone compute nodes - '
+                                  'default partition'),
+                        'max_jobs': 10
+                    },
+                }
+            },
+
+            'monch': {
+                'descr': 'Monch PASC',
+                'hostnames': ['monch'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Monch login nodes',
+                        'max_jobs': 1
+                    },
+
+                    'compute': {
+                        'scheduler': 'slurm+mpirun',
+                        'access': ['--partition=compute'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Monch compute nodes',
+                        'max_jobs': 10
                     }
                 }
             },
@@ -95,40 +244,64 @@ class ReframeSettings:
                 },
                 'PrgEnv-cray-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/cray-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/base'],
                 },
                 'PrgEnv-cray-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/cray-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/cray-env/gpu'],
                 },
                 'PrgEnv-pgi-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/pgi-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/base'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-pgi-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/pgi-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/pgi-env/gpu'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-c2sm': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/gnu-env/base'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/base'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-c2sm-gpu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm','c2sm/gnu-env/gpu'],
+                    'modules': ['c2sm-rcm/1.00.00-kesch',
+                                'c2sm/gnu-env/gpu'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
+            },
+            'leone': {
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/leone-foss-2016b'],
+                    'cc':  'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+            },
+            'monch': {
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu'],
+                    'cc':  'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                }
             },
             '*': {
                 'PrgEnv-cray': {
@@ -247,11 +420,13 @@ class ReframeSettings:
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
-                    'u=%(check_perf_upper_thres)s)'
+                    'u=%(check_perf_upper_thres)s)|'
+                    '%(check_perf_unit)s'
                 ),
                 'append': True
             }
         ]
     }
+
 
 settings = ReframeSettings()
