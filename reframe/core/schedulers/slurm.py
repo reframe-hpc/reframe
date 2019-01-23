@@ -44,7 +44,7 @@ class SlurmJob(sched.Job):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._prefix  = '#SBATCH'
+        self._prefix = '#SBATCH'
         self._completion_states = [SLURM_JOB_BOOT_FAIL,
                                    SLURM_JOB_CANCELLED,
                                    SLURM_JOB_COMPLETED,
@@ -293,11 +293,22 @@ class SlurmJob(sched.Job):
             reason, reason_details = reason_descr, None
 
         if reason in self._cancel_reasons:
-            # Here we handle the case were the UnavailableNodes list is empty,
-            # which actually means that the job is pending
             if reason == 'ReqNodeNotAvail' and reason_details:
-                if re.match(r'UnavailableNodes:$', reason_details.strip()):
-                    return
+                node_match = re.match(
+                    r'UnavailableNodes:(?P<node_names>\S+)?',
+                    reason_details.strip())
+                if node_match:
+                    node_names = node_match['node_names']
+                    if node_names:
+                        # Retrieve the info of the unavailable nodes
+                        # and check if they are indeed down
+                        nodes = self._get_nodes_by_name(node_names)
+                        if not any(n.is_down() for n in nodes):
+                            return
+                    else:
+                        # List of unavailable nodes is empty; assume job
+                        # is pending
+                        return
 
             self.cancel()
             reason_msg = ('job cancelled because it was blocked due to '
@@ -403,11 +414,14 @@ class SlurmNode:
 
     def __init__(self, node_descr):
         self._name = self._extract_attribute('NodeName', node_descr)
-        self._partitions = set(self._extract_attribute(
-            'Partitions', node_descr).split(','))
-        self._active_features = set(self._extract_attribute(
-            'ActiveFeatures', node_descr).split(','))
-        self._state = self._extract_attribute('State', node_descr)
+        if not self._name:
+            raise JobError('could not extract NodeName from node description')
+
+        self._partitions = self._extract_attribute(
+            'Partitions', node_descr, sep=',')
+        self._active_features = self._extract_attribute(
+            'ActiveFeatures', node_descr, sep=',')
+        self._states = self._extract_attribute('State', node_descr, sep='+')
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -419,7 +433,11 @@ class SlurmNode:
         return hash(self.name)
 
     def is_available(self):
-        return self._state == 'IDLE'
+        return all([self._states == {'IDLE'}, self._partitions,
+                    self._active_features, self._states])
+
+    def is_down(self):
+        return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)
 
     @property
     def active_features(self):
@@ -434,16 +452,16 @@ class SlurmNode:
         return self._partitions
 
     @property
-    def state(self):
-        return self._state
+    def states(self):
+        return self._states
 
-    def _extract_attribute(self, attr_name, node_descr):
+    def _extract_attribute(self, attr_name, node_descr, sep=None):
         attr_match = re.search(r'%s=(\S+)' % attr_name, node_descr)
         if attr_match:
-            return attr_match.group(1)
-        else:
-            raise JobError("could not extract attribute '%s' from "
-                           "node description" % attr_name)
+            attr = attr_match.group(1)
+            return set(attr_match.group(1).split(sep)) if sep else attr
+
+        return None
 
     def __str__(self):
         return self._name

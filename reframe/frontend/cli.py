@@ -1,5 +1,6 @@
 import os
 import inspect
+import json
 import socket
 import sys
 
@@ -7,12 +8,13 @@ import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.argparse as argparse
+import reframe.frontend.check_filters as filters
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
                                      SystemAutodetectionError)
-from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
@@ -47,7 +49,7 @@ def list_checks(checks, printer, detailed=False):
 
 def main():
     # Setup command line options
-    argparser = ArgumentParser()
+    argparser = argparse.ArgumentParser()
     output_options = argparser.add_argument_group(
         'Options controlling regression directories')
     locate_options = argparser.add_argument_group(
@@ -217,6 +219,12 @@ def main():
         help='Specify a custom config-file for the machine. '
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
+    misc_options.add_argument(
+        '--show-config', action='store_true',
+        help='Print configuration of the current system and exit')
+    misc_options.add_argument(
+        '--show-config-env', action='store', metavar='ENV',
+        help='Print configuration of environment ENV and exit')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
 
@@ -248,6 +256,9 @@ def main():
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
+    # Set colors in logger
+    logging.getlogger().colorize = options.colorize
+
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
@@ -260,7 +271,7 @@ def main():
         sys.exit(1)
 
     except (ConfigError, OSError) as e:
-        printer.error('configuration error %s' % e)
+        printer.error('configuration error: %s' % e)
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -320,6 +331,25 @@ def main():
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
 
+    # Show configuration after everything is set up
+    if options.show_config:
+        printer.info(rt.show_config())
+        sys.exit(0)
+
+    if options.show_config_env:
+        envname = options.show_config_env
+        for p in rt.system.partitions:
+            env = p.environment(envname)
+            if env:
+                break
+
+        if env is None:
+            printer.error('no such environment: ' + envname)
+            sys.exit(1)
+
+        printer.info(env.details())
+        sys.exit(0)
+
     if hasattr(settings, 'perf_logging_config'):
         try:
             logging.configure_perflogging(settings.perf_logging_config)
@@ -351,7 +381,7 @@ def main():
             prefix=reframe.INSTALL_PREFIX,
             recurse=settings.checks_path_recurse)
 
-    printer.log_config(options)
+    printer.debug(argparse.format_options(options))
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
@@ -379,42 +409,25 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(
-            lambda c:
-            c if c.name not in options.exclude_names else None,
-            checks_found
-        )
+        checks_matched = filter(filters.have_not_name(options.exclude_names),
+                                checks_found)
 
         if options.names:
-            checks_matched = filter(
-                lambda c: c if c.name in options.names else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_name(options.names),
+                                    checks_matched)
 
         # Filter checks by tags
-        user_tags = set(options.tags)
-        checks_matched = filter(
-            lambda c: c if user_tags.issubset(c.tags) else None,
-            checks_matched
-        )
+        checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # Filter checks by prgenv
-        def filter_prgenv(c):
-            if options.prgenv:
-                return util.allx(c.supports_environ(e) for e in options.prgenv)
-            else:
-                return bool(c.valid_prog_environs)
-
         if not options.skip_prgenv_check:
-            checks_matched = filter(filter_prgenv, checks_matched)
+            checks_matched = filter(filters.have_prgenv(options.prgenv),
+                                    checks_matched)
 
         # Filter checks by system
-        def filter_system(c):
-            return any([c.supports_system(s.fullname)
-                        for s in rt.system.partitions])
-
         if not options.skip_system_check:
-            checks_matched = filter(filter_system, checks_matched)
+            checks_matched = filter(
+                filters.have_partition(rt.system.partitions), checks_matched)
 
         # Filter checks further
         if options.gpu_only and options.cpu_only:
@@ -423,15 +436,9 @@ def main():
             sys.exit(1)
 
         if options.gpu_only:
-            checks_matched = filter(
-                lambda c: c if c.num_gpus_per_node > 0 else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_gpu_only(), checks_matched)
         elif options.cpu_only:
-            checks_matched = filter(
-                lambda c: c if c.num_gpus_per_node == 0 else None,
-                checks_matched
-            )
+            checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
         checks_matched = [c for c in checks_matched]
 
@@ -447,8 +454,11 @@ def main():
         for m in options.user_modules:
             try:
                 rt.modules_system.load_module(m, force=True)
-            except EnvironError:
-                printer.info("could not load module `%s': Skipping..." % m)
+                raise EnvironError("test")
+            except EnvironError as e:
+                printer.warning("could not load module '%s' correctly: "
+                                "Skipping..." % m)
+                printer.debug(str(e))
 
         success = True
         if options.list:

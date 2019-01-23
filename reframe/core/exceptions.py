@@ -122,7 +122,7 @@ class SpawnedProcessError(ReframeError):
         self._exitcode = exitcode
 
     def __str__(self):
-        lines = ["Command '{0}' failed with exit code {1}:".format(
+        lines = ["command '{0}' failed with exit code {1}:".format(
             self._command, self._exitcode)]
         lines.append('=== STDOUT ===')
         if self._stdout:
@@ -162,7 +162,7 @@ class SpawnedProcessTimeout(SpawnedProcessError):
         self.args = command, stdout, stderr, timeout
 
     def __str__(self):
-        lines = ["Command '{0}' timed out after {1}s:".format(self._command,
+        lines = ["command '{0}' timed out after {1}s:".format(self._command,
                                                               self._timeout)]
         lines.append('=== STDOUT ===')
         if self._stdout:

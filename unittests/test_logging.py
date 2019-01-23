@@ -358,11 +358,10 @@ class TestLoggingConfiguration(unittest.TestCase):
             rlog.getlogger().error('error from context')
 
         rlog.getlogger().error('error outside context')
-
-        self.assertTrue(
-            self.found_in_logfile('random_check: error from context'))
-        self.assertTrue(
-            self.found_in_logfile('reframe: error outside context'))
+        self.assertTrue(self.found_in_logfile(
+            'random_check: %s: error from context' % sys.argv[0]))
+        self.assertTrue(self.found_in_logfile(
+            'reframe: %s: error outside context' % sys.argv[0]))
 
     def test_logging_context_error(self):
         rlog.configure_logging(self.logging_config)

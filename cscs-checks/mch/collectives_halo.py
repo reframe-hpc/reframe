@@ -18,6 +18,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                                          '-DENABLE_MPI_TIMER=ON']
 
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.num_tasks = 144
             self.num_gpus_per_node = 16
             self.num_tasks_per_node = 16
@@ -76,7 +77,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
@@ -101,6 +102,7 @@ class AlltoallvTest(CollectivesBaseTest):
                                  'default': 0.0138493
                              }
                          })
+        self.strict_check = False
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         self.prebuild_cmd = ['git checkout alltoallv']
 

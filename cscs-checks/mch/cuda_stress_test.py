@@ -9,6 +9,7 @@ class CudaStressTest(rfm.RegressionTest):
         self.descr = 'MCH CUDA stress test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['craype-accel-nvidia35']
         else:
@@ -35,5 +36,5 @@ class CudaStressTest(rfm.RegressionTest):
                 'time': (2.12769, None, 0.05)
             }
         }
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
         self.maintainers = ['VK', 'AJ']
