@@ -8,7 +8,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                    'PrgEnv-gnu', 'PrgEnv-cray-c2sm-gpu',
+                                    'PrgEnv-cray-c2sm-gpu',
                                     'PrgEnv-pgi-c2sm-gpu']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
@@ -23,7 +23,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.num_tasks = 1
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
-        self.sourcepath = 'automatic_arrays.f90'
+        self.sourcepath = 'automatic_arrays_OpenACC.F90'
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O2']
         self.sanity_patterns = sn.assert_found(r'Result: ', self.stdout)
@@ -38,11 +38,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'dom:gpu': {'time': (5.8E-05, None, 0.15)},
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
-            'PrgEnv-gnu': {
-                'daint:gpu': {'time': (7.0E-03, None, 0.15)},
-                'dom:gpu': {'time': (7.3E-03, None, 0.15)},
-                'kesch:cn': {'time': (6.5E-03, None, 0.15)},
-            },
             'PrgEnv-pgi': {
                 'daint:gpu': {'time': (6.4E-05, None, 0.15)},
                 'dom:gpu': {'time': (6.3E-05, None, 0.15)},
@@ -51,7 +46,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'mch'}
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
@@ -65,8 +60,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
             elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
-        elif environ.name.startswith('PrgEnv-gnu'):
-            envname = 'PrgEnv-gnu'
         else:
             envname = environ.name
 

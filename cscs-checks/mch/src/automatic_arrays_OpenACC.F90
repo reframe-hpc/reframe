@@ -357,6 +357,12 @@ program AutomaticArrays
   call MPI_Comm_size(MPI_COMM_WORLD, mpi_size, ierr)
   call MPI_Comm_rank(MPI_COMM_WORLD, mpi_rank, ierr)
 
+#ifndef _OPENACC
+   write (*,'(A)') "Error: this test must be compield with OpenACC on"
+   write (*,'(A)') "Result: FAIL"
+   CALL MPI_Abort(MPI_COMM_WORLD, ierr)
+#endif
+
   !----------------------------------------------------------------------------!
   ! CPU reference with work arrays
 
