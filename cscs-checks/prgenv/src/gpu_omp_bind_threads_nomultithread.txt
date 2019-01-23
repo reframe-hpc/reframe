@@ -22,22 +22,3 @@ Tag: affinity/affinity, Hostname: nid00001, Rank: 0, Thread: 10
     CPU affinity: [  10]
 Tag: affinity/affinity, Hostname: nid00001, Rank: 0, Thread: 11
     CPU affinity: [  11]
- 
-Batch Job Summary Report for Job "rfm_AffinityOpenMPTest_xxx_job" (605305) on dom
------------------------------------------------------------------------------------------------------
-             Submit            Eligible               Start                 End    Elapsed  Timelimit 
-------------------- ------------------- ------------------- ------------------- ---------- ---------- 
-2019-01-23T11:08:15 2019-01-23T11:08:15 2019-01-23T11:08:16 2019-01-23T11:08:23   00:00:07   00:10:00 
------------------------------------------------------------------------------------------------------
-Username    Account     Partition   NNodes   Energy
-----------  ----------  ----------  ------  --------------
-sarafael    csstaff     normal           1      447 joules
- 
-This job did not utilize any GPUs
- 
-----------------------------------------------------------
-Scratch File System        Files       Quota
---------------------  ----------  ----------
-/scratch/snx1600tds       119774     1000000
-/scratch/snx3000tds            4     1000000
- 

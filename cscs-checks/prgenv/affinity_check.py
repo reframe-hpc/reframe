@@ -112,7 +112,6 @@ class AffinityOpenMPTest(AffinityTestBase):
 
 @rfm.parameterized_test(['alternate_socket_filling'],
                         ['consecutive_socket_filling'],
-                        ['single_task_per_socket'],
                         ['single_task_per_socket_omp'])
 class SocketDistributionTest(AffinityTestBase):
     def __init__(self, variant):
@@ -135,14 +134,6 @@ class SocketDistributionTest(AffinityTestBase):
                 'num_tasks_per_socket': None,
                 'multithreading': False,
                 'cpu-bind': 'rank',
-            },
-            'single_task_per_socket': {
-                'ref_mc': 'single_task_per_socket.txt',
-                'num_tasks': 2,
-                'num_cpus_per_task': 1,
-                'num_tasks_per_socket': 1,
-                'multithreading': False,
-                'cpu-bind': None,
             },
             'single_task_per_socket_omp': {
                 'ref_mc': 'single_task_per_socket_omp.txt',
