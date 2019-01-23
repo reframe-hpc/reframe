@@ -1,0 +1,23 @@
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 0
+    CPU affinity: [   0]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 0
+    CPU affinity: [  18]
+ 
+Batch Job Summary Report for Job "rfm_AffinityMPISocketDistributionTest_case10_job" (604180) on dom
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed  Timelimit 
+------------------- ------------------- ------------------- ------------------- ---------- ---------- 
+2019-01-22T13:29:56 2019-01-22T13:29:56 2019-01-22T13:29:57 2019-01-22T13:30:02   00:00:05   00:10:00 
+-----------------------------------------------------------------------------------------------------
+Username    Account     Partition   NNodes   Energy
+----------  ----------  ----------  ------  --------------
+sarafael    csstaff     normal           1      487 joules
+ 
+This job did not utilize any GPUs
+ 
+----------------------------------------------------------
+Scratch File System        Files       Quota
+--------------------  ----------  ----------
+/scratch/snx1600tds       119774     1000000
+/scratch/snx3000tds            4     1000000
+ 
