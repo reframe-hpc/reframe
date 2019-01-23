@@ -15,8 +15,7 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_gpus_per_node = 1
-        self.executable_opts = ('-O -i %s -o %s'
-                                % (input_file, output_file)).split()
+        self.executable_opts = ['-O', '-i', input_file, '-o', output_file]
         self.keep_files = [output_file]
         self.extra_resources = {
             'switches': {
@@ -42,13 +41,13 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(*([variant, architecture]
+@rfm.parameterized_test(*([variant, arch]
                           for variant in ['prod', 'maint']
-                          for architecture in ['CPU', 'GPU']))
+                          for arch in ['CPU', 'GPU']))
 class AmberCheck(AmberBaseCheck):
-    def __init__(self, variant, architecture):
-        super().__init__('mdin.%s' % architecture, 'amber.out')
-        if architecture == 'GPU':
+    def __init__(self, variant, arch):
+        super().__init__('mdin.%s' % arch, 'amber.out')
+        if arch== 'GPU':
             self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.executable = 'pmemd.cuda.MPI'
             self.reference = {
@@ -65,7 +64,7 @@ class AmberCheck(AmberBaseCheck):
             elif variant == 'maint':
                 self.descr = 'Amber parallel GPU maintenance check'
                 self.tags |= {'maintenance'}
-        elif architecture == 'CPU':
+        elif arch== 'CPU':
             self.valid_systems = ['daint:mc', 'dom:mc']
             if variant == 'prod':
                 self.descr = 'Amber parallel CPU production check'

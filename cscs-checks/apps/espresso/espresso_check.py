@@ -3,20 +3,22 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('<=2.14')
-class EspressoBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, variant):
+@rfm.simple_test
+class QECheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
         super().__init__()
 
-        self.descr = 'Quantum Espresso check (%s)' % variant
+        self.descr = 'Quantum Espresso CPU check'
         self.maintainers = ['AK', 'LM']
-
+        self.tags = {'scs', 'production'}
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Espresso')
+
+        self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
-        self.executable_opts = '-in ausurf.in'.split()
+        self.executable_opts = ['-in', 'ausurf.in']
         if self.current_system.name == 'dom':
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -35,47 +37,18 @@ class EspressoBaseCheck(rfm.RunOnlyRegressionTest):
                                   self.stdout, 'energy', float)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
-            sn.assert_reference(energy, -11427.09017162, -1e-10, 1e-10)])
+            sn.assert_reference(energy, -11427.09017162, -1e-10, 1e-10)
+        ])
         self.perf_patterns = {
             'sec': sn.extractsingle(r'electrons    :\s+(?P<sec>\S+)s CPU ',
                                     self.stdout, 'sec', float)
         }
-
-
-@rfm.parameterized_test(['cpu'], ['gpu'])
-class EspressoProdCheck(EspressoBaseCheck):
-    def __init__(self, variant):
-        super().__init__(variant)
-
-        if variant == 'cpu':
-            self.tags = {'scs', 'production'}
-            self.valid_systems = ['daint:mc', 'dom:mc']
-            self.reference = {
-                'dom:mc': {
-                    'sec': (159.0, None, 0.05),
-                },
-                'daint:mc': {
-                    'sec': (157.0, None, 0.40)
-                },
-            }
-        else:
-            self.valid_systems = ['daint:gpu', 'dom:gpu']
-            self.executable = 'pw-gpu.x'
-            self.use_multithreading = True
-            if self.current_system.name == 'dom':
-                self.num_tasks = 72
-                self.num_tasks_per_node = 12
-            else:
-                self.num_tasks = 192
-                self.num_tasks_per_node = 12
-            self.reference = {
-                'dom:gpu': {
-                    # FIXME: Update this value as soon as GPU version is working
-                    'sec': (0.097, None, 0.15),
-                },
-                'daint:gpu': {
-                    # FIXME: Update this value as soon as GPU version is working
-                    'sec': (0.097, None, 0.15),
-                },
-            }
+        self.reference = {
+            'dom:mc': {
+                'sec': (159.0, None, 0.05),
+            },
+            'daint:mc': {
+                'sec': (157.0, None, 0.40)
+            },
+        }
 
