@@ -362,14 +362,13 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.logger:
             super().setLevel(level)
 
+    @property
     def stream_handlers(self):
         if self.logger:
-            _stream_handlers = []
-            for hdlr in self.logger.handlers:
-                 if isinstance(hdlr, logging.StreamHandler) and not \
-                    isinstance(hdlr, logging.FileHandler):
-                    _stream_handlers.append(hdlr)
-            return _stream_handlers
+            return [h for h in self.logger.handlers
+                if (isinstance(h, logging.StreamHandler) and
+                    not isinstance(h, logging.FileHandler))]
+        return []
 
     def _update_check_extras(self):
         """Return a dictionary with all the check-specific information."""

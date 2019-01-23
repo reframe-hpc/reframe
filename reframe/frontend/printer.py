@@ -20,18 +20,16 @@ class PrettyPrinter:
         self.line_width = 78
         self.status_width = 10
 
-    def set_verbosity(self, number):
-        if number:
-            for hdlr in self.stream_handlers():
-                for l in range(0,number):
-                    loglevel = hdlr.level
-                    if loglevel == logging.INFO:
-                        new_level = max(loglevel - 1, logging.DEBUG)
-                    elif loglevel == logging.VERBOSE:
-                        new_level = max(loglevel - 9, logging.DEBUG)
-                    else:
-                        new_level = max(loglevel - 10, logging.DEBUG)
-                    hdlr.setLevel(new_level)
+    def inc_verbosity(self, num_steps):
+        log_levels = sorted(logging._log_level_names.keys())[1:] # [1:] to exclude level NOTSET
+        for h in self.stream_handlers:
+            level_idx = log_levels.index(h.level)
+            try:
+                new_level = log_levels[level_idx - num_steps]
+            except IndexError:
+                new_level = 0
+
+            h.setLevel(new_level)
 
     def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':

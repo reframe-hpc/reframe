@@ -89,7 +89,7 @@ def main():
              'end of the program')
     output_options.add_argument(
         '--verbose', '-v', action='count', default=0,
-        help='Increase output verbosity level')
+        help='Increase verbosity level of output')
 
     # Check discovery options
     locate_options.add_argument(
@@ -265,7 +265,8 @@ def main():
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
-    printer.set_verbosity(options.verbose)
+    if options.verbose:
+        printer.inc_verbosity(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
