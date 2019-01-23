@@ -87,6 +87,9 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Copy the log file from the work dir to the output dir at the '
              'end of the program')
+    output_options.add_argument(
+        '--verbose', '-v', action='count', default=0,
+        help='Increase verbosity level of output')
 
     # Check discovery options
     locate_options.add_argument(
@@ -262,6 +265,8 @@ def main():
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
+    if options.verbose:
+        printer.inc_verbosity(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
