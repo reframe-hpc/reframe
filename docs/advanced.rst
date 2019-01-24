@@ -406,6 +406,9 @@ Flexible Regression Tests
 
 ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``<=0``.
 In ReFrame's terminology, such tests are called `flexible`.
+Negative values indicate the minimum number of tasks that is acceptable for this test (a value of ``-4`` indicates a minimum acceptable number of ``4`` tasks).
+A zero value indicates the default minimum number of tasks which is equal to :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`.
+
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition, but this behavior can be adjusted from the command-line.
 Flexible tests are very useful for diagnostics tests, e.g., tests for checking the health of a whole set nodes.
 In this example, we demonstrate this feature through a simple test that runs ``hostname``.

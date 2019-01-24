@@ -257,10 +257,13 @@ class RegressionTest:
     #:
     #: If the number of tasks is set to a number ``<=0``, ReFrame will try
     #: to flexibly allocate the number of tasks, based on the command line
-    #: option ``--flex-alloc-tasks``. A negative number is used to indicate
-    #: the minimum number of tasks valid for the test. In this case the
-    #: minimum number of tasks is the absolute value of the number, while
-    #: ``0`` is used when the minimum number of tasks is ``1``.
+    #: option ``--flex-alloc-tasks``.
+    #: A negative number is used to indicate the minimum number of tasks
+    #: required for the test.
+    #: In this case the minimum number of tasks is the absolute value of
+    #: the number, while
+    #: Setting ``num_tasks`` to ``0`` is equivalent to setting it to
+    #: ``-num_tasks_per_node``.
     #:
     #: :type: integral
     #: :default: ``1``
@@ -273,8 +276,8 @@ class RegressionTest:
     #:        <running.html#flexible-task-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
-    #:        Added support for specifying the minimum number of acceptable
-    #:        tasks when negative numbers are specified.
+    #:        Negative ``num_tasks`` is allowed for specifying the minimum
+    #:        number of required tasks by the test.
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.

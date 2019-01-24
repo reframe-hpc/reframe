@@ -390,8 +390,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         # monkey patch `get_partition_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob.get_partition_nodes = lambda: set()
-        with self.assertRaises(JobError):
-            self.testjob.guess_num_tasks()
+        self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
 
 class TestSqueueJob(TestSlurmJob):
@@ -707,6 +706,12 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._get_nodes_by_name = self.get_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_no_num_tasks_per_node(self):
+        self.testjob._num_tasks_per_node = None
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 1)
 
     def test_not_enough_idle_nodes(self):
         self.testjob._sched_flex_alloc_tasks = 'idle'
