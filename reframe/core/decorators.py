@@ -37,7 +37,7 @@ def _register_test(cls, args=None):
                 mod.__rfm_skip_tests = set()
 
             try:
-                _instantiate(cls, args)
+                ret.append(_instantiate(cls, args))
             except Exception as e:
                 frame = user_frame(sys.exc_info()[2])
                 msg = "skipping test due to errors: %s: " % cls.__name__
