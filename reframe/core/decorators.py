@@ -40,8 +40,9 @@ def _register_test(cls, args=None):
                 _instantiate(cls, args)
             except Exception as e:
                 frame = user_frame(sys.exc_info()[2])
-                msg = 'skipping test due to errors: %s\n' % cls.__name__
-                msg += '  %s:%s' % (frame.filename, frame.lineno)
+                msg = "skipping test due to errors: %s: " % cls.__name__
+                msg += "use `-v' for more information\n"
+                msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)
                 getlogger().warning(msg)
                 getlogger().verbose(traceback.format_exc())
 
