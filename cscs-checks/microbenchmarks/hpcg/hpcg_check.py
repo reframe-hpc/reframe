@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class HPCGCheck(rfm.RunOnlyRegressionTest):
+class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
 
