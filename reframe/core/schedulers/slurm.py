@@ -252,7 +252,7 @@ class SlurmJob(sched.Job):
             'sacct -P -o jobid,nodelist -j %d' % self._jobid)
 
         match = re.search(r'^(?P<jobid>\d+)\|(?P<nodelist>\S+)',
-                                completed.stdout, re.MULTILINE)
+                          completed.stdout, re.MULTILINE)
         if match is None:
             getlogger().debug('job id not matched (stdout follows)\n%s' %
                               completed.stdout)

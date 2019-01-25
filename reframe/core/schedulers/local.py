@@ -190,8 +190,7 @@ class LocalJob(sched.Job):
     def nodelist(self):
         super().nodelist()
         completed = self._run_command('hostname')
-        match = re.search(r'^(?P<node>\S+)',
-                                completed.stdout, re.MULTILINE)
+        match = re.search(r'^(?P<node>\S+)', completed.stdout, re.MULTILINE)
         if match is None:
             return None
 
