@@ -10,7 +10,8 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
         super().__init__()
         self.maintainers = ['VK']
         self.descr = 'HPCG check'
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'HPCG')
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'HPCG')
 
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -45,7 +46,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
 
 
 # FIXME: This test is obsolete; it is kept only for reference
-@rfm.required_version('<=2.14')
 @rfm.parameterized_test([2], [4], [6], [8])
 class HPCGMonchAcceptanceCheck(rfm.RegressionTest):
     def __init__(self, num_tasks):

@@ -41,7 +41,6 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs'}
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([variant, arch]
                           for variant in ['prod', 'maint']
                           for arch in ['CPU', 'GPU']))
