@@ -7,7 +7,6 @@ import reframe.utility.sanity as sn
 class QECheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-
         self.descr = 'Quantum Espresso CPU check'
         self.maintainers = ['AK', 'LM']
         self.tags = {'scs', 'production'}
@@ -25,6 +24,7 @@ class QECheck(rfm.RunOnlyRegressionTest):
         else:
             self.num_tasks = 576
             self.num_tasks_per_node = 36
+
         self.use_multithreading = True
         self.extra_resources = {
             'switches': {

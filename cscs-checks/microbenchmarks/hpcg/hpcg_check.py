@@ -1,4 +1,5 @@
 import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -7,14 +8,13 @@ import reframe.utility.sanity as sn
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-
         self.maintainers = ['VK']
         self.descr = 'HPCG check'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir, 'HPCG')
 
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['cudatoolkit', 'craype-hugepages8M']
+        self.modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
         self.executable = 'xhpcg_gpu_3.1'
         self.num_tasks = 5304
         self.num_tasks_per_node = 1
@@ -50,7 +50,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
 class HPCGMonchAcceptanceCheck(rfm.RegressionTest):
     def __init__(self, num_tasks):
         super().__init__()
-
         self.tags = {'monch_acceptance'}
         self.descr = 'HPCG monch acceptance check'
         self.maintainers = ['VK']

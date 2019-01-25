@@ -1,4 +1,5 @@
 import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -12,7 +13,7 @@ class OpenCLCheck(rfm.RegressionTest):
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        self.modules = ['cudatoolkit']
+        self.modules = ['craype-accel-nvidia60']
         self.num_gpus_per_node = 1
         self.executable = 'vecAdd_opencl'
 

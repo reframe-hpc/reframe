@@ -1,4 +1,5 @@
 import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -31,7 +32,6 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
         }
         #  OpenMP version of CPMD segfaults
         #  self.variables = { 'OMP_NUM_THREADS' : '8' }
-
         energy = sn.extractsingle(
             r'CLASSICAL ENERGY\s+-(?P<result>\S+)',
             'stdout.txt', 'result', float)

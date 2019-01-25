@@ -1,4 +1,5 @@
 import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -47,7 +48,7 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
 class AmberCheck(AmberBaseCheck):
     def __init__(self, variant, arch):
         super().__init__('mdin.%s' % arch, 'amber.out')
-        if arch== 'GPU':
+        if arch == 'GPU':
             self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.executable = 'pmemd.cuda.MPI'
             self.reference = {
@@ -64,7 +65,7 @@ class AmberCheck(AmberBaseCheck):
             elif variant == 'maint':
                 self.descr = 'Amber parallel GPU maintenance check'
                 self.tags |= {'maintenance'}
-        elif arch== 'CPU':
+        elif arch == 'CPU':
             self.valid_systems = ['daint:mc', 'dom:mc']
             if variant == 'prod':
                 self.descr = 'Amber parallel CPU production check'
@@ -77,6 +78,7 @@ class AmberCheck(AmberBaseCheck):
                 else:
                     self.num_tasks = 576
                     self.num_tasks_per_node = 36
+
                 self.reference = {
                     'dom:mc': {
                         'perf': (8.0, -0.05, None)
