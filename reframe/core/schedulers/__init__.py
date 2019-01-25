@@ -222,25 +222,25 @@ class Job(abc.ABC):
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
-            num_tasks_per_node = (self.num_tasks_per_node if
-                                  self.num_tasks_per_node else 1)
-            min_num_tasks = (abs(self.num_tasks) if self.num_tasks < 0 else
+            num_tasks_per_node = self.num_tasks_per_node or 1
+            min_num_tasks = (-self.num_tasks if self.num_tasks else
                              num_tasks_per_node)
+
             try:
                 guessed_num_tasks = self.guess_num_tasks()
-                if guessed_num_tasks >= min_num_tasks:
-                    self._num_tasks = guessed_num_tasks
-                    getlogger().debug('flex_alloc_tasks: setting num_tasks '
-                                      'to %s' % self._num_tasks)
-                else:
-                    raise JobError(
-                        'not enough nodes satisfying the minimum '
-                        'number of tasks required: %s < %s' %
-                        (guessed_num_tasks, min_num_tasks))
-
             except NotImplementedError as e:
-                raise JobError('guessing number of tasks is not implemented '
-                               'by the backend') from e
+                raise JobError('flexible task allocation is not supported by '
+                               'this backend') from e
+
+            if guessed_num_tasks < min_num_tasks:
+                raise JobError(
+                    'could not find enough nodes: required %s, found %s' %
+                    (min_num_tasks // num_tasks_per_node,
+                     guessed_num_tasks // num_tasks_per_node))
+            else:
+                self._num_tasks = guessed_num_tasks
+                getlogger().debug('flex_alloc_tasks: setting num_tasks '
+                                  'to %s' % self._num_tasks)
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
