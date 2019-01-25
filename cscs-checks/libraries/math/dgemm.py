@@ -15,14 +15,14 @@ class DGEMMTest(rfm.RegressionTest):
         self.perf_patterns = {}
 
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 1
         self.num_tasks_per_socket = 1
         self.use_multithreading = False
         self.build_system = 'SingleSource'
-        self.build_system.cflags = ['-O3', '-fopenmp']
+        self.build_system.cflags = ['-O3']
         self.sys_reference = {
             'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
@@ -36,6 +36,16 @@ class DGEMMTest(rfm.RegressionTest):
         self.tags = {'diagnostic'}
 
     def setup(self, partition, environ, **job_opts):
+
+        if environ.name.startswith('PrgEnv-gnu'):
+            envname = 'PrgEnv-gnu'
+            self.build_system.cflags += ['-fopenmp']
+        elif environ.name.startswith('PrgEnv-intel'):
+            envname = 'PrgEnv-intel'
+            self.build_system.cflags += ['-qopenmp', '-DMKL_ILP64', '-I${MKLROOT}/include', '-Wl,--start-group', '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a', '${MKLROOT}/lib/intel64/libmkl_intel_thread.a', '${MKLROOT}/lib/intel64/libmkl_core.a', '-Wl,--end-group', '-liomp5', '-lpthread', '-lm', '-ldl']
+        else:
+            envname = environ.name
+
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
             self.executable_opts = ['6144', '12288', '3072']
