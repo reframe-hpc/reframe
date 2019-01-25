@@ -50,8 +50,9 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
             'bandwidth': bw_pattern
         }
 
+
 @rfm.required_version('>=2.16-dev0')
-@rfm.parameterized_test(*[[l,k] for l in ['L1', 'L2', 'L3']
+@rfm.parameterized_test(*[[l, k] for l in ['L1', 'L2', 'L3']
                         for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
                         ['memory', 'store_mem_avx'])
@@ -99,17 +100,18 @@ class CPUBandwidth(MemBandwidthTest):
         }
 
     def setup(self, partition, environ, **job_opts):
-        self.data_size = self.system_cache_sizes[partition.fullname][self.mem_level]
+        pfn = parition.fullname
+        self.data_size = self.system_cache_sizes[pfn][self.mem_level]
         self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
         numa_domains = self.system_numa_domains[partition.fullname]
         num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
-                                                self.num_tasks_per_core)
+                                                   self.num_tasks_per_core)
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
         # format: -w domain:data_size:nthreads:chunk_size:stride
         # chunk_size and stride affect which cpus from <domain> are selected
         workgroups = ['-w %s:%s:%d:1:2' %
-                     (dom, self.data_size, num_cpu_domain)
-                     for dom in numa_domains]
+                        (dom, self.data_size, num_cpu_domain)
+                            for dom in numa_domains]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
 
@@ -141,17 +143,17 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
         numa_domains = self.system_numa_domains[partition.fullname]
 
-        num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
-                                                self.num_tasks_per_core)
+        num_cpu_domain = (self.num_cpus_per_task / (len(numa_domains) *
+                          self.num_tasks_per_core))
 
         # daint:mc: '-w S0:100MB:18:1:2-0:S1 -w S1:100MB:18:1:2-0:S0'
         # format:
         # -w domain:data_size:nthreads:chunk_size:stride-stream_nr:mem_domain
         # chunk_size and stride affect which cpus from <domain> are selected
         workgroups = ['-w %s:100MB:%d:1:2-0:%s' %
-                     (dom_cpu, num_cpu_domain, dom_mem)
-                     for dom_cpu, dom_mem in
-                     zip(numa_domains[:2], reversed(numa_domains[:2]))]
+                      (dom_cpu, num_cpu_domain, dom_mem)
+                       for dom_cpu, dom_mem in
+                        zip(numa_domains[:2], reversed(numa_domains[:2]))]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
 
