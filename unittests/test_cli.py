@@ -387,3 +387,13 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(1, returncode)
+
+    def test_verbosity(self):
+        self.more_options = ['-vvvvv']
+        self.system = 'testsys'
+        self.action = 'list'
+        returncode, stdout, stderr = self._run_reframe()
+        self.assertNotEqual('', stdout)
+        self.assertNotIn('Traceback', stdout)
+        self.assertNotIn('Traceback', stderr)
+        self.assertEqual(0, returncode)
