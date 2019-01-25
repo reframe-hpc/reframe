@@ -395,7 +395,7 @@ class SqueueJob(SlurmJob):
         # finished already, squeue might return an error about an invalid
         # job id.
         completed = self._run_command(
-            'squeue -h -j %s -O state,exit_code,reason,nodelist' % self._jobid)
+            'squeue -h -j %s -O state,exit_code,nodelist,reason' % self._jobid)
         output = completed.stdout.strip()
         if not output:
             # Assume that job has finished
@@ -412,7 +412,7 @@ class SqueueJob(SlurmJob):
         # it, just in case we are lucky enough and get its actual value while
         # the job has finished but is still showing up in the queue (e.g., when
         # it is 'COMPLETING')
-        state, exitcode, reason, nodelist = output.split(maxsplit=2)
+        state, exitcode, nodelist, reason = output.split(maxsplit=3)
         self._state = SlurmJobState(state)
         self._exitcode = int(exitcode)
         self._nodelist = [n.name for n in self._get_nodes_by_name(nodelist)]
