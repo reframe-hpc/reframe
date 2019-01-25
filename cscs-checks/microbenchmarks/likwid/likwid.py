@@ -110,8 +110,8 @@ class CPUBandwidth(MemBandwidthTest):
         # format: -w domain:data_size:nthreads:chunk_size:stride
         # chunk_size and stride affect which cpus from <domain> are selected
         workgroups = ['-w %s:%s:%d:1:2' %
-                        (dom, self.data_size, num_cpu_domain)
-                            for dom in numa_domains]
+                      (dom, self.data_size, num_cpu_domain)
+                       for dom in numa_domains]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
 
