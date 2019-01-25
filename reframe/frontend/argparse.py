@@ -138,3 +138,11 @@ class ArgumentParser(_ArgumentHolder):
                 )
 
         return options
+
+
+def format_options(namespace):
+    """Format parsed arguments in ``namespace``."""
+    ret = 'Command-line configuration:\n'
+    ret += '\n'.join(['    %s=%s' % (attr, val)
+                      for attr, val in sorted(namespace.__dict__.items())])
+    return ret
