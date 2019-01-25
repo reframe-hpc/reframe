@@ -1,4 +1,5 @@
 import os
+import re
 import signal
 import stat
 import subprocess
@@ -7,7 +8,7 @@ from datetime import datetime
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import JobError, ReframeError
+from reframe.core.exceptions import JobError, ReframeError, SpawnedProcessError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
@@ -57,6 +58,13 @@ class LocalJob(sched.Job):
 
     def emit_preamble(self):
         return []
+
+    def _run_command(self, cmd, timeout=None):
+        """Run command cmd and re-raise any exception as a JobError."""
+        try:
+            return os_ext.run_command(cmd, check=True, timeout=timeout)
+        except SpawnedProcessError as e:
+            raise JobError(jobid=self._jobid) from e
 
     def get_partition_nodes(self):
         raise NotImplementedError(
@@ -177,3 +185,14 @@ class LocalJob(sched.Job):
             return False
 
         return True
+
+    @property
+    def nodelist(self):
+        super().nodelist()
+        completed = self._run_command('hostname')
+        match = re.search(r'^(?P<node>\S+)',
+                                completed.stdout, re.MULTILINE)
+        if match is None:
+            return None
+
+        return [match.group('node')]

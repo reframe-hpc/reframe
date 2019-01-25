@@ -306,3 +306,17 @@ class Job(abc.ABC):
     def finished(self):
         if self._jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
+
+    @abc.abstractmethod
+    def nodelist(self):
+        """The nodelist assigned to this job.
+
+        This attribute is useful in a flexible regression test for determining
+        the actual nodes that scheduler assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        `tutorial <advanced.html#flexible-regression-tests>`__.
+        """
+        if self._jobid is None:
+            raise JobNotStartedError('cannot get the nodelist of an unstarted '
+                                     'job')

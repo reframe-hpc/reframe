@@ -245,6 +245,22 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
+    @property
+    def nodelist(self):
+        super().nodelist()
+        completed = self._run_command(
+            'sacct -P -o jobid,nodelist -j %d' % self._jobid)
+
+        match = re.search(r'^(?P<jobid>\d+)\|(?P<nodelist>\S+)',
+                                completed.stdout, re.MULTILINE)
+        if match is None:
+            getlogger().debug('job id not matched (stdout follows)\n%s' %
+                              completed.stdout)
+            return None
+
+        return [n.name for n in
+                self._get_nodes_by_name(match.group('nodelist'))]
+
     def _update_state(self):
         """Check the status of the job."""
 
@@ -363,6 +379,7 @@ class SqueueJob(SlurmJob):
         self.submit_time = None
         self.squeue_delay = 2
         self._cancelled = False
+        self._nodelist = None
 
     def submit(self):
         super().submit()
@@ -378,7 +395,7 @@ class SqueueJob(SlurmJob):
         # finished already, squeue might return an error about an invalid
         # job id.
         completed = self._run_command(
-            'squeue -h -j %s -O state,exit_code,reason' % self._jobid)
+            'squeue -h -j %s -O state,exit_code,reason,nodelist' % self._jobid)
         output = completed.stdout.strip()
         if not output:
             # Assume that job has finished
@@ -395,9 +412,10 @@ class SqueueJob(SlurmJob):
         # it, just in case we are lucky enough and get its actual value while
         # the job has finished but is still showing up in the queue (e.g., when
         # it is 'COMPLETING')
-        state, exitcode, reason = output.split(maxsplit=2)
+        state, exitcode, reason, nodelist = output.split(maxsplit=2)
         self._state = SlurmJobState(state)
         self._exitcode = int(exitcode)
+        self._nodelist = [n.name for n in self._get_nodes_by_name(nodelist)]
         if not self._is_cancelling and self._state in self._pending_states:
             self._check_and_cancel(reason)
 
@@ -407,6 +425,11 @@ class SqueueJob(SlurmJob):
         # _update_state() will make sure to return the approriate state.
         super().cancel()
         self._cancelled = True
+
+    @property
+    def nodelist(self):
+        super().nodelist()
+        return self._nodelist
 
 
 class SlurmNode:
