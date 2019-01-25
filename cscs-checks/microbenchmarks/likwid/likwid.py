@@ -53,7 +53,7 @@ class MemBandwidthTest(rfm.RunOnlyRegressionTest):
 
 @rfm.required_version('>=2.16-dev0')
 @rfm.parameterized_test(*[[l, k] for l in ['L1', 'L2', 'L3']
-                        for k in ['load_avx', 'store_avx']],
+                          for k in ['load_avx', 'store_avx']],
                         ['memory', 'load_avx'],
                         ['memory', 'store_mem_avx'])
 class CPUBandwidth(MemBandwidthTest):
@@ -111,7 +111,7 @@ class CPUBandwidth(MemBandwidthTest):
         # chunk_size and stride affect which cpus from <domain> are selected
         workgroups = ['-w %s:%s:%d:1:2' %
                       (dom, self.data_size, num_cpu_domain)
-                       for dom in numa_domains]
+                      for dom in numa_domains]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
 
@@ -143,8 +143,8 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
         numa_domains = self.system_numa_domains[partition.fullname]
 
-        num_cpu_domain = (self.num_cpus_per_task / (len(numa_domains) *
-                          self.num_tasks_per_core))
+        num_cpu_domain = (self.num_cpus_per_task /
+                          (len(numa_domains) * self.num_tasks_per_core))
 
         # daint:mc: '-w S0:100MB:18:1:2-0:S1 -w S1:100MB:18:1:2-0:S0'
         # format:
@@ -152,8 +152,8 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         # chunk_size and stride affect which cpus from <domain> are selected
         workgroups = ['-w %s:100MB:%d:1:2-0:%s' %
                       (dom_cpu, num_cpu_domain, dom_mem)
-                       for dom_cpu, dom_mem in
-                        zip(numa_domains[:2], reversed(numa_domains[:2]))]
+                      for dom_cpu, dom_mem in
+                      zip(numa_domains[:2], reversed(numa_domains[:2]))]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
 
