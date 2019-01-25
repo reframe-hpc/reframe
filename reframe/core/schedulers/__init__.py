@@ -233,14 +233,15 @@ class Job(abc.ABC):
                                'this backend') from e
 
             if guessed_num_tasks < min_num_tasks:
-                raise JobError(
-                    'could not find enough nodes: required %s, found %s' %
-                    (min_num_tasks // num_tasks_per_node,
-                     guessed_num_tasks // num_tasks_per_node))
-            else:
-                self._num_tasks = guessed_num_tasks
-                getlogger().debug('flex_alloc_tasks: setting num_tasks '
-                                  'to %s' % self._num_tasks)
+                nodes_required = min_num_tasks // num_tasks_per_node
+                nodes_found = guessed_num_tasks // num_tasks_per_node
+                raise JobError('could not find enough nodes: '
+                               'required %s, found %s' %
+                               (nodes_required, nodes_found))
+
+            self._num_tasks = guessed_num_tasks
+            getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+                              self._num_tasks)
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
