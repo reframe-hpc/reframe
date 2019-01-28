@@ -42,11 +42,15 @@ class DGEMMTest(rfm.RegressionTest):
             self.build_system.cflags += ['-fopenmp']
         elif environ.name.startswith('PrgEnv-intel'):
             envname = 'PrgEnv-intel'
-            self.build_system.cflags += ['-qopenmp', '-DMKL_ILP64', '-I${MKLROOT}/include', '-Wl,--start-group']
-            self.build_system.cflags += ['${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a']
-            self.build_system.cflags += ['${MKLROOT}/lib/intel64/libmkl_intel_thread.a']
-            self.build_system.cflags += ['${MKLROOT}/lib/intel64/libmkl_core.a']
-            self.build_system.cflags += ['-Wl,--end-group', '-liomp5', '-lpthread', '-lm', '-ldl']
+            self.build_system.cflags += [
+                '-qopenmp', '-DMKL_ILP64', '-I${MKLROOT}/include',
+                '-Wl,--start-group', 
+                '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
+                '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
+                '${MKLROOT}/lib/intel64/libmkl_intel_thread.a',
+                '${MKLROOT}/lib/intel64/libmkl_core.a',
+                '-Wl,--end-group',
+                '-liomp5', '-lpthread', '-lm', '-ldl']
         else:
             envname = environ.name
 
