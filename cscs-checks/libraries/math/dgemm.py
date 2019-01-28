@@ -44,7 +44,7 @@ class DGEMMTest(rfm.RegressionTest):
             envname = 'PrgEnv-intel'
             self.build_system.cflags += [
                 '-qopenmp', '-DMKL_ILP64', '-I${MKLROOT}/include',
-                '-Wl,--start-group', 
+                '-Wl,--start-group',
                 '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
                 '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
                 '${MKLROOT}/lib/intel64/libmkl_intel_thread.a',
