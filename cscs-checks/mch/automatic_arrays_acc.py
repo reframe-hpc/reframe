@@ -56,7 +56,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             envname = 'PrgEnv-pgi'
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
-                self.build_system.ftn = ['pgfortran -I/opt/mvapich2/gdr/2.3/mcast/no-openacc/cuda8.0/mofed4.4/mpirun/gnu5.4.0/include -L/opt/mvapich2/gdr/2.3/mcast/no-openacc/cuda8.0/mofed4.4/mpirun/gnu5.4.0/lib64 -lmpichf90']
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
             elif self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
