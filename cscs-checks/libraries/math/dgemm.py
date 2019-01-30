@@ -38,10 +38,8 @@ class DGEMMTest(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
 
         if environ.name.startswith('PrgEnv-gnu'):
-            envname = 'PrgEnv-gnu'
             self.build_system.cflags += ['-fopenmp']
         elif environ.name.startswith('PrgEnv-intel'):
-            envname = 'PrgEnv-intel'
             self.build_system.cflags += [
                 '-qopenmp', '-DMKL_ILP64', '-I${MKLROOT}/include',
                 '-Wl,--start-group',
