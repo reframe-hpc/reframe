@@ -1,6 +1,7 @@
-import os
 import inspect
 import json
+import os
+import re
 import socket
 import sys
 
@@ -103,6 +104,9 @@ def main():
         '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
     select_options.add_argument(
+        '-ten', '--regexp_tag', action='append', dest='regexp_tags', default=[],
+        help='Select checks matching TAG')
+    select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
         metavar='NAME', help='Select checks with NAME')
     select_options.add_argument(
@@ -110,6 +114,9 @@ def main():
         metavar='NAME', help='Select checks with NAME')
     select_options.add_argument(
         '-x', '--exclude', action='append', dest='exclude_names',
+        metavar='NAME', default=[], help='Exclude checks with NAME')
+    select_options.add_argument(
+        '-xen', '--regexp_exclude', action='append', dest='regexp_exclude_names',
         metavar='NAME', default=[], help='Exclude checks with NAME')
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[],
@@ -414,26 +421,38 @@ def main():
         checks_matched = filter(filters.have_not_name(options.exclude_names),
                                 checks_found)
 
+        # TODO: remove old filter functions and use checks_found as input for this step
+        p = [re.compile(regexp) for regexp in options.regexp_exclude_names]
+        checks_matched = filter(filters.have_not_name_regexp(p),
+                                checks_found)
+
         if options.names:
             checks_matched = filter(filters.have_name(options.names),
                                     checks_matched)
 
-        # Filter checks by regular expression for name
         if options.regexp_names:
-            checks_matched = filter(filters.have_name_regexp(options.regexp_names[0]),checks_matched)
+            # TODO: should I merge the input regexp string into a single regexp?
+            p = [re.compile(regexp) for regexp in options.regexp_names]
+            checks_matched = filter(filters.have_name_regexp(p), checks_matched)
 
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
+
+        # Filter checks by regular expression for tags
+        checks_matched = filter(filters.have_tag_regexp([
+            re.compile(regexp) for regexp in options.regexp_tags]), checks_matched)
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
             checks_matched = filter(filters.have_prgenv(options.prgenv),
                                     checks_matched)
 
-        # Filter checks by regular expression for prgenv
+        # Filter checks by regular expression for prgenvs
         if not options.skip_prgenv_check:
-            checks_matched = filter(filters.have_prgenv_regexp(options.regexp_prgenv[0]),
-                                    checks_matched)
+            if len(options.regexp_prgenv)>0:
+                p = [re.compile(regexp) for regexp in options.regexp_prgenv]
+                checks_matched = filter(filters.have_prgenv_regexp(p),
+                                        checks_matched)
 
         # Filter checks by system
         if not options.skip_system_check:
