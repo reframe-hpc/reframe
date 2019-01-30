@@ -88,9 +88,6 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Copy the log file from the work dir to the output dir at the '
              'end of the program')
-    output_options.add_argument(
-        '--verbose', '-v', action='count', default=0,
-        help='Increase verbosity level of output')
 
     # Check discovery options
     locate_options.add_argument(
@@ -246,6 +243,8 @@ def main():
         help='Print configuration of environment ENV and exit')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
+    misc_options.add_argument('-v', '--verbose', action='count', default=0,
+                              help='Increase verbosity level of output')
 
     if len(sys.argv) == 1:
         argparser.print_help()
