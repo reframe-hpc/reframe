@@ -108,20 +108,23 @@ def main():
         '-t', '--tag', action='append', dest='tags', default=[],
         help='Select checks matching TAG')
     select_options.add_argument(
-        '-ten', '--regexp_tag', action='append', dest='regexp_tags', default=[],
+        '-ten', '--regexp_tag', action='append', dest='regexp_tags', 
+        default=[],
         help='Select checks matching TAG')
     select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
         metavar='NAME', help='Select checks with NAME')
     select_options.add_argument(
-        '-ren', '--regexp_name', action='append', dest='regexp_names', default=[],
+        '-ren', '--regexp_name', action='append', dest='regexp_names', 
+        default=[],
         metavar='NAME', help='Select checks with NAME')
     select_options.add_argument(
         '-x', '--exclude', action='append', dest='exclude_names',
         metavar='NAME', default=[], help='Exclude checks with NAME')
     select_options.add_argument(
-        '-xen', '--regexp_exclude', action='append', dest='regexp_exclude_names',
-        metavar='NAME', default=[], help='Exclude checks with NAME')
+        '-xen', '--regexp_exclude', action='append', 
+        dest='regexp_exclude_names', metavar='NAME', default=[], 
+        help='Exclude checks with NAME')
     select_options.add_argument(
         '-p', '--prgenv', action='append', default=[],
         help='Select tests for PRGENV programming environment only')
@@ -430,7 +433,7 @@ def main():
         checks_matched = filter(filters.have_not_name(options.exclude_names),
                                 checks_found)
 
-        # TODO: remove old filter functions and use checks_found as input for this step
+        # TODO: remove old filter functions and use checks_found
         p = [re.compile(regexp) for regexp in options.regexp_exclude_names]
         checks_matched = filter(filters.have_not_name_regexp(p),
                                 checks_found)
@@ -440,16 +443,18 @@ def main():
                                     checks_matched)
 
         if options.regexp_names:
-            # TODO: should I merge the input regexp string into a single regexp?
+            # TODO: should I merge the input string into a single regexp?
             p = [re.compile(regexp) for regexp in options.regexp_names]
-            checks_matched = filter(filters.have_name_regexp(p), checks_matched)
+            checks_matched = filter(filters.have_name_regexp(p), 
+                checks_matched)
 
         # Filter checks by tags
         checks_matched = filter(filters.have_tag(options.tags), checks_matched)
 
         # Filter checks by regular expression for tags
         checks_matched = filter(filters.have_tag_regexp([
-            re.compile(regexp) for regexp in options.regexp_tags]), checks_matched)
+            re.compile(regexp) for regexp in options.regexp_tags]), 
+            checks_matched)
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
@@ -458,7 +463,7 @@ def main():
 
         # Filter checks by regular expression for prgenvs
         if not options.skip_prgenv_check:
-            if len(options.regexp_prgenv)>0:
+            if len(options.regexp_prgenv) > 0:
                 p = [re.compile(regexp) for regexp in options.regexp_prgenv]
                 checks_matched = filter(filters.have_prgenv_regexp(p),
                                         checks_matched)

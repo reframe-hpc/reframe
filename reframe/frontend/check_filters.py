@@ -45,7 +45,7 @@ def have_tag_regexp(regexp_tags):
     def _fn(c):
         if regexp_tags:
             for p in regexp_tags:
-                if(any(p.search(tag) for tag in c.tags) == False):
+                if(any(p.search(tag) for tag in c.tags) is False):
                     return False
         return True
 
@@ -66,7 +66,8 @@ def have_prgenv_regexp(regexp_prgenv):
     def _fn(c):
         if regexp_prgenv:
             for p in regexp_prgenv:
-                if(any(p.search(prgenv) for prgenv in c.valid_prog_environs) == False):
+                if(any(p.search(prgenv) for prgenv in c.valid_prog_environs) 
+                   is False):
                     return False
             return True
         else:
