@@ -50,8 +50,6 @@ class DGEMMTest(rfm.RegressionTest):
                 '${MKLROOT}/lib/intel64/libmkl_core.a',
                 '-Wl,--end-group',
                 '-liomp5', '-lpthread', '-lm', '-ldl']
-        else:
-            envname = environ.name
 
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
