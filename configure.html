@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.15 documentation</title>
+  <title>Configuring ReFrame for Your Site &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -102,6 +102,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#environments-configuration">Environments Configuration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#system-auto-detection">System Auto-Detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#showing-configuration">Showing configuration</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pipeline.html">The Regression Test Pipeline</a></li>
@@ -473,6 +474,21 @@ The detection process stops at the first match found, and the system it belongs 
 If the system cannot be auto-detected, ReFrame will fail with an error message.
 You can override completely the auto-detection process by specifying a system or a system partition with the <code class="docutils literal"><span class="pre">--system</span></code> option (e.g., <code class="docutils literal"><span class="pre">--system</span> <span class="pre">daint</span></code> or <code class="docutils literal"><span class="pre">--system</span> <span class="pre">daint:gpu</span></code>).</p>
 </div>
+<div class="section" id="showing-configuration">
+<h2>Showing configuration<a class="headerlink" href="#showing-configuration" title="Permalink to this headline">¶</a></h2>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.16.</span></p>
+</div>
+<p>It is possible to ask ReFrame to print the configuration of the current system or the configuration of any programming environment defined for the current system.
+There are two command-line options for performing these operations:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">--show-config</span></code>: This option shows the current system’s configuration and exits.
+It can be combined with the <code class="docutils literal"><span class="pre">--system</span></code> option in order to show the configuration of another system.</li>
+<li><code class="docutils literal"><span class="pre">--show-config-env</span> <span class="pre">ENV</span></code>: This option shows the configuration of the programming environment <code class="docutils literal"><span class="pre">ENV</span></code> and exits.
+The environment <code class="docutils literal"><span class="pre">ENV</span></code> must be defined for any of the partitions of the current system.
+This option can also be combined with <code class="docutils literal"><span class="pre">--system</span></code> in order to show the configuration of a programming environment defined for another system.</li>
+</ul>
+</div>
 </div>
 
 
@@ -565,6 +581,7 @@ You can override completely the auto-detection process by specifying a system or
             <dd><a href="v2.13/configure.html">v2.13</a></dd>
             <dd><a href="v2.14/configure.html">v2.14</a></dd>
             <dd><a href="v2.15/configure.html">v2.15</a></dd>
+            <dd><a href="v2.16/configure.html">v2.16</a></dd>
             <dd><a href="v2.7/configure.html">v2.7</a></dd>
             <dd><a href="v2.8/configure.html">v2.8</a></dd>
             <dd><a href="v2.9/configure.html">v2.9</a></dd>
@@ -584,7 +601,7 @@ You can override completely the auto-detection process by specifying a system or
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'./',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

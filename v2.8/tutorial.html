@@ -184,7 +184,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="reframe-tutorial">
-<span id="reframe-tutorial"></span><h1>ReFrame Tutorial<a class="headerlink" href="#reframe-tutorial" title="Permalink to this headline">¶</a></h1>
+<h1>ReFrame Tutorial<a class="headerlink" href="#reframe-tutorial" title="Permalink to this headline">¶</a></h1>
 <p>This tutorial will guide you through writing your first regression tests with ReFrame.
 We will start with the most common and simple case of a regression test that compiles a code, runs it and checks its output.
 We will then expand this example gradually by adding functionality and more advanced sanity and performance checks.
@@ -264,7 +264,7 @@ The site configuration that we used for this tutorial is the following:</p>
 <p>You can find the full <code class="docutils literal"><span class="pre">settings.py</span></code> file ready to be used by ReFrame in <code class="docutils literal"><span class="pre">&lt;reframe-install-prefix&gt;/tutorial/config/settings.py</span></code>.
 You may first need to go over the <a class="reference external" href="configure.html">“Configuring ReFrame For Your Site”</a> section, in order to prepare the framework for your systems.</p>
 <div class="section" id="the-first-regression-test">
-<span id="the-first-regression-test"></span><h2>The First Regression Test<a class="headerlink" href="#the-first-regression-test" title="Permalink to this headline">¶</a></h2>
+<h2>The First Regression Test<a class="headerlink" href="#the-first-regression-test" title="Permalink to this headline">¶</a></h2>
 <p>The following is a simple regression test that compiles and runs a serial C program, which computes a matrix-vector product (<code class="docutils literal"><span class="pre">tutorial/src/example_matrix_multiplication.c</span></code>), and verifies its sane execution.
 As a sanity check, it simply looks for a specific output in the output of the program.
 Here is the full code for this test:</p>
@@ -382,7 +382,7 @@ More about test selection, you can find in the <a class="reference external" hre
 <div>NOTE: The values assigned to the attributes of a <code class="docutils literal"><span class="pre">RegressionTest</span></code> are validated and if they don’t have the correct type, an error will be issued by ReFrame.
 For a list of all the attributes and their types, please refer to the <a class="reference external" href="reference.html">“Reference Guide”</a>.</div></blockquote>
 <div class="section" id="running-the-tutorial-examples">
-<span id="running-the-tutorial-examples"></span><h3>Running the Tutorial Examples<a class="headerlink" href="#running-the-tutorial-examples" title="Permalink to this headline">¶</a></h3>
+<h3>Running the Tutorial Examples<a class="headerlink" href="#running-the-tutorial-examples" title="Permalink to this headline">¶</a></h3>
 <p>ReFrame offers a rich command-line interface that allows you to control several aspects of its executions.
 A more detailed description can be found in the <a class="reference external" href="running.html">“Running ReFrame”</a> section.
 Here we will only show you how to run a specific tutorial test:</p>
@@ -439,7 +439,7 @@ Here we will only show you how to run a specific tutorial test:</p>
 </div>
 </div>
 <div class="section" id="customizing-the-compilation-phase">
-<span id="customizing-the-compilation-phase"></span><h2>Customizing the Compilation Phase<a class="headerlink" href="#customizing-the-compilation-phase" title="Permalink to this headline">¶</a></h2>
+<h2>Customizing the Compilation Phase<a class="headerlink" href="#customizing-the-compilation-phase" title="Permalink to this headline">¶</a></h2>
 <p>In this example, we write a regression test to compile and run the OpenMP version of the matrix-vector product program, that we have shown before.
 The full code of this test follows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -523,7 +523,7 @@ We then set the compilation flags accordingly.
 Since our target file is a C program, we just set the <code class="docutils literal"><span class="pre">cflags</span></code> of the current programming environment.
 Finally, we call the <code class="docutils literal"><span class="pre">compile()</span></code> method of the base class, in order to perform the actual compilation.</p>
 <div class="section" id="an-alternative-implementation-using-dictionaries">
-<span id="an-alternative-implementation-using-dictionaries"></span><h3>An alternative implementation using dictionaries<a class="headerlink" href="#an-alternative-implementation-using-dictionaries" title="Permalink to this headline">¶</a></h3>
+<h3>An alternative implementation using dictionaries<a class="headerlink" href="#an-alternative-implementation-using-dictionaries" title="Permalink to this headline">¶</a></h3>
 <p>Here we present an alternative implementation of the same test using a dictionary to hold the compilation flags for the different programming environments.
 The advantage of this implementation is that you move the different compilation flags in the initialization phase, where also the rest of the test’s specification is, thus making it more concise.</p>
 <p>The <code class="docutils literal"><span class="pre">compile()</span></code> method is now very simple: it gets the correct compilation flags from the <code class="docutils literal"><span class="pre">prgenv_flags</span></code> dictionary and applies them to the current programming environment.</p>
@@ -573,7 +573,7 @@ If you accidentally try to write on a reserved <code class="docutils literal"><s
 </div>
 </div>
 <div class="section" id="running-on-multiple-nodes">
-<span id="running-on-multiple-nodes"></span><h2>Running on Multiple Nodes<a class="headerlink" href="#running-on-multiple-nodes" title="Permalink to this headline">¶</a></h2>
+<h2>Running on Multiple Nodes<a class="headerlink" href="#running-on-multiple-nodes" title="Permalink to this headline">¶</a></h2>
 <p>So far, all our tests run on a single node.
 Depending on the actual system that ReFrame is running, the test may run locally or be submitted to the system’s job scheduler.
 In this example, we write a regression test for the MPI+OpenMP version of the matrix-vector product.
@@ -645,22 +645,21 @@ For example, for Slurm these variables will result in the following flags: <code
 ReFrame provides several more variables for configuring the job submission.
 As shown in the following Table, they follow closely the corresponding Slurm options.
 For schedulers that do not provide the same functionality, some of the variables may be ignored.</p>
-<p><center>
-<code class="docutils literal"><span class="pre">RegressionTest</span></code> attribute | Corresponding SLURM option
-— | —
-<code class="docutils literal"><span class="pre">time_limit</span> <span class="pre">=</span> <span class="pre">(0,</span> <span class="pre">10,</span> <span class="pre">30)</span></code>   | <code class="docutils literal"><span class="pre">--time=00:10:30</span></code>
-<code class="docutils literal"><span class="pre">use_multithreading</span> <span class="pre">=</span> <span class="pre">True</span></code>  | <code class="docutils literal"><span class="pre">--hint=multithread</span></code>
-<code class="docutils literal"><span class="pre">use_multithreading</span> <span class="pre">=</span> <span class="pre">False</span></code> | <code class="docutils literal"><span class="pre">--hint=nomultithread</span></code>
-<code class="docutils literal"><span class="pre">exclusive</span> <span class="pre">=</span> <span class="pre">True</span></code>           | <code class="docutils literal"><span class="pre">--exclusive</span></code>
-<code class="docutils literal"><span class="pre">num_tasks=72</span></code>               | <code class="docutils literal"><span class="pre">--ntasks=72</span></code>
-<code class="docutils literal"><span class="pre">num_tasks_per_node=36</span></code>      | <code class="docutils literal"><span class="pre">--ntasks-per-node=36</span></code>
-<code class="docutils literal"><span class="pre">num_cpus_per_task=4</span></code>        | <code class="docutils literal"><span class="pre">--cpus-per-task=4</span></code>
-<code class="docutils literal"><span class="pre">num_tasks_per_core=2</span></code>       | <code class="docutils literal"><span class="pre">--ntasks-per-core=2</span></code>
-<code class="docutils literal"><span class="pre">num_tasks_per_socket=36</span></code>    | <code class="docutils literal"><span class="pre">--ntasks-per-socket=36</span></code>
-</center></p>
-</div>
+<center>
+`RegressionTest` attribute | Corresponding SLURM option
+--- | ---
+`time_limit = (0, 10, 30)`   | `--time=00:10:30`
+`use_multithreading = True`  | `--hint=multithread`
+`use_multithreading = False` | `--hint=nomultithread`
+`exclusive = True`           | `--exclusive`
+`num_tasks=72`               | `--ntasks=72`
+`num_tasks_per_node=36`      | `--ntasks-per-node=36`
+`num_cpus_per_task=4`        | `--cpus-per-task=4`
+`num_tasks_per_core=2`       | `--ntasks-per-core=2`
+`num_tasks_per_socket=36`    | `--ntasks-per-socket=36`
+</center></div>
 <div class="section" id="testing-a-gpu-code">
-<span id="testing-a-gpu-code"></span><h2>Testing a GPU Code<a class="headerlink" href="#testing-a-gpu-code" title="Permalink to this headline">¶</a></h2>
+<h2>Testing a GPU Code<a class="headerlink" href="#testing-a-gpu-code" title="Permalink to this headline">¶</a></h2>
 <p>In this example, we will create two regression tests for two different GPU versions of our matrix-vector code: OpenACC and CUDA.
 Let’s start with the OpenACC regression test:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -743,7 +742,7 @@ In this case, there is no need to differentiate across the programming environme
 <code class="docutils literal"><span class="pre">nvcc</span></code> in our example is provided by the <code class="docutils literal"><span class="pre">cudatoolkit</span></code> module, which we list it in the <code class="docutils literal"><span class="pre">modules</span></code> variable.</p>
 </div>
 <div class="section" id="more-advanced-sanity-checking">
-<span id="more-advanced-sanity-checking"></span><h2>More Advanced Sanity Checking<a class="headerlink" href="#more-advanced-sanity-checking" title="Permalink to this headline">¶</a></h2>
+<h2>More Advanced Sanity Checking<a class="headerlink" href="#more-advanced-sanity-checking" title="Permalink to this headline">¶</a></h2>
 <p>So far we have done a very simple sanity checking.
 We are only looking if a specific line is present in the output of the test program.
 In this example, we expand the regression test of the serial code, so as to check also if the printed norm of the result matrix is correct.</p>
@@ -831,7 +830,7 @@ If you include the result of a sanity function in an expression, the evaluation 
 For a detailed description of the mechanism behind the sanity functions, please have a look at <a class="reference external" href="deferrables.html">“Understanding The Mechanism Of Sanity Functions”</a> section.</p>
 </div>
 <div class="section" id="writing-a-performance-test">
-<span id="writing-a-performance-test"></span><h2>Writing a Performance Test<a class="headerlink" href="#writing-a-performance-test" title="Permalink to this headline">¶</a></h2>
+<h2>Writing a Performance Test<a class="headerlink" href="#writing-a-performance-test" title="Permalink to this headline">¶</a></h2>
 <p>An important aspect of regression testing is checking for performance regressions.
 ReFrame offers a flexible way of extracting and manipulating performance data from the program output, as well as a comprehensive way of setting performance thresholds per system and system partitions.</p>
 <p>In this example, we extend the CUDA test presented <a class="reference external" href="tutorial.html#testing-a-gpu-code">previously</a>, so as to check also the performance of the matrix-vector multiplication.</p>
@@ -914,7 +913,7 @@ In our example, the reference value for this test on <code class="docutils liter
 Setting a threshold value to <code class="docutils literal"><span class="pre">None</span></code> disables the threshold.</p>
 </div>
 <div class="section" id="combining-it-all-together">
-<span id="combining-it-all-together"></span><h2>Combining It All Together<a class="headerlink" href="#combining-it-all-together" title="Permalink to this headline">¶</a></h2>
+<h2>Combining It All Together<a class="headerlink" href="#combining-it-all-together" title="Permalink to this headline">¶</a></h2>
 <p>As we have mentioned before and as you have already experienced with the examples in this tutorial, regression tests in ReFrame are written in pure Python.
 As a result, you can leverage the language features and capabilities to organize better your tests and decrease the maintenance cost.
 In this example, we are going to reimplement all the tests of the tutorial with much less code and in a single file.
@@ -1040,7 +1039,7 @@ Notice how the base class for all tutorial regression tests specify additional p
 <p>We use such techniques extensively in the regression tests for our production systems, in order to facilitate their maintenance.</p>
 </div>
 <div class="section" id="summary">
-<span id="summary"></span><h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
 <p>This concludes our ReFrame tutorial.
 We have covered all basic aspects of writing regression tests in ReFrame and you should now be able to start experimenting by writing your first useful tests.
 The <a class="reference external" href="advanced.html">next section</a> covers further topics in customizing a regression test to your needs.</p>
@@ -1137,6 +1136,7 @@ The <a class="reference external" href="advanced.html">next section</a> covers f
             <dd><a href="../v2.13/tutorial.html">v2.13</a></dd>
             <dd><a href="../v2.14/tutorial.html">v2.14</a></dd>
             <dd><a href="../v2.15/tutorial.html">v2.15</a></dd>
+            <dd><a href="../v2.16/tutorial.html">v2.16</a></dd>
             <dd><a href="../v2.7/tutorial.html">v2.7</a></dd>
             <dd><a href="tutorial.html">v2.8</a></dd>
             <dd><a href="../v2.9/tutorial.html">v2.9</a></dd>

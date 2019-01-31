@@ -175,13 +175,13 @@
            <div itemprop="articleBody">
             
   <div class="section" id="configuring-reframe-for-your-site">
-<span id="configuring-reframe-for-your-site"></span><h1>Configuring ReFrame for Your Site<a class="headerlink" href="#configuring-reframe-for-your-site" title="Permalink to this headline">¶</a></h1>
+<h1>Configuring ReFrame for Your Site<a class="headerlink" href="#configuring-reframe-for-your-site" title="Permalink to this headline">¶</a></h1>
 <p>ReFrame provides an easy and flexible way to configure new systems and new programming environments.
 By default, it ships with a generic local system configured.
 This should be enough to let you run ReFrame on a local computer as soon as the basic <a class="reference external" href="started.html#requirements">software requirements</a> are met.</p>
 <p>As soon as a new system with its programming environments is configured, adapting an existing regression test could be as easy as just adding the system’s name in the <code class="docutils literal"><span class="pre">valid_systems</span></code> list and its associated programming environments in the <code class="docutils literal"><span class="pre">valid_prog_environs</span></code> list.</p>
 <div class="section" id="the-configuration-file">
-<span id="the-configuration-file"></span><h2>The Configuration File<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h2>
+<h2>The Configuration File<a class="headerlink" href="#the-configuration-file" title="Permalink to this headline">¶</a></h2>
 <p>The configuration of systems and programming environments is performed by a special Python dictionary called <code class="docutils literal"><span class="pre">_site_configuration</span></code> defined inside the file <code class="docutils literal"><span class="pre">&lt;install-dir&gt;/reframe/settings.py</span></code>.</p>
 <p>The <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary should define two entries, <code class="docutils literal"><span class="pre">systems</span></code> and <code class="docutils literal"><span class="pre">environments</span></code>.
 The former defines the systems that ReFrame may recognize, whereas the latter defines the available programming environments.</p>
@@ -254,7 +254,7 @@ The former defines the systems that ReFrame may recognize, whereas the latter de
 </div>
 </div>
 <div class="section" id="system-configuration">
-<span id="system-configuration"></span><h2>System Configuration<a class="headerlink" href="#system-configuration" title="Permalink to this headline">¶</a></h2>
+<h2>System Configuration<a class="headerlink" href="#system-configuration" title="Permalink to this headline">¶</a></h2>
 <p>The list of supported systems is defined as a set of key/value pairs under key <code class="docutils literal"><span class="pre">systems</span></code>.
 Each system is a key/value pair, with the key being the name of the system and the value being another set of key/value pairs defining its attributes.
 The valid attributes of a system are the following:</p>
@@ -274,7 +274,7 @@ Partition configuration is discussed in the <a class="reference external" href="
 <p>For a more detailed description of the <code class="docutils literal"><span class="pre">prefix</span></code>, <code class="docutils literal"><span class="pre">stagedir</span></code>, <code class="docutils literal"><span class="pre">outputdir</span></code> and <code class="docutils literal"><span class="pre">logdir</span></code> directories, please refer to the <a class="reference external" href="running.html#configuring-reframe-directories">“Running ReFrame”</a> section.</p>
 </div>
 <div class="section" id="partition-configuration">
-<span id="partition-configuration"></span><h2>Partition Configuration<a class="headerlink" href="#partition-configuration" title="Permalink to this headline">¶</a></h2>
+<h2>Partition Configuration<a class="headerlink" href="#partition-configuration" title="Permalink to this headline">¶</a></h2>
 <p>From the ReFrame’s point of view, each system consists of a set of logical partitions.
 These partitions need not necessarily correspond to real scheduler partitions.
 For example, Piz Daint on the above example is split in <em>virtual partitions</em> using Slurm constraints.
@@ -350,7 +350,7 @@ For example, one could define a <code class="docutils literal"><span class="pre"
 <p>Refer to the <a class="reference external" href="reference.html#reframe.core.pipeline.RegressionTest.extra_resources">reference guide</a> for more information on the use of the <code class="docutils literal"><span class="pre">extra_resources</span></code> regression test attribute.</p>
 </div>
 <div class="section" id="environments-configuration">
-<span id="environments-configuration"></span><h2>Environments Configuration<a class="headerlink" href="#environments-configuration" title="Permalink to this headline">¶</a></h2>
+<h2>Environments Configuration<a class="headerlink" href="#environments-configuration" title="Permalink to this headline">¶</a></h2>
 <p>The environments available for testing in different systems are defined under the <code class="docutils literal"><span class="pre">environments</span></code> key of the top-level <code class="docutils literal"><span class="pre">_site_configuration</span></code> dictionary.
 The <code class="docutils literal"><span class="pre">environments</span></code> key is associated to a special dictionary that defines scopes for looking up an environment.
 The <code class="docutils literal"><span class="pre">*</span></code> denotes the global scope and all environments defined there can be used by any system.
@@ -398,7 +398,7 @@ There are two available environment types (note that names are case sensitive):<
 If a flags variable is not <code class="docutils literal"><span class="pre">None</span></code> it will be passed to the Makefile, which may affect the compilation process.</div></blockquote>
 </div>
 <div class="section" id="system-auto-detection">
-<span id="system-auto-detection"></span><h2>System Auto-Detection<a class="headerlink" href="#system-auto-detection" title="Permalink to this headline">¶</a></h2>
+<h2>System Auto-Detection<a class="headerlink" href="#system-auto-detection" title="Permalink to this headline">¶</a></h2>
 <p>When the ReFrame is launched, it tries to auto-detect the current system based on its site configuration.
 The auto-detection process is as follows:</p>
 <p>ReFrame first tries to obtain the hostname from <code class="docutils literal"><span class="pre">/etc/xthostname</span></code>, which provides the unqualified <em>machine name</em> in Cray systems.
@@ -500,6 +500,7 @@ You can override completely the auto-detection process by specifying a system or
             <dd><a href="../v2.13/configure.html">v2.13</a></dd>
             <dd><a href="../v2.14/configure.html">v2.14</a></dd>
             <dd><a href="../v2.15/configure.html">v2.15</a></dd>
+            <dd><a href="../v2.16/configure.html">v2.16</a></dd>
             <dd><a href="../v2.7/configure.html">v2.7</a></dd>
             <dd><a href="configure.html">v2.8</a></dd>
             <dd><a href="../v2.9/configure.html">v2.9</a></dd>

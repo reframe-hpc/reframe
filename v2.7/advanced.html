@@ -173,12 +173,12 @@
            <div itemprop="articleBody">
             
   <div class="section" id="customizing-further-a-regression-test">
-<span id="customizing-further-a-regression-test"></span><h1>Customizing Further a Regression Test<a class="headerlink" href="#customizing-further-a-regression-test" title="Permalink to this headline">¶</a></h1>
+<h1>Customizing Further a Regression Test<a class="headerlink" href="#customizing-further-a-regression-test" title="Permalink to this headline">¶</a></h1>
 <p>In this section, we are going to show some more elaborate use cases of ReFrame.
 Through the use of more advanced examples, we will demonstrate further customization options which modify the default options of the ReFrame pipeline.
 The corresponding scripts as well as the source code of the examples discussed here can be found in the directory <code class="docutils literal"><span class="pre">tutorial/advanced</span></code>.</p>
 <div class="section" id="leveraging-makefiles">
-<span id="leveraging-makefiles"></span><h2>Leveraging Makefiles<a class="headerlink" href="#leveraging-makefiles" title="Permalink to this headline">¶</a></h2>
+<h2>Leveraging Makefiles<a class="headerlink" href="#leveraging-makefiles" title="Permalink to this headline">¶</a></h2>
 <p>We have already shown how you can compile a single source file associated with your regression test.
 In this example, we show how ReFrame can leverage Makefiles to build executables.</p>
 <p>Compiling a regression test through a Makefile is very straightforward with ReFrame.
@@ -266,7 +266,7 @@ In this case, you can pass the custom Makefile name as an argument to the compil
 </div>
 </div>
 <div class="section" id="implementing-a-run-only-regression-test">
-<span id="implementing-a-run-only-regression-test"></span><h2>Implementing a Run-Only Regression Test<a class="headerlink" href="#implementing-a-run-only-regression-test" title="Permalink to this headline">¶</a></h2>
+<h2>Implementing a Run-Only Regression Test<a class="headerlink" href="#implementing-a-run-only-regression-test" title="Permalink to this headline">¶</a></h2>
 <p>There are cases when it is desirable to perform regression testing for an already built executable.
 The following test uses the <code class="docutils literal"><span class="pre">echo</span></code> Bash shell command to print a random integer between specific lower and upper bounds.
 Here is the full regression test (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example2.py</span></code>):</p>
@@ -305,7 +305,7 @@ A thing to note about run-only regression tests is that the copying of their res
 For standard regression tests, this happens at the beginning of the compilation phase, instead.</p>
 </div>
 <div class="section" id="implementing-a-compile-only-regression-test">
-<span id="implementing-a-compile-only-regression-test"></span><h2>Implementing a Compile-Only Regression Test<a class="headerlink" href="#implementing-a-compile-only-regression-test" title="Permalink to this headline">¶</a></h2>
+<h2>Implementing a Compile-Only Regression Test<a class="headerlink" href="#implementing-a-compile-only-regression-test" title="Permalink to this headline">¶</a></h2>
 <p>ReFrame provides the option to write compile-only tests which consist only of a compilation phase without a specified executable.
 This kind of tests must derive from the <code class="docutils literal"><span class="pre">CompileOnlyRegressionTest</span></code> class provided by the framework.
 The following example (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example3.py</span></code>) reuses the code of our first example in this section and checks that no warnings are issued by the compiler:</p>
@@ -337,7 +337,7 @@ The following example (<code class="docutils literal"><span class="pre">tutorial
 So sanity checking can be done in exactly the same way as with a normal test.</p>
 </div>
 <div class="section" id="leveraging-environment-variables">
-<span id="leveraging-environment-variables"></span><h2>Leveraging Environment Variables<a class="headerlink" href="#leveraging-environment-variables" title="Permalink to this headline">¶</a></h2>
+<h2>Leveraging Environment Variables<a class="headerlink" href="#leveraging-environment-variables" title="Permalink to this headline">¶</a></h2>
 <p>We have already demonstrated in the <a class="reference external" href="tutorial.html">tutorial</a> that ReFrame allows you to load the required modules for regression tests and also set any needed environment variables.
 When setting environment variables for your test through the <code class="docutils literal"><span class="pre">variables</span></code> attribute, you can assign them values of other, already defined, environment variables using the standard notation <code class="docutils literal"><span class="pre">$OTHER_VARIABLE</span></code> or <code class="docutils literal"><span class="pre">${OTHER_VARIABLE}</span></code>.
 The following regression test (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example4.py</span></code>) sets the <code class="docutils literal"><span class="pre">CUDA_HOME</span></code> environment variable to the value of the <code class="docutils literal"><span class="pre">CUDATOOLKIT_HOME</span></code> and then compiles and runs a simple program:</p>
@@ -436,7 +436,7 @@ This has the result that <code class="docutils literal"><span class="pre">CUDA_H
 </div>
 </div>
 <div class="section" id="setting-a-time-limit-for-regression-tests">
-<span id="setting-a-time-limit-for-regression-tests"></span><h2>Setting a Time Limit for Regression Tests<a class="headerlink" href="#setting-a-time-limit-for-regression-tests" title="Permalink to this headline">¶</a></h2>
+<h2>Setting a Time Limit for Regression Tests<a class="headerlink" href="#setting-a-time-limit-for-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>ReFrame gives you the option to limit the execution time of regression tests.
 The following example (<code class="docutils literal"><span class="pre">tutorial/advanced/advanced_example5.py</span></code>) demonstrates how you can achieve this by limiting the execution time of a test that tries to sleep 100 seconds:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
@@ -570,6 +570,7 @@ Time limits are implemented for both the Slurm and the local scheduler backends.
             <dd><a href="../v2.13/advanced.html">v2.13</a></dd>
             <dd><a href="../v2.14/advanced.html">v2.14</a></dd>
             <dd><a href="../v2.15/advanced.html">v2.15</a></dd>
+            <dd><a href="../v2.16/advanced.html">v2.16</a></dd>
             <dd><a href="advanced.html">v2.7</a></dd>
             <dd><a href="../v2.8/advanced.html">v2.8</a></dd>
             <dd><a href="../v2.9/advanced.html">v2.9</a></dd>

@@ -185,12 +185,12 @@
            <div itemprop="articleBody">
             
   <div class="section" id="understanding-the-mechanism-of-sanity-functions">
-<span id="understanding-the-mechanism-of-sanity-functions"></span><h1>Understanding the Mechanism of Sanity Functions<a class="headerlink" href="#understanding-the-mechanism-of-sanity-functions" title="Permalink to this headline">¶</a></h1>
+<h1>Understanding the Mechanism of Sanity Functions<a class="headerlink" href="#understanding-the-mechanism-of-sanity-functions" title="Permalink to this headline">¶</a></h1>
 <p>This section describes the mechanism behind the sanity functions that are used for the sanity and performance checking.
 Generally, writing a new sanity function is as straightforward as decorating a simple Python function with either the <code class="docutils literal"><span class="pre">&#64;reframe.utility.sanity.sanity_function</span></code> or the <code class="docutils literal"><span class="pre">&#64;reframe.core.deferrable.deferrable</span></code> decorator.
 However, it is important to understand how and when a deferrable function is evaluated, especially if your function takes as arguments the results of other deferrable functions.</p>
 <div class="section" id="what-is-a-deferrable-function">
-<span id="what-is-a-deferrable-function"></span><h2>What Is a Deferrable Function?<a class="headerlink" href="#what-is-a-deferrable-function" title="Permalink to this headline">¶</a></h2>
+<h2>What Is a Deferrable Function?<a class="headerlink" href="#what-is-a-deferrable-function" title="Permalink to this headline">¶</a></h2>
 <p>A deferrable function is a function whose a evaluation is deferred to a later point in time.
 You can define any function as deferrable by adding the <code class="docutils literal"><span class="pre">&#64;reframe.utility.sanity.sanity_function</span></code> or the <code class="docutils literal"><span class="pre">&#64;reframe.core.deferrable.deferrable</span></code> decorator before its definition.
 The example below demonstrates a simple scenario:</p>
@@ -309,7 +309,7 @@ However, when we called our deferrable function, <code class="docutils literal">
 <p>Notice the different IDs of <code class="docutils literal"><span class="pre">l</span></code> before and after the <code class="docutils literal"><span class="pre">+=</span></code> operation.
 This a key trait of deferrable functions and expressions that you should be aware of.</p>
 <div class="section" id="deferred-expressions">
-<span id="deferred-expressions"></span><h3>Deferred expressions<a class="headerlink" href="#deferred-expressions" title="Permalink to this headline">¶</a></h3>
+<h3>Deferred expressions<a class="headerlink" href="#deferred-expressions" title="Permalink to this headline">¶</a></h3>
 <p>You might be still wondering why the internal name of a deferred function refers to the more general term deferred expression.
 Here is why:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="nd">@sn</span><span class="o">.</span><span class="n">sanity_function</span>
@@ -345,7 +345,7 @@ If you want to defer the execution of such operators, you should use the corresp
 </div>
 </div>
 <div class="section" id="how-a-deferred-expression-is-evaluated">
-<span id="how-a-deferred-expression-is-evaluated"></span><h2>How a Deferred Expression Is Evaluated?<a class="headerlink" href="#how-a-deferred-expression-is-evaluated" title="Permalink to this headline">¶</a></h2>
+<h2>How a Deferred Expression Is Evaluated?<a class="headerlink" href="#how-a-deferred-expression-is-evaluated" title="Permalink to this headline">¶</a></h2>
 <p>As discussed before, you can create a new deferred expression by calling a function whose definition is decorated by the <code class="docutils literal"><span class="pre">&#64;sanity_function</span></code> or <code class="docutils literal"><span class="pre">&#64;deferrable</span></code> decorator or by including an already deferred expression in any sort of arithmetic operation.
 When you call <code class="docutils literal"><span class="pre">evaluate()</span></code> on a deferred expression, you trigger the evaluation of the whole subexpression tree.
 Here is how the evaluation process evolves:</p>
@@ -382,7 +382,7 @@ The following figure shows how the evaluation evolves for this particular exampl
 <div style="text-align:center">
 ![Sequence diagram of the evaluation of the deferrable `avg()` function.](_static/img/deferrable-evaluation.svg)
 </div><div class="section" id="implicit-evaluation-of-a-deferred-expression">
-<span id="implicit-evaluation-of-a-deferred-expression"></span><h3>Implicit evaluation of a deferred expression<a class="headerlink" href="#implicit-evaluation-of-a-deferred-expression" title="Permalink to this headline">¶</a></h3>
+<h3>Implicit evaluation of a deferred expression<a class="headerlink" href="#implicit-evaluation-of-a-deferred-expression" title="Permalink to this headline">¶</a></h3>
 <p>Although you can trigger the evaluation of a deferred expression at any time by calling <code class="docutils literal"><span class="pre">evaluate()</span></code>, there are some cases where the evaluation is triggered implicitly:</p>
 <ul class="simple">
 <li>When you try to get the truthy value of a deferred expression by calling <code class="docutils literal"><span class="pre">bool()</span></code> on it.
@@ -450,7 +450,7 @@ However, when you try to iterate over the result of this call, then the deferred
 </div>
 </div>
 <div class="section" id="how-to-write-a-deferrable-function">
-<span id="how-to-write-a-deferrable-function"></span><h2>How to Write a Deferrable Function?<a class="headerlink" href="#how-to-write-a-deferrable-function" title="Permalink to this headline">¶</a></h2>
+<h2>How to Write a Deferrable Function?<a class="headerlink" href="#how-to-write-a-deferrable-function" title="Permalink to this headline">¶</a></h2>
 <p>The answer is simple: like you would with any other normal function!
 We’ve done that already in all the examples we’ve shown in this documentation.
 A question that somehow naturally comes up here is whether you can call a deferrable function from within a deferrable function, since this doesn’t make a lot of sense: after all, your function will be deferred anyway.</p>
@@ -486,18 +486,18 @@ In the version with the deferrables, <code class="docutils literal"><span class=
 <p>Generally, inside a sanity function, it is a preferable to use the non-deferrable version of a function, if that exists, since you avoid the extra overhead and bookkeeping of the deferring mechanism.</p>
 </div>
 <div class="section" id="deferrable-sanity-functions">
-<span id="deferrable-sanity-functions"></span><h2>Deferrable Sanity Functions<a class="headerlink" href="#deferrable-sanity-functions" title="Permalink to this headline">¶</a></h2>
+<h2>Deferrable Sanity Functions<a class="headerlink" href="#deferrable-sanity-functions" title="Permalink to this headline">¶</a></h2>
 <p>Normally, you will not have to implement your own sanity functions, since ReFrame provides already a variety of them.
 You can find the complete list of provided sanity functions <a class="reference external" href="sanity_functions_reference.html">here</a>.</p>
 </div>
 <div class="section" id="similarities-and-differences-with-generators">
-<span id="similarities-and-differences-with-generators"></span><h2>Similarities and Differences with Generators<a class="headerlink" href="#similarities-and-differences-with-generators" title="Permalink to this headline">¶</a></h2>
+<h2>Similarities and Differences with Generators<a class="headerlink" href="#similarities-and-differences-with-generators" title="Permalink to this headline">¶</a></h2>
 <p>Python allows you to create functions that will be evaluated lazily.
 These are called <a class="reference external" href="https://wiki.python.org/moin/Generators">generator functions</a>.
 Their key characteristic is that instead of using the <code class="docutils literal"><span class="pre">return</span></code> keyword to return values, they use the <code class="docutils literal"><span class="pre">yield</span></code> keyword.
 I’m not going to go into the details of the generators, since there is plenty of documentation out there, so I will focus on the similarities and differences with our deferrable functions.</p>
 <div class="section" id="similarities">
-<span id="similarities"></span><h3>Similarities<a class="headerlink" href="#similarities" title="Permalink to this headline">¶</a></h3>
+<h3>Similarities<a class="headerlink" href="#similarities" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>Both generators and our deferrables return an object representing the deferred expression when you call them.</li>
 <li>Both generators and deferrables may be evaluated explicitly or implicitly when they appear in certain expressions.</li>
@@ -505,7 +505,7 @@ I’m not going to go into the details of the generators, since there is plenty 
 </ul>
 </div>
 <div class="section" id="differences">
-<span id="differences"></span><h3>Differences<a class="headerlink" href="#differences" title="Permalink to this headline">¶</a></h3>
+<h3>Differences<a class="headerlink" href="#differences" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>You can include deferrables in any arithmetic expression and the result will be another deferrable expression.
 This is not true with generator functions, which will raise a <code class="docutils literal"><span class="pre">TypeError</span></code> in such cases or they will always evaluate to <code class="docutils literal"><span class="pre">False</span></code> if you include them in boolean expressions.
@@ -664,6 +664,7 @@ Notice also, the printout of <code class="docutils literal"><span class="pre">2<
             <dd><a href="../v2.13/deferrables.html">v2.13</a></dd>
             <dd><a href="../v2.14/deferrables.html">v2.14</a></dd>
             <dd><a href="../v2.15/deferrables.html">v2.15</a></dd>
+            <dd><a href="../v2.16/deferrables.html">v2.16</a></dd>
             <dd><a href="../v2.7/deferrables.html">v2.7</a></dd>
             <dd><a href="deferrables.html">v2.8</a></dd>
             <dd><a href="../v2.9/deferrables.html">v2.9</a></dd>

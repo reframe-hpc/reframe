@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference Guide &mdash; ReFrame 2.15 documentation</title>
+  <title>Reference Guide &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -806,9 +806,15 @@ during the <a class="reference internal" href="#reframe.core.pipeline.Regression
 <dt id="reframe.core.pipeline.RegressionTest.num_tasks">
 <code class="descname">num_tasks</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.num_tasks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of tasks required by this test.</p>
-<p>If the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>, ReFrame will try to flexibly
-allocate the number of tasks, based on the command line option
-<code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code>.</p>
+<p>If the number of tasks is set to a number <code class="docutils literal"><span class="pre">&lt;=0</span></code>, ReFrame will try
+to flexibly allocate the number of tasks, based on the command line
+option <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code>.
+A negative number is used to indicate the minimum number of tasks
+required for the test.
+In this case the minimum number of tasks is the absolute value of
+the number, while
+Setting <code class="docutils literal"><span class="pre">num_tasks</span></code> to <code class="docutils literal"><span class="pre">0</span></code> is equivalent to setting it to
+<code class="docutils literal"><span class="pre">-num_tasks_per_node</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -821,11 +827,15 @@ allocate the number of tasks, based on the command line option
 </table>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<div class="last versionchanged">
+<div class="versionchanged">
 <p><span class="versionmodified">Changed in version 2.15: </span>Added support for flexible allocation of the number of tasks
 according to the <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code> command line option
 (see <a class="reference external" href="running.html#flexible-task-allocation">Flexible task allocation</a>)
 if the number of tasks is set to <code class="docutils literal"><span class="pre">0</span></code>.</p>
+</div>
+<div class="last versionchanged">
+<p><span class="versionmodified">Changed in version 2.16: </span>Negative <code class="docutils literal"><span class="pre">num_tasks</span></code> is allowed for specifying the minimum
+number of required tasks by the test.</p>
 </div>
 </div>
 </dd></dl>
@@ -1060,8 +1070,25 @@ directory.</p>
 <dt id="reframe.core.pipeline.RegressionTest.reference">
 <code class="descname">reference</code><a class="headerlink" href="#reframe.core.pipeline.RegressionTest.reference" title="Permalink to this definition">¶</a></dt>
 <dd><p>The set of reference values for this test.</p>
-<p>Refer to the <a class="reference internal" href="tutorial.html"><span class="doc">ReFrame Tutorial</span></a> for concrete usage
-examples.</p>
+<p>The reference values are specified as a scoped dictionary keyed on the
+performance variables defined in <a class="reference internal" href="#reframe.core.pipeline.RegressionTest.perf_patterns" title="reframe.core.pipeline.RegressionTest.perf_patterns"><code class="xref py py-attr docutils literal"><span class="pre">perf_patterns</span></code></a> and scoped under
+the system/partition combinations.
+The reference itself is a three- or four-tuple that contains the
+reference value, the lower and upper thresholds and, optionally, the
+measurement unit.
+An example follows:</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;sys0:part0&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;perfvar0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;Gflop/s&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;perfvar1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;GB/s&#39;</span><span class="p">)</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;sys0:part1&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;perfvar0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;Gflop/s&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;perfvar1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s1">&#39;GB/s&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1468,12 +1495,18 @@ descriptor is set up for this test.</p>
 <span id="environments-and-systems"></span><h2>Environments and Systems<a class="headerlink" href="#module-reframe.core.environments" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="reframe.core.environments.Environment">
-<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">Environment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables={}</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#Environment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.Environment" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">reframe.core.environments.</code><code class="descname">Environment</code><span class="sig-paren">(</span><em>name</em>, <em>modules=[]</em>, <em>variables=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#Environment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.Environment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>This class abstracts away an environment to run regression tests.</p>
 <p>It is simply a collection of modules to be loaded and environment variables
 to be set when this environment is loaded by the framework.
 Users may not create or modify directly environments.</p>
+<dl class="method">
+<dt id="reframe.core.environments.Environment.details">
+<code class="descname">details</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/environments.html#Environment.details"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.environments.Environment.details" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a detailed description of this environment.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="reframe.core.environments.Environment.is_loaded">
 <code class="descname">is_loaded</code><a class="headerlink" href="#reframe.core.environments.Environment.is_loaded" title="Permalink to this definition">¶</a></dt>
@@ -2218,6 +2251,12 @@ resources of the framework on the current system.</p>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="method">
+<dt id="reframe.core.runtime.RuntimeContext.show_config">
+<code class="descname">show_config</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/reframe/core/runtime.html#RuntimeContext.show_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#reframe.core.runtime.RuntimeContext.show_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a textual representation of the current runtime.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -3044,6 +3083,7 @@ This is automatically set by the framework based on the
             <dd><a href="v2.13/reference.html">v2.13</a></dd>
             <dd><a href="v2.14/reference.html">v2.14</a></dd>
             <dd><a href="v2.15/reference.html">v2.15</a></dd>
+            <dd><a href="v2.16/reference.html">v2.16</a></dd>
             <dd><a href="v2.7/reference.html">v2.7</a></dd>
             <dd><a href="v2.8/reference.html">v2.8</a></dd>
             <dd><a href="v2.9/reference.html">v2.9</a></dd>
@@ -3063,7 +3103,7 @@ This is automatically set by the framework based on the
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'./',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

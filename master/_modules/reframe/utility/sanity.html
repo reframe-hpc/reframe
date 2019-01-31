@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.utility.sanity &mdash; ReFrame 2.15 documentation</title>
+  <title>reframe.utility.sanity &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -870,6 +870,12 @@
         <span class="k">return</span> <span class="n">ret</span></div>
 
 
+<div class="viewcode-block" id="count_uniq"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.count_uniq">[docs]</a><span class="nd">@deferrable</span>
+<span class="k">def</span> <span class="nf">count_uniq</span><span class="p">(</span><span class="n">iterable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the unique element count of ``iterable``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">len</span><span class="p">(</span><span class="n">builtins</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">iterable</span><span class="p">))</span></div>
+
+
 <div class="viewcode-block" id="glob"><a class="viewcode-back" href="../../../sanity_functions_reference.html#reframe.utility.sanity.glob">[docs]</a><span class="nd">@deferrable</span>
 <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Replacement for the :func:`glob.glob() &lt;python:glob.glob&gt;` function.&quot;&quot;&quot;</span>
@@ -962,6 +968,7 @@
             <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../../v2.14/index.html">v2.14</a></dd>
             <dd><a href="../../../../v2.15/index.html">v2.15</a></dd>
+            <dd><a href="../../../../v2.16/index.html">v2.16</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.9/index.html">v2.9</a></dd>
@@ -981,7 +988,7 @@
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'../../../',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

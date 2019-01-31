@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Running ReFrame &mdash; ReFrame 2.15 documentation</title>
+  <title>Running ReFrame &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -125,6 +125,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#performance-logging-using-graylog">Performance Logging Using Graylog</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#adjusting-verbosity-of-output">Adjusting verbosity of output</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#asynchronous-execution-of-regression-checks">Asynchronous Execution of Regression Checks</a></li>
@@ -903,7 +904,8 @@ This is configured by the <code class="docutils literal"><span class="pre">perf_
                 <span class="s1">&#39;</span><span class="si">%(check_perf_var)s</span><span class="s1">=</span><span class="si">%(check_perf_value)s</span><span class="s1">|&#39;</span>
                 <span class="s1">&#39;ref=</span><span class="si">%(check_perf_ref)s</span><span class="s1"> &#39;</span>
                 <span class="s1">&#39;(l=</span><span class="si">%(check_perf_lower_thres)s</span><span class="s1">, &#39;</span>
-                <span class="s1">&#39;u=</span><span class="si">%(check_perf_upper_thres)s</span><span class="s1">)&#39;</span>
+                <span class="s1">&#39;u=</span><span class="si">%(check_perf_upper_thres)s</span><span class="s1">)|&#39;</span>
+                <span class="s1">&#39;</span><span class="si">%(check_perf_unit)s</span><span class="s1">&#39;</span>
             <span class="p">),</span>
             <span class="s1">&#39;append&#39;</span><span class="p">:</span> <span class="kc">True</span>
         <span class="p">}</span>
@@ -960,6 +962,7 @@ Found 0 check(s).
 <li><code class="docutils literal"><span class="pre">check_perf_ref</span></code>: The reference performance value of a certain performance variable.</li>
 <li><code class="docutils literal"><span class="pre">check_perf_value</span></code>: The performance value obtained by this test for a certain performance variable.</li>
 <li><code class="docutils literal"><span class="pre">check_perf_var</span></code>: The name of the <a class="reference external" href="tutorial.html#writing-a-performance-test">performance variable</a>, whose value is logged.</li>
+<li><code class="docutils literal"><span class="pre">check_perf_unit</span></code>: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.reference" title="reframe.core.pipeline.RegressionTest.reference"><code class="xref py py-attr docutils literal"><span class="pre">reframe.core.pipeline.RegressionTest.reference</span></code></a> attribute.</li>
 </ul>
 </li>
 </ul>
@@ -1007,6 +1010,18 @@ These may depend on the server configuration.</li>
 <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html">GELF</a> is a format specification for log messages that are sent over the network.
 The ReFrame’s <code class="docutils literal"><span class="pre">graylog</span></code> handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
 More details on this log format may be found <a class="reference external" href="http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification">here</a>.</p>
+</div>
+</div>
+<div class="section" id="adjusting-verbosity-of-output">
+<h3>Adjusting verbosity of output<a class="headerlink" href="#adjusting-verbosity-of-output" title="Permalink to this headline">¶</a></h3>
+<p>ReFrame’s output is handled by a logging mechanism.
+In fact, as revealed in the corresponding configuration entry (see <a class="reference external" href="#configuring-logging">Configuring Logging</a>), a specific logging handler takes care of printing ReFrame’s message in the standard output.
+One way to change the verbosity level of the output is by explicitly setting the value of the <code class="docutils literal"><span class="pre">level</span></code> key in the configuration of the output handler.
+Alternatively, you may increase the verbosity level from the command line by chaining the <code class="docutils literal"><span class="pre">-v</span></code> or <code class="docutils literal"><span class="pre">--verbose</span></code> option.
+Every time <code class="docutils literal"><span class="pre">-v</span></code> is specified, the next verbosity level will be selected for the output.
+For example, if the initial level of the output handler is set to <code class="docutils literal"><span class="pre">INFO</span></code> (in the configuration file), specifying <code class="docutils literal"><span class="pre">-v</span></code> twice will make ReFrame spit out all <code class="docutils literal"><span class="pre">DEBUG</span></code> messages.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 2.16: </span><code class="docutils literal"><span class="pre">-v</span></code> and <code class="docutils literal"><span class="pre">--verbose</span></code> options are added.</p>
 </div>
 </div>
 </div>
@@ -1169,7 +1184,7 @@ FAILURE INFO for Example7Test
 <div class="versionadded">
 <p><span class="versionmodified">New in version 2.15.</span></p>
 </div>
-<p>ReFrame can automatically set the number of tasks of a particular test, if its <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks" title="reframe.core.pipeline.RegressionTest.num_tasks"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code></a> attribute is set to <code class="docutils literal"><span class="pre">0</span></code>.
+<p>ReFrame can automatically set the number of tasks of a particular test, if its <a class="reference internal" href="reference.html#reframe.core.pipeline.RegressionTest.num_tasks" title="reframe.core.pipeline.RegressionTest.num_tasks"><code class="xref py py-attr docutils literal"><span class="pre">num_tasks</span></code></a> attribute is set to a value <code class="docutils literal"><span class="pre">&lt;=0</span></code>.
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
 This behavior can be adjusted using the <code class="docutils literal"><span class="pre">--flex-alloc-tasks</span></code> command line option.
 This option accepts three values:</p>
@@ -1287,6 +1302,7 @@ Notice that ReFrame will issue an error if the resulting number of nodes is zero
             <dd><a href="v2.13/running.html">v2.13</a></dd>
             <dd><a href="v2.14/running.html">v2.14</a></dd>
             <dd><a href="v2.15/running.html">v2.15</a></dd>
+            <dd><a href="v2.16/running.html">v2.16</a></dd>
             <dd><a href="v2.7/running.html">v2.7</a></dd>
             <dd><a href="v2.8/running.html">v2.8</a></dd>
             <dd><a href="v2.9/running.html">v2.9</a></dd>
@@ -1306,7 +1322,7 @@ Notice that ReFrame will issue an error if the resulting number of nodes is zero
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'./',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

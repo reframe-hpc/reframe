@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.systems &mdash; ReFrame 2.15 documentation</title>
+  <title>reframe.core.systems &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -159,7 +159,9 @@
            <div itemprop="articleBody">
             
   <h1>Source code for reframe.core.systems</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">reframe.core.debug</span> <span class="k">as</span> <span class="nn">debug</span>
 <span class="kn">import</span> <span class="nn">reframe.core.fields</span> <span class="k">as</span> <span class="nn">fields</span>
 <span class="kn">import</span> <span class="nn">reframe.utility.typecheck</span> <span class="k">as</span> <span class="nn">typ</span>
 <span class="kn">from</span> <span class="nn">reframe.core.environments</span> <span class="k">import</span> <span class="n">Environment</span>
@@ -297,7 +299,17 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_local_env</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_local_env</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+        <span class="n">local_env</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(?m)^&#39;</span><span class="p">,</span> <span class="mi">6</span><span class="o">*</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39; - &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local_env</span><span class="o">.</span><span class="n">details</span><span class="p">())</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> [</span><span class="si">%s</span><span class="s1">]:&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descr</span><span class="p">),</span>
+            <span class="s1">&#39;    fullname: &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fullname</span><span class="p">,</span>
+            <span class="s1">&#39;    scheduler: &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduler</span><span class="o">.</span><span class="n">registered_name</span><span class="p">,</span>
+            <span class="s1">&#39;    launcher: &#39;</span>  <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_launcher</span><span class="o">.</span><span class="n">registered_name</span><span class="p">,</span>
+            <span class="s1">&#39;    access: &#39;</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_access</span><span class="p">),</span>
+            <span class="s1">&#39;    local_env:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">local_env</span><span class="p">,</span>
+            <span class="s1">&#39;    environs: &#39;</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_environs</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">debug</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
@@ -407,11 +419,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">_partitions</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">debug</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> (partitions: </span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span>
-                                        <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partitions</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="n">debug</span><span class="o">.</span><span class="n">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </pre></div>
 
            </div>
@@ -494,6 +502,7 @@
             <dd><a href="../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../v2.14/index.html">v2.14</a></dd>
             <dd><a href="../../../v2.15/index.html">v2.15</a></dd>
+            <dd><a href="../../../v2.16/index.html">v2.16</a></dd>
             <dd><a href="../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../v2.9/index.html">v2.9</a></dd>
@@ -513,7 +522,7 @@
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'../../../',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

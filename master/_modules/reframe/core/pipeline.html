@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>reframe.core.pipeline &mdash; ReFrame 2.15 documentation</title>
+  <title>reframe.core.pipeline &mdash; ReFrame 2.16 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                2.15
+                2.16
               </div>
             
           
@@ -416,9 +416,15 @@
 
     <span class="c1">#: Number of tasks required by this test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: If the number of tasks is set to ``0``, ReFrame will try to flexibly</span>
-    <span class="c1">#: allocate the number of tasks, based on the command line option</span>
-    <span class="c1">#: ``--flex-alloc-tasks``.</span>
+    <span class="c1">#: If the number of tasks is set to a number ``&lt;=0``, ReFrame will try</span>
+    <span class="c1">#: to flexibly allocate the number of tasks, based on the command line</span>
+    <span class="c1">#: option ``--flex-alloc-tasks``.</span>
+    <span class="c1">#: A negative number is used to indicate the minimum number of tasks</span>
+    <span class="c1">#: required for the test.</span>
+    <span class="c1">#: In this case the minimum number of tasks is the absolute value of</span>
+    <span class="c1">#: the number, while</span>
+    <span class="c1">#: Setting ``num_tasks`` to ``0`` is equivalent to setting it to</span>
+    <span class="c1">#: ``-num_tasks_per_node``.</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: integral</span>
     <span class="c1">#: :default: ``1``</span>
@@ -430,6 +436,9 @@
     <span class="c1">#:        (see `Flexible task allocation</span>
     <span class="c1">#:        &lt;running.html#flexible-task-allocation&gt;`__)</span>
     <span class="c1">#:        if the number of tasks is set to ``0``.</span>
+    <span class="c1">#:     .. versionchanged:: 2.16</span>
+    <span class="c1">#:        Negative ``num_tasks`` is allowed for specifying the minimum</span>
+    <span class="c1">#:        number of required tasks by the test.</span>
     <span class="n">num_tasks</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;num_tasks&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 
     <span class="c1">#: Number of tasks per node required by this test.</span>
@@ -496,8 +505,26 @@
 
     <span class="c1">#: The set of reference values for this test.</span>
     <span class="c1">#:</span>
-    <span class="c1">#: Refer to the :doc:`ReFrame Tutorial &lt;/tutorial&gt;` for concrete usage</span>
-    <span class="c1">#: examples.</span>
+    <span class="c1">#: The reference values are specified as a scoped dictionary keyed on the</span>
+    <span class="c1">#: performance variables defined in :attr:`perf_patterns` and scoped under</span>
+    <span class="c1">#: the system/partition combinations.</span>
+    <span class="c1">#: The reference itself is a three- or four-tuple that contains the</span>
+    <span class="c1">#: reference value, the lower and upper thresholds and, optionally, the</span>
+    <span class="c1">#: measurement unit.</span>
+    <span class="c1">#: An example follows:</span>
+    <span class="c1">#:</span>
+    <span class="c1">#: .. code:: python</span>
+    <span class="c1">#:</span>
+    <span class="c1">#:    self.reference = {</span>
+    <span class="c1">#:        &#39;sys0:part0&#39;: {</span>
+    <span class="c1">#:            &#39;perfvar0&#39;: (50, -0.1, 0.1, &#39;Gflop/s&#39;),</span>
+    <span class="c1">#:            &#39;perfvar1&#39;: (20, -0.1, 0.1, &#39;GB/s&#39;)</span>
+    <span class="c1">#:        },</span>
+    <span class="c1">#:        &#39;sys0:part1&#39;: {</span>
+    <span class="c1">#:            &#39;perfvar0&#39;: (100, -0.1, 0.1, &#39;Gflop/s&#39;),</span>
+    <span class="c1">#:            &#39;perfvar1&#39;: (40, -0.1, 0.1, &#39;GB/s&#39;)</span>
+    <span class="c1">#:        }</span>
+    <span class="c1">#:    }</span>
     <span class="c1">#:</span>
     <span class="c1">#: :type: A scoped dictionary with system names as scopes or :class:`None`</span>
     <span class="c1">#: :default: ``{}``</span>
@@ -658,6 +685,7 @@
                                            <span class="n">SystemPartition</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
     <span class="n">_current_environ</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_current_environ&#39;</span><span class="p">,</span>
                                          <span class="n">Environment</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+    <span class="n">_user_environ</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_user_environ&#39;</span><span class="p">,</span> <span class="n">Environment</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
     <span class="n">_job</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_job&#39;</span><span class="p">,</span> <span class="n">Job</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
     <span class="n">_build_job</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">TypedField</span><span class="p">(</span><span class="s1">&#39;_build_job&#39;</span><span class="p">,</span> <span class="n">Job</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
 
@@ -734,6 +762,7 @@
         <span class="c1"># Runtime information of the test</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Associated job</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_job</span> <span class="o">=</span> <span class="kc">None</span>
@@ -941,12 +970,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span> <span class="o">=</span> <span class="n">environ</span>
 
-        <span class="c1"># Add user modules and variables to the environment</span>
-        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">set_variable</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="c1"># Set up user environment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 
         <span class="c1"># Temporarily load the test&#39;s environment to record the actual module</span>
         <span class="c1"># load/unload sequence</span>
@@ -955,8 +981,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;loading environment for the current partition&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;loading test&#39;s environment&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;loading current programming environment&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;loading user&#39;s environment&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
         <span class="n">environ_save</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_setup_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1141,7 +1170,8 @@
             <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">build_system</span><span class="o">.</span><span class="n">emit_build_commands</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">),</span>
             <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">postbuild_cmd</span>
         <span class="p">]</span>
-        <span class="n">environs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">]</span>
+        <span class="n">environs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_build_job</span> <span class="o">=</span> <span class="n">getscheduler</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)(</span>
             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;rfm_</span><span class="si">%s</span><span class="s1">_build&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">launcher</span><span class="o">=</span><span class="n">getlauncher</span><span class="p">(</span><span class="s1">&#39;local&#39;</span><span class="p">)(),</span>
@@ -1180,7 +1210,8 @@
         <span class="n">exec_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">launcher</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">job</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">executable_opts</span><span class="p">]</span>
         <span class="n">commands</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_run</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exec_cmd</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">post_run</span><span class="p">]</span>
-        <span class="n">environs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">]</span>
+        <span class="n">environs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span><span class="p">]</span>
         <span class="k">with</span> <span class="n">os_ext</span><span class="o">.</span><span class="n">change_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stagedir</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">commands</span><span class="p">,</span> <span class="n">environs</span><span class="p">,</span> <span class="n">login</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1256,20 +1287,18 @@
             <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">expr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">perf_patterns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">:</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">SanityError</span><span class="p">(</span>
                         <span class="s2">&quot;tag `</span><span class="si">%s</span><span class="s2">&#39; not resolved in references for `</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span>
                         <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">fullname</span><span class="p">))</span>
 
                 <span class="n">perf_values</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_perf_logger</span><span class="o">.</span><span class="n">log_performance</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span>
-                                                  <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">)</span>
+                                                  <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
             <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">reference</span> <span class="ow">in</span> <span class="n">perf_values</span><span class="p">:</span>
-                <span class="n">refval</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span> <span class="o">=</span> <span class="n">reference</span>
-                <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_reference</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">refval</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">))</span></div>
+                <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">reference</span>
+                <span class="n">evaluate</span><span class="p">(</span><span class="n">assert_reference</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ref</span><span class="p">,</span> <span class="n">low_thres</span><span class="p">,</span> <span class="n">high_thres</span><span class="p">))</span></div>
 
     <span class="k">def</span> <span class="nf">_copy_job_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">dst</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">job</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1316,6 +1345,7 @@
 
         <span class="k">if</span> <span class="n">unload_env</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;unloading test&#39;s environment&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_user_environ</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_environ</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_partition</span><span class="o">.</span><span class="n">local_env</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span></div>
 
@@ -1490,6 +1520,7 @@
             <dd><a href="../../../../v2.13/index.html">v2.13</a></dd>
             <dd><a href="../../../../v2.14/index.html">v2.14</a></dd>
             <dd><a href="../../../../v2.15/index.html">v2.15</a></dd>
+            <dd><a href="../../../../v2.16/index.html">v2.16</a></dd>
             <dd><a href="../../../../v2.7/index.html">v2.7</a></dd>
             <dd><a href="../../../../v2.8/index.html">v2.8</a></dd>
             <dd><a href="../../../../v2.9/index.html">v2.9</a></dd>
@@ -1509,7 +1540,7 @@
       <script type="text/javascript">
           var DOCUMENTATION_OPTIONS = {
               URL_ROOT:'../../../',
-              VERSION:'2.15',
+              VERSION:'2.16',
               LANGUAGE:'None',
               COLLAPSE_INDEX:false,
               FILE_SUFFIX:'.html',

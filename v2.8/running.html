@@ -190,7 +190,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="running-reframe">
-<span id="running-reframe"></span><h1>Running ReFrame<a class="headerlink" href="#running-reframe" title="Permalink to this headline">¶</a></h1>
+<h1>Running ReFrame<a class="headerlink" href="#running-reframe" title="Permalink to this headline">¶</a></h1>
 <p>Before getting into any details, the simplest way to invoke ReFrame is the following:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c /path/to/checks -R --run
 </pre></div>
@@ -205,7 +205,7 @@
 <p>In the following, we will elaborate on these phases and the key command-line options controlling them.
 A detailed listing of all the command-line options grouped by phase is given by <code class="docutils literal"><span class="pre">./bin/reframe</span> <span class="pre">-h</span></code>.</p>
 <div class="section" id="supported-actions">
-<span id="supported-actions"></span><h2>Supported Actions<a class="headerlink" href="#supported-actions" title="Permalink to this headline">¶</a></h2>
+<h2>Supported Actions<a class="headerlink" href="#supported-actions" title="Permalink to this headline">¶</a></h2>
 <p>Even though an action is the last phase that the front-end goes through, we are listing it first since an action is always required.
 Currently there are only two available actions:</p>
 <ol class="simple">
@@ -213,7 +213,7 @@ Currently there are only two available actions:</p>
 <li>Execution of the selected checks</li>
 </ol>
 <div class="section" id="listing-of-the-regression-tests">
-<span id="listing-of-the-regression-tests"></span><h3>Listing of the regression tests<a class="headerlink" href="#listing-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
+<h3>Listing of the regression tests<a class="headerlink" href="#listing-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
 <p>To retrieve a listing of the selected checks, you must specify the <code class="docutils literal"><span class="pre">-l</span></code> or <code class="docutils literal"><span class="pre">--list</span></code> options.
 An example listing of checks is the following that lists all the tests found under the <code class="docutils literal"><span class="pre">tutorial/</span></code> folder:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial -l
@@ -267,7 +267,7 @@ Note that this listing may also contain checks that are not supported by the cur
 These checks will be just skipped if you try to run them.</p>
 </div>
 <div class="section" id="execution-of-the-regression-tests">
-<span id="execution-of-the-regression-tests"></span><h3>Execution of the regression tests<a class="headerlink" href="#execution-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
+<h3>Execution of the regression tests<a class="headerlink" href="#execution-of-the-regression-tests" title="Permalink to this headline">¶</a></h3>
 <p>To run the regression tests you should specify the <em>run</em> action though the <code class="docutils literal"><span class="pre">-r</span></code> or <code class="docutils literal"><span class="pre">--run</span></code> options.</p>
 <blockquote>
 <div>NOTE: The listing action takes precedence over the execution, meaning that if you specify both <code class="docutils literal"><span class="pre">-l</span> <span class="pre">-r</span></code>, only the listing action will be performed.</div></blockquote>
@@ -323,7 +323,7 @@ These checks will be just skipped if you try to run them.</p>
 </div>
 </div>
 <div class="section" id="discovery-of-regression-tests">
-<span id="discovery-of-regression-tests"></span><h2>Discovery of Regression Tests<a class="headerlink" href="#discovery-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<h2>Discovery of Regression Tests<a class="headerlink" href="#discovery-of-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>When ReFrame is invoked, it tries to locate regression tests in a predefined path.
 By default, this path is the <code class="docutils literal"><span class="pre">&lt;reframe-install-dir&gt;/checks</span></code>.
 You can also retrieve this path as follows:</p>
@@ -352,11 +352,11 @@ This is very useful when you are implementing new regression tests, since it all
 </div>
 </div>
 <div class="section" id="filtering-of-regression-tests">
-<span id="filtering-of-regression-tests"></span><h2>Filtering of Regression Tests<a class="headerlink" href="#filtering-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<h2>Filtering of Regression Tests<a class="headerlink" href="#filtering-of-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>At this phase you can select which regression tests should be run or listed.
 There are several ways to select regression tests, which we describe in more detail here:</p>
 <div class="section" id="selecting-tests-by-programming-environment">
-<span id="selecting-tests-by-programming-environment"></span><h3>Selecting tests by programming environment<a class="headerlink" href="#selecting-tests-by-programming-environment" title="Permalink to this headline">¶</a></h3>
+<h3>Selecting tests by programming environment<a class="headerlink" href="#selecting-tests-by-programming-environment" title="Permalink to this headline">¶</a></h3>
 <p>To select tests by the programming environment, use the <code class="docutils literal"><span class="pre">-p</span></code> or <code class="docutils literal"><span class="pre">--prgenv</span></code> options:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -p PrgEnv-gnu -l
 </pre></div>
@@ -370,7 +370,7 @@ For example the following will select all the checks that can run with both <cod
 <p>If you are going to run a set of tests selected by programming environment, they will run only for the selected programming environment(s).</p>
 </div>
 <div class="section" id="selecting-tests-by-tags">
-<span id="selecting-tests-by-tags"></span><h3>Selecting tests by tags<a class="headerlink" href="#selecting-tests-by-tags" title="Permalink to this headline">¶</a></h3>
+<h3>Selecting tests by tags<a class="headerlink" href="#selecting-tests-by-tags" title="Permalink to this headline">¶</a></h3>
 <p>As we have seen in the <a class="reference external" href="tutorial.html">“ReFrame tutorial”</a>, every regression test may be associated with a set of tags.
 Using the <code class="docutils literal"><span class="pre">-t</span></code> or <code class="docutils literal"><span class="pre">--tag</span></code> option you can select the regression tests associated with a specific tag.
 For example the following will list all the tests that have a <code class="docutils literal"><span class="pre">maintenance</span></code> tag:</p>
@@ -381,7 +381,7 @@ For example the following will list all the tests that have a <code class="docut
 The list of tags associated with a check can be viewed in the listing output when specifying the <code class="docutils literal"><span class="pre">-l</span></code> option.</p>
 </div>
 <div class="section" id="selecting-tests-by-name">
-<span id="selecting-tests-by-name"></span><h3>Selecting tests by name<a class="headerlink" href="#selecting-tests-by-name" title="Permalink to this headline">¶</a></h3>
+<h3>Selecting tests by name<a class="headerlink" href="#selecting-tests-by-name" title="Permalink to this headline">¶</a></h3>
 <p>It is possible to select or exclude tests by name through the <code class="docutils literal"><span class="pre">--name</span></code> or <code class="docutils literal"><span class="pre">-n</span></code> and <code class="docutils literal"><span class="pre">--exclude</span></code> or <code class="docutils literal"><span class="pre">-x</span></code> options.
 For example, you can select only the <code class="docutils literal"><span class="pre">example7_check</span></code> from the tutorial as follows:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>./bin/reframe -c tutorial n example7_check -l
@@ -449,7 +449,7 @@ For example, you can select only the <code class="docutils literal"><span class=
 </div>
 </div>
 <div class="section" id="controlling-the-execution-of-regression-tests">
-<span id="controlling-the-execution-of-regression-tests"></span><h2>Controlling the Execution of Regression Tests<a class="headerlink" href="#controlling-the-execution-of-regression-tests" title="Permalink to this headline">¶</a></h2>
+<h2>Controlling the Execution of Regression Tests<a class="headerlink" href="#controlling-the-execution-of-regression-tests" title="Permalink to this headline">¶</a></h2>
 <p>There are several options for controlling the execution of regression tests.
 Keep in mind that these options will affect all the tests that will run with the current invocation.
 They are summarized below:</p>
@@ -485,7 +485,7 @@ For example, if you know that a tests supports only <code class="docutils litera
 </div>
 </div>
 <div class="section" id="configuring-reframe-directories">
-<span id="configuring-reframe-directories"></span><h2>Configuring ReFrame Directories<a class="headerlink" href="#configuring-reframe-directories" title="Permalink to this headline">¶</a></h2>
+<h2>Configuring ReFrame Directories<a class="headerlink" href="#configuring-reframe-directories" title="Permalink to this headline">¶</a></h2>
 <p>ReFrame uses three basic directories during the execution of tests:</p>
 <ol class="simple">
 <li>The stage directory<ul>
@@ -548,7 +548,7 @@ This is useful if you want to check the directories that ReFrame will create.</p
 The command line options, though, take always precedence over any default directory.</p>
 </div>
 <div class="section" id="logging">
-<span id="logging"></span><h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
+<h2>Logging<a class="headerlink" href="#logging" title="Permalink to this headline">¶</a></h2>
 <p>From version 2.4 onward, ReFrame supports logging of its actions.
 ReFrame creates two files inside the current working directory every time it is run:</p>
 <ul class="simple">
@@ -586,7 +586,7 @@ ReFrame creates two files inside the current working directory every time it is 
 <p>Every time ReFrame is run, both <code class="docutils literal"><span class="pre">reframe.out</span></code> and <code class="docutils literal"><span class="pre">reframe.log</span></code> files will be rewritten.
 However, you can ask ReFrame to copy them to the output directory before exiting by passing it the <code class="docutils literal"><span class="pre">--save-log-files</span></code> option.</p>
 <div class="section" id="configuring-logging">
-<span id="configuring-logging"></span><h3>Configuring logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
+<h3>Configuring logging<a class="headerlink" href="#configuring-logging" title="Permalink to this headline">¶</a></h3>
 <p>You can configure several aspects of logging in ReFrame and even how the output will look like.
 ReFrame’s logging mechanism is built upon Python’s <a class="reference external" href="https://docs.python.org/3.6/library/logging.html">logging</a> framework adding extra logging levels and more formatting capabilities.</p>
 <p>Logging in ReFrame is configured by the <code class="docutils literal"><span class="pre">_logging_config</span></code> variable in the <code class="docutils literal"><span class="pre">reframe/settings.py</span></code> file.
@@ -653,7 +653,7 @@ This property is ignored for the standard output/error handlers.</li>
 </ul>
 </div>
 <div class="section" id="performance-logging">
-<span id="performance-logging"></span><h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
+<h3>Performance Logging<a class="headerlink" href="#performance-logging" title="Permalink to this headline">¶</a></h3>
 <p>ReFrame supports additional logging for performance tests specifically, in order to record historical performance data.
 For each performance test, a log file of the form <code class="docutils literal"><span class="pre">&lt;test-name&gt;.log</span></code> is created under the ReFrame’s <a class="reference external" href="#configuring-reframe-directories">log directory</a> where the test’s performance is recorded.
 The default format used for this file is <code class="docutils literal"><span class="pre">'[%(asctime)s]</span> <span class="pre">%(testcase_name)s</span> <span class="pre">(jobid=%(check_jobid)s):</span> <span class="pre">%(message)s'</span></code> and ReFrame always appends to this file.
@@ -670,7 +670,7 @@ The reference value is a three-element tuple of the form <code class="docutils l
 </div>
 </div>
 <div class="section" id="asynchronous-execution-of-regression-checks">
-<span id="asynchronous-execution-of-regression-checks"></span><h2>Asynchronous Execution of Regression Checks<a class="headerlink" href="#asynchronous-execution-of-regression-checks" title="Permalink to this headline">¶</a></h2>
+<h2>Asynchronous Execution of Regression Checks<a class="headerlink" href="#asynchronous-execution-of-regression-checks" title="Permalink to this headline">¶</a></h2>
 <p>From version <a class="reference external" href="https://github.com/eth-cscs/reframe/releases/tag/v2.4">2.4</a>, ReFrame supports asynchronous execution of regression tests.
 This execution policy can be enabled by passing the option <code class="docutils literal"><span class="pre">--exec-policy=async</span></code> to the command line.
 The default execution policy is <code class="docutils literal"><span class="pre">serial</span></code> which enforces a sequential execution of the selected regression tests.
@@ -840,6 +840,7 @@ For compile-only and normal tests that require a compilation, the execution time
             <dd><a href="../v2.13/running.html">v2.13</a></dd>
             <dd><a href="../v2.14/running.html">v2.14</a></dd>
             <dd><a href="../v2.15/running.html">v2.15</a></dd>
+            <dd><a href="../v2.16/running.html">v2.16</a></dd>
             <dd><a href="../v2.7/running.html">v2.7</a></dd>
             <dd><a href="running.html">v2.8</a></dd>
             <dd><a href="../v2.9/running.html">v2.9</a></dd>
