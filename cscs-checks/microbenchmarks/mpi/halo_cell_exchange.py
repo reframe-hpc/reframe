@@ -30,31 +30,40 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.perf_patterns = {
             'time_2_10': sn.extractsingle(
                 r'halo_cell_exchange 6 2 1 1 10 10 10'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_2_10000': sn.extractsingle(
                 r'halo_cell_exchange 6 2 1 1 10000 10000 10000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_2_1000000': sn.extractsingle(
                 r'halo_cell_exchange 6 2 1 1 1000000 1000000 1000000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_4_10': sn.extractsingle(
                 r'halo_cell_exchange 6 2 2 1 10 10 10'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_4_10000': sn.extractsingle(
                 r'halo_cell_exchange 6 2 2 1 10000 10000 10000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_4_1000000': sn.extractsingle(
                 r'halo_cell_exchange 6 2 2 1 1000000 1000000 1000000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_6_10': sn.extractsingle(
                 r'halo_cell_exchange 6 3 2 1 10 10 10'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_6_10000': sn.extractsingle(
                 r'halo_cell_exchange 6 3 2 1 10000 10000 10000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float),
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float),
             'time_6_1000000': sn.extractsingle(
                 r'halo_cell_exchange 6 3 2 1 1000000 1000000 1000000'
-                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout, 'time_mpi', float)
+                r' (?P<dummy>\S+) (?P<time_mpi>\S+)', self.stdout,
+                'time_mpi', float)
         }
 
         # the kesch values need to be added
