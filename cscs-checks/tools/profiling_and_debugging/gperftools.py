@@ -57,7 +57,8 @@ class GperftoolsCheck(rfm.RegressionTest):
             'CPUPROFILE': self.rpt_file,
         }
         self.post_run = [
-            'pprof --text ./perftools_check $CPUPROFILE &> %s' % self.rpt_file_txt
+            'pprof --text ./perftools_check $CPUPROFILE &> %s'
+                % self.rpt_file_txt
         ]
 
     def setup(self, environ, partition, **job_opts):
