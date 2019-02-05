@@ -1158,10 +1158,14 @@ class RegressionTest:
 
         # Copy files specified by the user
         for f in self.keep_files:
+            filename = f
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
 
-            shutil.copy(f, self.outputdir)
+            if os.path.isfile(f):
+                shutil.copy(f, self.outputdir)
+            elif os.path.isdir(f):
+                shutil.copytree(f, os.path.join(self.outputdir, filename))
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
