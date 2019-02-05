@@ -119,7 +119,7 @@ class TestRegressionTest(unittest.TestCase):
         # Test also the prebuild/postbuild functionality
         test.prebuild_cmd  = ['touch prebuild']
         test.postbuild_cmd = ['touch postbuild']
-        test.keepfiles = ['prebuild', 'postbuild']
+        test.keep_files = ['prebuild', 'postbuild']
 
         # Force local execution of the test
         test.local = True
