@@ -580,6 +580,12 @@ class LModImpl(TModImpl):
                 # Tmod syntax
                 ret.append(Module(conflict_arg))
 
+        for m in re.finditer(r'family\s*(\S+)', completed.stderr):
+            conflict_arg = m.group(1)
+            if conflict_arg.startswith('('):
+                # Lua syntax
+                ret.append(Module(conflict_arg.strip('\'"()')))
+
         return ret
 
     def unload_all(self):
