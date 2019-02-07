@@ -296,11 +296,12 @@ class TestLoggingConfiguration(unittest.TestCase):
             'level': 'INFO',
             'handlers': [
                 {'type': 'stream', 'name': 'stderr'},
-                {'type': 'file', 'name': self.logfile}
+                {'type': 'file', 'name': self.logfile},
+                {'type': 'syslog'}
             ],
         }
         rlog.configure_logging(self.logging_config)
-        self.assertEqual(len(rlog.getlogger().logger.handlers), 2)
+        self.assertEqual(len(rlog.getlogger().logger.handlers), 3)
 
     def test_file_handler_timestamp(self):
         self.logging_config['handlers'][0]['timestamp'] = '%F'

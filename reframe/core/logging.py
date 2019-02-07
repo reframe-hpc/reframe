@@ -197,6 +197,10 @@ def _create_filelog_handler(handler_config):
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
 
 
+def _create_syslog_handler(handler_config):
+    return logging.handlers.SysLogHandler(address = '/dev/log')
+
+
 def _create_stream_handler(handler_config):
     stream = handler_config.get('name', 'stdout')
     if stream == 'stdout':
@@ -258,6 +262,8 @@ def _extract_handlers(handlers_list):
             hdlr = _create_file_handler(handler_config)
         elif handler_type == 'filelog':
             hdlr = _create_filelog_handler(handler_config)
+        elif handler_type == 'syslog':
+            hdlr = _create_syslog_handler(handler_config)
         elif handler_type == 'stream':
             hdlr = _create_stream_handler(handler_config)
         elif handler_type == 'graylog':
