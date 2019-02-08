@@ -40,7 +40,8 @@ class DGEMMTest(rfm.RegressionTest):
         if environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
         elif environ.name.startswith('PrgEnv-intel'):
-            self.build_system.cppflags = ['-DMKL_ILP64', '-I${MKLROOT}/include']
+            self.build_system.cppflags = [
+                '-DMKL_ILP64', '-I${MKLROOT}/include']
             self.build_system.cflags = ['-qopenmp']
             self.build_system.ldflags = [
                 '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
