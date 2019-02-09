@@ -137,7 +137,3 @@ class PbsJob(sched.Job):
             time_from_finish = (t_now - self._time_finished).total_seconds()
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT
-
-    @property
-    def nodelist(self):
-        raise NotImplementedError('pbs backend does not support node listing')

@@ -1,6 +1,7 @@
 import abc
 import os
 import re
+import socket
 import tempfile
 import time
 import unittest
@@ -106,9 +107,15 @@ class _TestJob:
     def test_submit(self):
         self.setup_user()
         self.testjob.prepare(self.commands, self.environs)
+        self.assertIsNone(self.testjob.nodelist)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
+
+    def assert_nodelist(self):
+        num_tasks_per_node = self.testjob.num_tasks_per_node or 1
+        num_nodes = self.testjob.num_tasks // num_tasks_per_node
+        self.assertEqual(num_nodes, len(self.testjob.nodelist))
 
     @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
@@ -202,6 +209,8 @@ class TestLocalJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
+        self.assert_nodelist()
+        self.assertEqual([socket.gethostname()], self.testjob.nodelist)
 
     def test_submit_timelimit(self):
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
@@ -373,6 +382,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
+        self.assert_nodelist()
 
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
@@ -408,8 +418,9 @@ class TestSqueueJob(TestSlurmJob):
         self.testjob.options += partition.access
 
     def test_submit(self):
-        # Squeue backend may not set the exitcode; bypass ourp parent's submit
+        # Squeue backend may not set the exitcode; bypass our parent's submit
         _TestJob.test_submit(self)
+        self.assert_nodelist()
 
 
 class TestPbsJob(_TestJob, unittest.TestCase):

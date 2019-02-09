@@ -245,33 +245,18 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
-    @property
-    def nodelist(self):
-        super().nodelist()
-        completed = self._run_command(
-            'sacct -P -o jobid,nodelist -j %d' % self._jobid)
-
-        match = re.search(r'^(?P<jobid>\d+)\|(?P<nodelist>\S+)',
-                          completed.stdout, re.MULTILINE)
-        if match is None:
-            getlogger().debug('job id not matched (stdout follows)\n%s' %
-                              completed.stdout)
-            return None
-
-        return [n.name for n in
-                self._get_nodes_by_name(match.group('nodelist'))]
-
     def _update_state(self):
         """Check the status of the job."""
 
         completed = self._run_command(
-            'sacct -S %s -P -j %s -o jobid,state,exitcode' %
+            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
             (datetime.now().strftime('%F'), self._jobid)
         )
         self._update_state_count += 1
-        state_match = re.search(r'^(?P<jobid>\d+)\|(?P<state>\S+)([^\|]*)\|'
-                                r'(?P<exitcode>\d+)\:(?P<signal>\d+)',
-                                completed.stdout, re.MULTILINE)
+        state_match = re.search(
+            r'^(?P<jobid>\d+)\|(?P<state>\S+)([^\|]*)\|'
+            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
+            completed.stdout, re.MULTILINE)
         if state_match is None:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
                               completed.stdout)
@@ -283,6 +268,13 @@ class SlurmJob(sched.Job):
 
         if self._state in self._completion_states:
             self._exitcode = int(state_match.group('exitcode'))
+
+        if (self._nodelist is None and
+            self._state not in self._completion_states):
+            self._nodelist = [
+                n.name for n in
+                self._get_nodes_by_name(state_match.group('nodespec'))
+            ]
 
     def _cancel_if_blocked(self):
         if self._is_cancelling or self._state not in self._pending_states:
@@ -379,7 +371,6 @@ class SqueueJob(SlurmJob):
         self.submit_time = None
         self.squeue_delay = 2
         self._cancelled = False
-        self._nodelist = None
 
     def submit(self):
         super().submit()
@@ -413,7 +404,8 @@ class SqueueJob(SlurmJob):
         self._state = SlurmJobState(state_match.group('state'))
         nodespec = state_match.group('nodespec')
         if nodespec:
-            self._nodelist = [n.name for n in self._get_nodes_by_name(nodespec)]
+            self._nodelist = [n.name for n
+                              in self._get_nodes_by_name(nodespec)]
 
         if not self._is_cancelling and self._state in self._pending_states:
             self._check_and_cancel(state_match.group('reason'))
@@ -424,11 +416,6 @@ class SqueueJob(SlurmJob):
         # _update_state() will make sure to return the approriate state.
         super().cancel()
         self._cancelled = True
-
-    @property
-    def nodelist(self):
-        super().nodelist()
-        return self._nodelist
 
 
 class SlurmNode:

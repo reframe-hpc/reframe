@@ -98,6 +98,7 @@ class Job(abc.ABC):
         self._stdout = stdout or os.path.join(workdir, '%s.out' % name)
         self._stderr = stderr or os.path.join(workdir, '%s.err' % name)
         self._time_limit = time_limit
+        self._nodelist = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
@@ -307,16 +308,16 @@ class Job(abc.ABC):
         if self._jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
 
-    @abc.abstractmethod
+    @property
     def nodelist(self):
-        """The nodelist assigned to this job.
+        """The list of node names assigned to this job.
 
-        This attribute is useful in a flexible regression test for determining
-        the actual nodes that scheduler assigned to the test.
+        This attribute is :class:`None` if no nodes are assigned yet to the job.
+
+        You may use this attribute in a flexible regression test for
+        determining the actual nodes that were assigned to the test.
 
         For more information on flexible task allocation, please refer to the
         `tutorial <advanced.html#flexible-regression-tests>`__.
         """
-        if self._jobid is None:
-            raise JobNotStartedError('cannot get the nodelist of an unstarted '
-                                     'job')
+        return self._nodelist

@@ -1,6 +1,7 @@
 import os
 import re
 import signal
+import socket
 import stat
 import subprocess
 import time
@@ -55,6 +56,7 @@ class LocalJob(sched.Job):
 
         # Update job info
         self._jobid = self._proc.pid
+        self._nodelist = [socket.gethostname()]
 
     def emit_preamble(self):
         return []
@@ -185,13 +187,3 @@ class LocalJob(sched.Job):
             return False
 
         return True
-
-    @property
-    def nodelist(self):
-        super().nodelist()
-        completed = self._run_command('hostname')
-        match = re.search(r'^(?P<node>\S+)', completed.stdout, re.MULTILINE)
-        if match is None:
-            return None
-
-        return [match.group('node')]

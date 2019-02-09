@@ -28,9 +28,6 @@ class FakeJob(Job):
     def filter_nodes(self, nodes):
         pass
 
-    def nodelist(self):
-        pass
-
 
 class _TestLauncher(abc.ABC):
     """Base class for launcher tests."""
