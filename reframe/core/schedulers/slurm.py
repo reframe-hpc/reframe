@@ -1,3 +1,4 @@
+import functools
 import itertools
 import re
 import time
@@ -31,6 +32,9 @@ SLURM_JOB_RESIZING    = SlurmJobState('RESIZING')
 SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
 SLURM_JOB_SUSPENDED   = SlurmJobState('SUSPENDED')
 SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
+
+
+_run_strict = functools.partial(os_ext.run_command, check=True)
 
 
 @register_scheduler('slurm')
@@ -137,16 +141,9 @@ class SlurmJob(sched.Job):
         # Filter out empty statements before returning
         return list(filter(None, preamble))
 
-    def _run_command(self, cmd, timeout=None):
-        """Run command cmd and re-raise any exception as a JobError."""
-        try:
-            return os_ext.run_command(cmd, check=True, timeout=timeout)
-        except SpawnedProcessError as e:
-            raise JobError(jobid=self._jobid) from e
-
     def submit(self):
         cmd = 'sbatch %s' % self.script_filename
-        completed = self._run_command(cmd, settings().job_submit_timeout)
+        completed = _run_strict(cmd, timeout=settings().job_submit_timeout)
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
@@ -157,8 +154,7 @@ class SlurmJob(sched.Job):
 
     def _get_all_nodes(self):
         try:
-            completed = os_ext.run_command('scontrol -a show -o nodes',
-                                           check=True)
+            completed = _run_strict('scontrol -a show -o nodes')
         except SpawnedProcessError as e:
             raise JobError('could not retrieve node information') from e
 
@@ -220,8 +216,7 @@ class SlurmJob(sched.Job):
         return nodes
 
     def _get_reservation_nodes(self, reservation):
-        completed = os_ext.run_command('scontrol -a show res %s' % reservation,
-                                       check=True)
+        completed = _run_strict('scontrol -a show res %s' % reservation)
         node_match = re.search(r'(Nodes=\S+)', completed.stdout)
         if node_match:
             reservation_nodes = node_match[1]
@@ -229,15 +224,13 @@ class SlurmJob(sched.Job):
             raise JobError("could not extract the nodes names for "
                            "reservation '%s'" % valid_reservation)
 
-        completed = os_ext.run_command(
-            'scontrol -a show -o %s' % reservation_nodes, check=True)
+        completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
     def _get_nodes_by_name(self, nodespec):
         try:
-            completed = os_ext.run_command(
-                'scontrol -a show -o node %s' % nodespec, check=True)
+            completed = _run_strict('scontrol -a show -o node %s' % nodespec)
         except SpawnedProcessError as e:
             raise JobError('could not retrieve the node description '
                            'of nodes: %s' % nodespec) from e
@@ -248,7 +241,7 @@ class SlurmJob(sched.Job):
     def _update_state(self):
         """Check the status of the job."""
 
-        completed = self._run_command(
+        completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
             (datetime.now().strftime('%F'), self._jobid)
         )
@@ -280,7 +273,7 @@ class SlurmJob(sched.Job):
         if self._is_cancelling or self._state not in self._pending_states:
             return
 
-        completed = self._run_command('squeue -h -j %s -o %%r' % self._jobid)
+        completed = _run_strict('squeue -h -j %s -o %%r' % self._jobid)
         if not completed.stdout:
             # Can't retrieve job's state. Perhaps it has finished already and
             # does not show up in the output of squeue
@@ -342,8 +335,8 @@ class SlurmJob(sched.Job):
     def cancel(self):
         super().cancel()
         getlogger().debug('cancelling job (id=%s)' % self._jobid)
-        self._run_command('scancel %s' % self._jobid,
-                          settings().job_submit_timeout)
+        _run_strict('scancel %s' % self._jobid,
+                    timeout=settings().job_submit_timeout)
         self._is_cancelling = True
 
     def finished(self):
@@ -385,8 +378,8 @@ class SqueueJob(SlurmJob):
         # We don't run the command with check=True, because if the job has
         # finished already, squeue might return an error about an invalid
         # job id.
-        completed = self._run_command('squeue -h -j %s -o "%%T|%%N|%%r"' %
-                                      self._jobid)
+        completed = os_ext.run_command('squeue -h -j %s -o "%%T|%%N|%%r"' %
+                                       self._jobid)
         state_match = re.search(r'^(?P<state>\S+)\|(?P<nodespec>\S*)\|'
                                 r'(?P<reason>.+)', completed.stdout)
 

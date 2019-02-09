@@ -61,13 +61,6 @@ class LocalJob(sched.Job):
     def emit_preamble(self):
         return []
 
-    def _run_command(self, cmd, timeout=None):
-        """Run command cmd and re-raise any exception as a JobError."""
-        try:
-            return os_ext.run_command(cmd, check=True, timeout=timeout)
-        except SpawnedProcessError as e:
-            raise JobError(jobid=self._jobid) from e
-
     def get_partition_nodes(self):
         raise NotImplementedError(
             'local scheduler does not support listing of available nodes')
