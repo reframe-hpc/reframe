@@ -238,6 +238,14 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
+    def _set_nodelist(self, nodespec):
+        if self._nodelist is not None:
+            return
+
+        if nodespec and nodespec != 'None assigned':
+            self._nodelist = [n.name for n in
+                              self._get_nodes_by_name(nodespec)]
+
     def _update_state(self):
         """Check the status of the job."""
 
@@ -262,12 +270,7 @@ class SlurmJob(sched.Job):
         if self._state in self._completion_states:
             self._exitcode = int(state_match.group('exitcode'))
 
-        if (self._nodelist is None and
-            self._state not in self._completion_states):
-            self._nodelist = [
-                n.name for n in
-                self._get_nodes_by_name(state_match.group('nodespec'))
-            ]
+        self._set_nodelist(state_match.group('nodespec'))
 
     def _cancel_if_blocked(self):
         if self._is_cancelling or self._state not in self._pending_states:
@@ -395,11 +398,7 @@ class SqueueJob(SlurmJob):
             return
 
         self._state = SlurmJobState(state_match.group('state'))
-        nodespec = state_match.group('nodespec')
-        if nodespec:
-            self._nodelist = [n.name for n
-                              in self._get_nodes_by_name(nodespec)]
-
+        self._set_nodelist(state_match.group('nodespec'))
         if not self._is_cancelling and self._state in self._pending_states:
             self._check_and_cancel(state_match.group('reason'))
 
