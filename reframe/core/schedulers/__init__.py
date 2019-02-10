@@ -312,12 +312,25 @@ class Job(abc.ABC):
     def nodelist(self):
         """The list of node names assigned to this job.
 
-        This attribute is :class:`None` if no nodes are assigned yet to the job.
+        This attribute is :class:`None` if no nodes are assigned to the job
+        yet.
+        This attribute is set reliably only for the ``slurm`` backend, i.e.,
+        Slurm *with* accounting enabled.
+        The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
+        might not set this attribute for jobs that finish very quickly.
+        For the ``local`` scheduler backend, this returns an one-element list
+        containing the hostname of the current host.
 
-        You may use this attribute in a flexible regression test for
+        This attribute might be useful in a flexible regression test for
         determining the actual nodes that were assigned to the test.
 
         For more information on flexible task allocation, please refer to the
-        `tutorial <advanced.html#flexible-regression-tests>`__.
+        corresponding `section <advanced.html#flexible-regression-tests>`__ of
+        the tutorial.
+
+        This attribute is *not* supported by the ``pbs`` scheduler backend.
+
+        .. versionadded:: 2.17
+
         """
         return self._nodelist
