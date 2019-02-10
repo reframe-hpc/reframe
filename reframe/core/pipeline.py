@@ -255,9 +255,15 @@ class RegressionTest:
 
     #: Number of tasks required by this test.
     #:
-    #: If the number of tasks is set to ``0``, ReFrame will try to flexibly
-    #: allocate the number of tasks, based on the command line option
-    #: ``--flex-alloc-tasks``.
+    #: If the number of tasks is set to a number ``<=0``, ReFrame will try
+    #: to flexibly allocate the number of tasks, based on the command line
+    #: option ``--flex-alloc-tasks``.
+    #: A negative number is used to indicate the minimum number of tasks
+    #: required for the test.
+    #: In this case the minimum number of tasks is the absolute value of
+    #: the number, while
+    #: Setting ``num_tasks`` to ``0`` is equivalent to setting it to
+    #: ``-num_tasks_per_node``.
     #:
     #: :type: integral
     #: :default: ``1``
@@ -269,6 +275,9 @@ class RegressionTest:
     #:        (see `Flexible task allocation
     #:        <running.html#flexible-task-allocation>`__)
     #:        if the number of tasks is set to ``0``.
+    #:     .. versionchanged:: 2.16
+    #:        Negative ``num_tasks`` is allowed for specifying the minimum
+    #:        number of required tasks by the test.
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -1117,7 +1126,7 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                if not key in self.reference:
+                if key not in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
@@ -1149,10 +1158,14 @@ class RegressionTest:
 
         # Copy files specified by the user
         for f in self.keep_files:
+            f_orig = f
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
 
-            shutil.copy(f, self.outputdir)
+            if os.path.isfile(f):
+                shutil.copy(f, self.outputdir)
+            elif os.path.isdir(f):
+                shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.

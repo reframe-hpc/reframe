@@ -1,25 +1,37 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class CPMDCheck(RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('cpmd_cpu_check', os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class CPMDCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
         self.descr = 'CPMD check (C4H6 metadynamics)'
+        self.maintainers = ['AJ', 'LM']
+        self.tags = {'production'}
+
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-intel']
+        self.modules = ['CPMD']
         self.executable = 'cpmd.x'
         self.executable_opts = ['ana_c4h6.in > stdout.txt']
+        self.readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
         if self.current_system.name == 'dom':
             self.num_tasks = 9
         else:
             self.num_tasks = 16
-
         self.num_tasks_per_node = 1
         self.use_multithreading = True
-
+        self.strict_check = False
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+        #  OpenMP version of CPMD segfaults
+        #  self.variables = { 'OMP_NUM_THREADS' : '8' }
         energy = sn.extractsingle(
             r'CLASSICAL ENERGY\s+-(?P<result>\S+)',
             'stdout.txt', 'result', float)
@@ -40,20 +52,3 @@ class CPMDCheck(RunOnlyRegressionTest):
             },
         }
 
-        self.modules = ['CPMD']
-        self.readonly_files = ['ana_c4h6.in', 'C_MT_BLYP', 'H_MT_BLYP']
-        #  OpenMP version of CPMD segfaults
-        #  self.variables = { 'OMP_NUM_THREADS' : '8' }
-
-        self.maintainers = ['AJ', 'LM']
-        self.tags = {'production'}
-        self.strict_check = False
-        self.extra_resources = {
-            'switches': {
-                'num_switches': 1
-            }
-        }
-
-
-def _get_checks(**kwargs):
-    return [CPMDCheck(**kwargs)]

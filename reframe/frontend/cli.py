@@ -227,6 +227,8 @@ def main():
         help='Print configuration of environment ENV and exit')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
+    misc_options.add_argument('-v', '--verbose', action='count', default=0,
+                              help='Increase verbosity level of output')
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -262,6 +264,8 @@ def main():
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
+    if options.verbose:
+        printer.inc_verbosity(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
