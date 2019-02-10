@@ -112,11 +112,6 @@ class _TestJob:
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
 
-    def assert_nodelist(self):
-        num_tasks_per_node = self.testjob.num_tasks_per_node or 1
-        num_nodes = self.testjob.num_tasks // num_tasks_per_node
-        self.assertEqual(num_nodes, len(self.testjob.nodelist))
-
     @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
         self.setup_user()
@@ -209,7 +204,6 @@ class TestLocalJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
-        self.assert_nodelist()
         self.assertEqual([socket.gethostname()], self.testjob.nodelist)
 
     def test_submit_timelimit(self):
@@ -382,7 +376,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
-        self.assert_nodelist()
+        num_tasks_per_node = self.testjob.num_tasks_per_node or 1
+        num_nodes = self.testjob.num_tasks // num_tasks_per_node
+        self.assertEqual(num_nodes, len(self.testjob.nodelist))
 
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
@@ -420,7 +416,6 @@ class TestSqueueJob(TestSlurmJob):
     def test_submit(self):
         # Squeue backend may not set the exitcode; bypass our parent's submit
         _TestJob.test_submit(self)
-        self.assert_nodelist()
 
 
 class TestPbsJob(_TestJob, unittest.TestCase):

@@ -385,7 +385,6 @@ class SqueueJob(SlurmJob):
                                        self._jobid)
         state_match = re.search(r'^(?P<state>\S+)\|(?P<nodespec>\S*)\|'
                                 r'(?P<reason>.+)', completed.stdout)
-
         if state_match is None:
             # Assume that job has finished
             self._state = (SLURM_JOB_CANCELLED if self._cancelled
