@@ -390,6 +390,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         # monkey patch `get_partition_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob.get_partition_nodes = lambda: set()
+        # monkey patch `_get_default_partition()` to simulate extraction
+        # of the default partition through the use of `scontrol show`
+        self.testjob._get_default_partition = lambda: {'pdef'}
         self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
 
