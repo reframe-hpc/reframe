@@ -165,6 +165,16 @@ class SlurmJob(sched.Job):
         node_descriptions = completed.stdout.splitlines()
         return {SlurmNode(descr) for descr in node_descriptions}
 
+    def _get_default_partition(self):
+        completed = os_ext.run_command('scontrol -a show -o partitions',
+                                       check=True)
+        partition_match = re.search(r'PartitionName=(?P<partition>\S+)\s+'
+                                    r'.*Default=YES.*', completed.stdout)
+        if not partition_match:
+            raise JobError('could not retrieve a default partition')
+
+        return {partition_match.group('partition')}
+
     def get_partition_nodes(self):
         nodes = self._get_all_nodes()
         return self.filter_nodes(nodes, self.sched_access)
@@ -191,10 +201,13 @@ class SlurmJob(sched.Job):
 
         if partitions:
             partitions = set(partitions.strip().split(','))
-            nodes = {n for n in nodes if n.partitions >= partitions}
-            getlogger().debug(
-                'flex_alloc_tasks: filtering nodes by partition(s) %s: '
-                'available nodes now: %s' % (partitions, len(nodes)))
+        else:
+            partitions = self._get_default_partition()
+
+        nodes = {n for n in nodes if n.partitions >= partitions}
+        getlogger().debug(
+            'flex_alloc_tasks: filtering nodes by partition(s) %s: '
+            'available nodes now: %s' % (partitions, len(nodes)))
 
         if constraints:
             constraints = set(constraints.strip().split(','))
