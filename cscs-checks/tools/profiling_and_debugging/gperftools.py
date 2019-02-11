@@ -9,15 +9,10 @@ import reframe.utility.sanity as sn
 class GperftoolsCheck(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu',
-                              'daint:mc', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
-
-        # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
-        # is correct, the batch job uses all the time.
-        self.time_limit = (0, 1, 0)
 
         self.num_gpus_per_node = 1
         self.executable = 'perftools_check'
