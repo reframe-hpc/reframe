@@ -44,3 +44,21 @@ The documentation is now up on [localhost:8000](http://localhost:8000), where yo
 In the `cscs-checks/` folder, you can find realistic regression tests used for the CSCS systems that you can reuse and adapt to your system.
 Notice that these tests are published as examples and may not run as-is in your system.
 However, they can serve as a very good starting point for implementing your system tests in ReFrame.
+
+
+## Contact
+
+You can get in contact with the ReFrame community in the following ways:
+
+### Mailing list
+
+For keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers, you may follow the mailing list: [reframe@sympa.cscs.ch](mailto:reframe@sympa.cscs.ch).
+
+Only subscribers may send messages to the list.
+To subscribe, please send an empty message to [reframe-subscribe@sympa.cscs.ch](mailto:reframe-subscribe@sympa.cscs.ch).
+
+For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.cscs.ch](mailto:reframe-unsubscribe@sympa.cscs.ch).
+
+### Slack
+
+You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).

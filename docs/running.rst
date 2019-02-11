@@ -829,6 +829,20 @@ The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTT
 More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
 
 
+Adjusting verbosity of output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ReFrame's output is handled by a logging mechanism.
+In fact, as revealed in the corresponding configuration entry (see `Configuring Logging <#configuring-logging>`__), a specific logging handler takes care of printing ReFrame's message in the standard output.
+One way to change the verbosity level of the output is by explicitly setting the value of the ``level`` key in the configuration of the output handler.
+Alternatively, you may increase the verbosity level from the command line by chaining the ``-v`` or ``--verbose`` option.
+Every time ``-v`` is specified, the next verbosity level will be selected for the output.
+For example, if the initial level of the output handler is set to ``INFO`` (in the configuration file), specifying ``-v`` twice will make ReFrame spit out all ``DEBUG`` messages.
+
+.. versionadded:: 2.16
+   ``-v`` and ``--verbose`` options are added.
+
+
 Asynchronous Execution of Regression Checks
 -------------------------------------------
 
@@ -1006,7 +1020,7 @@ Controlling the Flexible Task Allocation
 
 .. versionadded:: 2.15
 
-ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value ``<=0``.
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
 This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
 This option accepts three values:
