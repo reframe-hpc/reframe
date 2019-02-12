@@ -38,102 +38,71 @@ class TestCheckFilters(unittest.TestCase):
                 'num_gpus_per_node': 1})
         ]
 
-    def test_have_name(self):
-        self.assertEqual(1, sn.count(filter(filters.have_name('check1'),
-                                            self.checks)))
-        self.assertEqual(1, sn.count(filter(filters.have_name('check2'),
-                                            self.checks)))
-        self.assertEqual(1, sn.count(filter(filters.have_name('check3'),
-                                            self.checks)))
-        self.assertEqual(0, sn.count(filter(filters.have_name('check4'),
-                                            self.checks)))
 
-    def test_have_name_regexp(self):
+    def test_have_name(self):
         p = [re.compile('check1')]
-        self.assertEqual(1, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(1, sn.count(filter(filters.have_name(p),
                                             self.checks)))
         p = [re.compile('check')]
-        self.assertEqual(3, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(3, sn.count(filter(filters.have_name(p),
                                             self.checks)))
         p = [re.compile('.1|.3')]
-        self.assertEqual(2, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_name(p),
                                             self.checks)))
         p = [re.compile('Check')]
-        self.assertEqual(0, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(0, sn.count(filter(filters.have_name(p),
                                             self.checks)))
         p = [re.compile('(?i)Check')]
-        self.assertEqual(3, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(3, sn.count(filter(filters.have_name(p),
                                             self.checks)))
         p = [re.compile('check1'), re.compile('(?i)CHECK2')]
-        self.assertEqual(2, sn.count(filter(filters.have_name_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_name(p),
                                             self.checks)))
 
     def test_have_not_name(self):
-        self.assertEqual(2, sn.count(filter(filters.have_not_name('check1'),
-                                            self.checks)))
-
-    def test_have_not_name_regexp(self):
         p = [re.compile('check1')]
-        self.assertEqual(2, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
         p = [re.compile('check1'), re.compile('check3')]
-        self.assertEqual(1, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(1, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
         p = [re.compile('check1'), re.compile('check2'), re.compile('check3')]
-        self.assertEqual(0, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(0, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
         p = [re.compile('Check1')]
-        self.assertEqual(3, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(3, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
         p = [re.compile('Check1')]
-        self.assertEqual(3, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(3, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
         p = [re.compile('(?i)Check1')]
-        self.assertEqual(2, sn.count(filter(filters.have_not_name_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_not_name(p),
                                             self.checks)))
 
     def test_have_tags(self):
-        self.assertEqual(1, sn.count(filter(filters.have_tag(['a', 'c']),
-                                            self.checks)))
-        self.assertEqual(0, sn.count(filter(filters.have_tag(['p', 'q']),
-                                            self.checks)))
-        self.assertEqual(2, sn.count(filter(filters.have_tag(['z']),
-                                            self.checks)))
-
-    def test_have_tags_regexp(self):
         p = [re.compile('a'), re.compile('c')]
-        self.assertEqual(1, sn.count(filter(filters.have_tag_regexp(p),
+        self.assertEqual(1, sn.count(filter(filters.have_tag(p),
                                             self.checks)))
         p = [re.compile('p'), re.compile('q')]
-        self.assertEqual(0, sn.count(filter(filters.have_tag_regexp(p),
+        self.assertEqual(0, sn.count(filter(filters.have_tag(p),
                                             self.checks)))
         p = [re.compile('z')]
-        self.assertEqual(2, sn.count(filter(filters.have_tag_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_tag(p),
                                             self.checks)))
 
     def test_have_prgenv(self):
-        self.assertEqual(1, sn.count(filter(
-            filters.have_prgenv(['env1', 'env2']), self.checks)))
-        self.assertEqual(2, sn.count(filter(filters.have_prgenv(['env3']),
-                                            self.checks)))
-        self.assertEqual(1, sn.count(filter(filters.have_prgenv(['env4']),
-                                            self.checks)))
-        self.assertEqual(0, sn.count(filter(
-            filters.have_prgenv(['env1', 'env3']), self.checks)))
-
-    def test_have_prgenv_regexp(self):
         p = [re.compile('env1'), re.compile('env2')]
         self.assertEqual(1, sn.count(filter(
-            filters.have_prgenv_regexp(p), self.checks)))
+            filters.have_prgenv(p), self.checks)))
         p = [re.compile('env3')]
-        self.assertEqual(2, sn.count(filter(filters.have_prgenv_regexp(p),
+        self.assertEqual(2, sn.count(filter(filters.have_prgenv(p),
                                             self.checks)))
         p = [re.compile('env4')]
-        self.assertEqual(1, sn.count(filter(filters.have_prgenv_regexp(p),
+        self.assertEqual(1, sn.count(filter(filters.have_prgenv(p),
                                             self.checks)))
         p = [re.compile('env1'), re.compile('env3')]
         self.assertEqual(0, sn.count(filter(
-            filters.have_prgenv_regexp(p), self.checks)))
+            filters.have_prgenv(p), self.checks)))
 
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
