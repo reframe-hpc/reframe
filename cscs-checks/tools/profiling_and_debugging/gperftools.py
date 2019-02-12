@@ -10,10 +10,8 @@ class GperftoolsCheck(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc']
-
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
-
         self.num_gpus_per_node = 1
         self.executable = 'perftools_check'
         self.prgenv_flags = {
@@ -62,5 +60,5 @@ class GperftoolsCheck(rfm.RegressionTest):
         self.build_system.cflags = flags
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
-        self.ldflags = [' -dynamic `pkg-config --libs libprofiler`']
-        self.build_system.ldflags = flags + self.ldflags
+        self.build_system.ldflags = flags + ['-dynamic',
+                                             '`pkg-config --libs libprofiler`']
