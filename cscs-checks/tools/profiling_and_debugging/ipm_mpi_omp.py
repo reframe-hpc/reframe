@@ -9,23 +9,20 @@ import reframe.utility.sanity as sn
 class Ipm(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        self.name = 'IPM_%s' % lang.replace('+', 'p')
-        self.descr = '%s check' % lang
-        self.language = lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-gnu': ['-O2 -g -fopenmp'],
-            'PrgEnv-cray': ['-O2 -g -homp'],
-            'PrgEnv-intel': ['-O2 -g -openmp'],
-            'PrgEnv-pgi': ['-O2 -g -mp']
+            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-cray': ['-O2', '-g', '-homp'],
+            'PrgEnv-intel': ['-O2', '-g', '-openmp'],
+            'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
         self.ipm_modules = {
-            'PrgEnv-gnu': 'IPM/2.0.6-CrayGNU-18.08',
-            'PrgEnv-cray': 'IPM/2.0.6-CrayCCE-18.08',
-            'PrgEnv-intel': 'IPM/2.0.6-CrayIntel-18.08',
-            'PrgEnv-pgi': 'IPM/2.0.6-CrayPGI-18.08'
+            'PrgEnv-gnu': ['IPM/2.0.6-CrayGNU-18.08'],
+            'PrgEnv-cray': ['IPM/2.0.6-CrayCCE-18.08'],
+            'PrgEnv-intel': ['IPM/2.0.6-CrayIntel-18.08'],
+            'PrgEnv-pgi': ['IPM/2.0.6-CrayPGI-18.08']
         }
         self.sourcesdir = os.path.join('src', lang)
         self.executable = './jacobi'
@@ -33,7 +30,6 @@ class Ipm(rfm.RegressionTest):
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
-        self.time_limit = (0, 2, 0)
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
@@ -45,29 +41,30 @@ class Ipm(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
             'PKG_CONFIG_PATH':
                 '$PAT_BUILD_PAPI_BASEDIR/lib64/pkgconfig:$PKG_CONFIG_PATH',
-            # The list of hardware performance counters available depend
+            # The list of available hardware performance counters depends
             # on the cpu type:
             #    srun -n1 -t1 -Cgpu papi_avail
             # More infos: http://ipm-hpc.sourceforge.net/userguide.html
             'IPM_HPM': 'PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM',
         }
         self.txtrpt = 'ipm.rpt'
-        self.post_run = ['ipm_parse.pl -h']
-        self.post_run += ['ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt]
-        self.post_run += ['ipm_parse.pl -html *.ipm.xml']
-        self.post_run += ['cp *ipm.xml_ipm*/index.html .']
+        self.post_run = ['ipm_parse.pl -h',
+                         'ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt,
+                         'ipm_parse.pl -html *.ipm.xml',
+                         'cp *ipm.xml_ipm*/index.html .']
         self.maintainers = ['JG']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
-        self.modules = [self.ipm_modules[environ.name]]
+        self.modules = self.ipm_modules[environ.name]
         super().setup(partition, environ, **job_opts)
         environ_name = self.current_environ.name
         prgenv_flags = self.prgenv_flags[environ_name]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
-        self.build_system.ldflags = ['-lm `pkg-config --libs papi` ${IPM}']
+        self.build_system.ldflags = ['-lm', '`pkg-config --libs papi`',
+                                     '${IPM}']
 
         self.htmlrpt = 'index.html'
         self.sanity_patterns = sn.all([
