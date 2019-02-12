@@ -9,6 +9,7 @@ import reframe.utility.sanity as sn
 class Ipm(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
+        self.name = 'Ipm_%s' % lang.replace('+', 'p')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
