@@ -98,6 +98,7 @@ class Job(abc.ABC):
         self._stdout = stdout or os.path.join(workdir, '%s.out' % name)
         self._stderr = stderr or os.path.join(workdir, '%s.err' % name)
         self._time_limit = time_limit
+        self._nodelist = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
@@ -310,3 +311,30 @@ class Job(abc.ABC):
     def finished(self):
         if self._jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
+
+    @property
+    def nodelist(self):
+        """The list of node names assigned to this job.
+
+        This attribute is :class:`None` if no nodes are assigned to the job
+        yet.
+        This attribute is set reliably only for the ``slurm`` backend, i.e.,
+        Slurm *with* accounting enabled.
+        The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
+        might not set this attribute for jobs that finish very quickly.
+        For the ``local`` scheduler backend, this returns an one-element list
+        containing the hostname of the current host.
+
+        This attribute might be useful in a flexible regression test for
+        determining the actual nodes that were assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        corresponding `section <advanced.html#flexible-regression-tests>`__ of
+        the tutorial.
+
+        This attribute is *not* supported by the ``pbs`` scheduler backend.
+
+        .. versionadded:: 2.17
+
+        """
+        return self._nodelist
