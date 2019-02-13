@@ -398,7 +398,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.testjob.get_partition_nodes = lambda: set()
         # monkey patch `_get_default_partition()` to simulate extraction
         # of the default partition through the use of `scontrol show`
-        self.testjob._get_default_partition = lambda: {'pdef'}
+        self.testjob._get_default_partition = lambda: 'pdef'
         self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
 
@@ -594,7 +594,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._get_all_nodes = self.create_dummy_nodes
         # monkey patch `_get_default_partition` to simulate extraction
         # of the default partition
-        self.testjob._get_default_partition = lambda: {'pdef'}
+        self.testjob._get_default_partition = lambda: 'pdef'
         self.testjob._sched_flex_alloc_tasks = 'all'
         self.testjob._num_tasks_per_node = 4
         self.testjob._num_tasks = 0
