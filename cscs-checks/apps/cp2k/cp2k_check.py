@@ -62,7 +62,7 @@ class Cp2kCpuCheck(Cp2kCheck):
                     'perf': (182.6, None, 0.05)
                 },
                 'daint:mc': {
-                    'perf': (106.8, None, 0.10)
+                    'perf': (141.0, None, 0.05)
                 },
             }
         else:
