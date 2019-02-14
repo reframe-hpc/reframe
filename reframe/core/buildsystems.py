@@ -137,16 +137,6 @@ class BuildSystem:
 
         return None
 
-    def _fix_flags(self, flags):
-        # FIXME: That's a necessary workaround to the fact the environment
-        # defines flags as strings, but here as lists of strings. Should be
-        # removed as soon as setting directly the flags in an environment will
-        # be disabled.
-        if isinstance(flags, str):
-            return flags.split()
-        else:
-            return flags
-
     def _cc(self, environ):
         return self._resolve_flags('cc', environ)
 
@@ -160,19 +150,19 @@ class BuildSystem:
         return self._resolve_flags('nvcc', environ)
 
     def _cppflags(self, environ):
-        return self._fix_flags(self._resolve_flags('cppflags', environ))
+        return self._resolve_flags('cppflags', environ)
 
     def _cflags(self, environ):
-        return self._fix_flags(self._resolve_flags('cflags', environ))
+        return self._resolve_flags('cflags', environ)
 
     def _cxxflags(self, environ):
-        return self._fix_flags(self._resolve_flags('cxxflags', environ))
+        return self._resolve_flags('cxxflags', environ)
 
     def _fflags(self, environ):
-        return self._fix_flags(self._resolve_flags('fflags', environ))
+        return self._resolve_flags('fflags', environ)
 
     def _ldflags(self, environ):
-        return self._fix_flags(self._resolve_flags('ldflags', environ))
+        return self._resolve_flags('ldflags', environ)
 
 
 class Make(BuildSystem):
