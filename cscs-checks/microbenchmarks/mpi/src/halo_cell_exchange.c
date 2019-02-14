@@ -1,5 +1,3 @@
-/* there is still somewhere a bug in the code */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +12,7 @@ int main(int argc, const char* argv[]){
     int comm_size, comm_rank, comm_size_cart, comm_rank_cart;
     char *sendbuf, *recvbuf, inputbuf[1000], *pinputbuf;
     double start, stop, deltatmin, deltatmax, ttt;
-    int rank, i, j;
+    int rank_source, rank_dest, i, j;
 
     if (argc>1){
         printf("%s < ndims dim1 dim2 ... halosize1 halosize2 ...\n", argv[0]);
@@ -108,23 +106,19 @@ int main(int argc, const char* argv[]){
 
                 for (j=0; j<10000; j++){
                     for (i=0; i<ndims; i++){
-                        ierr = MPI_Cart_shift(cart_comm, i, -1, &comm_rank_cart, &rank);
+                        ierr = MPI_Cart_shift(cart_comm, i, 1, &rank_source, &rank_dest);
                         if (ierr!=0) exit(1);
-                        ierr = MPI_Irecv(recvbuf+i*2*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank, 1, cart_comm, request+i*2);
+                        ierr = MPI_Irecv(recvbuf+i*2*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank_source, 1, cart_comm, request+i*2);
                         if (ierr!=0) exit(1);
-                        ierr = MPI_Cart_shift(cart_comm, i, 1, &comm_rank_cart, &rank);
-                        if (ierr!=0) exit(1);
-                        ierr = MPI_Irecv(recvbuf+(i*2+1)*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank, 1, cart_comm, request+i*2+1);
+                        ierr = MPI_Irecv(recvbuf+(i*2+1)*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank_dest, 1, cart_comm, request+i*2+1);
                         if (ierr!=0) exit(1);
                     }
                     for (i=0; i<ndims; i++){
-                        ierr = MPI_Cart_shift(cart_comm, i, -1, &comm_rank_cart, &rank);
+                        ierr = MPI_Cart_shift(cart_comm, i, 1, &rank_source, &rank_dest);
                         if (ierr!=0) exit(1);
-                        ierr = MPI_Isend(sendbuf+i*2*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank, 1, cart_comm, request+i*2+ndims*2);
+                        ierr = MPI_Isend(sendbuf+i*2*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank_source, 1, cart_comm, request+i*2+ndims*2);
                         if (ierr!=0) exit(1);
-                        ierr = MPI_Cart_shift(cart_comm, i, 1, &comm_rank_cart, &rank);
-                        if (ierr!=0) exit(1);
-                        ierr = MPI_Isend(sendbuf+(i*2+1)*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank, 1, cart_comm, request+i*2+1+ndims*2);
+                        ierr = MPI_Isend(sendbuf+(i*2+1)*halosize[i]*sizeof(char), halosize[i], MPI_CHAR, rank_dest, 1, cart_comm, request+i*2+1+ndims*2);
                         if (ierr!=0) exit(1);
                     }
                     ierr = MPI_Waitall(ndims*2*2, request, status);
@@ -133,9 +127,9 @@ int main(int argc, const char* argv[]){
 
                 stop = MPI_Wtime ();
                 ttt = stop - start;
-                ierr = MPI_Allreduce (&ttt, &deltatmin, 1, MPI_DOUBLE, MPI_MIN, cart_comm);
+                ierr = MPI_Reduce (&ttt, &deltatmin, 1, MPI_DOUBLE, MPI_MIN, 0, cart_comm);
                 if (ierr!=0) exit(1);
-                ierr = MPI_Allreduce (&ttt, &deltatmax, 1, MPI_DOUBLE, MPI_MAX, cart_comm);
+                ierr = MPI_Reduce (&ttt, &deltatmax, 1, MPI_DOUBLE, MPI_MAX, 0, cart_comm);
                 if (ierr!=0) exit(1);
                 if (comm_rank_cart == 0){
                     printf ("halo_cell_exchange %d", comm_size);
