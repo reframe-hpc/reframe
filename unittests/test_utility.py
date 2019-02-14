@@ -36,7 +36,7 @@ class TestOSTools(unittest.TestCase):
 
         try:
             str(e.exception)
-        except:
+        except TypeError:
             self.fail('could not convert exception to string')
 
     def test_command_async(self):
