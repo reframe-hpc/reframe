@@ -30,6 +30,15 @@ class TestOSTools(unittest.TestCase):
         except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
 
+    def test_command_timeout_exception_string(self):
+        with self.assertRaises(SpawnedProcessTimeout) as e:
+            os_ext.run_command('sleep 3', timeout=2)
+
+        try:
+            str(e.exception)
+        except:
+            self.fail('could not convert exception to string')
+
     def test_command_async(self):
         from datetime import datetime
 

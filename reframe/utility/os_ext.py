@@ -25,8 +25,8 @@ def run_command(cmd, check=False, timeout=None, shell=False):
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
         raise SpawnedProcessTimeout(e.cmd,
-                                    proc.stdout,
-                                    proc.stderr, timeout) from None
+                                    proc.stdout.read(),
+                                    proc.stderr.read(), timeout) from None
 
     completed = subprocess.CompletedProcess(args=shlex.split(cmd),
                                             returncode=proc.returncode,
