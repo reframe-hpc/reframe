@@ -61,4 +61,4 @@ For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.c
 
 ### Slack
 
-You may also reach the community through Slack at [reframetalk.slack.com](https://reframetalk.slack.com/join/signup). Currently, you may join the Slack workspace by invitation only, which you will get as soon as you subscribe to the mailing list.
+You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).
