@@ -198,7 +198,23 @@ def _create_filelog_handler(handler_config):
 
 
 def _create_syslog_handler(handler_config):
-    return logging.handlers.SysLogHandler(address = '/dev/log')
+    from socket import SOCK_DGRAM, SOCK_STREAM
+    address = handler_config.get('address', None) 
+    facility = handler_config.get('facility', logging.handlers.SysLogHandler.LOG_USER)
+    socket = handler_config.get('socket', 'udp')
+    if address is None:
+        raise ConfigError('syslog handler: no address specified')
+
+    if socket == 'udp':
+        socktype = SOCK_DGRAM
+    elif socket == 'tcp':
+        socktype = SOCK_STREAM
+    else:
+        raise ConfigError('syslog handler: unsupported socket type %s' % socket)
+
+    return logging.handlers.SysLogHandler(address=address,
+                                          facility=facility,
+                                          socktype=socktype)
 
 
 def _create_stream_handler(handler_config):

@@ -297,7 +297,7 @@ class TestLoggingConfiguration(unittest.TestCase):
             'handlers': [
                 {'type': 'stream', 'name': 'stderr'},
                 {'type': 'file', 'name': self.logfile},
-                {'type': 'syslog'}
+                {'type': 'syslog', 'address': '/dev/log'}
             ],
         }
         rlog.configure_logging(self.logging_config)
@@ -326,6 +326,26 @@ class TestLoggingConfiguration(unittest.TestCase):
             'level': 'INFO',
             'handlers': [
                 {'type': 'stream', 'name': 'foo'},
+            ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler_syntax_no_address(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [
+                {'type': 'syslog'}
+            ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler_unknown_socket(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [
+                {'type': 'syslog', 'socket': 'foo'},
             ],
         }
         self.assertRaises(ConfigError, rlog.configure_logging,
