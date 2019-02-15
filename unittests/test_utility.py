@@ -29,15 +29,8 @@ class TestOSTools(unittest.TestCase):
             self.fail('Expected timeout')
         except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
-
-    def test_command_timeout_exception_string(self):
-        with self.assertRaises(SpawnedProcessTimeout) as e:
-            os_ext.run_command('sleep 3', timeout=2)
-
-        try:
-            str(e.exception)
-        except TypeError:
-            self.fail('could not convert exception to string')
+            # Try to get the string representation of the exception: see bug #658
+            s = str(e)
 
     def test_command_async(self):
         from datetime import datetime
