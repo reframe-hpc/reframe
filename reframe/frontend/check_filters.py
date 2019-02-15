@@ -35,8 +35,8 @@ def have_prgenv(regexp_prgenv):
     def _fn(c):
         if regexp_prgenv:
             for p in regexp_prgenv:
-                if(any(p.search(prgenv) for prgenv in c.valid_prog_environs) 
-                   is False):
+                if(any((p.search(prgenv) or prgenv == '*')
+                   for prgenv in c.valid_prog_environs) is False):
                     return False
             return True
         else:

@@ -431,10 +431,9 @@ def main():
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
-            if len(options.prgenv) > 0:
-                p = [re.compile(regexp) for regexp in options.prgenv]
-                checks_matched = filter(filters.have_prgenv(p),
-                                        checks_matched)
+            p = [re.compile(regexp) for regexp in options.prgenv]
+            checks_matched = filter(filters.have_prgenv(p),
+                                    checks_matched)
 
         # Filter checks by system
         if not options.skip_system_check:
