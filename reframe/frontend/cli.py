@@ -3,6 +3,7 @@ import inspect
 import json
 import socket
 import sys
+import traceback
 
 import reframe
 import reframe.core.config as config
@@ -273,9 +274,9 @@ def main():
         printer.error("could not auto-detect system; please use the "
                       "`--system' option to specify one explicitly")
         sys.exit(1)
-
-    except (ConfigError, OSError) as e:
+    except Exception as e:
         printer.error('configuration error: %s' % e)
+        printer.verbose(''.join(traceback.format_exception(*sys.exc_info())))
         sys.exit(1)
 
     rt = runtime.runtime()

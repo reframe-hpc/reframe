@@ -1126,7 +1126,7 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                if not key in self.reference:
+                if key not in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
@@ -1158,10 +1158,14 @@ class RegressionTest:
 
         # Copy files specified by the user
         for f in self.keep_files:
+            f_orig = f
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
 
-            shutil.copy(f, self.outputdir)
+            if os.path.isfile(f):
+                shutil.copy(f, self.outputdir)
+            elif os.path.isdir(f):
+                shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.

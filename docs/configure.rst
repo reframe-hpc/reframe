@@ -302,8 +302,11 @@ The possible attributes of an environment are the following:
 * ``fflags``: The default Fortran compiler flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
 * ``ldflags``: The default linker flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
 
-.. note:: When defining programming environment flags, :class:`None` is treated differently from ``''`` for regression tests that are compiled through a Makefile.
-   If a flags variable is not :class:`None` it will be passed to the Makefile, which may affect the compilation process.
+.. note::
+   All flags for programming environments are now defined as list of strings instead of simple strings.
+
+   .. versionchanged:: 2.17
+
 
 System Auto-Detection
 ---------------------

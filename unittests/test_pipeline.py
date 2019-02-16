@@ -117,9 +117,10 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_prog_environs = [self.progenv.name]
 
         # Test also the prebuild/postbuild functionality
-        test.prebuild_cmd  = ['touch prebuild']
-        test.postbuild_cmd = ['touch postbuild']
-        test.keepfiles = ['prebuild', 'postbuild']
+        test.prebuild_cmd  = ['touch prebuild', 'mkdir prebuild_dir']
+        test.postbuild_cmd = ['touch postbuild', 'mkdir postbuild_dir']
+        test.keep_files = ['prebuild', 'postbuild',
+                           'prebuild_dir', 'postbuild_dir']
 
         # Force local execution of the test
         test.local = True
