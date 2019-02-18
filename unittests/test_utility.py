@@ -187,6 +187,50 @@ class TestOSTools(unittest.TestCase):
         # Try to remove a non-existent file
         os_ext.force_remove_file(fp.name)
 
+    def test_expandvars_dollar(self):
+        text = 'Hello, $(echo World)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '$(echo Hello, $(echo World))'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_backticks(self):
+        text = 'Hello, `echo World`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '`echo Hello, `echo World``'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_mixed_syntax(self):
+        text = '`echo Hello, $(echo World)`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = '$(echo Hello, `echo World`)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_error(self):
+        text = 'Hello, $(foo)'
+        with self.assertRaises(SpawnedProcessError):
+            os_ext.expandvars(text)
+
+    def test_strange_syntax(self):
+        text = 'Hello, $(foo`'
+        self.assertEqual('Hello, $(foo`', os_ext.expandvars(text))
+
+        text = 'Hello, `foo)'
+        self.assertEqual('Hello, `foo)', os_ext.expandvars(text))
+
+    def test_expandvars_nocmd(self):
+        os.environ['FOO'] = 'World'
+        text = 'Hello, $FOO'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = 'Hello, ${FOO}'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        del os.environ['FOO']
+
 
 class TestCopyTree(unittest.TestCase):
     def setUp(self):
