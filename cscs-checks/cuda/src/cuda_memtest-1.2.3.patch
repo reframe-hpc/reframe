@@ -1,0 +1,16 @@
+Binary files cuda_memtest-1.2.3-orig/cuda_memtest and cuda_memtest-1.2.3/cuda_memtest differ
+Binary files cuda_memtest-1.2.3-orig/cuda_memtest.o and cuda_memtest-1.2.3/cuda_memtest.o differ
+diff -urN cuda_memtest-1.2.3-orig/Makefile cuda_memtest-1.2.3/Makefile
+--- cuda_memtest-1.2.3-orig/Makefile	2012-02-06 21:39:33.000000000 +0100
++++ cuda_memtest-1.2.3/Makefile	2019-02-15 10:16:10.769307000 +0100
+@@ -54,7 +54,7 @@
+ 
+ CUDA_INCLUDES := -I. -I${CUDA_INSTALL_PATH}/include 
+ CUDALIB := -L${CUDA_INSTALL_PATH}/lib64 -lcuda  -lcudart -lpthread
+-CFLAGS= -arch sm_13 -DSM_13 -O3
++CFLAGS= -arch sm_60 -DSM_60 -O3
+ CFLAGS_SM10= -arch sm_10 -DSM_10 -O3
+ CFLAGS_SM20= -arch sm_20 -DSM_20 -O3
+ CUDA_SRC_FILES= cuda_memtest.cu misc.cpp tests.cu
+Binary files cuda_memtest-1.2.3-orig/misc.o and cuda_memtest-1.2.3/misc.o differ
+Binary files cuda_memtest-1.2.3-orig/tests.o and cuda_memtest-1.2.3/tests.o differ

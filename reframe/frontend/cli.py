@@ -306,15 +306,15 @@ def main():
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
-        rt.resources.prefix = os.path.expandvars(options.prefix)
+        rt.resources.prefix = os_ext.expandvars(options.prefix)
         rt.resources.outputdir = None
         rt.resources.stagedir  = None
 
     if options.output:
-        rt.resources.outputdir = os.path.expandvars(options.output)
+        rt.resources.outputdir = os_ext.expandvars(options.output)
 
     if options.stage:
-        rt.resources.stagedir = os.path.expandvars(options.stage)
+        rt.resources.stagedir = os_ext.expandvars(options.stage)
 
     if (os_ext.samefile(rt.resources.stage_prefix,
                         rt.resources.output_prefix) and
@@ -331,7 +331,7 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+        rt.resources.perflogdir = os_ext.expandvars(options.perflogdir)
 
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
@@ -369,7 +369,7 @@ def main():
     if options.checkpath:
         load_path = []
         for d in options.checkpath:
-            d = os.path.expandvars(d)
+            d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
                                 (argparser.prog, d))

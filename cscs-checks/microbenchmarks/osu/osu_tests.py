@@ -9,7 +9,7 @@ class AlltoallTest(rfm.RegressionTest):
         super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.descr = 'Alltoall osu microbenchmark'
+        self.descr = 'Alltoall OSU microbenchmark'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
@@ -46,6 +46,30 @@ class AlltoallTest(rfm.RegressionTest):
                 'num_switches': 1
             }
         }
+
+
+@rfm.simple_test
+class FlexAlltoallTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = ['daint:gpu', 'daint:mc',
+                              'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'kesch:pn', 'leone:normal']
+        self.valid_prog_environs = ['PrgEnv-cray']
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
+
+        self.descr = 'Flexible Alltoall OSU test'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_alltoall'
+        self.executable = './osu_alltoall'
+        self.maintainers = ['RS', 'VK']
+        self.num_tasks_per_node = 1
+        self.num_tasks = 0
+        self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
+        self.tags = {'diagnostic', 'ops'}
 
 
 # FIXME: This test is obsolete; it is kept only for reference.

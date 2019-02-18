@@ -64,7 +64,7 @@ class Environment:
         """
         is_module_loaded = runtime().modules_system.is_module_loaded
         return (all(map(is_module_loaded, self._modules)) and
-                all(os.environ.get(k, None) == os.path.expandvars(v)
+                all(os.environ.get(k, None) == os_ext.expandvars(v)
                     for k, v in self._variables.items()))
 
     def load(self):
@@ -85,7 +85,7 @@ class Environment:
             if k in os.environ:
                 self._saved_variables[k] = os.environ[k]
 
-            os.environ[k] = os.path.expandvars(v)
+            os.environ[k] = os_ext.expandvars(v)
 
         self._loaded = True
 
