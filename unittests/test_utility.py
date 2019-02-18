@@ -26,9 +26,12 @@ class TestOSTools(unittest.TestCase):
     def test_command_timeout(self):
         try:
             os_ext.run_command('sleep 3', timeout=2)
-            self.fail('Expected timeout')
         except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
+            # Try to get the string repr. of the exception: see bug #658
+            s = str(e)
+        else:
+            self.fail('expected timeout')
 
     def test_command_async(self):
         from datetime import datetime
