@@ -215,6 +215,13 @@ class TestOSTools(unittest.TestCase):
         with self.assertRaises(SpawnedProcessError):
             os_ext.expandvars(text)
 
+    def test_strange_syntax(self):
+        text = 'Hello, $(foo`'
+        self.assertEqual('Hello, $(foo`', os_ext.expandvars(text))
+
+        text = 'Hello, `foo)'
+        self.assertEqual('Hello, `foo)', os_ext.expandvars(text))
+
     def test_expandvars_nocmd(self):
         os.environ['FOO'] = 'World'
         text = 'Hello, $FOO'

@@ -314,12 +314,12 @@ def expandvars(path):
     This function is the same as ``os.path.expandvars()``, except that it
     understands also the syntax: $(cmd)`` or `cmd`.
     """
-    cmd_subst = re.compile(r'(`|\$\()(.*)(`|\))')
+    cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')
     cmd_subst_m = cmd_subst.search(path)
     if not cmd_subst_m:
         return os.path.expandvars(path)
 
-    cmd = cmd_subst_m.group(2)
+    cmd = cmd_subst_m.groups()[0] or cmd_subst_m.groups()[1]
 
     # We need shell=True to support nested expansion
     completed = run_command(cmd, check=True, shell=True)
