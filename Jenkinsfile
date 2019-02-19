@@ -93,7 +93,7 @@ stage('Unittest') {
                                             echo \$SCRATCH""").trim()
                 def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
                 def moduleDefinition = ''
-                if (machineName == 'leone') {
+                if (machineName in ['leone', 'fulen']) {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
                 }
