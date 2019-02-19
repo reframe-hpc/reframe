@@ -99,6 +99,42 @@ class ReframeSettings:
                 }
             },
 
+            'fulen': {
+                'descr': 'Fulen',
+                'hostnames': ['fulen'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 1
+                    },
+
+                    'normal': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': ('Compute nodes - '
+                                  'default partition'),
+                    },
+
+                    'fat': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-gnu'],
+                        'access':  ['--partition fat'],
+                        'descr': ('High-memory compute nodes'),
+                    },
+
+                    'gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-gnu'],
+                        'access':  ['--partition gpu'],
+                        'descr': ('Hybrid compute nodes'),
+                    },
+                }
+            },
+
             'kesch': {
                 'descr': 'Kesch MCH',
                 'hostnames': ['keschln-\d+'],
