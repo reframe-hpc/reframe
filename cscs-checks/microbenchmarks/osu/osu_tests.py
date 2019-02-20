@@ -72,6 +72,76 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.tags = {'diagnostic', 'ops'}
 
 
+@rfm.required_version('>=2.14')
+@rfm.parameterized_test(['production'])
+class AllreduceTest(rfm.RegressionTest):
+    def __init__(self, variant):
+        super().__init__()
+        self.strict_check = False
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.descr = 'Allreduce OSU microbenchmark'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_allreduce'
+        self.executable = './osu_allreduce'
+        # The -x option controls the number of warm-up iterations
+        # The -i option controls the number of iterations
+        self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel']
+        self.maintainers = ['RS', 'VK']
+        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+        self.perf_patterns = {
+            'perf': sn.extractsingle(r'^8\s+(?P<perf>\S+)',
+                                     self.stdout, 'perf', float)
+        }
+        self.tags = {variant}
+        self.reference = {
+            'dom:gpu': {
+                'perf': (6.0, None, 0.1)
+            },
+            'daint:gpu': {
+                'perf': (20.5, None, 2.0)
+            },
+        }
+        self.num_tasks_per_node = 1
+        self.num_gpus_per_node  = 1
+        if self.current_system.name == 'dom':
+            self.num_tasks = 6
+
+        if self.current_system.name == 'daint':
+            self.num_tasks = 16
+
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
+
+
+@rfm.simple_test
+class FlexAllreduceTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = ['daint:gpu', 'daint:mc',
+                              'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'kesch:pn', 'leone:normal']
+        self.valid_prog_environs = ['PrgEnv-cray']
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
+
+        self.descr = 'Flexible Allreduce OSU test'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_allreduce'
+        self.executable = './osu_allreduce'
+        self.maintainers = ['RS', 'VK']
+        self.num_tasks_per_node = 1
+        self.num_tasks = 0
+        self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
+        self.tags = {'diagnostic', 'ops'}
+
+
 # FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
 class AlltoallMonchAcceptanceTest(AlltoallTest):
