@@ -74,8 +74,8 @@ class FieldextraPerformance(FieldextraCheck):
             'source create_nl_6h.template'
         ]
         self.variables = {
-             'OMP_STACKSIZE': '500M',
-             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
+            'OMP_STACKSIZE': '500M',
+            'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
 
         self.sanity_patterns = sn.assert_found(
