@@ -97,7 +97,7 @@ stage('Unittest') {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
                 }
-                # Run only the generic unit tests on fulen
+                // Run only the generic unit tests on fulen
                 def genericTestFlag = machineName in ['fulen'] ? '-g' : ''
                 dir(reframeDir) {
                     checkout scm
