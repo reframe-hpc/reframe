@@ -98,12 +98,12 @@ stage('Unittest') {
                                           export -f module'''
                 }
                 // Run only the generic unit tests on fulen
-                def genericTestFlag = machineName in ['fulen'] ? '-g' : ''
+                def localOnlyFlag = machineName in ['fulen'] ? '-L' : ''
                 dir(reframeDir) {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
-                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' ${genericTestFlag}""")
+                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' ${localOnlyFlag}""")
                 }
             }
         }
