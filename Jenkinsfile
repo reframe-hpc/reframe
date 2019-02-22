@@ -3,7 +3,7 @@
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def machinesList = ['daint', 'dom', 'kesch']
+def machinesList = ['daint', 'dom', 'kesch', 'fulen']
 def machinesToRun = machinesList
 def runTests = true
 def uniqueID
@@ -97,11 +97,13 @@ stage('Unittest') {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
                 }
+                # Run only the generic unit tests on fulen
+                def genericTestFlag = machineName in ['fulen'] ? '-g' : ''
                 dir(reframeDir) {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
-                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
+                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' ${genericTestFlag}""")
                 }
             }
         }
