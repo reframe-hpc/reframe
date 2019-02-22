@@ -30,11 +30,14 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.sourcepath = 'bandwidthtestflex.cu'
         self.executable = 'gpu_bandwidth_check.x'
 
-        # NOTE: Perform a range of bandwidth tests from 2MB to 32MB
-        # with 2MB increments to avoid initialization overhead in bandwidth
+        # NOTE: Perform a range of bandwidth tests from 64MB to 1024MB
+        # with 64MB increments
+        self.min_buffer_size = 67108864
+        self.max_buffer_size = 1073741824
         self.executable_opts = ['device', 'all', '--mode=range',
-                                '--start=2097152', '--increment=2097152',
-                                '--end=33554432', '--csv']
+                                '--start=%d' % self.min_buffer_size,
+                                '--increment=%d' % self.min_buffer_size,
+                                '--end=%d' % self.max_buffer_size, '--csv']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         if self.current_system.name in ['daint', 'dom']:
@@ -51,10 +54,10 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.__bwref = {
             'daint:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'daint:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
-            'daint:gpu:d2d': (485932, -0.1, None, 'MB/s'),
+            'daint:gpu:d2d': (499000, -0.1, None, 'MB/s'),
             'dom:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'dom:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
-            'dom:gpu:d2d': (485932, -0.1, None, 'MB/s'),
+            'dom:gpu:d2d': (499000, -0.1, None, 'MB/s'),
             'kesch:cn:h2d':   (7583, -0.1, None, 'MB/s'),
             'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
             'kesch:cn:d2d': (137408, -0.1, None, 'MB/s')
@@ -71,10 +74,10 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         else:
             first_part = 'bandwidthTest-D2D'
 
-        # Extract the bandwidth corresponding to the 32MB message
+        # Extract the bandwidth corresponding to the maximum buffer size
         return (r'^%s[^,]*,\s*%s[^,]*,\s*Bandwidth\s*=\s*(\S+)\s*MB/s([^,]*,)'
-                r'{2}\s*Size\s*=\s*33554432\s*bytes[^,]*,\s*DeviceNo\s*=\s*-1'
-                r':%s' % (nodename, first_part, devno))
+                r'{2}\s*Size\s*=\s*%d\s*bytes[^,]*,\s*DeviceNo\s*=\s*-1'
+                r':%s' % (nodename, first_part, self.max_buffer_size, devno))
 
     @sn.sanity_function
     def do_sanity_check(self):
