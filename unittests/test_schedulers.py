@@ -396,6 +396,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         # monkey patch `get_partition_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob.get_partition_nodes = lambda: set()
+        # monkey patch `_get_default_partition()` to simulate extraction
+        # of the default partition through the use of `scontrol show`
+        self.testjob._get_default_partition = lambda: 'pdef'
         self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
 
@@ -502,7 +505,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=MAINT+DRAIN '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p1,p2 '
+                             'MCS_label=N/A Partitions=p1,p2,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -520,7 +523,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=MAINT+DRAIN '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p2,p3'
+                             'MCS_label=N/A Partitions=p2,p3,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -538,7 +541,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=IDLE '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p1,p3 '
+                             'MCS_label=N/A Partitions=p1,p3,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -556,7 +559,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=IDLE '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p1,p3 '
+                             'MCS_label=N/A Partitions=p1,p3,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -589,6 +592,9 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         # monkey patch `_get_all_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob._get_all_nodes = self.create_dummy_nodes
+        # monkey patch `_get_default_partition` to simulate extraction
+        # of the default partition
+        self.testjob._get_default_partition = lambda: 'pdef'
         self.testjob._sched_flex_alloc_tasks = 'all'
         self.testjob._num_tasks_per_node = 4
         self.testjob._num_tasks = 0

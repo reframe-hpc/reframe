@@ -4,6 +4,7 @@ import collections.abc
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
+import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError,
                                      ReframeError,
@@ -151,26 +152,26 @@ class SiteConfiguration:
 
             # Expand variables
             if sys_prefix:
-                sys_prefix = os.path.expandvars(sys_prefix)
+                sys_prefix = os_ext.expandvars(sys_prefix)
 
             if sys_stagedir:
-                sys_stagedir = os.path.expandvars(sys_stagedir)
+                sys_stagedir = os_ext.expandvars(sys_stagedir)
 
             if sys_outputdir:
-                sys_outputdir = os.path.expandvars(sys_outputdir)
+                sys_outputdir = os_ext.expandvars(sys_outputdir)
 
             if sys_logdir:
                 user_deprecation_warning(
                     "`logdir' attribute in system config is deprecated; "
                     "please use `perflogdir' instead"
                 )
-                sys_perflogdir = os.path.expandvars(sys_logdir)
+                sys_perflogdir = os_ext.expandvars(sys_logdir)
 
             if sys_perflogdir:
-                sys_perflogdir = os.path.expandvars(sys_perflogdir)
+                sys_perflogdir = os_ext.expandvars(sys_perflogdir)
 
             if sys_resourcesdir:
-                sys_resourcesdir = os.path.expandvars(sys_resourcesdir)
+                sys_resourcesdir = os_ext.expandvars(sys_resourcesdir)
 
             system = System(name=sys_name,
                             descr=sys_descr,

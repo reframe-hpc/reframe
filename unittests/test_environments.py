@@ -192,6 +192,36 @@ class TestEnvironment(unittest.TestCase):
         commands.append('foo')
         self.assertNotIn('foo', self.environ.emit_load_commands())
 
+        # Test ProgEnvironment
+        prgenv = renv.ProgEnvironment('foo_prgenv')
+        self.assertIsInstance(prgenv, renv.Environment)
+        with self.assertRaises(AttributeError):
+            prgenv.cc = 'gcc'
+
+        with self.assertRaises(AttributeError):
+            prgenv.cxx = 'g++'
+
+        with self.assertRaises(AttributeError):
+            prgenv.ftn = 'gfortran'
+
+        with self.assertRaises(AttributeError):
+            prgenv.nvcc = 'clang'
+
+        with self.assertRaises(AttributeError):
+            prgenv.cppflags = ['-DFOO']
+
+        with self.assertRaises(AttributeError):
+            prgenv.cflags = ['-O1']
+
+        with self.assertRaises(AttributeError):
+            prgenv.cxxflags = ['-O1']
+
+        with self.assertRaises(AttributeError):
+            prgenv.fflags = ['-O1']
+
+        with self.assertRaises(AttributeError):
+            prgenv.ldflags = ['-lm']
+
     def test_immutability_after_load(self):
         self.environ.load()
         self.test_immutability()
