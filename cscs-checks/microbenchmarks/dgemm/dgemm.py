@@ -24,7 +24,7 @@ class DGEMMTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-        
+
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 1
