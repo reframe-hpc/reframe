@@ -15,11 +15,11 @@ class DGEMMTest(rfm.RegressionTest):
         self.perf_patterns = {}
 
         self.valid_systems = [
-            'daint:gpu', 'daint:mc', 
+            'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
             'kesch:cn', 'kesch:pn'
         ]
-        
+
         if self.current_system.name == ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name == 'kesch':
