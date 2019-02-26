@@ -88,7 +88,7 @@ class PbsJob(sched.Job):
         preamble.append('cd %s' % self.workdir)
         return preamble
 
-    def get_partition_nodes(self):
+    def list_all_nodes(self):
         raise NotImplementedError('pbs backend does not support node listing')
 
     def filter_nodes(self, nodes, options):
