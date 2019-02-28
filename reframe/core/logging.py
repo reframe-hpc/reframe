@@ -11,6 +11,7 @@ import warnings
 from datetime import datetime
 
 import reframe
+import reframe.utility.color as color
 import reframe.core.debug as debug
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import ConfigError, LoggingError
@@ -352,6 +353,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             }
         )
         self.check = check
+        self.colorize = False
 
     def __repr__(self):
         return debug.repr(self)
@@ -359,6 +361,14 @@ class LoggerAdapter(logging.LoggerAdapter):
     def setLevel(self, level):
         if self.logger:
             super().setLevel(level)
+
+    @property
+    def std_stream_handlers(self):
+        if self.logger:
+            return [h for h in self.logger.handlers
+                    if h.stream == sys.stdout or h.stream == sys.stderr]
+        else:
+            return []
 
     def _update_check_extras(self):
         """Return a dictionary with all the check-specific information."""
@@ -414,6 +424,33 @@ class LoggerAdapter(logging.LoggerAdapter):
 
     def verbose(self, message, *args, **kwargs):
         self.log(VERBOSE, message, *args, **kwargs)
+
+    def warning(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
+        if self.colorize:
+            message = color.colorize(message, color.YELLOW)
+
+        super().warning(message, *args, **kwargs)
+
+    def error(self, message, *args, **kwargs):
+        message = '%s: %s' % (sys.argv[0], message)
+        if self.colorize:
+            message = color.colorize(message, color.RED)
+
+        super().error(message, *args, **kwargs)
+
+    def inc_verbosity(self, num_steps):
+        """Convenience function for increasing the verbosity
+        of the logger step-wise."""
+        log_levels = sorted(_log_level_names.keys())[1:]
+        for h in self.std_stream_handlers:
+            level_idx = log_levels.index(h.level)
+            if level_idx - num_steps < 0:
+                new_level = log_levels[0]
+            else:
+                new_level = log_levels[level_idx - num_steps]
+
+            h.setLevel(new_level)
 
 
 # A logger that doesn't log anything

@@ -3,23 +3,25 @@ import inspect
 import json
 import socket
 import sys
+import traceback
 
 import reframe
 import reframe.core.config as config
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
                                      SystemAutodetectionError)
-from reframe.frontend.argparse import ArgumentParser
 from reframe.frontend.executors import Runner
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
+
 
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
@@ -48,7 +50,7 @@ def list_checks(checks, printer, detailed=False):
 
 def main():
     # Setup command line options
-    argparser = ArgumentParser()
+    argparser = argparse.ArgumentParser()
     output_options = argparser.add_argument_group(
         'Options controlling regression directories')
     locate_options = argparser.add_argument_group(
@@ -226,6 +228,8 @@ def main():
         help='Print configuration of environment ENV and exit')
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
+    misc_options.add_argument('-v', '--verbose', action='count', default=0,
+                              help='Increase verbosity level of output')
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -255,9 +259,14 @@ def main():
         sys.stderr.write('could not configure logging: %s\n' % e)
         sys.exit(1)
 
+    # Set colors in logger
+    logging.getlogger().colorize = options.colorize
+
     # Setup printer
     printer = PrettyPrinter()
     printer.colorize = options.colorize
+    if options.verbose:
+        printer.inc_verbosity(options.verbose)
 
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
@@ -265,9 +274,9 @@ def main():
         printer.error("could not auto-detect system; please use the "
                       "`--system' option to specify one explicitly")
         sys.exit(1)
-
-    except (ConfigError, OSError) as e:
+    except Exception as e:
         printer.error('configuration error: %s' % e)
+        printer.verbose(''.join(traceback.format_exception(*sys.exc_info())))
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -297,15 +306,15 @@ def main():
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
-        rt.resources.prefix = os.path.expandvars(options.prefix)
+        rt.resources.prefix = os_ext.expandvars(options.prefix)
         rt.resources.outputdir = None
         rt.resources.stagedir  = None
 
     if options.output:
-        rt.resources.outputdir = os.path.expandvars(options.output)
+        rt.resources.outputdir = os_ext.expandvars(options.output)
 
     if options.stage:
-        rt.resources.stagedir = os.path.expandvars(options.stage)
+        rt.resources.stagedir = os_ext.expandvars(options.stage)
 
     if (os_ext.samefile(rt.resources.stage_prefix,
                         rt.resources.output_prefix) and
@@ -322,7 +331,7 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+        rt.resources.perflogdir = os_ext.expandvars(options.perflogdir)
 
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
@@ -360,7 +369,7 @@ def main():
     if options.checkpath:
         load_path = []
         for d in options.checkpath:
-            d = os.path.expandvars(d)
+            d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
                                 (argparser.prog, d))
@@ -377,7 +386,7 @@ def main():
             prefix=reframe.INSTALL_PREFIX,
             recurse=settings.checks_path_recurse)
 
-    printer.log_config(options)
+    printer.debug(argparse.format_options(options))
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
@@ -452,7 +461,7 @@ def main():
                 rt.modules_system.load_module(m, force=True)
                 raise EnvironError("test")
             except EnvironError as e:
-                printer.warning("could not load module '%s' correctly: " 
+                printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
 

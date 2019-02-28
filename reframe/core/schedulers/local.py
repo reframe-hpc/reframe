@@ -1,5 +1,6 @@
 import os
 import signal
+import socket
 import stat
 import subprocess
 import time
@@ -54,6 +55,7 @@ class LocalJob(sched.Job):
 
         # Update job info
         self._jobid = self._proc.pid
+        self._nodelist = [socket.gethostname()]
 
     def emit_preamble(self):
         return []
