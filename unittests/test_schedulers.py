@@ -393,9 +393,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
         self.testjob._sched_flex_alloc_tasks = 'all'
-        # monkey patch `list_all_nodes()` to simulate extraction of
+        # monkey patch `get_all_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.list_all_nodes = lambda: set()
+        self.testjob.get_all_nodes = lambda: set()
         # monkey patch `_get_default_partition()` to simulate extraction
         # of the default partition through the use of `scontrol show`
         self.testjob._get_default_partition = lambda: 'pdef'
@@ -606,9 +606,9 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        # monkey patch `list_all_nodes` to simulate extraction of
+        # monkey patch `get_all_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.list_all_nodes = self.create_dummy_nodes
+        self.testjob.get_all_nodes = self.create_dummy_nodes
         # monkey patch `_get_default_partition` to simulate extraction
         # of the default partition
         self.testjob._get_default_partition = lambda: 'pdef'

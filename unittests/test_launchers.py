@@ -22,7 +22,7 @@ class FakeJob(Job):
     def finished(self):
         pass
 
-    def list_all_nodes(self):
+    def get_all_nodes(self):
         pass
 
     def filter_nodes(self, nodes):

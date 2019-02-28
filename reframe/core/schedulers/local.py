@@ -60,7 +60,7 @@ class LocalJob(sched.Job):
     def emit_preamble(self):
         return []
 
-    def list_all_nodes(self):
+    def get_all_nodes(self):
         raise NotImplementedError(
             'local scheduler does not support listing of available nodes')
 

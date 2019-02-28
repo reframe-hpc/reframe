@@ -265,9 +265,9 @@ class Job(abc.ABC):
 
             return self.sched_flex_alloc_tasks
 
-        available_nodes = self.list_all_nodes()
-        getlogger().debug('flex_alloc_tasks: total available nodes %s '
-                          % len(available_nodes))
+        available_nodes = self.get_all_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes %s ' %
+                          len(available_nodes))
 
         # Try to guess the number of tasks now
         available_nodes = self.filter_nodes(available_nodes,
@@ -285,8 +285,8 @@ class Job(abc.ABC):
         return num_tasks
 
     @abc.abstractmethod
-    def list_all_nodes(self):
-        # Lists all the available nodes
+    def get_all_nodes(self):
+        # Gets all the available nodes
         pass
 
     @abc.abstractmethod
