@@ -8,6 +8,7 @@ import pprint
 import shutil
 import sys
 import warnings
+import socket
 from datetime import datetime
 
 import reframe
@@ -198,23 +199,27 @@ def _create_filelog_handler(handler_config):
 
 
 def _create_syslog_handler(handler_config):
-    from socket import SOCK_DGRAM, SOCK_STREAM
     address = handler_config.get('address', None) 
-    facility = handler_config.get('facility', logging.handlers.SysLogHandler.LOG_USER)
-    socket = handler_config.get('socket', 'udp')
     if address is None:
         raise ConfigError('syslog handler: no address specified')
 
-    if socket == 'udp':
-        socktype = SOCK_DGRAM
-    elif socket == 'tcp':
-        socktype = SOCK_STREAM
+    facility = handler_config.get('facility', 'user')
+    try:
+        facility_type = logging.handlers.SysLogHandler.facility_names[facility]
+    except KeyError:
+        raise ConfigError('syslog handler: unknown facility: %s' % facility) from None
+
+    socktype = handler_config.get('socktype', 'udp')
+    if socktype == 'udp':
+        socket_type = socket.SOCK_DGRAM
+    elif socktype == 'tcp':
+        socket_type = socket.SOCK_STREAM
     else:
-        raise ConfigError('syslog handler: unsupported socket type %s' % socket)
+        raise ConfigError('syslog handler: unsupported socket type: %s' % socktype)
 
     return logging.handlers.SysLogHandler(address=address,
-                                          facility=facility,
-                                          socktype=socktype)
+                                          facility=facility_type,
+                                          socktype=socket_type)
 
 
 def _create_stream_handler(handler_config):

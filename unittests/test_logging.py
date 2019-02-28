@@ -334,19 +334,23 @@ class TestLoggingConfiguration(unittest.TestCase):
     def test_syslog_handler_syntax_no_address(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': [
-                {'type': 'syslog'}
-            ],
+            'handlers': [{'type': 'syslog'}]
         }
         self.assertRaises(ConfigError, rlog.configure_logging,
                           self.logging_config)
 
-    def test_syslog_handler_unknown_socket(self):
+    def test_syslog_handler_unknown_facility(self):
         self.logging_config = {
             'level': 'INFO',
-            'handlers': [
-                {'type': 'syslog', 'socket': 'foo'},
-            ],
+            'handlers': [{'type': 'syslog', 'facility': 'foo'}]
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler_unknown_socktype(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog', 'socktype': 'foo'}]
         }
         self.assertRaises(ConfigError, rlog.configure_logging,
                           self.logging_config)
