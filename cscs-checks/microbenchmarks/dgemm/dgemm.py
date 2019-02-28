@@ -20,7 +20,7 @@ class DGEMMTest(rfm.RegressionTest):
             'kesch:cn', 'kesch:pn'
         ]
 
-        if self.current_system.name == ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
