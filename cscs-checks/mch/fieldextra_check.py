@@ -4,10 +4,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class FieldextraCheck(rfm.RunOnlyRegressionTest):
+class FieldextraTestBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.maintainers = ['Mkr']
+        self.maintainers = ['MKr']
 
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -22,12 +22,10 @@ class FieldextraCheck(rfm.RunOnlyRegressionTest):
 
 
 @rfm.parameterized_test(['opt'], ['opt_omp'])
-class FieldextraAccuracy(FieldextraCheck):
+class FieldextraAccuracyTest(FieldextraTestBase):
     def __init__(self, variant):
         super().__init__()
-        self.descr = (
-            'Fieldextra validation test (accuracy); MCH'
-        )
+        self.descr = ('Fieldextra validation test (accuracy); MCH')
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Fieldextra', 'cookbook_tests')
         self.readonly_files = [
@@ -45,7 +43,7 @@ class FieldextraAccuracy(FieldextraCheck):
             self.executable_opts = ['-c gnu -m opt']
         else:
             self.modules = ['fieldextra/12.7.5-gmvolf-17.02-openmp']
-            self.executable_opts = ['-c gnu -m opt_omp']
+            self.executable_opts = ['-c', 'gnu', '-m', 'opt_omp']
             self.variables = {
                 'OMP_STACKSIZE': '500M',
                 'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
@@ -56,23 +54,17 @@ class FieldextraAccuracy(FieldextraCheck):
 
 
 @rfm.simple_test
-class FieldextraPerformance(FieldextraCheck):
+class FieldextraPerformanceTest(FieldextraTestBase):
     def __init__(self):
         super().__init__()
-        self.descr = (
-            'Fieldextra validation test (performance); MCH'
-        )
+        self.descr = ('Fieldextra validation test (performance); MCH')
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Fieldextra', 'performance')
         self.modules = ['fieldextra/12.7.5-gmvolf-17.02-openmp']
         self.executable = 'fieldextra_gnu_opt_omp'
         self.executable_opts = ['nl.TC']
-        self.readonly_files = [
-            '18112900_204',
-        ]
-        self.pre_run = [
-            'source create_nl_6h.template'
-        ]
+        self.readonly_files = ['18112900_204']
+        self.pre_run = ['source create_nl_6h.template']
         self.variables = {
             'OMP_STACKSIZE': '500M',
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
@@ -87,6 +79,6 @@ class FieldextraPerformance(FieldextraCheck):
         }
         self.reference = {
             'kesch': {
-                'perf': (350., None, 0.20)
+                'perf': (420., None, 0.10)
             }
         }
