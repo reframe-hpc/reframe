@@ -203,6 +203,14 @@ def _create_syslog_handler(handler_config):
     if address is None:
         raise ConfigError('syslog handler: no address specified')
 
+    # Check if address is in `host:port` format
+    try:
+        host, port = address.split(':', maxsplit=1)
+    except ValueError:
+        pass
+    else:
+        address = (host, port)
+
     facility = handler_config.get('facility', 'user')
     try:
         facility_type = logging.handlers.SysLogHandler.facility_names[facility]

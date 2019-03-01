@@ -331,7 +331,23 @@ class TestLoggingConfiguration(unittest.TestCase):
         self.assertRaises(ConfigError, rlog.configure_logging,
                           self.logging_config)
 
-    def test_syslog_handler_syntax_no_address(self):
+    def test_syslog_handler(self):
+        import platform
+
+        if platform.system() == 'Linux':
+            addr = '/dev/log'
+        elif platform.system() == 'Darwin':
+            addr = '/dev/run/syslog'
+        else:
+            self.skipTest()
+
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog', 'address': addr}]
+        }
+        rlog.getlogger().info('foo')
+
+    def test_syslog_handler_no_address(self):
         self.logging_config = {
             'level': 'INFO',
             'handlers': [{'type': 'syslog'}]
