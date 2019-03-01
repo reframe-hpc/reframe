@@ -23,8 +23,7 @@ import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
-from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
-                                     user_deprecation_warning)
+from reframe.core.exceptions import BuildError, PipelineError, SanityError
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
