@@ -62,3 +62,35 @@ class MpiInitTest(rfm.RegressionTest):
         ])
         self.maintainers = ['JG']
         self.tags = {'production'}
+
+
+@rfm.simple_test
+class MpiHelloTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = ['daint:gpu', 'daint:mc',
+                              'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'kesch:pn',
+                              'leone:normal', 'monch:compute']
+        self.valid_prog_environs = ['PrgEnv-cray']
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
+
+        self.descr = 'MPI Hello World'
+        self.sourcepath = 'mpi_helloworld.c'
+        self.maintainers = ['RS', 'VK']
+        self.num_tasks_per_node = 1
+        self.num_tasks = 0
+        num_processes = sn.extractsingle(
+            r'Received correct messages from (?P<nprocs>\d+) processes',
+            self.stdout, 'nprocs', int)
+        self.sanity_patterns = sn.assert_eq(num_processes,
+                                            self.num_tasks_assigned-1)
+        self.tags = {'diagnostic', 'ops'}
+
+    @property
+    @sn.sanity_function
+    def num_tasks_assigned(self):
+        return self.job.num_tasks
