@@ -235,7 +235,8 @@ class ReframeSettings:
                     'type': 'ProgEnvironment',
                     'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
-                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+#                        'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
+                        'LD_PRELOAD': '/opt/mvapich2/gdr/2.3/mcast/no-openacc/cuda8.0/mofed3.4/mpirun/gnu5.4.0/lib64/libmpi.so'
                     },
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
