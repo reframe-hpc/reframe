@@ -8,6 +8,7 @@ class FieldextraTestBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.maintainers = ['MKr']
+        self.tags = {'mch'}
 
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -25,7 +26,7 @@ class FieldextraTestBase(rfm.RunOnlyRegressionTest):
 class FieldextraAccuracyTest(FieldextraTestBase):
     def __init__(self, variant):
         super().__init__()
-        self.descr = ('Fieldextra validation test (accuracy); MCH')
+        self.descr = 'Fieldextra validation test (accuracy - "cookbook")'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Fieldextra', 'cookbook_tests')
         self.readonly_files = [
@@ -57,7 +58,7 @@ class FieldextraAccuracyTest(FieldextraTestBase):
 class FieldextraPerformanceTest(FieldextraTestBase):
     def __init__(self):
         super().__init__()
-        self.descr = ('Fieldextra validation test (performance); MCH')
+        self.descr = 'Fieldextra validation test (performance)'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Fieldextra', 'performance')
         self.modules = ['fieldextra/12.7.5-gmvolf-17.02-openmp']
