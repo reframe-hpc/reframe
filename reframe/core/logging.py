@@ -207,7 +207,8 @@ def _create_syslog_handler(handler_config):
     try:
         facility_type = logging.handlers.SysLogHandler.facility_names[facility]
     except KeyError:
-        raise ConfigError('syslog handler: unknown facility: %s' % facility) from None
+        raise ConfigError('syslog handler: '
+                          'unknown facility: %s' % facility) from None
 
     socktype = handler_config.get('socktype', 'udp')
     if socktype == 'udp':
@@ -215,11 +216,9 @@ def _create_syslog_handler(handler_config):
     elif socktype == 'tcp':
         socket_type = socket.SOCK_STREAM
     else:
-        raise ConfigError('syslog handler: unsupported socket type: %s' % socktype)
+        raise ConfigError('syslog handler: unknown socket type: %s' % socktype)
 
-    return logging.handlers.SysLogHandler(address=address,
-                                          facility=facility_type,
-                                          socktype=socket_type)
+    return logging.handlers.SysLogHandler(address, facility_type, socket_type)
 
 
 def _create_stream_handler(handler_config):
