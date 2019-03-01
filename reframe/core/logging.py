@@ -199,7 +199,7 @@ def _create_filelog_handler(handler_config):
 
 
 def _create_syslog_handler(handler_config):
-    address = handler_config.get('address', None) 
+    address = handler_config.get('address', None)
     if address is None:
         raise ConfigError('syslog handler: no address specified')
 
