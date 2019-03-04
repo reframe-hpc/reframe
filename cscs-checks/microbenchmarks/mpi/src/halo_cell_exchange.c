@@ -1,3 +1,5 @@
+/* This benchmark emulates a halo cell exchange in n dimensions. The pure
+   communication is considered without any stencil computation.*/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +61,7 @@ main (int argc, const char *argv[])
     {
       if (comm_rank == 0)
 	{
+          /* read parameters for every single benchmark line by line */
 	  end = (fgets (inputbuf, sizeof (inputbuf) - 1, pFile) == NULL);
 	  if (end == 0)
 	    {
@@ -78,6 +81,7 @@ main (int argc, const char *argv[])
 	{
 	  if (comm_rank == 0)
 	    {
+              /* read number of dimensions */
 	      sscanf (pinputbuf, "%d", &ndims);
 	    }
 	  if (MPI_Bcast (&ndims, 1, MPI_INT, 0, MPI_COMM_WORLD) != 0)
@@ -106,6 +110,7 @@ main (int argc, const char *argv[])
 		    pinputbuf++;
 		  while (*pinputbuf == ' ')
 		    pinputbuf++;
+                  /* read number of ranks in every dimension */
 		  sscanf (pinputbuf, "%d", &dim_size[i]);
 		}
 	      if (MPI_Bcast (&dim_size[i], 1, MPI_INT, 0, MPI_COMM_WORLD) !=
@@ -126,6 +131,8 @@ main (int argc, const char *argv[])
 		    pinputbuf++;
 		  while (*pinputbuf == ' ')
 		    pinputbuf++;
+                  /* read halo cell size to be communicated in every
+                     dimension */
 		  sscanf (pinputbuf, "%d", &halosize[i]);
 		}
 	      if (MPI_Bcast (&halosize[i], 1, MPI_INT, 0, MPI_COMM_WORLD) !=
@@ -149,6 +156,7 @@ main (int argc, const char *argv[])
 	      exit (0);
 	    }
 
+          /* use only the number of ranks required */
 	  color = (comm_rank < j);
 	  if (color == 0)
 	    {
@@ -167,6 +175,7 @@ main (int argc, const char *argv[])
 		  fprintf (stderr, "MPI_Comm_split() failed\n");
 		  exit (1);
 		}
+              /* cartesian grid communicator */
 	      if (MPI_Cart_create
 		  (red_comm, ndims, dim_size, periods, reorder,
 		   &cart_comm) != 0)
@@ -206,6 +215,7 @@ main (int argc, const char *argv[])
 		{
 		  for (i = 0; i < ndims; i++)
 		    {
+                      /* receive data in every direction */
 		      if (MPI_Cart_shift
 			  (cart_comm, i, 1, &rank_source, &rank_dest) != 0)
 			{
@@ -232,6 +242,7 @@ main (int argc, const char *argv[])
 		    }
 		  for (i = 0; i < ndims; i++)
 		    {
+                      /* send data in every direction */
 		      if (MPI_Cart_shift
 			  (cart_comm, i, 1, &rank_source, &rank_dest) != 0)
 			{
@@ -290,6 +301,7 @@ main (int argc, const char *argv[])
 		    {
 		      printf (" %d", halosize[i]);
 		    }
+                  /* print minimum and maximum time per exchange and test */
 		  printf (" %e %e\n", deltatmin / NCALLS, deltatmax / NCALLS);
 		}
 	      free (status);
