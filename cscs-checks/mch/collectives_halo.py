@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class CommunicationBaseTest(rfm.RegressionTest):
+class CommunicationTestBase(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
         super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
@@ -90,7 +90,7 @@ class CommunicationBaseTest(rfm.RegressionTest):
 # of the check where the time is measured; default == all
 # nocomm == no communication  nocomp == no computation
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class AlltoallvTest(CommunicationBaseTest):
+class AlltoallvTest(CommunicationTestBase):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -105,14 +105,14 @@ class AlltoallvTest(CommunicationBaseTest):
                                  'default': 0.0138493
                              }
                          })
-        self.descr = 'Alltoall communication; Meteoswiss check'
+        self.descr = 'Alltoall communication test'
         self.strict_check = False
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         self.prebuild_cmd = ['git checkout alltoallv']
 
 
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class HaloExchangeTest(CommunicationBaseTest):
+class HaloExchangeTest(CommunicationTestBase):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -127,6 +127,6 @@ class HaloExchangeTest(CommunicationBaseTest):
                                  'default': 2.53509
                              }
                          })
-        self.descr = 'Halo-cell exchange; Meteoswiss check'
+        self.descr = 'Halo-cell exchange test'
         self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout barebones']
