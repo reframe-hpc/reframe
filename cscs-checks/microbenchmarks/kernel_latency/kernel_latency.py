@@ -51,7 +51,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.sys_reference = {
             'sync': {
                 'dom:gpu': {
-                    'latency': (6.6, None, 0.10, 's')
+                    'latency': (6.6, None, 0.10, 'us')
                 },
                 'daint:gpu': {
                     'latency': (6.6, None, 0.10, 'us')
@@ -65,7 +65,7 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (2.2, None, 0.10, 'us')
                 },
                 'daint:gpu': {
-                    'latency': (2.2, None, 0.10, 's')
+                    'latency': (2.2, None, 0.10, 'us')
                 },
                 'kesch:cn': {
                     'latency': (5.7, None, 0.10, 'us')
