@@ -81,7 +81,11 @@ class EnvironError(ReframeError):
 
 
 class SanityError(ReframeError):
-    """Raised to denote an error in sanity or performance checking."""
+    """Raised to denote an error in sanity checking."""
+
+
+class PerformanceError(ReframeError):
+    """Raised to denote an error in performance checking."""
 
 
 class PipelineError(ReframeError):
@@ -237,6 +241,9 @@ def format_exception(exc_type, exc_value, tb):
 
     if isinstance(exc_value, SanityError):
         return 'sanity error: %s' % exc_value
+
+    if isinstance(exc_value, PerformanceError):
+        return 'performance error: %s' % exc_value
 
     if isinstance(exc_value, ReframeFatalError):
         exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
