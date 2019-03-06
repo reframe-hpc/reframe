@@ -30,9 +30,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.sourcepath = 'bandwidthtestflex.cu'
         self.executable = 'gpu_bandwidth_check.x'
 
-        # NOTE: Perform a range of bandwidth tests from 64MB to 1024MB
-        # with 64MB increments
-        self.min_buffer_size = 67108864
+        # Perform a single bandwidth test with a buffer size of 1024MB
+        self.min_buffer_size = 1073741824
         self.max_buffer_size = 1073741824
         self.executable_opts = ['device', 'all', '--mode=range',
                                 '--start=%d' % self.min_buffer_size,
