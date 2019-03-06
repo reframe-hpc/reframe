@@ -1076,7 +1076,7 @@ class RegressionTest:
     def performance(self):
         try:
             self.check_performance()
-        except (PerformanceError, SanityError):
+        except PerformanceError:
             if self.strict_check:
                 raise
 
@@ -1124,7 +1124,7 @@ class RegressionTest:
                 try:
                     evaluate(assert_reference(val, ref, low_thres, high_thres))
                 except SanityError as e:
-                    raise PerformanceError(e)
+                    raise PerformanceError from e
 
     def _copy_job_files(self, job, dst):
         if job is None:
