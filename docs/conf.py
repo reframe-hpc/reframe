@@ -63,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ReFrame'
-copyright = '2017-2018, CSCS'
+copyright = '2017-2019, CSCS'
 author = 'CSCS'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -112,7 +112,7 @@ html_theme_options = {
     'collapse_navigation': True,
     'display_version': True,
     'navigation_depth': 5,
-    'analytics_id': 'UA-86976416-6',
+    # 'analytics_id': 'UA-86976416-6',
     #     # 'canonical_url': True,
 }
 
