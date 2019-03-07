@@ -152,7 +152,7 @@ class SlurmJob(sched.Job):
 
         self._jobid = int(jobid_match.group('jobid'))
 
-    def _get_all_nodes(self):
+    def get_all_nodes(self):
         try:
             completed = _run_strict('scontrol -a show -o nodes')
         except SpawnedProcessError as e:
@@ -169,10 +169,6 @@ class SlurmJob(sched.Job):
             return partition_match.group('partition')
 
         return None
-
-    def get_partition_nodes(self):
-        nodes = self._get_all_nodes()
-        return self.filter_nodes(nodes, self.sched_access)
 
     def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
@@ -199,6 +195,8 @@ class SlurmJob(sched.Job):
         else:
             default_partition = self._get_default_partition()
             partitions = {default_partition} if default_partition else set()
+            getlogger().debug('flex_alloc_tasks: default partition: %s' %
+                              default_partition)
 
         nodes = {n for n in nodes if n.partitions >= partitions}
         getlogger().debug(
@@ -217,7 +215,7 @@ class SlurmJob(sched.Job):
             nodes &= self._get_nodes_by_name(nodelist)
             getlogger().debug(
                 'flex_alloc_tasks: filtering nodes by nodelist: %s '
-                'availablenodes now: %s' % (nodelist, len(nodes)))
+                'available nodes now: %s' % (nodelist, len(nodes)))
 
         if exclude_nodes:
             exclude_nodes = exclude_nodes.strip()
@@ -431,10 +429,11 @@ class SlurmNode:
             raise JobError('could not extract NodeName from node description')
 
         self._partitions = self._extract_attribute(
-            'Partitions', node_descr, sep=',')
+            'Partitions', node_descr, sep=',') or set()
         self._active_features = self._extract_attribute(
-            'ActiveFeatures', node_descr, sep=',')
-        self._states = self._extract_attribute('State', node_descr, sep='+')
+            'ActiveFeatures', node_descr, sep=',') or set()
+        self._states = self._extract_attribute(
+            'State', node_descr, sep='+') or set()
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):

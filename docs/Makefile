@@ -41,13 +41,10 @@ TARGET_DOCS := \
 
 all:
 	@$(SPHINX_VERS) -l conf.py build docs/ html/
-	@rsync -az old/ html/_old/
-	@./link_old_docs.sh
 
 latest:
 	@make html
 	@touch html/.nojekyll
-	@rsync -az old/ html/_old/
 
 clean:
 	@echo 'Removing directories'

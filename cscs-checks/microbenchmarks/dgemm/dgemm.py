@@ -14,8 +14,17 @@ class DGEMMTest(rfm.RegressionTest):
         # the perf patterns are automaticaly generated inside sanity
         self.perf_patterns = {}
 
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
+        self.valid_systems = [
+            'daint:gpu', 'daint:mc',
+            'dom:gpu', 'dom:mc',
+            'kesch:cn', 'kesch:pn'
+        ]
+
+        if self.current_system.name in ['daint', 'dom']:
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
+        if self.current_system.name == 'kesch':
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_tasks_per_core = 1
@@ -28,8 +37,8 @@ class DGEMMTest(rfm.RegressionTest):
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
-            # FIXME update the values for monch
-            'monch:compute': (350, -0.1, None, 'Gflop/s'),
+            'kesch:cn': (300.0, -0.15, None, 'Gflop/s'),
+            'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
@@ -55,9 +64,9 @@ class DGEMMTest(rfm.RegressionTest):
         elif partition.fullname in ['daint:mc', 'dom:mc']:
             self.num_cpus_per_task = 36
             self.executable_opts = ['6144', '12288', '3072']
-        elif partition.fullname in ['monch:compute']:
-            self.num_cpus_per_task = 20
-            self.executable_opts = ['5000', '5000', '5000']
+        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
+            self.num_cpus_per_task = 12
+            self.executable_opts = ['6144', '12288', '3072']
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
