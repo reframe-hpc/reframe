@@ -265,12 +265,13 @@ class Job(abc.ABC):
 
             return self.sched_flex_alloc_tasks
 
-        available_nodes = self.get_partition_nodes()
-        getlogger().debug('flex_alloc_tasks: total available nodes in current '
-                          'virtual partition: %s' % len(available_nodes))
+        available_nodes = self.get_all_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes %s ' %
+                          len(available_nodes))
 
         # Try to guess the number of tasks now
-        available_nodes = self.filter_nodes(available_nodes, self.options)
+        available_nodes = self.filter_nodes(available_nodes,
+                                            self.sched_access + self.options)
 
         if self.sched_flex_alloc_tasks == 'idle':
             available_nodes = {n for n in available_nodes
@@ -284,8 +285,8 @@ class Job(abc.ABC):
         return num_tasks
 
     @abc.abstractmethod
-    def get_partition_nodes(self):
-        # Get all nodes of the current virtual partition
+    def get_all_nodes(self):
+        # Gets all the available nodes
         pass
 
     @abc.abstractmethod
