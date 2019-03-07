@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe) [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe) [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
+[![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
+[![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)
 
 # ReFrame
 
@@ -16,12 +18,15 @@ Users can create their own test hierarchies, create test factories for generatin
 
 ## Documentation
 
-The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
-It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
+You may find the official documentation of the latest release and the current master in the following links:
 
-### Building the documentation from master
+- [Latest release](https://reframe-hpc.readthedocs.io)
+- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
 
-You may build the documentation of the master either with Python 2 or Python 3.
+
+### Building the documentation locally
+
+You may build the documentation of the master locally either with Python 2 or Python 3.
 Here is how to do it:
 
 ```
