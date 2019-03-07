@@ -16,7 +16,7 @@ Users can create their own test hierarchies, create test factories for generatin
 
 ## Documentation
 
-The official documentation is maintained [here](https://reframe-hpc.readthedocs.org).
+The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
 It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
 
 ### Building the documentation from master
