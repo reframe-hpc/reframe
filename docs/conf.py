@@ -112,7 +112,6 @@ html_theme_options = {
     'collapse_navigation': True,
     'display_version': True,
     'navigation_depth': 5,
-    # 'analytics_id': 'UA-86976416-6',
     #     # 'canonical_url': True,
 }
 
