@@ -7,11 +7,9 @@ PYTHON      = python3
 SPHINXOPTS  =
 SPHINXBUILD =  -msphinx
 SPHINXPROJ  = ReFrame
-SPHINX_VERS = sphinx-versioning
 SOURCEDIR   = .
 BUILDDIR    = $(VERSION)
 RM          = /bin/rm -rf
-TAG_VERS    = '^v\d+(\.\d+)*[a-z]*'
 
 TARGET_DOCS := \
 	help \
@@ -39,9 +37,6 @@ TARGET_DOCS := \
 	doctest \
 	coverage
 
-all:
-	@$(SPHINX_VERS) -l conf.py build docs/ html/
-
 latest:
 	@make html
 	@touch html/.nojekyll
@@ -55,4 +50,4 @@ $(TARGET_DOCS): Makefile
 
 
 
-.PHONY: all clean latest Makefile
+.PHONY: clean latest Makefile
