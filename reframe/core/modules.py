@@ -580,11 +580,31 @@ class LModImpl(TModImpl):
                 # Tmod syntax
                 ret.append(Module(conflict_arg))
 
+        # Lmod accepts the family exclusion syntax, where only one family
+        # member can be loaded at a given time.
+        # The following test appends to the list of conflicted module any
+        # family member to the current module we are trying to load
+        families = []
         for m in re.finditer(r'family\s*(\S+)', completed.stderr):
-            conflict_arg = m.group(1)
-            if conflict_arg.startswith('('):
+            family_arg = m.group(1)
+            if family_arg.startswith('('):
                 # Lua syntax
-                ret.append(Module(conflict_arg.strip('\'"()')))
+                families.append(family_arg.strip('\'"()'))
+
+        # only test for families with the current modules is part of
+        if families:
+            loaded_modules = self.loaded_modules()
+            for mod in loaded_modules:
+                completed = self._run_module_command(
+                    'show', str(mod), msg="could not show module '%s'" % mod)
+                for family in re.finditer(r'family\s*(\S+)', completed.stderr):
+                    family_arg = family.group(1)
+                    if family_arg.startswith('('):
+                        family_name = family_arg.strip('\'"()')
+                        # Lmod should automatically swap the modules if they
+                        # have different names and belong to the same family
+                        if family_name in families and mod.name == module.name:
+                            ret.append(mod)
 
         return ret
 

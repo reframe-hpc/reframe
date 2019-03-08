@@ -147,6 +147,53 @@ class TestLModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def expected_unload_instr(self, module):
         return 'module unload %s' % module
 
+    def test_lua_module_load(self):
+        self.modules_system.load_module('testluamod_foo')
+        self.assertTrue(self.modules_system.is_module_loaded('testluamod_foo'))
+        self.assertIn('testluamod_foo', self.modules_system.loaded_modules())
+        self.assertIn('TESTLUAMOD_FOO', os.environ)
+
+        self.modules_system.unload_module('testluamod_foo')
+        self.assertFalse(
+            self.modules_system.is_module_loaded('testluamod_foo'))
+        self.assertNotIn('testluamod_foo',
+                         self.modules_system.loaded_modules())
+        self.assertNotIn('TESTLUAMOD_FOO', os.environ)
+
+    def test_lua_module_load_force(self):
+        self.modules_system.load_module('testluamod_foo')
+
+        unloaded = self.modules_system.load_module(
+            'testluamod_foo', force=True)
+        self.assertEqual(0, len(unloaded))
+        self.assertTrue(self.modules_system.is_module_loaded('testluamod_foo'))
+
+        unloaded = self.modules_system.load_module(
+            'testluamod_bar', force=True)
+        self.assertTrue(self.modules_system.is_module_loaded('testluamod_bar'))
+        self.assertFalse(
+            self.modules_system.is_module_loaded('testluamod_foo'))
+        self.assertIn('testluamod_foo', unloaded)
+        self.assertIn('TESTLUAMOD_BAR', os.environ)
+
+    def test_lua_family_exclusion(self):
+        self.modules_system.load_module('testluamod_foo')
+        self.assertTrue(self.modules_system.is_module_loaded('testluamod_foo'))
+
+        # Lmod should swap the modules automatically
+        self.modules_system.load_module('testluamod_bar')
+        self.assertFalse(
+            self.modules_system.is_module_loaded('testluamod_foo'))
+        self.assertTrue(self.modules_system.is_module_loaded('testluamod_bar'))
+        self.assertIn('TESTLUAMOD_BAR', os.environ)
+
+        # Lmod should swap the modules automatically
+        self.modules_system.load_module('test_lua/a')
+        self.assertTrue(self.modules_system.is_module_loaded('test_lua/a'))
+        # Lmod should not swap the modules automatically
+        self.assertFalse(self.modules_system.is_module_loaded('test_lua/b'))
+        self.assertIn('TEST_LUA_A', os.environ)
+
 
 class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
     def setUp(self):
