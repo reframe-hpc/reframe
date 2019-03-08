@@ -650,10 +650,14 @@ Common Log Handler Attributes
 All handlers accept the following set of attributes (keys) in their configuration:
 
 * ``type``: (required) the type of the handler.
-  There are two types of handlers used for standard logging in ReFrame
+  There are several types of handlers used for logging in ReFrame.
+  Some of them are only relevant for performance logging:
 
   1. ``file``: a handler that writes log records in file.
   2. ``stream``: a handler that writes log records in a file stream.
+  3. ``syslog``: a handler that sends log records to Unix syslog.
+  4. ``filelog``: a handler for writing performance logs (relevant only for `performance logging <#performance-logging>`__).
+  5. ``graylog``: a handler for sending performance logs to a Graylog server (relevant only for `performance logging <#performance-logging>`__).
 
 
 * ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
@@ -708,6 +712,25 @@ In addition to the common log handler attributes, file log handlers accept the f
 * ``name``: (default ``stdout``) The symbolic name of the log stream to use.
   Available values: ``stdout`` for standard output and ``stderr`` for standard error.
 
+
+Syslog log handler
+""""""""""""""""""
+
+In addition to the common log handler attributes, file log handlers accept the following:
+
+* ``socktype``: The type of socket where the handler will send log records to. There are two socket types:
+
+   1. ``udp``: (default) This opens a UDP datagram socket.
+   2. ``tcp``: This opens a TCP stream socket.
+
+* ``facility``: (default: ``user``) The Syslog facility to send records to.
+  The list of supported facilities can be found `here <https://docs.python.org/3.6/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
+* ``address``: (required) The address where the handler will connect to.
+  This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
+
+
+.. note::
+   .. versionadded:: 2.17
 
 
 Performance Logging

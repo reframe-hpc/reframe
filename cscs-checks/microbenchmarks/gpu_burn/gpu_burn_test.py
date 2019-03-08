@@ -59,6 +59,7 @@ class GpuBurnTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
 
         self.maintainers = ['AJ', 'VK', 'TM']
+        self.tags = {'diagnostic', 'benchmark'}
 
     @property
     @sn.sanity_function

@@ -23,8 +23,7 @@ import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
-from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
-                                     user_deprecation_warning)
+from reframe.core.exceptions import BuildError, PipelineError, SanityError
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
@@ -924,11 +923,9 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
-        :arg compile_opts: Extra options to be passed to the programming
-            environment for compiling the source code of the test.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         """
         if not self._current_environ:
@@ -988,20 +985,6 @@ class RegressionTest:
 
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
-
-        if compile_opts:
-            user_deprecation_warning(
-                'passing options to the compile() method is deprecated; '
-                'please use a build system.')
-
-            # Remove source and executable from compile_opts
-            compile_opts.pop('source', None)
-            compile_opts.pop('executable', None)
-            try:
-                self.build_system.makefile = compile_opts['makefile']
-                self.build_system.options  = compile_opts['options']
-            except KeyError:
-                pass
 
         # Prepare build job
         build_commands = [
@@ -1126,7 +1109,7 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                if not key in self.reference:
+                if key not in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
@@ -1158,10 +1141,14 @@ class RegressionTest:
 
         # Copy files specified by the user
         for f in self.keep_files:
+            f_orig = f
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
 
-            shutil.copy(f, self.outputdir)
+            if os.path.isfile(f):
+                shutil.copy(f, self.outputdir)
+            elif os.path.isdir(f):
+                shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
@@ -1200,7 +1187,7 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.

@@ -64,8 +64,8 @@ class TypedField(Field):
         if not any(isinstance(value, t) for t in self._types):
             typedescr = '|'.join(t.__name__ for t in self._types)
             raise TypeError(
-                "failed to set field '%s': type mismatch: "
-                "required type is '%s'" % (self._name, typedescr))
+                "failed to set field '%s': '%s' is not of type '%s'" %
+                (self._name, value, typedescr))
 
     def __set__(self, obj, value):
         self._check_type(value)
