@@ -3,7 +3,7 @@
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def machinesList = ['daint', 'dom', 'kesch', 'fulen']
+def machinesList = ['daint', 'kesch']
 def machinesToRun = machinesList
 def runTests = true
 def uniqueID
@@ -93,17 +93,15 @@ stage('Unittest') {
                                             echo \$SCRATCH""").trim()
                 def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
                 def moduleDefinition = ''
-                if (machineName in ['leone', 'fulen']) {
+                if (machineName == 'leone') {
                     moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
                                           export -f module'''
                 }
-                // Run only the generic unit tests on fulen
-                def localOnlyFlag = machineName in ['fulen'] ? '-L' : ''
                 dir(reframeDir) {
                     checkout scm
                     sh("""${loginBash}
                           ${moduleDefinition}
-                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i '' ${localOnlyFlag}""")
+                          bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
                 }
             }
         }

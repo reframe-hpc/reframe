@@ -5,7 +5,6 @@ CI_FOLDER=""
 CI_GENERIC=0
 CI_TUTORIAL=0
 CI_EXITCODE=0
-CI_LOCAL=0
 TERM="${TERM:-xterm}"
 PROFILE=""
 MODULEUSE=""
@@ -27,7 +26,6 @@ Usage: $(tput setaf 1)$scriptname$(tput sgr0) $(tput setaf 3)[OPTIONS]$(tput sgr
     $(tput setaf 3)-m | --module-use$(tput sgr0) $(tput setaf 1)ARGS$(tput sgr0)   executes module use of the give folder before loading the regression
     $(tput setaf 3)-g | --generic-only$(tput sgr0)      executes unit tests using the generic configuration
     $(tput setaf 3)-t | --tutorial-only$(tput sgr0)     executes only the modified/new tutorial tests
-    $(tput setaf 3)-L | --local-only$(tput sgr0)        executes the unit tests without a configuration
     $(tput setaf 3)-h | --help$(tput sgr0)              prints this help and exits
 
 EOF
@@ -68,8 +66,8 @@ run_serial_user_checks()
 
 ### Main script ###
 
-shortopts="h,g,t,L,f:,i:,l:,m:"
-longopts="help,generic-only,tutorial-only,local-only,folder:,invocation:,load-profile:,module-use:"
+shortopts="h,g,t,f:,i:,l:,m:"
+longopts="help,generic-only,tutorial-only,folder:,invocation:,load-profile:,module-use:"
 
 eval set -- $(getopt -o ${shortopts} -l ${longopts} \
                      -n ${scriptname} -- "$@" 2> /dev/null)
@@ -104,9 +102,6 @@ while [ $# -ne 0 ]; do
         -t | --tutorial-only)
             shift
             CI_TUTORIAL=1 ;;
-        -L | --local-only)
-            shift
-            CI_LOCAL=1 ;;
         --)
             ;;
         *)
@@ -185,11 +180,7 @@ else
     echo "Running unit tests"
     echo "=================="
 
-    if [ $CI_LOCAL -eq 1 ]; then
-        checked_exec ./test_reframe.py
-    else
-        checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
-    fi
+    checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
 
     echo "==================================="
     echo "Running unit tests with PBS backend"
