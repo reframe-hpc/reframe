@@ -101,7 +101,7 @@ class ReframeSettings:
 
             'fulen': {
                 'descr': 'Fulen',
-                'hostnames': ['fulen'],
+                'hostnames': ['fulen-ln\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
@@ -115,22 +115,21 @@ class ReframeSettings:
                     'normal': {
                         'scheduler': 'nativeslurm',
                         'environs': ['PrgEnv-gnu'],
-                        'descr': ('Compute nodes - '
-                                  'default partition'),
+                        'descr': 'Compute nodes - default partition',
                     },
 
                     'fat': {
                         'scheduler': 'nativeslurm',
                         'environs': ['PrgEnv-gnu'],
                         'access':  ['--partition fat'],
-                        'descr': ('High-memory compute nodes'),
+                        'descr': 'High-memory compute nodes',
                     },
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'environs': ['PrgEnv-gnu'],
                         'access':  ['--partition gpu'],
-                        'descr': ('Hybrid compute nodes'),
+                        'descr': 'Hybrid compute nodes',
                     },
                 }
             },
