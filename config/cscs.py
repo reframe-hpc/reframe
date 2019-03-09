@@ -121,14 +121,14 @@ class ReframeSettings:
                     'fat': {
                         'scheduler': 'nativeslurm',
                         'environs': ['PrgEnv-gnu'],
-                        'access':  ['--partition fat'],
+                        'access': ['--partition fat'],
                         'descr': 'High-memory compute nodes',
                     },
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'environs': ['PrgEnv-gnu'],
-                        'access':  ['--partition gpu'],
+                        'access': ['--partition gpu'],
                         'descr': 'Hybrid compute nodes',
                     },
                 }
