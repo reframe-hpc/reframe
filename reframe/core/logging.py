@@ -8,6 +8,7 @@ import pprint
 import shutil
 import sys
 import warnings
+import socket
 from datetime import datetime
 
 import reframe
@@ -197,6 +198,37 @@ def _create_filelog_handler(handler_config):
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
 
 
+def _create_syslog_handler(handler_config):
+    address = handler_config.get('address', None)
+    if address is None:
+        raise ConfigError('syslog handler: no address specified')
+
+    # Check if address is in `host:port` format
+    try:
+        host, port = address.split(':', maxsplit=1)
+    except ValueError:
+        pass
+    else:
+        address = (host, port)
+
+    facility = handler_config.get('facility', 'user')
+    try:
+        facility_type = logging.handlers.SysLogHandler.facility_names[facility]
+    except KeyError:
+        raise ConfigError('syslog handler: '
+                          'unknown facility: %s' % facility) from None
+
+    socktype = handler_config.get('socktype', 'udp')
+    if socktype == 'udp':
+        socket_type = socket.SOCK_DGRAM
+    elif socktype == 'tcp':
+        socket_type = socket.SOCK_STREAM
+    else:
+        raise ConfigError('syslog handler: unknown socket type: %s' % socktype)
+
+    return logging.handlers.SysLogHandler(address, facility_type, socket_type)
+
+
 def _create_stream_handler(handler_config):
     stream = handler_config.get('name', 'stdout')
     if stream == 'stdout':
@@ -258,6 +290,8 @@ def _extract_handlers(handlers_list):
             hdlr = _create_file_handler(handler_config)
         elif handler_type == 'filelog':
             hdlr = _create_filelog_handler(handler_config)
+        elif handler_type == 'syslog':
+            hdlr = _create_syslog_handler(handler_config)
         elif handler_type == 'stream':
             hdlr = _create_stream_handler(handler_config)
         elif handler_type == 'graylog':
