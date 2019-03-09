@@ -101,7 +101,7 @@ class ReframeSettings:
 
             'fulen': {
                 'descr': 'Fulen',
-                'hostnames': ['fulen-ln\d+'],
+                'hostnames': [r'fulen-ln\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
