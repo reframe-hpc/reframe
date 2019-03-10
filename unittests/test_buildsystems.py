@@ -16,11 +16,11 @@ class _BuildSystemTest:
                                        cc='gcc',
                                        cxx='g++',
                                        ftn='gfortran',
-                                       cppflags='-DNDEBUG',
-                                       cflags='-Wall -std=c99',
-                                       cxxflags='-Wall -std=c++11',
-                                       fflags='-Wall',
-                                       ldflags='-dynamic')
+                                       cppflags=['-DNDEBUG'],
+                                       cflags=['-Wall', '-std=c99'],
+                                       cxxflags=['-Wall', '-std=c++11'],
+                                       fflags=['-Wall'],
+                                       ldflags=['-dynamic'])
         self.build_system = self.create_build_system()
 
     def setup_base_buildsystem(self):

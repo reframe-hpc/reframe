@@ -26,9 +26,12 @@ class TestOSTools(unittest.TestCase):
     def test_command_timeout(self):
         try:
             os_ext.run_command('sleep 3', timeout=2)
-            self.fail('Expected timeout')
         except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
+            # Try to get the string repr. of the exception: see bug #658
+            s = str(e)
+        else:
+            self.fail('expected timeout')
 
     def test_command_async(self):
         from datetime import datetime
@@ -186,6 +189,50 @@ class TestOSTools(unittest.TestCase):
 
         # Try to remove a non-existent file
         os_ext.force_remove_file(fp.name)
+
+    def test_expandvars_dollar(self):
+        text = 'Hello, $(echo World)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '$(echo Hello, $(echo World))'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_backticks(self):
+        text = 'Hello, `echo World`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '`echo Hello, `echo World``'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_mixed_syntax(self):
+        text = '`echo Hello, $(echo World)`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = '$(echo Hello, `echo World`)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_error(self):
+        text = 'Hello, $(foo)'
+        with self.assertRaises(SpawnedProcessError):
+            os_ext.expandvars(text)
+
+    def test_strange_syntax(self):
+        text = 'Hello, $(foo`'
+        self.assertEqual('Hello, $(foo`', os_ext.expandvars(text))
+
+        text = 'Hello, `foo)'
+        self.assertEqual('Hello, `foo)', os_ext.expandvars(text))
+
+    def test_expandvars_nocmd(self):
+        os.environ['FOO'] = 'World'
+        text = 'Hello, $FOO'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = 'Hello, ${FOO}'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        del os.environ['FOO']
 
 
 class TestCopyTree(unittest.TestCase):

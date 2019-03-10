@@ -14,7 +14,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
 
         # Reset sources dir relative to the SCS apps prefix
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'Gromacs')
+                                       'Gromacs', 'herflat')
         self.keep_files = [output_file]
 
         energy = sn.extractsingle(r'\s+Potential\s+Kinetic En\.\s+Total Energy'

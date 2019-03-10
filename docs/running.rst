@@ -650,10 +650,14 @@ Common Log Handler Attributes
 All handlers accept the following set of attributes (keys) in their configuration:
 
 * ``type``: (required) the type of the handler.
-  There are two types of handlers used for standard logging in ReFrame
+  There are several types of handlers used for logging in ReFrame.
+  Some of them are only relevant for performance logging:
 
   1. ``file``: a handler that writes log records in file.
   2. ``stream``: a handler that writes log records in a file stream.
+  3. ``syslog``: a handler that sends log records to Unix syslog.
+  4. ``filelog``: a handler for writing performance logs (relevant only for `performance logging <#performance-logging>`__).
+  5. ``graylog``: a handler for sending performance logs to a Graylog server (relevant only for `performance logging <#performance-logging>`__).
 
 
 * ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
@@ -708,6 +712,25 @@ In addition to the common log handler attributes, file log handlers accept the f
 * ``name``: (default ``stdout``) The symbolic name of the log stream to use.
   Available values: ``stdout`` for standard output and ``stderr`` for standard error.
 
+
+Syslog log handler
+""""""""""""""""""
+
+In addition to the common log handler attributes, file log handlers accept the following:
+
+* ``socktype``: The type of socket where the handler will send log records to. There are two socket types:
+
+   1. ``udp``: (default) This opens a UDP datagram socket.
+   2. ``tcp``: This opens a TCP stream socket.
+
+* ``facility``: (default: ``user``) The Syslog facility to send records to.
+  The list of supported facilities can be found `here <https://docs.python.org/3.6/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
+* ``address``: (required) The address where the handler will connect to.
+  This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
+
+
+.. note::
+   .. versionadded:: 2.17
 
 
 Performance Logging
@@ -827,6 +850,20 @@ This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, 
 `GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
 The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
 More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
+
+
+Adjusting verbosity of output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ReFrame's output is handled by a logging mechanism.
+In fact, as revealed in the corresponding configuration entry (see `Configuring Logging <#configuring-logging>`__), a specific logging handler takes care of printing ReFrame's message in the standard output.
+One way to change the verbosity level of the output is by explicitly setting the value of the ``level`` key in the configuration of the output handler.
+Alternatively, you may increase the verbosity level from the command line by chaining the ``-v`` or ``--verbose`` option.
+Every time ``-v`` is specified, the next verbosity level will be selected for the output.
+For example, if the initial level of the output handler is set to ``INFO`` (in the configuration file), specifying ``-v`` twice will make ReFrame spit out all ``DEBUG`` messages.
+
+.. versionadded:: 2.16
+   ``-v`` and ``--verbose`` options are added.
 
 
 Asynchronous Execution of Regression Checks
