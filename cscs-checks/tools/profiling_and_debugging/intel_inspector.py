@@ -11,9 +11,8 @@ class Intel_Inspector(rfm.RegressionTest):
         super().__init__()
         self.name = 'Intel_Inspector_%s' % lang.replace('+', 'p')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
-        self.prgenv_flags = {
+        self.valid_prog_environs = ['PrgEnv-intel']
+        elf.prgenv_flags = {
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-cray': ['-O2', '-g', '-homp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
@@ -27,7 +26,7 @@ class Intel_Inspector(rfm.RegressionTest):
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
-        self.num_iterations = 50
+        self.num_iterations = 10
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'ITERATIONS': str(self.num_iterations),
