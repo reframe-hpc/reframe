@@ -12,7 +12,7 @@ class Intel_Inspector(rfm.RegressionTest):
         self.name = 'Intel_Inspector_%s' % lang.replace('+', 'p')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
-        elf.prgenv_flags = {
+        self.prgenv_flags = {
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-cray': ['-O2', '-g', '-homp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
