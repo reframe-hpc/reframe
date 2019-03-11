@@ -74,7 +74,7 @@ class Intel_Inspector(rfm.RegressionTest):
                             self.summary_rpt),
             sn.assert_found(r'1 Memory not deallocated problem\(s\) detected',
                             self.summary_rpt),
-            sn.assert_found(r'_main.\w+\(\d+\): Warning X\d+: P\d: ',
+            sn.assert_found(r'_main.\w+\(\d+\): Warning X\d+: P\d: '
                             r'Memory not deallocated:',
                             self.observations_rpt),
             sn.assert_found(r'_main.\w+\(\d+\): Warning X\d+:',
