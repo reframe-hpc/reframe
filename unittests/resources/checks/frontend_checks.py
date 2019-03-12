@@ -71,7 +71,7 @@ class PerformanceFailureCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.perf_patterns = {
-            'perf': sn.extractsingle('perf: (\d+)', self.stdout, 1, int)
+            'perf': sn.extractsingle(r'perf: (\d+)', self.stdout, 1, int)
         }
         self.reference = {
             '*': {
