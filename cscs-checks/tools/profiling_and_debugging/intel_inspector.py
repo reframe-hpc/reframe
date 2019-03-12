@@ -64,6 +64,7 @@ class IntelInspectorTest(rfm.RegressionTest):
             toolsversion = '579146'
         elif self.current_system.name == 'daint':
             toolsversion = '551023'
+
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),
