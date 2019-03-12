@@ -240,7 +240,8 @@ class SlurmJob(sched.Job):
         return {SlurmNode(descr) for descr in node_descriptions}
 
     def _get_nodes_by_name(self, nodespec):
-        completed = run_command('scontrol -a show -o node %s' % nodespec)
+        completed = os_ext.run_command('scontrol -a show -o node %s'
+                                       % nodespec)
         node_descriptions = completed.stdout.splitlines()
         nodes_avail = set()
         for descr in node_descriptions:
