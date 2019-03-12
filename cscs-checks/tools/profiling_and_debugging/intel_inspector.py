@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C++'], ['F90'])
-class Intel_Inspector(rfm.RegressionTest):
+class IntelInspectorTest(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
         self.name = 'Intel_Inspector_%s' % lang.replace('+', 'p')
@@ -23,6 +23,7 @@ class Intel_Inspector(rfm.RegressionTest):
         self.build_system = 'Make'
         if lang == 'F90':
             self.build_system.max_concurrency = 1
+
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
@@ -61,7 +62,7 @@ class Intel_Inspector(rfm.RegressionTest):
                         r'\s(?P<toolsversion>\d+)')
         if self.current_system.name == 'dom':
             toolsversion = '579146'
-        if self.current_system.name == 'daint':
+        elif self.current_system.name == 'daint':
             toolsversion = '551023'
         self.sanity_patterns = sn.all([
             # check the job:
