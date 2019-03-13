@@ -243,8 +243,7 @@ def format_exception(exc_type, exc_value, tb):
         return 'sanity error: %s' % exc_value
 
     if isinstance(exc_value, PerformanceError):
-        exc = exc_value.__cause__ or exc_value
-        return 'performance error: %s' % exc
+        return 'performance error: %s' % exc_value
 
     if isinstance(exc_value, ReframeFatalError):
         exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))

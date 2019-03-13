@@ -53,10 +53,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         stats = self.runner.stats
         self.assertEqual(7, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
+        self.assertEqual(4, stats.num_failures())
         self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(2, self._num_failures_stage('performance'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_system_check(self):
         self.runner.policy.skip_system_check = True
@@ -64,10 +64,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
+        self.assertEqual(4, stats.num_failures())
         self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(2, self._num_failures_stage('performance'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_prgenv_check(self):
         self.runner.policy.skip_environ_check = True
@@ -75,10 +75,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         stats = self.runner.stats
         self.assertEqual(8, stats.num_cases())
-        self.assertEqual(5, stats.num_failures())
+        self.assertEqual(4, stats.num_failures())
         self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(2, self._num_failures_stage('performance'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
@@ -86,10 +86,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         stats = self.runner.stats
         self.assertEqual(7, stats.num_cases())
-        self.assertEqual(4, stats.num_failures())
+        self.assertEqual(3, stats.num_failures())
         self.assertEqual(2, self._num_failures_stage('setup'))
         self.assertEqual(0, self._num_failures_stage('sanity'))
-        self.assertEqual(2, self._num_failures_stage('performance'))
+        self.assertEqual(1, self._num_failures_stage('performance'))
 
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True

@@ -4,7 +4,7 @@
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.exceptions import ReframeError, SanityError
+from reframe.core.exceptions import ReframeError, PerformanceError
 
 
 class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
@@ -91,7 +91,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         self.strict_check = False
 
     def check_performance(self):
-        raise SanityError('performance failure')
+        raise PerformanceError('performance failure')
 
 
 class KeyboardInterruptCheck(BaseFrontendCheck):
