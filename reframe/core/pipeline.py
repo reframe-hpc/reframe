@@ -1091,7 +1091,7 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             success = evaluate(self.sanity_patterns)
             if not success:
-                raise SanityError('sanity failure')
+                raise SanityError()
 
     def check_performance(self):
         """The performance checking phase of the regression test pipeline.
@@ -1124,7 +1124,7 @@ class RegressionTest:
                 try:
                     evaluate(assert_reference(val, ref, low_thres, high_thres))
                 except SanityError as e:
-                    raise PerformanceError from e
+                    raise PerformanceError(e)
 
     def _copy_job_files(self, job, dst):
         if job is None:
