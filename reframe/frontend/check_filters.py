@@ -7,7 +7,7 @@ import reframe.utility.sanity as util
 def have_name(patt):
     regex = re.compile(patt)
     def _fn(c):
-       return regex.match(c.name)
+        return regex.match(c.name)
 
     return _fn
 

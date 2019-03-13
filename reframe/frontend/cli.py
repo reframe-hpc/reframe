@@ -421,17 +421,12 @@ def main():
                                         checks_matched)
 
         if options.names:
-            if len(options.names) > 1:
-                options_names = "|".join(options.names)
-            else:
-                options_names = options.names[0]
-            checks_matched = filter(filters.have_name(options_names),
-                checks_matched)
+            checks_matched = filter(filters.have_name("|".join(options.names)),
+                                    checks_matched)
 
         # Filter checks by tags
         for tag in options.tags:
-            checks_matched = filter(filters.have_tag(tag),
-                                    checks_matched)
+            checks_matched = filter(filters.have_tag(tag), checks_matched)
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
