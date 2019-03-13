@@ -20,7 +20,8 @@ class CudaMemtest(rfm.RegressionTest):
             'wget %s' % src_url,
             'tar -xzf cuda_memtest-1.2.3.tar.gz',
             'cd cuda_memtest-1.2.3',
-            'patch -p1 < ../cuda_memtest-1.2.3.patch'
+            'patch -p1 < ../cuda_memtest-1.2.3.patch',
+            'patch -p1 < ../cuda_memtest-1.2.3.patch2'
         ]
         self.build_system = 'Make'
         self.executable = './cuda_memtest-1.2.3/cuda_memtest'
