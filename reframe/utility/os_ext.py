@@ -176,13 +176,17 @@ def copytree_virtual(src, dst, file_links=[],
 def rmtree(*args, max_retries=3, **kwargs):
     """Persistent version of ``shutil.rmtree()``.
 
-    If ``shutil.rmtree()`` with ``ENOTEMPTY``, retry up to ``max_retries``
-    times to delete the directory.
+    If ``shutil.rmtree()`` fails with ``ENOTEMPTY`` or ``EBUSY``, retry up to
+    ``max_retries`times to delete the directory.
 
     This version of ``rmtree()`` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See https://github.com/eth-cscs/reframe/issues/291 for
     more information.
+    Furthermore, it offers a work around for nfs file systems where a ``.nfs*``
+    file may be present during the ``rmtree()`` call which throws a busy
+    device/resource error. See https://github.com/eth-cscs/reframe/issues/712
+    for more information.
 
     ``args`` and ``kwargs`` are passed through to ``shutil.rmtree()``.
 
@@ -200,7 +204,7 @@ def rmtree(*args, max_retries=3, **kwargs):
         except OSError as e:
             if i == max_retries:
                 raise
-            elif e.errno == errno.ENOTEMPTY:
+            elif e.errno in {errno.ENOTEMPTY, errno.EBUSY}:
                 pass
             else:
                 raise
