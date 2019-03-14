@@ -19,9 +19,9 @@ from reframe.utility.versioning import Version, VersionValidator
 
 def _register_test(cls, args=None):
     def _instantiate(cls, args):
-        if isinstance(args, collections.Sequence):
+        if isinstance(args, collections.abc.Sequence):
             return cls(*args)
-        elif isinstance(args, collections.Mapping):
+        elif isinstance(args, collections.abc.Mapping):
             return cls(**args)
         elif args is None:
             return cls()
