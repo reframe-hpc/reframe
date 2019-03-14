@@ -43,7 +43,7 @@ class TestCheckFilters(unittest.TestCase):
     def test_have_name(self):
         self.assertEqual(1, self.count_checks(filters.have_name('check1')))
         self.assertEqual(3, self.count_checks(filters.have_name('check')))
-        self.assertEqual(2, self.count_checks(filters.have_name('\S*1|\S*3')))
+        self.assertEqual(2, self.count_checks(filters.have_name(r'\S*1|\S*3')))
         self.assertEqual(0, self.count_checks(filters.have_name('Check')))
         self.assertEqual(3, self.count_checks(filters.have_name('(?i)Check')))
         self.assertEqual(
