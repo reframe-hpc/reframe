@@ -50,12 +50,11 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
             'amplxe-cl -help collect |tail -20',
         ]
         self.post_run = [
-            'amplxe-cl -V &> %s'
-            % self.version_rpt,
-            'amplxe-cl -R hotspots -r hotspots* -column="CPU Time:Self" &> %s'
-            % self.summary_rpt,
-            'srun -n1 cat /proc/sys/kernel/perf_event_paranoid &> %s'
-            % self.paranoid_rpt,
+            'amplxe-cl -V &> %s' % self.version_rpt,
+            'amplxe-cl -R hotspots -r hotspots* -column="CPU Time:Self" &>%s' %
+            self.summary_rpt,
+            'srun -n1 cat /proc/sys/kernel/perf_event_paranoid &> %s' %
+            self.paranoid_rpt,
         ]
         self.maintainers = ['JG']
         self.tags = {'production'}
