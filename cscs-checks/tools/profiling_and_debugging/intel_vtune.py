@@ -7,11 +7,11 @@ import reframe.utility.sanity as sn
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C++'], ['F90'])
 class IntelVTuneAmplifierTest(rfm.RegressionTest):
-    """This test checks Intel VTune Amplifier:
+    '''This test checks Intel VTune Amplifier:
     https://software.intel.com/en-us/intel-vtune-amplifier-xe
     and the -Cperf slurm constraint (that sets perf_event_paranoid to 0 for
     advanced performance analysis)
-    """
+    '''
     def __init__(self, lang):
         super().__init__()
         self.name = 'Intel_VTuneAmplifier_%s' % lang.replace('+', 'p')
@@ -50,7 +50,8 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
             'amplxe-cl -help collect |tail -20',
         ]
         self.post_run = [
-            'amplxe-cl -V &> %s' % self.version_rpt,
+            'amplxe-cl -V &> %s'
+            % self.version_rpt,
             'amplxe-cl -R hotspots -r hotspots* -column="CPU Time:Self" &> %s'
             % self.summary_rpt,
             'srun -n1 cat /proc/sys/kernel/perf_event_paranoid &> %s'
@@ -72,24 +73,22 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
         elif partitiontype == 'mc':
             self.job.options = ['--constraint="mc&perf"']
 
-        regexversion = (r'I*.\(build\s(?P<toolsversion>\d+)\s*.')
         if self.current_system.name == 'dom':
             toolsversion = '579888'
         elif self.current_system.name == 'daint':
             toolsversion = '551022'
 
-        regexperfevent = (r'(?P<perfevent>\d)')
-        perfevent = '0'
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),
             sn.assert_found(r'amplxe: Executing actions \d+ %', self.stderr),
             # check the version:
-            sn.assert_eq(sn.extractsingle(regexversion, self.version_rpt,
-                         'toolsversion'), toolsversion),
+            sn.assert_eq(sn.extractsingle(
+                r'I*.\(build\s(?P<toolsversion>\d+)\s*.', self.version_rpt,
+                'toolsversion'), toolsversion),
             # check the perf_event setting:
-            sn.assert_eq(sn.extractsingle(regexperfevent, self.paranoid_rpt,
-                         'perfevent'), perfevent),
+            sn.assert_eq(sn.extractsingle(r'(?P<perfevent>\d)',
+                self.paranoid_rpt, 'perfevent'), '0'),
             # check the hotspots:
             sn.assert_found(r'^[jJ]acobi.*\$omp\$parallel@\d+\s+\d+.\d+s',
                             self.summary_rpt),
