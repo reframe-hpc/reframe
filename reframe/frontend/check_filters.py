@@ -6,6 +6,7 @@ import reframe.utility.sanity as util
 
 def have_name(patt):
     regex = re.compile(patt)
+
     def _fn(c):
         return regex.match(c.name)
 
@@ -21,6 +22,7 @@ def have_not_name(patt):
 
 def have_tag(patt):
     regex = re.compile(patt)
+
     def _fn(c):
         return any(regex.match(p) for p in c.tags)
 
@@ -29,6 +31,7 @@ def have_tag(patt):
 
 def have_prgenv(patt):
     regex = re.compile(patt)
+
     def _fn(c):
         if '*' in c.valid_prog_environs:
             return True

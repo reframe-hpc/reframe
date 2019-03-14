@@ -421,7 +421,7 @@ def main():
                                         checks_matched)
 
         if options.names:
-            checks_matched = filter(filters.have_name("|".join(options.names)),
+            checks_matched = filter(filters.have_name('|'.join(options.names)),
                                     checks_matched)
 
         # Filter checks by tags

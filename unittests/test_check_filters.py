@@ -46,18 +46,22 @@ class TestCheckFilters(unittest.TestCase):
         self.assertEqual(2, self.count_checks(filters.have_name('\S*1|\S*3')))
         self.assertEqual(0, self.count_checks(filters.have_name('Check')))
         self.assertEqual(3, self.count_checks(filters.have_name('(?i)Check')))
-        self.assertEqual(2, self.count_checks(filters.have_name(
-                                         'check1|(?i)CHECK2')))
+        self.assertEqual(
+            2, self.count_checks(filters.have_name('check1|(?i)CHECK2'))
+        )
 
     def test_have_not_name(self):
         self.assertEqual(2, self.count_checks(filters.have_not_name('check1')))
-        self.assertEqual(1, self.count_checks(filters.have_not_name(
-                                         'check1|check3')))
-        self.assertEqual(0, self.count_checks(filters.have_not_name(
-                                         'check1|check2|check3')))
+        self.assertEqual(
+            1, self.count_checks(filters.have_not_name('check1|check3'))
+        )
+        self.assertEqual(
+            0, self.count_checks(filters.have_not_name('check1|check2|check3'))
+        )
         self.assertEqual(3, self.count_checks(filters.have_not_name('Check1')))
-        self.assertEqual(2, self.count_checks(filters.have_not_name(
-                                              '(?i)Check1')))
+        self.assertEqual(
+            2, self.count_checks(filters.have_not_name('(?i)Check1'))
+        )
 
     def test_have_tags(self):
         self.assertEqual(2, self.count_checks(filters.have_tag('a|c')))
@@ -65,12 +69,14 @@ class TestCheckFilters(unittest.TestCase):
         self.assertEqual(2, self.count_checks(filters.have_tag('z')))
 
     def test_have_prgenv(self):
-        self.assertEqual(1, self.count_checks(filters.have_prgenv(
-                                              'env1|env2')))
+        self.assertEqual(
+            1, self.count_checks(filters.have_prgenv('env1|env2'))
+        )
         self.assertEqual(2, self.count_checks(filters.have_prgenv('env3')))
         self.assertEqual(1, self.count_checks(filters.have_prgenv('env4')))
-        self.assertEqual(3, self.count_checks(filters.have_prgenv(
-                                              'env1|env3')))
+        self.assertEqual(
+            3, self.count_checks(filters.have_prgenv('env1|env3'))
+        )
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_partition(self):
