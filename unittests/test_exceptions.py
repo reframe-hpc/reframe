@@ -114,7 +114,7 @@ class TestExceptions(unittest.TestCase):
         exc_args = ('some error',)
         e = exc.JobError(*exc_args, jobid=1234)
         self.assertEqual(1234, e.jobid)
-        self.assertRaisesRegex(exc.JobError, r'\(jobid=1234\) some error',
+        self.assertRaisesRegex(exc.JobError, r'\[jobid=1234\] some error',
                                raise_exc, e)
         self.assertEqual(exc_args, e.args)
 
@@ -125,7 +125,7 @@ class TestExceptions(unittest.TestCase):
             except ValueError as e:
                 raise exc.JobError('some error', jobid=1234) from e
         except exc.JobError as e:
-            self.assertEqual('(jobid=1234) some error: random value error',
+            self.assertEqual('[jobid=1234] some error: random value error',
                              str(e))
 
     def test_reraise_job_error_no_message(self):
@@ -135,5 +135,5 @@ class TestExceptions(unittest.TestCase):
             except ValueError as e:
                 raise exc.JobError(jobid=1234) from e
         except exc.JobError as e:
-            self.assertEqual('(jobid=1234): random value error',
+            self.assertEqual('[jobid=1234]: random value error',
                              str(e))
