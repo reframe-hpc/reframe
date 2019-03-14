@@ -253,8 +253,8 @@ class TestRegressionTest(unittest.TestCase):
         self.assertTrue(test.supports_environ('*'))
 
         test.valid_prog_environs = ['PrgEnv-foo-*']
-        self.assertTrue(test.supports_environ('PrgEnv-foo-version1'))
-        self.assertTrue(test.supports_environ('PrgEnv-foo-version2'))
+        self.assertFalse(test.supports_environ('PrgEnv-foo-version1'))
+        self.assertFalse(test.supports_environ('PrgEnv-foo-version2'))
         self.assertFalse(test.supports_environ('PrgEnv-boo-version1'))
         self.assertFalse(test.supports_environ('Prgenv-foo-version1'))
 

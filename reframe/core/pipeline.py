@@ -6,7 +6,6 @@ __all__ = ['RegressionTest',
            'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
 
 
-import fnmatch
 import inspect
 import itertools
 import os
@@ -66,12 +65,18 @@ class RegressionTest:
 
     #: List of programming environments supported by this test.
     #:
+    #: If ``*`` is in the list then all programming environments are supported
+    #: by this test.
+    #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
     #:        Programming environments can now be specified using wildcards.
+    #:
+    #:     .. versionchanged:: 2.17
+    #:        Support for wildcards is dropped.
     valid_prog_environs = fields.TypedField('valid_prog_environs',
                                             typ.List[str])
 
@@ -786,11 +791,10 @@ class RegressionTest:
         return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
-        for env in self.valid_prog_environs:
-            if fnmatch.fnmatch(env_name, env):
-                return True
+        if '*' in self.valid_prog_environs:
+            return True
 
-        return False
+        return env_name in self.valid_prog_environs
 
     def is_local(self):
         """Check if the test will execute locally.
