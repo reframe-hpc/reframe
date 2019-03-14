@@ -88,7 +88,7 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
                 'toolsversion'), toolsversion),
             # check the perf_event setting:
             sn.assert_eq(sn.extractsingle(r'(?P<perfevent>\d)',
-                self.paranoid_rpt, 'perfevent'), '0'),
+                         self.paranoid_rpt, 'perfevent'), '0'),
             # check the hotspots:
             sn.assert_found(r'^[jJ]acobi.*\$omp\$parallel@\d+\s+\d+.\d+s',
                             self.summary_rpt),
