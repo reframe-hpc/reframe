@@ -116,30 +116,6 @@ class AllreduceTest(rfm.RegressionTest):
         }
 
 
-@rfm.simple_test
-class FlexAllreduceTest(rfm.RegressionTest):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal']
-        self.valid_prog_environs = ['PrgEnv-cray']
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel']
-
-        self.descr = 'Flexible Allreduce OSU test'
-        self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_allreduce'
-        self.executable = './osu_allreduce'
-        self.maintainers = ['RS', 'VK']
-        self.num_tasks_per_node = 1
-        self.num_tasks = 0
-        self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.tags = {'diagnostic', 'ops'}
-
-
 # FIXME: This test is obsolete; it is kept only for reference.
 @rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
 class AlltoallMonchAcceptanceTest(AlltoallTest):
