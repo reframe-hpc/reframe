@@ -240,14 +240,17 @@ class SlurmJob(sched.Job):
         return {SlurmNode(descr) for descr in node_descriptions}
 
     def _get_nodes_by_name(self, nodespec):
-        try:
-            completed = _run_strict('scontrol -a show -o node %s' % nodespec)
-        except SpawnedProcessError as e:
-            raise JobError('could not retrieve the node description '
-                           'of nodes: %s' % nodespec) from e
-
+        completed = os_ext.run_command('scontrol -a show -o node %s' %
+                                       nodespec)
         node_descriptions = completed.stdout.splitlines()
-        return {SlurmNode(descr) for descr in node_descriptions}
+        nodes_avail = set()
+        for descr in node_descriptions:
+            try:
+                nodes_avail.add(SlurmNode(descr))
+            except JobError:
+                pass
+
+        return nodes_avail
 
     def _set_nodelist(self, nodespec):
         if self._nodelist is not None:

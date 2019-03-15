@@ -7,7 +7,8 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, SanityError)
+                                     ReframeSyntaxError, PerformanceError,
+                                     SanityError)
 from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
                                    RunOnlyRegressionTest)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -545,7 +546,7 @@ class TestSanityPatterns(unittest.TestCase):
         self.output_file.write('result = success\n')
         self.output_file.close()
         self.test.check_sanity()
-        self.assertRaises(SanityError, self.test.check_performance)
+        self.assertRaises(PerformanceError, self.test.check_performance)
 
     def test_unknown_tag(self):
         self.test.reference = {
@@ -628,7 +629,7 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.0,
                                       performance2=1.8,
                                       performance3=3.3)
-        with self.assertRaises(SanityError) as cm:
+        with self.assertRaises(PerformanceError) as cm:
             self.test.check_performance()
 
         logfile = os.path.join(self.test.stagedir, logfile)
