@@ -1,6 +1,7 @@
 import inspect
 import json
 import os
+import re
 import socket
 import sys
 import traceback
@@ -452,6 +453,12 @@ def main():
 
         checks_matched = [c for c in checks_matched]
 
+        # Determine the programming environments to run with
+        run_environs = {e.name
+                        for env_patt in options.prgenv
+                        for p in rt.system.partitions
+                        for e in p.environs if re.match(env_patt, e.name)}
+
         # Act on checks
 
         # Unload regression's module and load user-specified modules
@@ -496,7 +503,7 @@ def main():
             exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.only_environs = options.prgenv
+            exec_policy.only_environs = run_environs
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
                 errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
