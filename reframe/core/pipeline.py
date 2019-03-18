@@ -6,7 +6,6 @@ __all__ = ['RegressionTest',
            'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
 
 
-import fnmatch
 import inspect
 import itertools
 import os
@@ -24,7 +23,7 @@ from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
-                                     user_deprecation_warning)
+                                     PerformanceError)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
@@ -67,12 +66,18 @@ class RegressionTest:
 
     #: List of programming environments supported by this test.
     #:
+    #: If ``*`` is in the list then all programming environments are supported
+    #: by this test.
+    #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
     #:        Programming environments can now be specified using wildcards.
+    #:
+    #:     .. versionchanged:: 2.17
+    #:        Support for wildcards is dropped.
     valid_prog_environs = fields.TypedField('valid_prog_environs',
                                             typ.List[str])
 
@@ -787,11 +792,10 @@ class RegressionTest:
         return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
-        for env in self.valid_prog_environs:
-            if fnmatch.fnmatch(env_name, env):
-                return True
+        if '*' in self.valid_prog_environs:
+            return True
 
-        return False
+        return env_name in self.valid_prog_environs
 
     def is_local(self):
         """Check if the test will execute locally.
@@ -924,11 +928,9 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
-        :arg compile_opts: Extra options to be passed to the programming
-            environment for compiling the source code of the test.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         """
         if not self._current_environ:
@@ -988,20 +990,6 @@ class RegressionTest:
 
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
-
-        if compile_opts:
-            user_deprecation_warning(
-                'passing options to the compile() method is deprecated; '
-                'please use a build system.')
-
-            # Remove source and executable from compile_opts
-            compile_opts.pop('source', None)
-            compile_opts.pop('executable', None)
-            try:
-                self.build_system.makefile = compile_opts['makefile']
-                self.build_system.options  = compile_opts['options']
-            except KeyError:
-                pass
 
         # Prepare build job
         build_commands = [
@@ -1092,7 +1080,7 @@ class RegressionTest:
     def performance(self):
         try:
             self.check_performance()
-        except SanityError:
+        except PerformanceError:
             if self.strict_check:
                 raise
 
@@ -1107,7 +1095,7 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             success = evaluate(self.sanity_patterns)
             if not success:
-                raise SanityError('sanity failure')
+                raise SanityError()
 
     def check_performance(self):
         """The performance checking phase of the regression test pipeline.
@@ -1137,7 +1125,10 @@ class RegressionTest:
 
             for val, reference in perf_values:
                 ref, low_thres, high_thres, *_ = reference
-                evaluate(assert_reference(val, ref, low_thres, high_thres))
+                try:
+                    evaluate(assert_reference(val, ref, low_thres, high_thres))
+                except SanityError as e:
+                    raise PerformanceError(e)
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -1204,7 +1195,7 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.
