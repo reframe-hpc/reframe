@@ -148,12 +148,16 @@ class TestFrontend(unittest.TestCase):
         self.local = False
         self.system = partition.fullname
 
-        # pick up the programming environment of the partition
-        self.environs = [partition.environs[0].name]
+        # Pick up the programming environment of the partition
+        # Prepend ^ and append $ so as to much exactly the given name
+        self.environs = ['^' + partition.environs[0].name + '$']
 
         returncode, stdout, _ = self._run_reframe()
         self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
+
+        # Assert that we have run only one test case
+        self.assertIn('Ran 1 test case(s)', stdout)
         self.assertEqual(0, returncode)
 
     def test_check_failure(self):
