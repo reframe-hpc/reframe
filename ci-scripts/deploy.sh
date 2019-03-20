@@ -44,25 +44,13 @@ if [ $found_version != $version ]; then
     exit 1
 fi
 
-python3 -m venv venv.docs
-source venv.docs/bin/activate
+python3 -m venv venv.deployment
+source venv.deployment/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install -r docs/requirements.txt
 ./test_reframe.py
 git tag -a v$version -m "ReFrame $version"
 git push origin --tags
-make -C docs
-cd ..
-git clone -b gh-pages https://github.com/eth-cscs/reframe.git reframe-doc
-cd reframe-doc
-rsync -avz ../reframe/docs/html/ .
-echo "Please visit http://localhost:8000/ and " \
-     "check that the documentation is fine."
-echo "Press Ctrl-C to continue when ready."
-python3 -m http.server
-git commit -a -m "ReFrame $version documentation"
-git push origin gh-pages
 deactivate
 cd $oldpwd
 echo "Deployment was successful!"

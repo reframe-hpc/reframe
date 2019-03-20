@@ -83,10 +83,11 @@ def allx(iterable):
     return all(iterable) if iterable else False
 
 
-def decamelize(s):
+def decamelize(s, delim='_'):
     """Decamelize the string ``s``.
 
     For example, ``MyBaseClass`` will be converted to ``my_base_class``.
+    The delimiter may be changed by setting the ``delim`` argument.
     """
 
     if not isinstance(s, str):
@@ -95,7 +96,7 @@ def decamelize(s):
     if not s:
         return ''
 
-    return re.sub(r'([a-z])([A-Z])', r'\1_\2', s).lower()
+    return re.sub(r'([a-z])([A-Z])', r'\1%s\2' % delim, s).lower()
 
 
 def toalphanum(s):

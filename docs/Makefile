@@ -7,11 +7,9 @@ PYTHON      = python3
 SPHINXOPTS  =
 SPHINXBUILD =  -msphinx
 SPHINXPROJ  = ReFrame
-SPHINX_VERS = sphinx-versioning
 SOURCEDIR   = .
 BUILDDIR    = $(VERSION)
 RM          = /bin/rm -rf
-TAG_VERS    = '^v\d+(\.\d+)*[a-z]*'
 
 TARGET_DOCS := \
 	help \
@@ -39,15 +37,9 @@ TARGET_DOCS := \
 	doctest \
 	coverage
 
-all:
-	@$(SPHINX_VERS) -l conf.py build docs/ html/
-	@rsync -az old/ html/_old/
-	@./link_old_docs.sh
-
 latest:
 	@make html
 	@touch html/.nojekyll
-	@rsync -az old/ html/_old/
 
 clean:
 	@echo 'Removing directories'
@@ -58,4 +50,4 @@ $(TARGET_DOCS): Makefile
 
 
 
-.PHONY: all clean latest Makefile
+.PHONY: clean latest Makefile

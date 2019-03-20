@@ -393,9 +393,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
         self.testjob._sched_flex_alloc_tasks = 'all'
-        # monkey patch `get_partition_nodes()` to simulate extraction of
+        # monkey patch `get_all_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.get_partition_nodes = lambda: set()
+        self.testjob.get_all_nodes = lambda: set()
         # monkey patch `_get_default_partition()` to simulate extraction
         # of the default partition through the use of `scontrol show`
         self.testjob._get_default_partition = lambda: 'pdef'
@@ -566,6 +566,23 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'AllocTRES= CapWatts=n/a CurrentWatts=100 '
                              'LowestJoules=100000000 ConsumedJoules=0 '
                              'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ ',
+
+                             'NodeName=nid00005 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f5 ActiveFeatures=f5 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
+                             'NodeHostName=nid00003 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=ALLOCATED '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p1,p3 '
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
                              'ExtSensorsTemp=n/s Reason=Foo/ '
                              'failed [reframe_user@01 Jan 2018]']
 
@@ -589,9 +606,9 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        # monkey patch `_get_all_nodes` to simulate extraction of
+        # monkey patch `get_all_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob._get_all_nodes = self.create_dummy_nodes
+        self.testjob.get_all_nodes = self.create_dummy_nodes
         # monkey patch `_get_default_partition` to simulate extraction
         # of the default partition
         self.testjob._get_default_partition = lambda: 'pdef'
@@ -631,6 +648,16 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_sched_access_partition(self):
+        self.testjob._sched_access = ['--partition=p1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 16)
+
+    def test_default_partition_all(self):
+        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_constraint_idle(self):
         self.testjob._sched_flex_alloc_tasks = 'idle'
@@ -876,7 +903,7 @@ class TestSlurmNode(unittest.TestCase):
         self.assertEqual(self.allocated_node.partitions, {'p1', 'p2'})
         self.assertEqual(self.allocated_node.active_features, {'f1', 'f2'})
         self.assertEqual(self.no_partition_node.name, 'nid00004')
-        self.assertEqual(self.no_partition_node.partitions, None)
+        self.assertEqual(self.no_partition_node.partitions, set())
         self.assertEqual(self.no_partition_node.active_features, {'f1', 'f2'})
 
     def test_str(self):
