@@ -90,7 +90,7 @@ class AllreduceTest(rfm.RegressionTest):
         self.maintainers = ['RS', 'VK']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latancy>\S+)',
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
         self.tags = {'production'}
