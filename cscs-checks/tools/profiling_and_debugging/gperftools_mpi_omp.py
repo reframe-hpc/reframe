@@ -85,8 +85,8 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
                 self.rpt_file_txt, 'flatPercentage', float)
         }
         self.reference = {
-            'daint:mc':  {'hotspot1': (26.0, -0.5, 0.5, '%')},
-            'daint:gpu': {'hotspot1': (46.0, -0.5, 0.5, '%')},
+            'daint:mc':  {'hotspot1': (26.0, -0.6, 0.6, '%')},
+            'daint:gpu': {'hotspot1': (46.0, -0.6, 0.6, '%')},
             'dom:mc':    {'hotspot1': (26.0, -0.5, 0.5, '%')},
             'dom:gpu':   {'hotspot1': (46.0, -0.5, 0.5, '%')},
         }
