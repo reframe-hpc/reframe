@@ -56,26 +56,22 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         self.pre_run = [
-            'echo \'#!/bin/bash\' &> %s'
-            % self.split_file,
+            'echo \'#!/bin/bash\' &> %s' % self.split_file,
             'echo \'CPUPROFILE=`hostname`.$SLURM_PROCID\' %s >> %s'
             % (self.exe, self.split_file),
-            'chmod u+x %s'
-            % (self.split_file),
+            'chmod u+x %s' % (self.split_file),
         ]
         self.post_run = [
             'pprof --text --lines %s %s &> %s'
             % (self.exe, '*.0', self.rpt_file_txt),
-            'pprof --pdf %s %s &> %s'
-            % (self.exe, '*.0', self.rpt_file_pdf),
-            'file %s &> %s'
-            % (self.rpt_file_pdf, self.rpt_file_doc)
+            'pprof --pdf %s %s &> %s' % (self.exe, '*.0', self.rpt_file_pdf),
+            'file %s &> %s'           % (self.rpt_file_pdf, self.rpt_file_doc)
         ]
         self.sanity_patterns = sn.all([
             # check job status:
             sn.assert_found('SUCCESS', self.stdout),
             # check txt report:
-            sn.assert_found(r'MPI_Allreduce', self.rpt_file_txt),
+            sn.assert_found('MPI_Allreduce', self.rpt_file_txt),
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
