@@ -18,7 +18,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
         self.prgenv_flags = {
             'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp', '-O2'],
             'PrgEnv-gnu': ['-g', '-fopenmp', '-O2'],
-            'PrgEnv-intel': ['-g', '-openmp', '-O2'],
+            'PrgEnv-intel': ['-g', '-qopenmp', '-O2'],
             'PrgEnv-pgi': ['-g', '-mp', '-O2']
         }
         # external pprof is needed to avoid "stack trace depth >= 2**32" errors
@@ -72,20 +72,13 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
             # check txt report:
             sn.assert_found('MPI_Allreduce', self.rpt_file_txt),
+            sn.extractsingle(
+                r'^\s+\d+ms\s+(?P<flatPercentage>\d+.\d+)%.*_jacobi.\w+:\d+',
+                self.rpt_file_txt, 'flatPercentage', float
+            ),
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
-        self.perf_patterns = {
-            'hotspot1': sn.extractsingle(
-                r'^\s+\d+ms\s+(?P<flatPercentage>\d+.\d+)%.*_jacobi.\w+:\d+',
-                self.rpt_file_txt, 'flatPercentage', float)
-        }
-        self.reference = {
-            'daint:mc':  {'hotspot1': (26.0, -0.6, None, '%')},
-            'daint:gpu': {'hotspot1': (46.0, -0.6, None, '%')},
-            'dom:mc':    {'hotspot1': (26.0, -0.5, None, '%')},
-            'dom:gpu':   {'hotspot1': (46.0, -0.5, None, '%')},
-        }
         self.maintainers = ['JG']
         self.tags = {'production'}
 
