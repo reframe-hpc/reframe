@@ -72,10 +72,8 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
             # check txt report:
             sn.assert_found('MPI_Allreduce', self.rpt_file_txt),
-            sn.extractsingle(
-                r'^\s+\d+ms\s+(?P<flatPercentage>\d+.\d+)%.*_jacobi.\w+:\d+',
-                self.rpt_file_txt, 'flatPercentage', float
-            ),
+            sn.assert_found(
+                r'^\s+\d+ms\s+\d+.\d+%.*_jacobi.\w+:\d+', self.rpt_file_txt),
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
