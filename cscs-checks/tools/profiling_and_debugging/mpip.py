@@ -72,11 +72,10 @@ class MpipCheck(rfm.RegressionTest):
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
-        self.build_system.ldflags = [ flags,
-            '-L$(EBROOTMPIP)/lib',
-            '-Wl,--whole-archive -lmpiP -Wl,--no-whole-archive',
-            '-lunwind -lbfd -liberty -ldl -lz'
-        ]
+        self.build_system.ldflags = flags + ['-L$(EBROOTMPIP)/lib',
+                                             '-Wl,--whole-archive -lmpiP',
+                                             '-Wl,--no-whole-archive -lunwind',
+                                             '-lbfd -liberty -ldl -lz']
 
     @property
     @sn.sanity_function
