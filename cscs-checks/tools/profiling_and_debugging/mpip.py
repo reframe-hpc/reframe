@@ -73,9 +73,9 @@ class MpipCheck(rfm.RegressionTest):
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
         self.build_system.ldflags = flags + [
-             '-L$(EBROOTMPIP)/lib',
-             '-Wl,--whole-archive -lmpiP -Wl,--no-whole-archive',
-             '-lunwind -lbfd -liberty -ldl -lz'
+           '-L$(EBROOTMPIP)/lib',
+           '-Wl,--whole-archive -lmpiP -Wl,--no-whole-archive',
+           '-lunwind -lbfd -liberty -ldl -lz'
         ]
 
     @property
