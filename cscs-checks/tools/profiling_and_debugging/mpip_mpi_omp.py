@@ -61,7 +61,6 @@ class MpipCheck(rfm.RegressionTest):
         elif lang == 'F90':
             mpi_isendline = '146'
 
-        self.post_run = ['ls -lrta', 'pwd']
         self.sanity_patterns = sn.all([
             # check job status:
             sn.assert_found('SUCCESS', self.stdout),
