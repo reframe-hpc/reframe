@@ -85,13 +85,13 @@ class IntelRooflineTest(rfm.RegressionTest):
             'advixe-cl --report=roofs --project-dir=%s &> %s' %
             (self.roofdir, self.roofline_ref),
             'python2 API/cscs.py %s &> %s' % (self.roofdir, self.roofline_rpt),
-            # 'advixe-cl --format=csv' seems to be not working (empty report), 
+            # 'advixe-cl --format=csv' seems to be not working (empty report),
             # keeping as reference for later check:
             #   'advixe-cl --show-all-columns -csv-delimiter=";"'
             #   ' --report=tripcounts --format=csv --project-dir=%s &> %s'
             # This can be used instead (see advisor/config/report/roofs.tmpl):
             #   'advixe-cl --report custom --report-template ./TEMPL/cscs.tmpl'
-            #   ' --project-dir=%s &> %s' 
+            #   ' --project-dir=%s &> %s'
         ]
         self.maintainers = ['JG']
         self.tags = {'production'}
@@ -155,4 +155,4 @@ class IntelRooflineTest(rfm.RegressionTest):
             sn.assert_reference(sn.extractsingle(
                 r'^returned\sGFLOPS\sgap\s=\s(?P<Flops>.*)', self.roofline_rpt,
                 'Flops', float), 0.0, -0.01, 0.01),
-            ])
+        ])

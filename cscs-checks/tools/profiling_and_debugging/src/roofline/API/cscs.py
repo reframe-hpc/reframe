@@ -1,5 +1,5 @@
 # Taken from /opt/intel/advisor_2018/pythonapi/examples/roofline.py
-# 
+#
 # The roofline model is based on GFLOPS and Arithmetic Intensity (AI):
 #   "Self GFLOPS" = "Self GFLOP" / "Self Elapsed Time"
 #   "Self GB/s" = "Self Memory GB" / "Self Elapsed Time"
@@ -43,25 +43,25 @@ self_arithmetic_intensity = float(rows[0]['self_arithmetic_intensity'])
 _self_arithmetic_intensity = _self_gflops / _self_gb_s
 
 # --- Reported values:
-print('self_elapsed_time'        , self_elapsed_time)
-print('self_memory_gb'           , self_memory_gb)
-print('self_gb_s'                , self_gb_s)
-print('self_gflop'               , self_gflop)
-print('self_gflops'              , self_gflops)
+print('self_elapsed_time', self_elapsed_time)
+print('self_memory_gb', self_memory_gb)
+print('self_gb_s', self_gb_s)
+print('self_gflop', self_gflop)
+print('self_gflops', self_gflops)
 print('self_arithmetic_intensity', self_arithmetic_intensity)
 
 print('_self_gb_s', _self_gb_s, self_gb_s)
 print('_self_gflops', _self_gflops, self_gflops)
 print('_self_arithmetic_intensity', _self_arithmetic_intensity,
-    self_arithmetic_intensity)
+      self_arithmetic_intensity)
 
 print('gap _self_gb_s', _self_gb_s-self_gb_s)
 print('gap _self_gflops', _self_gflops-self_gflops)
 print('gap _self_arithmetic_intensity',
-    _self_arithmetic_intensity-self_arithmetic_intensity)
+      _self_arithmetic_intensity-self_arithmetic_intensity)
 
 # --- Compare the roofline report:
 print('returned AI gap = {:.16f}'.
-    format(_self_arithmetic_intensity-self_arithmetic_intensity))
+      format(_self_arithmetic_intensity-self_arithmetic_intensity))
 print('returned GFLOPS gap = {:.16f}'.
-    format(_self_gflops-self_gflops))
+      format(_self_gflops-self_gflops))
