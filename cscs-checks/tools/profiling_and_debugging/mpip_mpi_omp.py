@@ -24,10 +24,10 @@ class MpipCheck(rfm.RegressionTest):
         }
         self.modules = ['mpiP']
         self.build_system = 'Make'
-        self.iterations = 500
+        self.num_iterations = 500
         self.build_system.cppflags = [
             '-DUSE_MPI',
-            '-D_CSCS_ITMAX=%s' % self.iterations,
+            '-D_CSCS_ITMAX=%s' % self.num_iterations,
         ]
         if lang == 'Cpp':
             self.sourcesdir = os.path.join('src', 'C++')
@@ -41,7 +41,6 @@ class MpipCheck(rfm.RegressionTest):
         self.num_tasks_per_node = 24
         self.num_cpus_per_task = 1
         self.num_tasks_per_core = 2
-        self.num_iterations = self.iterations
         self.executable = './jacobi'
         self.rpt_file = self.rpt_file_txt
         self.variables = {
