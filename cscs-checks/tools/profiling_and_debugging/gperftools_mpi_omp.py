@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(*([lang] for lang in ['Cpp', 'F90']))
+@rfm.parameterized_test(['Cpp', 'F90'])
 class GperftoolsMpiCheck(rfm.RegressionTest):
     '''This test checks gperftools:
     https://gperftools.github.io/gperftools/cpuprofile.html
