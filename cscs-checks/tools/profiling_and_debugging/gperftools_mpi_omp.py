@@ -5,13 +5,13 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['Cpp', 'F90'])
+@rfm.parameterized_test(['Cpp'], ['F90'])
 class GperftoolsMpiCheck(rfm.RegressionTest):
     '''This test checks gperftools:
     https://gperftools.github.io/gperftools/cpuprofile.html
     '''
     def __init__(self, lang):
-        super().__init__(lang)
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
