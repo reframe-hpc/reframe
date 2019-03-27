@@ -36,7 +36,8 @@ class IntelRooflineTest(rfm.RegressionTest):
         self.prgenv_flags = {
             'PrgEnv-intel': ['-O2', '-g', '-std=c++11'],
         }
-        self.sourcesdir = 'src/roofline'
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'Espresso', 'intel_advisor')
         self.build_system = 'Make'
         self.prebuild_cmd = [
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
