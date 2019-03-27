@@ -11,7 +11,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
     https://gperftools.github.io/gperftools/cpuprofile.html
     '''
     def __init__(self, lang):
-        super().__init__()
+        super().__init__(lang)
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
