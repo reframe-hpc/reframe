@@ -1,8 +1,10 @@
-import os
 import inspect
 import json
+import os
+import re
 import socket
 import sys
+import traceback
 
 import reframe
 import reframe.core.config as config
@@ -110,7 +112,7 @@ def main():
         '-x', '--exclude', action='append', dest='exclude_names',
         metavar='NAME', default=[], help='Exclude checks with NAME')
     select_options.add_argument(
-        '-p', '--prgenv', action='append', default=[],
+        '-p', '--prgenv', action='append', default=[r'.*'],
         help='Select tests for PRGENV programming environment only')
     select_options.add_argument(
         '--gpu-only', action='store_true',
@@ -273,9 +275,9 @@ def main():
         printer.error("could not auto-detect system; please use the "
                       "`--system' option to specify one explicitly")
         sys.exit(1)
-
-    except (ConfigError, OSError) as e:
+    except Exception as e:
         printer.error('configuration error: %s' % e)
+        printer.verbose(''.join(traceback.format_exception(*sys.exc_info())))
         sys.exit(1)
 
     rt = runtime.runtime()
@@ -305,15 +307,15 @@ def main():
     # Adjust system directories
     if options.prefix:
         # if prefix is set, reset all other directories
-        rt.resources.prefix = os.path.expandvars(options.prefix)
+        rt.resources.prefix = os_ext.expandvars(options.prefix)
         rt.resources.outputdir = None
         rt.resources.stagedir  = None
 
     if options.output:
-        rt.resources.outputdir = os.path.expandvars(options.output)
+        rt.resources.outputdir = os_ext.expandvars(options.output)
 
     if options.stage:
-        rt.resources.stagedir = os.path.expandvars(options.stage)
+        rt.resources.stagedir = os_ext.expandvars(options.stage)
 
     if (os_ext.samefile(rt.resources.stage_prefix,
                         rt.resources.output_prefix) and
@@ -330,7 +332,7 @@ def main():
     # NOTE: we need resources to be configured in order to set the global
     # perf. logging prefix correctly
     if options.perflogdir:
-        rt.resources.perflogdir = os.path.expandvars(options.perflogdir)
+        rt.resources.perflogdir = os_ext.expandvars(options.perflogdir)
 
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = (rt.resources.
                                                           perflog_prefix)
@@ -368,7 +370,7 @@ def main():
     if options.checkpath:
         load_path = []
         for d in options.checkpath:
-            d = os.path.expandvars(d)
+            d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
                                 (argparser.prog, d))
@@ -413,20 +415,25 @@ def main():
             raise ReframeError from e
 
         # Filter checks by name
-        checks_matched = filter(filters.have_not_name(options.exclude_names),
-                                checks_found)
+        checks_matched = checks_found
+        if options.exclude_names:
+            for name in options.exclude_names:
+                checks_matched = filter(filters.have_not_name(name),
+                                        checks_matched)
 
         if options.names:
-            checks_matched = filter(filters.have_name(options.names),
+            checks_matched = filter(filters.have_name('|'.join(options.names)),
                                     checks_matched)
 
         # Filter checks by tags
-        checks_matched = filter(filters.have_tag(options.tags), checks_matched)
+        for tag in options.tags:
+            checks_matched = filter(filters.have_tag(tag), checks_matched)
 
         # Filter checks by prgenv
         if not options.skip_prgenv_check:
-            checks_matched = filter(filters.have_prgenv(options.prgenv),
-                                    checks_matched)
+            for prgenv in options.prgenv:
+                checks_matched = filter(filters.have_prgenv(prgenv),
+                                        checks_matched)
 
         # Filter checks by system
         if not options.skip_system_check:
@@ -445,6 +452,12 @@ def main():
             checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
         checks_matched = [c for c in checks_matched]
+
+        # Determine the programming environments to run with
+        run_environs = {e.name
+                        for env_patt in options.prgenv
+                        for p in rt.system.partitions
+                        for e in p.environs if re.match(env_patt, e.name)}
 
         # Act on checks
 
@@ -490,7 +503,7 @@ def main():
             exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.only_environs = options.prgenv
+            exec_policy.only_environs = run_environs
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
                 errmsg = "invalid option for --flex-alloc-tasks: '{0}'"

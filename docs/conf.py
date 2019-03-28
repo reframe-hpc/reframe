@@ -63,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'ReFrame'
-copyright = '2017-2018, CSCS'
+copyright = '2017-2019, CSCS'
 author = 'CSCS'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -85,7 +85,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'old', 'html/*']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'html/*']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -112,7 +112,6 @@ html_theme_options = {
     'collapse_navigation': True,
     'display_version': True,
     'navigation_depth': 5,
-    'analytics_id': 'UA-86976416-6',
     #     # 'canonical_url': True,
 }
 

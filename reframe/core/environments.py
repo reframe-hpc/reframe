@@ -64,7 +64,7 @@ class Environment:
         """
         is_module_loaded = runtime().modules_system.is_module_loaded
         return (all(map(is_module_loaded, self._modules)) and
-                all(os.environ.get(k, None) == os.path.expandvars(v)
+                all(os.environ.get(k, None) == os_ext.expandvars(v)
                     for k, v in self._variables.items()))
 
     def load(self):
@@ -85,7 +85,7 @@ class Environment:
             if k in os.environ:
                 self._saved_variables[k] = os.environ[k]
 
-            os.environ[k] = os.path.expandvars(v)
+            os.environ[k] = os_ext.expandvars(v)
 
         self._loaded = True
 
@@ -237,104 +237,14 @@ class ProgEnvironment(Environment):
     :attr:`propagate` attribute to :class:`False`.
     """
 
-    #: The C compiler of this programming environment.
-    #:
-    #: :type: :class:`str`
-    cc = fields.DeprecatedField(fields.TypedField('cc', str),
-                                'setting this field is deprecated; '
-                                'please set it through a build system',
-                                fields.DeprecatedField.OP_SET)
-    _cc = fields.TypedField('cc', str)
-
-    #: The C++ compiler of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    cxx = fields.DeprecatedField(fields.TypedField('cxx', str, type(None)),
-                                 'setting this field is deprecated; '
-                                 'please set it through a build system',
-                                 fields.DeprecatedField.OP_SET)
-    _cxx = fields.TypedField('cxx', str, type(None))
-
-    #: The Fortran compiler of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    ftn = fields.DeprecatedField(fields.TypedField('ftn', str, type(None)),
-                                 'setting this field is deprecated; '
-                                 'please set it through a build system',
-                                 fields.DeprecatedField.OP_SET)
-    _ftn = fields.TypedField('ftn', str, type(None))
-
-    #: The preprocessor flags of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    cppflags = fields.DeprecatedField(
-        fields.TypedField('cppflags', str, type(None)),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _cppflags = fields.TypedField('cppflags', str, type(None))
-
-    #: The C compiler flags of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    cflags = fields.DeprecatedField(
-        fields.TypedField('cflags', str, type(None)),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _cflags = fields.TypedField('cflags', str, type(None))
-
-    #: The C++ compiler flags of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    cxxflags = fields.DeprecatedField(
-        fields.TypedField('cxxflags', str, type(None)),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _cxxflags = fields.TypedField('cxxflags', str, type(None))
-
-    #: The Fortran compiler flags of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    fflags = fields.DeprecatedField(
-        fields.TypedField('fflags', str, type(None)),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _fflags = fields.TypedField('fflags', str, type(None))
-
-    #: The linker flags of this programming environment.
-    #:
-    #: :type: :class:`str` or :class:`None`
-    ldflags = fields.DeprecatedField(
-        fields.TypedField('ldflags', str, type(None)),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _ldflags = fields.TypedField('ldflags', str, type(None))
-
-    #: The include search path of this programming environment.
-    #:
-    #: :type: :class:`list` of :class:`str`
-    #: :default: ``[]``
-    include_search_path = fields.DeprecatedField(
-        fields.TypedField('include_search_path', typ.List[str]),
-        'setting this field is deprecated; '
-        'please set it through a build system',
-        fields.DeprecatedField.OP_SET)
-    _include_search_path = fields.TypedField('include_search_path',
-                                             typ.List[str])
-
-    #: Propagate the compilation flags to the ``make`` invocation.
-    #:
-    #: :type: :class:`bool`
-    #: :default: :class:`True`
-    propagate = fields.DeprecatedField(fields.TypedField('propagate', bool),
-                                       'setting this field is deprecated; '
-                                       'please set it through a build system',
-                                       fields.DeprecatedField.OP_SET)
-    _propagate = fields.TypedField('propagate', bool)
+    _cc = fields.TypedField('_cc', str)
+    _cxx = fields.TypedField('_cxx', str)
+    _ftn = fields.TypedField('_ftn', str)
+    _cppflags = fields.TypedField('_cppflags', typ.List[str], type(None))
+    _cflags = fields.TypedField('_cflags', typ.List[str], type(None))
+    _cxxflags = fields.TypedField('_cxxflags', typ.List[str], type(None))
+    _fflags = fields.TypedField('_fflags', typ.List[str], type(None))
+    _ldflags = fields.TypedField('_ldflags', typ.List[str], type(None))
 
     def __init__(self,
                  name,
@@ -360,8 +270,70 @@ class ProgEnvironment(Environment):
         self._cxxflags = cxxflags
         self._fflags = fflags
         self._ldflags = ldflags
-        self._include_search_path = []
-        self._propagate = True
+
+    @property
+    def cc(self):
+        """The C compiler of this programming environment.
+
+        :type: :class:`str`
+        """
+        return self._cc
+
+    @property
+    def cxx(self):
+        """The C++ compiler of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._cxx
+
+    @property
+    def ftn(self):
+        """The Fortran compiler of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._ftn
+
+    @property
+    def cppflags(self):
+        """The preprocessor flags of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._cppflags
+
+    @property
+    def cflags(self):
+        """The C compiler flags of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._cflags
+
+    @property
+    def cxxflags(self):
+        """The C++ compiler flags of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._cxxflags
+
+    @property
+    def fflags(self):
+        """The Fortran compiler flags of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._fflags
+
+    @property
+    def ldflags(self):
+        """The linker flags of this programming environment.
+
+        :type: :class:`str` or :class:`None`
+        """
+        return self._ldflags
 
     @property
     def nvcc(self):

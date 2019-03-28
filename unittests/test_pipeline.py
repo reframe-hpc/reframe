@@ -7,7 +7,8 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
-                                     ReframeSyntaxError, SanityError)
+                                     ReframeSyntaxError, PerformanceError,
+                                     SanityError)
 from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
                                    RunOnlyRegressionTest)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -117,9 +118,10 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_prog_environs = [self.progenv.name]
 
         # Test also the prebuild/postbuild functionality
-        test.prebuild_cmd  = ['touch prebuild']
-        test.postbuild_cmd = ['touch postbuild']
-        test.keepfiles = ['prebuild', 'postbuild']
+        test.prebuild_cmd  = ['touch prebuild', 'mkdir prebuild_dir']
+        test.postbuild_cmd = ['touch postbuild', 'mkdir postbuild_dir']
+        test.keep_files = ['prebuild', 'postbuild',
+                           'prebuild_dir', 'postbuild_dir']
 
         # Force local execution of the test
         test.local = True
@@ -250,12 +252,6 @@ class TestRegressionTest(unittest.TestCase):
         self.assertTrue(test.supports_environ('foo1'))
         self.assertTrue(test.supports_environ('foo-env'))
         self.assertTrue(test.supports_environ('*'))
-
-        test.valid_prog_environs = ['PrgEnv-foo-*']
-        self.assertTrue(test.supports_environ('PrgEnv-foo-version1'))
-        self.assertTrue(test.supports_environ('PrgEnv-foo-version2'))
-        self.assertFalse(test.supports_environ('PrgEnv-boo-version1'))
-        self.assertFalse(test.supports_environ('Prgenv-foo-version1'))
 
     def test_sourcesdir_none(self):
         test = RegressionTest('hellocheck', 'unittests/resources/checks')
@@ -550,7 +546,7 @@ class TestSanityPatterns(unittest.TestCase):
         self.output_file.write('result = success\n')
         self.output_file.close()
         self.test.check_sanity()
-        self.assertRaises(SanityError, self.test.check_performance)
+        self.assertRaises(PerformanceError, self.test.check_performance)
 
     def test_unknown_tag(self):
         self.test.reference = {
@@ -633,7 +629,7 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.0,
                                       performance2=1.8,
                                       performance3=3.3)
-        with self.assertRaises(SanityError) as cm:
+        with self.assertRaises(PerformanceError) as cm:
             self.test.check_performance()
 
         logfile = os.path.join(self.test.stagedir, logfile)

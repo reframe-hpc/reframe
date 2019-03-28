@@ -296,11 +296,12 @@ class TestLoggingConfiguration(unittest.TestCase):
             'level': 'INFO',
             'handlers': [
                 {'type': 'stream', 'name': 'stderr'},
-                {'type': 'file', 'name': self.logfile}
+                {'type': 'file', 'name': self.logfile},
+                {'type': 'syslog', 'address': '/dev/log'}
             ],
         }
         rlog.configure_logging(self.logging_config)
-        self.assertEqual(len(rlog.getlogger().logger.handlers), 2)
+        self.assertEqual(len(rlog.getlogger().logger.handlers), 3)
 
     def test_file_handler_timestamp(self):
         self.logging_config['handlers'][0]['timestamp'] = '%F'
@@ -326,6 +327,46 @@ class TestLoggingConfiguration(unittest.TestCase):
             'handlers': [
                 {'type': 'stream', 'name': 'foo'},
             ],
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler(self):
+        import platform
+
+        if platform.system() == 'Linux':
+            addr = '/dev/log'
+        elif platform.system() == 'Darwin':
+            addr = '/dev/run/syslog'
+        else:
+            self.skipTest()
+
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog', 'address': addr}]
+        }
+        rlog.getlogger().info('foo')
+
+    def test_syslog_handler_no_address(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog'}]
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler_unknown_facility(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog', 'facility': 'foo'}]
+        }
+        self.assertRaises(ConfigError, rlog.configure_logging,
+                          self.logging_config)
+
+    def test_syslog_handler_unknown_socktype(self):
+        self.logging_config = {
+            'level': 'INFO',
+            'handlers': [{'type': 'syslog', 'socktype': 'foo'}]
         }
         self.assertRaises(ConfigError, rlog.configure_logging,
                           self.logging_config)
