@@ -1,3 +1,5 @@
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -37,7 +39,7 @@ class IntelRooflineTest(rfm.RegressionTest):
             'PrgEnv-intel': ['-O2', '-g', '-std=c++11'],
         }
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'Espresso', 'intel_advisor')
+                                       'roofline', 'intel_advisor')
         self.build_system = 'Make'
         self.prebuild_cmd = [
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
@@ -87,7 +89,7 @@ class IntelRooflineTest(rfm.RegressionTest):
             (self.roofdir, self.roofline_ref),
             'python2 API/cscs.py %s &> %s' % (self.roofdir, self.roofline_rpt),
             # 'advixe-cl --format=csv' seems to be not working (empty report),
-            # keeping as reference for later check:
+            # keeping as reference for a future check:
             #   'advixe-cl --show-all-columns -csv-delimiter=";"'
             #   ' --report=tripcounts --format=csv --project-dir=%s &> %s'
             # This can be used instead (see advisor/config/report/roofs.tmpl):
