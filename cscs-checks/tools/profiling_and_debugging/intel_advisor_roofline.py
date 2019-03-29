@@ -132,7 +132,7 @@ class IntelRooflineTest(rfm.RegressionTest):
         environ_name = self.current_environ.name
         prgenv_flags = self.prgenv_flags[environ_name]
         self.build_system.cxxflags = prgenv_flags
-        launcher_cmd = ''.join(self.job.launcher.command(self.job))
+        launcher_cmd = ' '.join(self.job.launcher.command(self.job))
         self.post_run = [
             # collecting the performance data for the roofline model is a 2
             # steps process:
