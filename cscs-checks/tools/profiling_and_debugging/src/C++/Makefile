@@ -9,7 +9,7 @@ $(OBJS):
 	$(PREP) $(CXX) $(CXXFLAGS) -c -o $(@) $(@:.o=.cc)
 
 $(EXECUTABLE): $(OBJS)
-	$(PREP) $(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(@) $(OBJS)
+	$(PREP) $(CXX) $(CXXFLAGS) -o $(@) $(OBJS) $(LDFLAGS)
 
 clean:
 	-$(RM) $(OBJS)

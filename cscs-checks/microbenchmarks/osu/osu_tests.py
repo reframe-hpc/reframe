@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16')
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
@@ -21,16 +21,16 @@ class AlltoallTest(rfm.RegressionTest):
         self.maintainers = ['RS', 'VK']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'^8\s+(?P<perf>\S+)',
-                                     self.stdout, 'perf', float)
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
         }
         self.tags = {variant}
         self.reference = {
             'dom:gpu': {
-                'perf': (8.23, None, 0.1)
+                'latency': (8.23, None, 0.1, 'us')
             },
             'daint:gpu': {
-                'perf': (20.73, None, 2.0)
+                'latency': (20.73, None, 2.0, 'us')
             },
         }
         self.num_tasks_per_node = 1
@@ -70,6 +70,50 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
         self.tags = {'diagnostic', 'ops'}
+
+
+@rfm.required_version('>=2.16')
+@rfm.simple_test
+class AllreduceTest(rfm.RegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.strict_check = False
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.descr = 'Allreduce OSU microbenchmark'
+        self.build_system = 'Make'
+        self.build_system.makefile = 'Makefile_allreduce'
+        self.executable = './osu_allreduce'
+        # The -x option controls the number of warm-up iterations
+        # The -i option controls the number of iterations
+        self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
+        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.maintainers = ['RS', 'VK']
+        self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
+        }
+        self.tags = {'production'}
+        self.reference = {
+            'dom:gpu': {
+                'latency': (6.0, None, 0.1, 'us')
+            },
+            'daint:gpu': {
+                'latency': (20.5, None, 2.0, 'us')
+            },
+        }
+        self.num_tasks_per_node = 1
+        self.num_gpus_per_node  = 1
+        if self.current_system.name == 'dom':
+            self.num_tasks = 6
+        elif self.current_system.name == 'daint':
+            self.num_tasks = 16
+
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
+            }
+        }
 
 
 # FIXME: This test is obsolete; it is kept only for reference.
@@ -125,7 +169,7 @@ class P2PBaseTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -137,22 +181,22 @@ class P2PCPUBandwidthTest(P2PBaseTest):
 
         self.reference = {
             'daint:gpu': {
-                'bw': (9798.29, -0.1, None)
+                'bw': (9798.29, -0.1, None, 'MB/s')
             },
             'daint:mc': {
-                'bw': (9865.00, -0.2, None)
+                'bw': (9865.00, -0.2, None, 'MB/s')
             },
             'dom:gpu': {
-                'bw': (9815.66, -0.1, None)
+                'bw': (9815.66, -0.1, None, 'MB/s')
             },
             'dom:mc': {
-                'bw': (9472.59, -0.20, None)
+                'bw': (9472.59, -0.20, None, 'MB/s')
             },
             'monch:compute': {
-                'bw': (6317.84, -0.15, None)
+                'bw': (6317.84, -0.15, None, 'MB/s')
             },
             'kesch:cn': {
-                'bw': (6311.48, -0.15, None)
+                'bw': (6311.48, -0.15, None, 'MB/s')
             }
         }
         self.perf_patterns = {
@@ -162,7 +206,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
@@ -174,22 +218,22 @@ class P2PCPULatencyTest(P2PBaseTest):
         self.executable = './p2p_osu_latency'
         self.reference = {
             'daint:gpu': {
-                'latency': (1.16, None, 1.0)
+                'latency': (1.16, None, 1.0, 'us')
             },
             'daint:mc': {
-                'latency': (1.15, None, 0.6)
+                'latency': (1.15, None, 0.6, 'us')
             },
             'dom:gpu': {
-                'latency': (1.13, None, 0.1)
+                'latency': (1.13, None, 0.1, 'us')
             },
             'dom:mc': {
-                'latency': (1.27, None, 0.2)
+                'latency': (1.27, None, 0.2, 'us')
             },
             'monch:compute': {
-                'latency': (1.27, None, 0.1)
+                'latency': (1.27, None, 0.1, 'us')
             },
             'kesch:cn': {
-                'latency': (1.17, None, 0.1)
+                'latency': (1.17, None, 0.1, 'us')
             }
         }
         self.perf_patterns = {
@@ -199,7 +243,7 @@ class P2PCPULatencyTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -212,13 +256,13 @@ class G2GBandwidthTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'bw': (8897.86, -0.1, None)
+                'bw': (8897.86, -0.1, None, 'MB/s')
             },
             'daint:gpu': {
-                'bw': (8765.65, -0.1, None)
+                'bw': (8765.65, -0.1, None, 'MB/s')
             },
             'kesch:cn': {
-                'bw': (6288.98, -0.1, None)
+                'bw': (6288.98, -0.1, None, 'MB/s')
             },
         }
         self.perf_patterns = {
@@ -236,7 +280,7 @@ class G2GBandwidthTest(P2PBaseTest):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
-@rfm.required_version('>=2.14')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
@@ -249,13 +293,13 @@ class G2GLatencyTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'latency': (5.49, None, 0.1)
+                'latency': (5.49, None, 0.1, 'us')
             },
             'daint:gpu': {
-                'latency': (5.73, None, 1.0)
+                'latency': (5.73, None, 1.0, 'us')
             },
             'kesch:cn': {
-                'latency': (23.09, None, 0.1)
+                'latency': (23.09, None, 0.1, 'us')
             },
         }
         self.perf_patterns = {

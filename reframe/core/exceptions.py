@@ -8,34 +8,40 @@ import traceback
 import warnings
 import sys
 
+import reframe.utility as utility
 
-class ReframeError(Exception):
+
+class ReframeBaseError(BaseException):
+    """Base exception for any ReFrame error."""
+
+    def __init__(self, *args):
+        self._message = str(args[0]) if args else None
+
+    @property
+    def message(self):
+        return self._message
+
+    def __str__(self):
+        ret = self._message or ''
+        if self.__cause__ is not None:
+            ret += ': ' + str(self.__cause__)
+
+        return ret
+
+
+class ReframeError(ReframeBaseError, Exception):
     """Base exception for soft errors.
 
     Soft errors may be treated by simply printing the exception's message and
     trying to continue execution if possible.
     """
 
-    def __str__(self):
-        ret = super().__str__()
-        if self.__cause__ is not None:
-            ret += ': ' + str(self.__cause__)
 
-        return ret
-
-
-class ReframeFatalError(BaseException):
+class ReframeFatalError(ReframeBaseError):
     """A fatal framework error.
 
     Execution must be aborted.
     """
-
-    def __str__(self):
-        ret = super().__str__()
-        if self.__cause__ is not None:
-            ret += ': ' + str(self.__cause__)
-
-        return ret
 
 
 class ReframeSyntaxError(ReframeError):
@@ -81,7 +87,11 @@ class EnvironError(ReframeError):
 
 
 class SanityError(ReframeError):
-    """Raised to denote an error in sanity or performance checking."""
+    """Raised to denote an error in sanity checking."""
+
+
+class PerformanceError(ReframeError):
+    """Raised to denote an error in performance checking."""
 
 
 class PipelineError(ReframeError):
@@ -102,37 +112,36 @@ class BuildError(ReframeError):
     """Raised when a build fails."""
 
     def __init__(self, stdout, stderr):
-        self._stdout = stdout
-        self._stderr = stderr
-
-    def __str__(self):
-        return ("standard error can be found in `%s', "
-                "standard output can be found in `%s'" % (self._stderr,
-                                                          self._stdout))
+        super().__init__()
+        self._message = (
+            "standard error can be found in `%s', "
+            "standard output can be found in `%s'" % (stdout, stderr)
+        )
 
 
 class SpawnedProcessError(ReframeError):
     """Raised when a spawned OS command has failed."""
 
     def __init__(self, command, stdout, stderr, exitcode):
-        super().__init__(command, stdout, stderr, exitcode)
+        super().__init__()
+
+        # Format message and put it in args
+        lines = [
+            "command '%s' failed with exit code %s:" % (command, exitcode)
+        ]
+        lines.append('=== STDOUT ===')
+        if stdout:
+            lines.append(stdout)
+
+        lines.append('=== STDERR ===')
+        if stderr:
+            lines.append(stderr)
+
+        self._message = '\n'.join(lines)
         self._command = command
         self._stdout = stdout
         self._stderr = stderr
         self._exitcode = exitcode
-
-    def __str__(self):
-        lines = ["command '{0}' failed with exit code {1}:".format(
-            self._command, self._exitcode)]
-        lines.append('=== STDOUT ===')
-        if self._stdout:
-            lines.append(self._stdout)
-
-        lines.append('=== STDERR ===')
-        if self._stderr:
-            lines.append(self._stderr)
-
-        return '\n'.join(lines)
 
     @property
     def command(self):
@@ -156,14 +165,8 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 
     def __init__(self, command, stdout, stderr, timeout):
         super().__init__(command, stdout, stderr, None)
-        self._timeout = timeout
 
-        # Reset the args to match the real ones passed to this exception
-        self.args = command, stdout, stderr, timeout
-
-    def __str__(self):
-        lines = ["command '{0}' timed out after {1}s:".format(self._command,
-                                                              self._timeout)]
+        lines = ["command '%s' timed out after %ss:" % (command, timeout)]
         lines.append('=== STDOUT ===')
         if self._stdout:
             lines.append(self._stdout)
@@ -172,7 +175,8 @@ class SpawnedProcessTimeout(SpawnedProcessError):
         if self._stderr:
             lines.append(self._stderr)
 
-        return '\n'.join(lines)
+        self._message = '\n'.join(lines)
+        self._timeout = timeout
 
     @property
     def timeout(self):
@@ -182,21 +186,17 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 class JobError(ReframeError):
     """Job related errors."""
 
-    def __init__(self, *args, jobid=None):
-        super().__init__(*args)
+    def __init__(self, msg=None, jobid=None):
+        message = '[jobid=%s]' % jobid
+        if msg:
+            message += ' ' + msg
+
+        super().__init__(message)
         self._jobid = jobid
 
     @property
     def jobid(self):
         return self._jobid
-
-    def __str__(self):
-        prefix = '(jobid=%s)' % self._jobid
-        msg = super().__str__()
-        if self.args:
-            return prefix + ' ' + msg
-        else:
-            return prefix + msg
 
 
 class JobBlockedError(JobError):
@@ -235,21 +235,18 @@ def format_exception(exc_type, exc_value, tb):
     if exc_type is None:
         return ''
 
-    if isinstance(exc_value, SanityError):
-        return 'sanity error: %s' % exc_value
-
-    if isinstance(exc_value, ReframeFatalError):
-        exc_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
-        return 'fatal error: %s\n%s' % (exc_value, exc_str)
-
     if isinstance(exc_value, AbortTaskError):
         return 'aborted due to %s' % type(exc_value.__cause__).__name__
 
-    if isinstance(exc_value, BuildError):
-        return 'build failure: %s' % exc_value
-
     if isinstance(exc_value, ReframeError):
-        return 'caught framework exception: %s' % exc_value
+        return '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
+                           exc_value)
+
+    if isinstance(exc_value, ReframeFatalError):
+        exc_str = '%s: %s' % (utility.decamelize(exc_type.__name__, ' '),
+                              exc_value)
+        tb_str = ''.join(traceback.format_exception(exc_type, exc_value, tb))
+        return '%s\n%s' % (exc_str, tb_str)
 
     if isinstance(exc_value, KeyboardInterrupt):
         return 'cancelled by user'

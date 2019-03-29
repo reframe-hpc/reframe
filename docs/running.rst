@@ -365,10 +365,29 @@ For example the following will select all the checks that can run with both ``Pr
 
 If you are going to run a set of tests selected by programming environment, they will run only for the selected programming environment(s).
 
+The ``-p`` option accepts also the Python `regular expression syntax <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`__.
+In fact, the argument to ``-p`` option is treated as a regular expression always. This means that the ``-p PrgEnv-gnu`` will match also tests that support a ``PrgEnv-gnuXX`` environment.
+If you would like to stricly select tests that support ``PrgEnv-gnu`` only and not ``PrgEnv-gnuXX``, you should write ``-p PrgEnv-gnu$``.
+As described above multiple ``-p`` options are AND-ed.
+Combining that with regular expressions can be quite powerful.
+For example, the following will select all tests that support programming environment ``foo`` and either ``PrgEnv-gnu`` or ``PrgEnv-pgi``:
+
+.. code-block:: bash
+
+   ./bin/reframe -p foo -p 'PrgEnv-(gnu|pgi)' -l
+
+
+.. note::
+   .. versionadded:: 2.17
+
+   The ``-p`` option recognizes regular expressions as arguments.
+
+
 Selecting tests by tags
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags. Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
+As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags.
+Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
 For example the following will list all the tests that have a ``maintenance`` tag and can run on the current system:
 
 .. code-block:: bash
@@ -377,6 +396,11 @@ For example the following will list all the tests that have a ``maintenance`` ta
 
 Similarly to the ``-p`` option, you can chain multiple ``-t`` options together, in which case a regression test will be selected if it is associated with all the tags specified in the command line.
 The list of tags associated with a check can be viewed in the listing output when specifying the ``-l`` option.
+
+.. note::
+   .. versionadded:: 2.17
+
+   The ``-t`` option recognizes regular expressions as arguments.
 
 Selecting tests by name
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -437,6 +461,18 @@ Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
   Found 12 check(s).
+
+
+Both ``-n`` and ``-x`` options can be chained, in which case either the tests that have any of the specified names are selected or excluded from running.
+They may also accept regular expressions as arguments.
+
+.. note::
+   .. versionadded:: 2.17
+
+      The ``-n`` and ``-x`` options recognize regular expressions as arguments.
+      Chaining these options, e.g., ``-n A -n B``, is equivalent to a regular expression that applies OR to the individual arguments, i.e., equivalent to ``-n 'A|B'``.
+
+
 
 
 Controlling the Execution of Regression Tests
