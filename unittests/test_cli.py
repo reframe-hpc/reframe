@@ -132,8 +132,8 @@ class TestFrontend(unittest.TestCase):
     def test_check_success(self):
         self.more_options = ['--save-log-files']
         returncode, stdout, _ = self._run_reframe()
-        self.assertNotIn('FAILED', stdout)
         self.assertIn('PASSED', stdout)
+        self.assertNotIn('FAILED', stdout)
         self.assertEqual(0, returncode)
         self.assert_log_file_is_saved()
 
@@ -251,8 +251,6 @@ class TestFrontend(unittest.TestCase):
         self.system = 'foo'
         self.checkpath = []
         returncode, stdout, stderr = self._run_reframe()
-        print(stdout)
-        print(stderr)
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(1, returncode)

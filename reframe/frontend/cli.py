@@ -17,7 +17,7 @@ import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
                                      SystemAutodetectionError)
-from reframe.frontend.executors import Runner
+from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -451,13 +451,18 @@ def main():
         elif options.cpu_only:
             checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
-        checks_matched = [c for c in checks_matched]
+        # Determine the allowed programming environments
+        allowed_environs = {e.name
+                            for env_patt in options.prgenv
+                            for p in rt.system.partitions
+                            for e in p.environs if re.match(env_patt, e.name)}
 
-        # Determine the programming environments to run with
-        run_environs = {e.name
-                        for env_patt in options.prgenv
-                        for p in rt.system.partitions
-                        for e in p.environs if re.match(env_patt, e.name)}
+        # Generate the test cases
+        checks_matched = list(checks_matched)
+        testcases = generate_testcases(checks_matched,
+                                       options.skip_system_check,
+                                       options.skip_prgenv_check,
+                                       allowed_environs)
 
         # Act on checks
 
@@ -500,10 +505,8 @@ def main():
             exec_policy.skip_system_check = options.skip_system_check
             exec_policy.force_local = options.force_local
             exec_policy.strict_check = options.strict
-            exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.only_environs = run_environs
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
                 errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
@@ -532,14 +535,14 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
-                runner.runall(checks_matched)
+                runner.runall(testcases)
             finally:
                 # Print a retry report if we did any retries
-                if runner.stats.num_failures(run=0):
+                if runner.stats.failures(run=0):
                     printer.info(runner.stats.retry_report())
 
                 # Print a failure report if we had failures in the last run
-                if runner.stats.num_failures():
+                if runner.stats.failures():
                     printer.info(runner.stats.failure_report())
                     success = False
 
