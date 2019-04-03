@@ -5,60 +5,72 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(*([lang] for lang in ['C', 'Cpp', 'F90', 'Cuda']))
+@rfm.parameterized_test(['Cuda'], ['C++'], ['F90'])
 class PerftoolsCheck(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        if lang == 'Cuda':
-            self.valid_systems = ['daint:gpu', 'dom:gpu']
-        else:
+        self.name = 'jacobi_perftools_%s' % lang.replace('+', 'p')
+        self.descr = '%s check' % lang
+        if lang != 'Cuda':
             self.valid_systems = ['daint:gpu', 'dom:gpu',
                                   'daint:mc', 'dom:mc']
-
-        if lang != 'F90':
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
         else:
-            # Intel Fortran does not work with perftools,
-            # FIXME: PGI Fortran is hanging after completion
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+            self.valid_systems = ['daint:gpu', 'dom:gpu']
 
-        # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
-        # is correct, the batch job uses all the time.
-        self.time_limit = (0, 1, 0)
-
-        self.num_gpus_per_node = 1
-        self.executable = 'perftools_check'
-        self.prgenv_flags = {
-            'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp'],
-            'PrgEnv-gnu': ['-g', '-fopenmp'],
-            'PrgEnv-intel': ['-g', '-openmp'],
-            'PrgEnv-pgi': ['-g', '-mp']
-        }
-        self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
-                                               self.stdout)
-
-        self.modules = ['perftools-lite', 'craype-accel-nvidia60']
-        self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_perftools'
-        self.build_system.cppflags = ['-D_CSCS_ITMAX=1', '-DUSE_MPI']
-        self.build_system.options = ['NVCCFLAGS="-arch=sm_60"']
-
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         if lang == 'Cpp':
             self.sourcesdir = os.path.join('src', 'C++')
         else:
             self.sourcesdir = os.path.join('src', lang)
 
+        self.modules = ['craype-accel-nvidia60', 'perftools-lite']
+        self.build_system = 'Make'
         # NOTE: Restrict concurrency to allow creation of Fortran modules
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
-        if lang != 'Cuda':
-            self.num_tasks_per_node = 2
-            self.variables = {'OMP_NUM_THREADS': '2'}
-        else:
-            self.num_tasks_per_node = 1
+        self.prgenv_flags = {
+            'PrgEnv-cray': ['-O2', '-g', '-h nomessage=3140', '-homp'],
+            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
+            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
+            'PrgEnv-pgi': ['-O2', '-g', '-mp']
+        }
 
+        self.num_iterations = 200
+        if lang == 'Cuda':
+            self.build_system.options = [
+                'NVCCFLAGS="-arch=sm_60"',
+                'DDTFLAGS="-DUSE_MPI -D_CSCS_ITMAX=%s"' %
+                str(self.num_iterations),
+                'LIB=-lstdc++']
+
+        self.executable = 'jacobi'
+        # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
+        # is correct, the batch job uses all the time.
+        self.time_limit = (0, 1, 0)
+
+        self.num_tasks = 3
+        self.num_tasks_per_node = 3
+        self.num_cpus_per_task = 4
+        if lang == 'Cuda':
+            self.num_gpus_per_node = 1
+            self.num_tasks = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 1
+
+        self.variables = {
+            'ITERATIONS': str(self.num_iterations),
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'OMP_PROC_BIND': 'true',
+            'CRAYPE_LINK_TYPE': 'dynamic'
+        }
+        if self.num_tasks == 1:
+            # will be fixed in perftools/7.1
+            self.variables['PAT_RT_REPORT_METHOD'] = 'pe'
+
+        self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
+                                               self.stdout)
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
 
