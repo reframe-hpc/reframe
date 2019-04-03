@@ -7,9 +7,6 @@ import reframe.utility.sanity as sn
 class HelloWorldBaseTest(rfm.RegressionTest):
     def __init__(self, variant, lang, linkage):
         super().__init__()
-        if self.current_system.name in ['dom', 'daint']:
-            self.modules += ['gcc/6.1.0']
-
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
         self.prgenv_flags = {}
         self.lang_names = {
