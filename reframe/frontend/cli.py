@@ -231,6 +231,9 @@ def main():
                               version=reframe.VERSION)
     misc_options.add_argument('-v', '--verbose', action='count', default=0,
                               help='Increase verbosity level of output')
+    misc_options.add_argument('--performance-report', action='store_true',
+                              help='Print the performance report')
+
 
     if len(sys.argv) == 1:
         argparser.print_help()
@@ -545,6 +548,9 @@ def main():
                 if runner.stats.failures():
                     printer.info(runner.stats.failure_report())
                     success = False
+
+                if options.performance_report:
+                    printer.info(runner.stats.performance_report())
 
         else:
             printer.info('No action specified. Exiting...')
