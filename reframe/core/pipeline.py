@@ -566,6 +566,8 @@ class RegressionTest:
         self.readonly_files = []
         self.tags = set()
         self.maintainers = []
+        self.perf_values = []
+        self.perf_keys = []
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -1110,8 +1112,6 @@ class RegressionTest:
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
-            self.perf_values = []
-            self.perf_keys = []
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)

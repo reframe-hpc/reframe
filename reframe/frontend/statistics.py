@@ -114,12 +114,20 @@ class TestStats:
         report = [line_width * '=']
         report.append('PERFORMANCE REPORT')
         for t in self.tasks(current_run):
-            report.append(line_width * '-')
-            report.append('%s' % (t.check.name))
+            if t.check.perf_keys:
+                report.append(line_width * '-')
+                report.append('%s [%s]' %
+                              (t.check.name, t.check.current_environ))
+
             for k, p in zip(t.check.perf_keys, t.check.perf_values):
                 system, partition, key = k.split(':')
-                report.append(' * [%s:%s] %s: %s' %
-                              (system, partition, key, p[0]))
+                if type(p[1][-1]) is str:
+                    unit = p[1][-1]
+                else:
+                    unit = ''
+
+                report.append(' * [%s:%s] %s: %s %s' %
+                              (system, partition, key, p[0], unit))
 
         report.append(line_width * '-')
         return '\n'.join(report)

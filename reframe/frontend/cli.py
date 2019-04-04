@@ -234,7 +234,6 @@ def main():
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
 
-
     if len(sys.argv) == 1:
         argparser.print_help()
         sys.exit(1)
