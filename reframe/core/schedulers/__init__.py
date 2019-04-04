@@ -270,10 +270,8 @@ class Job(abc.ABC):
                           len(available_nodes))
 
         # Try to guess the number of tasks now
-        # Append `options` to a list containing the elements of `sched_access`
-        # whis is immutable.
-        available_nodes = self.filter_nodes(
-            available_nodes, list(self.sched_access) + self.options)
+        available_nodes = self.filter_nodes(available_nodes,
+                                            self.sched_access + self.options)
 
         if self.sched_flex_alloc_tasks == 'idle':
             available_nodes = {n for n in available_nodes
