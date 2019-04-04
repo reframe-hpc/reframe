@@ -30,9 +30,9 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
         }
         self.compiler_version = {
             'dom':   '71',
-            'daint': '49',
+            'daint': '71',
         }
-        self.compiler_version_default = '49'
+        self.compiler_version_default = '71'
         self.modules = ['craype-haswell', module_name]
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
