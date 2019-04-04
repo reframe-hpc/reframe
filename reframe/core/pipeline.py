@@ -1120,15 +1120,10 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
-                self.perf_value = value
-                self.perf_name = key
-
                 self.perf_values.append((value, self.reference[key]))
                 self.perf_keys.append(key)
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   *self.reference[key])
-
-            # self.perf_values = perf_values
 
             for val, reference in self.perf_values:
                 ref, low_thres, high_thres, *_ = reference
