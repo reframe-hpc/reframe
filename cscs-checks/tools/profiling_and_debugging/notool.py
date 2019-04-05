@@ -10,7 +10,7 @@ from reframe.core.fields import ScopedDict
 class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        self.name = 'JacobiCheck_%s' % lang.replace('+', 'p')
+        self.name = '%s_%s' % (type(self).__name__, lang.replace('+', 'p'))
         self.descr = 'Jacobi (without tool) %s check' % lang
         self.language = lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
