@@ -50,7 +50,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
 class GromacsGPUCheck(GromacsBaseCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__('md.log')
         self.valid_systems = ['daint:gpu']
         self.descr = 'GROMACS GPU check'
@@ -58,7 +58,7 @@ class GromacsGPUCheck(GromacsBaseCheck):
                                 '-s herflat.tpr']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 72
             self.num_tasks_per_node = 12
@@ -86,7 +86,7 @@ class GromacsGPUCheck(GromacsBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
@@ -95,14 +95,14 @@ class GromacsGPUCheck(GromacsBaseCheck):
                           for s in ['small', 'large']
                           for v in ['prod']))
 class GromacsCPUCheck(GromacsBaseCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__('md.log')
         self.valid_systems = ['daint:mc']
         self.descr = 'GROMACS CPU check'
         self.executable_opts = ['mdrun', '-dlb yes', '-ntomp 1', '-npme -1',
                                 '-nb cpu', '-s herflat.tpr']
 
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -131,7 +131,7 @@ class GromacsCPUCheck(GromacsBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 

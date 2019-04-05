@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 
 
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, arch, size, variant):
+    def __init__(self, arch, scale, variant):
         super().__init__()
         self.descr = 'NAMD check (%s, %s)' % (arch, variant)
         self.valid_prog_environs = ['PrgEnv-intel']
@@ -18,7 +18,7 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
         self.use_multithreading = True
         self.num_tasks_per_core = 2
 
-        if size == 'small':
+        if scale == 'small':
             self.num_tasks = 6
             self.num_tasks_per_node = 1
         else:
@@ -58,14 +58,14 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
 class NamdGPUCheck(NamdBaseCheck):
-    def __init__(self, size, variant):
-        super().__init__('gpu', size, variant)
+    def __init__(self, scale, variant):
+        super().__init__('gpu', scale, variant)
         self.valid_systems = ['daint:gpu']
         self.executable_opts = ['+idlepoll', '+ppn 23', 'stmv.namd']
         self.num_cpus_per_task = 24
         self.num_gpus_per_node = 1
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.reference = {
                 'dom:gpu': {'days_ns': (0.18, None, 0.05, 'days/ns')},
@@ -82,12 +82,12 @@ class NamdGPUCheck(NamdBaseCheck):
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
 class NamdCPUCheck(NamdBaseCheck):
-    def __init__(self, size, variant):
-        super().__init__('cpu', size, variant)
+    def __init__(self, scale, variant):
+        super().__init__('cpu', scale, variant)
         self.valid_systems = ['daint:mc']
         self.executable_opts = ['+idlepoll', '+ppn 71', 'stmv.namd']
         self.num_cpus_per_task = 72
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.reference = {
                 'dom:mc': {'days_ns': (0.57, None, 0.05, 'days/ns')},

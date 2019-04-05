@@ -43,11 +43,11 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__()
-        self.descr = 'CP2K CPU check (version: %s, %s)' % (size, variant)
+        self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:mc']
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
         else:
@@ -75,7 +75,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             }
         }
 
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
@@ -83,14 +83,14 @@ class Cp2kCpuCheck(Cp2kCheck):
                           for s in ['small', 'large']
                           for v in ['maint', 'prod']))
 class Cp2kGpuCheck(Cp2kCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__()
-        self.descr = 'CP2K GPU check (version: %s, %s)' % (size, variant)
+        self.descr = 'CP2K GPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.modules = ['CP2K']
         self.num_gpus_per_node = 1
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 72
         else:
@@ -117,5 +117,5 @@ class Cp2kGpuCheck(Cp2kCheck):
                 }
             }
         }
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}

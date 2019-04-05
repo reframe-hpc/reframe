@@ -7,7 +7,7 @@ import reframe.utility.sanity as sn
 @rfm.required_version('>=2.16')
 @rfm.parameterized_test(['small'], ['large'])
 class QECheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, size):
+    def __init__(self, scale):
         super().__init__()
         self.descr = 'Quantum Espresso CPU check'
         self.maintainers = ['AK', 'LM']
@@ -20,7 +20,7 @@ class QECheck(rfm.RunOnlyRegressionTest):
         self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
         self.executable_opts = ['-in', 'ausurf.in']
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
             self.num_tasks_per_node = 36

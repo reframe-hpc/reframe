@@ -42,14 +42,14 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
 class LAMMPSGPUCheck(LAMMPSBaseCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__()
         self.valid_systems = ['daint:gpu']
         self.executable = 'lmp_mpi'
         self.executable_opts = ['-sf gpu', '-pk gpu 1', '-in in.lj.gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 12
             self.num_tasks_per_node = 2
@@ -77,7 +77,7 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
@@ -86,12 +86,12 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
                           for s in ['small', 'large']
                           for v in ['prod']))
 class LAMMPSCPUCheck(LAMMPSBaseCheck):
-    def __init__(self, size, variant):
+    def __init__(self, scale, variant):
         super().__init__()
         self.valid_systems = ['daint:mc']
         self.executable = 'lmp_omp'
         self.executable_opts = ['-sf omp', '-pk omp 1', '-in in.lj.cpu']
-        if size == 'small':
+        if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
             self.num_tasks_per_node = 36
@@ -110,5 +110,5 @@ class LAMMPSCPUCheck(LAMMPSBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][size]
+        self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
