@@ -47,7 +47,7 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.executable = 'jacobi'
         # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
         # is correct, the batch job uses all the time.
-        self.time_limit = (0, 1, 0)
+        self.time_limit = (0, 5, 0)
 
         self.num_tasks = 3
         self.num_tasks_per_node = 3
