@@ -13,7 +13,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.name = '%s_%s' % (type(self).__name__, lang.replace('+', 'p'))
         self.descr = 'Jacobi (without tool) %s check' % lang
         self.language = lang
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
