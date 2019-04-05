@@ -41,8 +41,7 @@ class PerftoolsCheck(rfm.RegressionTest):
         if lang == 'Cuda':
             self.build_system.options = [
                 'NVCCFLAGS="-arch=sm_60"',
-                'DDTFLAGS="-DUSE_MPI -D_CSCS_ITMAX=%s"' %
-                str(self.num_iterations),
+                'DDTFLAGS="-DUSE_MPI -D_CSCS_ITMAX=%s"' % self.num_iterations,
                 'LIB=-lstdc++']
 
         self.executable = 'jacobi'
