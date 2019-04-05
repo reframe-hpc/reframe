@@ -50,10 +50,14 @@ class AffinityTestBase(rfm.RegressionTest):
         self.sanity_patterns = sn.all([
             sn.assert_eq(self.aff_thrds, self.ref_thrds),
             sn.assert_eq(self.aff_ranks, self.ref_ranks),
-            sn.assert_eq(self.aff_cores, self.ref_cores)])
+            sn.assert_eq(self.sn_sorted(self.aff_cores),
+                         self.sn_sorted(self.ref_cores))])
 
         super().setup(partition, environ, **job_opts)
 
+    @sn.sanity_function
+    def sn_sorted(self, lst):
+        return sorted(lst)
 
 @rfm.parameterized_test(['omp_bind_threads'],
                         ['omp_bind_threads_nomultithread'],
