@@ -10,7 +10,6 @@ from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
-from reframe.utility.sandbox import Sandbox
 
 ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
 
@@ -23,10 +22,10 @@ class TestCase:
     def __init__(self, check, partition, environ):
         self.__check_orig = check
         self.__check = copy.deepcopy(check)
+        self.__environ = copy.deepcopy(environ)
 
-        # Environments and partitions are immutable; no need to clone them
+        # Partitions are immutable; no need to clone them
         self.__partition = partition
-        self.__environ = environ
 
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
@@ -220,7 +219,6 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._sandbox = Sandbox()
         self._environ_snapshot = EnvironmentSnapshot()
 
     def __repr__(self):
