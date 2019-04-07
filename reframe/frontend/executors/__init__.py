@@ -23,9 +23,7 @@ class TestCase:
         self.__check_orig = check
         self.__check = copy.deepcopy(check)
         self.__environ = copy.deepcopy(environ)
-
-        # Partitions are immutable; no need to clone them
-        self.__partition = partition
+        self.__partition = copy.deepcopy(partition)
 
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
