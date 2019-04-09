@@ -35,6 +35,11 @@ class IntelRooflineTest(rfm.RegressionTest):
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
+        # Latest advisor is needed because tests with advisor/2018 Update 2 
+        # (build 551025) raised failures:
+        #    roof.dir/nid00753.000/trc000/trc000.advixe
+        #    Application exit code: 139
+        # advisor/2019 is broken on dom ("Exceeded job memory limit")
         self.modules = ['advisor/2019_update3']
         self.prgenv_flags = {
             'PrgEnv-intel': ['-O2', '-g', '-std=c++11'],
@@ -54,10 +59,6 @@ class IntelRooflineTest(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         self.pre_run = [
-            # Testing with advisor/2018 Update 2 (build 551025):
-            #   advisor/2019 is broken on dom ("Exceeded job memory limit"),
-            #   and advisor/2019 is not installed on daint,
-            # 'source $INTEL_PATH/../advisor_2018/advixe-vars.sh',
             'advixe-cl -help collect | head -20',
         ]
         self.executable = 'advixe-cl'
