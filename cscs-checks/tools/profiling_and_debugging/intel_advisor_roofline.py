@@ -9,7 +9,7 @@ import reframe.utility.sanity as sn
                           for repeat in ['100000']
                           for toolsversion in ['591264']
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
-                                             'G3_AOS_VECTOR', 'G3_SOA_VECTOR']
+                                             'G3_AOS_VECTOR', 'G3_SOA_VECTOR']])
 class IntelRooflineTest(rfm.RegressionTest):
     '''This test checks the values reported by Intel Advisor's roofline model:
     https://software.intel.com/en-us/intel-advisor-xe
