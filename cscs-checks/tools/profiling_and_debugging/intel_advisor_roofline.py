@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*[[repeat, toolsversion, datalayout]
-                          for repeat in ['90000']
+                          for repeat in ['120000']
                           for toolsversion in ['591264']
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
                                              'G3_AOS_VECTOR', 'G3_SOA_VECTOR',
@@ -35,8 +35,8 @@ class IntelRooflineTest(rfm.RegressionTest):
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
-        # Latest advisor is needed because tests with advisor/2018 Update 2
-        # (build 551025) raised failures:
+        # Using advisor/2019 because tests with advisor/2018 (build 551025)
+        # raised failures:
         #    roof.dir/nid00753.000/trc000/trc000.advixe
         #    Application exit code: 139
         # advisor/2019 is currently broken on dom ("Exceeded job memory limit")
