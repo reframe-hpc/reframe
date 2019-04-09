@@ -16,6 +16,31 @@ Writing system regression tests in a high-level modern programming language, lik
 Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
 
+## Getting ReFrame
+
+You may install ReFrame directly from [PyPI](https://pypi.org/project/ReFrame-HPC/) through `pip`:
+
+```bash
+pip install reframe-hpc
+```
+
+ReFrame will be available in your PATH:
+
+```bash
+reframe -V
+```
+
+Alternatively, and especially if you want to contribute back to the framework, you may clone this repository:
+
+```bash
+git clone https://github.com/eth-cscs/reframe.git
+cd reframe
+./bin/reframe -V
+```
+
+Finally, you may access all previous versions of ReFrame [here](https://github.com/eth-cscs/reframe/releases).
+
+
 ## Documentation
 
 You may find the official documentation of the latest release and the current master in the following links:
