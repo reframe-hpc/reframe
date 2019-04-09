@@ -108,21 +108,6 @@ class TestFields(unittest.TestCase):
         self.assertRaises(ValueError, exec, 'tester.field = (100, 3, 65)',
                           globals(), locals())
 
-    def test_sandbox(self):
-        from reframe.core.environments import Environment
-        from reframe.core.systems import System
-        from reframe.utility.sandbox import Sandbox
-
-        environ = Environment('myenv')
-        system  = System('mysystem')
-
-        sandbox = Sandbox()
-        sandbox.environ = environ
-        sandbox.system  = system
-
-        self.assertIsNot(system, sandbox.system)
-        self.assertIsNot(environ, sandbox.environ)
-
     def test_proxy_field(self):
         class Target:
             def __init__(self):
