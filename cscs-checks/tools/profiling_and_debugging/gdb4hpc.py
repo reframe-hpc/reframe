@@ -42,6 +42,11 @@ class Gdb4hpcCheck(rfm.RegressionTest):
         }
         self.maintainers = ['JG']
         self.tags = {'production'}
+        # gdb4hpc has its own way to launch a debugging job and needs an
+        # additional jobscript. The reframe jobscript can be copied for that 
+        # purpose, by adding the cray_debug_ comments around the job launch 
+        # command to be debugged, gdb4hpc is then activated by removing the 
+        # #GDB4HPC comments in the next (post_run) step.
         self.pre_run = [
             '#GDB4HPC #cray_debug_start',
             '#GDB4HPC srun %s' % self.target_executable,
@@ -50,7 +55,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
-        # gdb4hpc has its own way to launch a job:
+        # create extra jobscript for gdb4hpc:
         self.post_run = [
             'sed "s-#GDB4HPC --" %s | '
             'egrep -v "output=|error=|^gdb4hpc" &> %s' %
@@ -71,7 +76,7 @@ class Gdb4hpcCpuCheck(Gdb4hpcCheck):
                 'gdb4hpc.rpt', 'result', float),
                 2.572e-6, -1e-1, 1.0e-1),
 
-            sn.assert_found(r'gdb4hpc \d\.\d - Cray Line Mode Parallel Debugg',
+            sn.assert_found(r'gdb4hpc \d\.\d - Cray Line Mode Parallel Debug',
                             'gdb4hpc.rpt'),
 
             sn.assert_found(r'Shutting down debugger and killing application',
