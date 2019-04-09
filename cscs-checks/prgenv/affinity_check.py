@@ -9,12 +9,12 @@ class AffinityTestBase(rfm.RegressionTest):
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system = 'Make'
-        self.build_system.options = ['--directory=affinity', 'MPI=1']
+        self.build_system.options = ['-C affinity', 'MPI=1']
         # The github URL can not be specifid as `self.sourcedir` as that
         # would prevent the src folder from being copied to stage which is
         # necessary since these tests need files from it.
         self.prebuild_cmd = ['git clone https://github.com/vkarak/affinity']
-        self.executable = 'affinity/affinity'
+        self.executable = './affinity/affinity'
         self.variant = variant
         self.maintainers = ['RS', 'VK']
         self.tags = {'production', 'scs', 'maintenance'}
@@ -50,7 +50,8 @@ class AffinityTestBase(rfm.RegressionTest):
         self.sanity_patterns = sn.all([
             sn.assert_eq(self.aff_thrds, self.ref_thrds),
             sn.assert_eq(self.aff_ranks, self.ref_ranks),
-            sn.assert_eq(self.aff_cores, self.ref_cores)])
+            sn.assert_eq(sn.sorted(self.aff_cores), sn.sorted(self.ref_cores))
+        ])
 
         super().setup(partition, environ, **job_opts)
 

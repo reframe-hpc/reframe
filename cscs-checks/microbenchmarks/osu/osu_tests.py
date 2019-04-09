@@ -73,12 +73,15 @@ class FlexAlltoallTest(rfm.RegressionTest):
 
 
 @rfm.required_version('>=2.16')
-@rfm.simple_test
+@rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
-    def __init__(self):
+    def __init__(self, variant):
         super().__init__()
         self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc']
+        if variant == 'small':
+            self.valid_systems += ['dom:gpu', 'dom:mc']
+
         self.descr = 'Allreduce OSU microbenchmark'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_allreduce'
@@ -94,21 +97,34 @@ class AllreduceTest(rfm.RegressionTest):
                                         self.stdout, 'latency', float)
         }
         self.tags = {'production'}
-        self.reference = {
-            'dom:gpu': {
-                'latency': (6.0, None, 0.1, 'us')
-            },
-            'daint:gpu': {
-                'latency': (20.5, None, 2.0, 'us')
-            },
-        }
+        if variant == 'small':
+            self.num_tasks = 6
+            self.reference = {
+                'dom:gpu': {
+                    'latency': (6.0, None, 0.10, 'us')
+                },
+                'daint:gpu': {
+                    'latency': (7.81, None, 0.25, 'us')
+                },
+                'daint:mc': {
+                    'latency': (8.79, None, 0.25, 'us')
+                }
+            }
+        else:
+            self.num_tasks = 16
+            self.reference = {
+                'daint:gpu': {
+                    'latency': (16.87, None, 0.40, 'us')
+                },
+                'daint:mc': {
+                    'latency': (10.85, None, 0.20, 'us')
+                }
+            }
+
+        # Allow test to run on new systems without errors
+        self.reference['*:latency'] = (0, None, None, 'us')
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
-        if self.current_system.name == 'dom':
-            self.num_tasks = 6
-        elif self.current_system.name == 'daint':
-            self.num_tasks = 16
-
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
