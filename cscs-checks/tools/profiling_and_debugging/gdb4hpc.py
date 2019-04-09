@@ -43,9 +43,9 @@ class Gdb4hpcCheck(rfm.RegressionTest):
         self.maintainers = ['JG']
         self.tags = {'production'}
         # gdb4hpc has its own way to launch a debugging job and needs an
-        # additional jobscript. The reframe jobscript can be copied for that 
-        # purpose, by adding the cray_debug_ comments around the job launch 
-        # command to be debugged, gdb4hpc is then activated by removing the 
+        # additional jobscript. The reframe jobscript can be copied for that
+        # purpose, by adding the cray_debug_ comments around the job launch
+        # command to be debugged, gdb4hpc is then activated by removing the
         # #GDB4HPC comments in the next (post_run) step.
         self.pre_run = [
             '#GDB4HPC #cray_debug_start',
