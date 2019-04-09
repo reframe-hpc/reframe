@@ -7,27 +7,22 @@ break _jacobi.F90:90
 continue
 list 90,91
 print residual
-#printf "(_jacobi.F90:90)] residual:%f\n", residual
 # ----2
 continue
 print residual
-#printf "(_jacobi.F90:90)] residual:%f\n", residual
 # ----3
 continue
 print residual
-#printf "(_jacobi.F90:90)] residual:%f\n", residual
 # ----4
 continue
 print residual
-#printf "(_jacobi.F90:90)] residual:%f\n", residual
 # ----5
 continue
 print residual
-#printf "(_jacobi.F90:90)] residual:%f\n", residual
 quit
 
-# can't use printf with gdb4hpc until this cray case is solved:
+# can use printf with gdb4hpc only in gdbmode: 
+#   printf "(_jacobi.F90:90)] residual:%f\n", residual
 # CASE #227672 - GDB4HPC: PRINTF SUPPORT
-# printf "(_jacobi.F90:90)] residual:%f\n", residual
 
 # TODO: tracepoints

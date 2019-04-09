@@ -69,7 +69,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
 class Gdb4hpcCpuCheck(Gdb4hpcCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['dom:gpu', 'dom:mc', 'daint:gpu', 'daint:mc']
+        self.valid_systems = ['dom:gpu', 'dom:mc']
         self.sanity_patterns = sn.all([
             sn.assert_reference(sn.extractsingle(
                 r'^tst\{0\}:\s+(?P<result>\d+.\d+[eE]-\d+)',
