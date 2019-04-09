@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*[[repeat, toolsversion, datalayout]
-                          for repeat in ['50000']
+                          for repeat in ['90000']
                           for toolsversion in ['591264']
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
                                              'G3_AOS_VECTOR', 'G3_SOA_VECTOR',
