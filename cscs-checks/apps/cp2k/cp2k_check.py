@@ -4,11 +4,9 @@ import reframe.utility.sanity as sn
 
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, check_name, check_descr):
-        super().__init__(check_name, os.path.dirname(__file__))
-        self.descr = check_descr
+    def __init__(self):
+        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
-
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
@@ -26,7 +24,7 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         ])
 
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
+            'time': sn.extractsingle(r'^ CP2K(\s+[\d\.]+){4}\s+(?P<perf>\S+)',
                                      self.stdout, 'perf', float)
         }
 
@@ -41,75 +39,83 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         }
 
 
-@rfm.parameterized_test(['prod'], ['maint'])
+@rfm.parameterized_test(*([s, v]
+                          for s in ['small', 'large']
+                          for v in ['maint', 'prod']))
 class Cp2kCpuCheck(Cp2kCheck):
-    def __init__(self, variant):
-        super().__init__('cp2k_cpu_%s_check' % variant,
-                         'CP2K check CPU')
-        self.valid_systems = ['daint:mc', 'dom:mc']
-        self.num_gpus_per_node = 0
-        if self.current_system.name == 'dom':
+    def __init__(self, scale, variant):
+        super().__init__()
+        self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
+        self.valid_systems = ['daint:mc']
+        if scale == 'small':
+            self.valid_systems += ['dom:mc']
             self.num_tasks = 216
         else:
             self.num_tasks = 576
 
         self.num_tasks_per_node = 36
-
-        if variant == 'maint':
-            self.tags |= {'maintenance'}
-            self.reference = {
-                'dom:mc': {
-                    'perf': (182.6, None, 0.05)
+        references = {
+            'maint': {
+                'small': {
+                    'dom:mc': {'time': (182.6, None, 0.05, 's')},
+                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
                 },
-                'daint:mc': {
-                    'perf': (141.0, None, 0.05)
+                'large': {
+                    'daint:mc': {'time': (141.0, None, 0.05, 's')}
+                }
+            },
+            'prod': {
+                'small': {
+                    'dom:mc': {'time': (174.5, None, 0.05, 's')},
+                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
                 },
+                'large': {
+                    'daint:mc': {'time': (113.0, None, 0.05, 's')}
+                }
             }
-        else:
-            self.tags |= {'production'}
-            self.reference = {
-                'dom:mc': {
-                    'perf': (174.5, None, 0.05)
-                },
-                'daint:mc': {
-                    'perf': (113.0, None, 0.25)
-                },
-            }
+        }
+
+        self.reference = references[variant][scale]
+        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
-@rfm.parameterized_test(['prod'], ['maint'])
+@rfm.parameterized_test(*([s, v]
+                          for s in ['small', 'large']
+                          for v in ['maint', 'prod']))
 class Cp2kGpuCheck(Cp2kCheck):
-    def __init__(self, variant):
-        super().__init__('cp2k_gpu_%s_check' % variant,
-                         'CP2K check GPU')
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+    def __init__(self, scale, variant):
+        super().__init__()
+        self.descr = 'CP2K GPU check (version: %s, %s)' % (scale, variant)
+        self.valid_systems = ['daint:gpu']
         self.variables = {'CRAY_CUDA_MPS': '1'}
         self.modules = ['CP2K']
         self.num_gpus_per_node = 1
-        if self.current_system.name == 'dom':
+        if scale == 'small':
+            self.valid_systems += ['dom:gpu']
             self.num_tasks = 72
         else:
             self.num_tasks = 192
 
         self.num_tasks_per_node = 12
-
-        if variant == 'maint':
-            self.tags |= {'maintenance'}
-            self.reference = {
-                'dom:gpu': {
-                    'perf': (251.8, None, 0.15)
+        references = {
+            'maint': {
+                'small': {
+                    'dom:gpu': {'time': (251.8, None, 0.15, 's')},
+                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
                 },
-                'daint:gpu': {
-                    'perf': (222.6, None, 0.05)
+                'large': {
+                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                }
+            },
+            'prod': {
+                'small': {
+                    'dom:gpu': {'time': (240.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
                 },
+                'large': {
+                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                }
             }
-        else:
-            self.tags |= {'production'}
-            self.reference = {
-                'dom:gpu': {
-                    'perf': (240.0, None, 0.05)
-                },
-                'daint:gpu': {
-                    'perf': (222.6, None, 0.05)
-                },
-            }
+        }
+        self.reference = references[variant][scale]
+        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
