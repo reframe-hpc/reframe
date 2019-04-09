@@ -172,7 +172,7 @@ class Make(BuildSystem):
 
     .. code::
 
-      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC='X' CXX='X' FC='X' NVCC='X' CPPFLAGS='X' CFLAGS='X' CXXFLAGS='X' FCFLAGS='X' LDFLAGS='X' OPTIONS
+      make -j [N] [-f MAKEFILE] [-C SRCDIR] CC="X" CXX="X" FC="X" NVCC="X" CPPFLAGS="X" CFLAGS="X" CXXFLAGS="X" FCFLAGS="X" LDFLAGS="X" OPTIONS
 
     The compiler and compiler flags variables will only be passed if they are
     not :class:`None`.
@@ -246,31 +246,31 @@ class Make(BuildSystem):
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
         if cc is not None:
-            cmd_parts += ["CC='%s'" % cc]
+            cmd_parts += ['CC="%s"' % cc]
 
         if cxx is not None:
-            cmd_parts += ["CXX='%s'" % cxx]
+            cmd_parts += ['CXX="%s"' % cxx]
 
         if ftn is not None:
-            cmd_parts += ["FC='%s'" % ftn]
+            cmd_parts += ['FC="%s"' % ftn]
 
         if nvcc is not None:
-            cmd_parts += ["NVCC='%s'" % nvcc]
+            cmd_parts += ['NVCC="%s"' % nvcc]
 
         if cppflags is not None:
-            cmd_parts += ["CPPFLAGS='%s'" % ' '.join(cppflags)]
+            cmd_parts += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
 
         if cflags is not None:
-            cmd_parts += ["CFLAGS='%s'" % ' '.join(cflags)]
+            cmd_parts += ['CFLAGS="%s"' % ' '.join(cflags)]
 
         if cxxflags is not None:
-            cmd_parts += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
+            cmd_parts += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
 
         if fflags is not None:
-            cmd_parts += ["FCFLAGS='%s'" % ' '.join(fflags)]
+            cmd_parts += ['FCFLAGS="%s"' % ' '.join(fflags)]
 
         if ldflags is not None:
-            cmd_parts += ["LDFLAGS='%s'" % ' '.join(ldflags)]
+            cmd_parts += ['LDFLAGS="%s"' % ' '.join(ldflags)]
 
         if self.options:
             cmd_parts += self.options
@@ -521,28 +521,28 @@ class CMake(ConfigureBasedBuildSystem):
         fflags   = self._combine_flags(cppflags, self._fflags(environ))
         ldflags  = self._ldflags(environ)
         if cc is not None:
-            cmake_cmd += ["-DCMAKE_C_COMPILER='%s'" % cc]
+            cmake_cmd += ['-DCMAKE_C_COMPILER="%s"' % cc]
 
         if cxx is not None:
-            cmake_cmd += ["-DCMAKE_CXX_COMPILER='%s'" % cxx]
+            cmake_cmd += ['-DCMAKE_CXX_COMPILER="%s"' % cxx]
 
         if ftn is not None:
-            cmake_cmd += ["-DCMAKE_Fortran_COMPILER='%s'" % ftn]
+            cmake_cmd += ['-DCMAKE_Fortran_COMPILER="%s"' % ftn]
 
         if nvcc is not None:
-            cmake_cmd += ["-DCMAKE_CUDA_COMPILER='%s'" % nvcc]
+            cmake_cmd += ['-DCMAKE_CUDA_COMPILER="%s"' % nvcc]
 
         if cflags is not None:
-            cmake_cmd += ["-DCMAKE_C_FLAGS='%s'" % ' '.join(cflags)]
+            cmake_cmd += ['-DCMAKE_C_FLAGS="%s"' % ' '.join(cflags)]
 
         if cxxflags is not None:
-            cmake_cmd += ["-DCMAKE_CXX_FLAGS='%s'" % ' '.join(cxxflags)]
+            cmake_cmd += ['-DCMAKE_CXX_FLAGS="%s"' % ' '.join(cxxflags)]
 
         if fflags is not None:
-            cmake_cmd += ["-DCMAKE_Fortran_FLAGS='%s'" % ' '.join(fflags)]
+            cmake_cmd += ['-DCMAKE_Fortran_FLAGS="%s"' % ' '.join(fflags)]
 
         if ldflags is not None:
-            cmake_cmd += ["-DCMAKE_EXE_LINKER_FLAGS='%s'" % ' '.join(ldflags)]
+            cmake_cmd += ['-DCMAKE_EXE_LINKER_FLAGS="%s"' % ' '.join(ldflags)]
 
         if self.config_opts:
             cmake_cmd += self.config_opts
@@ -599,28 +599,28 @@ class Autotools(ConfigureBasedBuildSystem):
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
         if cc is not None:
-            configure_cmd += ["CC='%s'" % cc]
+            configure_cmd += ['CC="%s"' % cc]
 
         if cxx is not None:
-            configure_cmd += ["CXX='%s'" % cxx]
+            configure_cmd += ['CXX="%s"' % cxx]
 
         if ftn is not None:
-            configure_cmd += ["FC='%s'" % ftn]
+            configure_cmd += ['FC="%s"' % ftn]
 
         if cppflags is not None:
-            configure_cmd += ["CPPFLAGS='%s'" % ' '.join(cppflags)]
+            configure_cmd += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
 
         if cflags is not None:
-            configure_cmd += ["CFLAGS='%s'" % ' '.join(cflags)]
+            configure_cmd += ['CFLAGS="%s"' % ' '.join(cflags)]
 
         if cxxflags is not None:
-            configure_cmd += ["CXXFLAGS='%s'" % ' '.join(cxxflags)]
+            configure_cmd += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
 
         if fflags is not None:
-            configure_cmd += ["FCFLAGS='%s'" % ' '.join(fflags)]
+            configure_cmd += ['FCFLAGS="%s"' % ' '.join(fflags)]
 
         if ldflags is not None:
-            configure_cmd += ["LDFLAGS='%s'" % ' '.join(ldflags)]
+            configure_cmd += ['LDFLAGS="%s"' % ' '.join(ldflags)]
 
         if self.config_opts:
             configure_cmd += self.config_opts
