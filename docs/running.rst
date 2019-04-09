@@ -365,10 +365,29 @@ For example the following will select all the checks that can run with both ``Pr
 
 If you are going to run a set of tests selected by programming environment, they will run only for the selected programming environment(s).
 
+The ``-p`` option accepts also the Python `regular expression syntax <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`__.
+In fact, the argument to ``-p`` option is treated as a regular expression always. This means that the ``-p PrgEnv-gnu`` will match also tests that support a ``PrgEnv-gnuXX`` environment.
+If you would like to stricly select tests that support ``PrgEnv-gnu`` only and not ``PrgEnv-gnuXX``, you should write ``-p PrgEnv-gnu$``.
+As described above multiple ``-p`` options are AND-ed.
+Combining that with regular expressions can be quite powerful.
+For example, the following will select all tests that support programming environment ``foo`` and either ``PrgEnv-gnu`` or ``PrgEnv-pgi``:
+
+.. code-block:: bash
+
+   ./bin/reframe -p foo -p 'PrgEnv-(gnu|pgi)' -l
+
+
+.. note::
+   .. versionadded:: 2.17
+
+   The ``-p`` option recognizes regular expressions as arguments.
+
+
 Selecting tests by tags
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags. Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
+As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags.
+Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
 For example the following will list all the tests that have a ``maintenance`` tag and can run on the current system:
 
 .. code-block:: bash
@@ -377,6 +396,11 @@ For example the following will list all the tests that have a ``maintenance`` ta
 
 Similarly to the ``-p`` option, you can chain multiple ``-t`` options together, in which case a regression test will be selected if it is associated with all the tags specified in the command line.
 The list of tags associated with a check can be viewed in the listing output when specifying the ``-l`` option.
+
+.. note::
+   .. versionadded:: 2.17
+
+   The ``-t`` option recognizes regular expressions as arguments.
 
 Selecting tests by name
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -437,6 +461,18 @@ Similarly, you can exclude this test by passing the ``-x Example7Test`` option:
     * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
     * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
   Found 12 check(s).
+
+
+Both ``-n`` and ``-x`` options can be chained, in which case either the tests that have any of the specified names are selected or excluded from running.
+They may also accept regular expressions as arguments.
+
+.. note::
+   .. versionadded:: 2.17
+
+      The ``-n`` and ``-x`` options recognize regular expressions as arguments.
+      Chaining these options, e.g., ``-n A -n B``, is equivalent to a regular expression that applies OR to the individual arguments, i.e., equivalent to ``-n 'A|B'``.
+
+
 
 
 Controlling the Execution of Regression Tests
@@ -650,10 +686,14 @@ Common Log Handler Attributes
 All handlers accept the following set of attributes (keys) in their configuration:
 
 * ``type``: (required) the type of the handler.
-  There are two types of handlers used for standard logging in ReFrame
+  There are several types of handlers used for logging in ReFrame.
+  Some of them are only relevant for performance logging:
 
   1. ``file``: a handler that writes log records in file.
   2. ``stream``: a handler that writes log records in a file stream.
+  3. ``syslog``: a handler that sends log records to Unix syslog.
+  4. ``filelog``: a handler for writing performance logs (relevant only for `performance logging <#performance-logging>`__).
+  5. ``graylog``: a handler for sending performance logs to a Graylog server (relevant only for `performance logging <#performance-logging>`__).
 
 
 * ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
@@ -708,6 +748,25 @@ In addition to the common log handler attributes, file log handlers accept the f
 * ``name``: (default ``stdout``) The symbolic name of the log stream to use.
   Available values: ``stdout`` for standard output and ``stderr`` for standard error.
 
+
+Syslog log handler
+""""""""""""""""""
+
+In addition to the common log handler attributes, file log handlers accept the following:
+
+* ``socktype``: The type of socket where the handler will send log records to. There are two socket types:
+
+   1. ``udp``: (default) This opens a UDP datagram socket.
+   2. ``tcp``: This opens a TCP stream socket.
+
+* ``facility``: (default: ``user``) The Syslog facility to send records to.
+  The list of supported facilities can be found `here <https://docs.python.org/3.6/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
+* ``address``: (required) The address where the handler will connect to.
+  This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
+
+
+.. note::
+   .. versionadded:: 2.17
 
 
 Performance Logging
@@ -827,6 +886,20 @@ This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, 
 `GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
 The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
 More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
+
+
+Adjusting verbosity of output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ReFrame's output is handled by a logging mechanism.
+In fact, as revealed in the corresponding configuration entry (see `Configuring Logging <#configuring-logging>`__), a specific logging handler takes care of printing ReFrame's message in the standard output.
+One way to change the verbosity level of the output is by explicitly setting the value of the ``level`` key in the configuration of the output handler.
+Alternatively, you may increase the verbosity level from the command line by chaining the ``-v`` or ``--verbose`` option.
+Every time ``-v`` is specified, the next verbosity level will be selected for the output.
+For example, if the initial level of the output handler is set to ``INFO`` (in the configuration file), specifying ``-v`` twice will make ReFrame spit out all ``DEBUG`` messages.
+
+.. versionadded:: 2.16
+   ``-v`` and ``--verbose`` options are added.
 
 
 Asynchronous Execution of Regression Checks
@@ -1006,7 +1079,7 @@ Controlling the Flexible Task Allocation
 
 .. versionadded:: 2.15
 
-ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to ``0``.
+ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value ``<=0``.
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
 This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
 This option accepts three values:

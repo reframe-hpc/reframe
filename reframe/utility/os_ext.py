@@ -25,8 +25,8 @@ def run_command(cmd, check=False, timeout=None, shell=False):
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
         raise SpawnedProcessTimeout(e.cmd,
-                                    proc.stdout,
-                                    proc.stderr, timeout) from None
+                                    proc.stdout.read(),
+                                    proc.stderr.read(), timeout) from None
 
     completed = subprocess.CompletedProcess(args=shlex.split(cmd),
                                             returncode=proc.returncode,
@@ -176,13 +176,17 @@ def copytree_virtual(src, dst, file_links=[],
 def rmtree(*args, max_retries=3, **kwargs):
     """Persistent version of ``shutil.rmtree()``.
 
-    If ``shutil.rmtree()`` with ``ENOTEMPTY``, retry up to ``max_retries``
-    times to delete the directory.
+    If ``shutil.rmtree()`` fails with ``ENOTEMPTY`` or ``EBUSY``, retry up to
+    ``max_retries`times to delete the directory.
 
     This version of ``rmtree()`` is mostly provided to work around a race
     condition between when ``sacct`` reports a job as completed and when the
     Slurm epilog runs. See https://github.com/eth-cscs/reframe/issues/291 for
     more information.
+    Furthermore, it offers a work around for nfs file systems where a ``.nfs*``
+    file may be present during the ``rmtree()`` call which throws a busy
+    device/resource error. See https://github.com/eth-cscs/reframe/issues/712
+    for more information.
 
     ``args`` and ``kwargs`` are passed through to ``shutil.rmtree()``.
 
@@ -200,7 +204,7 @@ def rmtree(*args, max_retries=3, **kwargs):
         except OSError as e:
             if i == max_retries:
                 raise
-            elif e.errno == errno.ENOTEMPTY:
+            elif e.errno in {errno.ENOTEMPTY, errno.EBUSY}:
                 pass
             else:
                 raise
@@ -305,3 +309,25 @@ def git_repo_exists(url, timeout=5):
         return False
     else:
         return True
+
+
+def expandvars(path):
+    """Expand environment variables in ``path`` and
+        perform any command substitution
+
+    This function is the same as ``os.path.expandvars()``, except that it
+    understands also the syntax: $(cmd)`` or `cmd`.
+    """
+    cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')
+    cmd_subst_m = cmd_subst.search(path)
+    if not cmd_subst_m:
+        return os.path.expandvars(path)
+
+    cmd = cmd_subst_m.groups()[0] or cmd_subst_m.groups()[1]
+
+    # We need shell=True to support nested expansion
+    completed = run_command(cmd, check=True, shell=True)
+
+    # Prepare stdout for inline use
+    stdout = completed.stdout.replace('\n', ' ').strip()
+    return cmd_subst.sub(stdout, path)

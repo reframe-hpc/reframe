@@ -6,7 +6,6 @@ __all__ = ['RegressionTest',
            'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
 
 
-import fnmatch
 import inspect
 import itertools
 import os
@@ -24,7 +23,7 @@ from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
-                                     user_deprecation_warning)
+                                     PerformanceError)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
@@ -67,12 +66,18 @@ class RegressionTest:
 
     #: List of programming environments supported by this test.
     #:
+    #: If ``*`` is in the list then all programming environments are supported
+    #: by this test.
+    #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.12
     #:        Programming environments can now be specified using wildcards.
+    #:
+    #:     .. versionchanged:: 2.17
+    #:        Support for wildcards is dropped.
     valid_prog_environs = fields.TypedField('valid_prog_environs',
                                             typ.List[str])
 
@@ -255,9 +260,15 @@ class RegressionTest:
 
     #: Number of tasks required by this test.
     #:
-    #: If the number of tasks is set to ``0``, ReFrame will try to flexibly
-    #: allocate the number of tasks, based on the command line option
-    #: ``--flex-alloc-tasks``.
+    #: If the number of tasks is set to a number ``<=0``, ReFrame will try
+    #: to flexibly allocate the number of tasks, based on the command line
+    #: option ``--flex-alloc-tasks``.
+    #: A negative number is used to indicate the minimum number of tasks
+    #: required for the test.
+    #: In this case the minimum number of tasks is the absolute value of
+    #: the number, while
+    #: Setting ``num_tasks`` to ``0`` is equivalent to setting it to
+    #: ``-num_tasks_per_node``.
     #:
     #: :type: integral
     #: :default: ``1``
@@ -269,6 +280,9 @@ class RegressionTest:
     #:        (see `Flexible task allocation
     #:        <running.html#flexible-task-allocation>`__)
     #:        if the number of tasks is set to ``0``.
+    #:     .. versionchanged:: 2.16
+    #:        Negative ``num_tasks`` is allowed for specifying the minimum
+    #:        number of required tasks by the test.
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -515,6 +529,7 @@ class RegressionTest:
                                            SystemPartition, type(None))
     _current_environ = fields.TypedField('_current_environ',
                                          Environment, type(None))
+    _user_environ = fields.TypedField('_user_environ', Environment, type(None))
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
 
@@ -591,6 +606,7 @@ class RegressionTest:
         # Runtime information of the test
         self._current_partition = None
         self._current_environ = None
+        self._user_environ = None
 
         # Associated job
         self._job = None
@@ -776,11 +792,10 @@ class RegressionTest:
         return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
-        for env in self.valid_prog_environs:
-            if fnmatch.fnmatch(env_name, env):
-                return True
+        if '*' in self.valid_prog_environs:
+            return True
 
-        return False
+        return env_name in self.valid_prog_environs
 
     def is_local(self):
         """Check if the test will execute locally.
@@ -798,12 +813,9 @@ class RegressionTest:
 
         self._current_environ = environ
 
-        # Add user modules and variables to the environment
-        for m in self.modules:
-            self._current_environ.add_module(m)
-
-        for k, v in self.variables.items():
-            self._current_environ.set_variable(k, v)
+        # Set up user environment
+        self._user_environ = Environment(type(self).__name__, self.modules,
+                                         self.variables.items())
 
         # Temporarily load the test's environment to record the actual module
         # load/unload sequence
@@ -812,8 +824,11 @@ class RegressionTest:
         self.logger.debug('loading environment for the current partition')
         self._current_partition.local_env.load()
 
-        self.logger.debug("loading test's environment")
+        self.logger.debug("loading current programming environment")
         self._current_environ.load()
+
+        self.logger.debug("loading user's environment")
+        self._user_environ.load()
         environ_save.load()
 
     def _setup_paths(self):
@@ -913,11 +928,9 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
-        :arg compile_opts: Extra options to be passed to the programming
-            environment for compiling the source code of the test.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         """
         if not self._current_environ:
@@ -978,27 +991,14 @@ class RegressionTest:
             self.build_system.srcfile = self.sourcepath
             self.build_system.executable = self.executable
 
-        if compile_opts:
-            user_deprecation_warning(
-                'passing options to the compile() method is deprecated; '
-                'please use a build system.')
-
-            # Remove source and executable from compile_opts
-            compile_opts.pop('source', None)
-            compile_opts.pop('executable', None)
-            try:
-                self.build_system.makefile = compile_opts['makefile']
-                self.build_system.options  = compile_opts['options']
-            except KeyError:
-                pass
-
         # Prepare build job
         build_commands = [
             *self.prebuild_cmd,
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
-        environs = [self._current_partition.local_env, self._current_environ]
+        environs = [self._current_partition.local_env,
+                    self._current_environ, self._user_environ]
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
             launcher=getlauncher('local')(),
@@ -1037,7 +1037,8 @@ class RegressionTest:
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
-        environs = [self._current_partition.local_env, self._current_environ]
+        environs = [self._current_partition.local_env,
+                    self._current_environ, self._user_environ]
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs, login=True)
@@ -1079,7 +1080,7 @@ class RegressionTest:
     def performance(self):
         try:
             self.check_performance()
-        except SanityError:
+        except PerformanceError:
             if self.strict_check:
                 raise
 
@@ -1094,7 +1095,7 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             success = evaluate(self.sanity_patterns)
             if not success:
-                raise SanityError('sanity failure')
+                raise SanityError()
 
     def check_performance(self):
         """The performance checking phase of the regression test pipeline.
@@ -1113,7 +1114,7 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                if not key in self.reference:
+                if key not in self.reference:
                     raise SanityError(
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
@@ -1124,7 +1125,10 @@ class RegressionTest:
 
             for val, reference in perf_values:
                 ref, low_thres, high_thres, *_ = reference
-                evaluate(assert_reference(val, ref, low_thres, high_thres))
+                try:
+                    evaluate(assert_reference(val, ref, low_thres, high_thres))
+                except SanityError as e:
+                    raise PerformanceError(e)
 
     def _copy_job_files(self, job, dst):
         if job is None:
@@ -1145,10 +1149,14 @@ class RegressionTest:
 
         # Copy files specified by the user
         for f in self.keep_files:
+            f_orig = f
             if not os.path.isabs(f):
                 f = os.path.join(self._stagedir, f)
 
-            shutil.copy(f, self.outputdir)
+            if os.path.isfile(f):
+                shutil.copy(f, self.outputdir)
+            elif os.path.isdir(f):
+                shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
@@ -1171,6 +1179,7 @@ class RegressionTest:
 
         if unload_env:
             self.logger.debug("unloading test's environment")
+            self._user_environ.unload()
             self._current_environ.unload()
             self._current_partition.local_env.unload()
 
@@ -1186,7 +1195,7 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def compile(self, **compile_opts):
+    def compile(self):
         """The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.

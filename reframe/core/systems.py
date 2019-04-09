@@ -1,11 +1,17 @@
+import re
+
 import reframe.core.debug as debug
 import reframe.core.fields as fields
+import reframe.utility as utility
 import reframe.utility.typecheck as typ
 from reframe.core.environments import Environment
 
 
 class SystemPartition:
-    """A representation of a system partition inside ReFrame."""
+    """A representation of a system partition inside ReFrame.
+
+    This class is immutable.
+    """
 
     _name      = fields.TypedField('_name', typ.Str['(\w|-)+'])
     _descr     = fields.TypedField('_descr', str)
@@ -35,7 +41,7 @@ class SystemPartition:
 
     @property
     def access(self):
-        return self._access
+        return utility.SequenceView(self._access)
 
     @property
     def descr(self):
@@ -44,7 +50,7 @@ class SystemPartition:
 
     @property
     def environs(self):
-        return self._environs
+        return utility.SequenceView(self._environs)
 
     @property
     def fullname(self):
@@ -78,7 +84,7 @@ class SystemPartition:
 
     @property
     def resources(self):
-        return self._resources
+        return utility.MappingView(self._resources)
 
     @property
     def scheduler(self):
@@ -136,7 +142,17 @@ class SystemPartition:
                 self._local_env == other._local_env)
 
     def __str__(self):
-        return self._name
+        local_env = re.sub('(?m)^', 6*' ', ' - ' + self._local_env.details())
+        lines = [
+            '%s [%s]:' % (self._name, self._descr),
+            '    fullname: ' + self.fullname,
+            '    scheduler: ' + self._scheduler.registered_name,
+            '    launcher: '  + self._launcher.registered_name,
+            '    access: ' + ' '.join(self._access),
+            '    local_env:\n' + local_env,
+            '    environs: ' + ', '.join(str(e) for e in self._environs)
+        ]
+        return '\n'.join(lines)
 
     def __repr__(self):
         return debug.repr(self)
@@ -231,7 +247,7 @@ class System:
     @property
     def partitions(self):
         """All the system partitions associated with this system."""
-        return self._partitions
+        return utility.SequenceView(self._partitions)
 
     def add_partition(self, partition):
         partition._system = self
@@ -247,7 +263,3 @@ class System:
 
     def __repr__(self):
         return debug.repr(self)
-
-    def __str__(self):
-        return '%s (partitions: %s)' % (self._name,
-                                        [str(p) for p in self._partitions])

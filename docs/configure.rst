@@ -302,8 +302,11 @@ The possible attributes of an environment are the following:
 * ``fflags``: The default Fortran compiler flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
 * ``ldflags``: The default linker flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
 
-.. note:: When defining programming environment flags, :class:`None` is treated differently from ``''`` for regression tests that are compiled through a Makefile.
-   If a flags variable is not :class:`None` it will be passed to the Makefile, which may affect the compilation process.
+.. note::
+   All flags for programming environments are now defined as list of strings instead of simple strings.
+
+   .. versionchanged:: 2.17
+
 
 System Auto-Detection
 ---------------------
@@ -315,3 +318,18 @@ If this cannot be found the hostname will be obtained from the standard ``hostna
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
 If the system cannot be auto-detected, ReFrame will fail with an error message.
 You can override completely the auto-detection process by specifying a system or a system partition with the ``--system`` option (e.g., ``--system daint`` or ``--system daint:gpu``).
+
+
+Showing configuration
+---------------------
+
+.. versionadded:: 2.16
+
+It is possible to ask ReFrame to print the configuration of the current system or the configuration of any programming environment defined for the current system.
+There are two command-line options for performing these operations:
+
+* ``--show-config``: This option shows the current system's configuration and exits.
+  It can be combined with the ``--system`` option in order to show the configuration of another system.
+* ``--show-config-env ENV``: This option shows the configuration of the programming environment ``ENV`` and exits.
+  The environment ``ENV`` must be defined for any of the partitions of the current system.
+  This option can also be combined with ``--system`` in order to show the configuration of a programming environment defined for another system.

@@ -26,9 +26,12 @@ class TestOSTools(unittest.TestCase):
     def test_command_timeout(self):
         try:
             os_ext.run_command('sleep 3', timeout=2)
-            self.fail('Expected timeout')
         except SpawnedProcessTimeout as e:
             self.assertEqual(e.timeout, 2)
+            # Try to get the string repr. of the exception: see bug #658
+            s = str(e)
+        else:
+            self.fail('expected timeout')
 
     def test_command_async(self):
         from datetime import datetime
@@ -186,6 +189,50 @@ class TestOSTools(unittest.TestCase):
 
         # Try to remove a non-existent file
         os_ext.force_remove_file(fp.name)
+
+    def test_expandvars_dollar(self):
+        text = 'Hello, $(echo World)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '$(echo Hello, $(echo World))'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_backticks(self):
+        text = 'Hello, `echo World`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        # Test nested expansion
+        text = '`echo Hello, `echo World``'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_mixed_syntax(self):
+        text = '`echo Hello, $(echo World)`'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = '$(echo Hello, `echo World`)'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+    def test_expandvars_error(self):
+        text = 'Hello, $(foo)'
+        with self.assertRaises(SpawnedProcessError):
+            os_ext.expandvars(text)
+
+    def test_strange_syntax(self):
+        text = 'Hello, $(foo`'
+        self.assertEqual('Hello, $(foo`', os_ext.expandvars(text))
+
+        text = 'Hello, `foo)'
+        self.assertEqual('Hello, `foo)', os_ext.expandvars(text))
+
+    def test_expandvars_nocmd(self):
+        os.environ['FOO'] = 'World'
+        text = 'Hello, $FOO'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+
+        text = 'Hello, ${FOO}'
+        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        del os.environ['FOO']
 
 
 class TestCopyTree(unittest.TestCase):
@@ -695,14 +742,14 @@ class TestScopedDict(unittest.TestCase):
         )
 
     def test_update(self):
-        scoped_dict = reframe.utility.ScopedDict({
+        scoped_dict = util.ScopedDict({
             'a': {'k1': 1, 'k2': 2},
             'a:b': {'k1': 3, 'k3': 4},
             'a:b:c': {'k2': 5, 'k3': 6},
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
-        scoped_dict_alt = reframe.utility.ScopedDict({'a': {'k1': 3, 'k2': 5}})
+        scoped_dict_alt = util.ScopedDict({'a': {'k1': 3, 'k2': 5}})
         scoped_dict_alt.update({
             'a': {'k1': 1, 'k2': 2},
             'a:b': {'k1': 3, 'k3': 4},
@@ -710,3 +757,99 @@ class TestScopedDict(unittest.TestCase):
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
         self.assertEqual(scoped_dict, scoped_dict_alt)
+
+
+class TestReadOnlyViews(unittest.TestCase):
+    def test_sequence(self):
+        l = util.SequenceView([1, 2, 2])
+        self.assertEqual(1, l[0])
+        self.assertEqual(3, len(l))
+        self.assertIn(2, l)
+        self.assertEqual(list(l), [1, 2, 2])
+        self.assertEqual(list(reversed(l)), [2, 2, 1])
+        self.assertEqual(1, l.index(2))
+        self.assertEqual(2, l.count(2))
+
+        # Assert immutability
+        m = l + [3, 4]
+        self.assertEqual([1, 2, 2, 3, 4], m)
+        self.assertIsInstance(m, util.SequenceView)
+
+        m = l
+        l += [3, 4]
+        self.assertIsNot(m, l)
+        self.assertEqual([1, 2, 2], m)
+        self.assertEqual([1, 2, 2, 3, 4], l)
+        self.assertIsInstance(l, util.SequenceView)
+
+        with self.assertRaises(TypeError):
+            l[1] = 3
+
+        with self.assertRaises(TypeError):
+            l[1:2] = [3]
+
+        with self.assertRaises(TypeError):
+            l *= 3
+
+        with self.assertRaises(TypeError):
+            del l[:1]
+
+        with self.assertRaises(AttributeError):
+            l.append(3)
+
+        with self.assertRaises(AttributeError):
+            l.clear()
+
+        with self.assertRaises(AttributeError):
+            s = l.copy()
+
+        with self.assertRaises(AttributeError):
+            l.extend([3, 4])
+
+        with self.assertRaises(AttributeError):
+            l.insert(1, 4)
+
+        with self.assertRaises(AttributeError):
+            l.pop()
+
+        with self.assertRaises(AttributeError):
+            l.remove(2)
+
+        with self.assertRaises(AttributeError):
+            l.reverse()
+
+    def test_mapping(self):
+        d = util.MappingView({'a': 1, 'b': 2})
+        self.assertEqual(1, d['a'])
+        self.assertEqual(2, len(d))
+        self.assertEqual({'a': 1, 'b': 2}, dict(d))
+        self.assertIn('b', d)
+        self.assertEqual({'a', 'b'}, set(d.keys()))
+        self.assertEqual({1, 2}, set(d.values()))
+        self.assertEqual({('a', 1), ('b', 2)}, set(d.items()))
+        self.assertEqual(2, d.get('b'))
+        self.assertEqual(3, d.get('c', 3))
+        self.assertEqual({'a': 1, 'b': 2}, d)
+        self.assertNotEqual({'a': 1, 'b': 2, 'c': 3}, d)
+
+        # Assert immutability
+        with self.assertRaises(TypeError):
+            d['c'] = 3
+
+        with self.assertRaises(TypeError):
+            del d['b']
+
+        with self.assertRaises(AttributeError):
+            d.pop('a')
+
+        with self.assertRaises(AttributeError):
+            d.popitem()
+
+        with self.assertRaises(AttributeError):
+            d.clear()
+
+        with self.assertRaises(AttributeError):
+            d.update({'a': 4, 'b': 5})
+
+        with self.assertRaises(AttributeError):
+            d.setdefault('c', 3)

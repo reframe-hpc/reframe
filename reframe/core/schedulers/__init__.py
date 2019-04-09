@@ -98,6 +98,7 @@ class Job(abc.ABC):
         self._stdout = stdout or os.path.join(workdir, '%s.out' % name)
         self._stderr = stderr or os.path.join(workdir, '%s.err' % name)
         self._time_limit = time_limit
+        self._nodelist = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
@@ -221,14 +222,27 @@ class Job(abc.ABC):
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
-        if self.num_tasks == 0:
+        if self.num_tasks <= 0:
+            num_tasks_per_node = self.num_tasks_per_node or 1
+            min_num_tasks = (-self.num_tasks if self.num_tasks else
+                             num_tasks_per_node)
+
             try:
-                self._num_tasks = self.guess_num_tasks()
-                getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
-                                  self._num_tasks)
+                guessed_num_tasks = self.guess_num_tasks()
             except NotImplementedError as e:
-                raise JobError('guessing number of tasks is not implemented '
-                               'by the backend') from e
+                raise JobError('flexible task allocation is not supported by '
+                               'this backend') from e
+
+            if guessed_num_tasks < min_num_tasks:
+                nodes_required = min_num_tasks // num_tasks_per_node
+                nodes_found = guessed_num_tasks // num_tasks_per_node
+                raise JobError('could not find enough nodes: '
+                               'required %s, found %s' %
+                               (nodes_required, nodes_found))
+
+            self._num_tasks = guessed_num_tasks
+            getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+                              self._num_tasks)
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
@@ -251,36 +265,28 @@ class Job(abc.ABC):
 
             return self.sched_flex_alloc_tasks
 
-        available_nodes = self.get_partition_nodes()
-        getlogger().debug('flex_alloc_tasks: total available nodes in current '
-                          'virtual partition: %s' % len(available_nodes))
+        available_nodes = self.get_all_nodes()
+        getlogger().debug('flex_alloc_tasks: total available nodes %s ' %
+                          len(available_nodes))
 
         # Try to guess the number of tasks now
-        available_nodes = self.filter_nodes(available_nodes, self.options)
-        if not available_nodes:
-            options = ' '.join(self.sched_access + self.options)
-            raise JobError('could not find any node satisfying the '
-                           'required criteria: %s' % options)
+        available_nodes = self.filter_nodes(available_nodes,
+                                            self.sched_access + self.options)
 
         if self.sched_flex_alloc_tasks == 'idle':
             available_nodes = {n for n in available_nodes
                                if n.is_available()}
-            if not available_nodes:
-                raise JobError('could not find any idle nodes')
-
             getlogger().debug(
                 'flex_alloc_tasks: selecting idle nodes: '
                 'available nodes now: %s' % len(available_nodes))
 
         num_tasks_per_node = self.num_tasks_per_node or 1
         num_tasks = len(available_nodes) * num_tasks_per_node
-        getlogger().debug('flex_alloc_tasks: setting num_tasks to: %s' %
-                          num_tasks)
         return num_tasks
 
     @abc.abstractmethod
-    def get_partition_nodes(self):
-        # Get all nodes of the current virtual partition
+    def get_all_nodes(self):
+        # Gets all the available nodes
         pass
 
     @abc.abstractmethod
@@ -306,3 +312,30 @@ class Job(abc.ABC):
     def finished(self):
         if self._jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
+
+    @property
+    def nodelist(self):
+        """The list of node names assigned to this job.
+
+        This attribute is :class:`None` if no nodes are assigned to the job
+        yet.
+        This attribute is set reliably only for the ``slurm`` backend, i.e.,
+        Slurm *with* accounting enabled.
+        The ``squeue`` scheduler backend, i.e., Slurm *without* accounting,
+        might not set this attribute for jobs that finish very quickly.
+        For the ``local`` scheduler backend, this returns an one-element list
+        containing the hostname of the current host.
+
+        This attribute might be useful in a flexible regression test for
+        determining the actual nodes that were assigned to the test.
+
+        For more information on flexible task allocation, please refer to the
+        corresponding `section <advanced.html#flexible-regression-tests>`__ of
+        the tutorial.
+
+        This attribute is *not* supported by the ``pbs`` scheduler backend.
+
+        .. versionadded:: 2.17
+
+        """
+        return self._nodelist

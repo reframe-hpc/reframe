@@ -1,0 +1,72 @@
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 0
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 1
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 2
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 3
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 4
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 5
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 6
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 7
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 8
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 9
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 10
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 11
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 12
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 13
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 14
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 15
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 16
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 0, Thread: 17
+    CPU affinity: [   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 0
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 1
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 2
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 3
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 4
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 5
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 6
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 7
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 8
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 9
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 10
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 11
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 12
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 13
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 14
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 15
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 16
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]
+Tag: affinity/affinity, Hostname: nid00404, Rank: 1, Thread: 17
+    CPU affinity: [  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35]

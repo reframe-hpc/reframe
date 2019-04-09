@@ -1,5 +1,6 @@
 import os
 import signal
+import socket
 import stat
 import subprocess
 import time
@@ -54,11 +55,12 @@ class LocalJob(sched.Job):
 
         # Update job info
         self._jobid = self._proc.pid
+        self._nodelist = [socket.gethostname()]
 
     def emit_preamble(self):
         return []
 
-    def get_partition_nodes(self):
+    def get_all_nodes(self):
         raise NotImplementedError(
             'local scheduler does not support listing of available nodes')
 

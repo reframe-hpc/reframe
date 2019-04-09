@@ -14,13 +14,15 @@ class SerialExecutionPolicy(ExecutionPolicy):
         super().__init__()
         self._tasks = []
 
-    def run_check(self, check, partition, environ):
-        super().run_check(check, partition, environ)
+    def runcase(self, case):
+        super().runcase(case)
+        check, partition, environ = case
+
         self.printer.status(
-            'RUN', "%s on %s using %s" %
+            'RUN', '%s on %s using %s' %
             (check.name, partition.fullname, environ.name)
         )
-        task = RegressionTask(check)
+        task = RegressionTask(case)
         self._tasks.append(task)
         self.stats.add_task(task)
         try:
@@ -147,14 +149,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._retired_tasks.append(task)
 
-    def enter_partition(self, c, p):
-        self._running_tasks_counts.setdefault(p.fullname, 0)
-        self._ready_tasks.setdefault(p.fullname, [])
-        self._max_jobs.setdefault(p.fullname, p.max_jobs)
+    def runcase(self, case):
+        super().runcase(case)
+        check, partition, environ = case
 
-    def run_check(self, check, partition, environ):
-        super().run_check(check, partition, environ)
-        task = RegressionTask(check, self.task_listeners)
+        # Set partition-based counters, if not set already
+        self._running_tasks_counts.setdefault(partition.fullname, 0)
+        self._ready_tasks.setdefault(partition.fullname, [])
+        self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
+
+        task = RegressionTask(case, self.task_listeners)
         self._tasks.append(task)
         self.stats.add_task(task)
         try:

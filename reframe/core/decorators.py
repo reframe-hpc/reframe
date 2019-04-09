@@ -7,16 +7,26 @@ __all__ = ['parameterized_test', 'simple_test', 'required_version']
 
 import collections
 import inspect
+import sys
+import traceback
 
 import reframe
-from reframe.core.exceptions import ReframeSyntaxError
+from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
 from reframe.utility.versioning import Version, VersionValidator
 
 
 def _register_test(cls, args=None):
-    def _instantiate():
+    def _instantiate(cls, args):
+        if isinstance(args, collections.abc.Sequence):
+            return cls(*args)
+        elif isinstance(args, collections.abc.Mapping):
+            return cls(**args)
+        elif args is None:
+            return cls()
+
+    def _instantiate_all():
         ret = []
         for cls, args in mod.__rfm_test_registry:
             try:
@@ -26,18 +36,21 @@ def _register_test(cls, args=None):
             except AttributeError:
                 mod.__rfm_skip_tests = set()
 
-            if isinstance(args, collections.Sequence):
-                ret.append(cls(*args))
-            elif isinstance(args, collections.Mapping):
-                ret.append(cls(**args))
-            elif args is None:
-                ret.append(cls())
+            try:
+                ret.append(_instantiate(cls, args))
+            except Exception as e:
+                frame = user_frame(sys.exc_info()[2])
+                msg = "skipping test due to errors: %s: " % cls.__name__
+                msg += "use `-v' for more information\n"
+                msg += "  FILE: %s:%s" % (frame.filename, frame.lineno)
+                getlogger().warning(msg)
+                getlogger().verbose(traceback.format_exc())
 
         return ret
 
     mod = inspect.getmodule(cls)
     if not hasattr(mod, '_rfm_gettests'):
-        mod._rfm_gettests = _instantiate
+        mod._rfm_gettests = _instantiate_all
 
     try:
         mod.__rfm_test_registry.append((cls, args))

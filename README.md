@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe) [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)
+[![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
+[![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
+[![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)
 
 # ReFrame
 
@@ -16,12 +18,15 @@ Users can create their own test hierarchies, create test factories for generatin
 
 ## Documentation
 
-The official documentation is maintained [here](https://eth-cscs.github.io/reframe/index.html).
-It corresponds to the [latest](https://github.com/eth-cscs/reframe/releases/latest) stable release and not to the current status of the `master`.
+You may find the official documentation of the latest release and the current master in the following links:
 
-### Building the documentation from master
+- [Latest release](https://reframe-hpc.readthedocs.io)
+- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
 
-You may build the documentation of the master either with Python 2 or Python 3 (<= 3.5).
+
+### Building the documentation locally
+
+You may build the documentation of the master locally either with Python 2 or Python 3.
 Here is how to do it:
 
 ```
@@ -44,3 +49,21 @@ The documentation is now up on [localhost:8000](http://localhost:8000), where yo
 In the `cscs-checks/` folder, you can find realistic regression tests used for the CSCS systems that you can reuse and adapt to your system.
 Notice that these tests are published as examples and may not run as-is in your system.
 However, they can serve as a very good starting point for implementing your system tests in ReFrame.
+
+
+## Contact
+
+You can get in contact with the ReFrame community in the following ways:
+
+### Mailing list
+
+For keeping up with the latest news about ReFrame, posting questions and, generally getting in touch with other users and the developers, you may follow the mailing list: [reframe@sympa.cscs.ch](mailto:reframe@sympa.cscs.ch).
+
+Only subscribers may send messages to the list.
+To subscribe, please send an empty message to [reframe-subscribe@sympa.cscs.ch](mailto:reframe-subscribe@sympa.cscs.ch).
+
+For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.cscs.ch](mailto:reframe-unsubscribe@sympa.cscs.ch).
+
+### Slack
+
+You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).

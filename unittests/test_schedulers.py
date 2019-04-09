@@ -1,6 +1,7 @@
 import abc
 import os
 import re
+import socket
 import tempfile
 import time
 import unittest
@@ -106,6 +107,7 @@ class _TestJob:
     def test_submit(self):
         self.setup_user()
         self.testjob.prepare(self.commands, self.environs)
+        self.assertIsNone(self.testjob.nodelist)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
         self.testjob.wait()
@@ -202,6 +204,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
+        self.assertEqual([socket.gethostname()], self.testjob.nodelist)
 
     def test_submit_timelimit(self):
         from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
@@ -373,6 +376,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_submit(self):
         super().test_submit()
         self.assertEqual(0, self.testjob.exitcode)
+        num_tasks_per_node = self.testjob.num_tasks_per_node or 1
+        num_nodes = self.testjob.num_tasks // num_tasks_per_node
+        self.assertEqual(num_nodes, len(self.testjob.nodelist))
 
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
@@ -387,11 +393,13 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0
         self.testjob._sched_flex_alloc_tasks = 'all'
-        # monkey patch `get_partition_nodes()` to simulate extraction of
+        # monkey patch `get_all_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.get_partition_nodes = lambda: set()
-        with self.assertRaises(JobError):
-            self.testjob.guess_num_tasks()
+        self.testjob.get_all_nodes = lambda: set()
+        # monkey patch `_get_default_partition()` to simulate extraction
+        # of the default partition through the use of `scontrol show`
+        self.testjob._get_default_partition = lambda: 'pdef'
+        self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
 
 class TestSqueueJob(TestSlurmJob):
@@ -408,7 +416,7 @@ class TestSqueueJob(TestSlurmJob):
         self.testjob.options += partition.access
 
     def test_submit(self):
-        # Squeue backend may not set the exitcode; bypass ourp parent's submit
+        # Squeue backend may not set the exitcode; bypass our parent's submit
         _TestJob.test_submit(self)
 
 
@@ -497,7 +505,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=MAINT+DRAIN '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p1,p2 '
+                             'MCS_label=N/A Partitions=p1,p2,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -515,7 +523,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=MAINT+DRAIN '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p2,p3'
+                             'MCS_label=N/A Partitions=p2,p3,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -533,7 +541,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=IDLE '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
-                             'MCS_label=N/A Partitions=p1,p3 '
+                             'MCS_label=N/A Partitions=p1,p3,pdef '
                              'BootTime=01 Jan 2018 '
                              'SlurmdStartTime=01 Jan 2018 '
                              'CfgTRES=cpu=24,mem=32220M '
@@ -550,6 +558,23 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'NodeHostName=nid00003 Version=10.00 OS=Linux '
                              'RealMemory=32220 AllocMem=0 FreeMem=10000 '
                              'Sockets=1 Boards=1 State=IDLE '
+                             'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+                             'MCS_label=N/A Partitions=p1,p3,pdef '
+                             'BootTime=01 Jan 2018 '
+                             'SlurmdStartTime=01 Jan 2018 '
+                             'CfgTRES=cpu=24,mem=32220M '
+                             'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+                             'LowestJoules=100000000 ConsumedJoules=0 '
+                             'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+                             'ExtSensorsTemp=n/s Reason=Foo/ ',
+
+                             'NodeName=nid00005 Arch=x86_64 CoresPerSocket=12 '
+                             'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+                             'AvailableFeatures=f5 ActiveFeatures=f5 '
+                             'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00003'
+                             'NodeHostName=nid00003 Version=10.00 OS=Linux '
+                             'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+                             'Sockets=1 Boards=1 State=ALLOCATED '
                              'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
                              'MCS_label=N/A Partitions=p1,p3 '
                              'BootTime=01 Jan 2018 '
@@ -581,9 +606,12 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        # monkey patch `_get_all_nodes` to simulate extraction of
+        # monkey patch `get_all_nodes` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob._get_all_nodes = self.create_dummy_nodes
+        self.testjob.get_all_nodes = self.create_dummy_nodes
+        # monkey patch `_get_default_partition` to simulate extraction
+        # of the default partition
+        self.testjob._get_default_partition = lambda: 'pdef'
         self.testjob._sched_flex_alloc_tasks = 'all'
         self.testjob._num_tasks_per_node = 4
         self.testjob._num_tasks = 0
@@ -620,6 +648,16 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
+
+    def test_sched_access_partition(self):
+        self.testjob._sched_access = ['--partition=p1']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 16)
+
+    def test_default_partition_all(self):
+        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_constraint_idle(self):
         self.testjob._sched_flex_alloc_tasks = 'idle'
@@ -707,6 +745,30 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._get_nodes_by_name = self.get_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
+
+    def test_no_num_tasks_per_node(self):
+        self.testjob._num_tasks_per_node = None
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 1)
+
+    def test_not_enough_idle_nodes(self):
+        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._num_tasks = -12
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_not_enough_nodes_constraint_partition(self):
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.testjob._num_tasks = -8
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
+    def test_enough_nodes_constraint_partition(self):
+        self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
+        self.testjob._num_tasks = -4
+        self.prepare_job()
+        self.assertEqual(self.testjob.num_tasks, 4)
 
     def prepare_job(self):
         self.testjob.prepare(['hostname'])
@@ -841,7 +903,7 @@ class TestSlurmNode(unittest.TestCase):
         self.assertEqual(self.allocated_node.partitions, {'p1', 'p2'})
         self.assertEqual(self.allocated_node.active_features, {'f1', 'f2'})
         self.assertEqual(self.no_partition_node.name, 'nid00004')
-        self.assertEqual(self.no_partition_node.partitions, None)
+        self.assertEqual(self.no_partition_node.partitions, set())
         self.assertEqual(self.no_partition_node.active_features, {'f1', 'f2'})
 
     def test_str(self):
