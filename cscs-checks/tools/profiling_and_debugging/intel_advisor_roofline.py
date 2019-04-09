@@ -35,7 +35,7 @@ class IntelRooflineTest(rfm.RegressionTest):
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
-        # Latest advisor is needed because tests with advisor/2018 Update 2 
+        # Latest advisor is needed because tests with advisor/2018 Update 2
         # (build 551025) raised failures:
         #    roof.dir/nid00753.000/trc000/trc000.advixe
         #    Application exit code: 139
