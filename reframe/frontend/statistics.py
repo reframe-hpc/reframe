@@ -109,25 +109,32 @@ class TestStats:
         return '\n'.join(report)
 
     def performance_report(self):
-        current_run = rt.runtime().current_run
         line_width = 78
         report = [line_width * '=']
         report.append('PERFORMANCE REPORT')
-        for t in self.tasks(current_run):
-            if t.check.perf_keys:
-                report.append(line_width * '-')
-                report.append('%s [%s]' %
-                              (t.check.name, t.check.current_environ))
+        previous_name = ''
+        previous_part = ''
+        for t in self.tasks():
+            if t.check.perfvalues.keys():
+                if t.check.name != previous_name:
+                    report.append(line_width * '-')
+                    report.append('%s' % t.check.name)
+                    previous_name = t.check.name
 
-            for k, p in zip(t.check.perf_keys, t.check.perf_values):
-                system, partition, key = k.split(':')
+                if t.check.current_partition.fullname != previous_part:
+                    report.append('- %s' % t.check.current_partition.fullname)
+                    previous_part = t.check.current_partition.fullname
+
+                report.append('   - %s' % t.check.current_environ)
+
+            for k, p in t.check.perfvalues.items():
+                key = k.split(':')[-1]
                 if type(p[1][-1]) is str:
                     unit = p[1][-1]
                 else:
                     unit = ''
 
-                report.append(' * [%s:%s] %s: %s %s' %
-                              (system, partition, key, p[0], unit))
+                report.append('      * %s: %s %s' % (key, p[0], unit))
 
         report.append(line_width * '-')
         return '\n'.join(report)

@@ -566,8 +566,7 @@ class RegressionTest:
         self.readonly_files = []
         self.tags = set()
         self.maintainers = []
-        self.perf_values = []
-        self.perf_keys = []
+        self._perfvalues = {}
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -659,6 +658,11 @@ class RegressionTest:
         :type: :class:`reframe.core.runtime.HostSystem`.
         """
         return rt.runtime().system
+
+    @property
+    def perfvalues(self):
+        """The performance values obtained on this test."""
+        return util.MappingView(self._perfvalues)
 
     @property
     def job(self):
@@ -1120,12 +1124,11 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
-                self.perf_values.append((value, self.reference[key]))
-                self.perf_keys.append(key)
+                self._perfvalues[key] = (value, self.reference[key])
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   *self.reference[key])
 
-            for val, reference in self.perf_values:
+            for val, reference in self._perfvalues.values():
                 ref, low_thres, high_thres, *_ = reference
                 try:
                     evaluate(assert_reference(val, ref, low_thres, high_thres))
