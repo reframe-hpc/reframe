@@ -65,7 +65,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['F90', 'F90'])
+@rfm.parameterized_test(['F90', 'F90'], ['C++', 'cc'])
 class Gdb4hpcCpuCheck(Gdb4hpcCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
