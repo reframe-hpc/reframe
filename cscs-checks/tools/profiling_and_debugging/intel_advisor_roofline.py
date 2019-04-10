@@ -6,11 +6,11 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*[[repeat, toolsversion, datalayout]
-                          for repeat in ['50000']
-                          for toolsversion in ['551025']
+                          for repeat in ['100000']
+                          for toolsversion in ['591264']
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
-                                             'G3_AOS_VECTOR', 'G3_SOA_VECTOR',
-                                             'G3_SOA_VECTOR_FMAS']])
+                                             'G3_AOS_VECTOR', 'G3_SOA_VECTOR']
+                          ])
 class IntelRooflineTest(rfm.RegressionTest):
     '''This test checks the values reported by Intel Advisor's roofline model:
     https://software.intel.com/en-us/intel-advisor-xe
@@ -30,11 +30,17 @@ class IntelRooflineTest(rfm.RegressionTest):
     def __init__(self, repeat, toolsversion, datalayout):
         super().__init__()
         self.descr = 'Roofline Analysis test with Intel Advisor'
-        self.valid_systems = ['daint:mc', 'dom:mc']
+        self.valid_systems = ['daint:mc']
         # Reporting MFLOPS is not available on Intel Haswell cpus, see
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
+        # Using advisor/2019 because tests with advisor/2018 (build 551025)
+        # raised failures:
+        #    roof.dir/nid00753.000/trc000/trc000.advixe
+        #    Application exit code: 139
+        # advisor/2019 is currently broken on dom ("Exceeded job memory limit")
+        self.modules = ['advisor/2019_update3']
         self.prgenv_flags = {
             'PrgEnv-intel': ['-O2', '-g', '-std=c++11'],
         }
@@ -53,10 +59,6 @@ class IntelRooflineTest(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         self.pre_run = [
-            # Testing with advisor/2018 Update 2 (build 551025):
-            #   advisor/2019 is broken on dom ("Exceeded job memory limit"),
-            #   and advisor/2019 is not installed on daint,
-            'source $INTEL_PATH/../advisor_2018/advixe-vars.sh',
             'advixe-cl -help collect | head -20',
         ]
         self.executable = 'advixe-cl'
@@ -74,30 +76,30 @@ class IntelRooflineTest(rfm.RegressionTest):
         L1bw = 293*1024**3
         L2bw = 79*1024**3
         L3bw = 33*1024**3
-        DPfmabw = 49*1024**3
+        DPfmabw = 45*1024**3
         DPaddbw = 12*1024**3
         ScalarAddbw = 3*1024**3
         self.sanity_patterns = sn.all([
             # check the job status:
             sn.assert_found('loop complete.', self.stdout),
-            # check the tool's version:
+            # check the tool's version (2019=591264, 2018=551025):
             sn.assert_eq(sn.extractsingle(
                 r'I*.\(build\s(?P<toolsversion>\d+)\s*.',
                 self.version_rpt, 'toolsversion'), toolsversion),
             # --- roofline boundaries:
             # check --report=roofs (L1 bandwidth):
             sn.assert_reference(sn.extractsingle(
-                r'^L1\sBandwidth\s\(single-threaded\)\s+(?P<L1bw>\d+)\s+'
+                r'^L1\sbandwidth\s\(single-threaded\)\s+(?P<L1bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L1bw', int),
                 L1bw, -0.08, 0.08),
             # check --report=roofs (L2 bandwidth):
             sn.assert_reference(sn.extractsingle(
-                r'^L2\sBandwidth\s\(single-threaded\)\s+(?P<L2bw>\d+)\s+'
+                r'^L2\sbandwidth\s\(single-threaded\)\s+(?P<L2bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L2bw', int),
                 L2bw, -0.08, 0.08),
             # check --report=roofs (L3 bandwidth):
             sn.assert_reference(sn.extractsingle(
-                r'^L3\sBandwidth\s\(single-threaded\)\s+(?P<L3bw>\d+)\s+'
+                r'^L3\sbandwidth\s\(single-threaded\)\s+(?P<L3bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L3bw', int),
                 L3bw, -0.08, 0.08),
             # check --report=roofs (DP FMA):
