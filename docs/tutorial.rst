@@ -450,7 +450,7 @@ For schedulers that do not provide the same functionality, some of the variables
       ``time_limit = (0, 10, 30)``                         ``--time=00:10:30``
       ``use_multithreading = True``                        ``--hint=multithread``
       ``use_multithreading = False``                       ``--hint=nomultithread``
-      ``exclusive = True``                                 ``--exclusive``
+      ``exclusive_access = True``                          ``--exclusive``
       ``num_tasks=72``                                     ``--ntasks=72``
       ``num_tasks_per_node=36``                            ``--ntasks-per-node=36``
       ``num_cpus_per_task=4``                              ``--cpus-per-task=4``
