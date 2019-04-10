@@ -46,11 +46,13 @@ fi
 
 python3 -m venv venv.deployment
 source venv.deployment/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel twine
 pip install -r requirements.txt
 ./test_reframe.py
 git tag -a v$version -m "ReFrame $version"
 git push origin --tags
+python setup.py sdist bdist_wheel
+twine upload dist/*
 deactivate
 cd $oldpwd
 echo "Deployment was successful!"

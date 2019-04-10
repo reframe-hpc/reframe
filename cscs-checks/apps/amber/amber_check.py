@@ -41,49 +41,54 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs'}
 
 
-@rfm.parameterized_test(*([variant, arch]
-                          for variant in ['prod', 'maint']
-                          for arch in ['CPU', 'GPU']))
+@rfm.required_version('>=2.16')
+@rfm.parameterized_test(*(
+    [variant, arch, scale]
+    for variant in ['prod', 'maint']
+    for arch in ['CPU', 'GPU']
+    for scale in ['small', 'large']
+    if (not (scale, arch) == ('large', 'GPU') and
+        not (variant, arch) == ('maint', 'CPU'))
+))
 class AmberCheck(AmberBaseCheck):
-    def __init__(self, variant, arch):
+    def __init__(self, variant, arch, scale):
         super().__init__('mdin.%s' % arch, 'amber.out')
+        self.descr = 'Amber parallel %s %s check (%s)' % (scale, arch, variant)
+        self.tags |= {'maintenance' if variant == 'maint' else 'production'}
         if arch == 'GPU':
             self.valid_systems = ['daint:gpu', 'dom:gpu']
             self.executable = 'pmemd.cuda.MPI'
             self.reference = {
                 'dom:gpu': {
-                    'perf': (30.0, -0.05, None)
+                    'perf': (30.0, -0.05, None, 'ns/day')
                 },
                 'daint:gpu': {
-                    'perf': (30.0, -0.05, None)
+                    'perf': (30.0, -0.05, None, 'ns/day')
                 },
             }
-            if variant == 'prod':
-                self.descr = 'Amber parallel GPU production check'
-                self.tags |= {'production'}
-            elif variant == 'maint':
-                self.descr = 'Amber parallel GPU maintenance check'
-                self.tags |= {'maintenance'}
         elif arch == 'CPU':
-            self.valid_systems = ['daint:mc', 'dom:mc']
-            if variant == 'prod':
-                self.descr = 'Amber parallel CPU production check'
-                self.tags |= {'production'}
-                self.executable = 'pmemd.MPI'
-                self.strict_check = False
-                if self.current_system.name == 'dom':
-                    self.num_tasks = 216
-                    self.num_tasks_per_node = 36
-                else:
-                    self.num_tasks = 576
-                    self.num_tasks_per_node = 36
+            self.valid_systems = ['daint:mc']
+            if scale == 'small':
+                self.valid_systems += ['dom:mc']
 
+            self.executable = 'pmemd.MPI'
+            self.strict_check = False
+            if scale == 'small':
+                self.num_tasks = 216
+                self.num_tasks_per_node = 36
                 self.reference = {
                     'dom:mc': {
-                        'perf': (8.0, -0.05, None)
+                        'perf': (8.0, -0.05, None, 'ns/day')
                     },
                     'daint:mc': {
-                        'perf': (10.7, -0.25, None)
-                    },
+                        'perf': (7.6, -0.05, None, 'ns/day')
+                    }
                 }
-
+            else:
+                self.num_tasks = 576
+                self.num_tasks_per_node = 36
+                self.reference = {
+                    'daint:mc': {
+                        'perf': (10.7, -0.25, None, 'ns/day')
+                    }
+                }

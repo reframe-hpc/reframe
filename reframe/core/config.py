@@ -7,9 +7,7 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError,
-                                     ReframeError,
-                                     ReframeFatalError,
-                                     user_deprecation_warning)
+                                     ReframeError, ReframeFatalError)
 
 
 _settings = None
@@ -159,13 +157,6 @@ class SiteConfiguration:
 
             if sys_outputdir:
                 sys_outputdir = os_ext.expandvars(sys_outputdir)
-
-            if sys_logdir:
-                user_deprecation_warning(
-                    "`logdir' attribute in system config is deprecated; "
-                    "please use `perflogdir' instead"
-                )
-                sys_perflogdir = os_ext.expandvars(sys_logdir)
 
             if sys_perflogdir:
                 sys_perflogdir = os_ext.expandvars(sys_perflogdir)

@@ -100,7 +100,7 @@ class CPUBandwidth(MemBandwidthTest):
         }
 
     def setup(self, partition, environ, **job_opts):
-        pfn = parition.fullname
+        pfn = partition.fullname
         self.data_size = self.system_cache_sizes[pfn][self.mem_level]
         self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
         numa_domains = self.system_numa_domains[partition.fullname]
