@@ -197,8 +197,8 @@ else
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
     if [[ $(hostname) =~ daint ]]; then
-        # Temporarily disable running modified checks on Daint
-        userchecks=""
+        # FIXME: temporarily disable running modified checks on Daint
+        userchecks=()
     fi
 
     if [ ${#userchecks[@]} -ne 0 ]; then
