@@ -61,12 +61,13 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
+                    # FIXME: temporarily disable PrgEnv-pgi on all partitions
                     'login': {
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                                     'PrgEnv-intel'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
@@ -76,7 +77,7 @@ class ReframeSettings:
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                                     'PrgEnv-intel'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -89,7 +90,7 @@ class ReframeSettings:
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                                     'PrgEnv-intel'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
