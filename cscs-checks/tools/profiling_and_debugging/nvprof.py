@@ -14,17 +14,17 @@ class NvprofCheck(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
         self.executable = 'nvprof'
-        self.executable_opts = ['./nvprof_check']
+        self.target_executable = './jacobi'
+        self.executable_opts = ['%s' % self.target_executable]
         self.sanity_patterns = sn.all([
-            sn.assert_found('Profiling application: ./nvprof_check',
-                            self.stderr),
+            sn.assert_found('Profiling application: %s' %
+                            self.target_executable, self.stderr),
             sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
             sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
             sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr)
         ])
 
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile_nvprof'
         self.build_system.cflags = [
             '-g', '-D_CSCS_ITMAX=100', '-DOMP_MEMLOCALITY', '-DUSE_MPI',
             '-DEVS_PER_NODE=1', '-fopenmp', '-std=c99'
