@@ -30,7 +30,7 @@ class NvprofCheck(rfm.RegressionTest):
             '-DEVS_PER_NODE=1', '-fopenmp', '-std=c99'
         ]
         self.build_system.cxxflags = ['-g', '-G']
-        self.build_system.ldflags = ['-g', '-fopenmp', '-std=c99']
+        self.build_system.ldflags = ['-g', '-fopenmp', '-std=c99', '-lstdc++']
 
         # FIXME temporary workaround
         # the programming environment should be adapted / fixed
