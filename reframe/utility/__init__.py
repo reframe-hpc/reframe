@@ -273,6 +273,21 @@ class SequenceView(collections.abc.Sequence):
     def __reversed__(self, *args, **kwargs):
         return self.__container.__reversed__(*args, **kwargs)
 
+    def __add__(self, other):
+        if not isinstance(other, collections.abc.Sequence):
+            return NotImplemented
+
+        return SequenceView(self.__container + other)
+
+    def __iadd__(self, other):
+        return NotImplemented
+
+    def __eq__(self, other):
+        if not isinstance(other, collections.abc.Sequence):
+            return NotImplemented
+
+        return self.__container == other
+
 
 class MappingView(collections.abc.Mapping):
     """A read-only view of a mapping."""

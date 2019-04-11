@@ -75,9 +75,6 @@ def main():
         '-s', '--stage', action='store', metavar='DIR',
         help='Set regression stage directory to DIR')
     output_options.add_argument(
-        '--logdir', action='store', metavar='DIR',
-        help='(deprecated) Use --perflogdir instead.')
-    output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
         help='Set directory prefix for the performance logs '
         '(default: ${prefix}/perflogs, '
@@ -240,12 +237,6 @@ def main():
 
     # Parse command line
     options = argparser.parse_args()
-
-    if options.logdir:
-        sys.stderr.write('WARNING: --logdir option is deprecated; '
-                         'please use --perflogdir instead.\n')
-        if not options.perflogdir:
-            options.perflogdir = options.logdir
 
     # Load configuration
     try:
