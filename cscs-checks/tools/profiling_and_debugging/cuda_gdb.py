@@ -27,7 +27,7 @@ class CudaGdbCheck(rfm.RegressionTest):
                                     '-fopenmp']
         nvidia_sm = '37' if self.current_system.name == 'kesch' else '60'
         self.build_system.cxxflags = ['-g', '-G', '-arch=sm_%s' % nvidia_sm]
-        self.build_system.ldflags = ['-g', '-fopenmp']
+        self.build_system.ldflags = ['-g', '-fopenmp', '-lstdc++']
 
         # FIXME: workaround until the kesch programming environment is fixed
         if self.current_system.name == 'kesch':
