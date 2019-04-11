@@ -107,3 +107,35 @@ class TestStats:
 
         report.append(line_width * '-')
         return '\n'.join(report)
+
+    def performance_report(self):
+        line_width = 78
+        report = [line_width * '=']
+        report.append('PERFORMANCE REPORT')
+        previous_name = ''
+        previous_part = ''
+        for t in self.tasks():
+            if t.check.perfvalues.keys():
+                if t.check.name != previous_name:
+                    report.append(line_width * '-')
+                    report.append('%s' % t.check.name)
+                    previous_name = t.check.name
+
+                if t.check.current_partition.fullname != previous_part:
+                    report.append('- %s' % t.check.current_partition.fullname)
+                    previous_part = t.check.current_partition.fullname
+
+                report.append('   - %s' % t.check.current_environ)
+
+            for key, ref in t.check.perfvalues.items():
+                var = key.split(':')[-1]
+                val = ref[0]
+                try:
+                    unit = ref[4]
+                except IndexError:
+                    unit = '(no unit specified)'
+
+                report.append('      * %s: %s %s' % (var, val, unit))
+
+        report.append(line_width * '-')
+        return '\n'.join(report)
