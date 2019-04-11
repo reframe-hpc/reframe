@@ -15,7 +15,7 @@ class NvprofCheck(rfm.RegressionTest):
         self.sourcesdir = 'src/Cuda'
         self.executable = 'nvprof'
         self.target_executable = './jacobi'
-        self.executable_opts = ['%s' % self.target_executable]
+        self.executable_opts = [self.target_executable]
         self.sanity_patterns = sn.all([
             sn.assert_found('Profiling application: %s' %
                             self.target_executable, self.stderr),
