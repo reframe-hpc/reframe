@@ -127,14 +127,15 @@ class TestStats:
 
                 report.append('   - %s' % t.check.current_environ)
 
-            for k, p in t.check.perfvalues.items():
-                key = k.split(':')[-1]
-                if type(p[1][-1]) is str:
-                    unit = p[1][-1]
-                else:
-                    unit = ''
+            for key, ref in t.check.perfvalues.items():
+                var = key.split(':')[-1]
+                val = ref[0]
+                try:
+                    unit = ref[4]
+                except IndexError:
+                    unit = '(no unit specified)'
 
-                report.append('      * %s: %s %s' % (key, p[0], unit))
+                report.append('      * %s: %s %s' % (var, val, unit))
 
         report.append(line_width * '-')
         return '\n'.join(report)

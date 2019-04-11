@@ -188,33 +188,6 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '-m', '--module', action='append', default=[],
-        metavar='MOD', dest='user_modules',
-        help='Load module MOD before running the regression')
-    misc_options.add_argument(
-        '-M', '--map-module', action='append', metavar='MAPPING',
-        dest='module_mappings', default=[],
-        help='Apply a single module mapping')
-    misc_options.add_argument(
-        '--module-mappings', action='store', metavar='FILE',
-        dest='module_map_file',
-        help='Apply module mappings defined in FILE')
-    misc_options.add_argument(
-        '--purge-env', action='store_true', dest='purge_env', default=False,
-        help='Purge modules environment before running any tests')
-    misc_options.add_argument(
-        '--nocolor', action='store_false', dest='colorize', default=True,
-        help='Disable coloring of output')
-    misc_options.add_argument(
-        '--timestamp', action='store', nargs='?',
-        const='%FT%T', metavar='TIMEFMT',
-        help='Append a timestamp component to the regression directories'
-             '(default format "%%FT%%T")'
-    )
-    misc_options.add_argument(
-        '--system', action='store',
-        help='Load SYSTEM configuration explicitly')
-    misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
         metavar='FILE', default=os.path.join(reframe.INSTALL_PREFIX,
                                              'reframe/settings.py'),
@@ -222,17 +195,44 @@ def main():
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
     misc_options.add_argument(
+        '-M', '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
+    misc_options.add_argument(
+        '-m', '--module', action='append', default=[],
+        metavar='MOD', dest='user_modules',
+        help='Load module MOD before running the regression')
+    misc_options.add_argument(
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
+    misc_options.add_argument(
+        '--nocolor', action='store_false', dest='colorize', default=True,
+        help='Disable coloring of output')
+    misc_options.add_argument('--performance-report', action='store_true',
+                              help='Print the performance report')
+    misc_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge modules environment before running any tests')
+    misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
     misc_options.add_argument(
         '--show-config-env', action='store', metavar='ENV',
         help='Print configuration of environment ENV and exit')
+    misc_options.add_argument(
+        '--system', action='store',
+        help='Load SYSTEM configuration explicitly')
+    misc_options.add_argument(
+        '--timestamp', action='store', nargs='?',
+        const='%FT%T', metavar='TIMEFMT',
+        help='Append a timestamp component to the regression directories'
+             '(default format "%%FT%%T")'
+    )
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
     misc_options.add_argument('-v', '--verbose', action='count', default=0,
                               help='Increase verbosity level of output')
-    misc_options.add_argument('--performance-report', action='store_true',
-                              help='Print the performance report')
 
     if len(sys.argv) == 1:
         argparser.print_help()

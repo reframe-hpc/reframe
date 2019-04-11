@@ -661,7 +661,6 @@ class RegressionTest:
 
     @property
     def perfvalues(self):
-        """The performance values obtained on this test."""
         return util.MappingView(self._perfvalues)
 
     @property
@@ -1124,11 +1123,11 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
-                self._perfvalues[key] = (value, self.reference[key])
+                self._perfvalues[key] = (value, *self.reference[key])
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   *self.reference[key])
 
-            for val, reference in self._perfvalues.values():
+            for val, *reference in self._perfvalues.values():
                 ref, low_thres, high_thres, *_ = reference
                 try:
                     evaluate(assert_reference(val, ref, low_thres, high_thres))
