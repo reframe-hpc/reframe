@@ -25,7 +25,6 @@ class NvprofCheck(rfm.RegressionTest):
         ])
 
         self.build_system = 'Make'
-        # self.build_system.makefile = 'Makefile_nvprof'
         self.build_system.cflags = [
             '-g', '-D_CSCS_ITMAX=100', '-DOMP_MEMLOCALITY', '-DUSE_MPI',
             '-DEVS_PER_NODE=1', '-fopenmp', '-std=c99'
