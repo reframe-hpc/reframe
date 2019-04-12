@@ -58,6 +58,21 @@ class ReframeSettings:
                         'descr': 'GPU partition',
                     }
                 }
+            },
+            'sys0': {
+                # System used for dependency checking
+                'descr': 'System for test dependencies unit tests',
+                'hostnames': ['sys\d+'],
+                'partitions': {
+                    'p0': {
+                        'scheduler': 'local',
+                        'environs': ['e0', 'e1'],
+                    },
+                    'p1': {
+                        'scheduler': 'local',
+                        'environs': ['e0', 'e1'],
+                    }
+                }
             }
         },
         'environments': {
@@ -90,7 +105,15 @@ class ReframeSettings:
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
-                }
+                },
+                'e0': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['e0'],
+                },
+                'e1': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['e1'],
+                },
             }
         },
         'modes': {

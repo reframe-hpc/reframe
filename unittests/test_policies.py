@@ -1,18 +1,28 @@
+import collections
 import os
+import pytest
 import tempfile
 import unittest
 
+import reframe as rfm
 import reframe.core.runtime as rt
+import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import JobNotStartedError
+from reframe.core.exceptions import DependencyError, JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
-    KeyboardInterruptCheck, SystemExitCheck, SleepCheck, SleepCheckPollFail,
-    SleepCheckPollFailLate, BadSetupCheck, BadSetupCheckEarly, RetriesCheck
+    BadSetupCheck,
+    BadSetupCheckEarly,
+    KeyboardInterruptCheck,
+    RetriesCheck,
+    SleepCheck,
+    SleepCheckPollFail,
+    SleepCheckPollFailLate,
+    SystemExitCheck,
 )
 
 
@@ -383,3 +393,174 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         stats = self.runner.stats
         self.assertEqual(num_tasks, stats.num_cases())
         self.assertEqual(num_tasks, len(stats.failures()))
+
+
+class TestDependencies(unittest.TestCase):
+    class Node:
+        """A node in the test case graph.
+
+        It's simply a wrapper to a (test_name, partition, environment) tuple
+        that can interact seemlessly with a real test case.
+        It's meant for convenience in unit testing.
+        """
+
+        def __init__(self, cname, pname, ename):
+            self.cname, self.pname, self.ename = cname, pname, ename
+
+        def __eq__(self, other):
+            if isinstance(other, type(self)):
+                return (self.cname == other.cname and
+                        self.pname == other.pname and
+                        self.ename == other.ename)
+
+            if isinstance(other, executors.TestCase):
+                return (self.cname == other.check.name and
+                        self.pname == other.partition.fullname and
+                        self.ename == other.environ.name)
+
+            return NotImplemented
+
+        def __hash__(self):
+            return hash(self.cname) ^ hash(self.pname) ^ hash(self.ename)
+
+        def __repr__(self):
+            return 'Node(%r, %r, %r)' % (self.cname, self.pname, self.ename)
+
+    def has_edge(graph, src, dst):
+        return dst in graph[src].deps
+
+    def num_deps(graph, cname):
+        return sum(len(c.deps) for c in graph.values()
+                   if c.check.name == cname)
+
+    def find_check(name, checks):
+        for c in checks:
+            if c.name == name:
+                return c
+
+        return None
+
+    def find_case(cname, ename, cases):
+        for c in cases:
+            if c.check.name == cname and c.environ.name == ename:
+                return c
+
+    def setUp(self):
+        self.loader = RegressionCheckLoader([
+            'unittests/resources/checks_unlisted/dependencies/normal.py'
+        ])
+
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+    def tearDown(self):
+        os_ext.rmtree(rt.runtime().resources.prefix)
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_build_deps(self):
+        Node = TestDependencies.Node
+        has_edge = TestDependencies.has_edge
+        num_deps = TestDependencies.num_deps
+        find_check = TestDependencies.find_check
+        find_case = TestDependencies.find_case
+
+        cases = executors.generate_testcases(self.loader.load_all())
+        deps = dependency.build_deps(cases)
+
+        # Check DEPEND_FULLY dependencies
+        assert num_deps(deps, 'Test1_fully') == 8
+        for p in ['sys0:p0', 'sys0:p1']:
+            for e0 in ['e0', 'e1']:
+                for e1 in ['e0', 'e1']:
+                    assert has_edge(deps,
+                                    Node('Test1_fully', p, e0),
+                                    Node('Test0', p, e1))
+
+        # Check DEPEND_BY_ENV
+        assert num_deps(deps, 'Test1_by_env') == 4
+        assert num_deps(deps, 'Test1_default') == 4
+        for p in ['sys0:p0', 'sys0:p1']:
+            for e in ['e0', 'e1']:
+                assert has_edge(deps,
+                                Node('Test1_by_env', p, e),
+                                Node('Test0', p, e))
+                assert has_edge(deps,
+                                Node('Test1_default', p, e),
+                                Node('Test0', p, e))
+
+        # Check DEPEND_EXACT
+        assert num_deps(deps, 'Test1_exact') == 6
+        for p in ['sys0:p0', 'sys0:p1']:
+            assert has_edge(deps,
+                            Node('Test1_exact', p, 'e0'),
+                            Node('Test0', p, 'e0'))
+            assert has_edge(deps,
+                            Node('Test1_exact', p, 'e0'),
+                            Node('Test0', p, 'e1'))
+            assert has_edge(deps,
+                            Node('Test1_exact', p, 'e1'),
+                            Node('Test0', p, 'e1'))
+
+        # Pick a check to test getdep()
+        check_e0 = find_case('Test1_exact', 'e0', cases).check
+        check_e1 = find_case('Test1_exact', 'e1', cases).check
+        assert check_e0.getdep('Test0', 'e0').name == 'Test0'
+        assert check_e0.getdep('Test0', 'e1').name == 'Test0'
+        assert check_e1.getdep('Test0', 'e1').name == 'Test0'
+        with pytest.raises(DependencyError):
+            check_e0.getdep('TestX', 'e0')
+
+        with pytest.raises(DependencyError):
+            check_e0.getdep('Test0', 'eX')
+
+        with pytest.raises(DependencyError):
+            check_e1.getdep('Test0', 'e0')
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_build_deps_unknown_test(self):
+        find_check = TestDependencies.find_check
+        checks = self.loader.load_all()
+
+        # Add some inexistent dependencies
+        test0 = find_check('Test0', checks)
+        for depkind in ('default', 'fully', 'by_env', 'exact'):
+            test1 = find_check('Test1_' + depkind, checks)
+            if depkind == 'default':
+                test1.depends_on('TestX')
+            elif depkind == 'exact':
+                test1.depends_on('TestX', rfm.DEPEND_EXACT, {'e0': ['e0']})
+            elif depkind == 'fully':
+                test1.depends_on('TestX', rfm.DEPEND_FULLY)
+            elif depkind == 'by_env':
+                test1.depends_on('TestX', rfm.DEPEND_BY_ENV)
+
+            with pytest.raises(DependencyError):
+                dependency.build_deps(executors.generate_testcases(checks))
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_build_deps_unknown_target_env(self):
+        find_check = TestDependencies.find_check
+        checks = self.loader.load_all()
+
+        # Add some inexistent dependencies
+        test0 = find_check('Test0', checks)
+        test1 = find_check('Test1_default', checks)
+        test1.depends_on('Test0', rfm.DEPEND_EXACT, {'e0': ['eX']})
+        with pytest.raises(DependencyError):
+            dependency.build_deps(executors.generate_testcases(checks))
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_build_deps_unknown_source_env(self):
+        find_check = TestDependencies.find_check
+        num_deps = TestDependencies.num_deps
+        checks = self.loader.load_all()
+
+        # Add some inexistent dependencies
+        test0 = find_check('Test0', checks)
+        test1 = find_check('Test1_default', checks)
+        test1.depends_on('Test0', rfm.DEPEND_EXACT, {'eX': ['e0']})
+
+        # Unknown source is ignored, because it might simply be that the test
+        # is not executed for eX
+        deps = dependency.build_deps(executors.generate_testcases(checks))
+        assert num_deps(deps, 'Test1_default') == 4
