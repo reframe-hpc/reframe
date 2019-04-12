@@ -12,7 +12,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 12
         self.num_tasks_per_node = 12
-        self.modules = ['gcc/7.1.0', 'ParaView']
+        self.modules = ['ParaView']
 
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
