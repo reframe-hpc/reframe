@@ -14,6 +14,9 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
 
+        # FIXME: The test runs fine, but the process does not exit until the
+        # job times out
+        self.time_limit = (0, 1, 0)
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
 
