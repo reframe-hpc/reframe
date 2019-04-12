@@ -62,7 +62,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             'chmod u+x %s' % (self.split_file),
         ]
         self.post_run = [
-            'pprof --text --lines %s %s &> %s' %
+            'pprof -unit=ms -nodecount=4 --text --lines %s %s &> %s' %
             (self.exe, '*.0', self.rpt_file_txt),
             'pprof --pdf %s %s &> %s' % (self.exe, '*.0', self.rpt_file_pdf),
             'file %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
