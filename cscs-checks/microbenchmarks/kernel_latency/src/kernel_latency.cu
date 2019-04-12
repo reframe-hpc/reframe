@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
         auto t_start = std::chrono::system_clock::now();
         const int kernel_count = 1000;
 
-        for (int i = 0; i < kernel_count; ++i) {
+        for (int j = 0; j < kernel_count; ++j) {
             null_kernel<<<1, 1>>>();
             #if SYNCKERNEL == 1
             cudaDeviceSynchronize();
