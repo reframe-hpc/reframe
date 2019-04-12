@@ -15,8 +15,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['craype-accel-nvidia20'], ['craype-accel-nvidia35'],
-                        ['craype-accel-nvidia60'])
+@rfm.parameterized_test(['craype-accel-nvidia35'], ['craype-accel-nvidia60'])
 class Nvidia35ResolveTest(LibSciResolveBaseTest):
     def __init__(self, module_name):
         super().__init__()
@@ -26,19 +25,15 @@ class Nvidia35ResolveTest(LibSciResolveBaseTest):
 
         self.module_name = module_name
         self.module_version = {
-            'craype-accel-nvidia20': 'nv20',
             'craype-accel-nvidia35': 'nv35',
             'craype-accel-nvidia60': 'nv60'
         }
         self.compiler_version = {
-            'dom':   '49',
-            'daint': '49',
+            'dom':   '71',
+            'daint': '71',
         }
-        self.compiler_version_default = '49'
+        self.compiler_version_default = '71'
         self.modules = ['craype-haswell', module_name]
-        if module_name == 'craype-accel-nvidia20':
-            self.modules += ['cray-libsci_acc/17.03.1']
-
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
 
         self.prgenv_names = {
