@@ -6,12 +6,12 @@ from reframe.core.fields import ScopedDict
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['C'], ['C++'], ['F90'])
+@rfm.parameterized_test(['C++'], ['F90'])
 class JacobiNoToolHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
-        self.name = 'jacobi_%s' % lang.replace('+', 'p')
-        self.descr = '%s check' % lang
+        self.name = '%s_%s' % (type(self).__name__, lang.replace('+', 'p'))
+        self.descr = 'Jacobi (without tool) %s check' % lang
         self.language = lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -42,7 +42,6 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.openmp_versions = ScopedDict({
             'PrgEnv-cray': {'version': 201511},
             'PrgEnv-gnu': {'version': 201511},
-            'PrgEnv-gnu:F90': {'version': 201307},
             'PrgEnv-intel': {'version': 201611},
             'PrgEnv-pgi': {'version': 201307},
         })
@@ -68,7 +67,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         }
         self.post_run = ['module list -t']
 
-        self.maintainers = ['VH', 'JG']
+        self.maintainers = ['JG', 'MK']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
