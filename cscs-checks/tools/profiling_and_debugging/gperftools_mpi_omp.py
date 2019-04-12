@@ -62,10 +62,10 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             'chmod u+x %s' % (self.split_file),
         ]
         self.post_run = [
-            'pprof -unit=ms -nodecount=4 --text --lines %s %s &> %s' %
+            'pprof --unit=ms --text --lines %s %s &> %s' %
             (self.exe, '*.0', self.rpt_file_txt),
             'pprof --pdf %s %s &> %s' % (self.exe, '*.0', self.rpt_file_pdf),
-            'file %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
+            'head -3 %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
         ]
         self.sanity_patterns = sn.all([
             # check job status:
@@ -75,7 +75,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             sn.assert_found(
                 r'^\s+\d+ms\s+\d+.\d+%.*_jacobi.\w+:\d+', self.rpt_file_txt),
             # check pdf report:
-            sn.assert_found('PDF document', self.rpt_file_doc),
+            sn.assert_found('%PDF', self.rpt_file_doc),
         ])
         self.maintainers = ['JG']
         self.tags = {'production'}
