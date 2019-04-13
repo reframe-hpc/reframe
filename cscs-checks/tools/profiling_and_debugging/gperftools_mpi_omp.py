@@ -66,7 +66,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             (self.exe, '*.0', self.rpt_file_txt),
             '$EBROOTPPROF/bin/pprof --pdf %s %s &> %s' %
             (self.exe, '*.0', self.rpt_file_pdf),
-            'head -3 %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
+            'file %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
         ]
         self.sanity_patterns = sn.all([
             # check job status:
@@ -76,7 +76,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             sn.assert_found(
                 r'^\s+\d+ms\s+\d+.\d+%.*_jacobi.\w+:\d+', self.rpt_file_txt),
             # check pdf report:
-            sn.assert_found('%PDF', self.rpt_file_doc),
+            sn.assert_found('PDF document', self.rpt_file_doc),
         ])
         self.maintainers = ['JG']
         self.tags = {'production'}
