@@ -2,10 +2,18 @@ import re
 
 import reframe.core.runtime as rt
 import reframe.utility.sanity as util
+from reframe.core.exceptions import ReframeError
+
+
+def re_compile(patt):
+    try:
+        return re.compile(patt)
+    except re.error:
+        raise ReframeError("invalid regex: '%s'" % patt)
 
 
 def have_name(patt):
-    regex = re.compile(patt)
+    regex = re_compile(patt)
 
     def _fn(c):
         return regex.match(c.name)
@@ -21,7 +29,7 @@ def have_not_name(patt):
 
 
 def have_tag(patt):
-    regex = re.compile(patt)
+    regex = re_compile(patt)
 
     def _fn(c):
         return any(regex.match(p) for p in c.tags)
@@ -30,7 +38,7 @@ def have_tag(patt):
 
 
 def have_prgenv(patt):
-    regex = re.compile(patt)
+    regex = re_compile(patt)
 
     def _fn(c):
         if '*' in c.valid_prog_environs:
