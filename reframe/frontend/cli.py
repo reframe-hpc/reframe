@@ -17,7 +17,7 @@ import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
                                      SystemAutodetectionError)
-from reframe.frontend.executors import Runner
+from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
@@ -74,9 +74,6 @@ def main():
     output_options.add_argument(
         '-s', '--stage', action='store', metavar='DIR',
         help='Set regression stage directory to DIR')
-    output_options.add_argument(
-        '--logdir', action='store', metavar='DIR',
-        help='(deprecated) Use --perflogdir instead.')
     output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
         help='Set directory prefix for the performance logs '
@@ -188,33 +185,6 @@ def main():
 
     # Miscellaneous options
     misc_options.add_argument(
-        '-m', '--module', action='append', default=[],
-        metavar='MOD', dest='user_modules',
-        help='Load module MOD before running the regression')
-    misc_options.add_argument(
-        '-M', '--map-module', action='append', metavar='MAPPING',
-        dest='module_mappings', default=[],
-        help='Apply a single module mapping')
-    misc_options.add_argument(
-        '--module-mappings', action='store', metavar='FILE',
-        dest='module_map_file',
-        help='Apply module mappings defined in FILE')
-    misc_options.add_argument(
-        '--purge-env', action='store_true', dest='purge_env', default=False,
-        help='Purge modules environment before running any tests')
-    misc_options.add_argument(
-        '--nocolor', action='store_false', dest='colorize', default=True,
-        help='Disable coloring of output')
-    misc_options.add_argument(
-        '--timestamp', action='store', nargs='?',
-        const='%FT%T', metavar='TIMEFMT',
-        help='Append a timestamp component to the regression directories'
-             '(default format "%%FT%%T")'
-    )
-    misc_options.add_argument(
-        '--system', action='store',
-        help='Load SYSTEM configuration explicitly')
-    misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
         metavar='FILE', default=os.path.join(reframe.INSTALL_PREFIX,
                                              'reframe/settings.py'),
@@ -222,11 +192,40 @@ def main():
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
     misc_options.add_argument(
+        '-M', '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
+    misc_options.add_argument(
+        '-m', '--module', action='append', default=[],
+        metavar='MOD', dest='user_modules',
+        help='Load module MOD before running the regression')
+    misc_options.add_argument(
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
+    misc_options.add_argument(
+        '--nocolor', action='store_false', dest='colorize', default=True,
+        help='Disable coloring of output')
+    misc_options.add_argument('--performance-report', action='store_true',
+                              help='Print the performance report')
+    misc_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge modules environment before running any tests')
+    misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
     misc_options.add_argument(
         '--show-config-env', action='store', metavar='ENV',
         help='Print configuration of environment ENV and exit')
+    misc_options.add_argument(
+        '--system', action='store',
+        help='Load SYSTEM configuration explicitly')
+    misc_options.add_argument(
+        '--timestamp', action='store', nargs='?',
+        const='%FT%T', metavar='TIMEFMT',
+        help='Append a timestamp component to the regression directories'
+             '(default format "%%FT%%T")'
+    )
     misc_options.add_argument('-V', '--version', action='version',
                               version=reframe.VERSION)
     misc_options.add_argument('-v', '--verbose', action='count', default=0,
@@ -238,12 +237,6 @@ def main():
 
     # Parse command line
     options = argparser.parse_args()
-
-    if options.logdir:
-        sys.stderr.write('WARNING: --logdir option is deprecated; '
-                         'please use --perflogdir instead.\n')
-        if not options.perflogdir:
-            options.perflogdir = options.logdir
 
     # Load configuration
     try:
@@ -451,13 +444,18 @@ def main():
         elif options.cpu_only:
             checks_matched = filter(filters.have_cpu_only(), checks_matched)
 
-        checks_matched = [c for c in checks_matched]
+        # Determine the allowed programming environments
+        allowed_environs = {e.name
+                            for env_patt in options.prgenv
+                            for p in rt.system.partitions
+                            for e in p.environs if re.match(env_patt, e.name)}
 
-        # Determine the programming environments to run with
-        run_environs = {e.name
-                        for env_patt in options.prgenv
-                        for p in rt.system.partitions
-                        for e in p.environs if re.match(env_patt, e.name)}
+        # Generate the test cases
+        checks_matched = list(checks_matched)
+        testcases = generate_testcases(checks_matched,
+                                       options.skip_system_check,
+                                       options.skip_prgenv_check,
+                                       allowed_environs)
 
         # Act on checks
 
@@ -500,10 +498,8 @@ def main():
             exec_policy.skip_system_check = options.skip_system_check
             exec_policy.force_local = options.force_local
             exec_policy.strict_check = options.strict
-            exec_policy.skip_environ_check = options.skip_prgenv_check
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
-            exec_policy.only_environs = run_environs
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
                 errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
@@ -532,16 +528,19 @@ def main():
                                   max_retries) from None
             runner = Runner(exec_policy, printer, max_retries)
             try:
-                runner.runall(checks_matched)
+                runner.runall(testcases)
             finally:
                 # Print a retry report if we did any retries
-                if runner.stats.num_failures(run=0):
+                if runner.stats.failures(run=0):
                     printer.info(runner.stats.retry_report())
 
                 # Print a failure report if we had failures in the last run
-                if runner.stats.num_failures():
+                if runner.stats.failures():
                     printer.info(runner.stats.failure_report())
                     success = False
+
+                if options.performance_report:
+                    printer.info(runner.stats.performance_report())
 
         else:
             printer.info('No action specified. Exiting...')

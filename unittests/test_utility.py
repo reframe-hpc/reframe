@@ -771,14 +771,22 @@ class TestReadOnlyViews(unittest.TestCase):
         self.assertEqual(2, l.count(2))
 
         # Assert immutability
+        m = l + [3, 4]
+        self.assertEqual([1, 2, 2, 3, 4], m)
+        self.assertIsInstance(m, util.SequenceView)
+
+        m = l
+        l += [3, 4]
+        self.assertIsNot(m, l)
+        self.assertEqual([1, 2, 2], m)
+        self.assertEqual([1, 2, 2, 3, 4], l)
+        self.assertIsInstance(l, util.SequenceView)
+
         with self.assertRaises(TypeError):
             l[1] = 3
 
         with self.assertRaises(TypeError):
             l[1:2] = [3]
-
-        with self.assertRaises(TypeError):
-            l += [3, 4]
 
         with self.assertRaises(TypeError):
             l *= 3

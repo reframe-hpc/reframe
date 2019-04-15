@@ -26,11 +26,10 @@ if [ -z $version ]; then
 fi
 
 py_minor_version=$(python3 -c 'import sys; print(sys.version_info.minor)')
-if [ $py_minor_version -ne 5 ]; then
-    echo "$0: deployment script requires Python 3.5" >&2
+if [ $py_minor_version -lt 5 ]; then
+    echo "$0: deployment script requires Python>=3.5" >&2
     exit 1
 fi
-
 
 tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."
@@ -46,11 +45,13 @@ fi
 
 python3 -m venv venv.deployment
 source venv.deployment/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel twine
 pip install -r requirements.txt
 ./test_reframe.py
 git tag -a v$version -m "ReFrame $version"
 git push origin --tags
+python setup.py sdist bdist_wheel
+twine upload dist/*
 deactivate
 cd $oldpwd
 echo "Deployment was successful!"

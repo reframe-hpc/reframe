@@ -2,12 +2,16 @@ import re
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
+import reframe.utility as utility
 import reframe.utility.typecheck as typ
 from reframe.core.environments import Environment
 
 
 class SystemPartition:
-    """A representation of a system partition inside ReFrame."""
+    """A representation of a system partition inside ReFrame.
+
+    This class is immutable.
+    """
 
     _name      = fields.TypedField('_name', typ.Str['(\w|-)+'])
     _descr     = fields.TypedField('_descr', str)
@@ -37,7 +41,7 @@ class SystemPartition:
 
     @property
     def access(self):
-        return self._access
+        return utility.SequenceView(self._access)
 
     @property
     def descr(self):
@@ -46,7 +50,7 @@ class SystemPartition:
 
     @property
     def environs(self):
-        return self._environs
+        return utility.SequenceView(self._environs)
 
     @property
     def fullname(self):
@@ -80,7 +84,7 @@ class SystemPartition:
 
     @property
     def resources(self):
-        return self._resources
+        return utility.MappingView(self._resources)
 
     @property
     def scheduler(self):
@@ -243,7 +247,7 @@ class System:
     @property
     def partitions(self):
         """All the system partitions associated with this system."""
-        return self._partitions
+        return utility.SequenceView(self._partitions)
 
     def add_partition(self, partition):
         partition._system = self

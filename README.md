@@ -1,10 +1,11 @@
 [![Build Status](https://travis-ci.org/eth-cscs/reframe.svg?branch=master)](https://travis-ci.org/eth-cscs/reframe)
 [![Documentation Status](https://readthedocs.org/projects/reframe-hpc/badge/?version=latest)](https://reframe-hpc.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/eth-cscs/reframe/branch/master/graph/badge.svg)](https://codecov.io/github/eth-cscs/reframe)
+[![PyPI version](https://badge.fury.io/py/ReFrame-HPC.svg)](https://badge.fury.io/py/ReFrame-HPC)
 
 # ReFrame
 
-ReFrame is a new framework for writing regression tests for HPC systems.
+ReFrame is a framework for writing regression tests for HPC systems.
 The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
 This allows users to write easily portable regression tests, focusing only on the functionality.
 
@@ -14,6 +15,31 @@ The stages of this pipeline take care of all the system interaction details, suc
 
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
 Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
+
+
+## Getting ReFrame
+
+You may install ReFrame directly from [PyPI](https://pypi.org/project/ReFrame-HPC/) through `pip`:
+
+```bash
+pip install reframe-hpc
+```
+
+ReFrame will be available in your PATH:
+
+```bash
+reframe -V
+```
+
+Alternatively, and especially if you want to contribute back to the framework, you may clone this repository:
+
+```bash
+git clone https://github.com/eth-cscs/reframe.git
+cd reframe
+./bin/reframe -V
+```
+
+Finally, you may access all previous versions of ReFrame [here](https://github.com/eth-cscs/reframe/releases).
 
 
 ## Documentation

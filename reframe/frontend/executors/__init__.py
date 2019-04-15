@@ -1,4 +1,5 @@
 import abc
+import copy
 import sys
 
 import reframe.core.debug as debug
@@ -9,17 +10,76 @@ from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
-from reframe.utility.sandbox import Sandbox
 
 ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
+
+
+class TestCase:
+    """A combination of a regression check, a system partition
+    and a programming environment.
+    """
+
+    def __init__(self, check, partition, environ):
+        self.__check_orig = check
+        self.__check = copy.deepcopy(check)
+        self.__environ = copy.deepcopy(environ)
+        self.__partition = copy.deepcopy(partition)
+
+    def __iter__(self):
+        # Allow unpacking a test case with a single liner:
+        #       c, p, e = case
+        return iter([self.__check, self.__partition, self.__environ])
+
+    @property
+    def check(self):
+        return self.__check
+
+    @property
+    def partition(self):
+        return self.__partition
+
+    @property
+    def environ(self):
+        return self.__environ
+
+    def clone(self):
+        # Return a fresh clone, i.e., one based on the original check
+        return TestCase(self.__check_orig, self.__partition, self.__environ)
+
+
+def generate_testcases(checks,
+                       skip_system_check=False,
+                       skip_environ_check=False,
+                       allowed_environs=None):
+    """Generate concrete test cases from checks."""
+
+    def supports_partition(c, p):
+        return skip_system_check or c.supports_system(p.fullname)
+
+    def supports_environ(c, e):
+        return skip_environ_check or c.supports_environ(e.name)
+
+    rt = runtime.runtime()
+    cases = []
+    for c in checks:
+        for p in rt.system.partitions:
+            if not supports_partition(c, p):
+                continue
+
+            for e in p.environs:
+                if allowed_environs is None or e.name in allowed_environs:
+                    if supports_environ(c, e):
+                        cases.append(TestCase(c, p, e))
+
+    return cases
 
 
 class RegressionTask:
     """A class representing a :class:`RegressionTest` through the regression
     pipeline."""
 
-    def __init__(self, check, listeners=[]):
-        self._check = check
+    def __init__(self, case, listeners=[]):
+        self._case = case
         self._failed_stage = None
         self._current_stage = None
         self._exc_info = (None, None, None)
@@ -30,8 +90,12 @@ class RegressionTask:
         self.zombie = False
 
     @property
+    def testcase(self):
+        return self._case
+
+    @property
     def check(self):
-        return self._check
+        return self._case.check
 
     @property
     def exc_info(self):
@@ -53,7 +117,7 @@ class RegressionTask:
     def _safe_call(self, fn, *args, **kwargs):
         self._current_stage = fn.__name__
         try:
-            with logging.logging_context(self._check) as logger:
+            with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
                 return fn(*args, **kwargs)
         except ABORT_REASONS:
@@ -64,25 +128,25 @@ class RegressionTask:
             raise TaskExit from e
 
     def setup(self, *args, **kwargs):
-        self._safe_call(self._check.setup, *args, **kwargs)
+        self._safe_call(self.check.setup, *args, **kwargs)
         self._environ = EnvironmentSnapshot()
 
     def compile(self):
-        self._safe_call(self._check.compile)
+        self._safe_call(self.check.compile)
 
     def compile_wait(self):
-        self._safe_call(self._check.compile_wait)
+        self._safe_call(self.check.compile_wait)
 
     def run(self):
-        self._safe_call(self._check.run)
+        self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
     def wait(self):
-        self._safe_call(self._check.wait)
+        self._safe_call(self.check.wait)
         self.zombie = False
 
     def poll(self):
-        finished = self._safe_call(self._check.poll)
+        finished = self._safe_call(self.check.poll)
         if finished:
             self.zombie = True
             self._notify_listeners('on_task_exit')
@@ -90,13 +154,13 @@ class RegressionTask:
         return finished
 
     def sanity(self):
-        self._safe_call(self._check.sanity)
+        self._safe_call(self.check.sanity)
 
     def performance(self):
-        self._safe_call(self._check.performance)
+        self._safe_call(self.check.performance)
 
     def cleanup(self, *args, **kwargs):
-        self._safe_call(self._check.cleanup, *args, **kwargs)
+        self._safe_call(self.check.cleanup, *args, **kwargs)
         self._notify_listeners('on_task_success')
 
     def fail(self, exc_info=None):
@@ -108,14 +172,14 @@ class RegressionTask:
         self._environ.load()
 
     def abort(self, cause=None):
-        logging.getlogger().debug('aborting: %s' % self._check.info())
+        logging.getlogger().debug('aborting: %s' % self.check.info())
         exc = AbortTaskError()
         exc.__cause__ = cause
         try:
             # FIXME: we should perhaps extend the RegressionTest interface
             # for supporting job cancelling
-            if not self.zombie and self._check.job:
-                self._check.job.cancel()
+            if not self.zombie and self.check.job:
+                self.check.job.cancel()
         except JobNotStartedError:
             self.fail((type(exc), exc, None))
         except BaseException:
@@ -153,7 +217,6 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._sandbox = Sandbox()
         self._environ_snapshot = EnvironmentSnapshot()
 
     def __repr__(self):
@@ -167,101 +230,68 @@ class Runner:
     def stats(self):
         return self._stats
 
-    def runall(self, checks):
+    def runall(self, testcases):
+        num_checks = len({tc.check.name for tc in testcases})
+        self._printer.separator('short double line',
+                                'Running %d check(s)' % num_checks)
+        self._printer.timestamp('Started on', 'short double line')
+        self._printer.info('')
         try:
-            self._printer.separator('short double line',
-                                    'Running %d check(s)' % len(checks))
-            self._printer.timestamp('Started on', 'short double line')
-            self._printer.info('')
-            self._runall(checks)
+            self._runall(testcases)
             if self._max_retries:
-                self._retry_failed(checks)
+                self._retry_failed(testcases)
 
         finally:
             # Print the summary line
-            num_failures = self._stats.num_failures()
-            num_cases    = self._stats.num_cases(run=0)
+            num_failures = len(self._stats.failures())
             self._printer.status(
                 'FAILED' if num_failures else 'PASSED',
                 'Ran %d test case(s) from %d check(s) (%d failure(s))' %
-                (num_cases, len(checks), num_failures), just='center'
+                (len(testcases), num_checks, num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
             self._environ_snapshot.load()
 
-    def _partition_supported(self, check, partition):
-        if self._policy.skip_system_check:
-            return True
-
-        return check.supports_system(partition.name)
-
-    def _environ_supported(self, check, environ):
-        ret = True
-        if self._policy.only_environs:
-            ret = environ.name in self._policy.only_environs
-
-        if self._policy.skip_environ_check:
-            return ret
-        else:
-            return ret and check.supports_environ(environ.name)
-
-    def _retry_failed(self, checks):
+    def _retry_failed(self, cases):
         rt = runtime.runtime()
-        while (self._stats.num_failures() and
-               rt.current_run < self._max_retries):
-            failed_checks = [
-                c for c in checks if c.name in
-                set([t.check.name for t in self._stats.tasks_failed()])
-            ]
+        failures = self._stats.failures()
+        while (failures and rt.current_run < self._max_retries):
+            num_failed_checks = len({tc.check.name for tc in failures})
             rt.next_run()
 
             self._printer.separator(
                 'short double line',
                 'Retrying %d failed check(s) (retry %d/%d)' %
-                (len(failed_checks), rt.current_run, self._max_retries)
+                (num_failed_checks, rt.current_run, self._max_retries)
             )
-            self._runall(failed_checks)
+            self._runall(t.testcase.clone() for t in failures)
+            failures = self._stats.failures()
 
-    def _runall(self, checks):
-        system = runtime.runtime().system
+    def _runall(self, testcases):
+        def print_separator(check, prefix):
+            self._printer.separator(
+                'short single line',
+                '%s %s (%s)' % (prefix, check.name, check.descr)
+            )
+
         self._policy.enter()
-        for c in checks:
-            self._policy.enter_check(c)
-            for p in system.partitions:
-                if not self._partition_supported(c, p):
-                    self._printer.status('SKIP',
-                                         'skipping %s' % p.fullname,
-                                         just='center',
-                                         level=logging.VERBOSE)
-                    continue
+        last_check = None
+        for t in testcases:
+            if last_check is None or last_check.name != t.check.name:
+                if last_check is not None:
+                    print_separator(last_check, 'finished processing')
+                    self._printer.info('')
 
-                self._policy.enter_partition(c, p)
-                for e in p.environs:
-                    if not self._environ_supported(c, e):
-                        self._printer.status('SKIP',
-                                             'skipping %s for %s' %
-                                             (e.name, p.fullname),
-                                             just='center',
-                                             level=logging.VERBOSE)
-                        continue
+                print_separator(t.check, 'started processing')
+                last_check = t.check
 
-                    self._sandbox.system  = p
-                    self._sandbox.environ = e
-                    self._sandbox.check   = c
-                    self._policy.enter_environ(self._sandbox.check,
-                                               self._sandbox.system,
-                                               self._sandbox.environ)
-                    self._environ_snapshot.load()
-                    self._policy.run_check(self._sandbox.check,
-                                           self._sandbox.system,
-                                           self._sandbox.environ)
-                    self._policy.exit_environ(self._sandbox.check,
-                                              self._sandbox.system,
-                                              self._sandbox.environ)
+            self._environ_snapshot.load()
+            self._policy.runcase(t)
 
-                self._policy.exit_partition(c, p)
-
-            self._policy.exit_check(c)
+        # Close the last visual box
+        if last_check is not None:
+            print_separator(last_check, 'finished processing')
+            self._printer.info('')
 
         self._policy.exit()
 
@@ -306,44 +336,15 @@ class ExecutionPolicy:
     def exit(self):
         pass
 
-    def enter_check(self, check):
-        self.printer.separator(
-            'short single line',
-            'started processing %s (%s)' % (check.name, check.descr)
-        )
-
-    def exit_check(self, check):
-        self.printer.separator(
-            'short single line',
-            'finished processing %s (%s)\n' % (check.name, check.descr)
-        )
-
-    def enter_partition(self, c, p):
-        pass
-
-    def exit_partition(self, c, p):
-        pass
-
-    def enter_environ(self, c, p, e):
-        pass
-
-    def exit_environ(self, c, p, e):
-        pass
-
     @abc.abstractmethod
-    def run_check(self, c, p, e):
-        """Run a check with on a specific system partition with a specific environment.
+    def runcase(self, case):
+        """Run a test case."""
 
-        Keyword arguments:
-        c -- the check to run.
-        p -- the system partition to run the check on.
-        e -- the environment to run the check with.
-        """
         if self.strict_check:
-            c.strict_check = True
+            case.check.strict_check = True
 
         if self.force_local:
-            c.local = True
+            case.check.local = True
 
     @abc.abstractmethod
     def getstats(self):

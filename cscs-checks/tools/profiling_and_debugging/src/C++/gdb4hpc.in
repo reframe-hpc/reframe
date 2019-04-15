@@ -1,0 +1,24 @@
+# this line is mandatory (cray case #224617):
+maint set sync on
+# this line is needed in C++ to avoid 'Debugger error: Missing PMI_Init symbol'
+maint set unsafe on
+# 1 MPI * x OpenMP:
+launch $tst{1} ./jacobi --sbatch=./gdb4hpc.slm
+break _jacobi.cc:89
+# ----1
+continue
+list 89,90
+print residual
+# ----2
+continue
+print residual
+# ----3
+continue
+print residual
+# ----4
+continue
+print residual
+# ----5
+continue
+print residual
+quit
