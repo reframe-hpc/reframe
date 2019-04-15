@@ -212,10 +212,10 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
 
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
-        'gflops': sn.extractsingle(
-            r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
-            r'(?P<perf>\S+)',
-            self.output_file, 'perf',  float) / num_nodes
+            'gflops': sn.extractsingle(
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
         }
 
         self.sanity_patterns = sn.all([
@@ -224,4 +224,4 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
-        super().setup(partition, environ, **job_opts) 
+        super().setup(partition, environ, **job_opts)
