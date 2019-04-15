@@ -62,9 +62,10 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             'chmod u+x %s' % (self.split_file),
         ]
         self.post_run = [
-            'pprof --text --lines %s %s &> %s' %
+            '$EBROOTPPROF/bin/pprof --unit=ms --text --lines %s %s &> %s' %
             (self.exe, '*.0', self.rpt_file_txt),
-            'pprof --pdf %s %s &> %s' % (self.exe, '*.0', self.rpt_file_pdf),
+            '$EBROOTPPROF/bin/pprof --pdf %s %s &> %s' %
+            (self.exe, '*.0', self.rpt_file_pdf),
             'file %s &> %s' % (self.rpt_file_pdf, self.rpt_file_doc)
         ]
         self.sanity_patterns = sn.all([
