@@ -7,8 +7,7 @@ from reframe.core.exceptions import ReframeError
 
 def re_compile(patt):
     try:
-        regex = re.compile(patt)
-        return regex
+        return re.compile(patt)
     except re.error:
         raise ReframeError("invalid regex: '%s'" % patt)
 
