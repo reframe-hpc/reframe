@@ -5,29 +5,22 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['C'], ['C++'], ['F90'])
+@rfm.parameterized_test(['C++'], ['F90'])
 class ScorepHybrid(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
         self.name = 'scorep_mpi_omp_%s' % lang.replace('+', 'p')
         self.descr = 'SCORE-P %s check' % lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
-
-        self.scorep_modules = {
-            'PrgEnv-gnu': ['Score-P/4.0-CrayGNU-18.08'],
-            'PrgEnv-intel': ['Score-P/4.0-CrayIntel-18.08'],
-            'PrgEnv-pgi': ['Score-P/4.0-CrayPGI-18.08']
-        }
-
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
+                                    'PrgEnv-cray']
         self.prgenv_flags = {
             'PrgEnv-cray': ['-g', '-homp'],
             'PrgEnv-gnu': ['-g', '-fopenmp'],
             'PrgEnv-intel': ['-g', '-openmp'],
             'PrgEnv-pgi': ['-g', '-mp']
         }
-
+        self.sourcesdir = os.path.join('src', lang)
         self.executable = 'jacobi'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_scorep_mpi_omp'
@@ -35,12 +28,10 @@ class ScorepHybrid(rfm.RegressionTest):
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
-        self.sourcesdir = os.path.join('src', lang)
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
         self.num_iterations = 200
-
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'ITERATIONS': str(self.num_iterations),
@@ -49,7 +40,6 @@ class ScorepHybrid(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'SCOREP_TIMER': 'clock_gettime'
         }
-
         cpu_count = self.num_cpus_per_task * self.num_tasks_per_node
         self.otf2_file = 'otf2.txt'
         self.sanity_patterns = sn.all([
@@ -59,10 +49,8 @@ class ScorepHybrid(rfm.RegressionTest):
                 'line')), 4 * self.num_iterations * cpu_count),
             sn.assert_not_found('warning|WARNING', self.stderr)
         ])
-
         self.maintainers = ['MK', 'JG']
         self.tags = {'production'}
-
         # additional program call in order to generate the tracing output for
         # the sanity check
         self.post_run = [
@@ -70,9 +58,17 @@ class ScorepHybrid(rfm.RegressionTest):
         ]
 
     def setup(self, partition, environ, **job_opts):
+        scorep_ver = '5.0'
+        tc_ver = '19.03'
+        self.scorep_modules = {
+            'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (scorep_ver, tc_ver)],
+            'PrgEnv-intel': ['Score-P/%s-CrayIntel-%s' % (scorep_ver, tc_ver)],
+            'PrgEnv-pgi': ['Score-P/%s-CrayPGI-%s' % (scorep_ver, tc_ver)],
+            'PrgEnv-cray': ['Score-P/%s-CrayCCE-%s' % (scorep_ver, tc_ver)]
+        }
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.scorep_modules['PrgEnv-gnu'] = [
-                'Score-P/4.0-CrayGNU-18.08-cuda-9.1'
+                'Score-P/%s-CrayGNU-%s-cuda-10.0' % (scorep_ver, tc_ver)
             ]
 
         self.modules = self.scorep_modules[environ.name]
