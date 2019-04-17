@@ -605,8 +605,8 @@ If a test needs to be run on a situation where the reference values are unknown,
    
   self.reference = {
       '*': {
-          'perf_variable1': (0, None, None),
-          'perf_variable2': (0, None, None)
+          'perf_variable1': (0, None, None, 'units'),
+          'perf_variable2': (0, None, None, 'units')
           ...
       }
   }
