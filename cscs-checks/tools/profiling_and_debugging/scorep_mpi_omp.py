@@ -60,6 +60,7 @@ class ScorepHybrid(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         scorep_ver = '5.0'
         tc_ver = '19.03'
+        cu_ver = '10.0'
         self.scorep_modules = {
             'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (scorep_ver, tc_ver)],
             'PrgEnv-intel': ['Score-P/%s-CrayIntel-%s' % (scorep_ver, tc_ver)],
@@ -68,7 +69,7 @@ class ScorepHybrid(rfm.RegressionTest):
         }
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.scorep_modules['PrgEnv-gnu'] = [
-                'Score-P/%s-CrayGNU-%s-cuda-10.0' % (scorep_ver, tc_ver)
+                'Score-P/%s-CrayGNU-%s-cuda-%s' % (scorep_ver, tc_ver, cu_ver)
             ]
 
         self.modules = self.scorep_modules[environ.name]
