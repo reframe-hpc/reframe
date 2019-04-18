@@ -1,3 +1,4 @@
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -203,13 +204,6 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
             },
         }
 
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
-
-    def setup(self, partition, environ, **job_opts):
-
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
@@ -224,4 +218,7 @@ class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
-        super().setup(partition, environ, **job_opts)
+    @property
+    @sn.sanity_function
+    def num_tasks_assigned(self):
+        return self.job.num_tasks
