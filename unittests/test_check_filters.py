@@ -5,6 +5,7 @@ import reframe.frontend.check_filters as filters
 import reframe.utility.sanity as sn
 import unittests.fixtures as fixtures
 from reframe.core.pipeline import RegressionTest
+from reframe.core.exceptions import ReframeError
 
 
 class TestCheckFilters(unittest.TestCase):
@@ -90,3 +91,18 @@ class TestCheckFilters(unittest.TestCase):
 
     def test_have_cpu_only(self):
         self.assertEqual(1, self.count_checks(filters.have_cpu_only()))
+
+    def test_invalid_regex(self):
+        # We need to explicitly call `evaluate` to make sure the exception
+        # is triggered in all cases
+        with self.assertRaises(ReframeError):
+            self.count_checks(filters.have_name('*foo')).evaluate()
+
+        with self.assertRaises(ReframeError):
+            self.count_checks(filters.have_not_name('*foo')).evaluate()
+
+        with self.assertRaises(ReframeError):
+            self.count_checks(filters.have_tag('*foo')).evaluate()
+
+        with self.assertRaises(ReframeError):
+            self.count_checks(filters.have_prgenv('*foo')).evaluate()
