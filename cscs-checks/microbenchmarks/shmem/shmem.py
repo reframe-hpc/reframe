@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 @rfm.required_version('>=2.18-dev0')
 @rfm.parameterized_test(['sync'], ['async'])
-class KernelLatencyTest(rfm.RegressionTest):
+class GPUShmemTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
         super().__init__()
         self.sourcepath = 'shmem.cu'
