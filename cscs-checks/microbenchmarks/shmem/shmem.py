@@ -16,7 +16,7 @@ class GPUShmemTest(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'Bandwidth',
-                        self.stdout)),
+                                self.stdout)),
             self.num_tasks_assigned * 2)
 
         self.perf_patterns = {
