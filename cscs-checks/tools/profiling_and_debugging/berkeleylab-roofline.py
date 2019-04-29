@@ -107,7 +107,7 @@ class ErtBroadwellTest(ErtTestBase):
                 sn.assert_reference(sn.extractsingle(
                     r'(?P<DRAMbw>\d+.\d+) DRAM EMP', self.roofline_rpt,
                     'DRAMbw', float), DRAMbw, -0.1, 0.3),
-                ])
+            ])
         else:
             self.post_run = [
                 'cat *_job.out | python2 preprocess.py > pre',
