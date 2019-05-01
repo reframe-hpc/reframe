@@ -83,7 +83,7 @@ class SdeBroadwellJ1Test(SdeBaseTest):
                          ('-bdw', self.sde, self.target_executable)]
         # References for Intel Broadwell CPU (E5-2695 v4):
         ai = 0.0825
-        gflops = 9773.0
+        gflops = 9.773
         self.sanity_patterns = sn.all([
             sn.assert_reference(self.gflops, gflops, -0.1, 0.3),
             sn.assert_reference(self.arithmetic_intensity, ai, -0.1, 0.3),
@@ -107,7 +107,7 @@ class SdeBroadwellJ1Test(SdeBaseTest):
                                self.stdout, 'avgtime', float)
         step = sn.extractsingle(r'^Each kernel will be executed (?P<step>\d+)',
                                 self.stdout, 'step', int)
-        return flops/(sec*step*10**6)
+        return flops/(sec*step*10**9)
 
 
 @rfm.parameterized_test(*[[mpitask, arraysize]
