@@ -79,25 +79,25 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         references = {
             'G3_AOS_SCALAR': {
                 'dom:mc': {
-                    'gflops': (596, -0.1, 0.3, 'Gflop/s'),
+                    'gflops': (0.596, -0.1, 0.3, 'Gflop/s'),
                     'ai': (0.16, -0.05, 0.05, 'flop/byte')
                 }
             },
             'G3_SOA_SCALAR': {
                 'dom:mc': {
-                    'gflops': (612, -0.1, 0.3, 'Gflop/s'),
+                    'gflops': (0.612, -0.1, 0.3, 'Gflop/s'),
                     'ai': (0.16, -0.05, 0.05, 'flop/byte')
                 }
             },
             'G3_AOS_VECTOR': {
                 'dom:mc': {
-                    'gflops': (1152, -0.1, 0.3, 'Gflop/s'),
+                    'gflops': (1.152, -0.1, 0.3, 'Gflop/s'),
                     'ai': (0.125, -0.05, 0.05, 'flop/byte')
                 }
             },
             'G3_SOA_VECTOR': {
                 'dom:mc': {
-                    'gflops': (1125, -0.1, 0.3, 'Gflop/s'),
+                    'gflops': (1.125, -0.1, 0.3, 'Gflop/s'),
                     'ai': (0.16, -0.05, 0.05, 'flop/byte')
                 }
             },
@@ -126,4 +126,4 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         msec = sn.extractsingle(r'^elapsed time: (?P<msec>\d+)ms', self.stdout,
                                 'msec', float)
         # debug: print('gflops={}'.format(flops/((msec/1000)*10**6)))
-        return flops/((msec/1000)*10**6)
+        return (flops/((msec/1000))/10**9)
