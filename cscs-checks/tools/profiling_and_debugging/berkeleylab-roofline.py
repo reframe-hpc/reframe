@@ -26,7 +26,6 @@ class ErtTestBase(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
-        # self.job.launcher.options = ['--cpu-bind=verbose,none']
 
 
 @rfm.parameterized_test(*[[mpitask, flop]
@@ -115,5 +114,6 @@ class ErtBroadwellTest(ErtTestBase):
                 'python2 summary.py < max > sum',
             ]
             self.sanity_patterns = sn.assert_found('GFLOPs', 'sum')
+
         if not mpitask == 36:
             self.job.launcher.options = ['--cpu-bind=verbose,none']
