@@ -35,7 +35,7 @@ class ErtTestBase(rfm.RegressionTest):
 class ErtBroadwellTest(ErtTestBase):
     def __init__(self, mpitask, flop):
         super().__init__()
-        ompthread = int(36/mpitask)
+        ompthread = 36 // mpitask
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system.cppflags = [
@@ -47,14 +47,12 @@ class ErtBroadwellTest(ErtTestBase):
             '-DERT_WORKING_SET_MIN=1',
             '-DERT_FLOP=%s' % flop,
         ]
-        self.name = 'ert_FLOPS.' + '{:03d}'.format(flop) + \
-                    '_MPI.' + '{:03d}'.format(mpitask) + \
-                    '_OpenMP.' + '{:03d}'.format(ompthread)
-        self.time_limit = (0, 10, 0)
+        self.name = 'ert_FLOPS.{:04d}_MPI.{:03d}_OpenMP.{:03d}'.format(
+            flop, mpitask, ompthread)
         self.exclusive = True
         self.num_tasks = mpitask
         self.num_tasks_per_node = mpitask
-        self.num_cpus_per_task = int(ompthread)
+        self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.variables = {
@@ -115,5 +113,5 @@ class ErtBroadwellTest(ErtTestBase):
             ]
             self.sanity_patterns = sn.assert_found('GFLOPs', 'sum')
 
-        if not mpitask == 36:
+        if mpitask != 36:
             self.job.launcher.options = ['--cpu-bind=verbose,none']
