@@ -37,10 +37,30 @@ class SdeBaseTest(rfm.RegressionTest):
         self.maintainers = ['JG']
         self.tags = {'scs'}
 
+    @property
+    @sn.sanity_function
+    def arithmetic_intensity(self):
+        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
+                                 self.rpt, 'flops', int)
+        byts = sn.extractsingle(r'^--->Total Bytes = (?P<byts>\d+)',
+                                self.rpt, 'byts', int)
+        return flops/byts
+
+    @property
+    @sn.sanity_function
+    def gflops(self):
+        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
+                                 self.rpt, 'flops', int)
+        sec = sn.extractsingle(r'^Triad:\s+\d+\.\d+\s+(?P<avgtime>\d+\.\d+)',
+                               self.stdout, 'avgtime', float)
+        step = sn.extractsingle(r'^Each kernel will be executed (?P<step>\d+)',
+                                self.stdout, 'step', int)
+        return flops/(sec*step*10**9)
+
     def setup(self, partition, environ, **job_opts):
         self.executable_opts = self.sdeflags
         super().setup(partition, environ, **job_opts)
-        if not self.num_tasks == 36:
+        if self.num_tasks != 36:
             self.job.options = ['--cpu-bind=verbose,none']
         else:
             self.job.options = ['--cpu-bind=verbose']
@@ -49,6 +69,7 @@ class SdeBaseTest(rfm.RegressionTest):
 @rfm.parameterized_test(*[[mpitask, arraysize]
                         for mpitask in [2]
                         for arraysize in [100000000]])
+# For parameter space study, you may want to use:
 # for mpitask in [36, 18, 12, 9, 6, 4, 3, 2, 1]
 # for arraysize in [400000000, 200000000, 100000000]])
 class SdeBroadwellJ1Test(SdeBaseTest):
@@ -89,30 +110,11 @@ class SdeBroadwellJ1Test(SdeBaseTest):
             sn.assert_reference(self.arithmetic_intensity, ai, -0.1, 0.3),
         ])
 
-    @property
-    @sn.sanity_function
-    def arithmetic_intensity(self):
-        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
-                                 self.rpt, 'flops', int)
-        byts = sn.extractsingle(r'^--->Total Bytes = (?P<byts>\d+)',
-                                self.rpt, 'byts', int)
-        return flops/byts
-
-    @property
-    @sn.sanity_function
-    def gflops(self):
-        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
-                                 self.rpt, 'flops', int)
-        sec = sn.extractsingle(r'^Triad:\s+\d+\.\d+\s+(?P<avgtime>\d+\.\d+)',
-                               self.stdout, 'avgtime', float)
-        step = sn.extractsingle(r'^Each kernel will be executed (?P<step>\d+)',
-                                self.stdout, 'step', int)
-        return flops/(sec*step*10**9)
-
 
 @rfm.parameterized_test(*[[mpitask, arraysize]
                         for mpitask in [2]
                         for arraysize in [100000000]])
+# For parameter space study, you may want to use:
 # for mpitask in [72, 36, 24, 18, 12, 9, 8, 6, 4, 3, 2,
 #                 1]
 # for arraysize in [400000000, 200000000, 100000000]])
@@ -153,23 +155,3 @@ class SdeBroadwellJ2Test(SdeBaseTest):
             sn.assert_reference(self.gflops, gflops, -0.1, 0.3),
             sn.assert_reference(self.arithmetic_intensity, ai, -0.1, 0.3),
         ])
-
-    @property
-    @sn.sanity_function
-    def arithmetic_intensity(self):
-        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
-                                 self.rpt, 'flops', int)
-        byts = sn.extractsingle(r'^--->Total Bytes = (?P<byts>\d+)',
-                                self.rpt, 'byts', int)
-        return flops/byts
-
-    @property
-    @sn.sanity_function
-    def gflops(self):
-        flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
-                                 self.rpt, 'flops', int)
-        sec = sn.extractsingle(r'^Triad:\s+\d+\.\d+\s+(?P<avgtime>\d+\.\d+)',
-                               self.stdout, 'avgtime', float)
-        step = sn.extractsingle(r'^Each kernel will be executed (?P<step>\d+)',
-                                self.stdout, 'step', int)
-        return ((flops/(sec*step))/10**9)
