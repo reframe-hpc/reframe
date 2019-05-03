@@ -26,12 +26,14 @@ class ErtTestBase(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
+        if self.num_tasks != 36:
+            self.job.launcher.options = ['--cpu-bind=verbose,none']
 
 
-@rfm.parameterized_test(*[[mpitask, flop]
-                        for mpitask in [36, 18, 12, 9, 6, 4, 3, 2, 1]
-                        for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512,
-                                     1024]])
+@rfm.parameterized_test(
+    *[[mpitask, flop]
+    for mpitask in [36, 18, 12, 9, 6, 4, 3, 2, 1]
+    for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
 class ErtBroadwellTest(ErtTestBase):
     def __init__(self, mpitask, flop):
         super().__init__()
@@ -60,7 +62,7 @@ class ErtBroadwellTest(ErtTestBase):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
         # Reference roofline boundaries for Intel Broadwell CPU (E5-2695 v4):
-        GFLOPs = 469.0
+        GFLOPs = 945.0
         L1bw = 1788.0
         L2bw = 855.0
         L3bw = 547.0
@@ -87,7 +89,7 @@ class ErtBroadwellTest(ErtTestBase):
                 # check GFLOPS:
                 sn.assert_reference(sn.extractsingle(
                     r'(?P<GFLOPs>\d+.\d+)\sGFLOPs EMP', self.roofline_rpt,
-                    'GFLOPs', float), GFLOPs, -0.1, 0.3),
+                    'GFLOPs', float), GFLOPs, -0.1, 0.5),
                 # check L1 bandwidth:
                 sn.assert_reference(sn.extractsingle(
                     r'(?P<L1bw>\d+.\d+)\sL1 EMP', self.roofline_rpt,
@@ -112,6 +114,3 @@ class ErtBroadwellTest(ErtTestBase):
                 'python2 summary.py < max > sum',
             ]
             self.sanity_patterns = sn.assert_found('GFLOPs', 'sum')
-
-        if mpitask != 36:
-            self.job.launcher.options = ['--cpu-bind=verbose,none']
