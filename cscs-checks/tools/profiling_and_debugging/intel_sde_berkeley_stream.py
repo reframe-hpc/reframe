@@ -90,10 +90,8 @@ class SdeBroadwellJ1Test(SdeBaseTest):
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
         self.use_multithreading = False
-        self.name = 'sde_n.' + '{:010d}'.format(arraysize) + \
-                    '_MPI.' + '{:03d}'.format(mpitask) + \
-                    '_OpenMP.' + '{:03d}'.format(ompthread) + \
-                    '_j.%s' % self.num_tasks_per_core
+        self.name = 'sde_n.{:010d}_MPI.{:03d}_OpenMP.{:03d}_j.{:01d}'.format(
+            arraysize, mpitask, ompthread, self.num_tasks_per_core)
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
@@ -136,10 +134,8 @@ class SdeBroadwellJ2Test(SdeBaseTest):
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 2
         self.use_multithreading = True
-        self.name = 'sde_n.' + '{:010d}'.format(arraysize) + \
-                    '_MPI.' + '{:03d}'.format(mpitask) + \
-                    '_OpenMP.' + '{:03d}'.format(ompthread) + \
-                    '_j.%s' % self.num_tasks_per_core
+        self.name = 'sde_n.{:010d}_MPI.{:03d}_OpenMP.{:03d}_j.{:01d}'.format(
+            arraysize, mpitask, ompthread, self.num_tasks_per_core)
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
