@@ -75,7 +75,7 @@ class SdeBaseTest(rfm.RegressionTest):
 class SdeBroadwellJ1Test(SdeBaseTest):
     def __init__(self, mpitask, arraysize):
         super().__init__()
-        ompthread = int(36/mpitask)
+        ompthread = 36 // mpitask
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.build_system.cppflags = [
@@ -87,7 +87,7 @@ class SdeBroadwellJ1Test(SdeBaseTest):
         self.exclusive = True
         self.num_tasks = mpitask
         self.num_tasks_per_node = mpitask
-        self.num_cpus_per_task = int(ompthread)
+        self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.name = 'sde_n.' + '{:010d}'.format(arraysize) + \
@@ -121,7 +121,7 @@ class SdeBroadwellJ1Test(SdeBaseTest):
 class SdeBroadwellJ2Test(SdeBaseTest):
     def __init__(self, mpitask, arraysize):
         super().__init__()
-        ompthread = int(72/mpitask)
+        ompthread = 72 // mpitask
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.build_system.cppflags = [
@@ -133,7 +133,7 @@ class SdeBroadwellJ2Test(SdeBaseTest):
         self.exclusive = True
         self.num_tasks = mpitask
         self.num_tasks_per_node = mpitask
-        self.num_cpus_per_task = int(ompthread)
+        self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 2
         self.use_multithreading = True
         self.name = 'sde_n.' + '{:010d}'.format(arraysize) + \
