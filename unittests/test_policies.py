@@ -457,6 +457,20 @@ class TestDependencies(unittest.TestCase):
         os_ext.rmtree(rt.runtime().resources.prefix)
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_eq_hash(self):
+        find_case = TestDependencies.find_case
+        cases = executors.generate_testcases(self.loader.load_all())
+
+        case0 = find_case('Test0', 'e0', cases)
+        case1 = find_case('Test0', 'e1', cases)
+        case0_copy = case0.clone()
+
+        assert case0 == case0_copy
+        assert hash(case0) == hash(case0_copy)
+        assert case1 != case0
+        assert hash(case1) != hash(case0)
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
     def test_build_deps(self):
         Node = TestDependencies.Node
         has_edge = TestDependencies.has_edge
@@ -464,7 +478,15 @@ class TestDependencies(unittest.TestCase):
         find_check = TestDependencies.find_check
         find_case = TestDependencies.find_case
 
-        cases = executors.generate_testcases(self.loader.load_all())
+        checks = self.loader.load_all()
+        cases = executors.generate_testcases(checks)
+
+        # Test calling getdep() before having built the graph
+        t = find_check('Test1_exact', checks)
+        with pytest.raises(DependencyError):
+            t.getdep('Test0', 'e0')
+
+        # Build dependencies and continue testing
         deps = dependency.build_deps(cases)
 
         # Check DEPEND_FULLY dependencies

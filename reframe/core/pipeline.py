@@ -1217,7 +1217,7 @@ class RegressionTest:
         self._userdeps.append((target, how, subdeps))
 
     def getdep(self, target, environ):
-        if self._case() is None:
+        if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
         for d in self._case().deps:
