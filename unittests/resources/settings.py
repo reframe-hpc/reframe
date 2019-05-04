@@ -62,7 +62,7 @@ class ReframeSettings:
             'sys0': {
                 # System used for dependency checking
                 'descr': 'System for test dependencies unit tests',
-                'hostnames': ['sys\d+'],
+                'hostnames': [r'sys\d+'],
                 'partitions': {
                     'p0': {
                         'scheduler': 'local',
