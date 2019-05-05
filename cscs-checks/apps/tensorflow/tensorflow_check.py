@@ -14,11 +14,11 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.num_tasks = 1
         self.num_gpus_per_node = 1
-        self.modules = ['TensorFlow/1.7.0-CrayGNU-18.08-cuda-9.1-python3']
+        self.modules = ['TensorFlow/1.12.0-CrayGNU-19.03-cuda-10.0-python3']
 
         # Checkout to the branch corresponding to the module version of
         # TensorFlow
-        self.pre_run = ['git checkout r1.7.0']
+        self.pre_run = ['git checkout r1.12.0']
         self.variables = {'PYTHONPATH': '$PYTHONPATH:.'}
 
 
@@ -34,7 +34,7 @@ class TensorFlowMnistTest(TensorFlowBaseTest):
                                 str(train_epochs)]
 
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'INFO:tensorflow:Finished evaluation at',
+            sn.assert_found(r'Finished evaluation at',
                             self.stderr),
             sn.assert_gt(sn.extractsingle(
                 r"Evaluation results:\s+\{.*'accuracy':\s+(?P<accuracy>\S+)"
@@ -48,21 +48,21 @@ class TensorFlowWidedeepTest(TensorFlowBaseTest):
         super().__init__('wide_deep')
 
         train_epochs = 10
-        self.executable = 'python3 ./official/wide_deep/wide_deep.py'
+        self.executable = 'python3 ./official/wide_deep/census_main.py'
         self.executable_opts = [
             '--data_dir', './official/wide_deep/',
             '--model_dir', './official/wide_deep/model_dir',
             '--train_epochs', str(train_epochs)]
 
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'INFO:tensorflow:Finished evaluation at',
+            sn.assert_found(r'Finished evaluation at',
                             self.stderr),
             sn.assert_reference(sn.extractsingle(
                 r"Results at epoch %s[\s\S]+accuracy:\s+(?P<accuracy>\S+)" %
-                train_epochs, self.stdout, 'accuracy', float, -1),
+                train_epochs, self.stderr, 'accuracy', float, -1),
                 0.85, -0.05, None)
         ])
 
         self.pre_run += ['mkdir ./official/wide_deep/model_dir',
-                         'python3 ./official/wide_deep/data_download.py '
+                         'python3 ./official/wide_deep/census_dataset.py '
                          '--data_dir ./official/wide_deep/']
