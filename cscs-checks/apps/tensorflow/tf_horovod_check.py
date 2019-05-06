@@ -10,9 +10,9 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.descr = 'Distributed training with TensorFlow and Horovod'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        tfshortver = '1.11'
+        tfshortver = '1.12'
         self.sourcesdir = 'https://github.com/tensorflow/benchmarks'
-        self.modules = ['Horovod/0.15.0-CrayGNU-18.08-tf-%s.0' % tfshortver]
+        self.modules = ['Horovod/0.16.0-CrayGNU-19.03-tf-%s.0' % tfshortver]
         if variant == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 8
@@ -38,9 +38,9 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
                 r'total images/sec:\s+(?P<throughput>\S+)',
                 self.stdout, 'throughput', float))
         }
-        self.sanity_patterns = sn.assert_found(
-            r'[\S+\s+] INFO NET\/IB : Using interface ipogif0'
-            r' for sideband communication', self.stdout)
+
+        self.sanity_patterns = sn.assert_eq(sn.count(sn.findall(
+            r'total images/sec:', self.stdout)), self.num_tasks)
 
         self.pre_run = ['git checkout cnn_tf_v%s_compatible' % tfshortver]
         self.variables = {
