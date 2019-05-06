@@ -9,6 +9,7 @@ class ErtTestBase(rfm.RegressionTest):
     The Empirical Roofline Tool, ERT, automatically generates roofline data.
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit/
     """
+
     def __init__(self):
         super().__init__()
         self.descr = 'Empirical Roofline Toolkit'
@@ -32,8 +33,8 @@ class ErtTestBase(rfm.RegressionTest):
 
 @rfm.parameterized_test(
     *[[num_ranks, flop]
-    for num_ranks in [36, 18, 12, 9, 6, 4, 3, 2, 1]
-    for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
+      for num_ranks in [36, 18, 12, 9, 6, 4, 3, 2, 1]
+      for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
 class ErtBroadwellTest(ErtTestBase):
     def __init__(self, num_ranks, flop):
         super().__init__()
