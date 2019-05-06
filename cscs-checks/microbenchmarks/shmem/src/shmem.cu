@@ -14,7 +14,7 @@
 
 #define NTHREADS 256
 #define NITER    4096
-// must be even
+// length of the thread block swap chain (must be even)
 #define SHARED_SEGMENTS 4
 
 static void HandleError( cudaError_t err,
@@ -37,7 +37,7 @@ __device__ void swap(T* a, T* b)
     // +1 isn't needed to prevent code elimination by the
     // compiler, but is added in case it gets smarter in
     // a future version
-    *b = tmp + T(1);
+    *b = tmp + T{1};
 }
 
 template <class T>
@@ -47,7 +47,7 @@ __global__ void test_shmem(T* glob_mem)
 
     int tid = threadIdx.x;
 
-    smem[tid] = T(1);
+    smem[tid] = T{0};
     for (int i = 0; i < NITER; ++i)
     {
         // even shared segments
@@ -85,7 +85,7 @@ double test_bw(long size)
     gpu_time /= 1000;
 
     // 2 writes + 2 reads per swap
-    double nbytes = nblocks * NTHREADS * double(NITER) * sizeof(T) * SHARED_SEGMENTS * 4;
+    double nbytes = NITER * size * (SHARED_SEGMENTS-1) * 4;
 
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
