@@ -23,12 +23,14 @@ class GPUShmemTest(rfm.RegressionTest):
                 r'Bandwidth\(double\) (?P<bw>\S+) GB/s',
                 self.stdout, 'bw', float)
         }
+        # theoretical limit:
+        # 8 [B/cycle] * 1.328 [GHz] * 16 [bankwidth] * 56 [SM] = 9520 GB/s
         self.reference = {
             'dom:gpu': {
-                'bandwidth': (8850, -0.01, 0.1, 'GB/s')
+                'bandwidth': (8850, -0.01, 1. - 9520/8850, 'GB/s')
             },
             'daint:gpu': {
-                'bandwidth': (8850, -0.01, 0.1, 'GB/s')
+                'bandwidth': (8850, -0.01, 1. - 9520/8850, 'GB/s')
             },
         }
 
