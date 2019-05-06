@@ -25,15 +25,15 @@ class SdeBaseTest(rfm.RegressionTest):
         self.rpt = '%s.rpt' % self.target_executable
         self.build_system.ldflags = ['-g', '-O3', '-qopenmp', '-restrict',
                                      '-qopt-streaming-stores', 'always']
+        exp = '/apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/experimental'
         self.pre_run = [
             'mv %s %s' % (self.executable, self.target_executable),
-            'module use /apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/'
-            'experimental/modules/all',
+            'module use %s/modules/all' % exp,
             'module load sde',
             'sde -help'
         ]
         self.sanity_patterns = sn.assert_found('Total FLOPs =', self.rpt)
-        self.post_run = ['./parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
+        self.post_run = ['SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
         self.maintainers = ['JG']
         self.tags = {'scs'}
 
@@ -42,9 +42,9 @@ class SdeBaseTest(rfm.RegressionTest):
     def arithmetic_intensity(self):
         flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
                                  self.rpt, 'flops', int)
-        byts = sn.extractsingle(r'^--->Total Bytes = (?P<byts>\d+)',
-                                self.rpt, 'byts', int)
-        return flops/byts
+        bytes = sn.extractsingle(r'^--->Total Bytes = (?P<bytes>\d+)',
+                                self.rpt, 'bytes', int)
+        return flops/bytes
 
     @property
     @sn.sanity_function
@@ -66,32 +66,31 @@ class SdeBaseTest(rfm.RegressionTest):
             self.job.options = ['--cpu-bind=verbose']
 
 
-@rfm.parameterized_test(*[[mpitask, arraysize]
-                        for mpitask in [2]
+@rfm.parameterized_test(*[[num_ranks, arraysize]
+                        for num_ranks in [2]
                         for arraysize in [100000000]])
 # For parameter space study, you may want to use:
-# for mpitask in [36, 18, 12, 9, 6, 4, 3, 2, 1]
+# for num_ranks in [36, 18, 12, 9, 6, 4, 3, 2, 1]
 # for arraysize in [400000000, 200000000, 100000000]])
 class SdeBroadwellJ1Test(SdeBaseTest):
-    def __init__(self, mpitask, arraysize):
+    def __init__(self, num_ranks, arraysize):
         super().__init__()
-        ompthread = 36 // mpitask
-        self.valid_systems = ['daint:mc', 'dom:mc']
+        ompthread = 36 // num_ranks
+        self.valid_systems = ['dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.build_system.cppflags = [
             '-D_SDE',
             '-DSTREAM_ARRAY_SIZE=%s' % arraysize,
             '-DNTIMES=50'
         ]
-        self.time_limit = (0, 10, 0)
         self.exclusive = True
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = mpitask
+        self.num_tasks = num_ranks
+        self.num_tasks_per_node = num_ranks
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.name = 'sde_n.{:010d}_MPI.{:03d}_OpenMP.{:03d}_j.{:01d}'.format(
-            arraysize, mpitask, ompthread, self.num_tasks_per_core)
+            arraysize, num_ranks, ompthread, self.num_tasks_per_core)
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
@@ -109,33 +108,32 @@ class SdeBroadwellJ1Test(SdeBaseTest):
         ])
 
 
-@rfm.parameterized_test(*[[mpitask, arraysize]
-                        for mpitask in [2]
+@rfm.parameterized_test(*[[num_ranks, arraysize]
+                        for num_ranks in [2]
                         for arraysize in [100000000]])
 # For parameter space study, you may want to use:
-# for mpitask in [72, 36, 24, 18, 12, 9, 8, 6, 4, 3, 2,
+# for num_ranks in [72, 36, 24, 18, 12, 9, 8, 6, 4, 3, 2,
 #                 1]
 # for arraysize in [400000000, 200000000, 100000000]])
 class SdeBroadwellJ2Test(SdeBaseTest):
-    def __init__(self, mpitask, arraysize):
+    def __init__(self, num_ranks, arraysize):
         super().__init__()
-        ompthread = 72 // mpitask
-        self.valid_systems = ['daint:mc', 'dom:mc']
+        ompthread = 72 // num_ranks
+        self.valid_systems = ['dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
         self.build_system.cppflags = [
             '-D_SDE',
             '-DSTREAM_ARRAY_SIZE=%s' % arraysize,
             '-DNTIMES=50'
         ]
-        self.time_limit = (0, 10, 0)
         self.exclusive = True
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = mpitask
+        self.num_tasks = num_ranks
+        self.num_tasks_per_node = num_ranks
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 2
         self.use_multithreading = True
         self.name = 'sde_n.{:010d}_MPI.{:03d}_OpenMP.{:03d}_j.{:01d}'.format(
-            arraysize, mpitask, ompthread, self.num_tasks_per_core)
+            arraysize, num_ranks, ompthread, self.num_tasks_per_core)
         self.variables = {
             'CRAYPE_LINK_TYPE': 'dynamic',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)

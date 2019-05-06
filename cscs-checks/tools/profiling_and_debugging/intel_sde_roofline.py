@@ -30,6 +30,10 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
                                        'roofline', 'intel_advisor')
         self.build_system = 'SingleSource'
         self.sourcepath = '_roofline.cpp'
+        self.executable = 'sde'
+        self.target_executable = './roof.exe'
+        self.sde = '%s.sde' % self.target_executable
+        self.rpt = '%s.rpt' % self.target_executable
         self.prebuild_cmd = [
             'patch < SDE/roofline_template.patch',
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
@@ -46,17 +50,13 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         self.num_tasks_per_core = 1
         self.use_multithreading = False
         self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
             'CRAYPE_LINK_TYPE': 'dynamic',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
-        self.executable = 'sde'
-        self.target_executable = './roof.exe'
-        self.sde = '%s.sde' % self.target_executable
-        self.rpt = '%s.rpt' % self.target_executable
+        exp = '/apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/experimental'
         self.pre_run = [
             'mv %s %s' % (self.executable, self.target_executable),
-            'module use /apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/'
-            'experimental/modules/all',
+            'module use %s/modules/all' % exp,
             'module load sde',
             'sde -help'
         ]
@@ -68,7 +68,7 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found('Total FLOPs =', self.rpt)
         self.post_run = ['SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'scs'}
         self.sanity_patterns = sn.all([
             sn.assert_eq(sn.extractsingle(
                 r'^Intel\(R\) Software Development Emulator\.  Version:  '
@@ -113,10 +113,10 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
     def arithmetic_intensity(self):
         flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
                                  self.rpt, 'flops', int)
-        byts = sn.extractsingle(r'^--->Total Bytes = (?P<byts>\d+)',
-                                self.rpt, 'byts', int)
-        # debug: print('ai={}'.format(flops/byts))
-        return flops/byts
+        bytes = sn.extractsingle(r'^--->Total Bytes = (?P<bytes>\d+)',
+                                self.rpt, 'bytes', int)
+        # debug: print('ai={}'.format(flops/bytes))
+        return flops/bytes
 
     @property
     @sn.sanity_function
