@@ -61,8 +61,7 @@ class DdtCheck(rfm.RegressionTest):
                                             self.ddt_options)
 
 
-@rfm.required_version('>=2.14')
-@rfm.parameterized_test(['F90', 'F90'], ['C', 'c'], ['C++', 'cc'])
+@rfm.parameterized_test(['F90', 'F90'], ['C++', 'cc'])
 class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
@@ -121,6 +120,7 @@ class DdtGpuCheck(DdtCheck):
             self.build_system.ldflags = ['-lm', '-lcudart']
         else:
             arch = 'sm_60'
+            self.build_system.ldflags = ['-lstdc++']
 
         self.build_system.options = ['NVCCFLAGS="-g -arch=%s"' % arch]
         self.sanity_patterns = sn.all([
