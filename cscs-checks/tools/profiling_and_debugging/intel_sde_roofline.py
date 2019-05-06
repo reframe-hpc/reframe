@@ -114,7 +114,7 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         flops = sn.extractsingle(r'^--->Total FLOPs = (?P<flops>\d+)',
                                  self.rpt, 'flops', int)
         bytes = sn.extractsingle(r'^--->Total Bytes = (?P<bytes>\d+)',
-                                self.rpt, 'bytes', int)
+                                 self.rpt, 'bytes', int)
         # debug: print('ai={}'.format(flops/bytes))
         return flops/bytes
 
