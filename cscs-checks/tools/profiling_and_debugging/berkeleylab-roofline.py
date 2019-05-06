@@ -17,7 +17,7 @@ class ErtTestBase(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.sourcepath = 'kernel1.c driver1.c'
         self.executable = 'ert.exe'
-        self.build_system.ldflags = ['-O3 -fopenmp']
+        self.build_system.ldflags = ['-O3', '-fopenmp']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'roofline', 'ert')
         self.rpt = '%s.rpt' % self.executable
@@ -31,13 +31,13 @@ class ErtTestBase(rfm.RegressionTest):
 
 
 @rfm.parameterized_test(
-    *[[mpitask, flop]
-    for mpitask in [36, 18, 12, 9, 6, 4, 3, 2, 1]
+    *[[num_ranks, flop]
+    for num_ranks in [36, 18, 12, 9, 6, 4, 3, 2, 1]
     for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
 class ErtBroadwellTest(ErtTestBase):
-    def __init__(self, mpitask, flop):
+    def __init__(self, num_ranks, flop):
         super().__init__()
-        ompthread = 36 // mpitask
+        ompthread = 36 // num_ranks
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system.cppflags = [
@@ -50,10 +50,10 @@ class ErtBroadwellTest(ErtTestBase):
             '-DERT_FLOP=%s' % flop,
         ]
         self.name = 'ert_FLOPS.{:04d}_MPI.{:03d}_OpenMP.{:03d}'.format(
-            flop, mpitask, ompthread)
+            flop, num_ranks, ompthread)
         self.exclusive = True
-        self.num_tasks = mpitask
-        self.num_tasks_per_node = mpitask
+        self.num_tasks = num_ranks
+        self.num_tasks_per_node = num_ranks
         self.num_cpus_per_task = ompthread
         self.num_tasks_per_core = 1
         self.use_multithreading = False
@@ -68,10 +68,10 @@ class ErtBroadwellTest(ErtTestBase):
         L3bw = 547.0
         DRAMbw = 70.5
         # slowest job:
-        mpitaskm1 = 1
-        flopm1 = 1024
+        num_ranks_min = 1
+        flop_min = 1024
         self.roofline_rpt = 'rpt'
-        if mpitask == mpitaskm1 and flop == flopm1:
+        if num_ranks == num_ranks_min and flop == flop_min:
             self.post_run = [
                 'cat *_job.out | python2 preprocess.py > pre',
                 'python2 maximum.py < pre > max',
