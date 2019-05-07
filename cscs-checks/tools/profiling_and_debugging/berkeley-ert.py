@@ -41,13 +41,13 @@ class ErtBroadwellTest(ErtTestBase):
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system.cppflags = [
+            '-DERT_FLOP=%s' % flop,
             '-DERT_ALIGN=32',
             '-DERT_MEMORY_MAX=1073741824',
             '-DERT_MPI=True',
             '-DERT_OPENMP=True',
             '-DERT_TRIALS_MIN=1',
             '-DERT_WORKING_SET_MIN=1',
-            '-DERT_FLOP=%s' % flop,
         ]
         self.name = 'ert_FLOPS.{:04d}_MPI.{:03d}_OpenMP.{:03d}'.format(
             flop, num_ranks, ompthread)
@@ -78,7 +78,7 @@ class ErtBroadwellTest(ErtTestBase):
                 'python2 summary.py < max > sum',
                 # give enough time for all the dependent jobs to collect data
                 'sleep 60',
-                'cat ../ert_FLOPS*/sum |python2 roofline.py > rpt',
+                'cat ../ert_FLOPS*/sum | python2 roofline.py > rpt',
             ]
             self.sanity_patterns = sn.all([
                 # --- check data type:
