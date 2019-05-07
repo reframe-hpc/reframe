@@ -21,7 +21,7 @@ class ErtP100Test(rfm.RegressionTest):
     Device 0: "Tesla P100-PCIE-16GB"
       CUDA Driver Version / Runtime Version     10.1 / 10.0
       CUDA Capability Major/Minor version number:    6.0
-      (56) Multiprocessors, ( 64) CUDA Cores/MP:     3584 CUDA Cores
+      (56) Multiprocessors, (64) CUDA Cores/MP:      3584 CUDA Cores
       GPU Max Clock rate:                            1329 MHz (1.33 GHz)
       Theoretical peak performance per GPU:          4761 Gflop/s
       Maximum number of threads per multiprocessor:  2048
@@ -91,8 +91,8 @@ class ErtP100Test(rfm.RegressionTest):
         self.rpt = '%s.rpt' % self.executable
         # Reference roofline boundaries for NVIDIA Tesla P100-PCIE-16GB:
         GFLOPs = 4355.0
-        L1bw = 1724.0
         # Keeping for future reference:
+        # L1bw = 1724.0
         # L2bw = 855.0
         # L3bw = 547.0
         DRAMbw = 521.0
@@ -129,12 +129,15 @@ class ErtP100Test(rfm.RegressionTest):
                     r'(?P<GFLOPs>\d+.\d+)\sGFLOPs EMP', self.roofline_rpt,
                     'GFLOPs', float), GFLOPs, -0.1, 0.5),
                 # check L1 bandwidth:
-                sn.assert_reference(sn.extractsingle(
-                    r'(?P<L1bw>\d+.\d+)\sL1 EMP', self.roofline_rpt,
-                    'L1bw', float), L1bw, -0.1, 0.3),
+                # https://cug.org/proceedings/protected/cug2019_proceedings/
+                # includes/files/pap103s2-file1.pdf: 
+                #   "ERT fails to identify the L1 cache"
+                # sn.assert_reference(sn.extractsingle(
+                #     r'(?P<L1bw>\d+.\d+)\sL1 EMP', self.roofline_rpt,
+                #     'L1bw', float), L1bw, -0.1, 0.3),
                 # check DRAM bandwidth:
                 sn.assert_reference(sn.extractsingle(
-                    r'(?P<DRAMbw>\d+.\d+) DRAM EMPv', self.roofline_rpt,
+                    r'(?P<DRAMbw>\d+.\d+) DRAM EMP', self.roofline_rpt,
                     'DRAMbw', float), DRAMbw, -0.1, 0.3),
             ])
         else:
