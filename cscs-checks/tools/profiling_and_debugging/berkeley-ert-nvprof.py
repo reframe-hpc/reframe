@@ -60,7 +60,7 @@ class ErtP100Test(rfm.RegressionTest):
         self.executable = 'ert.exe'
         self.build_system.cppflags = [
             # ERT_FLOPS = -DERT_FLOP !
-            '-DERT_FLOP=%s' % str(flop),
+            '-DERT_FLOP=%s' % flop,
             '-DERT_ALIGN=32',
             # 1G = 1024^3 = 1073741824:
             '-DERT_MEMORY_MAX=1073741824',
@@ -73,8 +73,7 @@ class ErtP100Test(rfm.RegressionTest):
         self.build_system.ldflags = ['-O3']
         self.maintainers = ['JG']
         self.tags = {'scs'}
-        gpu_blocks = gpudims[0]
-        gpu_threads = gpudims[1]
+        gpu_blocks, gpu_threads = gpudims
         self.name = 'ertgpu_Run.{}_FLOPS.{}_GPUBlocks.{}_GPUThreads.{}'.format(
             repeat, flop, gpu_blocks, gpu_threads)
         self.exclusive = True
@@ -130,7 +129,7 @@ class ErtP100Test(rfm.RegressionTest):
                     'GFLOPs', float), GFLOPs, -0.1, 0.5),
                 # check L1 bandwidth:
                 # https://cug.org/proceedings/protected/cug2019_proceedings/
-                # includes/files/pap103s2-file1.pdf: 
+                # includes/files/pap103s2-file1.pdf:
                 #   "ERT fails to identify the L1 cache"
                 # sn.assert_reference(sn.extractsingle(
                 #     r'(?P<L1bw>\d+.\d+)\sL1 EMP', self.roofline_rpt,
