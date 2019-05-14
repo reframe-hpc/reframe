@@ -11,6 +11,38 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
+
+            'ault': {
+                'descr': 'Ault TDS',
+                'hostnames': ['ault'],
+                'modules_system': 'lmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Login nodes (SkylakeSilver)',
+                        'max_jobs': 4
+                    },
+
+                    'v100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintelv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Hybrid Nvidia nodes (Skylake36c/4*V100)',
+                        'max_jobs': 100,
+                    },
+
+                    'skl': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintel'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Multicore nodes (Skylake36c)',
+                        'max_jobs': 100,
+                    },
+                }
+            },
+
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
@@ -244,6 +276,30 @@ class ReframeSettings:
         },
 
         'environments': {
+
+            'ault': {
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
+                    'modules': ['gcc', 'cuda', 'openmpi'],
+                    'cc':  'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'builtin': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'cc',
+                    'cxx': '',
+                    'ftn': '',
+                },
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                }
+            },
+
             'kesch': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
@@ -327,6 +383,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'leone': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -336,6 +393,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'monch': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -345,6 +403,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 }
             },
+
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
