@@ -288,7 +288,8 @@ class ReframeSettings:
             'ault': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gcc/8.3.0', 'cuda/10.1', 'openmpi/4.0.1'],
+                    # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
+                    'modules': ['gcc/8.3.0', 'cuda', 'openmpi'],
                     'cc':  'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
