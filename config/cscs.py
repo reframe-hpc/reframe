@@ -281,7 +281,7 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
-                    'modules': ['gcc/8.3.0', 'cuda', 'openmpi'],
+                    'modules': ['gcc', 'cuda', 'openmpi'],
                     'cc':  'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
