@@ -20,8 +20,6 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'modules': [],
-                        'access':  [],
                         'environs': ['PrgEnv-gnu'],
                         'descr': 'Login nodes (SkylakeSilver)',
                         'max_jobs': 4
@@ -33,9 +31,6 @@ class ReframeSettings:
                         'environs': ['PrgEnv-gnu'],
                         'descr': 'Hybrid Nvidia nodes (Skylake36c/4*V100)',
                         'max_jobs': 100,
-                        'resources': {
-                            'switches': ['--switches={num_switches}']
-                        }
                     },
 
                     'skl': {
@@ -44,9 +39,6 @@ class ReframeSettings:
                         'environs': ['PrgEnv-gnu'],
                         'descr': 'Multicore nodes (Skylake36c)',
                         'max_jobs': 100,
-                        'resources': {
-                            'switches': ['--switches={num_switches}']
-                        }
                     },
                 }
             },
