@@ -95,8 +95,8 @@ class Job(abc.ABC):
         self._num_cpus_per_task = num_cpus_per_task
         self._use_smt = use_smt
         self._script_filename = script_filename or '%s.sh' % name
-        self._stdout = stdout or os.path.join(workdir, '%s.out' % name)
-        self._stderr = stderr or os.path.join(workdir, '%s.err' % name)
+        self._stdout = stdout or '%s.out' % name
+        self._stderr = stderr or '%s.err' % name
         self._time_limit = time_limit
         self._nodelist = None
 
