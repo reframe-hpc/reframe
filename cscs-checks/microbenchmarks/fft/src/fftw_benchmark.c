@@ -71,18 +71,27 @@ int main(int argc, char *argv[]){
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     if (argc != 5){
         if (mpi_rank == 0){
-            printf("npoints nproc iter\n");
+            printf("Usage: %s npoints nproc niter withmpi\n", argv[0]);
         }
+        MPI_Finalize();
         exit(1);
     }
     npoints = atoi(argv[1]);
     nproc = atoi(argv[2]);
     iter = atoi(argv[3]);
     withmpi = atoi(argv[4]);
+    if ((npoints <= 0) || (nproc <= 0) || (iter <= 0) || (withmpi < 0)){
+        if (mpi_rank == 0){
+            printf("%s: invalid input arguments\n", argv[0]);
+        }
+        MPI_Finalize();
+        exit(1);
+    }
     if (mpi_size != nproc){
         if (mpi_rank == 0){
             printf("number of MPI processes must be %d\n", nproc);
         }
+        MPI_Finalize();
         exit(1);
     }
     npx = npy = npz2 = npoints;
