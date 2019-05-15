@@ -5,7 +5,6 @@
 #
 
 import os
-import pdb
 import itertools
 import re
 import time
@@ -102,7 +101,6 @@ class PbsJob(sched.Job):
         cmd = 'qsub -o %s -e %s %s' % (self.stdout, self.stderr,
                                        self.script_filename)
         completed = self._run_command(cmd, settings().job_submit_timeout)
-        pdb.set_trace()
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobError('could not retrieve the job id '
