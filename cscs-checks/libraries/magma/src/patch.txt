@@ -73,7 +73,7 @@ diff -Naur src/testing_zgemm.cpp src_patched/testing_zgemm.cpp
      printf("%%========================================================================================================\n");
 -    for( int itest = 0; itest < opts.ntest; ++itest ) {
 +//ajajajaj    for( int itest = 0; itest < opts.ntest; ++itest ) {
-+    for( int itest = 0; itest < opts.ntest; itest+=100 ) {
++    for( int itest = 0; itest < 3; itest++ ) {
          for( int iter = 0; iter < opts.niter; ++iter ) {
              M = opts.msize[itest];
              N = opts.nsize[itest];

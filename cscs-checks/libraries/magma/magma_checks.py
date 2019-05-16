@@ -42,78 +42,60 @@ class MagmaCheck(rfm.RegressionTest):
         elif subtest == 'zgemm':
             self.perf_patterns = {
                 'magma': sn.extractsingle(r'MAGMA GFlops: (?P<magma_gflops>\S+)',
-                                          self.stdout, 'magma_gflops', float),
+                                          self.stdout, 'magma_gflops', float, 2),
                 'cublas': sn.extractsingle(
                     r'cuBLAS GFlops: (?P<cublas_gflops>\S+)', self.stdout,
-                    'cublas_gflops', float),
-                'cpu': sn.extractsingle(r'CPU GFlops: (?P<cpu_gflops>\S+)',
-                                        self.stdout, 'cpu_gflops', float)
+                    'cublas_gflops', float, 2)
             }
             self.reference = {
                 'daint:gpu': {
-                    'magma':  (3344, -0.05, None, 'Gflop/s'),
-                    'cublas': (3709, -0.05, None, 'Gflop/s'),
-                    'cpu':    (42.8, -0.27, None, 'Gflop/s'),
+                    'magma':  (3749, -0.05, None, 'Gflop/s'),
+                    'cublas': (4050, -0.05, None, 'Gflop/s'),
                 },
                 'dom:gpu': {
-                    'magma':  (3344, -0.05, None, 'Gflop/s'),
-                    'cublas': (3709, -0.05, None, 'Gflop/s'),
-                    'cpu':    (42.8, -0.27, None, 'Gflop/s'),
+                    'magma':  (3749, -0.05, None, 'Gflop/s'),
+                    'cublas': (4050, -0.05, None, 'Gflop/s'),
                 },
             }
         elif subtest == 'zsymmetrize':
             self.perf_patterns = {
-                'cpu_perf': sn.extractsingle(r'CPU performance: (\S+)',
-                                             self.stdout, 1, float),
                 'gpu_perf': sn.extractsingle(r'GPU performance: (\S+)',
                                              self.stdout, 1, float),
             }
             self.reference = {
                 'daint:gpu': {
-                    'cpu_perf': (0.91, -0.05, None, 'GB/s'),
                     'gpu_perf': (158.3, -0.05, None, 'GB/s'),
                 },
                 'dom:gpu': {
-                    'cpu_perf': (0.91, -0.05, None, 'GB/s'),
                     'gpu_perf': (158.3, -0.05, None, 'GB/s'),
                 },
             }
         elif subtest == 'ztranspose':
             self.perf_patterns = {
-                'cpu_perf':
-                    sn.extractsingle(r'CPU performance: (?P<cpu_performance>\S+)',
-                                     self.stdout, 'cpu_performance', float),
                 'gpu_perf':
                     sn.extractsingle(r'GPU performance: (?P<gpu_performance>\S+)',
                                      self.stdout, 'gpu_performance', float)
             }
             self.reference = {
                 'daint:gpu': {
-                    'cpu_perf': (1.51, -0.05, None, 'GB/s'),
                     'gpu_perf': (498.2, -0.05, None, 'GB/s'),
                 },
                 'dom:gpu': {
-                    'cpu_perf': (1.51, -0.05, None, 'GB/s'),
                     'gpu_perf': (498.2, -0.05, None, 'GB/s'),
                 },
             }
         elif subtest == 'zunmbr':
             # This test fails to compile with Magma 2.4
             self.perf_patterns = {
-                'cpu_perf':
-                    sn.extractsingle(r'CPU performance: (?P<cpu_performance>\S+)',
-                                     self.stdout, 'cpu_performance', float),
                 'gpu_perf':
                     sn.extractsingle(r'GPU performance: (?P<gpu_performance>\S+)',
                                      self.stdout, 'gpu_performance', float)
             }
             self.reference = {
                 'daint:gpu': {
-                    'cpu_perf': (36.6, -0.05, None, 'Gflop/s'),
                     'gpu_perf': (254.7, -0.05, None, 'Gflop/s'),
                 },
                 'dom:gpu': {
-                    'cpu_perf': (36.6, -0.05, None, 'Gflop/s'),
                     'gpu_perf': (254.7, -0.05, None, 'Gflop/s'),
                 },
             }
