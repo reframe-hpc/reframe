@@ -19,13 +19,20 @@ class KernelLatencyTest(rfm.RegressionTest):
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']
             self.valid_prog_environs += ['PrgEnv-gnu']
-        else:
+        elif self.current_system == 'kesch':
             self.num_gpus_per_node = 16
             self.modules = ['craype-accel-nvidia35']
             gpu_arch = '37'
+        else:
+            # Enable test running on an unknown system
+            self.valid_systems = ['*']
+            self.valid_prog_environs = ['*']
+            gpu_arch = None
 
-        self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
-                                      '-code=sm_%s' % gpu_arch, '-std=c++11']
+        self.build_system.cxxflags = ['-std=c++11']
+        if gpu_arch:
+            self.build_system.cxxflags += ['-arch=compute_%s' % gpu_arch,
+                                          '-code=sm_%s' % gpu_arch]
 
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
@@ -59,6 +66,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'kesch:cn': {
                     'latency': (12.0, None, 0.10, 'us')
                 },
+                '*': {
+                    'latency': (0.0, None, None, 'us')
+                }
             },
             'async': {
                 'dom:gpu': {
@@ -70,6 +80,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'kesch:cn': {
                     'latency': (5.7, None, 0.10, 'us')
                 },
+                '*': {
+                    'latency': (0.0, None, None, 'us')
+                }
             },
         }
 
