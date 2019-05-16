@@ -24,22 +24,34 @@ class ReframeSettings:
                         'descr': 'Login nodes (SkylakeSilver)',
                         'max_jobs': 4
                     },
-
-                    'v100': {
+                    'amdv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Hybrid AMD/Nvidia nodes (Naples 32c / 2x V100)',
+                        'max_jobs': 100,
+                    },
+                    'amdvega': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdvega'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Hybrid AMD nodes (Naples 32c / 3x GFX900)',
+                        'max_jobs': 100,
+                    },
+                    'intelv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintelv100'],
                         'environs': ['PrgEnv-gnu'],
-                        'descr': 'Hybrid Nvidia nodes (Skylake36c/4*V100)',
+                        'descr': 'Hybrid Intel/Nvidia nodes (Skylake 36c / 4x V100)',
                         'max_jobs': 100,
                     },
-
-                    'skl': {
+                    'intel': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintel'],
                         'environs': ['PrgEnv-gnu'],
-                        'descr': 'Multicore nodes (Skylake36c)',
+                        'descr': 'Multicore nodes (Skylake 36c)',
                         'max_jobs': 100,
-                    },
+                    }
                 }
             },
 
