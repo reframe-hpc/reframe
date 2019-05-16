@@ -32,7 +32,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.build_system.cxxflags = ['-std=c++11']
         if gpu_arch:
             self.build_system.cxxflags += ['-arch=compute_%s' % gpu_arch,
-                                          '-code=sm_%s' % gpu_arch]
+                                           '-code=sm_%s' % gpu_arch]
 
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
