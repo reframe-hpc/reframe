@@ -41,8 +41,10 @@ class MagmaCheck(rfm.RegressionTest):
             }
         elif subtest == 'zgemm':
             self.perf_patterns = {
-                'magma': sn.extractsingle(r'MAGMA GFlops: (?P<magma_gflops>\S+)',
-                                          self.stdout, 'magma_gflops', float, 2),
+                'magma': sn.extractsingle(
+                             r'MAGMA GFlops: (?P<magma_gflops>\S+)',
+                             self.stdout, 'magma_gflops', float, 2
+                         ),
                 'cublas': sn.extractsingle(
                     r'cuBLAS GFlops: (?P<cublas_gflops>\S+)', self.stdout,
                     'cublas_gflops', float, 2)
@@ -73,8 +75,10 @@ class MagmaCheck(rfm.RegressionTest):
         elif subtest == 'ztranspose':
             self.perf_patterns = {
                 'gpu_perf':
-                    sn.extractsingle(r'GPU performance: (?P<gpu_performance>\S+)',
-                                     self.stdout, 'gpu_performance', float)
+                    sn.extractsingle(
+                        r'GPU performance: (?P<gpu_performance>\S+)',
+                        self.stdout, 'gpu_performance', float
+                    )
             }
             self.reference = {
                 'daint:gpu': {
@@ -88,8 +92,10 @@ class MagmaCheck(rfm.RegressionTest):
             # This test fails to compile with Magma 2.4
             self.perf_patterns = {
                 'gpu_perf':
-                    sn.extractsingle(r'GPU performance: (?P<gpu_performance>\S+)',
-                                     self.stdout, 'gpu_performance', float)
+                    sn.extractsingle(
+                        r'GPU performance: (?P<gpu_performance>\S+)',
+                        self.stdout, 'gpu_performance', float
+                    )
             }
             self.reference = {
                 'daint:gpu': {
