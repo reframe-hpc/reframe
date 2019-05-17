@@ -45,10 +45,6 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
         self.version_rpt = 'Intel_VTuneAmplifier_version.rpt'
         self.summary_rpt = 'Intel_VTuneAmplifier_summary.rpt'
         self.paranoid_rpt = 'Intel_VTuneAmplifier_paranoid.rpt'
-        self.pre_run = [
-            'source $INTEL_PATH/../vtune_amplifier/amplxe-vars.sh',
-            'amplxe-cl -help collect |tail -20',
-        ]
         self.post_run = [
             'amplxe-cl -V &> %s' % self.version_rpt,
             'amplxe-cl -R hotspots -r hotspots* -column="CPU Time:Self" &>%s' %
@@ -73,10 +69,17 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
             self.job.options = ['--constraint="mc&perf"']
 
         if self.current_system.name == 'dom':
+            vtuneversion = '2019'
             toolsversion = '579888'
         elif self.current_system.name == 'daint':
+            vtuneversion = '2018'
             toolsversion = '551022'
 
+        self.pre_run = [
+            'source $INTEL_PATH/../vtune_amplifier_%s/amplxe-vars.sh' %
+            vtuneversion,
+            'amplxe-cl -help collect |tail -20',
+        ]
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),
