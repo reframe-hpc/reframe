@@ -68,17 +68,11 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
         elif partitiontype == 'mc':
             self.job.options = ['--constraint="mc&perf"']
 
-        if self.current_system.name == 'dom':
-            vtuneversion = '2019'
-            toolsversion = '579888'
-        elif self.current_system.name == 'daint':
-            vtuneversion = '2018'
-            toolsversion = '551022'
-
+        vtuneversion = '2019'
+        toolsversion = '579888'
         self.pre_run = [
             'source $INTEL_PATH/../vtune_amplifier_%s/amplxe-vars.sh' %
-            vtuneversion,
-            'amplxe-cl -help collect |tail -20',
+            vtuneversion, 'amplxe-cl -help collect | tail -20',
         ]
         self.sanity_patterns = sn.all([
             # check the job:
