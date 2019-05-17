@@ -300,8 +300,8 @@ The generated job script for this example is the following:
    #SBATCH --job-name="prerun_demo_check_daint_gpu_PrgEnv-gnu"
    #SBATCH --time=0:10:0
    #SBATCH --ntasks=1
-   #SBATCH --output=/path/to/stage/gpu/prerun_demo_check/PrgEnv-gnu/prerun_demo_check.out
-   #SBATCH --error=/path/to/stage/gpu/prerun_demo_check/PrgEnv-gnu/prerun_demo_check.err
+   #SBATCH --output=prerun_demo_check.out
+   #SBATCH --error=prerun_demo_check.err
    #SBATCH --constraint=gpu
    module load daint-gpu
    module unload PrgEnv-cray
