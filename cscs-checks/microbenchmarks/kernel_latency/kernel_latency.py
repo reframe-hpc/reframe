@@ -21,7 +21,7 @@ class KernelLatencyTest(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                         'PrgEnv-gnu']
-        elif self.current_system == 'kesch':
+        elif self.current_system.name == 'kesch':
             self.num_gpus_per_node = 16
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
             self.modules = ['craype-accel-nvidia35']
