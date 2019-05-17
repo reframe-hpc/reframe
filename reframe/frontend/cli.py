@@ -32,7 +32,18 @@ def format_check(check, detailed):
             '      - description: %s' % check.descr,
             '      - systems: %s' % ', '.join(check.valid_systems),
             '      - environments: %s' % ', '.join(check.valid_prog_environs),
-            '      - modules: %s' % ', '.join(check.modules),
+            '      - modules: %s' % ', '.join(check.modules)
+        ]
+
+        if check.num_tasks <= 0:
+            num_tasks_per_node = check.num_tasks_per_node or 1
+            min_num_tasks = (-check.num_tasks if check.num_tasks else
+                             num_tasks_per_node)
+            num_nodes_required = min_num_tasks // num_tasks_per_node
+            lines.append(
+                '      - required nodes: %s' % num_nodes_required)
+
+        lines += [
             '      - tags: %s' % ', '.join(check.tags),
             '      - maintainers: %s' % ', '.join(check.maintainers)
         ]
