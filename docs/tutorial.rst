@@ -296,8 +296,8 @@ The generated job script for the test case we are currently inspecting is the fo
   #SBATCH --job-name="rfm_Example1Test_job"
   #SBATCH --time=0:10:0
   #SBATCH --ntasks=1
-  #SBATCH --output=/path/to/stage/daint/gpu/PrgEnv-gnu/Example1Test/rfm_Example1Test_job.out
-  #SBATCH --error=/path/to/stage/daint/gpu/PrgEnv-gnu/Example1Test/rfm_Example1Test_job.err
+  #SBATCH --output=rfm_Example1Test_job.out
+  #SBATCH --error=rfm_Example1Test_job.err
   #SBATCH --constraint=gpu
   module load daint-gpu
   module unload PrgEnv-cray
