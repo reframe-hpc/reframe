@@ -115,7 +115,7 @@ class BuildError(ReframeError):
         super().__init__()
         self._message = (
             "standard error can be found in `%s', "
-            "standard output can be found in `%s'" % (stdout, stderr)
+            "standard output can be found in `%s'" % (stderr, stdout)
         )
 
 
