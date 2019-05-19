@@ -427,10 +427,10 @@ class TestDependencies(unittest.TestCase):
             return 'Node(%r, %r, %r)' % (self.cname, self.pname, self.ename)
 
     def has_edge(graph, src, dst):
-        return dst in graph[src].deps
+        return dst in graph[src]
 
     def num_deps(graph, cname):
-        return sum(len(c.deps) for c in graph.values()
+        return sum(len(deps) for c, deps in graph.items()
                    if c.check.name == cname)
 
     def find_check(name, checks):

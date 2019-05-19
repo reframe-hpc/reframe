@@ -53,7 +53,7 @@ def build_deps(cases):
 
     graph = {}
     for c in cases:
-        graph[c] = c
+        graph[c] = c.deps
         cname = c.check.name
         pname = c.partition.fullname
         ename = c.environ.name

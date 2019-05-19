@@ -108,11 +108,11 @@ class ReframeSettings:
                 },
                 'e0': {
                     'type': 'ProgEnvironment',
-                    'modules': ['e0'],
+                    'modules': ['m0'],
                 },
                 'e1': {
                     'type': 'ProgEnvironment',
-                    'modules': ['e1'],
+                    'modules': ['m1'],
                 },
             }
         },
