@@ -466,7 +466,7 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
 
 
 @deferrable
-def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
+def assert_reference(val, ref, lower_thres=None, upper_thres=None, tag=None):
     """Assert that value ``val`` respects the reference value ``ref``.
 
     :arg val: The value to check.
@@ -479,6 +479,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         of the reference value. Must be in [0, inf] for ref >= 0.0 and
         in [0, 1] for ref < 0.0.
         If ``None``, no upper thresholds is applied.
+    :arg tag: The tag of the reference value.
     :returns: ``True`` on success.
     :raises reframe.core.exceptions.SanityError: if assertion fails or if the
         lower and upper thresholds do not have appropriate values.
@@ -515,7 +516,10 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:
         error_msg = '{0} is beyond reference value {1} (l={2}, u={3})'
-        raise SanityError(_format(error_msg, val, ref, lower, upper))
+        if tag:
+            error_msg = "'%s' " % tag  + error_msg
+
+        raise SanityError(_format(error_msg, val, ref, lower, upper,))
     else:
         return True
 
