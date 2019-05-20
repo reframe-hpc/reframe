@@ -233,7 +233,7 @@ class SlurmJob(sched.Job):
             reservation_nodes = node_match[1]
         else:
             raise JobError("could not extract the nodes names for "
-                           "reservation '%s'" % valid_reservation)
+                           "reservation '%s'" % reservation)
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
