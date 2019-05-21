@@ -27,7 +27,7 @@ from reframe.frontend.printer import PrettyPrinter
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
-    flex = 'flexible' if check.num_tasks <= 0 else 'inflexible'
+    flex = 'flexible' if check.num_tasks <= 0 else 'standard'
 
     if detailed:
         lines += [

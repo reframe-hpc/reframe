@@ -94,7 +94,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-pgi
          - modules: cudatoolkit
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example1Test (found in /path/to/reframe/tutorial/example1.py)
@@ -102,7 +102,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example4Test (found in /path/to/reframe/tutorial/example4.py)
@@ -110,7 +110,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-pgi
          - modules: craype-accel-nvidia60
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * SerialTest (found in /path/to/reframe/tutorial/example8.py)
@@ -118,7 +118,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
@@ -126,7 +126,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * MPITest (found in /path/to/reframe/tutorial/example8.py)
@@ -134,7 +134,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
@@ -142,7 +142,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-pgi
          - modules: craype-accel-nvidia60
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * CudaTest (found in /path/to/reframe/tutorial/example8.py)
@@ -150,7 +150,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
          - modules: cudatoolkit
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example3Test (found in /path/to/reframe/tutorial/example3.py)
@@ -158,7 +158,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example7Test (found in /path/to/reframe/tutorial/example7.py)
@@ -166,7 +166,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
          - modules: cudatoolkit
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example6Test (found in /path/to/reframe/tutorial/example6.py)
@@ -174,7 +174,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
@@ -182,7 +182,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
@@ -190,7 +190,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
-         - task allocation: inflexible
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
    Found 13 check(s).
