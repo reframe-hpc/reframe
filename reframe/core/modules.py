@@ -218,7 +218,8 @@ class ModulesSystem:
         If module ``name`` refers to multiple real modules, this method will
         return :class:`True` only if all the referees are loaded.
         """
-        return all(self._is_module_loaded(m) for m in self.resolve_module(name))
+        return all(self._is_module_loaded(m)
+                   for m in self.resolve_module(name))
 
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
@@ -484,22 +485,30 @@ class TModImpl(ModulesSystemImpl):
 class TMod4Impl(TModImpl):
     """Module system for TMod 4."""
 
+    MIN_VERSION = ('4', '1', '0')
+
     def __init__(self):
         self._command = 'modulecmd python'
         try:
             completed = os_ext.run_command(self._command + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
-                'could not find a sane Tmod4 installation') from e
+                'could not find a sane TMod4 installation') from e
         except SpawnedProcessError as e:
             raise ConfigError(
-                'could not get the Python bindings for Tmod4') from e
+                'could not get the Python bindings for TMod4') from e
 
-        version_match = re.match('^Modules Release (\S+)\s+', completed.stderr)
+        version_match = re.match(r'^Modules Release (\S+)\s+',
+                                 completed.stderr)
         if not version_match:
             raise ConfigError('could not retrieve the TMod4 version')
 
-        self._version = version_match.group(1)
+        version = version_match.group(1)
+        if tuple(version.split('.')) < self.MIN_VERSION:
+            raise ConfigError(
+                'version %s of TMod4 is not supported' % version)
+
+        self._version = version
 
     def name(self):
         return 'tmod4'

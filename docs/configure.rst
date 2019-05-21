@@ -98,7 +98,7 @@ The valid attributes of a system are the following:
   Three types of modules systems are currently supported:
 
   - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__.
-  - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__.
+  - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions less than 4.1.0 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
