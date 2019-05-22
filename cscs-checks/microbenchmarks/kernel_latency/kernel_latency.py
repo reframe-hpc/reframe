@@ -28,6 +28,7 @@ class KernelLatencyTest(rfm.RegressionTest):
             gpu_arch = '37'
         else:
             # Enable test when running on an unknown system
+            self.num_gpus_per_node = 1
             self.valid_systems = ['*']
             self.valid_prog_environs = ['*']
             gpu_arch = None
