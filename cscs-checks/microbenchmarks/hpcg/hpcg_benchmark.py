@@ -1,3 +1,4 @@
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -163,3 +164,61 @@ class HPCGCheckMKL(rfm.RegressionTest):
         ])
 
         super().setup(partition, environ, **job_opts)
+
+
+@rfm.simple_test
+class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
+        self.maintainers = ['SK', 'VK']
+        self.descr = 'HPCG benchmark on GPUs'
+        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+                                       'HPCG')
+
+        # there's no binary with support for CUDA 10 yet
+        self.valid_systems = ['daint:gpu']
+        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.modules = ['craype-accel-nvidia60', 'craype-hugepages8M']
+        self.executable = 'xhpcg_gpu_3.1'
+        self.pre_run = ['chmod +x %s' % self.executable]
+        self.num_tasks = 0
+        self.num_tasks_per_node = 1
+        self.num_cpus_per_task = 12
+        self.variables  = {
+            'PMI_NO_FORK': '1',
+            'MPICH_USE_DMAPP_COLL': '1',
+            'OMP_SCHEDULE': 'static',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task),
+            'HUGETLB_VERBOSE': '0',
+            'HUGETLB_DEFAULT_PAGE_SIZE': '8M',
+        }
+
+        self.output_file = sn.getitem(sn.glob('*.yaml'), 0)
+
+        self.reference = {
+            'daint:gpu': {
+                'gflops': (94.7, -0.1, None, 'Gflop/s')
+            },
+            'dom:gpu': {
+                'gflops': (94.7, -0.1, None, 'Gflop/s')
+            },
+        }
+
+        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
+        self.perf_patterns = {
+            'gflops': sn.extractsingle(
+                r'HPCG result is VALID with a GFLOP\/s rating of:\s*'
+                r'(?P<perf>\S+)',
+                self.output_file, 'perf',  float) / num_nodes
+        }
+
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(4, sn.count(
+                sn.findall(r'PASSED', self.output_file))),
+            sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
+        ])
+
+    @property
+    @sn.sanity_function
+    def num_tasks_assigned(self):
+        return self.job.num_tasks

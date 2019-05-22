@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.14')
-@rfm.parameterized_test(['C'], ['C++'], ['F90'])
+@rfm.parameterized_test(['C++'], ['F90'])
 class Ipm(rfm.RegressionTest):
     def __init__(self, lang):
         super().__init__()
@@ -19,11 +19,13 @@ class Ipm(rfm.RegressionTest):
             'PrgEnv-intel': ['-O2', '-g', '-openmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
+        ipm_ver = '2.0.6'
+        tc_ver = '19.03'
         self.ipm_modules = {
-            'PrgEnv-gnu': ['IPM/2.0.6-CrayGNU-18.08'],
-            'PrgEnv-cray': ['IPM/2.0.6-CrayCCE-18.08'],
-            'PrgEnv-intel': ['IPM/2.0.6-CrayIntel-18.08'],
-            'PrgEnv-pgi': ['IPM/2.0.6-CrayPGI-18.08']
+            'PrgEnv-gnu': ['IPM/%s-CrayGNU-%s' % (ipm_ver, tc_ver)],
+            'PrgEnv-cray': ['IPM/%s-CrayCCE-%s' % (ipm_ver, tc_ver)],
+            'PrgEnv-intel': ['IPM/%s-CrayIntel-%s' % (ipm_ver, tc_ver)],
+            'PrgEnv-pgi': ['IPM/%s-CrayPGI-%s' % (ipm_ver, tc_ver)]
         }
         self.sourcesdir = os.path.join('src', lang)
         self.executable = './jacobi'
@@ -42,6 +44,8 @@ class Ipm(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
             'PKG_CONFIG_PATH':
                 '$PAT_BUILD_PAPI_BASEDIR/lib64/pkgconfig:$PKG_CONFIG_PATH',
+            'LD_LIBRARY_PATH': '$PAT_BUILD_PAPI_BASEDIR/lib64:'
+                               '$LD_LIBRARY_PATH',
             # The list of available hardware performance counters depends
             # on the cpu type:
             #    srun -n1 -t1 -Cgpu papi_avail
@@ -65,8 +69,7 @@ class Ipm(rfm.RegressionTest):
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
         self.build_system.ldflags = ['-lm', '`pkg-config --libs papi`',
-                                     '${IPM}']
-
+                                     '`pkg-config --libs pfm`', '${IPM}']
         self.htmlrpt = 'index.html'
         self.sanity_patterns = sn.all([
             # check the job:
