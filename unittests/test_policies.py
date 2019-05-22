@@ -489,6 +489,7 @@ class TestDependencies(unittest.TestCase):
 
         # Build dependencies and continue testing
         deps = dependency.build_deps(cases)
+        dependency.validate_deps(deps)
 
         # Check DEPEND_FULLY dependencies
         assert num_deps(deps, 'Test1_fully') == 8
@@ -587,3 +588,90 @@ class TestDependencies(unittest.TestCase):
         # is not executed for eX
         deps = dependency.build_deps(executors.generate_testcases(checks))
         assert num_deps(deps, 'Test1_default') == 4
+
+    def create_test(self, name):
+        test = rfm.RegressionTest()
+        test.name = name
+        test.valid_systems = ['*']
+        test.valid_prog_environs = ['*']
+        test.executable = 'echo'
+        test.executable_opts = [name]
+        return test
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_valid_deps(self):
+        #
+        #       t0
+        #       ^
+        #       |
+        #   +-->t1<--+
+        #   |        |
+        #   t2<------t3
+        #   ^        ^
+        #   |        |
+        #   +---t4---+
+        #
+        t0 = self.create_test('t0')
+        t1 = self.create_test('t1')
+        t2 = self.create_test('t2')
+        t3 = self.create_test('t3')
+        t4 = self.create_test('t4')
+        t1.depends_on('t0')
+        t2.depends_on('t1')
+        t3.depends_on('t1')
+        t3.depends_on('t2')
+        t4.depends_on('t2')
+        t4.depends_on('t3')
+        dependency.validate_deps(
+            dependency.build_deps(
+                executors.generate_testcases([t0, t1, t2, t3, t4])
+            )
+        )
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_cyclic_deps(self):
+        #
+        #       t0
+        #       ^
+        #       |
+        #   +-->t1<--+
+        #   |   |    |
+        #   t2  |    t3
+        #   ^   |    ^
+        #   |   v    |
+        #   +---t4---+
+        #
+        t0 = self.create_test('t0')
+        t1 = self.create_test('t1')
+        t2 = self.create_test('t2')
+        t3 = self.create_test('t3')
+        t4 = self.create_test('t4')
+        t1.depends_on('t0')
+        t1.depends_on('t4')
+        t2.depends_on('t1')
+        t3.depends_on('t1')
+        t3.depends_on('t2')
+        t4.depends_on('t2')
+        t4.depends_on('t3')
+        deps = dependency.build_deps(
+            executors.generate_testcases([t0, t1, t2, t3, t4])
+        )
+
+        with pytest.raises(DependencyError) as exc_info:
+            dependency.validate_deps(deps)
+
+        assert 't4->t2->t1->t4' in str(exc_info.value)
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_cyclic_deps_by_env(self):
+        t0 = self.create_test('t0')
+        t1 = self.create_test('t1')
+        t1.depends_on('t0', rfm.DEPEND_EXACT, {'e0': ['e0']})
+        t0.depends_on('t1', rfm.DEPEND_EXACT, {'e1': ['e1']})
+        deps = dependency.build_deps(
+            executors.generate_testcases([t0, t1])
+        )
+        with pytest.raises(DependencyError) as exc_info:
+            dependency.validate_deps(deps)
+
+        assert 't1->t0->t1' in str(exc_info.value)
