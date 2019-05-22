@@ -397,8 +397,9 @@ class TModImpl(ModulesSystemImpl):
         version = version_match.group(1)
         try:
             ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
-        except ValueError as e:
-            raise ConfigError('could not parse TMod version') from e
+        except ValueError:
+            raise ConfigError(
+                'could not parse TMod version string: ' + version) from None
 
         if (ver_major, ver_minor) < self.MIN_VERSION:
             raise ConfigError(
@@ -519,8 +520,9 @@ class TMod4Impl(TModImpl):
         version = version_match.group(1)
         try:
             ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
-        except ValueError as e:
-            raise ConfigError('could not parse TMod4 version') from e
+        except ValueError:
+            raise ConfigError(
+                'could not parse TMod4 version string: ' + version) from None
 
         if (ver_major, ver_minor) < self.MIN_VERSION:
             raise ConfigError(
