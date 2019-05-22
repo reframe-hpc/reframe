@@ -11,13 +11,9 @@ from reframe.core.exceptions import DependencyError
 def build_deps(cases):
     """Build dependency graph from test cases.
 
-    The dependency information is encoded inside the test cases. Each test case
-    points internally to a list of its dependencies, that can be retrieved
-    through its ``deps`` attribute. This function updates the test cases by
-    setting up their dependencies and returns a dictionary that essentially
-    indexes the test cases for easy access. In fact, the returned dictionary is
-    an adjacency list representation of the graph, where the list of
-    dependencies is encoded inside each test case.
+    The graph is represented as an adjacency list in a Python dictionary
+    holding test cases. The dependency information is also encoded inside each
+    test cases.
     """
 
     # Index cases for quick access
