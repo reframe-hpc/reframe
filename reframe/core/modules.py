@@ -376,6 +376,8 @@ class ModulesSystemImpl(abc.ABC):
 class TModImpl(ModulesSystemImpl):
     """Module system for TMod (Tcl)."""
 
+    MIN_VERSION = (3, 2)
+
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
         try:
@@ -392,7 +394,14 @@ class TModImpl(ModulesSystemImpl):
         if version_match is None or tcl_version_match is None:
             raise ConfigError('could not find a sane Tmod installation')
 
-        self._version = version_match.group(1)
+        version = version_match.group(1)
+        ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        if (ver_major, ver_minor) < self.MIN_VERSION:
+            raise ConfigError(
+                'unsupported TMod version: %s (required >= %s)' %
+                (version, self.MIN_VERSION))
+
+        self._version = version
         self._command = 'modulecmd python'
         try:
             # Try the Python bindings now
@@ -485,7 +494,7 @@ class TModImpl(ModulesSystemImpl):
 class TMod4Impl(TModImpl):
     """Module system for TMod 4."""
 
-    MIN_VERSION = ('4', '1', '0')
+    MIN_VERSION = (4, 1)
 
     def __init__(self):
         self._command = 'modulecmd python'
@@ -504,9 +513,11 @@ class TMod4Impl(TModImpl):
             raise ConfigError('could not retrieve the TMod4 version')
 
         version = version_match.group(1)
-        if tuple(version.split('.')) < self.MIN_VERSION:
+        ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        if (ver_major, ver_minor) < self.MIN_VERSION:
             raise ConfigError(
-                'version %s of TMod4 is not supported' % version)
+                'unsupported TMod4 version: %s (required >= %s)' %
+                (version, self.MIN_VERSION))
 
         self._version = version
 
