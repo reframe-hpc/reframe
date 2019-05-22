@@ -77,7 +77,7 @@ The following example lists detailed information about the tutorial check:
 .. code-block:: none
 
    Command line: ./bin/reframe -c tutorial/ -L
-   Reframe version: 2.15-dev1
+   Reframe version: 2.18-dev2
    Launched by user: USER
    Launched on host: daint103
    Reframe paths
@@ -94,6 +94,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-pgi
          - modules: cudatoolkit
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example1Test (found in /path/to/reframe/tutorial/example1.py)
@@ -101,6 +102,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example4Test (found in /path/to/reframe/tutorial/example4.py)
@@ -108,6 +110,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-pgi
          - modules: craype-accel-nvidia60
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * SerialTest (found in /path/to/reframe/tutorial/example8.py)
@@ -115,6 +118,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenMPTest (found in /path/to/reframe/tutorial/example8.py)
@@ -122,6 +126,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * MPITest (found in /path/to/reframe/tutorial/example8.py)
@@ -129,6 +134,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * OpenACCTest (found in /path/to/reframe/tutorial/example8.py)
@@ -136,6 +142,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-cray, PrgEnv-pgi
          - modules: craype-accel-nvidia60
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * CudaTest (found in /path/to/reframe/tutorial/example8.py)
@@ -143,6 +150,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
          - modules: cudatoolkit
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example3Test (found in /path/to/reframe/tutorial/example3.py)
@@ -150,6 +158,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu, daint:mc
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example7Test (found in /path/to/reframe/tutorial/example7.py)
@@ -157,6 +166,7 @@ The following example lists detailed information about the tutorial check:
          - systems: daint:gpu
          - environments: PrgEnv-gnu, PrgEnv-cray, PrgEnv-pgi
          - modules: cudatoolkit
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example6Test (found in /path/to/reframe/tutorial/example6.py)
@@ -164,6 +174,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: *
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2aTest (found in /path/to/reframe/tutorial/example2.py)
@@ -171,6 +182,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
      * Example2bTest (found in /path/to/reframe/tutorial/example2.py)
@@ -178,6 +190,7 @@ The following example lists detailed information about the tutorial check:
          - systems: *
          - environments: PrgEnv-cray, PrgEnv-gnu, PrgEnv-intel, PrgEnv-pgi
          - modules:
+         - task allocation: standard
          - tags: tutorial
          - maintainers: you-can-type-your-email-here
    Found 13 check(s).
@@ -514,6 +527,125 @@ They are summarized below:
     ./bin/reframe -c /path/to/my/check.py -p PrgEnv-gnu --skip-prgenv-check -r
 
 * ``--max-retries NUM``: Specify the maximum number of times a failed regression test may be retried (default: 0).
+
+
+
+Generating a Performance Report
+-------------------------------
+
+If you are running performance tests, you may instruct ReFrame to produce a performance report at the end using the `--performance-report` command-line options.
+The performance report is printed after the output of the regression tests and has the following format:
+
+.. code-block:: none
+
+  PERFORMANCE REPORT
+  ------------------------------------------------------------------------------
+  Check1
+  - system:partition
+      - PrgEnv1
+          * perf_variable1: <value> <units>
+          * perf_variable2: <value> <units>
+          * ...
+      - PrgEnv2
+          : perf_variable1: <value> <units>
+          : perf_variable2: <value> <units>
+          * ...
+  ------------------------------------------------------------------------------
+  Check2
+  - system:partition
+      - PrgEnv1
+          * perf_variable1: <value> <units>
+          * perf_variable2: <value> <units>
+          * ...
+      - PrgEnv2
+          * perf_variable1: <value> <units>
+          * perf_variable2: <value> <units>
+          * ...
+  ------------------------------------------------------------------------------
+
+Achieved performance values are listed by system partition and programming environment for each performance test that has run.
+Performance variables are the variables collected through the :attr:`reframe.core.pipeline.RegressionTest.perf_patterns` attribute.
+
+The following command will run the CUDA matrix-vector multiplication example from the `tutorial <tutorial.html>`__ and will produce a performance report:
+
+.. code-block:: bash
+
+  ./bin/reframe -C tutorial/config/settings.py -c tutorial/example7.py -r --performance-report
+
+.. code-block:: none
+
+  Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example7.py -r --performance-report
+  Reframe version: 2.18-dev1
+  Launched by user: USER
+  Launched on host: daint101
+  Reframe paths
+  =============
+      Check prefix      :
+      Check search path : 'example7.py'
+      Stage dir prefix     : /path/to/reframe/stage/
+      Output dir prefix    : /path/to/reframe/output/
+      Perf. logging prefix : /path/to/reframe/perflogs
+  [==========] Running 1 check(s)
+  [==========] Started on Mon Apr 15 13:49:34 2019
+
+  [----------] started processing Example7Test (Matrix-vector multiplication (CUDA performance test))
+  [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
+  [       OK ] Example7Test on daint:gpu using PrgEnv-cray
+  [ RUN      ] Example7Test on daint:gpu using PrgEnv-gnu
+  [       OK ] Example7Test on daint:gpu using PrgEnv-gnu
+  [ RUN      ] Example7Test on daint:gpu using PrgEnv-pgi
+  [       OK ] Example7Test on daint:gpu using PrgEnv-pgi
+  [----------] finished processing Example7Test (Matrix-vector multiplication (CUDA performance test))
+
+  [  PASSED  ] Ran 3 test case(s) from 1 check(s) (0 failure(s))
+  [==========] Finished on Mon Apr 15 13:55:22 2019
+  ==============================================================================
+  PERFORMANCE REPORT
+  ------------------------------------------------------------------------------
+  Example7Test
+  - daint:gpu
+     - PrgEnv-cray
+        * perf: 49.994311 Gflop/s
+     - PrgEnv-gnu
+        * perf: 50.748701 Gflop/s
+     - PrgEnv-pgi
+        * perf: 49.844147 Gflop/s
+  ------------------------------------------------------------------------------
+
+
+For completeness, we show here the corresponding section from the ``Example7Test``, so that the connection between the test's code and the output becomes clear:
+
+.. literalinclude:: ../tutorial/example7.py
+  :lines: 20-28
+  :dedent: 8
+
+
+If you are writing a benchmark, it is often the case that you will run it in an unknown system, where you don't have any reference value.
+Normally, if ReFrame cannot find a reference for the system it is running on, it will complain and mark the test as a failure.
+However, you may right your test in such a way, that it allows it to run successfully on any new system.
+To achieve this, simply insert a "catch-all" ``*`` entry in the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute:
+
+
+.. code-block:: python
+
+  self.reference = {
+      '*': {
+          'perf_var1': (0, None, None, 'units'),
+          'perf_var2': (0, None, None, 'units')
+          ...
+      }
+  }
+
+The performance test will always pass on new systems and you may use the ``--performance-report`` option for getting the actual performance values.
+
+
+.. note::
+
+   The performance report should not be confused with `performance logging <#performance-logging>`__.
+   It is simply a way of quickly visualizing the performance results and is useful for interactive testing.
+   Performance logging, if configured, occurs independently of the performance report and is meant for keeping performance data over time.
+   Its formatting facilitates parsing and it should be used for later analysis of the performance data obtained.
+
 
 Configuring ReFrame Directories
 -------------------------------

@@ -126,8 +126,8 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
     def expected_minimal_command(self):
         return ('srun '
                 '--job-name=fake_job '
-                '--output=./fake_job.out '
-                '--error=./fake_job.err '
+                '--output=fake_job.out '
+                '--error=fake_job.err '
                 '--ntasks=1 '
                 '--foo')
 

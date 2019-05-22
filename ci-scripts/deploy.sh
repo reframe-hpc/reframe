@@ -26,11 +26,10 @@ if [ -z $version ]; then
 fi
 
 py_minor_version=$(python3 -c 'import sys; print(sys.version_info.minor)')
-if [ $py_minor_version -ne 5 ]; then
-    echo "$0: deployment script requires Python 3.5" >&2
+if [ $py_minor_version -lt 5 ]; then
+    echo "$0: deployment script requires Python>=3.5" >&2
     exit 1
 fi
-
 
 tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."

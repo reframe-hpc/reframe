@@ -193,8 +193,8 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
 
 class TaskEventMonitor(executors.TaskEventListener):
-    """Event listener for monitoring the execution of the asynchronous execution
-    policy.
+    """Event listener for monitoring the execution of the asynchronous
+    execution policy.
 
     We need to make sure two things for the async policy:
 
@@ -250,9 +250,10 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.begin_stamps = []
         self.end_stamps = []
         for t in tasks:
-            with open(evaluate(t.check.stdout), 'r') as f:
-                self.begin_stamps.append(float(f.readline().strip()))
-                self.end_stamps.append(float(f.readline().strip()))
+            with os_ext.change_dir(t.check.stagedir):
+                with open(evaluate(t.check.stdout), 'r') as f:
+                    self.begin_stamps.append(float(f.readline().strip()))
+                    self.end_stamps.append(float(f.readline().strip()))
 
         self.begin_stamps.sort()
         self.end_stamps.sort()
