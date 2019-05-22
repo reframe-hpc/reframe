@@ -7,25 +7,34 @@ import reframe.utility.sanity as sn
 class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
         super().__init__()
-        self.sourcepath = 'kernel_latency.cu'
-        self.build_system = 'SingleSource'
+        # List known partitions here so as to avoid specifying them every time
+        # with --system
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-
+        self.sourcepath = 'kernel_latency.cu'
+        self.build_system = 'SingleSource'
+        self.build_system.cxxflags = ['-std=c++11']
         if self.current_system.name in {'dom', 'daint'}:
             self.num_gpus_per_node = 1
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']
-            self.valid_prog_environs += ['PrgEnv-gnu']
-        else:
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
+                                        'PrgEnv-gnu']
+        elif self.current_system.name == 'kesch':
             self.num_gpus_per_node = 16
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
             self.modules = ['craype-accel-nvidia35']
             gpu_arch = '37'
+        else:
+            # Enable test when running on an unknown system
+            self.valid_systems = ['*']
+            self.valid_prog_environs = ['*']
+            gpu_arch = None
 
-        self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
-                                      '-code=sm_%s' % gpu_arch, '-std=c++11']
+        if gpu_arch:
+            self.build_system.cxxflags += ['-arch=compute_%s' % gpu_arch,
+                                           '-code=sm_%s' % gpu_arch]
 
         if kernel_version == 'sync':
             self.build_system.cppflags = ['-D SYNCKERNEL=1']
@@ -59,6 +68,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'kesch:cn': {
                     'latency': (12.0, None, 0.10, 'us')
                 },
+                '*': {
+                    'latency': (0.0, None, None, 'us')
+                }
             },
             'async': {
                 'dom:gpu': {
@@ -70,6 +82,9 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'kesch:cn': {
                     'latency': (5.7, None, 0.10, 'us')
                 },
+                '*': {
+                    'latency': (0.0, None, None, 'us')
+                }
             },
         }
 
