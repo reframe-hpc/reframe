@@ -384,7 +384,7 @@ class TModImpl(ModulesSystemImpl):
             completed = os_ext.run_command('modulecmd -V')
         except OSError as e:
             raise ConfigError(
-                'could not find a sane Tmod installation: %s' % e) from e
+                'could not find a sane TMod installation: %s' % e) from e
 
         version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
                                   re.MULTILINE)
@@ -392,10 +392,14 @@ class TModImpl(ModulesSystemImpl):
                                       re.MULTILINE)
 
         if version_match is None or tcl_version_match is None:
-            raise ConfigError('could not find a sane Tmod installation')
+            raise ConfigError('could not find a sane TMod installation')
 
         version = version_match.group(1)
-        ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        try:
+            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        except ValueError as e:
+            raise ConfigError('could not parse TMod version') from e
+
         if (ver_major, ver_minor) < self.MIN_VERSION:
             raise ConfigError(
                 'unsupported TMod version: %s (required >= %s)' %
@@ -408,11 +412,11 @@ class TModImpl(ModulesSystemImpl):
             completed = os_ext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
-                'could not get the Python bindings for Tmod: ' % e) from e
+                'could not get the Python bindings for TMod: ' % e) from e
 
         if re.search(r'Unknown shell type', completed.stderr):
             raise ConfigError(
-                'Python is not supported by this Tmod installation')
+                'Python is not supported by this TMod installation')
 
     def name(self):
         return 'tmod'
@@ -513,7 +517,11 @@ class TMod4Impl(TModImpl):
             raise ConfigError('could not retrieve the TMod4 version')
 
         version = version_match.group(1)
-        ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        try:
+            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        except ValueError as e:
+            raise ConfigError('could not parse TMod4 version') from e
+
         if (ver_major, ver_minor) < self.MIN_VERSION:
             raise ConfigError(
                 'unsupported TMod4 version: %s (required >= %s)' %
