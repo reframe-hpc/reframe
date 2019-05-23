@@ -15,12 +15,8 @@ class StreamTest(rfm.RegressionTest):
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal']
-        if self.current_system.name in {'dom', 'daint', 'kesch', 'leone'}:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
-        else:
-            self.valid_prog_environs = ['*']
-
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
@@ -31,11 +27,11 @@ class StreamTest(rfm.RegressionTest):
             'PrgEnv-cray': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
-            'PrgEnv-pgi': ['-mp', '-O3']
+            'PrgEnv-pgi': ['-mp', '-O3'],
+            '*': ['-O3']
         }
         self.sourcepath = 'stream.c'
         self.build_system = 'SingleSource'
-        self.prebuild_cmd = ['module list']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.stream_cpus_per_task = {
@@ -100,12 +96,8 @@ class StreamTest(rfm.RegressionTest):
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):
-        if self.current_system.name in {'dom', 'daint', 'kesch', 'leone'}:
-            self.num_cpus_per_task = self.stream_cpus_per_task[
-                partition.fullname]
-        else:
-            self.num_cpus_per_task = 1
-
+        self.num_cpus_per_task = self.stream_cpus_per_task.get(
+                                    partition.fullname, 1)
         if self.current_system.name == 'kesch':
             envname = environ.name.replace('-nompi', '')
         else:
