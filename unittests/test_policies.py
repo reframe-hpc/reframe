@@ -660,7 +660,12 @@ class TestDependencies(unittest.TestCase):
         with pytest.raises(DependencyError) as exc_info:
             dependency.validate_deps(deps)
 
-        assert 't4->t2->t1->t4' in str(exc_info.value)
+        assert ('t4->t2->t1->t4' in str(exc_info.value) or
+                't2->t1->t4->t2' in str(exc_info.value) or
+                't1->t4->t2->t1' in str(exc_info.value) or
+                't1->t4->t3->t1' in str(exc_info.value) or
+                't4->t3->t1->t4' in str(exc_info.value) or
+                't3->t1->t4->t3' in str(exc_info.value))
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
     def test_cyclic_deps_by_env(self):
@@ -674,4 +679,5 @@ class TestDependencies(unittest.TestCase):
         with pytest.raises(DependencyError) as exc_info:
             dependency.validate_deps(deps)
 
-        assert 't1->t0->t1' in str(exc_info.value)
+        assert ('t1->t0->t1' in str(exc_info.value) or
+                't0->t1->t0' in str(exc_info.value))
