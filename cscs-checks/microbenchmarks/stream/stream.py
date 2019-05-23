@@ -9,6 +9,7 @@ class StreamTest(rfm.RegressionTest):
        Function    Best Rate MB/s  Avg time     Min time     Max time
        Triad:          13991.7     0.017174     0.017153     0.017192
     """
+
     def __init__(self):
         super().__init__()
         self.descr = 'STREAM Benchmark'
@@ -97,7 +98,7 @@ class StreamTest(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
-                                    partition.fullname, 1)
+            partition.fullname, 1)
         if self.current_system.name == 'kesch':
             envname = environ.name.replace('-nompi', '')
         else:
