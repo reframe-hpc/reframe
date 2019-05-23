@@ -3,7 +3,8 @@
 #
 
 __all__ = ['RegressionTest',
-           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest']
+           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
+           'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
 
 import inspect
@@ -22,13 +23,20 @@ import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystem, BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
-from reframe.core.exceptions import (BuildError, PipelineError, SanityError,
+from reframe.core.exceptions import (BuildError, DependencyError,
+                                     PipelineError, SanityError,
                                      PerformanceError)
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
 from reframe.utility.sanity import assert_reference
+
+
+# Dependency kinds
+DEPEND_EXACT  = 1
+DEPEND_BY_ENV = 2
+DEPEND_FULLY  = 3
 
 
 class RegressionTest:
@@ -627,6 +635,12 @@ class RegressionTest:
         # Performance logging
         self._perf_logger = logging.null_logger
 
+        # List of dependencies specified by the user
+        self._userdeps = []
+
+        # Weak reference to the test case associated with this check
+        self._case = None
+
     # Export read-only views to interesting fields
     @property
     def current_environ(self):
@@ -748,9 +762,6 @@ class RegressionTest:
     @deferrable
     def build_stderr(self):
         return self._build_job.stderr
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def info(self):
         """Provide live information of a running test.
@@ -1186,6 +1197,35 @@ class RegressionTest:
             self._user_environ.unload()
             self._current_environ.unload()
             self._current_partition.local_env.unload()
+
+    # Dependency API
+    def user_deps(self):
+        return util.SequenceView(self._userdeps)
+
+    def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
+        if not isinstance(target, str):
+            raise TypeError("target argument must be of type: `str'")
+
+        if not isinstance(how, int):
+            raise TypeError("how argument must be of type: `int'")
+
+        if (subdeps is not None and
+            not isinstance(subdeps, typ.Dict[str, typ.List[str]])):
+            raise TypeError("subdeps argument must be of type "
+                            "`Dict[str, List[str]]' or `None'")
+
+        self._userdeps.append((target, how, subdeps))
+
+    def getdep(self, target, environ):
+        if self._case is None or self._case() is None:
+            raise DependencyError('no test case is associated with this test')
+
+        for d in self._case().deps:
+            if d.check.name == target and d.environ.name == environ:
+                return d.check
+
+        raise DependencyError('could not resolve dependency to (%s, %s)' %
+                              (target, environ))
 
     def __str__(self):
         return "%s(name='%s', prefix='%s')" % (type(self).__name__,
