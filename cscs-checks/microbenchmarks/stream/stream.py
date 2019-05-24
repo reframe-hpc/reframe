@@ -28,8 +28,7 @@ class StreamTest(rfm.RegressionTest):
             'PrgEnv-cray': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
-            'PrgEnv-pgi': ['-mp', '-O3'],
-            '*': ['-O3']
+            'PrgEnv-pgi': ['-mp', '-O3']
         }
         self.sourcepath = 'stream.c'
         self.build_system = 'SingleSource'
@@ -99,17 +98,18 @@ class StreamTest(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
             partition.fullname, 1)
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
         if self.current_system.name == 'kesch':
             envname = environ.name.replace('-nompi', '')
         else:
             envname = environ.name
 
-        self.reference = self.stream_bw_reference[envname]
-        # On SLURM there is no need to set OMP_NUM_THREADS if one defines
-        # num_cpus_per_task, but adding for completeness and portability
-        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+        self.build_system.cflags = self.prgenv_flags.get(envname, ['-O3'])
         if envname == 'PrgEnv-pgi':
             self.variables['OMP_PROC_BIND'] = 'true'
 
-        self.build_system.cflags = self.prgenv_flags[envname]
+        try:
+            self.reference = self.stream_bw_reference[envname]
+        except KeyError:
+            self.reference = {'*': {'triad': (0.0, None, None, 'MB/s')}}
         super().setup(partition, environ, **job_opts)
