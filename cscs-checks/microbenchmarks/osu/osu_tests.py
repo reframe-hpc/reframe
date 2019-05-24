@@ -13,8 +13,9 @@ class AlltoallTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
-        # The -x option controls the number of warm-up iterations
-        # The -i option controls the number of iterations
+        # The -m option sets the maximum message size
+        # The -x option sets the number of warm-up iterations
+        # The -i option sets the number of iterations
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
@@ -24,7 +25,7 @@ class AlltoallTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {variant}
+        self.tags = {variant, 'benchmark'}
         self.reference = {
             'dom:gpu': {
                 'latency': (8.23, None, 0.1, 'us')
@@ -38,12 +39,10 @@ class AlltoallTest(rfm.RegressionTest):
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
-        if self.current_system.name == 'dom':
-            self.num_tasks = 6
-        elif self.current_system.name == 'daint':
+        if self.current_system.name == 'daint':
             self.num_tasks = 16
         else:
-            self.num_tasks = 2
+            self.num_tasks = 6
 
         self.extra_resources = {
             'switches': {
@@ -71,13 +70,9 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.executable = './osu_alltoall'
         self.maintainers = ['RS', 'VK']
         self.num_tasks_per_node = 1
-        if self.current_system.name in {'dom', 'daint', 'kesch'}:
-            self.num_tasks = 0
-        else:
-            self.num_tasks = 2
-
+        self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
 @rfm.required_version('>=2.16')
@@ -104,7 +99,7 @@ class AllreduceTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {'production'}
+        self.tags = {'production', 'benchmark'}
         if variant == 'small':
             self.num_tasks = 6
             self.reference = {
@@ -187,7 +182,7 @@ class P2PBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'benchmark'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
         self.extra_resources = {
