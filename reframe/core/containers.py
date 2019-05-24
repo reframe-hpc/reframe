@@ -2,7 +2,7 @@ import abc
 
 import reframe.core.fields as fields
 import reframe.utility.typecheck as typ
-from reframe.core.exceptions import ContainerPlatformError
+from reframe.core.exceptions import ContainerError
 
 
 class ContainerPlatform:
@@ -15,72 +15,83 @@ class ContainerPlatform:
     registry = fields.TypedField('registry', str, type(None))
     image = fields.TypedField('image', str, type(None))
     requires_mpi = fields.TypedField('requires_mpi', bool)
-    commands = fields.TypedField('commands', typ.List[str], type(None))
+    commands = fields.TypedField('commands', typ.List[str])
     mount_points = fields.TypedField('mount_points',
-                                     typ.List[typ.Tuple[str, str]], type(None))
+                                     typ.List[typ.Tuple[str, str]])
+    workdir = fields.TypedField('workdir', str, type(None))
 
     def __init__(self):
         self.registry = None
         self.image = None
         self.requires_mpi = False
-        self.commands = None
+        self.commands = []
         self.mount_points  = []
+        self.workdir = None
 
     @abc.abstractmethod
     def emit_prepare_cmds(self):
-        """xxx."""
+        """Returns commands that are necessary before running with this
+        container platform.
+
+        :raises: `ContainerError` in case of errors.
+
+        .. note:
+            This method is relevant only to developers of new container
+            platforms.
+        """
 
     @abc.abstractmethod
     def emit_launch_cmds(self):
         """Returns the command for running with this container platform.
 
-        :raises: `ContainerPlatformError` in case of missing mandatory
-        fields.
+        :raises: `ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
-            plataforms.
+            platforms.
         """
+        if self.registry:
+            self.image = '/'.join([self.registry, self.image])
+
+    @abc.abstractmethod
+    def validate(self):
+        """Validates this container platform.
+
+        :raises: `ContainerError` in case of errors.
+
+        .. note:
+            This method is relevant only to developers of new container
+            platforms.
+        """
+        if self.image is None:
+            raise ContainerError('no image specified.')
+
+        if not self.commands:
+            raise ContainerError('no command specified')
 
 
 class Docker(ContainerPlatform):
-    """An implementation of the container platform to run containers with
+    """An implementation of ContainerPlatform to run containers with
     Docker.
     """
-    # def __init__(self):
-    #     super().__init__()
-
     def emit_prepare_cmds(self):
         pass
 
     def emit_launch_commands(self):
+        super().emit_launch_cmds()
         docker_opts = []
-
-        if self.image is None:
-            raise ContainerPlatformError('Please, specify the name of'
-                                         'the image')
-
-        if self.commands is None:
-            raise ContainerPlatformError('Please, specify a command')
-
-        if self.registry:
-            self.image = '%s/%s' % (self.registry, self.image)
-
-        self.mount_points.append(('$PWD', '/stagedir'))
-        for mp in self.mount_points:
-            docker_opts.append('-v %s:%s' % mp)
-
-        cmd_base = "docker run %s %s bash -c 'cd /stagedir; %s'"
-
-        return [cmd_base % (' '.join(docker_opts), self.image,
-                            '; '.join(self.commands))]
+        docker_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
+        run_cmd = 'docker run %s %s bash -c ' % (' '.join(docker_opts),
+                                                 self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
 
 
 class ContainerPlatformField(fields.TypedField):
-    """A field representing a build system.
+    """A field representing a container platforms.
 
     You may either assign an instance of :class:`ContainerPlatform:` or a
-    string representing the name of the concrete class of a build system.
+    string representing the name of the concrete class of a container platform.
     """
 
     def __init__(self, fieldname, *other_types):
