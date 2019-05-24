@@ -514,7 +514,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
     try:
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:
-        error_msg = '%s ' % msg or ''
+        error_msg = '%s ' % msg if msg else ''
         error_msg += '{0} is beyond reference value {1} (l={2}, u={3})'
         raise SanityError(_format(error_msg, val, ref, lower, upper))
     else:
