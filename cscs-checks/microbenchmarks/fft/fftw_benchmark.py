@@ -15,13 +15,14 @@ class FFTWTest(rfm.RegressionTest):
         self.num_gpus_per_node = 0
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'execution time', self.stdout)), 1)
+        self.build_system.cflags = ['-O2']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-            self.build_system.cflags = ['-O2 -I$FFTW_INC -L$FFTW_DIR -lfftw3']
-        else:
+            self.build_system.cflags += ['-I$FFTW_INC', '-L$FFTW_DIR',
+                                         '-lfftw3']
+        elif self.current_system.name in {'daint', 'dom'}:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                         'PrgEnv-gnu']
-            self.build_system.cflags = ['-O2']
 
         self.perf_patterns = {
             'fftw_exec_time': sn.extractsingle(
@@ -41,6 +42,9 @@ class FFTWTest(rfm.RegressionTest):
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (0.61, None, 0.05, 's'),
+                },
+                '*': {
+                    'fftw_exec_time': (0, None, None, 's'),
                 }
             }
         else:
@@ -55,6 +59,9 @@ class FFTWTest(rfm.RegressionTest):
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (1.58, None, 0.50, 's'),
+                }
+                '*': {
+                    'fftw_exec_time': (0, None, None, 's'),
                 }
             }
 
