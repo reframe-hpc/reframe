@@ -1131,7 +1131,7 @@ class RegressionTest:
                 tag, val, ref, low_thres, high_thres, *_ = values
                 try:
                     evaluate(assert_reference(val, ref, low_thres, high_thres,
-                                              tag))
+                                              "'%s'" % tag))
                 except SanityError as e:
                     raise PerformanceError(e)
 
