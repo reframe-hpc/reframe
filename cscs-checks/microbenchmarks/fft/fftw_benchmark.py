@@ -59,7 +59,7 @@ class FFTWTest(rfm.RegressionTest):
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (1.58, None, 0.50, 's'),
-                }
+                },
                 '*': {
                     'fftw_exec_time': (0, None, None, 's'),
                 }
