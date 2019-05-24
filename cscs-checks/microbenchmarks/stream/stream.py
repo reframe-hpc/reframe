@@ -112,4 +112,5 @@ class StreamTest(rfm.RegressionTest):
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
             self.reference = {'*': {'triad': (0.0, None, None, 'MB/s')}}
+
         super().setup(partition, environ, **job_opts)
