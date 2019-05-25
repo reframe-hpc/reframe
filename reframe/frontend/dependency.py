@@ -100,24 +100,29 @@ def validate_deps(graph):
 
     # Check for cyclic dependencies in the test name graph
     visited = set()
-    unvisited = list(
-        itertools.zip_longest(test_graph.keys(), [], fillvalue=None)
-    )
+    sources = set(test_graph.keys())
     path = []
-    while unvisited:
-        node, parent = unvisited.pop()
-        while path and path[-1] != parent:
-            path.pop()
 
-        adjacent = reversed(test_graph[node])
-        path.append(node)
-        for n in adjacent:
-            if n in path:
-                cycle_str = '->'.join(path + [n])
-                raise DependencyError(
-                    'found cyclic dependency between tests: ' + cycle_str)
+    # Since graph may comprise multiple not connected subgraphs, we search for
+    # cycles starting from all possible sources
+    while sources:
+        unvisited = [(sources.pop(), None)]
+        while unvisited:
+            node, parent = unvisited.pop()
+            while path and path[-1] != parent:
+                path.pop()
 
-            if n not in visited:
-                unvisited.append((n, node))
+            adjacent = reversed(test_graph[node])
+            path.append(node)
+            for n in adjacent:
+                if n in path:
+                    cycle_str = '->'.join(path + [n])
+                    raise DependencyError(
+                        'found cyclic dependency between tests: ' + cycle_str)
 
-        visited.add(node)
+                if n not in visited:
+                    unvisited.append((n, node))
+
+            visited.add(node)
+
+        sources -= visited
