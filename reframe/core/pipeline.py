@@ -1130,8 +1130,13 @@ class RegressionTest:
             for values in self._perfvalues.values():
                 tag, val, ref, low_thres, high_thres, *_ = values
                 try:
-                    evaluate(assert_reference(val, ref, low_thres, high_thres,
-                                              "'%s'" % tag))
+                    evaluate(
+                        assert_reference(
+                            val, ref, low_thres, high_thres,
+                            msg=('failed to meet reference: %s={0}, '
+                                 'expected {1} (l={2}, u={3})' % tag),
+                        )
+                    )
                 except SanityError as e:
                     raise PerformanceError(e)
 
