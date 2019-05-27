@@ -67,16 +67,6 @@ diff -Naur src/testing_zgemm.cpp src_patched/testing_zgemm.cpp
      
      // Allow 3*eps; complex needs 2*sqrt(2) factor; see Higham, 2002, sec. 3.6.
      double eps = lapackf77_dlamch("E");
-@@ -87,7 +88,8 @@
-                 g_platform_str, g_platform_str );
-     #endif
-     printf("%%========================================================================================================\n");
--    for( int itest = 0; itest < opts.ntest; ++itest ) {
-+//ajajajaj    for( int itest = 0; itest < opts.ntest; ++itest ) {
-+    for( int itest = 0; itest < 3; itest++ ) {
-         for( int iter = 0; iter < opts.niter; ++iter ) {
-             M = opts.msize[itest];
-             N = opts.nsize[itest];
 @@ -220,6 +222,9 @@
                             cpu_perf,    1000.*cpu_time,
                             magma_error, dev_error,

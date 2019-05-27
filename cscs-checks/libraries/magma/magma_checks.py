@@ -40,6 +40,7 @@ class MagmaCheck(rfm.RegressionTest):
                 },
             }
         elif subtest == 'zgemm':
+            self.executable_opts = ['--range 1088:3136:1024']
             self.perf_patterns = {
                 'magma': sn.extractsingle(
                              r'MAGMA GFlops: (?P<magma_gflops>\S+)',
@@ -51,12 +52,12 @@ class MagmaCheck(rfm.RegressionTest):
             }
             self.reference = {
                 'daint:gpu': {
-                    'magma':  (3749, -0.05, None, 'Gflop/s'),
-                    'cublas': (4050, -0.05, None, 'Gflop/s'),
+                    'magma':  (3692.65, -0.05, None, 'Gflop/s'),
+                    'cublas': (4269.31, -0.0847, None, 'Gflop/s'),
                 },
                 'dom:gpu': {
-                    'magma':  (3749, -0.05, None, 'Gflop/s'),
-                    'cublas': (4050, -0.05, None, 'Gflop/s'),
+                    'magma':  (3692.65, -0.05, None, 'Gflop/s'),
+                    'cublas': (4269.31, -0.0847, None, 'Gflop/s'),
                 },
             }
         elif subtest == 'zsymmetrize':
