@@ -207,6 +207,10 @@ class JobNotStartedError(JobError):
     """Raised when trying to operate on a unstarted job."""
 
 
+class DependencyError(ReframeError):
+    """Raised when a dependency problem is encountered."""
+
+
 class ReframeDeprecationWarning(DeprecationWarning):
     """Warning for deprecated features of the ReFrame framework."""
 

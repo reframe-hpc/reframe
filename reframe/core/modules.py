@@ -218,7 +218,8 @@ class ModulesSystem:
         If module ``name`` refers to multiple real modules, this method will
         return :class:`True` only if all the referees are loaded.
         """
-        return all(self._is_module_loaded(m) for m in self.resolve_module(name))
+        return all(self._is_module_loaded(m)
+                   for m in self.resolve_module(name))
 
     def _is_module_loaded(self, name):
         return self._backend.is_module_loaded(Module(name))
@@ -375,13 +376,15 @@ class ModulesSystemImpl(abc.ABC):
 class TModImpl(ModulesSystemImpl):
     """Module system for TMod (Tcl)."""
 
+    MIN_VERSION = (3, 2)
+
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
         try:
             completed = os_ext.run_command('modulecmd -V')
         except OSError as e:
             raise ConfigError(
-                'could not find a sane Tmod installation: %s' % e) from e
+                'could not find a sane TMod installation: %s' % e) from e
 
         version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
                                   re.MULTILINE)
@@ -389,20 +392,32 @@ class TModImpl(ModulesSystemImpl):
                                       re.MULTILINE)
 
         if version_match is None or tcl_version_match is None:
-            raise ConfigError('could not find a sane Tmod installation')
+            raise ConfigError('could not find a sane TMod installation')
 
-        self._version = version_match.group(1)
+        version = version_match.group(1)
+        try:
+            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        except ValueError:
+            raise ConfigError(
+                'could not parse TMod version string: ' + version) from None
+
+        if (ver_major, ver_minor) < self.MIN_VERSION:
+            raise ConfigError(
+                'unsupported TMod version: %s (required >= %s)' %
+                (version, self.MIN_VERSION))
+
+        self._version = version
         self._command = 'modulecmd python'
         try:
             # Try the Python bindings now
             completed = os_ext.run_command(self._command)
         except OSError as e:
             raise ConfigError(
-                'could not get the Python bindings for Tmod: ' % e) from e
+                'could not get the Python bindings for TMod: ' % e) from e
 
         if re.search(r'Unknown shell type', completed.stderr):
             raise ConfigError(
-                'Python is not supported by this Tmod installation')
+                'Python is not supported by this TMod installation')
 
     def name(self):
         return 'tmod'
@@ -484,22 +499,37 @@ class TModImpl(ModulesSystemImpl):
 class TMod4Impl(TModImpl):
     """Module system for TMod 4."""
 
+    MIN_VERSION = (4, 1)
+
     def __init__(self):
         self._command = 'modulecmd python'
         try:
             completed = os_ext.run_command(self._command + ' -V', check=True)
         except OSError as e:
             raise ConfigError(
-                'could not find a sane Tmod4 installation') from e
+                'could not find a sane TMod4 installation') from e
         except SpawnedProcessError as e:
             raise ConfigError(
-                'could not get the Python bindings for Tmod4') from e
+                'could not get the Python bindings for TMod4') from e
 
-        version_match = re.match('^Modules Release (\S+)\s+', completed.stderr)
+        version_match = re.match(r'^Modules Release (\S+)\s+',
+                                 completed.stderr)
         if not version_match:
             raise ConfigError('could not retrieve the TMod4 version')
 
-        self._version = version_match.group(1)
+        version = version_match.group(1)
+        try:
+            ver_major, ver_minor, *_ = [int(v) for v in version.split('.')]
+        except ValueError:
+            raise ConfigError(
+                'could not parse TMod4 version string: ' + version) from None
+
+        if (ver_major, ver_minor) < self.MIN_VERSION:
+            raise ConfigError(
+                'unsupported TMod4 version: %s (required >= %s)' %
+                (version, self.MIN_VERSION))
+
+        self._version = version
 
     def name(self):
         return 'tmod4'
