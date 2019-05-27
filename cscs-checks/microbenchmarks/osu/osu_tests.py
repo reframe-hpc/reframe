@@ -13,8 +13,9 @@ class AlltoallTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
-        # The -x option controls the number of warm-up iterations
-        # The -i option controls the number of iterations
+        # The -m option sets the maximum message size
+        # The -x option sets the number of warm-up iterations
+        # The -i option sets the number of iterations
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
@@ -24,7 +25,7 @@ class AlltoallTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {variant}
+        self.tags = {variant, 'benchmark'}
         self.reference = {
             'dom:gpu': {
                 'latency': (8.23, None, 0.1, 'us')
@@ -32,14 +33,16 @@ class AlltoallTest(rfm.RegressionTest):
             'daint:gpu': {
                 'latency': (20.73, None, 2.0, 'us')
             },
+            '*': {
+                'latency': (0, None, None, 'us')
+            },
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
-        if self.current_system.name == 'dom':
-            self.num_tasks = 6
-
         if self.current_system.name == 'daint':
             self.num_tasks = 16
+        else:
+            self.num_tasks = 6
 
         self.extra_resources = {
             'switches': {
@@ -69,7 +72,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
 @rfm.required_version('>=2.16')
@@ -96,7 +99,7 @@ class AllreduceTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {'production'}
+        self.tags = {'production', 'benchmark'}
         if variant == 'small':
             self.num_tasks = 6
             self.reference = {
@@ -108,6 +111,9 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (8.79, None, 0.25, 'us')
+                },
+                '*': {
+                    'latency': (0, None, None, 'us')
                 }
             }
         else:
@@ -118,11 +124,12 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (10.85, None, 0.20, 'us')
+                },
+                '*': {
+                    'latency': (0, None, None, 'us')
                 }
             }
 
-        # Allow test to run on new systems without errors
-        self.reference['*:latency'] = (0, None, None, 'us')
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
         self.extra_resources = {
@@ -175,7 +182,7 @@ class P2PBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'benchmark'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
         self.extra_resources = {
@@ -213,6 +220,9 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             },
             'kesch:cn': {
                 'bw': (6311.48, -0.15, None, 'MB/s')
+            },
+            '*': {
+                'bw': (0, None, None, 'MB/s')
             }
         }
         self.perf_patterns = {
@@ -250,6 +260,9 @@ class P2PCPULatencyTest(P2PBaseTest):
             },
             'kesch:cn': {
                 'latency': (1.17, None, 0.1, 'us')
+            },
+            '*': {
+                'latency': (0, None, None, 'us')
             }
         }
         self.perf_patterns = {
@@ -280,6 +293,9 @@ class G2GBandwidthTest(P2PBaseTest):
             'kesch:cn': {
                 'bw': (6288.98, -0.1, None, 'MB/s')
             },
+            '*': {
+                'bw': (0, None, None, 'MB/s')
+            }
         }
         self.perf_patterns = {
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
@@ -317,6 +333,9 @@ class G2GLatencyTest(P2PBaseTest):
             'kesch:cn': {
                 'latency': (23.09, None, 0.1, 'us')
             },
+            '*': {
+                'latency': (0, None, None, 'us')
+            }
         }
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',

@@ -1,6 +1,7 @@
 import abc
 import copy
 import sys
+import weakref
 
 import reframe.core.debug as debug
 import reframe.core.logging as logging
@@ -22,13 +23,32 @@ class TestCase:
     def __init__(self, check, partition, environ):
         self.__check_orig = check
         self.__check = copy.deepcopy(check)
-        self.__environ = copy.deepcopy(environ)
         self.__partition = copy.deepcopy(partition)
+        self.__environ = copy.deepcopy(environ)
+        self.__check._case = weakref.ref(self)
+        self.__deps = []
 
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
         #       c, p, e = case
         return iter([self.__check, self.__partition, self.__environ])
+
+    def __hash__(self):
+        return (hash(self.check.name) ^
+                hash(self.partition.fullname) ^
+                hash(self.environ.name))
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+
+        return (self.check.name == other.check.name and
+                self.environ.name == other.environ.name and
+                self.partition.fullname == other.partition.fullname)
+
+    def __repr__(self):
+        return '(%r, %r, %r)' % (self.check.name,
+                                 self.partition.fullname, self.environ.name)
 
     @property
     def check(self):
@@ -41,6 +61,10 @@ class TestCase:
     @property
     def environ(self):
         return self.__environ
+
+    @property
+    def deps(self):
+        return self.__deps
 
     def clone(self):
         # Return a fresh clone, i.e., one based on the original check
@@ -188,7 +212,7 @@ class RegressionTask:
             self.fail((type(exc), exc, None))
 
 
-class TaskEventListener:
+class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
         """Called whenever the run() method of a RegressionTask is called."""
@@ -296,7 +320,7 @@ class Runner:
         self._policy.exit()
 
 
-class ExecutionPolicy:
+class ExecutionPolicy(abc.ABC):
     """Base abstract class for execution policies.
 
     An execution policy implements the regression check pipeline."""
@@ -345,7 +369,3 @@ class ExecutionPolicy:
 
         if self.force_local:
             case.check.local = True
-
-    @abc.abstractmethod
-    def getstats(self):
-        """Return test case statistics of the run."""
