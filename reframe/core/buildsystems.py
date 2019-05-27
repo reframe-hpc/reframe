@@ -6,7 +6,7 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import BuildSystemError
 
 
-class BuildSystem:
+class BuildSystem(abc.ABC):
     """The abstract base class of any build system.
 
     Concrete build systems inherit from this class and must override the
