@@ -18,7 +18,7 @@ from reframe.core.schedulers.registry import getscheduler
 from reframe.core.schedulers.slurm import SlurmNode
 
 
-class _TestJob:
+class _TestJob(abc.ABC):
     def setUp(self):
         self.workdir = tempfile.mkdtemp(dir='unittests')
         self.testjob = self.job_type(
@@ -71,7 +71,6 @@ class _TestJob:
 
         self.testjob.options += partition.access
 
-    @abc.abstractmethod
     def assertScriptSanity(self, script_file):
         """Assert the sanity of the produced script file."""
         with open(self.testjob.script_filename) as fp:
