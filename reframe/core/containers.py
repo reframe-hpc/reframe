@@ -72,6 +72,7 @@ class ContainerPlatform(abc.ABC):
 
 class Docker(ContainerPlatform):
     """An implementation of ContainerPlatform to run containers with Docker."""
+
     def emit_prepare_cmds(self):
         pass
 
@@ -85,7 +86,6 @@ class Docker(ContainerPlatform):
 
     def validate(self):
         super().validate()
-        pass
 
 
 class ContainerPlatformField(fields.TypedField):
