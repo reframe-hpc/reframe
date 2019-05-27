@@ -43,9 +43,9 @@ class MagmaCheck(rfm.RegressionTest):
             self.executable_opts = ['--range 1088:3136:1024']
             self.perf_patterns = {
                 'magma': sn.extractsingle(
-                             r'MAGMA GFlops: (?P<magma_gflops>\S+)',
-                             self.stdout, 'magma_gflops', float, 2
-                         ),
+                    r'MAGMA GFlops: (?P<magma_gflops>\S+)',
+                    self.stdout, 'magma_gflops', float, 2
+                ),
                 'cublas': sn.extractsingle(
                     r'cuBLAS GFlops: (?P<cublas_gflops>\S+)', self.stdout,
                     'cublas_gflops', float, 2)
@@ -53,11 +53,15 @@ class MagmaCheck(rfm.RegressionTest):
             self.reference = {
                 'daint:gpu': {
                     'magma':  (3692.65, -0.05, None, 'Gflop/s'),
-                    'cublas': (4269.31, -0.0847, None, 'Gflop/s'),
+                    'cublas': (4269.31, -0.09, None, 'Gflop/s'),
                 },
                 'dom:gpu': {
                     'magma':  (3692.65, -0.05, None, 'Gflop/s'),
-                    'cublas': (4269.31, -0.0847, None, 'Gflop/s'),
+                    'cublas': (4269.31, -0.09, None, 'Gflop/s'),
+                },
+                '*': {
+                    'magma':  (0, None, None, 'Gflop/s'),
+                    'cublas': (0, None, None, 'Gflop/s'),
                 },
             }
         elif subtest == 'zsymmetrize':
@@ -71,6 +75,9 @@ class MagmaCheck(rfm.RegressionTest):
                 },
                 'dom:gpu': {
                     'gpu_perf': (158.3, -0.05, None, 'GB/s'),
+                },
+                '*': {
+                    'gpu_perf': (0, None, None, 'GB/s'),
                 },
             }
         elif subtest == 'ztranspose':
@@ -88,6 +95,9 @@ class MagmaCheck(rfm.RegressionTest):
                 'dom:gpu': {
                     'gpu_perf': (498.2, -0.05, None, 'GB/s'),
                 },
+                '*': {
+                    'gpu_perf': (0, None, None, 'GB/s'),
+                },
             }
         elif subtest == 'zunmbr':
             # This test fails to compile with Magma 2.4
@@ -104,5 +114,8 @@ class MagmaCheck(rfm.RegressionTest):
                 },
                 'dom:gpu': {
                     'gpu_perf': (254.7, -0.05, None, 'Gflop/s'),
+                },
+                '*': {
+                    'gpu_perf': (0, None, None, 'Gflop/s'),
                 },
             }
