@@ -3,6 +3,7 @@
 #
 
 import collections
+import itertools
 
 import reframe as rfm
 from reframe.core.exceptions import DependencyError
@@ -79,3 +80,49 @@ def print_deps(graph):
 
 def validate_deps(graph):
     """Validate dependency graph."""
+
+    # Reduce test case graph to a test name only graph; this disallows
+    # pseudo-dependencies as follows:
+    #
+    # (t0, e1) -> (t1, e1)
+    # (t1, e0) -> (t0, e0)
+    #
+    # This reduction step will result in a graph description with duplicate
+    # entries in the adjacency list; this is not a problem, cos they will be
+    # filtered out during the DFS traversal below.
+    test_graph = {}
+    for case, deps in graph.items():
+        test_deps = [d.check.name for d in deps]
+        try:
+            test_graph[case.check.name] += test_deps
+        except KeyError:
+            test_graph[case.check.name] = test_deps
+
+    # Check for cyclic dependencies in the test name graph
+    visited = set()
+    sources = set(test_graph.keys())
+    path = []
+
+    # Since graph may comprise multiple not connected subgraphs, we search for
+    # cycles starting from all possible sources
+    while sources:
+        unvisited = [(sources.pop(), None)]
+        while unvisited:
+            node, parent = unvisited.pop()
+            while path and path[-1] != parent:
+                path.pop()
+
+            adjacent = reversed(test_graph[node])
+            path.append(node)
+            for n in adjacent:
+                if n in path:
+                    cycle_str = '->'.join(path + [n])
+                    raise DependencyError(
+                        'found cyclic dependency between tests: ' + cycle_str)
+
+                if n not in visited:
+                    unvisited.append((n, node))
+
+            visited.add(node)
+
+        sources -= visited

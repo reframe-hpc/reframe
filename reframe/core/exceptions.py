@@ -108,6 +108,10 @@ class BuildSystemError(ReframeError):
     """Raised when a build system is not configured properly."""
 
 
+class ContainerError(ReframeError):
+    """Raised when a container platform is not configured properly."""
+
+
 class BuildError(ReframeError):
     """Raised when a build fails."""
 
