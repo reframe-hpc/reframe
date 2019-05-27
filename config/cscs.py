@@ -11,7 +11,6 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
-
             'ault': {
                 'descr': 'Ault TDS',
                 'hostnames': ['ault'],
@@ -21,25 +20,37 @@ class ReframeSettings:
                     'login': {
                         'scheduler': 'local',
                         'environs': ['PrgEnv-gnu'],
-                        'descr': 'Login nodes (SkylakeSilver)',
+                        'descr': 'Login nodes',
                         'max_jobs': 4
                     },
-
-                    'v100': {
+                    'amdv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 2x NVIDIA V100',
+                        'max_jobs': 100,
+                    },
+                    'amdvega': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdvega'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 3x AMD GFX900',
+                        'max_jobs': 100,
+                    },
+                    'intelv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintelv100'],
                         'environs': ['PrgEnv-gnu'],
-                        'descr': 'Hybrid Nvidia nodes (Skylake36c/4*V100)',
+                        'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
                         'max_jobs': 100,
                     },
-
-                    'skl': {
+                    'intel': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintel'],
                         'environs': ['PrgEnv-gnu'],
-                        'descr': 'Multicore nodes (Skylake36c)',
+                        'descr': 'Intel Skylake 36c',
                         'max_jobs': 100,
-                    },
+                    }
                 }
             },
 
@@ -281,7 +292,7 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
-                    'modules': ['gcc', 'cuda', 'openmpi'],
+                    'modules': ['gcc', 'cuda/10.1', 'openmpi'],
                     'cc':  'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',

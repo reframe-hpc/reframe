@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     prev_release, curr_release, *_ = sys.argv[1:]
     try:
-        git_cmd = 'git log --merges v%s..v%s' % (prev_release, curr_release)
+        git_cmd = 'git log --merges %s..%s' % (prev_release, curr_release)
         completed = subprocess.run(git_cmd.split(),
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT,
