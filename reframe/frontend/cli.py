@@ -27,12 +27,15 @@ from reframe.frontend.printer import PrettyPrinter
 def format_check(check, detailed):
     lines = ['  * %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
+    flex = 'flexible' if check.num_tasks <= 0 else 'standard'
+
     if detailed:
         lines += [
             '      - description: %s' % check.descr,
             '      - systems: %s' % ', '.join(check.valid_systems),
             '      - environments: %s' % ', '.join(check.valid_prog_environs),
             '      - modules: %s' % ', '.join(check.modules),
+            '      - task allocation: %s' % flex,
             '      - tags: %s' % ', '.join(check.tags),
             '      - maintainers: %s' % ', '.join(check.maintainers)
         ]

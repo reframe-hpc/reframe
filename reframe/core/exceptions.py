@@ -119,7 +119,7 @@ class BuildError(ReframeError):
         super().__init__()
         self._message = (
             "standard error can be found in `%s', "
-            "standard output can be found in `%s'" % (stdout, stderr)
+            "standard output can be found in `%s'" % (stderr, stdout)
         )
 
 
@@ -209,6 +209,10 @@ class JobBlockedError(JobError):
 
 class JobNotStartedError(JobError):
     """Raised when trying to operate on a unstarted job."""
+
+
+class DependencyError(ReframeError):
+    """Raised when a dependency problem is encountered."""
 
 
 class ReframeDeprecationWarning(DeprecationWarning):

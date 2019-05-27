@@ -18,7 +18,7 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
 
     def test_load_success(self):
         self.site_config.load_from_dict(self.dict_config)
-        self.assertEqual(2, len(self.site_config.systems))
+        self.assertEqual(3, len(self.site_config.systems))
 
         system = self.site_config.systems['testsys']
         self.assertEqual(2, len(system.partitions))

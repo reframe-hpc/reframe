@@ -11,6 +11,49 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
+            'ault': {
+                'descr': 'Ault TDS',
+                'hostnames': ['ault'],
+                'modules_system': 'lmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+                    'amdv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 2x NVIDIA V100',
+                        'max_jobs': 100,
+                    },
+                    'amdvega': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdvega'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 3x AMD GFX900',
+                        'max_jobs': 100,
+                    },
+                    'intelv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintelv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
+                        'max_jobs': 100,
+                    },
+                    'intel': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintel'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Intel Skylake 36c',
+                        'max_jobs': 100,
+                    }
+                }
+            },
+
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
@@ -244,6 +287,30 @@ class ReframeSettings:
         },
 
         'environments': {
+
+            'ault': {
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
+                    'modules': ['gcc', 'cuda/10.1', 'openmpi'],
+                    'cc':  'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'builtin': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'cc',
+                    'cxx': '',
+                    'ftn': '',
+                },
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                }
+            },
+
             'kesch': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
@@ -327,6 +394,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'leone': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -336,6 +404,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'monch': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -345,6 +414,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 }
             },
+
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
