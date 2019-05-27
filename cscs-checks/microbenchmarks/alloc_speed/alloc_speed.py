@@ -16,7 +16,8 @@ class AllocSpeedTest(rfm.RegressionTest):
         if hugepages == 'no':
             self.valid_systems += ['kesch:cn', 'kesch:pn']
         else:
-            self.modules = ['craype-hugepages%s' % hugepages]
+            if self.current_system.name in {'dom', 'daint'}:
+                self.modules = ['craype-hugepages%s' % hugepages]
 
         self.sanity_patterns = sn.assert_found('4096 MB', self.stdout)
         self.perf_patterns = {
@@ -42,6 +43,9 @@ class AllocSpeedTest(rfm.RegressionTest):
                 },
                 'kesch:pn': {
                     'time': (0.55, None, 0.10, 's')
+                },
+                '*': {
+                    'time': (0, None, None, 's')
                 }
             },
             '2M': {
@@ -57,6 +61,9 @@ class AllocSpeedTest(rfm.RegressionTest):
                 'daint:mc': {
                     'time': (0.20, None, 0.10, 's')
                 },
+                '*': {
+                    'time': (0, None, None, 's')
+                }
             },
         }
         self.reference = self.sys_reference[hugepages]
