@@ -6,7 +6,7 @@ import reframe.core.containers as containers
 from reframe.core.exceptions import ContainerError
 
 
-class _ContainerPlatformTest:
+class _ContainerPlatformTest(abc.ABC):
     @abc.abstractmethod
     def create_container_platform(self):
         pass
@@ -30,8 +30,8 @@ class _ContainerPlatformTest:
                                                 ('/path/two', '/two')]
         self.container_platform.commands = ['cmd1', 'cmd2']
         self.container_platform.workdir = '/stagedir'
-        self.assertEqual(self.exp_cmd_mount_points,
-                         self.container_platform.emit_launch_commands())
+        assert (self.exp_cmd_mount_points ==
+                self.container_platform.emit_launch_cmds())
 
     def test_missing_image(self):
         self.container_platform.commands = ['cmd']
@@ -49,8 +49,8 @@ class _ContainerPlatformTest:
         self.container_platform.commands = ['cmd']
         self.container_platform.mount_points = [('/path/one', '/one')]
         self.container_platform.workdir = '/stagedir'
-        self.assertEqual(self.exp_cmd_custom_registry,
-                         self.container_platform.emit_launch_commands())
+        assert (self.exp_cmd_custom_registry ==
+                self.container_platform.emit_launch_cmds())
 
 
 class TestDocker(_ContainerPlatformTest, unittest.TestCase):

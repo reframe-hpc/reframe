@@ -5,7 +5,7 @@ import reframe.utility.typecheck as typ
 from reframe.core.exceptions import ContainerError
 
 
-class ContainerPlatform:
+class ContainerPlatform(abc.ABC):
     """The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
@@ -64,27 +64,28 @@ class ContainerPlatform:
             platforms.
         """
         if self.image is None:
-            raise ContainerError('no image specified.')
+            raise ContainerError('no image specified')
 
         if not self.commands:
-            raise ContainerError('no command specified')
+            raise ContainerError('no commands specified')
 
 
 class Docker(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with
-    Docker.
-    """
+    """An implementation of ContainerPlatform to run containers with Docker."""
     def emit_prepare_cmds(self):
         pass
 
-    def emit_launch_commands(self):
+    def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        docker_opts = []
         docker_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
         run_cmd = 'docker run %s %s bash -c ' % (' '.join(docker_opts),
                                                  self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
+
+    def validate(self):
+        super().validate()
+        pass
 
 
 class ContainerPlatformField(fields.TypedField):
