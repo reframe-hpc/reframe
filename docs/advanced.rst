@@ -74,7 +74,7 @@ If you want to set the maximum build concurrency, you can do it as follows:
 
   self.build_system.max_concurrency = 4
 
-otherwise, if you do not want limit the build concurrency, :attr:`max_concurrency` has to be set to :class:`None` as follows:
+otherwise, if you do not want to limit the build concurrency, :attr:`max_concurrency` has to be set to :class:`None` as follows:
 
 .. code-block:: python
 
