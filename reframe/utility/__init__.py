@@ -1,5 +1,6 @@
 import abc
 import collections
+import functools
 import importlib
 import importlib.util
 import itertools
@@ -241,6 +242,195 @@ class ScopedDict(UserDict):
 
     def __missing__(self, key):
         raise KeyError(str(key))
+
+
+@functools.total_ordering
+class OrderedSet(collections.abc.MutableSet):
+    """An ordered set."""
+
+    def __init__(self, *args):
+        # We need to allow construction without arguments
+        if not args:
+            iterable = []
+        elif len(args) == 1:
+            iterable = args[0]
+        else:
+            # We use the exact same error message as for the built-in set
+            raise TypeError('%s expected at most 1 arguments, got %s' %
+                            type(self).__name__, len(args))
+
+        if not isinstance(iterable, collections.abc.Iterable):
+            raise TypeError("'%s' object is not iterable" %
+                            type(iterable).__name__)
+
+        # We implement an ordered set through the keys of an OrderedDict;
+        # its values are all set to None
+        self.__data = collections.OrderedDict(
+            itertools.zip_longest(iterable, [], fillvalue=None)
+        )
+
+    def __repr__(self):
+        vals = self.__data.keys()
+        if not vals:
+            return type(self).__name__ + '()'
+        else:
+            return '{' + ', '.join(str(v) for v in vals) + '}'
+
+    # Container i/face
+    def __contains__(self, item):
+        return item in self.__data
+
+    def __iter__(self):
+        return iter(self.__data)
+
+    def __len__(self):
+        return len(self.__data.keys())
+
+    # Set i/face
+    #
+    # Note on the complexity of the operators
+    #
+    # In every case below we first construct a set from the internal ordered
+    # dictionary's keys and then apply the operator. This step's complexity is
+    # O(len(self.__data.keys())). Since the complexity of the standard set
+    # operators are at the order of magnitute of the lenghts of the operands
+    # (ranging from O(min(len(a), len(b))) to O(len(a) + len(b))), this step
+    # does not change the complexity class; it just changes the constant
+    # factor.
+    #
+    def __eq__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) == other
+
+    def __gt__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) > other
+
+    def __and__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) & other
+
+    def __or__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) | other
+
+    def __sub__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) - other
+
+    def __xor__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()) ^ other
+
+    def isdisjoint(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        return set(self.__data.keys()).isdisjoint(other)
+
+    def issubset(self, other):
+        return self <= other
+
+    def issuperset(self, other):
+        return self >= other
+
+    def symmetric_difference(self, other):
+        return self ^ other
+
+    def union(self, *others):
+        ret = type(self)(self)
+        for s in others:
+            ret |= s
+
+        return ret
+
+    def intersection(self, *others):
+        ret = type(self)(self)
+        for s in others:
+            ret &= s
+
+        return ret
+
+    def difference(self, *others):
+        ret = type(self)(self)
+        for s in others:
+            ret -= s
+
+        return ret
+
+    # MutableSet i/face
+
+    def add(self, elem):
+        self.__data[elem] = None
+
+    def remove(self, elem):
+        del self.__data[elem]
+
+    def discard(self, elem):
+        try:
+            self.remove(elem)
+        except KeyError:
+            pass
+
+    def pop(self):
+        return self.__data.popitem()[0]
+
+    def clear(self):
+        self.__data.clear()
+
+    def __ior__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        for e in other:
+            self.add(e)
+
+        return self
+
+    def __iand__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        discard_list = [e for e in self if e not in other]
+        for e in discard_list:
+            self.discard(e)
+
+        return self
+
+    def __isub__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        for e in other:
+            self.discard(e)
+
+        return self
+
+    def __ixor__(self, other):
+        if not isinstance(other, collections.abc.Set):
+            return NotImplemented
+
+        discard_list = [e for e in self if e in other]
+        for e in discard_list:
+            self.discard(e)
+
+        return self
+
+    # Other functions
+    def __reversed__(self):
+        return reversed(self.__data.keys())
 
 
 class SequenceView(collections.abc.Sequence):

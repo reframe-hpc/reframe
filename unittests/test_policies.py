@@ -9,6 +9,7 @@ import reframe.core.runtime as rt
 import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import DependencyError, JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
@@ -666,7 +667,6 @@ class TestDependencies(unittest.TestCase):
         t1.depends_on('t4')
         t2.depends_on('t1')
         t3.depends_on('t1')
-        t3.depends_on('t2')
         t4.depends_on('t2')
         t4.depends_on('t3')
         t6.depends_on('t5')
@@ -705,3 +705,61 @@ class TestDependencies(unittest.TestCase):
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
     def test_validate_deps_empty(self):
         dependency.validate_deps({})
+
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_toposort(self):
+        #
+        #       t0       +-->t5<--+
+        #       ^        |        |
+        #       |        |        |
+        #   +-->t1<--+   t6       t7
+        #   |        |            ^
+        #   t2<------t3           |
+        #   ^        ^            |
+        #   |        |            t8
+        #   +---t4---+
+        #
+        t0 = self.create_test('t0')
+        t1 = self.create_test('t1')
+        t2 = self.create_test('t2')
+        t3 = self.create_test('t3')
+        t4 = self.create_test('t4')
+        t5 = self.create_test('t5')
+        t6 = self.create_test('t6')
+        t7 = self.create_test('t7')
+        t8 = self.create_test('t8')
+        t1.depends_on('t0')
+        t2.depends_on('t1')
+        t3.depends_on('t1')
+        t3.depends_on('t2')
+        t4.depends_on('t2')
+        t4.depends_on('t3')
+        t6.depends_on('t5')
+        t7.depends_on('t5')
+        t8.depends_on('t7')
+        deps = dependency.build_deps(
+            executors.generate_testcases([t0, t1, t2, t3, t4,
+                                          t5, t6, t7, t8])
+        )
+        cases = dependency.toposort(deps)
+
+        # Check the order of cases by test
+        tests = list(util.OrderedSet(c.check.name for c in cases))
+        assert (tests == ['t0', 't1', 't2', 't3', 't4',
+                          't5', 't6', 't7', 't8'] or
+                tests == ['t5', 't6', 't7', 't8',
+                          't0', 't1', 't2', 't3', 't4'] or
+                tests == ['t0', 't1', 't2', 't3', 't4',
+                          't5', 't7', 't6', 't8'] or
+                tests == ['t5', 't7', 't6', 't8',
+                          't0', 't1', 't2', 't3', 't4'])
+
+        expected_order = []
+        for t in tests:
+            for p in ['sys0:p0', 'sys0:p1']:
+                for e in ['e0', 'e1']:
+                    expected_order.append((t, p, e))
+
+        cases_order = [(c.check.name, c.partition.fullname, c.environ.name)
+                       for c in cases]
+        assert cases_order == expected_order
