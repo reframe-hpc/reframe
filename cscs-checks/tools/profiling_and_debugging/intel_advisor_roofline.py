@@ -28,15 +28,15 @@ class IntelRooflineTest(rfm.RegressionTest):
     directory for both steps.
 
     Example result on 1 core of Intel Broadwell CPU (E5-2695 v4):
-	G3_AOS_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
-	G3_AOS_VECTOR: self_gflops,  3.79  self_arithmetic_intensity', 0.125
-	G3_SOA_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
-	G3_SOA_VECTOR: self_gflops, 10.62  self_arithmetic_intensity', 0.166
+        G3_AOS_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
+        G3_AOS_VECTOR: self_gflops,  3.79  self_arithmetic_intensity', 0.125
+        G3_SOA_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
+        G3_SOA_VECTOR: self_gflops, 10.62  self_arithmetic_intensity', 0.166
     '''
     def __init__(self, repeat, toolsversion, datalayout):
         super().__init__()
         self.descr = 'Roofline Analysis test with Intel Advisor'
-        # advisor/2019 is currently failing on dom ("Exceeded job memory limit")
+        # advisor/2019 is failing on dom ("Exceeded job memory limit")
         # https://webrt.cscs.ch/Ticket/Display.html?id=36087
         self.valid_systems = ['daint:mc']
         # Reporting MFLOPS is not available on Intel Haswell cpus, see
@@ -54,7 +54,7 @@ class IntelRooflineTest(rfm.RegressionTest):
         self.executable = 'advixe-cl'
         self.target_executable = './roof.exe'
         self.build_system.cppflags = ['-D_ADVISOR',
-            '-I$ADVISOR_2019_DIR/include']
+                                      '-I$ADVISOR_2019_DIR/include']
         self.prgenv_flags = {
             'PrgEnv-intel': ['-g', '-O2', '-std=c++11', '-restrict'],
         }
