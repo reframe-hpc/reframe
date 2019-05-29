@@ -28,10 +28,10 @@ class IntelRooflineTest(rfm.RegressionTest):
     directory for both steps.
 
     Example result on 1 core of Intel Broadwell CPU (E5-2695 v4):
-        G3_AOS_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
-        G3_AOS_VECTOR: self_gflops,  3.79  self_arithmetic_intensity', 0.125
-        G3_SOA_SCALAR: self_gflops,  2.79  self_arithmetic_intensity', 0.166
-        G3_SOA_VECTOR: self_gflops, 10.62  self_arithmetic_intensity', 0.166
+        G3_AOS_SCALAR: gflops,  2.79 arithmetic_intensity', 0.166 380ms <- slow
+        G3_AOS_VECTOR: gflops,  3.79 arithmetic_intensity', 0.125 143ms
+        G3_SOA_SCALAR: gflops,  2.79 arithmetic_intensity', 0.166 351ms
+        G3_SOA_VECTOR: gflops, 10.62 arithmetic_intensity', 0.166  57ms <- fast
     '''
     def __init__(self, repeat, toolsversion, datalayout):
         super().__init__()
@@ -64,7 +64,7 @@ class IntelRooflineTest(rfm.RegressionTest):
         self.version_rpt = 'Intel_Advisor_version.rpt'
         self.roofline_ref = 'Intel_Advisor_roofline_reference.rpt'
         self.prebuild_cmd = [
-            'patch < ADVISOR/roofline_template.patch',
+            'patch -s < ADVISOR/roofline_template.patch',
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
             (repeat, datalayout, 'roofline_template.cpp', '_roofline.cpp')
         ]
