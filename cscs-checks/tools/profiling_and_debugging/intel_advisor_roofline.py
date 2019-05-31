@@ -7,11 +7,11 @@ import reframe.utility.sanity as sn
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*[[repeat, toolsversion, datalayout]
                           for repeat in ['100000']
-                          for toolsversion in ['591264']
+                          for toolsversion in ['597843']
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
                                              'G3_AOS_VECTOR', 'G3_SOA_VECTOR']
                           ])
-class IntelRooflineTest(rfm.RegressionTest):
+class IntelRooflineAdvisorTest(rfm.RegressionTest):
     '''This test checks the values reported by Intel Advisor's roofline model:
     https://software.intel.com/en-us/intel-advisor-xe
 
@@ -30,27 +30,28 @@ class IntelRooflineTest(rfm.RegressionTest):
     def __init__(self, repeat, toolsversion, datalayout):
         super().__init__()
         self.descr = 'Roofline Analysis test with Intel Advisor'
-        self.valid_systems = ['daint:mc']
+        self.valid_systems = ['daint:mc', 'dom:mc']
         # Reporting MFLOPS is not available on Intel Haswell cpus, see
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
-        # Using advisor/2019 because tests with advisor/2018 (build 551025)
-        # raised failures:
-        #    roof.dir/nid00753.000/trc000/trc000.advixe
-        #    Application exit code: 139
-        # advisor/2019 is currently broken on dom ("Exceeded job memory limit")
-        self.modules = ['advisor/2019_update3']
         self.prgenv_flags = {
-            'PrgEnv-intel': ['-O2', '-g', '-std=c++11'],
+            'PrgEnv-intel': ['-g', '-O2', '-std=c++11'],
         }
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'roofline', 'intel_advisor')
         self.build_system = 'Make'
+        exp = '/apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/experimental'
         self.prebuild_cmd = [
+            'module use %s/modules/all' % exp,
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
             (repeat, datalayout, 'roofline_template.cpp', '_roofline.cpp')
         ]
+        # Using advisor/2019 because tests with advisor/2018 (build 551025)
+        # raised failures:
+        #    roof.dir/nid00753.000/trc000/trc000.advixe
+        #    Application exit code: 139
+        self.modules = ['advisor/2019_update4']
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 1
