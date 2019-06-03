@@ -41,9 +41,7 @@ class IntelRooflineAdvisorTest(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'roofline', 'intel_advisor')
         self.build_system = 'Make'
-        exp = '/apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/experimental'
         self.prebuild_cmd = [
-            'module use %s/modules/all' % exp,
             'sed -e "s-XXXX-%s-" -e "s-YYYY-%s-" %s &> %s' %
             (repeat, datalayout, 'roofline_template.cpp', '_roofline.cpp')
         ]
