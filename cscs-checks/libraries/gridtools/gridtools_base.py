@@ -3,16 +3,63 @@ import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-
-class GridToolsCheckBase(rfm.RegressionTest):
-    def __init__(self):
+@rfm.parameterized_test(['vertical_advection_dycore_naive'], ['vertical_advection_dycore_mc'],
+                        ['simple_hori_diff_naive'], ['simple_hori_diff_mc'],
+                        ['vertical_advection_dycore_cuda'], ['simple_hori_diff_cuda'])
+class GridToolsCheck(rfm.RegressionTest):
+    def __init__(self, variant):
         super().__init__()
+
+        # Check if this is a device check 
+        is_device_test = "cuda" in variant
+
         self.descr = 'GridTools test base'
 
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['CMake/3.12.4', 'Boost', 'gcc/5.3.0']
+        if is_device_test:
+            self.modules.append('cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8') #TODO: uncomment
         self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
         self.build_system = 'CMake'
+
+        self.build_system.config_opts = ['-DCMAKE_INSTALL_PREFIX=/scratch/snx3000/bignamic/reframe/cscs-checks/libraries/gridtools/install',
+                                         '-DBoost_NO_BOOST_CMAKE="true"',
+                                         '-DCMAKE_BUILD_TYPE:STRING=Release',
+                                         '-DBUILD_SHARED_LIBS:BOOL=ON',
+                                         '-DGT_GCL_ONLY:BOOL=OFF',
+                                         '-DCMAKE_CXX_COMPILER=CC',
+                                         '-DGT_USE_MPI:BOOL=OFF',
+                                         '-DGT_SINGLE_PRECISION:BOOL=OFF',
+                                         '-DGT_ENABLE_PERFORMANCE_METERS:BOOL=ON',
+                                         '-DGT_TESTS_ICOSAHEDRAL_GRID:BOOL=OFF',
+                                         '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+                                         '-DBOOST_ROOT=$BOOST_ROOT',
+                                         '-DGT_ENABLE_PYUTILS=OFF',
+                                         '-DGT_TESTS_REQUIRE_FORTRAN_COMPILER=ON',
+                                         '-DGT_TESTS_REQUIRE_C_COMPILER=ON',
+                                         '-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON']
+
+        if is_device_test:
+            self.build_system.config_opts.extend(('-DGT_ENABLE_BACKEND_X86:BOOL=OFF',
+                                                  '-DGT_ENABLE_BACKEND_NAIVE:BOOL=OFF',
+                                                  '-DGT_ENABLE_BACKEND_MC=OFF',
+                                                  '-DGT_ENABLE_BACKEND_CUDA:BOOL=ON',
+                                                  '-DCUDA_ARCH:STRING=sm_60',
+                                                  '-DCMAKE_CUDA_HOST_COMPILER:STRING=CC'))
+        else:
+            self.build_system.config_opts.extend(('-DGT_ENABLE_BACKEND_X86:BOOL=ON',
+                                                  '-DGT_ENABLE_BACKEND_NAIVE:BOOL=ON',
+                                                  '-DGT_ENABLE_BACKEND_MC=ON',
+                                                  '-DGT_ENABLE_BACKEND_CUDA:BOOL=OFF'))
+
+        self.valid_systems = ['daint:gpu']
+        if is_device_test:
+            self.num_gpus_per_node = 1
+            self.num_tasks = 1
+        else:
+            self.valid_systems.append('daint:mc')
+            self.num_gpus_per_node = 0
+            self.num_tasks = 1
 
         self.sanity_patterns = sn.assert_found(r'PASSED', self.stdout)
         self.perf_patterns = {
@@ -20,8 +67,6 @@ class GridToolsCheckBase(rfm.RegressionTest):
                                      self.stdout, 'timer', int)
         }
         self.build_system.max_concurrency = 2
-        self.tags = {'production'}
-        self.maintainers = ['CB']
 
         self.variant_data = {
             'vertical_advection_dycore_naive': {
@@ -116,79 +161,11 @@ class GridToolsCheckBase(rfm.RegressionTest):
             }
         }
 
-@rfm.parameterized_test(['vertical_advection_dycore_naive'], ['vertical_advection_dycore_mc'],
-                        ['simple_hori_diff_naive'], ['simple_hori_diff_mc'])
-class GridToolsCheckCPU(GridToolsCheckBase):
-    def __init__(self, variant):
-        super().__init__()
-        self.descr = 'GridTools host test'
-
-        self.build_system.config_opts = ['-DCMAKE_INSTALL_PREFIX=/scratch/snx3000/bignamic/reframe/cscs-checks/libraries/gridtools/install',
-                                         '-DBoost_NO_BOOST_CMAKE="true"',
-                                         '-DCMAKE_BUILD_TYPE:STRING=Release',
-                                         '-DBUILD_SHARED_LIBS:BOOL=ON',
-                                         '-DGT_ENABLE_TARGET_X86:BOOL=ON',
-                                         '-DGT_ENABLE_TARGET_NAIVE:BOOL=ON',
-                                         '-DGT_ENABLE_TARGET_CUDA:BOOL=OFF',
-                                         '-DGT_ENABLE_TARGET_MC=ON',
-                                         '-DGT_GCL_ONLY:BOOL=OFF',
-                                         '-DCMAKE_CXX_COMPILER=CC',
-                                         '-DGT_USE_MPI:BOOL=OFF',
-                                         '-DGT_SINGLE_PRECISION:BOOL=OFF',
-                                         '-DGT_ENABLE_PERFORMANCE_METERS:BOOL=ON',
-                                         '-DGT_TESTS_ICOSAHEDRAL_GRID:BOOL=OFF',
-                                         '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-                                         '-DBOOST_ROOT=$BOOST_ROOT',
-                                         '-DGT_ENABLE_PYUTILS=OFF',
-                                         '-DGT_TESTS_REQUIRE_FORTRAN_COMPILER=ON',
-                                         '-DGT_TESTS_REQUIRE_C_COMPILER=ON',
-                                         '-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON']
-
-
-        self.valid_systems = ['daint:mc', 'daint:gpu']
-        self.num_gpus_per_node = 0
-        self.num_tasks = 1
-
         self.build_system.make_opts = [variant]
         self.executable = os.path.join('regression', variant)
         self.executable_opts = self.variant_data[variant]['executable_opts']
         self.reference = self.variant_data[variant]['reference']
 
-@rfm.parameterized_test(['vertical_advection_dycore_cuda'], ['simple_hori_diff_cuda'])
-class GridToolsCheckGPU(GridToolsCheckBase):
-    def __init__(self, variant):
-        super().__init__()
-        self.descr = 'GridTools device test'
+        self.tags = {'production'}
+        self.maintainers = ['CB']
 
-        self.modules.append('cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8') TODO: uncomment
-
-        self.build_system.config_opts = ['-DCMAKE_INSTALL_PREFIX=/scratch/snx3000/bignamic/reframe/cscs-checks/libraries/gridtools/install',
-                                         '-DBoost_NO_BOOST_CMAKE="true"',
-                                         '-DCMAKE_BUILD_TYPE:STRING=Release',
-                                         '-DBUILD_SHARED_LIBS:BOOL=ON',
-                                         '-DGT_ENABLE_TARGET_X86:BOOL=OFF',
-                                         '-DGT_ENABLE_TARGET_NAIVE:BOOL=OFF',
-                                         '-DGT_ENABLE_TARGET_CUDA:BOOL=ON',
-                                         '-DCUDA_ARCH:STRING=sm_60',
-                                         '-DGT_GCL_ONLY:BOOL=OFF',
-                                         '-DCMAKE_CXX_COMPILER=CC',
-                                         '-DCMAKE_CUDA_HOST_COMPILER:STRING=CC',
-                                         '-DGT_USE_MPI:BOOL=OFF',
-                                         '-DGT_SINGLE_PRECISION:BOOL=OFF',
-                                         '-DGT_ENABLE_PERFORMANCE_METERS:BOOL=ON',
-                                         '-DGT_TESTS_ICOSAHEDRAL_GRID:BOOL=OFF',
-                                         '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-                                         '-DBOOST_ROOT=$BOOST_ROOT',
-                                         '-DGT_ENABLE_PYUTILS=OFF',
-                                         '-DGT_TESTS_REQUIRE_FORTRAN_COMPILER=ON',
-                                         '-DGT_TESTS_REQUIRE_C_COMPILER=ON',
-                                         '-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON']
-
-        self.valid_systems = ['daint:gpu']
-        self.num_gpus_per_node = 1
-        self.num_tasks = 1
-
-        self.build_system.make_opts = [variant]
-        self.executable = os.path.join('regression', variant)
-        self.executable_opts = self.variant_data[variant]['executable_opts']
-        self.reference = self.variant_data[variant]['reference']
