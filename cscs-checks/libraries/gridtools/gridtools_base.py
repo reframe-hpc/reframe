@@ -11,19 +11,18 @@ class GridToolsCheck(rfm.RegressionTest):
         super().__init__()
 
         # Check if this is a device check 
-        is_device_test = "cuda" in variant
+        is_cuda_test = "cuda" in variant
 
         self.descr = 'GridTools test base'
 
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['CMake/3.12.4', 'Boost', 'gcc/5.3.0']
-        if is_device_test:
-            self.modules.append('cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8') #TODO: uncomment
+        if is_cuda_test:
+            self.modules.append('cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8')
         self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
         self.build_system = 'CMake'
 
-        self.build_system.config_opts = ['-DCMAKE_INSTALL_PREFIX=/scratch/snx3000/bignamic/reframe/cscs-checks/libraries/gridtools/install',
-                                         '-DBoost_NO_BOOST_CMAKE="true"',
+        self.build_system.config_opts = ['-DBoost_NO_BOOST_CMAKE="true"',
                                          '-DCMAKE_BUILD_TYPE:STRING=Release',
                                          '-DBUILD_SHARED_LIBS:BOOL=ON',
                                          '-DGT_GCL_ONLY:BOOL=OFF',
@@ -39,7 +38,7 @@ class GridToolsCheck(rfm.RegressionTest):
                                          '-DGT_TESTS_REQUIRE_C_COMPILER=ON',
                                          '-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON']
 
-        if is_device_test:
+        if is_cuda_test:
             self.build_system.config_opts.extend(('-DGT_ENABLE_BACKEND_X86:BOOL=OFF',
                                                   '-DGT_ENABLE_BACKEND_NAIVE:BOOL=OFF',
                                                   '-DGT_ENABLE_BACKEND_MC=OFF',
@@ -53,7 +52,7 @@ class GridToolsCheck(rfm.RegressionTest):
                                                   '-DGT_ENABLE_BACKEND_CUDA:BOOL=OFF'))
 
         self.valid_systems = ['daint:gpu']
-        if is_device_test:
+        if is_cuda_test:
             self.num_gpus_per_node = 1
             self.num_tasks = 1
         else:
@@ -139,7 +138,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 ,
                 'reference': {
                     'daint:gpu': {
-                        'wall_time': (10000, None, 0.1, 'ms')
+                        'wall_time': (12000, None, 0.1, 'ms')
                     },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
@@ -152,7 +151,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 ,
                 'reference': {
                     'daint:gpu': {
-                        'wall_time': (13000, None, 0.1, 'ms')
+                        'wall_time': (19000, None, 0.1, 'ms')
                     },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
