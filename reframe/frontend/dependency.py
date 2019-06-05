@@ -163,19 +163,31 @@ def toposort(graph):
     #    result of the topological sort of the tests and by choosing an
     #    arbitrary ordering of the partitions and the programming environment.
 
-    test_graph = _reduce_deps(graph)
-    revgraph = _reverse_deps(test_graph)
+    test_deps = _reduce_deps(graph)
+    rev_deps  = _reverse_deps(test_deps)
 
     # We do a BFS traversal from each root
     visited = {}
-    roots = set(t for t, deps in test_graph.items() if not deps)
+    roots = set(t for t, deps in test_deps.items() if not deps)
     for r in roots:
-        unvisited = [r]
+        unvisited = util.OrderedSet([r])
         visited[r] = util.OrderedSet()
         while unvisited:
-            node = unvisited.pop(0)
-            adjacent = revgraph[node]
-            unvisited += [n for n in adjacent if n not in visited]
+            # Next node is one whose all dependencies are visited
+            node = None
+            for n in unvisited:
+                if test_deps[n] <= visited[r]:
+                    node = n
+                    break
+
+            # If node is None, graph has a cycle and this is a bug; this
+            # function assumes acyclic graphs only
+            assert node is not None
+
+            unvisited.remove(node)
+            adjacent = rev_deps[node]
+            unvisited |= util.OrderedSet(
+                n for n in adjacent if n not in visited)
             visited[r].add(node)
 
     # Combine all individual sequences into a single one
