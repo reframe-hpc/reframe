@@ -4,7 +4,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(*[[repeat, toolsversion, datalayout]
                           for repeat in ['100000']
                           for toolsversion in ['597843']
@@ -36,9 +35,9 @@ class IntelRooflineTest(rfm.RegressionTest):
     def __init__(self, repeat, toolsversion, datalayout):
         super().__init__()
         self.descr = 'Roofline Analysis test with Intel Advisor'
-        # advisor/2019 is failing on dom ("Exceeded job memory limit")
-        # https://webrt.cscs.ch/Ticket/Display.html?id=36087
-        self.valid_systems = ['daint:mc']
+        # for reference: advisor/2019 was failing on dom with:
+        # "Exceeded job memory limit" (webrt#36087)
+        self.valid_systems = ['daint:mc', 'dom:mc']
         # Reporting MFLOPS is not available on Intel Haswell cpus, see
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
@@ -59,7 +58,6 @@ class IntelRooflineTest(rfm.RegressionTest):
             'PrgEnv-intel': ['-g', '-O2', '-std=c++11', '-restrict'],
         }
         self.build_system.ldflags = ['-L$ADVISOR_2019_DIR/lib64 -littnotify']
-        # self.roofline_rpt = 'Intel_Advisor_roofline_results.rpt'
         self.roofline_rpt = '%s.rpt' % self.target_executable
         self.version_rpt = 'Intel_Advisor_version.rpt'
         self.roofline_ref = 'Intel_Advisor_roofline_reference.rpt'
@@ -152,20 +150,20 @@ class IntelRooflineTest(rfm.RegressionTest):
         self.build_system.cxxflags = prgenv_flags
         launcher_cmd = ' '.join(self.job.launcher.command(self.job))
         self.post_run = [
-            # collecting the performance data for the roofline model is a 2
+            # --- collecting the performance data for the roofline model is a 2
             # steps process:
             '%s %s --collect tripcounts --flop --project-dir=%s '
             '--search-dir src:rp=. --data-limit=0 --no-auto-finalize '
             '--trace-mpi -- %s' %
             (launcher_cmd, self.executable, self.roofdir,
              self.target_executable),
-            # check tool's version:
+            # --- check tool's version:
             'advixe-cl -V &> %s' % self.version_rpt,
             # "advixe-cl --report" looks for e000/ in the output directory;
             # if not found, it will fail with:
             # IOError: Survey result cannot be loaded
             'cd %s;ln -s nid* e000;cd -' % self.roofdir,
-            # report reference values/boundaries (roofline_ref):
+            # --- report reference values/boundaries (roofline_ref):
             'advixe-cl --report=roofs --project-dir=%s &> %s' %
             (self.roofdir, self.roofline_ref),
             'python2 API/cscs.py %s &> %s' % (self.roofdir, self.roofline_rpt),
