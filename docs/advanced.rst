@@ -68,17 +68,14 @@ In this case, ``make`` will be invoked as follows:
   make -j 1 CPPFLAGS='-DMESSAGE'
 
 Notice that the ``-j 1`` option is always generated.
-If you want to set the maximum build concurrency, you can do it as follows:
+You may change the maximum build concurrency as follows:
 
 .. code-block:: python
 
   self.build_system.max_concurrency = 4
 
-otherwise, if you do not want to limit the build concurrency, :attr:`max_concurrency` has to be set to :class:`None` as follows:
-
-.. code-block:: python
-
-  self.build_system.max_concurrency = None
+By setting :attr:`max_concurrency <reframe.core.buildsystems.Make.max_concurrency>` to :class:`None`, no limit for concurrent parallel jobs will be placed.
+This means that ``make -j`` will be used for building.
 
 Finally, you may also customize the name of the ``Makefile``.
 You can achieve that by setting the corresponding variable of the :class:`Make <reframe.core.buildsystems.Make>` build system:
