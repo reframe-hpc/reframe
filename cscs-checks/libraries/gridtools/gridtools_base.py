@@ -76,8 +76,7 @@ class GridToolsCheck(rfm.RegressionTest):
 
         self.variant_data = {
             'vertical_advection_dycore_naive': {
-                'executable_opts':
-                    ['150', '150', '150'],
+                'executable_opts': ['150', '150', '150'],
                 'reference': {
                     'daint:mc': {
                         'wall_time': (3400, None, 0.1, 'ms')
@@ -91,8 +90,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 }
             },
             'vertical_advection_dycore_mc': {
-                'executable_opts':
-                    ['150', '150', '150'],
+                'executable_opts': ['150', '150', '150'],
                 'reference': {
                     'daint:mc': {
                         'wall_time': (3500, None, 0.1, 'ms')
@@ -106,8 +104,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 }
             },
             'simple_hori_diff_naive': {
-                'executable_opts':
-                    ['100', '100', '100'],
+                'executable_opts': ['100', '100', '100'],
                 'reference': {
                     'daint:mc': {
                         'wall_time': (3200, None, 0.1, 'ms')
@@ -121,8 +118,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 }
             },
             'simple_hori_diff_mc': {
-                'executable_opts':
-                    ['100', '100', '100'],
+                'executable_opts': ['100', '100', '100'],
                 'reference': {
                     'daint:mc': {
                         'wall_time': (3300, None, 0.1, 'ms')
@@ -136,8 +132,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 }
             },
             'vertical_advection_dycore_cuda': {
-                'executable_opts':
-                    ['200', '200', '200'],
+                'executable_opts': ['200', '200', '200'],
                 'reference': {
                     'daint:gpu': {
                         'wall_time': (12000, None, 0.1, 'ms')
@@ -148,8 +143,7 @@ class GridToolsCheck(rfm.RegressionTest):
                 }
             },
             'simple_hori_diff_cuda': {
-                'executable_opts':
-                    ['150', '150', '150'],
+                'executable_opts': ['150', '150', '150'],
                 'reference': {
                     'daint:gpu': {
                         'wall_time': (19000, None, 0.1, 'ms')
