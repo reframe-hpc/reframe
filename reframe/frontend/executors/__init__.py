@@ -212,7 +212,7 @@ class RegressionTask:
             self.fail((type(exc), exc, None))
 
 
-class TaskEventListener:
+class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
         """Called whenever the run() method of a RegressionTask is called."""
@@ -320,7 +320,7 @@ class Runner:
         self._policy.exit()
 
 
-class ExecutionPolicy:
+class ExecutionPolicy(abc.ABC):
     """Base abstract class for execution policies.
 
     An execution policy implements the regression check pipeline."""
@@ -369,7 +369,3 @@ class ExecutionPolicy:
 
         if self.force_local:
             case.check.local = True
-
-    @abc.abstractmethod
-    def getstats(self):
-        """Return test case statistics of the run."""

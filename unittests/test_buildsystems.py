@@ -6,7 +6,7 @@ from reframe.core.environments import ProgEnvironment
 from reframe.core.exceptions import BuildSystemError
 
 
-class _BuildSystemTest:
+class _BuildSystemTest(abc.ABC):
     @abc.abstractmethod
     def create_build_system(self):
         pass

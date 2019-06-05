@@ -67,7 +67,7 @@ class Version:
         return base + '-dev%s' % self._dev_number
 
 
-class _ValidatorImpl:
+class _ValidatorImpl(abc.ABC):
     """Abstract base class for the validation of version ranges."""
     @abc.abstractmethod
     def validate(version):
@@ -81,6 +81,7 @@ class _IntervalValidator(_ValidatorImpl):
     ``validate`` returns ``True`` if a given version string is inside
     the interval including the endpoints.
     """
+
     def __init__(self, condition):
         try:
             min_version_str, max_version_str = condition.split('..')
@@ -108,6 +109,7 @@ class _RelationalValidator(_ValidatorImpl):
     ``<bool_operator><version>``, and its method ``validate`` returns
     ``True`` if a given version string satisfies the relation.
     """
+
     def __init__(self, condition):
         self._op_actions = {
             ">":  lambda x, y: x > y,

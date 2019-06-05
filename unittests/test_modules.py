@@ -10,7 +10,7 @@ from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
 
 
-class _TestModulesSystem:
+class _TestModulesSystem(abc.ABC):
     def setUp(self):
         self.environ_save = EnvironmentSnapshot()
         self.modules_system.searchpath_add(TEST_MODULES)

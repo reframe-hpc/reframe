@@ -400,7 +400,7 @@ class LoggerAdapter(logging.LoggerAdapter):
     def std_stream_handlers(self):
         if self.logger:
             return [h for h in self.logger.handlers
-                    if h.stream == sys.stdout or h.stream == sys.stderr]
+                    if isinstance(h, logging.StreamHandler)]
         else:
             return []
 
