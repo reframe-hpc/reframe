@@ -742,24 +742,25 @@ class TestDependencies(unittest.TestCase):
                                           t5, t6, t7, t8])
         )
         cases = dependency.toposort(deps)
+        print(cases)
+        cases_order = []
+        tests = util.OrderedSet()
+        visited_tests = set()
+        for c in cases:
+            check, part, env = c
+            cases_order.append((check.name, part.fullname, env.name))
+            tests.add(check.name)
+            visited_tests.add(check.name)
 
-        # Check the order of cases by test
-        tests = list(util.OrderedSet(c.check.name for c in cases))
-        assert (tests == ['t0', 't1', 't2', 't3', 't4',
-                          't5', 't6', 't7', 't8'] or
-                tests == ['t5', 't6', 't7', 't8',
-                          't0', 't1', 't2', 't3', 't4'] or
-                tests == ['t0', 't1', 't2', 't3', 't4',
-                          't5', 't7', 't6', 't8'] or
-                tests == ['t5', 't7', 't6', 't8',
-                          't0', 't1', 't2', 't3', 't4'])
+            # Assert that all dependencies of c have been visited before
+            for d in deps[c]:
+                assert d.check.name in visited_tests
 
+        # Check the order of systems and prog. environments
         expected_order = []
         for t in tests:
             for p in ['sys0:p0', 'sys0:p1']:
                 for e in ['e0', 'e1']:
                     expected_order.append((t, p, e))
 
-        cases_order = [(c.check.name, c.partition.fullname, c.environ.name)
-                       for c in cases]
         assert cases_order == expected_order
