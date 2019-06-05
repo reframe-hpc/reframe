@@ -129,9 +129,9 @@ class TestStats:
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
-                val = ref[0]
+                val = ref[1]
                 try:
-                    unit = ref[4]
+                    unit = ref[5]
                 except IndexError:
                     unit = '(no unit specified)'
 
