@@ -221,6 +221,18 @@ class TestFrontend(unittest.TestCase):
                                            ['login'], self.environs))
         self.assertTrue(self._perflog_exists('PerformanceFailureCheck'))
 
+    def test_performance_report(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'PerformanceSuccessCheck',
+                             '--performance-report']
+        returncode, stdout, stderr = self._run_reframe()
+
+        self.assertIn('PASSED', stdout)
+        self.assertEqual(0, returncode)
+        self.assertTrue(self._perflog_exists('PerformanceSuccessCheck'))
+        self.assertIn(r'PERFORMANCE REPORT', stdout)
+        self.assertIn(r'perf: 10 Gflop/s', stdout)
+
     def test_skip_system_check_option(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['--skip-system-check', '-t', 'NoSystemCheck']
