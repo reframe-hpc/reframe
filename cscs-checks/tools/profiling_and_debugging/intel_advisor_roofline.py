@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
                           for datalayout in ['G3_AOS_SCALAR', 'G3_SOA_SCALAR',
                                              'G3_AOS_VECTOR', 'G3_SOA_VECTOR']
                           ])
-class IntelRooflineTest(rfm.RegressionTest):
+class IntelRooflineAdvisorTest(rfm.RegressionTest):
     '''This test checks the values reported by Intel Advisor's roofline model:
     https://software.intel.com/en-us/intel-advisor-xe
 
@@ -42,10 +42,10 @@ class IntelRooflineTest(rfm.RegressionTest):
         # https://www.intel.fr/content/dam/www/public/us/en/documents/manuals/
         # 64-ia-32-architectures-software-developer-vol-1-manual.pdf
         self.valid_prog_environs = ['PrgEnv-intel']
+        self.modules = ['advisor/2019_update4']
         # Testing with advisor/2018 (build 551025) fails with:
         #    roof.dir/nid00753.000/trc000/trc000.advixe
         #    Application exit code: 139
-        self.modules = ['advisor/2019_update4']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'roofline', 'intel_advisor')
         self.build_system = 'SingleSource'
@@ -105,32 +105,32 @@ class IntelRooflineTest(rfm.RegressionTest):
             sn.assert_reference(sn.extractsingle(
                 r'^L1\sbandwidth\s\(single-threaded\)\s+(?P<L1bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L1bw', int),
-                L1bw, -0.08, 0.08),
+                L1bw, -0.12, 0.08),
             # check --report=roofs (L2 bandwidth):
             sn.assert_reference(sn.extractsingle(
                 r'^L2\sbandwidth\s\(single-threaded\)\s+(?P<L2bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L2bw', int),
-                L2bw, -0.08, 0.08),
+                L2bw, -0.12, 0.08),
             # check --report=roofs (L3 bandwidth):
             sn.assert_reference(sn.extractsingle(
                 r'^L3\sbandwidth\s\(single-threaded\)\s+(?P<L3bw>\d+)\s+'
                 r'memory$', self.roofline_ref, 'L3bw', int),
-                L3bw, -0.08, 0.08),
+                L3bw, -0.12, 0.08),
             # check --report=roofs (DP FMA):
             sn.assert_reference(sn.extractsingle(
                 r'^DP Vector FMA Peak\s\(single-threaded\)\s+'
                 r'(?P<DPfmabw>\d+)\s+compute$', self.roofline_ref,
-                'DPfmabw', int), DPfmabw, -0.08, 0.08),
+                'DPfmabw', int), DPfmabw, -0.12, 0.08),
             # check --report=roofs (DP Add):
             sn.assert_reference(sn.extractsingle(
                 r'^DP Vector Add Peak\s\(single-threaded\)\s+'
                 r'(?P<DPaddbw>\d+)\s+compute$', self.roofline_ref,
-                'DPaddbw', int), DPaddbw, -0.08, 0.08),
+                'DPaddbw', int), DPaddbw, -0.12, 0.08),
             # check --report=roofs (Scalar Add):
             sn.assert_reference(sn.extractsingle(
                 r'^Scalar Add Peak\s\(single-threaded\)\s+'
                 r'(?P<ScalarAddbw>\d+)\s+compute$', self.roofline_ref,
-                'ScalarAddbw', int), ScalarAddbw, -0.08, 0.08),
+                'ScalarAddbw', int), ScalarAddbw, -0.12, 0.08),
             # --- check Arithmetic_intensity:
             sn.assert_reference(sn.extractsingle(
                 r'^returned\sAI\sgap\s=\s(?P<Intensity>.*)', self.roofline_rpt,
