@@ -58,12 +58,12 @@ class GridToolsCheck(rfm.RegressionTest):
                 '-DGT_ENABLE_BACKEND_MC=ON',
                 '-DGT_ENABLE_BACKEND_CUDA:BOOL=OFF'))
 
-        self.valid_systems = ['daint:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu']
         if is_cuda_test:
             self.num_gpus_per_node = 1
             self.num_tasks = 1
         else:
-            self.valid_systems.append('daint:mc')
+            self.valid_systems.append('daint:mc', 'dom:mc')
             self.num_gpus_per_node = 0
             self.num_tasks = 1
 
@@ -84,6 +84,12 @@ class GridToolsCheck(rfm.RegressionTest):
                     'daint:gpu': {
                         'wall_time': (3800, None, 0.1, 'ms')
                     },
+                    'dom:mc': {
+                        'wall_time': (3400, None, 0.1, 'ms')
+                    },
+                    'dom:gpu': {
+                        'wall_time': (3800, None, 0.1, 'ms')
+                    },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
                     }
@@ -96,6 +102,12 @@ class GridToolsCheck(rfm.RegressionTest):
                         'wall_time': (3500, None, 0.1, 'ms')
                     },
                     'daint:gpu': {
+                        'wall_time': (3700, None, 0.1, 'ms')
+                    },
+                    'dom:mc': {
+                        'wall_time': (3500, None, 0.1, 'ms')
+                    },
+                    'dom:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
                     },
                     '*': {
@@ -112,6 +124,12 @@ class GridToolsCheck(rfm.RegressionTest):
                     'daint:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
                     },
+                    'dom:mc': {
+                        'wall_time': (3200, None, 0.1, 'ms')
+                    },
+                    'dom:gpu': {
+                        'wall_time': (3700, None, 0.1, 'ms')
+                    },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
                     }
@@ -126,6 +144,12 @@ class GridToolsCheck(rfm.RegressionTest):
                     'daint:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
                     },
+                    'dom:mc': {
+                        'wall_time': (3300, None, 0.1, 'ms')
+                    },
+                    'dom:gpu': {
+                        'wall_time': (3700, None, 0.1, 'ms')
+                    },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
                     }
@@ -137,6 +161,9 @@ class GridToolsCheck(rfm.RegressionTest):
                     'daint:gpu': {
                         'wall_time': (12000, None, 0.1, 'ms')
                     },
+                    'dom:gpu': {
+                        'wall_time': (12000, None, 0.1, 'ms')
+                    },
                     '*': {
                         'wall_time': (0, None, None, 'ms')
                     }
@@ -146,6 +173,9 @@ class GridToolsCheck(rfm.RegressionTest):
                 'executable_opts': ['150', '150', '150'],
                 'reference': {
                     'daint:gpu': {
+                        'wall_time': (19000, None, 0.1, 'ms')
+                    },
+                    'dom:gpu': {
                         'wall_time': (19000, None, 0.1, 'ms')
                     },
                     '*': {
@@ -160,5 +190,5 @@ class GridToolsCheck(rfm.RegressionTest):
         self.executable_opts = self.variant_data[variant]['executable_opts']
         self.reference = self.variant_data[variant]['reference']
 
-        self.tags = {'production'}
+        self.tags = {'scs', 'benchmarking'}
         self.maintainers = ['CB']
