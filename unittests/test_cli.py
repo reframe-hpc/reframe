@@ -223,13 +223,10 @@ class TestFrontend(unittest.TestCase):
 
     def test_performance_report(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
-        self.more_options = ['-t', 'PerformanceSuccessCheck',
+        self.more_options = ['-t', 'PerformanceFailureCheck',
                              '--performance-report']
         returncode, stdout, stderr = self._run_reframe()
 
-        self.assertIn('PASSED', stdout)
-        self.assertEqual(0, returncode)
-        self.assertTrue(self._perflog_exists('PerformanceSuccessCheck'))
         self.assertIn(r'PERFORMANCE REPORT', stdout)
         self.assertIn(r'perf: 10 Gflop/s', stdout)
 

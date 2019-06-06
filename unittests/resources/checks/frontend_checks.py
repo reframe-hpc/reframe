@@ -81,22 +81,6 @@ class PerformanceFailureCheck(BaseFrontendCheck):
 
 
 @rfm.simple_test
-class PerformanceSuccessCheck(BaseFrontendCheck):
-    def __init__(self):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self.perf_patterns = {
-            'perf': sn.extractsingle(r'perf: (\d+)', self.stdout, 1, int)
-        }
-        self.reference = {
-            '*': {
-                'perf': (10, -0.1, 0.1, 'Gflop/s')
-            }
-        }
-
-
-@rfm.simple_test
 class CustomPerformanceFailureCheck(BaseFrontendCheck):
     """Simulate a performance check that ignores completely logging"""
 
