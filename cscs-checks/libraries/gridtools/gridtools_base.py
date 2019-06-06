@@ -19,7 +19,7 @@ class GridToolsCheck(rfm.RegressionTest):
         self.descr = 'GridTools test base'
 
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['CMake/3.12.4', 'Boost', 'gcc/5.3.0']
+        self.modules = ['CMake', 'Boost', 'gcc/5.3.0']
         if is_cuda_test:
             self.modules.append(
                 'cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8')
@@ -63,7 +63,7 @@ class GridToolsCheck(rfm.RegressionTest):
             self.num_gpus_per_node = 1
             self.num_tasks = 1
         else:
-            self.valid_systems.append('daint:mc', 'dom:mc')
+            self.valid_systems.extend(('daint:mc', 'dom:mc'))
             self.num_gpus_per_node = 0
             self.num_tasks = 1
 
