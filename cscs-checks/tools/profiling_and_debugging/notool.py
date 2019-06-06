@@ -62,28 +62,28 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         }
         self.reference = {
             '*': {
-                'elapsed_time': (0, None, None, 'seconds')
+                'elapsed_time': (0, None, None, 's')
             }
         }
         if lang == 'C++':
             self.reference_prgenv = {
-                'PrgEnv-cray': (0.38, -0.6, None, 'seconds'),
-                'PrgEnv-gnu': (0.38, -0.6, None, 'seconds'),
-                'PrgEnv-intel': (0.38, -0.6, None, 'seconds'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 'seconds'),
+                'PrgEnv-cray': (0.38, -0.6, None, 's'),
+                'PrgEnv-gnu': (0.38, -0.6, None, 's'),
+                'PrgEnv-intel': (0.38, -0.6, None, 's'),
+                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
             }
         elif lang == 'F90':
             self.reference_prgenv = {
-                'PrgEnv-cray': (0.17, -0.6, None, 'seconds'),
-                'PrgEnv-gnu': (0.17, -0.6, None, 'seconds'),
-                'PrgEnv-intel': (0.17, -0.6, None, 'seconds'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 'seconds'),
+                'PrgEnv-cray': (0.17, -0.6, None, 's'),
+                'PrgEnv-gnu': (0.17, -0.6, None, 's'),
+                'PrgEnv-intel': (0.17, -0.6, None, 's'),
+                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
             }
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
         envname = self.current_environ.name
-        prgenv_flags = self.prgenv_flags[envname]
+        prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
