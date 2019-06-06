@@ -1140,13 +1140,13 @@ class RegressionTest:
 
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
+                tag = key.split(':')[-1]
                 try:
                     evaluate(
                         assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
-                                 'expected {1} (l={2}, u={3})' %
-                                 key.split(':')[-1]))
+                                 'expected {1} (l={2}, u={3})' % tag))
                     )
                 except SanityError as e:
                     raise PerformanceError(e)
