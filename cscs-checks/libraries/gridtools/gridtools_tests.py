@@ -44,26 +44,28 @@ class GridToolsCheck(rfm.RegressionTest):
             '-DCMAKE_EXPORT_NO_PACKAGE_REGISTRY=ON']
 
         if is_cuda_test:
-            self.build_system.config_opts.extend((
+            self.build_system.config_opts += [
                 '-DGT_ENABLE_BACKEND_X86:BOOL=OFF',
                 '-DGT_ENABLE_BACKEND_NAIVE:BOOL=OFF',
                 '-DGT_ENABLE_BACKEND_MC=OFF',
                 '-DGT_ENABLE_BACKEND_CUDA:BOOL=ON',
                 '-DCUDA_ARCH:STRING=sm_60',
-                '-DCMAKE_CUDA_HOST_COMPILER:STRING=CC'))
+                '-DCMAKE_CUDA_HOST_COMPILER:STRING=CC'
+            ]
         else:
-            self.build_system.config_opts.extend((
+            self.build_system.config_opts += [
                 '-DGT_ENABLE_BACKEND_X86:BOOL=ON',
                 '-DGT_ENABLE_BACKEND_NAIVE:BOOL=ON',
                 '-DGT_ENABLE_BACKEND_MC=ON',
-                '-DGT_ENABLE_BACKEND_CUDA:BOOL=OFF'))
+                '-DGT_ENABLE_BACKEND_CUDA:BOOL=OFF'
+            ]
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         if is_cuda_test:
             self.num_gpus_per_node = 1
             self.num_tasks = 1
         else:
-            self.valid_systems.extend(('daint:mc', 'dom:mc'))
+            self.valid_systems += ['daint:mc', 'dom:mc']
             self.num_gpus_per_node = 0
             self.num_tasks = 1
 
