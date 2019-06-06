@@ -1,4 +1,5 @@
 import collections
+import itertools
 import os
 import pytest
 import tempfile
@@ -742,7 +743,6 @@ class TestDependencies(unittest.TestCase):
                                           t5, t6, t7, t8])
         )
         cases = dependency.toposort(deps)
-        print(cases)
         cases_order = []
         tests = util.OrderedSet()
         visited_tests = set()
@@ -757,10 +757,16 @@ class TestDependencies(unittest.TestCase):
                 assert d.check.name in visited_tests
 
         # Check the order of systems and prog. environments
-        expected_order = []
-        for t in tests:
-            for p in ['sys0:p0', 'sys0:p1']:
-                for e in ['e0', 'e1']:
-                    expected_order.append((t, p, e))
+        # We are checking against all possible orderings
+        valid_orderings = []
+        for partitions in itertools.permutations(['sys0:p0', 'sys0:p1']):
+            for environs in itertools.permutations(['e0', 'e1']):
+                ordering = []
+                for t in tests:
+                    for p in partitions:
+                        for e in environs:
+                            ordering.append((t, p, e))
 
-        assert cases_order == expected_order
+                valid_orderings.append(ordering)
+
+        assert cases_order in valid_orderings

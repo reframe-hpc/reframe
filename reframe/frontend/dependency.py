@@ -173,7 +173,7 @@ def toposort(graph):
         unvisited = util.OrderedSet([r])
         visited[r] = util.OrderedSet()
         while unvisited:
-            # Next node is one whose all dependencies are visited
+            # Next node is one whose all dependencies are already visited
             node = None
             for n in unvisited:
                 if test_deps[n] <= visited[r]:
@@ -187,7 +187,8 @@ def toposort(graph):
             unvisited.remove(node)
             adjacent = rev_deps[node]
             unvisited |= util.OrderedSet(
-                n for n in adjacent if n not in visited)
+                n for n in adjacent if n not in visited
+            )
             visited[r].add(node)
 
     # Combine all individual sequences into a single one
