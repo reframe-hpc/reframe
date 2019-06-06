@@ -118,7 +118,6 @@ def validate_deps(graph):
             while path and path[-1] != parent:
                 path.pop()
 
-            #adjacent = reversed(test_graph[node])
             adjacent = test_graph[node]
             path.append(node)
             for n in adjacent:
