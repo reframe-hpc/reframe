@@ -83,6 +83,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
         envname = self.current_environ.name
+        # if generic, falls back to -g:
         prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
