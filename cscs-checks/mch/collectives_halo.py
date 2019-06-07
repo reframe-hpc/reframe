@@ -65,12 +65,8 @@ class CommunicationTestBase(rfm.RegressionTest):
 
         try:
             ref = bench_reference[sysname][variant]
-        except:
-            ref = {
-                      'nocomm':  0,
-                      'nocomp':  0,
-                      'default': 0
-                  }
+        except KeyError:
+            ref = {}
 
         self.reference = {
             'kesch:cn': {
