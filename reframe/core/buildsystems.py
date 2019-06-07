@@ -214,7 +214,11 @@ class Make(BuildSystem):
     #: Otherwise, it will invoked as ``make -j``.
     #:
     #: :type: integer
-    #: :default: :class:`None`
+    #: :default: ``1``
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 2.19
+    #:        The default value is now ``1``
     max_concurrency = fields.TypedField('max_concurrency', int, type(None))
 
     def __init__(self):
@@ -222,7 +226,7 @@ class Make(BuildSystem):
         self.options = []
         self.makefile = None
         self.srcdir = None
-        self.max_concurrency = None
+        self.max_concurrency = 1
 
     def emit_build_commands(self, environ):
         cmd_parts = ['make']
@@ -467,7 +471,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
     #: Same as for the :attr:`Make` build system.
     #:
     #: :type: integer
-    #: :default: :class:`None`
+    #: :default: ``1``
     max_concurrency = fields.TypedField('max_concurrency', int, type(None))
 
     def __init__(self):
@@ -476,7 +480,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
         self.builddir = None
         self.config_opts = []
         self.make_opts = []
-        self.max_concurrency = None
+        self.max_concurrency = 1
 
 
 class CMake(ConfigureBasedBuildSystem):
