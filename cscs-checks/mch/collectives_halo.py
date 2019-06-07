@@ -63,7 +63,15 @@ class CommunicationTestBase(rfm.RegressionTest):
         else:
             sysname = self.current_system.name
 
-        ref = bench_reference[sysname][variant]
+        try:
+            ref = bench_reference[sysname][variant]
+        except:
+            ref = {
+                      'nocomm':  0,
+                      'nocomp':  0,
+                      'default': 0
+                  }
+
         self.reference = {
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
@@ -73,6 +81,9 @@ class CommunicationTestBase(rfm.RegressionTest):
             },
             'dom': {
                 'elapsed_time': (ref, None, 0.15)
+            },
+            '*': {
+                'elapsed_time': (0, None, None)
             }
         }
 
