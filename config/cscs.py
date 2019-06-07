@@ -54,6 +54,29 @@ class ReframeSettings:
                 }
             },
 
+            'tave': {
+                'descr': 'Grand Tave',
+                'hostnames': ['tave'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+                    'compute': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Intel Xeon Phi',
+                        'max_jobs': 100,
+                    }
+                }
+            },
+
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
