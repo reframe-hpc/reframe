@@ -52,7 +52,7 @@ ReFrame will invoke ``make`` as follows:
 
 .. code::
 
-  make -j CC='cc' CXX='CC' FC='ftn' NVCC='nvcc' CPPFLAGS='-DMESSAGE'
+  make -j 1 CC='cc' CXX='CC' FC='ftn' NVCC='nvcc' CPPFLAGS='-DMESSAGE'
 
 The compiler variables (``CC``, ``CXX`` etc.) are set based on the corresponding values specified in the `coniguration of the current environment <configure.html#environments-configuration>`__.
 You may instruct the build system to ignore the default values from the environment by setting the following:
@@ -65,15 +65,17 @@ In this case, ``make`` will be invoked as follows:
 
 .. code::
 
-  make -j CPPFLAGS='-DMESSAGE'
+  make -j 1 CPPFLAGS='-DMESSAGE'
 
-Notice that the ``-j`` option is always generated.
-If you want to limit build concurrency, you can do it as follows:
+Notice that the ``-j 1`` option is always generated.
+You may change the maximum build concurrency as follows:
 
 .. code-block:: python
 
   self.build_system.max_concurrency = 4
 
+By setting :attr:`max_concurrency <reframe.core.buildsystems.Make.max_concurrency>` to :class:`None`, no limit for concurrent parallel jobs will be placed.
+This means that ``make -j`` will be used for building.
 
 Finally, you may also customize the name of the ``Makefile``.
 You can achieve that by setting the corresponding variable of the :class:`Make <reframe.core.buildsystems.Make>` build system:
@@ -140,7 +142,7 @@ The generated build script then will have the following lines:
 .. code-block:: bash
 
   ./custom_configure -with-mylib
-  make -j CPPFLAGS='-DHAVE_FOO'
+  make -j 1 CPPFLAGS='-DHAVE_FOO'
 
 
 Implementing a Run-Only Regression Test

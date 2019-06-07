@@ -70,7 +70,7 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['make -j'],
+        self.assertEqual(['make -j 1'],
                          self.build_system.emit_build_commands(self.environ))
 
 
@@ -124,7 +124,7 @@ class TestCMake(_BuildSystemTest, unittest.TestCase):
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['cmake .', 'make -j'],
+        self.assertEqual(['cmake .', 'make -j 1'],
                          self.build_system.emit_build_commands(self.environ))
 
 
@@ -173,7 +173,7 @@ class TestAutotools(_BuildSystemTest, unittest.TestCase):
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['./configure', 'make -j'],
+        self.assertEqual(['./configure', 'make -j 1'],
                          self.build_system.emit_build_commands(self.environ))
 
 
