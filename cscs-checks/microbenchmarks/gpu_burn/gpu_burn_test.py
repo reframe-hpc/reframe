@@ -22,18 +22,22 @@ class GpuBurnTest(rfm.RegressionTest):
             self.executable_opts = ['-d', '40']
             self.num_gpus_per_node = 16
             gpu_arch = '37'
-        else:
+        elif self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-accel-nvidia60']
             self.executable_opts = ['-d', '20']
             self.num_gpus_per_node = 1
             gpu_arch = '60'
+        else:
+            self.num_gpus_per_node = 1
+            gpu_arch = None
 
         self.sourcepath = 'gpu_burn.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
-                                      '-code=sm_%s' % gpu_arch]
-        self.build_system.ldflags = ['-lcuda', '-lcublas', '-lnvidia-ml']
+        if gpu_arch:
+            self.build_system.cxxflags = ['-arch=compute_%s' % gpu_arch,
+                                          '-code=sm_%s' % gpu_arch]
 
+        self.build_system.ldflags = ['-lcuda', '-lcublas', '-lnvidia-ml']
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall('OK', self.stdout)), self.num_tasks_assigned)
 
@@ -45,13 +49,16 @@ class GpuBurnTest(rfm.RegressionTest):
 
         self.reference = {
             'dom:gpu': {
-                'perf': (4115, -0.10, None)
+                'perf': (4115, -0.10, None, 'Gflop/s')
             },
             'daint:gpu': {
-                'perf': (4115, -0.10, None)
+                'perf': (4115, -0.10, None, 'Gflop/s')
             },
             'kesch:cn': {
-                'perf': (950, -0.10, None)
+                'perf': (950, -0.10, None, 'Gflop/s')
+            },
+            '*': {
+                'perf': (0, None, None, 'Gflop/s')
             }
         }
 
