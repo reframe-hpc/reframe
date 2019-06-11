@@ -7,6 +7,9 @@ double test_alloc(size_t n)
     auto t_start = std::chrono::system_clock::now();
 
     /* time to allocate + fill */
+    /* memory is allocated using "malloc" since
+       "std::unique_ptr<char[]> ptr(new char[n])"
+       also creates the objects via "new[]" */
     char* ptr = (char*)std::malloc(n);
     std::fill(ptr, ptr + n, 0);
     auto t_alloc_fill = std::chrono::system_clock::now();
