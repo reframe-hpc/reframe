@@ -173,6 +173,7 @@ def toposort(graph):
         visited[r] = util.OrderedSet()
         while unvisited:
             # Next node is one whose all dependencies are already visited
+            # FIXME: This makes sorting's complexity O(V^2)
             node = None
             for n in unvisited:
                 if test_deps[n] <= visited[r]:
