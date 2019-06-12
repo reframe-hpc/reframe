@@ -1,20 +1,27 @@
 #include <chrono>
 #include <iostream>
 #include <algorithm>
-#include <memory>
 
 double test_alloc(size_t n)
 {
     auto t_start = std::chrono::system_clock::now();
-    std::unique_ptr<char[]> ptr(new char[n]);
 
     /* time to allocate + fill */
-    std::fill(ptr.get(), ptr.get() + n, 0);
+    /* memory is allocated using "malloc" since
+       "std::unique_ptr<char[]> ptr(new char[n])"
+       also creates the objects via "new[]" */
+    char* ptr = (char*)std::malloc(n);
+    std::fill(ptr, ptr + n, 0);
     auto t_alloc_fill = std::chrono::system_clock::now();
 
-    /* time too fill */
-    std::fill(ptr.get(), ptr.get() + n, 0);
+    /* time to fill */
+    std::fill(ptr, ptr + n, 0);
     auto t_alloc_two_fills = std::chrono::system_clock::now();
+
+    /* prevent compiler optimizations */
+    t_start += std::chrono::nanoseconds(ptr[0]);
+
+    std::free(ptr);
 
     return std::chrono::duration_cast<std::chrono::duration<double>>((t_alloc_fill - t_start) - (t_alloc_two_fills - t_alloc_fill)).count();
 }
