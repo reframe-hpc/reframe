@@ -4,50 +4,59 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['C++'], ['F90'])
 class IntelInspectorTest(rfm.RegressionTest):
+    '''This test checks Intel Inspector:
+    https://software.intel.com/en-us/inspector
+    '''
     def __init__(self, lang):
         super().__init__()
         self.name = 'Intel_Inspector_%s' % lang.replace('+', 'p')
         self.descr = self.name
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-intel']
-        self.prgenv_flags = {
-            'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-cray': ['-O2', '-g', '-homp'],
-            'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
-            'PrgEnv-pgi': ['-O2', '-g', '-mp']
-        }
+        self.modules = ['inspector']
         self.sourcesdir = os.path.join('src', lang)
-        self.executable = 'inspxe-cl -collect mi1 ./jacobi'
         self.build_system = 'Make'
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
+        self.executable = 'inspxe-cl'
+        self.target_executable = './jacobi'
+        self.prgenv_flags = {
+            'PrgEnv-gnu': ['-g', '-O2', '-fopenmp'],
+            'PrgEnv-cray': ['-g', '-O2', '-homp'],
+            'PrgEnv-intel': ['-g', '-O2', '-qopenmp'],
+            'PrgEnv-pgi': ['-g', '-O2', '-mp']
+        }
+        self.executable_opts = ['-collect mi1 %s' % self.target_executable]
+        self.exclusive = True
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
-        self.num_iterations = 10
+        self.num_tasks_per_core = 1
+        self.use_multithreading = False
+        num_iterations = 10
         self.variables = {
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
-            'ITERATIONS': str(self.num_iterations),
+            'ITERATIONS': str(num_iterations),
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
-        self.version_rpt = 'Intel_Inspector_version.rpt'
-        self.summary_rpt = 'Intel_Inspector_summary.rpt'
-        self.problems_rpt = 'Intel_Inspector_problems.rpt'
-        self.observations_rpt = 'Intel_Inspector_observations.rpt'
+        self.version_rpt = 'version.rpt'
+        self.problems_rpt = 'problems.rpt'
+        self.summary_rpt = 'summary.rpt'
+        self.observations_rpt = 'observations.rpt'
         self.pre_run = [
-            'source $INTEL_PATH/../inspector/inspxe-vars.sh',
-            'inspxe-cl -h collect'
+            'mv %s %s' % (self.executable, self.target_executable),
+            '%s --version &> %s' % (self.executable, self.version_rpt),
         ]
         self.post_run = [
-            'inspxe-cl -V &> %s' % self.version_rpt,
-            'inspxe-cl -report=summary &> %s' % self.summary_rpt,
-            'inspxe-cl -report=problems &> %s' % self.problems_rpt,
-            'inspxe-cl -report=observations &> %s' % self.observations_rpt,
+            '%s -V &> %s' % (self.executable, self.version_rpt),
+            '%s -report=summary &> %s' % (self.executable, self.summary_rpt),
+            '%s -report=problems &> %s' % (self.executable, self.problems_rpt),
+            '%s -report=observations &> %s' %
+            (self.executable, self.observations_rpt),
         ]
         self.maintainers = ['JG']
         self.tags = {'production'}
@@ -61,15 +70,11 @@ class IntelInspectorTest(rfm.RegressionTest):
         self.build_system.fflags = prgenv_flags
         regexversion = (r'^Intel\(R\)\sInspector\s\d+\sUpdate\s\d+\s\(build'
                         r'\s(?P<toolsversion>\d+)')
-        if self.current_system.name == 'dom':
-            toolsversion = '579146'
-        elif self.current_system.name == 'daint':
-            toolsversion = '551023'
-
+        toolsversion = '597413'
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),
-            # check the version:
+            # check the tool's version:
             sn.assert_eq(sn.extractsingle(regexversion, self.version_rpt,
                          'toolsversion'), toolsversion),
             # check the reports:

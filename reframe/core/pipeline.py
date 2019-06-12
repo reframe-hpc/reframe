@@ -1134,19 +1134,19 @@ class RegressionTest:
                         "tag `%s' not resolved in references for `%s'" %
                         (tag, self._current_partition.fullname))
 
-                self._perfvalues[key] = (tag, value, *self.reference[key])
+                self._perfvalues[key] = (value, *self.reference[key])
                 self._perf_logger.log_performance(logging.INFO, tag, value,
                                                   *self.reference[key])
 
-            for values in self._perfvalues.values():
-                tag, val, ref, low_thres, high_thres, *_ = values
+            for key, values in self._perfvalues.items():
+                val, ref, low_thres, high_thres, *_ = values
+                tag = key.split(':')[-1]
                 try:
                     evaluate(
                         assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
-                                 'expected {1} (l={2}, u={3})' % tag),
-                        )
+                                 'expected {1} (l={2}, u={3})' % tag))
                     )
                 except SanityError as e:
                     raise PerformanceError(e)
