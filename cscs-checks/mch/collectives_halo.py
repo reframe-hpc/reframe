@@ -44,11 +44,6 @@ class CommunicationTestBase(rfm.RegressionTest):
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
-            self.variables['MV2_USE_CUDA'] = '1'
-            self.build_system.config_opts += [
-                '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
-            ]
             self.build_system.max_concurrency = 1
 
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
