@@ -12,7 +12,9 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.descr = 'HPCG reference benchmark'
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['craype-hugepages8M']
+        if self.current_system.name in {'daint', 'dom'}:
+            self.modules = ['craype-hugepages8M']
+
         self.build_system = 'Make'
         self.build_system.options = ['arch=MPI_GCC_OMP']
         self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
@@ -44,6 +46,9 @@ class HPCGCheckRef(rfm.RegressionTest):
             'dom:mc': {
                 'gflops': (13.4, -0.1, None, 'Gflop/s')
             },
+            '*': {
+                'gflops': (0, None, None, 'Gflop/s')
+            }
         }
 
         self.maintainers = ['SK']
@@ -55,8 +60,9 @@ class HPCGCheckRef(rfm.RegressionTest):
         return self.job.num_tasks
 
     def setup(self, partition, environ, **job_opts):
-        self.num_tasks_per_node = self.system_num_tasks[partition.fullname]
-
+        self.num_tasks_per_node = self.system_num_tasks.get(
+            partition.fullname, 1
+        )
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(

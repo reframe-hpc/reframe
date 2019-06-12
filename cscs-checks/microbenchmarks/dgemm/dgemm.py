@@ -30,6 +30,7 @@ class DGEMMTest(rfm.RegressionTest):
         self.num_tasks_per_core = 1
         self.num_tasks_per_socket = 1
         self.use_multithreading = False
+        self.executable_opts = ['6144', '12288', '3072']
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O3']
         self.sys_reference = {
@@ -60,20 +61,19 @@ class DGEMMTest(rfm.RegressionTest):
 
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
-            self.executable_opts = ['6144', '12288', '3072']
         elif partition.fullname in ['daint:mc', 'dom:mc']:
             self.num_cpus_per_task = 36
-            self.executable_opts = ['6144', '12288', '3072']
         elif partition.fullname in ['kesch:cn', 'kesch:pn']:
             self.num_cpus_per_task = 12
-            self.executable_opts = ['6144', '12288', '3072']
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
 
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        if self.num_cpus_per_task:
+            self.variables = {
+                'OMP_NUM_THREADS': str(self.num_cpus_per_task)
+            }
+
         super().setup(partition, environ, **job_opts)
 
     @sn.sanity_function
@@ -87,12 +87,13 @@ class DGEMMTest(rfm.RegressionTest):
         sn.assert_eq(num_tested_nodes, self.job.num_tasks, msg=failure_msg)
 
         for hostname in all_tested_nodes:
-            if self.sys_reference[self.current_partition.fullname]:
-                partition_name = self.current_partition.fullname
-                ref_name = '%s:%s' % (partition_name, hostname)
-                self.reference[ref_name] = self.sys_reference[partition_name]
-                self.perf_patterns[hostname] = sn.extractsingle(
-                    r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
-                    r'\sGflop/s' % hostname, self.stdout, 'gflops', float)
+            partition_name = self.current_partition.fullname
+            ref_name = '%s:%s' % (partition_name, hostname)
+            self.reference[ref_name] = self.sys_reference.get(
+                partition_name, (0.0, None, None, 'Gflop/s')
+            )
+            self.perf_patterns[hostname] = sn.extractsingle(
+                r'%s:\s+Avg\. performance\s+:\s+(?P<gflops>\S+)'
+                r'\sGflop/s' % hostname, self.stdout, 'gflops', float)
 
         return True
