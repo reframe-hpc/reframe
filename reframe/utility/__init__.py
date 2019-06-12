@@ -284,7 +284,7 @@ class OrderedSet(collections.abc.MutableSet):
         return iter(self.__data)
 
     def __len__(self):
-        return len(self.__data.keys())
+        return len(self.__data)
 
     # Set i/face
     #
