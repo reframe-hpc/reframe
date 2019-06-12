@@ -117,7 +117,7 @@ class TestTypes(unittest.TestCase):
                          types.Dict[str, types.List[int]].__name__)
         self.assertEqual('Tuple[int,Set[float],str]',
                          types.Tuple[int, types.Set[float], str].__name__)
-        self.assertEqual("List[Str[r'\d+']]",
+        self.assertEqual(r"List[Str[r'\d+']]",
                          types.List[types.Str[r'\d+']].__name__)
 
     def test_custom_types(self):
