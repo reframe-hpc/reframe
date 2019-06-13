@@ -33,6 +33,7 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
             }
 
         self.num_tasks_per_node = 1
+        self.num_cpus_per_task = 12
         self.perf_patterns = {
             'throughput': sn.avg(sn.extractall(
                 r'total images/sec:\s+(?P<throughput>\S+)',
