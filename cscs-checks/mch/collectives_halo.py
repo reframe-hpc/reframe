@@ -30,7 +30,7 @@ class CommunicationTestBase(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
             ]
             self.build_system.max_concurrency = 1
-        else:
+        elif self.current_system.name in {'daint', 'dom'}:
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
@@ -40,6 +40,11 @@ class CommunicationTestBase(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
             ]
             self.build_system.max_concurrency = 8
+        else:
+            self.num_tasks = 4
+            self.num_gpus_per_node = 1
+            self.num_tasks_per_node = 1
+            self.build_system.max_concurrency = 1
 
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
@@ -63,7 +68,11 @@ class CommunicationTestBase(rfm.RegressionTest):
         else:
             sysname = self.current_system.name
 
-        ref = bench_reference[sysname][variant]
+        try:
+            ref = bench_reference[sysname][variant]
+        except KeyError:
+            ref = 0.0
+
         self.reference = {
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
@@ -73,6 +82,9 @@ class CommunicationTestBase(rfm.RegressionTest):
             },
             'dom': {
                 'elapsed_time': (ref, None, 0.15)
+            },
+            '*': {
+                'elapsed_time': (ref, None, None)
             }
         }
 

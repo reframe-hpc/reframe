@@ -1,4 +1,6 @@
 import os
+import pytest
+import random
 import shutil
 import sys
 import tempfile
@@ -853,3 +855,124 @@ class TestReadOnlyViews(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             d.setdefault('c', 3)
+
+
+class TestOrderedSet(unittest.TestCase):
+    def setUp(self):
+        # Initialize all tests with the same seed
+        random.seed(1)
+
+    def test_construction(self):
+        l = list(range(10))
+        random.shuffle(l)
+
+        s = util.OrderedSet(l + l)
+        assert len(s) == 10
+        for i in range(10):
+            assert i in s
+
+        assert list(s) == l
+
+    def test_construction_empty(self):
+        s = util.OrderedSet()
+        assert s == set()
+        assert set() == s
+
+    def test_str(self):
+        l = list(range(10))
+        random.shuffle(l)
+
+        s = util.OrderedSet(l)
+        assert str(s) == str(l).replace('[', '{').replace(']', '}')
+
+        s = util.OrderedSet()
+        assert str(s) == type(s).__name__ + '()'
+
+    def test_construction_error(self):
+        with pytest.raises(TypeError):
+            s = util.OrderedSet(2)
+
+        with pytest.raises(TypeError):
+            s = util.OrderedSet(1, 2, 3)
+
+    def test_operators(self):
+        s0 = util.OrderedSet(range(10))
+        s1 = util.OrderedSet(range(20))
+        s2 = util.OrderedSet(range(10, 20))
+
+        assert s0 == set(range(10))
+        assert set(range(10)) == s0
+        assert s0 != s1
+        assert s1 != s0
+
+        assert s0 < s1
+        assert s0 <= s1
+        assert s0 <= s0
+        assert s1 > s0
+        assert s1 >= s0
+        assert s1 >= s1
+
+        assert s0.issubset(s1)
+        assert s1.issuperset(s0)
+
+        assert (s0 & s1) == s0
+        assert (s0 & s2) == set()
+        assert (s0 | s2) == s1
+
+        assert (s1 - s0) == s2
+        assert (s2 - s0) == s2
+
+        assert (s0 ^ s1) == s2
+
+        assert s0.isdisjoint(s2)
+        assert not s0.isdisjoint(s1)
+        assert s0.symmetric_difference(s1) == s2
+
+    def test_union(self):
+        l0 = list(range(10))
+        l1 = list(range(10, 20))
+        l2 = list(range(20, 30))
+        random.shuffle(l0)
+        random.shuffle(l1)
+        random.shuffle(l2)
+
+        s0 = util.OrderedSet(l0)
+        s1 = util.OrderedSet(l1)
+        s2 = util.OrderedSet(l2)
+
+        assert list(s0.union(s1, s2)) == l0 + l1 + l2
+
+    def test_intersection(self):
+        l0 = list(range(10, 40))
+        l1 = list(range(20, 40))
+        l2 = list(range(20, 30))
+        random.shuffle(l0)
+        random.shuffle(l1)
+        random.shuffle(l2)
+
+        s0 = util.OrderedSet(l0)
+        s1 = util.OrderedSet(l1)
+        s2 = util.OrderedSet(l2)
+
+        assert s0.intersection(s1, s2) == s2
+
+    def test_difference(self):
+        l0 = list(range(10, 40))
+        l1 = list(range(20, 40))
+        l2 = list(range(20, 30))
+        random.shuffle(l0)
+        random.shuffle(l1)
+        random.shuffle(l2)
+
+        s0 = util.OrderedSet(l0)
+        s1 = util.OrderedSet(l1)
+        s2 = util.OrderedSet(l2)
+
+        assert s0.difference(s1, s2) == set(range(10, 20))
+
+    def test_reversed(self):
+        l = list(range(10))
+        random.shuffle(l)
+
+        s = util.OrderedSet(l)
+        assert list(reversed(s)) == list(reversed(l))
