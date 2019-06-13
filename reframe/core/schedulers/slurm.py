@@ -26,6 +26,7 @@ SLURM_JOB_CONFIGURING = SlurmJobState('CONFIGURING')
 SLURM_JOB_COMPLETING  = SlurmJobState('COMPLETING')
 SLURM_JOB_FAILED      = SlurmJobState('FAILED')
 SLURM_JOB_NODE_FAILED = SlurmJobState('NODE_FAILED')
+SLURM_JOB_OUT_OF_MEMORY = SlurmJobState('OUT_OF_MEMORY')
 SLURM_JOB_PENDING     = SlurmJobState('PENDING')
 SLURM_JOB_PREEMPTED   = SlurmJobState('PREEMPTED')
 SLURM_JOB_RESIZING    = SlurmJobState('RESIZING')
@@ -54,6 +55,7 @@ class SlurmJob(sched.Job):
                                    SLURM_JOB_COMPLETED,
                                    SLURM_JOB_FAILED,
                                    SLURM_JOB_NODE_FAILED,
+                                   SLURM_JOB_OUT_OF_MEMORY,
                                    SLURM_JOB_PREEMPTED,
                                    SLURM_JOB_TIMEOUT]
         self._pending_states = [SLURM_JOB_CONFIGURING,
