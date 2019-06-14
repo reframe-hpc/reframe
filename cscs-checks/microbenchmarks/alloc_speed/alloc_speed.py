@@ -27,10 +27,10 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'time': (1.80, None, 0.10, 's')
+                    'time': (1.00, None, 0.10, 's')
                 },
                 'dom:mc': {
-                    'time': (2.00, None, 0.10, 's')
+                    'time': (1.20, None, 0.10, 's')
                 },
                 'daint:gpu': {
                     'time': (1.80, None, 0.10, 's')
