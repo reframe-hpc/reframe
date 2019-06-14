@@ -19,10 +19,17 @@ class GridToolsCheck(rfm.RegressionTest):
         self.descr = 'GridTools test base'
 
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['CMake', 'Boost', 'gcc/5.3.0']
+        self.modules = ['CMake', 'Boost']
+        if self.current_system.name is 'daint':
+            self.modules.append('gcc/5.3.0')
+        else:
+            self.modules.append('gcc')
         if is_cuda_test:
-            self.modules.append(
-                'cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8')
+            if self.current_system.name is 'daint':
+                self.modules.append(
+                    'cudatoolkit/9.2.148_3.19-6.0.7.1_2.1__g3d9acc8')
+            else:
+                self.modules.append('cudatoolkit')
         self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
         self.build_system = 'CMake'
 
