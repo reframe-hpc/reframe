@@ -5,58 +5,57 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 fs = {
-    '/scratch/snx1600tds' : {
-        'valid_systems' : ['dom:gpu'],
-        'dom' : {
-            'num_tasks' : 2,  
-            # 1 task per node to avoid cache effects on read (other options 
-            # like -C did produce the desired impact)
-            # 8 tasks are enough to get ~peak perf (write 5.4 GB/s, read 4.3 GB/s)
+    '/scratch/snx1600tds': {
+        'valid_systems': ['dom:gpu'],
+        'dom': {
+            'num_tasks': 2,  
+            # 1 task per node to avoid cache effects on read (other options
+            # like -C did produce the desired impact) 8 tasks are enough
+            # to get ~peak perf (write 5.4 GB/s, read 4.3 GB/s)
         }
     },
-    '/scratch/snx1600' : {
-        'valid_systems' : ['daint:gpu'],
-        'daint' : {
-            'num_tasks' : 1, #to validate
+    '/scratch/snx1600': {
+        'valid_systems': ['daint:gpu'],
+        'daint': {
+            'num_tasks': 1,  #to validate
         }
     },
-    '/scratch/snx3000tds' : {
-        'valid_systems' : ['dom:gpu'],
-        'dom' : {
-            'num_tasks' : 2, #to validate
+    '/scratch/snx3000tds': {
+        'valid_systems': ['dom:gpu'],
+        'dom': {
+            'num_tasks': 2,  #to validate
         }
     },
-    '/scratch/snx3000' : {
-        'valid_systems' : ['daint:gpu'],
-        'daint' : {
-            'num_tasks' : 1, #to validate
+    '/scratch/snx3000': {
+        'valid_systems': ['daint:gpu'],
+        'daint': {
+            'num_tasks': 1,  #to validate
         }
     },
-    '/users' : {
-        'valid_systems' : ['daint:gpu', 'dom:gpu', 'fulen:normal'],
-        'ior_block_size' : '8g',
-        'daint' : {
-            'num_tasks' : 1, #to validate
+    '/users': {
+        'valid_systems': ['daint:gpu', 'dom:gpu', 'fulen:normal'],
+        'ior_block_size': '8g',
+        'daint': {
+            'num_tasks': 1,  #to validate
         },
-        'dom' : {
-            'num_tasks' : 1, #to validate
+        'dom': {
+            'num_tasks': 1,  #to validate
         },
-        #self.tags |= {'maintenance'} ???
-        'fulen' : {
-            'num_tasks' : 1, 
-            'build_system_cc' : 'mpicc',
-            'build_system_cxx' : 'mpic++',
-            'valid_prog_environs' : ['PrgEnv-gnu']
+        'fulen': {
+            'num_tasks': 1, 
+            'build_system_cc': 'mpicc',
+            'build_system_cxx': 'mpic++',
+            'valid_prog_environs': ['PrgEnv-gnu']
         }
     },
-    '/scratch/shared/fulen' : {
-        'valid_systems' : ['fulen:normal'],
-        'ior_block_size' : '48g',
-        'fulen' : {
-            'num_tasks' : 8, 
-            'build_system_cc' : 'mpicc',
-            'build_system_cxx' : 'mpic++',
-            'valid_prog_environs' : ['PrgEnv-gnu']
+    '/scratch/shared/fulen': {
+        'valid_systems': ['fulen:normal'],
+        'ior_block_size': '48g',
+        'fulen': {
+            'num_tasks': 8, 
+            'build_system_cc': 'mpicc',
+            'build_system_cxx': 'mpic++',
+            'valid_prog_environs': ['PrgEnv-gnu']
         }
     }
 }
