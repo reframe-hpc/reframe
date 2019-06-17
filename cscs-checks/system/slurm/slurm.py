@@ -156,8 +156,9 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']
-        self.sanity_patterns = sn.assert_found(r'exceeded memory limit',
-                                               self.stderr)
+        self.sanity_patterns = sn.assert_found(
+            r'(exceeded memory limit)|(Out Of Memory)', self.stderr
+        )
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
