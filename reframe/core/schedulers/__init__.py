@@ -14,23 +14,6 @@ from reframe.core.launchers import JobLauncher
 from reframe.core.logging import getlogger
 
 
-class JobState:
-    def __init__(self, state):
-        self._state = state
-
-    def __repr__(self):
-        return debug.repr(self)
-
-    def __eq__(self, other):
-        if not isinstance(other, type(self)):
-            return NotImplemented
-
-        return self._state == other._state
-
-    def __str__(self):
-        return self._state
-
-
 class Job(abc.ABC):
     """A job descriptor.
 
@@ -53,7 +36,7 @@ class Job(abc.ABC):
 
     _jobid = fields.TypedField('_jobid', int, type(None))
     _exitcode = fields.TypedField('_exitcode', int, type(None))
-    _state = fields.TypedField('_state', JobState, type(None))
+    _state = fields.TypedField('_state', str, type(None))
 
     # The sched_* arguments are exposed also to the frontend
     def __init__(self,

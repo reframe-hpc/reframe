@@ -13,16 +13,6 @@ from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
 
-# Local job states
-class LocalJobState(sched.JobState):
-    pass
-
-
-LOCAL_JOB_SUCCESS = LocalJobState('SUCCESS')
-LOCAL_JOB_FAILURE = LocalJobState('FAILURE')
-LOCAL_JOB_TIMEOUT = LocalJobState('TIMEOUT')
-
-
 class _TimeoutExpired(ReframeError):
     pass
 
@@ -153,12 +143,12 @@ class LocalJob(sched.Job):
             self._wait_all(timeout)
             self._exitcode = self._proc.returncode
             if self._exitcode != 0:
-                self._state = LOCAL_JOB_FAILURE
+                self._state = 'FAILURE'
             else:
-                self._state = LOCAL_JOB_SUCCESS
+                self._state = 'SUCCESS'
         except (_TimeoutExpired, subprocess.TimeoutExpired):
             getlogger().debug('job timed out')
-            self._state = LOCAL_JOB_TIMEOUT
+            self._state = 'TIMEOUT'
         finally:
             # Cleanup all the processes of this job
             self._kill_all()
