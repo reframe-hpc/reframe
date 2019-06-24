@@ -54,6 +54,7 @@ def slurm_state_pending(state):
 
     return False
 
+
 _run_strict = functools.partial(os_ext.run_command, check=True)
 
 
