@@ -172,7 +172,7 @@ class IorWriteCheck(IorCheck):
 class IorReadCheck(IorCheck):
     def __init__(self, base_dir):
         super().__init__(base_dir)
-        self.executable_opts.extend(['-r'])
+        self.executable_opts += ['-r']
         self.sanity_patterns = sn.assert_found(r'^Max Read: ', self.stdout)
         self.perf_patterns = {
             'read_bw': sn.extractsingle(
