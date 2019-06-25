@@ -14,12 +14,8 @@ class IorCheck(rfm.RegressionTest):
         self.base_dir = base_dir
         self.username = getpass.getuser()
         self.test_dir = os.path.join(self.base_dir, self.username, '.ior')
+        self.pre_run = ['mkdir -p ' + self.test_dir]
         self.test_file = os.path.join(self.test_dir, 'ior.dat')
-
-        try:
-            os.mkdir(self.test_dir)
-        except OSError:
-            pass
 
         self.fs = {
             '/scratch/snx1600tds': {
@@ -146,14 +142,13 @@ class IorCheck(rfm.RegressionTest):
             self.tags = {'production'}
 
 
-@rfm.parameterized_test(
-    ['/scratch/snx1600tds'],
-    ['/scratch/snx1600'],
-    ['/scratch/snx3000tds'],
-    ['/scratch/snx3000'],
-    ['/users'],
-    ['/scratch/shared/fulen']
-)
+@rfm.parameterized_test(['/scratch/snx1600tds'],
+                        ['/scratch/snx1600'],
+                        ['/scratch/snx3000tds'],
+                        ['/scratch/snx3000'],
+                        ['/users'],
+                        ['/scratch/shared/fulen']
+                        )
 class IorWriteCheck(IorCheck):
     def __init__(self, base_dir):
         super().__init__(base_dir)
