@@ -1,4 +1,5 @@
 import os
+import sys
 import getpass
 
 import reframe as rfm
@@ -30,35 +31,26 @@ class IorCheck(rfm.RegressionTest):
                 },
             '/scratch/snx1600': {
                 'valid_systems': ['daint:gpu'],
-                'daint': {
-                    'num_tasks': 1,  # to validate
-                    }
+                'daint': {}
                 },
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu'],
                 'dom': {
-                    'num_tasks': 2,  # to validate
+                    'num_tasks': 4,
                     }
                 },
             '/scratch/snx3000': {
                 'valid_systems': ['daint:gpu'],
-                'daint': {
-                    'num_tasks': 1,  # to validate
-                    }
+                'daint': {}
                 },
             '/users': {
                 'valid_systems': ['daint:gpu', 'dom:gpu', 'fulen:normal'],
                 'ior_block_size': '8g',
-                'daint': {
-                    'num_tasks': 1,  # to validate
-                    },
-                'dom': {
-                    'num_tasks': 1,  # to validate
-                    },
+                'daint': {},
+                'dom': {},
                 'fulen': {
-                    'num_tasks': 1,
-                    'build_system_cc': 'mpicc',
-                    'build_system_cxx': 'mpic++',
+                    #'build_system_cc': 'mpicc',
+                    #'build_system_cxx': 'mpic++',
                     'valid_prog_environs': ['PrgEnv-gnu']
                     }
                 },
@@ -67,8 +59,8 @@ class IorCheck(rfm.RegressionTest):
                 'ior_block_size': '48g',
                 'fulen': {
                     'num_tasks': 8,
-                    'build_system_cc': 'mpicc',
-                    'build_system_cxx': 'mpic++',
+                    #'build_system_cc': 'mpicc',
+                    #'build_system_cxx': 'mpic++',
                     'valid_prog_environs': ['PrgEnv-gnu']
                     }
                 }
@@ -87,15 +79,16 @@ class IorCheck(rfm.RegressionTest):
 
         cur_sys = self.current_system.name
 
-        try:
-            self.num_tasks = self.fs[base_dir][cur_sys]['num_tasks']
-        except KeyError:
-            self.num_tasks = 1
-        try:
-            tasks_per_node = self.fs[base_dir][cur_sys]['num_tasks_per_node']
-            self.num_tasks_per_node = tasks_per_node
-        except KeyError:
-            self.num_tasks_per_node = 1
+        # Check whether cur_sys is present in the fs dict
+        if cur_sys not in self.fs:
+            exit_msg = '%s is not present in the self.fs ' % cur_sys
+            exit_msg += 'confguration dict. Aborting.'
+            print(exit_msg)
+            sys.exit(1)
+
+        self.num_tasks = fs[base_dir][cur_sys].get('num_tasks', 1)
+        tasks_per_node = fs[base_dir][cur_sys].get('num_tasks_per_node', 1)
+        self.num_tasks_per_node = tasks_per_node
 
         self.ior_block_size = self.fs[base_dir]['ior_block_size']
         self.ior_access_type = self.fs[base_dir]['ior_access_type']
@@ -107,20 +100,8 @@ class IorCheck(rfm.RegressionTest):
         self.executable = os.path.join('src', 'C', 'IOR')
         self.build_system = 'Make'
 
-        try:
-            prog_env = self.fs[base_dir][cur_sys]['valid_prog_environs']
-            self.valid_prog_environs = prog_env
-        except KeyError:
-            self.valid_prog_environs = ['PrgEnv-cray']
-
-        try:
-            self.build_system.cc = self.fs[base_dir][cur_sys]['build_system_cc']
-        except KeyError:
-            pass
-        try:
-            self.build_system.cxx = self.fs[base_dir][cur_sys]['build_system_cxx']
-        except KeyError:
-            pass
+        penv = fs[base_dir][cur_sys].get('valid_prog_environs', ['PrgEnv-cray'])
+        self.num_tasks = penv
 
         self.build_system.options = ['posix', 'mpiio']
         self.build_system.max_concurrency = 1
