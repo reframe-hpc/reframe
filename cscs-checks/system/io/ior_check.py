@@ -125,7 +125,7 @@ class IorCheck(rfm.RegressionTest):
 class IorWriteCheck(IorCheck):
     def __init__(self, base_dir):
         super().__init__(base_dir)
-        self.executable_opts.extend(['-w', '-k'])
+        self.executable_opts += ['-w', '-k']
         self.sanity_patterns = sn.assert_found(r'^Max Write: ', self.stdout)
         self.perf_patterns = {
             'write_bw': sn.extractsingle(
