@@ -23,8 +23,8 @@ class IorCheck(rfm.RegressionTest):
                 'valid_systems': ['dom:gpu'],
                 'dom': {
                     'num_tasks': 2,
-                    # We will be using 1 task per node to avoid cache 
-                    # effects on read. The option "-C" could be used 
+                    # We will be using 1 task per node to avoid cache
+                    # effects on read. The option "-C" could be used
                     # with many tasks per node. 8 tasks are enough
                     # to get ~peak perf (write 5.4 GB/s, read 4.3 GB/s)
                     }
@@ -49,8 +49,6 @@ class IorCheck(rfm.RegressionTest):
                 'daint': {},
                 'dom': {},
                 'fulen': {
-                    #'build_system_cc': 'mpicc',
-                    #'build_system_cxx': 'mpic++',
                     'valid_prog_environs': ['PrgEnv-gnu']
                     }
                 },
@@ -59,8 +57,6 @@ class IorCheck(rfm.RegressionTest):
                 'ior_block_size': '48g',
                 'fulen': {
                     'num_tasks': 8,
-                    #'build_system_cc': 'mpicc',
-                    #'build_system_cxx': 'mpic++',
                     'valid_prog_environs': ['PrgEnv-gnu']
                     }
                 }
@@ -70,25 +66,20 @@ class IorCheck(rfm.RegressionTest):
         for data in self.fs.values():
             data.setdefault('ior_block_size', '24g')
             data.setdefault('ior_access_type', 'MPIIO')
-            data.setdefault('reference', 
+            data.setdefault('reference',
                             {'read_bw': (1, -0.5, None),
                              'write_bw': (1, -0.5, None)
                              })
-            
-        self.valid_systems = self.fs[base_dir]['valid_systems']
+            data.setdefault('dummy', {})  # entry for unknown systems
 
         cur_sys = self.current_system.name
+        if cur_sys not in self.fs[base_dir]:
+            cur_sys = 'dummy'
 
-        # Check whether cur_sys is present in the fs dict
-        if cur_sys not in self.fs:
-            exit_msg = '%s is not present in the self.fs ' % cur_sys
-            exit_msg += 'confguration dict. Aborting.'
-            print(exit_msg)
-            sys.exit(1)
-
-        self.num_tasks = fs[base_dir][cur_sys].get('num_tasks', 1)
-        tasks_per_node = fs[base_dir][cur_sys].get('num_tasks_per_node', 1)
-        self.num_tasks_per_node = tasks_per_node
+        self.valid_systems = self.fs[base_dir]['valid_systems']
+        self.num_tasks = self.fs[base_dir][cur_sys].get('num_tasks', 1)
+        tpn = self.fs[base_dir][cur_sys].get('num_tasks_per_node', 1)
+        self.num_tasks_per_node = tpn
 
         self.ior_block_size = self.fs[base_dir]['ior_block_size']
         self.ior_access_type = self.fs[base_dir]['ior_access_type']
@@ -100,8 +91,9 @@ class IorCheck(rfm.RegressionTest):
         self.executable = os.path.join('src', 'C', 'IOR')
         self.build_system = 'Make'
 
-        penv = fs[base_dir][cur_sys].get('valid_prog_environs', ['PrgEnv-cray'])
-        self.num_tasks = penv
+        vpe = 'valid_prog_environs'
+        penv = self.fs[base_dir][cur_sys].get(vpe, ['PrgEnv-cray'])
+        self.valid_prog_environs = penv
 
         self.build_system.options = ['posix', 'mpiio']
         self.build_system.max_concurrency = 1
