@@ -133,7 +133,7 @@ class ReframeSettings:
                         'modules': [],
                         'access':  [],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
