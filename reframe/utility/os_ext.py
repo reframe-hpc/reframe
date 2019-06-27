@@ -331,3 +331,13 @@ def expandvars(path):
     # Prepare stdout for inline use
     stdout = completed.stdout.replace('\n', ' ').strip()
     return cmd_subst.sub(stdout, path)
+
+
+def concat_files(files, concat, sep='\n'):
+    data = []
+    for f in files:
+        with open(f, 'r') as fr:
+            data.append(fr.read())
+
+    with open(concat, 'w') as f:
+        f.write(sep.join(data))
