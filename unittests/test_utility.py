@@ -976,3 +976,22 @@ class TestOrderedSet(unittest.TestCase):
 
         s = util.OrderedSet(l)
         assert list(reversed(s)) == list(reversed(l))
+
+    def test_concat_files(self):
+        tmpdir = tempfile.mkdtemp(dir='unittests')
+        _, file1 = tempfile.mkstemp(dir=tmpdir)
+        _, file2  = tempfile.mkstemp(dir=tmpdir)
+        _, concat_file = tempfile.mkstemp(dir=tmpdir)
+
+        with open(file1, 'w') as f1:
+            f1.write('Hello from file1')
+
+        with open(file2, 'w') as f2:
+            f2.write('Hello from file2')
+
+        os_ext.concat_files([file1, file2], concat_file, overwrite=True)
+
+        with open(concat_file) as cf:
+            out = cf.read()
+            self.assertTrue(all(['Hello from file1' in out,
+                                 'Hello from file2' in out]))

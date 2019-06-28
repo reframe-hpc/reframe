@@ -86,7 +86,7 @@ class SlurmJob(sched.Job):
                                 'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
         self._is_cancelling = False
-        self._is_array_job = False
+        self._is_job_array = False
         self._update_state_count = 0
 
     def _format_option(self, var, option):
@@ -114,7 +114,7 @@ class SlurmJob(sched.Job):
         super().prepare(commands, environs, **gen_opts)
 
     def emit_preamble(self):
-        self._handle_job_arrays()
+        self._check_array_opt()
         preamble = [
             self._format_option(self.name, '--job-name="{0}"'),
             self._format_option(self.num_tasks, '--ntasks={0}'),
@@ -128,6 +128,7 @@ class SlurmJob(sched.Job):
         ]
 
         if self._is_job_array:
+            # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
             preamble += [self._format_option(self.stdout, '--output={0}_%a'),
                          self._format_option(self.stderr, '--error={0}_%a')]
         else:
@@ -190,7 +191,7 @@ class SlurmJob(sched.Job):
 
         return None
 
-    def _handle_job_arrays(self):
+    def _check_array_opt(self):
         option_parser = ArgumentParser()
         option_parser.add_argument('-a', '--array')
         parsed_args, _ = option_parser.parse_known_args(self.options)
@@ -201,8 +202,8 @@ class SlurmJob(sched.Job):
     def _unify_files(self):
         output_glob = glob.glob(self.stdout + '_*')
         err_glob = glob.glob(self.stderr + '_*')
-        os_ext.concat_files(output_glob, self.stdout)
-        os_ext.concat_files(err_glob, self.stderr)
+        os_ext.concat_files(output_glob, self.stdout, overwrite=True)
+        os_ext.concat_files(err_glob, self.stderr, overwrite=True)
 
     def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
