@@ -130,7 +130,9 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-cray': (['-fopenmp'] if lang != 'f90' and
+                            self.current_system.name in {'daint', 'dom'} else
+                            ['-homp']),
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
@@ -184,7 +186,9 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-cray': (['-fopenmp'] if lang != 'f90' and
+                            self.current_system.name in {'daint', 'dom'} else
+                            ['-homp']),
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
