@@ -19,8 +19,6 @@ def slurm_state_completed(state):
         'BOOT_FAIL',
         'CANCELLED',
         'COMPLETED',
-        'CONFIGURING',
-        'COMPLETING',
         'DEADLINE',
         'FAILED',
         'NODE_FAIL',
@@ -33,6 +31,8 @@ def slurm_state_completed(state):
 
 def slurm_state_pending(state):
     pending_states = {
+        'COMPLETING',
+        'CONFIGURING',
         'PENDING',
         'RESV_DEL_HOLD',
         'REQUEUE_FED',
