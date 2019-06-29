@@ -3,7 +3,6 @@
 #
 
 import abc
-import os
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
