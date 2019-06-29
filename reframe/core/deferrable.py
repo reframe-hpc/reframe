@@ -5,7 +5,8 @@ import functools
 
 
 def deferrable(func):
-    """Function decorator for converting a function to a deferred expression."""
+    """Function decorator for converting a function to a deferred
+    expression."""
     @functools.wraps(func)
     def _deferred(*args, **kwargs):
         return _DeferredExpression(func, *args, **kwargs)
@@ -63,7 +64,8 @@ class _DeferredExpression:
         return builtins.bool(self.evaluate())
 
     def __str__(self):
-        """Evaluate the deferred expresion and return its string representation."""
+        """Evaluate the deferred expresion and return its string
+        representation."""
         return str(self.evaluate())
 
     def __iter__(self):
@@ -215,8 +217,8 @@ class _DeferredExpression:
     def __rdivmod__(self, other):
         """This is not deferrable.
 
-        Instead it returns a tuple of deferrables that compute the rfloordiv and
-        the rmod.
+        Instead it returns a tuple of deferrables that compute the rfloordiv
+        and the rmod.
         """
         return (self.__rfloordiv__(other), self.__rmod__(other))
 
