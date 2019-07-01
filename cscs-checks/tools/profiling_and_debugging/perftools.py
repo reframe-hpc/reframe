@@ -31,7 +31,8 @@ class PerftoolsCheck(rfm.RegressionTest):
             self.build_system.max_concurrency = 1
 
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-O2', '-g', '-h nomessage=3140', '-homp'],
+            'PrgEnv-cray': ['-O2', '-g', '-h nomessage=3140',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']

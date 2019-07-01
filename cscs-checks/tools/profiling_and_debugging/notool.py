@@ -15,7 +15,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-O2', '-g', '-homp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
