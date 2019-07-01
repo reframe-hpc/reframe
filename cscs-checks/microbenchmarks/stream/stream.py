@@ -24,8 +24,10 @@ class StreamTest(rfm.RegressionTest):
                                          'PrgEnv-gnu-nompi',
                                          'PrgEnv-pgi-nompi']
 
+        self.use_multithreading = False
+
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-homp'],
+            'PrgEnv-cray': ['-fopenmp'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
             'PrgEnv-pgi': ['-mp', '-O3']
@@ -56,19 +58,19 @@ class StreamTest(rfm.RegressionTest):
         }
         self.stream_bw_reference = {
             'PrgEnv-cray': {
-                'daint:gpu': {'triad': (50223.0, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (56643.0, -0.25, None, 'MB/s')},
-                'dom:gpu': {'triad': (50440.0, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (56711.0, -0.25, None, 'MB/s')},
+                'daint:gpu': {'triad': (42000, -0.15, None, 'MB/s')},
+                'daint:mc': {'triad': (86000, -0.15, None, 'MB/s')},
+                'dom:gpu': {'triad': (42000, -0.15, None, 'MB/s')},
+                'dom:mc': {'triad': (86000, -0.15, None, 'MB/s')},
                 'kesch:cn': {'triad': (103129.0, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (55967.0, -0.1, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
-                'daint:gpu': {'triad': (50223.0, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (56643.0, -0.25, None, 'MB/s')},
-                'dom:gpu': {'triad': (50440.0, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (56711.0, -0.25, None, 'MB/s')},
+                'daint:gpu': {'triad': (44000, -0.15, None, 'MB/s')},
+                'daint:mc': {'triad': (87000, -0.15, None, 'MB/s')},
+                'dom:gpu': {'triad': (44000, -0.15, None, 'MB/s')},
+                'dom:mc': {'triad': (87000, -0.15, None, 'MB/s')},
                 'kesch:cn': {'triad': (78046.0, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (43803.0, -0.1, None, 'MB/s')},
                 'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
@@ -76,10 +78,10 @@ class StreamTest(rfm.RegressionTest):
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-intel': {
-                'daint:gpu': {'triad': (50223.0, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (56643.0, -0.25, None, 'MB/s')},
-                'dom:gpu': {'triad': (50440.0, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (56711.0, -0.25, None, 'MB/s')},
+                'daint:gpu': {'triad': (60000, -0.15, None, 'MB/s')},
+                'daint:mc': {'triad': (120000, -0.15, None, 'MB/s')},
+                'dom:gpu': {'triad': (60000, -0.15, None, 'MB/s')},
+                'dom:mc': {'triad': (120000, -0.15, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-pgi': {
