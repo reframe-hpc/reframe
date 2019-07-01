@@ -621,8 +621,8 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     ``patt`` in the file ``filename``.
 
     This function is equivalent to ``extractall(patt, filename, tag,
-    conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out of
-    bounds.
+    conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out
+    of bounds.
 
     :arg patt: as in :func:`extractall`.
     :arg filename: as in :func:`extractall`.
@@ -632,6 +632,7 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
     :arg item: the specific element to extract.
     :returns: The extracted value.
     :raises reframe.core.exceptions.SanityError: In case of errors.
+
     """
     try:
         # Explicitly evaluate the expression here, so as to force any exception
@@ -639,8 +640,10 @@ def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
         # expression containing this one.
         return evaluate(extractall(patt, filename, tag, conv, encoding)[item])
     except IndexError:
-        raise SanityError("not enough matches of pattern `%s' in file `%s' "
-                          "so as to extract item `%s'" % (patt, filename, item))
+        raise SanityError(
+            "not enough matches of pattern `%s' in file `%s' "
+            "so as to extract item `%s'" % (patt, filename, item)
+        )
 
 
 # Numeric functions
@@ -723,5 +726,6 @@ def glob(pathname, *, recursive=False):
 
 @deferrable
 def iglob(pathname, recursive=False):
-    """Replacement for the :func:`glob.iglob() <python:glob.iglob>` function."""
+    """Replacement for the :func:`glob.iglob() <python:glob.iglob>`
+    function."""
     return pyglob.iglob(pathname, recursive=recursive)

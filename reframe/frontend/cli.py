@@ -1,5 +1,4 @@
 import inspect
-import json
 import os
 import re
 import socket
@@ -12,7 +11,6 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
-import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,

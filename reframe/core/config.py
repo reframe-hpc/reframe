@@ -1,4 +1,3 @@
-import os
 import collections.abc
 
 import reframe.core.debug as debug
@@ -6,8 +5,7 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError,
-                                     ReframeError, ReframeFatalError)
+from reframe.core.exceptions import (ConfigError, ReframeFatalError)
 
 
 _settings = None
@@ -64,7 +62,7 @@ class SiteConfiguration:
 
         try:
             sched_descr, launcher_descr = descr.split('+')
-        except ValueError as e:
+        except ValueError:
             raise ValueError('invalid syntax for the '
                              'scheduling system: %s' % descr) from None
 
@@ -109,7 +107,7 @@ class SiteConfiguration:
             # Create an environment instance
             try:
                 config = envconfig['%s:%s:%s' % (system, partition, name)]
-            except KeyError as e:
+            except KeyError:
                 raise ConfigError(
                     "could not find a definition for `%s'" % name
                 ) from None
@@ -144,7 +142,6 @@ class SiteConfiguration:
             sys_stagedir = config.get('stagedir', None)
             sys_outputdir = config.get('outputdir', None)
             sys_perflogdir = config.get('perflogdir', None)
-            sys_logdir = config.get('logdir', None)
             sys_resourcesdir = config.get('resourcesdir', '.')
             sys_modules_system = config.get('modules_system', None)
 

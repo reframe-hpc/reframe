@@ -3,7 +3,6 @@
 #
 
 import copy
-import itertools
 import os
 
 import reframe.utility.typecheck as types

@@ -39,7 +39,7 @@ def repr(obj, indent=4, max_depth=2):
         return builtins.repr(obj)
 
     tid = _gettid()
-    indent_width = _increase_indent() * indent
+    _increase_indent()
 
     # Attribute representation
     if _depth[tid] == max_depth:

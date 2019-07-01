@@ -14,7 +14,7 @@ import reframe
 from reframe.core.exceptions import ReframeSyntaxError, user_frame
 from reframe.core.logging import getlogger
 from reframe.core.pipeline import RegressionTest
-from reframe.utility.versioning import Version, VersionValidator
+from reframe.utility.versioning import VersionValidator
 
 
 def _register_test(cls, args=None):
@@ -38,7 +38,7 @@ def _register_test(cls, args=None):
 
             try:
                 ret.append(_instantiate(cls, args))
-            except Exception as e:
+            except Exception:
                 frame = user_frame(sys.exc_info()[2])
                 msg = "skipping test due to errors: %s: " % cls.__name__
                 msg += "use `-v' for more information\n"
