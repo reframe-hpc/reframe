@@ -4,9 +4,7 @@
 
 import ast
 import collections
-import inspect
 import os
-from importlib.machinery import SourceFileLoader
 
 import reframe.core.debug as debug
 import reframe.utility as util
