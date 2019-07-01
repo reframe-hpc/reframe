@@ -17,8 +17,8 @@ class PerftoolsCheck(rfm.RegressionTest):
         else:
             self.valid_systems = ['daint:gpu', 'dom:gpu']
 
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                    'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
         if lang == 'Cpp':
             self.sourcesdir = os.path.join('src', 'C++')
         else:
@@ -33,6 +33,8 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.prgenv_flags = {
             'PrgEnv-cray': ['-O2', '-g', '-h nomessage=3140',
                             '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-h nomessage=3140',
+                                    '-homp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
@@ -80,4 +82,3 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.build_system.cflags = flags
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
-        self.build_system.ldflags = flags
