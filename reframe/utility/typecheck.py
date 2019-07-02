@@ -58,7 +58,6 @@ is an instance of ``List``, but not an instance of ``List[int]``.
 """
 
 import abc
-import collections
 import re
 
 

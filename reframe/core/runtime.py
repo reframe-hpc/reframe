@@ -312,7 +312,8 @@ class temp_runtime:
 
 
 def switch_runtime(dict_config, sysname=None):
-    """Function decorator for temporarily changing the runtime for a function."""
+    """Function decorator for temporarily changing the runtime for a
+    function."""
     def _runtime_deco(fn):
         @functools.wraps(fn)
         def _fn(*args, **kwargs):

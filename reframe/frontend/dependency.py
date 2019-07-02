@@ -2,9 +2,6 @@
 # Test case graph functionality
 #
 
-import collections
-import itertools
-
 import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
