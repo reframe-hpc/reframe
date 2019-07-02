@@ -26,7 +26,7 @@ class ContainerPlatform(abc.ABC):
         self.requires_mpi = False
         self.commands = []
         self.mount_points  = []
-        self.workdir = None
+        self.workdir = '/rfm_workdir' 
 
     @abc.abstractmethod
     def emit_prepare_cmds(self):
@@ -79,7 +79,7 @@ class Docker(ContainerPlatform):
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
         docker_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
-        run_cmd = 'docker run %s %s bash -c ' % (' '.join(docker_opts),
+        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(docker_opts),
                                                  self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
