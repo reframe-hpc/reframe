@@ -457,7 +457,6 @@ class TModImpl(ModulesSystemImpl):
             return []
 
     def conflicted_modules(self, module):
-        conflict_list = []
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
         return [Module(m.group(1))
@@ -592,7 +591,6 @@ class LModImpl(TModImpl):
         return completed.stdout.strip() == 'false'
 
     def conflicted_modules(self, module):
-        conflict_list = []
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
 

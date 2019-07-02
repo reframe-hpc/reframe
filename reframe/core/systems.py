@@ -13,7 +13,7 @@ class SystemPartition:
     This class is immutable.
     """
 
-    _name      = fields.TypedField('_name', typ.Str['(\w|-)+'])
+    _name      = fields.TypedField('_name', typ.Str[r'(\w|-)+'])
     _descr     = fields.TypedField('_descr', str)
     _access    = fields.TypedField('_access', typ.List[str])
     _environs  = fields.TypedField('_environs', typ.List[Environment])
