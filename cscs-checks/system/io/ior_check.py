@@ -1,5 +1,4 @@
 import os
-import sys
 import getpass
 
 import reframe as rfm
@@ -67,8 +66,8 @@ class IorCheck(rfm.RegressionTest):
             data.setdefault('ior_block_size', '24g')
             data.setdefault('ior_access_type', 'MPIIO')
             data.setdefault('reference',
-                            {'read_bw': (1, -0.5, None),
-                             'write_bw': (1, -0.5, None)
+                            {'read_bw': (0, None, None, 'Bytes/s'),
+                             'write_bw': (0, None, None, 'Bytes/s')
                              })
             data.setdefault('dummy', {})  # entry for unknown systems
 
@@ -132,6 +131,8 @@ class IorWriteCheck(IorCheck):
                 r'^Max Write:\s+(?P<write_bw>\S+) MiB/sec', self.stdout,
                 'write_bw', float)
         }
+        # Convert from MiB/s to bytes/s
+        self.perf_patterns['write_bw'] *= pow(2, 20)
         self.tags |= {'write'}
 
 
@@ -152,4 +153,6 @@ class IorReadCheck(IorCheck):
                 r'^Max Read:\s+(?P<read_bw>\S+) MiB/sec', self.stdout,
                 'read_bw', float)
         }
+        # Convert from MiB/s to bytes/s
+        self.perf_patterns['read_bw'] *= pow(2, 20)
         self.tags |= {'read'}
