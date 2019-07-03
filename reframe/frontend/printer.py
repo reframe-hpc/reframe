@@ -1,5 +1,4 @@
 import datetime
-import sys
 
 import reframe.core.logging as logging
 import reframe.utility.color as color
