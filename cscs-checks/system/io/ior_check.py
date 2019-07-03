@@ -16,7 +16,6 @@ class IorCheck(rfm.RegressionTest):
         self.test_dir = os.path.join(self.base_dir, self.username, '.ior')
         self.pre_run = ['mkdir -p ' + self.test_dir]
         self.test_file = os.path.join(self.test_dir, 'ior.dat')
-
         self.fs = {
             '/scratch/snx1600tds': {
                 'valid_systems': ['dom:gpu'],
@@ -26,22 +25,22 @@ class IorCheck(rfm.RegressionTest):
                     # effects on read. The option "-C" could be used
                     # with many tasks per node. 8 tasks are enough
                     # to get ~peak perf (write 5.4 GB/s, read 4.3 GB/s)
-                    }
-                },
+                }
+            },
             '/scratch/snx1600': {
                 'valid_systems': ['daint:gpu'],
                 'daint': {}
-                },
+            },
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu'],
                 'dom': {
                     'num_tasks': 4,
-                    }
-                },
+                }
+            },
             '/scratch/snx3000': {
                 'valid_systems': ['daint:gpu'],
                 'daint': {}
-                },
+            },
             '/users': {
                 'valid_systems': ['daint:gpu', 'dom:gpu', 'fulen:normal'],
                 'ior_block_size': '8g',
@@ -49,26 +48,29 @@ class IorCheck(rfm.RegressionTest):
                 'dom': {},
                 'fulen': {
                     'valid_prog_environs': ['PrgEnv-gnu']
-                    }
-                },
+                }
+            },
             '/scratch/shared/fulen': {
                 'valid_systems': ['fulen:normal'],
                 'ior_block_size': '48g',
                 'fulen': {
                     'num_tasks': 8,
                     'valid_prog_environs': ['PrgEnv-gnu']
-                    }
                 }
             }
+        }
 
         # Setting some default values
         for data in self.fs.values():
             data.setdefault('ior_block_size', '24g')
             data.setdefault('ior_access_type', 'MPIIO')
-            data.setdefault('reference',
-                            {'read_bw': (0, None, None, 'Bytes/s'),
-                             'write_bw': (0, None, None, 'Bytes/s')
-                             })
+            data.setdefault(
+                'reference',
+                {
+                    'read_bw': (0, None, None, 'MiB/s'),
+                    'write_bw': (0, None, None, 'MiB/s')
+                }
+            )
             data.setdefault('dummy', {})  # entry for unknown systems
 
         cur_sys = self.current_system.name
@@ -119,8 +121,7 @@ class IorCheck(rfm.RegressionTest):
                         ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
-                        ['/scratch/shared/fulen']
-                        )
+                        ['/scratch/shared/fulen'])
 class IorWriteCheck(IorCheck):
     def __init__(self, base_dir):
         super().__init__(base_dir)
@@ -132,7 +133,6 @@ class IorWriteCheck(IorCheck):
                 'write_bw', float)
         }
         # Convert from MiB/s to bytes/s
-        self.perf_patterns['write_bw'] *= pow(2, 20)
         self.tags |= {'write'}
 
 
@@ -141,8 +141,7 @@ class IorWriteCheck(IorCheck):
                         ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
-                        ['/scratch/shared/fulen']
-                        )
+                        ['/scratch/shared/fulen'])
 class IorReadCheck(IorCheck):
     def __init__(self, base_dir):
         super().__init__(base_dir)
@@ -154,5 +153,4 @@ class IorReadCheck(IorCheck):
                 'read_bw', float)
         }
         # Convert from MiB/s to bytes/s
-        self.perf_patterns['read_bw'] *= pow(2, 20)
         self.tags |= {'read'}
