@@ -86,7 +86,7 @@ class SlurmJob(sched.Job):
                                 'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
         self._is_cancelling = False
-        self._is_job_array = False
+        self._is_job_array = None
         self._update_state_count = 0
 
     def _format_option(self, var, option):
@@ -114,7 +114,6 @@ class SlurmJob(sched.Job):
         super().prepare(commands, environs, **gen_opts)
 
     def emit_preamble(self):
-        self._check_array_opt()
         preamble = [
             self._format_option(self.name, '--job-name="{0}"'),
             self._format_option(self.num_tasks, '--ntasks={0}'),
@@ -127,13 +126,12 @@ class SlurmJob(sched.Job):
             self._format_option(self.num_cpus_per_task, '--cpus-per-task={0}'),
         ]
 
-        if self._is_job_array:
-            # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
-            preamble += [self._format_option(self.stdout, '--output={0}_%a'),
-                         self._format_option(self.stderr, '--error={0}_%a')]
-        else:
-            preamble += [self._format_option(self.stdout, '--output={0}'),
-                         self._format_option(self.stderr, '--error={0}')]
+        # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
+        outfile_fmt = '--output={0}' + ('_%a' if self.is_job_array else '')
+        errfile_fmt = '--error={0}' + ('_%a' if self.is_job_array else '')
+
+        preamble += [self._format_option(self.stdout, outfile_fmt),
+                     self._format_option(self.stderr, errfile_fmt)]
 
         if self.time_limit is not None:
             preamble.append(self._format_option('%d:%d:%d' % self.time_limit,
@@ -191,19 +189,11 @@ class SlurmJob(sched.Job):
 
         return None
 
-    def _check_array_opt(self):
-        option_parser = ArgumentParser()
-        option_parser.add_argument('-a', '--array')
-        parsed_args, _ = option_parser.parse_known_args(self.options)
-        jobs_array = parsed_args.array
-        if jobs_array:
-            self._is_job_array = True
-
-    def _unify_files(self):
+    def _merge_files(self):
         output_glob = glob.glob(self.stdout + '_*')
         err_glob = glob.glob(self.stderr + '_*')
-        os_ext.concat_files(output_glob, self.stdout, overwrite=True)
-        os_ext.concat_files(err_glob, self.stderr, overwrite=True)
+        os_ext.concat_files(self.stdout, *output_glob, overwrite=True)
+        os_ext.concat_files(self.stderr, *err_glob, overwrite=True)
 
     def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
@@ -388,6 +378,9 @@ class SlurmJob(sched.Job):
 
         # Quickly return in case we have finished already
         if slurm_state_completed(self._state):
+            if self.is_job_array:
+                self._merge_files()
+
             return
 
         intervals = itertools.cycle(settings().job_poll_intervals)
@@ -397,7 +390,7 @@ class SlurmJob(sched.Job):
             self._update_state()
 
         if self._is_job_array:
-            self._unify_files()
+            self._merge_files()
 
     def cancel(self):
         super().cancel()
@@ -420,6 +413,20 @@ class SlurmJob(sched.Job):
             return False
         else:
             return slurm_state_completed(self._state)
+
+    @property
+    def is_job_array(self):
+        if self._is_job_array is None:
+            option_parser = ArgumentParser()
+            option_parser.add_argument('-a', '--array')
+            parsed_args, _ = option_parser.parse_known_args(self.options)
+            jobs_array = parsed_args.array
+            if jobs_array:
+                self._is_job_array = True
+            else:
+                self._is_job_array = False
+
+        return self._is_job_array
 
 
 @register_scheduler('squeue')

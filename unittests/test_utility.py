@@ -979,19 +979,19 @@ class TestOrderedSet(unittest.TestCase):
 
     def test_concat_files(self):
         tmpdir = tempfile.mkdtemp(dir='unittests')
-        _, file1 = tempfile.mkstemp(dir=tmpdir)
-        _, file2  = tempfile.mkstemp(dir=tmpdir)
-        _, concat_file = tempfile.mkstemp(dir=tmpdir)
+        with os_ext.change_dir(tmpdir):
+            file1 = 'in1.txt'
+            file2 = 'in2.txt'
+            concat_file = 'out.txt'
+            with open(file1, 'w') as f1:
+                f1.write('Hello1')
 
-        with open(file1, 'w') as f1:
-            f1.write('Hello from file1')
+            with open(file2, 'w') as f2:
+                f2.write('Hello2')
 
-        with open(file2, 'w') as f2:
-            f2.write('Hello from file2')
+            os_ext.concat_files(concat_file, file1, file2, overwrite=True)
+            with open(concat_file) as cf:
+                out = cf.read()
+                assert out == 'Hello1\nHello2\n'
 
-        os_ext.concat_files([file1, file2], concat_file, overwrite=True)
-
-        with open(concat_file) as cf:
-            out = cf.read()
-            self.assertTrue(all(['Hello from file1' in out,
-                                 'Hello from file2' in out]))
+        os_ext.rmtree(tmpdir)

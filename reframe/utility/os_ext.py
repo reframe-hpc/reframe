@@ -2,7 +2,7 @@
 # OS and shell utility functions
 #
 
-import collections
+import collections.abc
 import errno
 import getpass
 import grp
@@ -334,29 +334,26 @@ def expandvars(path):
     return cmd_subst.sub(stdout, path)
 
 
-def concat_files(files, output, sep='\n', overwrite=False):
+def concat_files(dst, *files, sep='\n', overwrite=False):
     """Concatenates multiple files to a unified file
 
+       :arg dst: The name of the concatenated file.
        :arg files: The files to concatenate.
-       :arg concat: The name of the concatenated file.
        :arg sep: The separator to use during concatenation.
        :arg overwrite: Overwrite the ``output`` file if it already exists.
        :raises TypeError: In case ``files`` it not an iterable object.
        :raises ValueError: In case ``output`` already exists and ovewrite is
            :class:`False`.
     """
-
     if not isinstance(files, collections.abc.Iterable):
         raise TypeError("'%s' object is not iterable" %
                         files.__class__.__name__)
 
-    if os.path.exists(output) and not overwrite:
-        raise ValueError('File %s already exists' % output)
+    if os.path.exists(dst) and not overwrite:
+        raise ValueError("file '%s' already exists" % dst)
 
-    data = []
-    for f in files:
-        with open(f, 'r') as fr:
-            data.append(fr.read())
-
-    with open(output, 'w') as fw:
-        fw.write(sep.join(data))
+    with open(dst, 'w') as fw:
+        for f in files:
+            with open(f, 'r') as fr:
+                fw.write(fr.read())
+                fw.write(sep)
