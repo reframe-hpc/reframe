@@ -12,7 +12,6 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
-from reframe.utility import OrderedSet
 
 
 class Module:
