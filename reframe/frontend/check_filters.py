@@ -1,7 +1,5 @@
 import re
 
-import reframe.core.runtime as rt
-import reframe.utility.sanity as util
 from reframe.core.exceptions import ReframeError
 
 
