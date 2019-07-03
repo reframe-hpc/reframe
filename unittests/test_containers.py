@@ -59,10 +59,10 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def exp_cmd_mount_points(self):
-        return ('docker run -v "/path/one":"/one" -v "/path/two":"/two" '
+        return ('docker run --rm -v "/path/one":"/one" -v "/path/two":"/two" '
                 "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def exp_cmd_custom_registry(self):
-        return ('docker run -v "/path/one":"/one" registry/custom/name:tag '
+        return ('docker run --rm -v "/path/one":"/one" registry/custom/name:tag '
                 "bash -c 'cd /stagedir; cmd'")

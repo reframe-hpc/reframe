@@ -1062,7 +1062,7 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        if not self.exec_cmd:
+        if not self.container_platform:
             self.exec_cmd = [self.job.launcher.run_command(self.job),
                              self.executable, *self.executable_opts]
 
