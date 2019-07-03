@@ -76,7 +76,6 @@ class ModulesSystem:
     """A modules system abstraction inside ReFrame.
 
     This class interfaces between the framework internals and the actual
-re
     modules systems implementation.
     """
 
