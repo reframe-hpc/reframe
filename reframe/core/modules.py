@@ -120,9 +120,9 @@ re
 
             # Handle modules mappings with self loops
             if node == parent and node not in loop_nodes:
-               loop_nodes.add(node)
-               ret.append(node)
-               continue
+                loop_nodes.add(node)
+                ret.append(node)
+                continue
 
             try:
                 # We insert the adjacent nodes in reverse order, so as to
@@ -134,7 +134,7 @@ re
             else:
                 path.append(node)
                 for m in adjacent:
-                    if m in path and m !=node:
+                    if m in path and m != node:
                         raise EnvironError('module cyclic dependency: ' +
                                            '->'.join(path + [m]))
                     if m not in visited:
