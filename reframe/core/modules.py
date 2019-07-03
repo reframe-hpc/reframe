@@ -12,6 +12,7 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
+from reframe.utility import OrderedSet
 
 
 class Module:
@@ -75,6 +76,7 @@ class ModulesSystem:
     """A modules system abstraction inside ReFrame.
 
     This class interfaces between the framework internals and the actual
+re
     modules systems implementation.
     """
 
@@ -109,12 +111,18 @@ class ModulesSystem:
         visited = set()
         unvisited = [(name, None)]
         path = []
+        loop_nodes = set()
         while unvisited:
             node, parent = unvisited.pop()
-
             # Adjust the path
             while path and path[-1] != parent:
                 path.pop()
+
+            # Handle modules mappings with self loops
+            if node == parent and node not in loop_nodes:
+               loop_nodes.add(node)
+               ret.append(node)
+               continue
 
             try:
                 # We insert the adjacent nodes in reverse order, so as to
@@ -126,10 +134,9 @@ class ModulesSystem:
             else:
                 path.append(node)
                 for m in adjacent:
-                    if m in path:
+                    if m in path and m !=node:
                         raise EnvironError('module cyclic dependency: ' +
                                            '->'.join(path + [m]))
-
                     if m not in visited:
                         unvisited.append((m, node))
 
