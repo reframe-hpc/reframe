@@ -71,7 +71,7 @@ class ReframeSettings:
             },
             'kesch': {
                 'descr': 'Kesch MCH',
-                'hostnames': ['keschln-\d+'],
+                'hostnames': [r'keschln-\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
