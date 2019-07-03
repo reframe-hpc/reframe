@@ -15,7 +15,8 @@ class BuildSystem(abc.ABC):
 
     #: The C compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
-    #: the compiler defined in the current programming environment will be used.
+    #: the compiler defined in the current programming environment will be
+    #: used.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
@@ -23,7 +24,8 @@ class BuildSystem(abc.ABC):
 
     #: The C++ compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
-    #: the compiler defined in the current programming environment will be used.
+    #: the compiler defined in the current programming environment will be
+    #: used.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
@@ -31,7 +33,8 @@ class BuildSystem(abc.ABC):
 
     #: The Fortran compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
-    #: the compiler defined in the current programming environment will be used.
+    #: the compiler defined in the current programming environment will be
+    #: used.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
@@ -39,7 +42,8 @@ class BuildSystem(abc.ABC):
 
     #: The CUDA compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
-    #: the compiler defined in the current programming environment will be used.
+    #: the compiler defined in the current programming environment will be
+    #: used.
     #:
     #: :type: :class:`str`
     #: :default: :class:`None`
@@ -185,7 +189,8 @@ class Make(BuildSystem):
     """
 
     #: Append these options to the ``make`` invocation.
-    #: This variable is also useful for passing variables or targets to ``make``.
+    #: This variable is also useful for passing variables or targets to
+    #: ``make``.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -573,8 +578,8 @@ class Autotools(ConfigureBasedBuildSystem):
 
     1. Create a build directory if :attr:`builddir` is not :class:`None` and
        change to it.
-    2. Invoke ``configure`` to configure the project by setting the corresponding
-       flags for compilers and compiler flags.
+    2. Invoke ``configure`` to configure the project by setting the
+       corresponding flags for compilers and compiler flags.
     3. Issue ``make`` to compile the code.
     """
 
@@ -596,7 +601,6 @@ class Autotools(ConfigureBasedBuildSystem):
         cc = self._cc(environ)
         cxx = self._cxx(environ)
         ftn = self._ftn(environ)
-        nvcc = self._nvcc(environ)
         cppflags = self._cppflags(environ)
         cflags   = self._cflags(environ)
         cxxflags = self._cxxflags(environ)

@@ -7,7 +7,6 @@ import os
 import pprint
 import shutil
 import sys
-import warnings
 import socket
 from datetime import datetime
 
@@ -77,8 +76,8 @@ def _check_level(level):
 # 1. Monkey-patch the `setLevel` method of `logging.Handler` with our method
 #    that understands our levels.
 # 2. We need a way to differentiate the patched handlers. For this reason, we
-#    make the `logging.Handler` a pseudo-subclass of our custom `Handler` class,
-#    which itself should be abstract and unable to be instantiated.
+#    make the `logging.Handler` a pseudo-subclass of our custom `Handler`
+#    class, which itself should be abstract and unable to be instantiated.
 
 class Handler(abc.ABC):
     @abc.abstractmethod
