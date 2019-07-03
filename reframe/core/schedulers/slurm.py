@@ -129,7 +129,6 @@ class SlurmJob(sched.Job):
         # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
         outfile_fmt = '--output={0}' + ('_%a' if self.is_job_array else '')
         errfile_fmt = '--error={0}' + ('_%a' if self.is_job_array else '')
-
         preamble += [self._format_option(self.stdout, outfile_fmt),
                      self._format_option(self.stderr, errfile_fmt)]
 

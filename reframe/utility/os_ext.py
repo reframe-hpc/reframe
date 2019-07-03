@@ -335,9 +335,9 @@ def expandvars(path):
 
 
 def concat_files(dst, *files, sep='\n', overwrite=False):
-    """Concatenates multiple files to a unified file
+    """Concatenates multiple files into a single file
 
-       :arg dst: The name of the concatenated file.
+       :arg dst: The name of the output file.
        :arg files: The files to concatenate.
        :arg sep: The separator to use during concatenation.
        :arg overwrite: Overwrite the ``output`` file if it already exists.
