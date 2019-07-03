@@ -1064,7 +1064,7 @@ class RegressionTest:
 
         if not self.exec_cmd:
             self.exec_cmd = [self.job.launcher.run_command(self.job),
-                            self.executable, *self.executable_opts]
+                             self.executable, *self.executable_opts]
 
         commands = [*self.pre_run, ' '.join(self.exec_cmd), *self.post_run]
         environs = [self._current_partition.local_env,
