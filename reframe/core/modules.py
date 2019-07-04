@@ -12,6 +12,7 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
+from reframe.utility import OrderedSet
 
 
 class Module:
@@ -105,11 +106,10 @@ class ModulesSystem:
         :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
             contains a cycle.
         """
-        ret = []
+        ret = OrderedSet()
         visited = set()
         unvisited = [(name, None)]
         path = []
-        loop_nodes = set()
         while unvisited:
             node, parent = unvisited.pop()
             # Adjust the path
@@ -117,9 +117,8 @@ class ModulesSystem:
                 path.pop()
 
             # Handle modules mappings with self loops
-            if node == parent and node not in loop_nodes:
-                loop_nodes.add(node)
-                ret.append(node)
+            if node == parent and node not in ret:
+                ret.add(node)
                 continue
 
             try:
@@ -128,7 +127,7 @@ class ModulesSystem:
                 adjacent = reversed(self.module_map[node])
             except KeyError:
                 # We have reached a terminal node
-                ret.append(node)
+                ret.add(node)
             else:
                 path.append(node)
                 for m in adjacent:
@@ -140,7 +139,7 @@ class ModulesSystem:
 
             visited.add(node)
 
-        return ret
+        return list(ret)
 
     @property
     def backend(self):
