@@ -161,14 +161,6 @@ class RegressionTest:
     #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', type(None))
 
-    #: The container platform to be used for this test.
-    #:
-    #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
-    #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.19
-    container_platform = ContainerPlatformField('container_platform', type(None))
-
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are executed during the compilation phase and from
@@ -640,8 +632,6 @@ class RegressionTest:
         self._build_job = None
         self._compile_proc = None
         self.build_system = None
-
-        # Container platform
         self.container_platform = None
 
         # Performance logging
@@ -1062,14 +1052,11 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        # if not self.container_platform:
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
         environs = [self._current_partition.local_env,
                     self._current_environ, self._user_environ]
-
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs, login=True)
@@ -1260,6 +1247,17 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     """
 
+    #: The container platform to be used for this test.
+    #:
+    #: If the `self.container_platform.name` is defined on the test, both
+    #: `self.executable` and `self.executable_opts` are ignored.
+    #:
+    #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.19
+    container_platform = ContainerPlatformField('container_platform', type(None))
+
     def compile(self):
         """The compilation phase of the regression test pipeline.
 
@@ -1288,12 +1286,14 @@ class RunOnlyRegressionTest(RegressionTest):
         if self.container_platform:
             self.container_platform.validate()
             self.container_platform.mount_points = [
-                (self._stagedir, self.container_platform.workdir)]
+                (self._stagedir, self.container_platform.workdir)
+            ]
+            # We replace executable and executable_opts in the case of containers.
             self.executable = self.container_platform.emit_launch_cmds()
-            if self.container_platform.emit_prepare_cmds():
-                self.pre_run += [self.container_platform.emit_prepare_cmds()]
-
             self.executable_opts = []
+            emit_prepare_cmds = self.container_platform.emit_prepare_cmds()
+            if emit_prepare_cmds:
+                self.pre_run += [emit_prepare_cmds]
 
         super().run()
 
