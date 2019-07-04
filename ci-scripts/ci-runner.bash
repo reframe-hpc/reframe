@@ -180,7 +180,7 @@ else
     echo "Running unit tests"
     echo "=================="
 
-    checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
+    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py
 
     echo "==================================="
     echo "Running unit tests with PBS backend"
