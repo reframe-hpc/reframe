@@ -16,7 +16,7 @@ stage('Initialization') {
             echo sh(script: 'env|sort', returnStdout: true)
 
             def githubComment = env.ghprbCommentBody
-            if (githubComment == 'null') {
+            if (githubComment == 'null' || !githubComment.trim().startsWith('@jenkins-cscs')) {
                 machinesToRun = machinesList
                 currentBuild.result = 'SUCCESS'
                 return
