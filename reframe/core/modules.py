@@ -117,7 +117,7 @@ class ModulesSystem:
                 path.pop()
 
             # Handle modules mappings with self loops
-            if node == parent and node not in ret:
+            if node == parent:
                 ret.add(node)
                 continue
 
