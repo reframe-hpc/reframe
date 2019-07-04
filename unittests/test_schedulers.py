@@ -392,6 +392,16 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.testjob._get_default_partition = lambda: 'pdef'
         self.assertEqual(self.testjob.guess_num_tasks(), 0)
 
+    def test_submit_job_array(self):
+        self.testjob.options = ['--array=0-1']
+        self.parallel_cmd = 'echo "Task id: ${SLURM_ARRAY_TASK_ID}"'
+        super().test_submit()
+        assert self.testjob.exitcode == 0
+        with open(self.testjob.stdout) as fp:
+            output = fp.read()
+            assert all([re.search('Task id: 0', output),
+                        re.search('Task id: 1', output)])
+
 
 class TestSqueueJob(TestSlurmJob):
     @property
