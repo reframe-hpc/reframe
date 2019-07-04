@@ -10,11 +10,15 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.descr = 'check for avx2 instructions'
         self.valid_systems = ['dom:login', 'daint:login', 'kesch:login']
         if self.current_system.name == 'kesch':
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-cray-nompi', 'PrgEnv-gnu-nompi']
+            self.valid_prog_environs = [
+                'PrgEnv-cray', 'PrgEnv-gnu', 'PrgEnv-cray-nompi',
+                'PrgEnv-gnu-nompi'
+            ]
         else:
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel', 'PrgEnv-pgi']
+            self.valid_prog_environs = [
+                'PrgEnv-cray', 'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                'PrgEnv-intel', 'PrgEnv-pgi'
+            ]
             self.modules = ['craype-haswell']
 
         self.sourcesdir = 'src/haswell_fma'
@@ -42,5 +46,9 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
                 self.build_system.cflags += ['-march=native']
                 self.build_system.cxxflags += ['-march=native']
                 self.build_system.fflags += ['-march=native']
+        else:
+            if environ.name == 'PrgEnv-cray':
+                self.build_system.cflags = ['-Ofast', '-S']
+                self.build_system.cxxflags = ['-Ofast', '-S']
 
         super().setup(partition, environ, **job_opts)
