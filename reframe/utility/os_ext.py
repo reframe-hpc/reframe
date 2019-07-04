@@ -2,6 +2,7 @@
 # OS and shell utility functions
 #
 
+import collections.abc
 import errno
 import getpass
 import grp
@@ -331,3 +332,28 @@ def expandvars(path):
     # Prepare stdout for inline use
     stdout = completed.stdout.replace('\n', ' ').strip()
     return cmd_subst.sub(stdout, path)
+
+
+def concat_files(dst, *files, sep='\n', overwrite=False):
+    """Concatenate ``files`` into ``dst``.
+
+       :arg dst: The name of the output file.
+       :arg files: The files to concatenate.
+       :arg sep: The separator to use during concatenation.
+       :arg overwrite: Overwrite the ``output`` file if it already exists.
+       :raises TypeError: In case ``files`` it not an iterable object.
+       :raises ValueError: In case ``output`` already exists and ovewrite is
+           :class:`False`.
+    """
+    if not isinstance(files, collections.abc.Iterable):
+        raise TypeError("'%s' object is not iterable" %
+                        files.__class__.__name__)
+
+    if os.path.exists(dst) and not overwrite:
+        raise ValueError("file '%s' already exists" % dst)
+
+    with open(dst, 'w') as fw:
+        for f in files:
+            with open(f, 'r') as fr:
+                fw.write(fr.read())
+                fw.write(sep)
