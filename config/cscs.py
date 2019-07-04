@@ -132,8 +132,9 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
@@ -142,8 +143,8 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -155,8 +156,8 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
@@ -442,6 +443,11 @@ class ReframeSettings:
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
+                },
+
+                'PrgEnv-cray_classic': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray', 'cce/9.0.0-classic'],
                 },
 
                 'PrgEnv-gnu': {
