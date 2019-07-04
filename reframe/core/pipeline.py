@@ -1129,10 +1129,13 @@ class RegressionTest:
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                if key not in self.reference:
-                    raise SanityError(
-                        "tag `%s' not resolved in references for `%s'" %
-                        (tag, self._current_partition.fullname))
+                try:
+                    if key not in self.reference:
+                        raise SanityError(
+                            "tag `%s' not resolved in references for `%s'" %
+                            (tag, self._current_partition.fullname))
+                except SanityError: # TODO: use if-else
+                    self.reference.update({'*':{tag: (0, None, None, 'dummy')}})
 
                 self._perfvalues[key] = (value, *self.reference[key])
                 self._perf_logger.log_performance(logging.INFO, tag, value,
