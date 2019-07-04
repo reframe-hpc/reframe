@@ -1062,11 +1062,11 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
-        if not self.container_platform:
-            self.exec_cmd = [self.job.launcher.run_command(self.job),
-                             self.executable, *self.executable_opts]
+        # if not self.container_platform:
+        exec_cmd = [self.job.launcher.run_command(self.job),
+                    self.executable, *self.executable_opts]
 
-        commands = [*self.pre_run, ' '.join(self.exec_cmd), *self.post_run]
+        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
         environs = [self._current_partition.local_env,
                     self._current_environ, self._user_environ]
 
@@ -1287,12 +1287,13 @@ class RunOnlyRegressionTest(RegressionTest):
 
         if self.container_platform:
             self.container_platform.validate()
+            self.container_platform.mount_points = [
+                (self._stagedir, self.container_platform.workdir)]
+            self.executable = self.container_platform.emit_launch_cmds()
             if self.container_platform.emit_prepare_cmds():
                 self.pre_run += [self.container_platform.emit_prepare_cmds()]
 
-            self.container_platform.mount_points = [
-                (self._stagedir, self.container_platform.workdir)]
-            self.exec_cmd = [self.container_platform.emit_launch_cmds()]
+            self.executable_opts = []
 
         super().run()
 
