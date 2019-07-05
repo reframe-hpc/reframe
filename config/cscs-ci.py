@@ -111,7 +111,10 @@ class ReframeSettings:
             'kesch': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
+                    'modules': [
+                        'PE/17.06',
+                        'PrgEnv-gnu'
+                    ],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -120,22 +123,26 @@ class ReframeSettings:
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray'],
+                    'modules': [
+                        'PE/17.06',
+                        'PrgEnv-CrayCCE/17.06'
+                    ],
                 },
 
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                },
-
-                'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-intel'],
+                    'modules': [
+                        'PE/17.06',
+                        'PrgEnv-gnu'
+                    ],
                 },
 
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi'],
+                    'modules': [
+                        'PE/17.06',
+                        'PrgEnv-pgi'
+                    ],
                 },
 
                 'builtin': {
