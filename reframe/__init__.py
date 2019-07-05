@@ -14,5 +14,5 @@ if sys.version_info[:3] < MIN_PYTHON_VERSION:
 
 
 # Import important names for user tests
-from reframe.core.pipeline import *
-from reframe.core.decorators import *
+from reframe.core.pipeline import *     # noqa: F401, F403
+from reframe.core.decorators import *   # noqa: F401, F403

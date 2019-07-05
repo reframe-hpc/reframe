@@ -1,14 +1,10 @@
 import collections
-import copy
-import errno
-import itertools
 import os
 
 import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
-from reframe.core.exceptions import EnvironError, SpawnedProcessError
 from reframe.core.runtime import runtime
 
 

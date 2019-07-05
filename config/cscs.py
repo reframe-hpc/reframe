@@ -153,8 +153,9 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
@@ -171,8 +172,9 @@ class ReframeSettings:
                         },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -192,8 +194,9 @@ class ReframeSettings:
                         },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
@@ -240,7 +243,7 @@ class ReframeSettings:
 
             'kesch': {
                 'descr': 'Kesch MCH',
-                'hostnames': ['keschln-\d+'],
+                'hostnames': [r'keschln-\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
@@ -479,6 +482,11 @@ class ReframeSettings:
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
+                },
+
+                'PrgEnv-cray_classic': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray', 'cce/9.0.0-classic'],
                 },
 
                 'PrgEnv-gnu': {

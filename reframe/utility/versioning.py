@@ -3,8 +3,6 @@ import functools
 import sys
 import re
 
-from itertools import takewhile
-
 
 @functools.total_ordering
 class Version:

@@ -61,8 +61,9 @@ class TaskExit(ReframeError):
 
 
 class AbortTaskError(ReframeError):
-    """Raised into a regression task to denote that it has been aborted due to an
-    external reason (e.g., keyboard interrupt, fatal error in other places etc.)
+    """Raised into a regression task to denote that it has been aborted due to
+    an external reason (e.g., keyboard interrupt, fatal error in other places
+    etc.)
     """
 
 

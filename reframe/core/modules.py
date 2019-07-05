@@ -12,6 +12,7 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import (ConfigError, EnvironError,
                                      SpawnedProcessError)
+from reframe.utility import OrderedSet
 
 
 class Module:
@@ -105,16 +106,20 @@ class ModulesSystem:
         :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
             contains a cycle.
         """
-        ret = []
+        ret = OrderedSet()
         visited = set()
         unvisited = [(name, None)]
         path = []
         while unvisited:
             node, parent = unvisited.pop()
-
             # Adjust the path
             while path and path[-1] != parent:
                 path.pop()
+
+            # Handle modules mappings with self loops
+            if node == parent:
+                ret.add(node)
+                continue
 
             try:
                 # We insert the adjacent nodes in reverse order, so as to
@@ -122,20 +127,19 @@ class ModulesSystem:
                 adjacent = reversed(self.module_map[node])
             except KeyError:
                 # We have reached a terminal node
-                ret.append(node)
+                ret.add(node)
             else:
                 path.append(node)
                 for m in adjacent:
-                    if m in path:
+                    if m in path and m != node:
                         raise EnvironError('module cyclic dependency: ' +
                                            '->'.join(path + [m]))
-
                     if m not in visited:
                         unvisited.append((m, node))
 
             visited.add(node)
 
-        return ret
+        return list(ret)
 
     @property
     def backend(self):
@@ -457,7 +461,6 @@ class TModImpl(ModulesSystemImpl):
             return []
 
     def conflicted_modules(self, module):
-        conflict_list = []
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
         return [Module(m.group(1))
@@ -592,7 +595,6 @@ class LModImpl(TModImpl):
         return completed.stdout.strip() == 'false'
 
     def conflicted_modules(self, module):
-        conflict_list = []
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
 
