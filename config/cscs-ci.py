@@ -119,6 +119,19 @@ class ReframeSettings:
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
+                'PrgEnv-cray': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PE/17.06',
+                                'PrgEnv-CrayCCE/17.06'],
+                },
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PE/17.06',
+                                'PrgEnv-pgi/18.05'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
             },
             '*': {
                 'PrgEnv-cray': {
