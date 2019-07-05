@@ -144,7 +144,8 @@ class ReframeSettings:
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel'],
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -157,7 +158,8 @@ class ReframeSettings:
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel'],
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
