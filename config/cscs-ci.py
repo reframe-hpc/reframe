@@ -123,26 +123,22 @@ class ReframeSettings:
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': [
-                        'PE/17.06',
-                        'PrgEnv-CrayCCE/17.06'
-                    ],
+                    'modules': ['PrgEnv-cray'],
                 },
 
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': [
-                        'PE/17.06',
-                        'PrgEnv-gnu'
-                    ],
+                    'modules': ['PrgEnv-gnu'],
+                },
+
+                'PrgEnv-intel': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': [
-                        'PE/17.06',
-                        'PrgEnv-pgi'
-                    ],
+                    'modules': ['PrgEnv-pgi'],
                 },
 
                 'builtin': {
