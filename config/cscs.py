@@ -337,29 +337,34 @@ class ReframeSettings:
             'kesch': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-pgi/18.05'],
                     'cc': 'pgcc',
                     'cxx': 'pgc++',
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_gdr'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-pgi/18.05'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-CrayCCE/17.06'],
                 },
                 'PrgEnv-cray-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'modules': ['PE/17.06',
+                                'gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
                         'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
                     },
@@ -369,7 +374,8 @@ class ReframeSettings:
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
