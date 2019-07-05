@@ -633,7 +633,6 @@ class RegressionTest:
         self._build_job = None
         self._compile_proc = None
         self.build_system = None
-        self.container_platform = None
 
         # Performance logging
         self._perf_logger = logging.null_logger
@@ -1250,7 +1249,7 @@ class RunOnlyRegressionTest(RegressionTest):
 
     #: The container platform to be used for this test.
     #:
-    #: If the `self.container_platform.name` is defined on the test, both
+    #: If the `self.container_platform` is defined on the test, both
     #: `self.executable` and `self.executable_opts` are ignored.
     #:
     #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
@@ -1258,6 +1257,10 @@ class RunOnlyRegressionTest(RegressionTest):
     #:
     #: .. versionadded:: 2.19
     container_platform = ContainerPlatformField('container_platform', type(None))
+
+    def __init__(self, name=None, prefix=None):
+        self.container_platform = None
+        super().__init__(name, prefix)
 
     def compile(self):
         """The compilation phase of the regression test pipeline.
@@ -1289,12 +1292,13 @@ class RunOnlyRegressionTest(RegressionTest):
             self.container_platform.mount_points = [
                 (self._stagedir, self.container_platform.workdir)
             ]
+
             # We replace executable and executable_opts in the case of containers.
             self.executable = self.container_platform.emit_launch_cmds()
             self.executable_opts = []
-            emit_prepare_cmds = self.container_platform.emit_prepare_cmds()
-            if emit_prepare_cmds:
-                self.pre_run += [emit_prepare_cmds]
+            pre_run_container = self.container_platform.emit_prepare_cmds()
+            if pre_run_container:
+                self.pre_run += pre_run_container
 
         super().run()
 
