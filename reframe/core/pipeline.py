@@ -1259,8 +1259,8 @@ class RunOnlyRegressionTest(RegressionTest):
     container_platform = ContainerPlatformField('container_platform', type(None))
 
     def __init__(self, name=None, prefix=None):
-        self.container_platform = None
         super().__init__(name, prefix)
+        self.container_platform = None
 
     def compile(self):
         """The compilation phase of the regression test pipeline.
