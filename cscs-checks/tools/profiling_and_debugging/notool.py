@@ -69,21 +69,9 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             }
         }
         if lang == 'C++':
-            self.reference_prgenv = {
-                'PrgEnv-cray': (0.38, -0.6, None, 's'),
-                'PrgEnv-cray_classic': (0.38, -0.6, None, 's'),
-                'PrgEnv-gnu': (0.38, -0.6, None, 's'),
-                'PrgEnv-intel': (0.38, -0.6, None, 's'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
-            }
+            self.reference_lang = (0.38, -0.6, None, 's')
         elif lang == 'F90':
-            self.reference_prgenv = {
-                'PrgEnv-cray': (0.17, -0.6, None, 's'),
-                'PrgEnv-cray_classic': (0.17, -0.6, None, 's'),
-                'PrgEnv-gnu': (0.17, -0.6, None, 's'),
-                'PrgEnv-intel': (0.17, -0.6, None, 's'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
-            }
+            self.reference_lang = (0.17, -0.6, None, 's')
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
@@ -102,4 +90,4 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
         ])
         if self.current_system.name in {'dom', 'daint'}:
-            self.reference['*:elapsed_time'] = self.reference_prgenv[envname]
+            self.reference['*:elapsed_time'] = self.reference_lang
