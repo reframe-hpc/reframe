@@ -17,21 +17,11 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'modules': [],
-                        'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
-                        'descr': 'Login nodes',
-                        'max_jobs': 4
-                    },
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu', '--partition=cscsci'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -46,21 +36,11 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'modules': [],
-                        'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
-                        'descr': 'Login nodes',
-                        'max_jobs': 4
-                    },
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel'],
+                        'environs': ['PrgEnv-cray'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -75,17 +55,10 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'environs': ['PrgEnv-cray', 'PrgEnv-pgi',
-                                     'PrgEnv-gnu'],
-                        'descr': 'Kesch login nodes',
-                    },
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-pgi',
-                                     'PrgEnv-gnu'],
+                        'environs': ['PrgEnv-cray'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -108,31 +81,6 @@ class ReframeSettings:
         },
 
         'environments': {
-            'kesch': {
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': [
-                        'PE/17.06',
-                        'PrgEnv-gnu'
-                    ],
-                    'cc': 'gcc',
-                    'cxx': 'g++',
-                    'ftn': 'gfortran',
-                },
-                'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PE/17.06',
-                                'PrgEnv-CrayCCE/17.06'],
-                },
-                'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.05'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-            },
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
