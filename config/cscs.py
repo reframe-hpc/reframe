@@ -341,7 +341,7 @@ class ReframeSettings:
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.05'],
+                                'PrgEnv-pgi/18.5'],
                     'cc': 'pgcc',
                     'cxx': 'pgc++',
                     'ftn': 'pgf90',
@@ -349,7 +349,7 @@ class ReframeSettings:
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.05'],
+                                'PrgEnv-pgi/18.5'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
