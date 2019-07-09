@@ -45,11 +45,6 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            if task.failed:
-                remove_stage_files = False
-            else:
-                remove_stage_files = not self.keep_stage_files
-
             task.cleanup(not self.keep_stage_files, False)
 
         except TaskExit:
@@ -247,7 +242,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _reschedule(self, task, load_env=True):
         getlogger().debug('scheduling test case for running')
-        partname = task.check.current_partition.fullname
 
         # Restore the test case's environment and run it
         if load_env:

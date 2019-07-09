@@ -3,7 +3,7 @@
 def dirPrefix = 'reframe-ci'
 def loginBash = '#!/bin/bash -l'
 def bashScript = 'ci-scripts/ci-runner.bash'
-def machinesList = ['daint', 'dom', 'kesch']
+def machinesList = params.machines.split()
 def machinesToRun = machinesList
 def runTests = true
 def uniqueID
@@ -16,7 +16,7 @@ stage('Initialization') {
             echo sh(script: 'env|sort', returnStdout: true)
 
             def githubComment = env.ghprbCommentBody
-            if (githubComment == 'null') {
+            if (githubComment == 'null' || !githubComment.trim().startsWith('@jenkins-cscs')) {
                 machinesToRun = machinesList
                 currentBuild.result = 'SUCCESS'
                 return

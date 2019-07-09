@@ -12,15 +12,13 @@ import itertools
 import os
 import shutil
 
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
-import reframe.core.shell as shell
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
-from reframe.core.buildsystems import BuildSystem, BuildSystemField
+from reframe.core.buildsystems import BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, DependencyError,
@@ -61,8 +59,8 @@ class RegressionTest:
         regression tests.
         Refer to the :doc:`ReFrame Tutorial </tutorial>` for more information.
 
-        This class is also directly available under the top-level :mod:`reframe`
-        module.
+        This class is also directly available under the top-level
+        :mod:`reframe` module.
 
        .. versionchanged:: 2.13
 
@@ -126,11 +124,12 @@ class RegressionTest:
     #: relative to the location of the test. Its contents will always be copied
     #: to the stage directory of the test.
     #:
-    #: This attribute may also accept a URL, in which case ReFrame will treat it
-    #: as a Git repository and will try to clone its contents in the stage
+    #: This attribute may also accept a URL, in which case ReFrame will treat
+    #: it as a Git repository and will try to clone its contents in the stage
     #: directory of the test.
     #:
-    #: If set to :class:`None`, the test has no resources an no action is taken.
+    #: If set to :class:`None`, the test has no resources an no action is
+    #: taken.
     #:
     #: :type: :class:`str` or :class:`None`
     #: :default: ``'src'``
@@ -148,10 +147,11 @@ class RegressionTest:
     #: If not specified, the framework will try to figure it out automatically
     #: based on the value of :attr:`sourcepath`.
     #:
-    #: This field may be set using either a string referring to a concrete build
-    #: system class name (see `build systems <reference.html#build-systems>`__)
-    #: or an instance of :class:`reframe.core.buildsystems.BuildSystem`.
-    #: The former is the recommended way.
+    #: This field may be set using either a string referring to a concrete
+    #: build system class name
+    #: (see `build systems <reference.html#build-systems>`__) or an instance of
+    #: :class:`reframe.core.buildsystems.BuildSystem`. The former is the
+    #: recommended way.
     #:
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
@@ -163,7 +163,8 @@ class RegressionTest:
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are executed during the compilation phase and from
-    #: inside the stage directory. **Each entry in the list spawns a new shell.**
+    #: inside the stage directory. **Each entry in the list spawns a new
+    #: shell.**
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -479,8 +480,8 @@ class RegressionTest:
     #:         ]
     #:     }
     #:
-    #: A regression test then may instantiate the above resources by setting the
-    #: :attr:`extra_resources` attribute as follows:
+    #: A regression test then may instantiate the above resources by setting
+    #: the :attr:`extra_resources` attribute as follows:
     #:
     #: ::
     #:
@@ -505,8 +506,8 @@ class RegressionTest:
     #: alternative directive prefix (in this case ``#DW``), this will replace
     #: the standard prefix of the backend scheduler (in this case ``#SBATCH``)
     #:
-    #: If the resource name specified in this variable does not match a resource
-    #: name in the partition configuration, it will be simply ignored.
+    #: If the resource name specified in this variable does not match a
+    #: resource name in the partition configuration, it will be simply ignored.
     #: The :attr:`num_gpus_per_node` attribute translates internally to the
     #: ``_rfm_gpu`` resource, so that setting
     #: ``self.num_gpus_per_node = 2`` is equivalent to the following:
@@ -1070,8 +1071,8 @@ class RegressionTest:
     def poll(self):
         """Poll the test's state.
 
-        :returns: :class:`True` if the associated job has finished, :class:`False`
-            otherwise.
+        :returns: :class:`True` if the associated job has finished,
+            :class:`False` otherwise.
 
             If no job descriptor is yet associated with this test,
             :class:`True` is returned.
