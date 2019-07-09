@@ -1125,11 +1125,11 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
 
             # Check if default reference perf values are provided and
-            # stare all the variables tested in the performance check
+            # store all the variables  tested in the performance check
             is_default_present = False
             variables = set()
             for system, perf_data in self.reference.items():
-                variables.add(system.split(":")[-1])
+                variables.add((system.split(":")[-1],perf_data[-1]))
                 if system.split(":")[0] == '*':
                     is_default_present = True
                     break
@@ -1139,8 +1139,7 @@ class RegressionTest:
                 # tested variables
                 for variable in variables:
                     self.reference.update(
-                        {'*': {variable: (0, None, None, 'dummy')}})
-                print(self.reference.items())
+                        {'*': {variable[0]: (0, None, None, variable[1])}})
 
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
