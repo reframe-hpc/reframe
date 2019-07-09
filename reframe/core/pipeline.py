@@ -1123,19 +1123,35 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+
+            # Check if default reference perf values are provided and
+            # stare all the variables tested in the performance check
+            is_default_present = False
+            variables = set()
+            for system, perf_data in self.reference.items():
+                variables.add(system.split(":")[-1])
+                if system.split(":")[0] == '*':
+                    is_default_present = True
+                    break
+
+            if is_default_present is False:
+                # If default value is not provided add one for all the
+                # tested variables
+                for variable in variables:
+                    self.reference.update(
+                        {'*': {variable: (0, None, None, 'dummy')}})
+                print(self.reference.items())
+
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
             for tag, expr in self.perf_patterns.items():
                 value = evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
-                try:
-                    if key not in self.reference:
-                        raise SanityError(
-                            "tag `%s' not resolved in references for `%s'" %
-                            (tag, self._current_partition.fullname))
-                except SanityError: # TODO: use if-else
-                    self.reference.update({'*':{tag: (0, None, None, 'dummy')}})
+                if key not in self.reference:
+                    raise SanityError(
+                        "tag `%s' not resolved in references for `%s'" %
+                        (tag, self._current_partition.fullname))
 
                 self._perfvalues[key] = (value, *self.reference[key])
                 self._perf_logger.log_performance(logging.INFO, tag, value,
