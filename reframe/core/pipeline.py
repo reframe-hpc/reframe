@@ -1130,7 +1130,7 @@ class RegressionTest:
             is_default_present = False
             variables = set()
             for system, perf_data in self.reference.items():
-                variables.add((system.split(":")[-1],perf_data[-1]))
+                variables.add((system.split(":")[-1], perf_data[-1]))
                 if system.split(":")[0] == '*':
                     is_default_present = True
                     break
