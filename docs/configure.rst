@@ -314,17 +314,57 @@ The possible attributes of an environment are the following:
 System Auto-Detection
 ---------------------
 
-When the ReFrame is launched, it tries to auto-detect the current system based on its site configuration. The auto-detection process is as follows:
+When ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
 
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found the hostname will be obtained from the standard ``hostname`` command. Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
+If this cannot be found the hostname will be obtained from the standard ``hostname`` command. 
+Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
-If the system cannot be auto-detected, ReFrame will fail with an error message.
+If the system cannot be auto-detected, ReFrame will issue a warning and fall back to a generic system configuration, which is equivalent to the following:
+
+.. code-block:: python
+
+   site_configuration = {
+       'systems': {
+           'generic': {
+               'descr': 'Generic fallback system configuration',
+               'hostnames': ['localhost'],
+               'partitions': {
+                   'login': {
+                       'scheduler': 'local',
+                       'environs': ['builtin-gcc'],
+                       'descr': 'Login nodes'
+                   }
+               }
+           }
+       },
+       'environments': {
+           '*': {
+               'builtin-gcc': {
+                   'type': 'ProgEnvironment',
+                   'cc':  'gcc',
+                   'cxx': 'g++',
+                   'ftn': 'gfortran',
+               }
+           }
+       }
+   }
+
+
+
+
 You can override completely the auto-detection process by specifying a system or a system partition with the ``--system`` option (e.g., ``--system daint`` or ``--system daint:gpu``).
 
+.. note::
+   Instead of issuing an error, ReFrame falls back to a generic system configuration in case system auto-detection fails.
 
-Showing configuration
----------------------
+   .. versionchanged:: 2.19
+
+
+
+
+Viewing the current system configuration
+----------------------------------------
 
 .. versionadded:: 2.16
 
