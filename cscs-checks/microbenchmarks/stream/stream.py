@@ -17,7 +17,9 @@ class StreamTest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel','PrgEnv-pgi',
+                                    'PrgEnv-cray_classic']
+
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
@@ -27,7 +29,8 @@ class StreamTest(rfm.RegressionTest):
         self.use_multithreading = False
 
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-fopenmp'],
+            'PrgEnv-cray_classic': ['-homp', '-O3'],
+            'PrgEnv-cray': ['-fopenmp', '-O3'],
             'PrgEnv-gnu': ['-fopenmp', '-O3'],
             'PrgEnv-intel': ['-qopenmp', '-O3'],
             'PrgEnv-pgi': ['-mp', '-O3']
@@ -57,44 +60,52 @@ class StreamTest(rfm.RegressionTest):
                                       self.stdout, 'triad', float)
         }
         self.stream_bw_reference = {
-            'PrgEnv-cray': {
-                'daint:gpu': {'triad': (42000, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (86000, -0.15, None, 'MB/s')},
-                'dom:gpu': {'triad': (42000, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (86000, -0.15, None, 'MB/s')},
+            'PrgEnv-cray_classic': {
+                'daint:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
+                'daint:mc': {'triad': (117000, -0.05, None, 'MB/s')},
+                'dom:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
+                'dom:mc': {'triad': (117000, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (103129.0, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (55967.0, -0.1, None, 'MB/s')},
+                'kesch:pn': {'triad': (55967.0, -0.05, None, 'MB/s')},
+                '*': {'triad': (0.0, None, None, 'MB/s')},
+            },
+            'PrgEnv-cray': {
+                'daint:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
+                'daint:mc': {'triad': (89000, -0.05, None, 'MB/s')},
+                'dom:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
+                'dom:mc': {'triad': (89000, -0.05, None, 'MB/s')},
+                'kesch:cn': {'triad': (103129.0, -0.05, None, 'MB/s')},
+                'kesch:pn': {'triad': (55967.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
-                'daint:gpu': {'triad': (44000, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (87000, -0.15, None, 'MB/s')},
-                'dom:gpu': {'triad': (44000, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (87000, -0.15, None, 'MB/s')},
-                'kesch:cn': {'triad': (78046.0, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (43803.0, -0.1, None, 'MB/s')},
+                'daint:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
+                'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
+                'dom:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
+                'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
+                'kesch:cn': {'triad': (78000, -0.05, None, 'MB/s')},
+                'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
                 'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
-                'monch:compute': {'triad': (31011.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-intel': {
-                'daint:gpu': {'triad': (60000, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (120000, -0.15, None, 'MB/s')},
-                'dom:gpu': {'triad': (60000, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (120000, -0.15, None, 'MB/s')},
+                'daint:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
+                'daint:mc': {'triad': (119000, -0.05, None, 'MB/s')},
+                'dom:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
+                'dom:mc': {'triad': (119000, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-pgi': {
-                'daint:gpu': {'triad': (50223.0, -0.15, None, 'MB/s')},
-                'daint:mc': {'triad': (56643.0, -0.25, None, 'MB/s')},
-                'dom:gpu': {'triad': (50440.0, -0.15, None, 'MB/s')},
-                'dom:mc': {'triad': (56711.0, -0.25, None, 'MB/s')},
-                'kesch:cn': {'triad': (78637.0, -0.1, None, 'MB/s')},
-                'kesch:pn': {'triad': (86022.0, -0.1, None, 'MB/s')},
+                'daint:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
+                'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
+                'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
+                'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
+                'kesch:cn': {'triad': (78637.0, -0.05, None, 'MB/s')},
+                'kesch:pn': {'triad': (86022.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             }
         }
-        self.tags = {'production', 'monch_acceptance'}
+        self.tags = {'production'}
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):
