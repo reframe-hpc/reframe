@@ -314,7 +314,7 @@ The possible attributes of an environment are the following:
 System Auto-Detection
 ---------------------
 
-When the ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
+When ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
 
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
 If this cannot be found the hostname will be obtained from the standard ``hostname`` command. 
