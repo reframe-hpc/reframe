@@ -1137,6 +1137,10 @@ Manipulating modules
 
 .. versionadded:: 2.11
 
+.. note::
+   .. versionchanged:: 2.19
+      Module self loops are now allowed in *module mappings*.
+
 ReFrame allows you to change the modules loaded by a regression test on-the-fly without having to edit the regression test file.
 This feature is extremely useful when you need to quickly test a newer version of a module, but it also allows you to completely decouple the module names used in your regression tests from the real module names in a system, thus making your test even more portable.
 This is achieved by defining *module mappings*.
@@ -1205,6 +1209,13 @@ If you now try to run a test that loads the module `cudatoolkit`, the following 
      * Failing phase: setup
      * Reason: caught framework exception: module cyclic dependency: cudatoolkit->foo->bar->foobar->cudatoolkit
    ------------------------------------------------------------------------------
+
+On the other hand, module mappings containing self loops are allowed.
+In the following example, ReFrame will load both ``module-1`` and ``module-2`` whenever the ``module-1`` is encountered:
+
+.. code-block:: none
+
+  --map-module 'module-1: module-1 module-2'
 
 Controlling the Flexible Task Allocation
 ----------------------------------------

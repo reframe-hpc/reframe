@@ -38,8 +38,9 @@ class CudaMatrixmulCublasCheck(CudaCheck):
         self.descr = 'Implements matrix multiplication using CUBLAS'
         self.sourcepath = 'matrixmulcublas.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
+        self.build_system.cxxflags = ['-I.', '-ccbin g++', '-m64',
                                       '-arch=sm_%s' % self.nvidia_sm]
+        self.build_system.ldflags = ['-lcublas']
         self.sanity_patterns = sn.assert_found(
             r'Comparing CUBLAS Matrix Multiply with CPU results: PASS',
             self.stdout)
@@ -53,7 +54,7 @@ class CudaDeviceQueryCheck(CudaCheck):
         self.descr = 'Queries the properties of the CUDA devices'
         self.sourcepath = 'devicequery.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
+        self.build_system.cxxflags = ['-I.', '-ccbin g++', '-m64',
                                       '-arch=sm_%s' % self.nvidia_sm]
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
 
@@ -66,8 +67,9 @@ class CudaConcurrentKernelsCheck(CudaCheck):
         self.descr = 'Use of streams for concurrent execution'
         self.sourcepath = 'concurrentkernels.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
+        self.build_system.cxxflags = ['-I.', '-ccbin g++', '-m64',
                                       '-arch=sm_%s' % self.nvidia_sm]
+        self.build_system.ldflags = ['-lcublas']
         self.sanity_patterns = sn.assert_found(r'Test passed', self.stdout)
 
 
@@ -91,5 +93,6 @@ class CudaSimpleMPICheck(CudaCheck):
             self.variables = {'CRAY_CUDA_MPS': '1'}
 
         self.build_system = 'Make'
-        self.build_system.cxxflags = ['-I.', '-ccbin g++ -m64 -lcublas',
+        self.build_system.cxxflags = ['-I.', '-ccbin g++', '-m64',
                                       '-arch=sm_%s' % self.nvidia_sm]
+        self.build_system.ldflags = ['-lcublas']
