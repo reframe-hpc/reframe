@@ -1135,7 +1135,7 @@ class RegressionTest:
                     is_default_not_present = False
                     break
 
-            if is_default_not_present is True:
+            if is_default_not_present:
                 # If default value is not provided add one for all the
                 # tested variables
                 for variable in variables:
