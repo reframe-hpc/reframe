@@ -1127,15 +1127,15 @@ class RegressionTest:
 
             # Check if default reference perf values are provided and
             # store all the variables  tested in the performance check
-            is_default_present = False
+            is_default_not_present = True
             variables = set()
             for system, perf_data in self.reference.items():
                 variables.add((system.split(":")[-1], perf_data[-1]))
                 if system.split(":")[0] == '*':
-                    is_default_present = True
+                    is_default_not_present = False
                     break
 
-            if is_default_present is False:
+            if is_default_not_present is True:
                 # If default value is not provided add one for all the
                 # tested variables
                 for variable in variables:
