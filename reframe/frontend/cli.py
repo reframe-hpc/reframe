@@ -266,9 +266,36 @@ def main():
     try:
         runtime.init_runtime(settings.site_configuration, options.system)
     except SystemAutodetectionError:
-        printer.error("could not auto-detect system; please use the "
-                      "`--system' option to specify one explicitly")
-        sys.exit(1)
+        printer.warning(
+            'could not find a configuration entry for the current system; '
+            'falling back to a generic system configuration; '
+            'please check the online documentation on how to configure '
+            'ReFrame for your system.'
+        )
+        settings.site_configuration['systems'] = {
+            'generic': {
+                'descr': 'Generic fallback system configuration',
+                'hostnames': ['localhost'],
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['builtin-gcc'],
+                        'descr': 'Login nodes'
+                    }
+                }
+            }
+        }
+        settings.site_configuration['environments'] = {
+            '*': {
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                }
+            }
+        }
+        runtime.init_runtime(settings.site_configuration, 'generic')
     except Exception as e:
         printer.error('configuration error: %s' % e)
         printer.verbose(''.join(traceback.format_exception(*sys.exc_info())))
