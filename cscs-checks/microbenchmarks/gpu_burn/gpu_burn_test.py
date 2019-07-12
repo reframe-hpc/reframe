@@ -44,21 +44,28 @@ class GpuBurnTest(rfm.RegressionTest):
         self.perf_patterns = {
             'perf': sn.min(sn.extractall(
                 r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s', self.stdout,
-                'perf', float))
+                'perf', float)),
+            'temp': sn.max(sn.extractall(
+                r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  (?P<temp>\S*) Celsius', self.stdout,
+                'temp', float))
         }
 
         self.reference = {
             'dom:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
+                'temp': (0, None, None, 'Celsius')
             },
             'daint:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
+                'temp': (0, None, None, 'Celsius')
             },
             'kesch:cn': {
-                'perf': (950, -0.10, None, 'Gflop/s')
+                'perf': (950, -0.10, None, 'Gflop/s'),
+                'temp': (0, None, None, 'Celsius')
             },
             '*': {
-                'perf': (0, None, None, 'Gflop/s')
+                'perf': (0, None, None, 'Gflop/s'),
+                'temp': (0, None, None, 'Celsius')
             }
         }
 
