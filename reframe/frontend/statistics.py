@@ -127,7 +127,7 @@ class TestStats:
 
                 report.append('   - %s' % t.check.current_environ)
 
-            for key, ref in t.check.perfvalues.items():
+            for ref in t.check.perfvalues.values():
                 var = ref[0]
                 val = ref[1]
                 try:
