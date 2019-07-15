@@ -6,11 +6,11 @@ import reframe.utility.sanity as sn
 class RubyNArray(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.descr = ('Check NArray for Ruby version 2.2.2')
-        self.valid_systems = ['kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+        self.descr = ('Check NArray for default Ruby')
+        self.valid_systems = ['kesch:cn', 'tsa:cn']
+        self.valid_prog_environs = ['PrgEnv-gnu']
         self.exclusive_access = True
-        self.modules = ['ruby/2.2.2-gmvolf-17.02']
+        self.modules = ['ruby/2.6.3-foss-2018b']
         self.executable = 'ruby'
         self.executable_opts = ['NArray.rb']
         self.sanity_patterns = sn.assert_found(r'NArray\.float\(4\):\s*'
