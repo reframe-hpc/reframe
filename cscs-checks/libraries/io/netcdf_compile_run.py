@@ -67,7 +67,8 @@ class NetCDFTest(rfm.RegressionTest):
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
             if environ.name == 'PrgEnv-pgi' and self.lang == 'cpp':
-                # NOTE: Workaround to fix compiling for PrgEnv-pgi
+                # FIXME: Workaround to fix compilation for PrgEnv-pgi
+                # Cray Case: #243751
                 self.build_system.cppflags = ['-D_GLIBCXX_USE_CXX11_ABI=0']
 
         super().setup(partition, environ, **job_opts)
