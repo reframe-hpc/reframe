@@ -44,7 +44,7 @@ class GpuBurnTest(rfm.RegressionTest):
 
         p = r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  (?P<temp>\S*) Celsius'
         self.perf_patterns = {
-            'perf': sn.min(sn.extractall(p, self.stdout,'perf', float)),
+            'perf': sn.min(sn.extractall(p, self.stdout, 'perf', float)),
             'max_temp': sn.max(sn.extractall(p, self.stdout, 'temp', float))
         }
 
