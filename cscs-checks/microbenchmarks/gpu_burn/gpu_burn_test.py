@@ -1,4 +1,5 @@
 import os
+import re
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -41,14 +42,10 @@ class GpuBurnTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall('OK', self.stdout)), self.num_tasks_assigned)
 
+        p = r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  (?P<temp>\S*) Celsius'
         self.perf_patterns = {
-            'perf': sn.min(sn.extractall(
-                r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s', self.stdout,
-                'perf', float)),
-            'max_temp': sn.max(sn.extractall(
-                r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  \
-                (?P<temp>\S*) Celsius',
-                self.stdout, 'temp', float))
+            'perf': sn.min(sn.extractall(p, self.stdout,'perf', float)),
+            'max_temp': sn.max(sn.extractall(p, self.stdout, 'temp', float))
         }
 
         self.reference = {
