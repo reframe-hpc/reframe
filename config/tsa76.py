@@ -255,7 +255,7 @@ class ReframeSettings:
             'tsa': {
                 'descr': 'TsaTDS MCH',
                 'hostnames': ['tsa-cn017','tsa-cn018'],
-                'modules_system': 'lmod',
+                'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'cn': {
