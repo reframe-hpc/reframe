@@ -66,10 +66,10 @@ class CPULatencyTest(rfm.RegressionTest):
                 'latencyMem': (75.0, -0.01, 0.05, 'ns')
             },
             'ault:intel': {
-                'latencyL1':  (1.14, -0.01, 0.26, 'ns'),
-                'latencyL2':  (3.44, -0.01, 0.26, 'ns'),
-                'latencyL3':  (15.65, -0.01, 0.05, 'ns'),
-                'latencyMem': (75.0, -0.01, 0.05, 'ns')
+                'latencyL1':  (1.08, -0.01, 0.26, 'ns'),
+                'latencyL2':  (3.8, -0.01, 0.26, 'ns'),
+                'latencyL3':  (21.5, -0.01, 0.05, 'ns'),
+                'latencyMem': (86.5, -0.01, 0.05, 'ns')
             },
             #'*': {
             #    'latencies': (0, None, None, 'ns')
