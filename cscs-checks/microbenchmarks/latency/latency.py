@@ -10,7 +10,7 @@ class CPULatencyTest(rfm.RegressionTest):
         self.sourcepath = 'latency.cpp'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'ault:intel', 'tave:compute']
+                              'ault:intel', 'ault:amdvega', 'tave:compute']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
@@ -72,6 +72,12 @@ class CPULatencyTest(rfm.RegressionTest):
                 'latencyL2':  (3.8, -0.01, 0.26, 'ns'),
                 'latencyL3':  (21.5, -0.01, 0.05, 'ns'),
                 'latencyMem': (86.5, -0.01, 0.05, 'ns')
+            },
+            'ault:amdvega': {
+                'latencyL1':  (1.32, -0.01, 0.26, 'ns'),
+                'latencyL2':  (4.02, -0.01, 0.26, 'ns'),
+                'latencyL3':  (14.4, -0.01, 0.26, 'ns'),
+                'latencyMem': (90.0, -0.01, 0.05, 'ns')
             },
             'tave:compute': {
                 'latencyL1':  (2.86, -0.01, 0.05, 'ns'),
