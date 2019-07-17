@@ -260,6 +260,17 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         self.assertRaises(ReframeError, self._run_test, test)
 
+    def test_sourcesdir_build_system(self):
+        test = RegressionTest('hellocheck_make', 'unittests/resources/checks')
+        test.build_system = 'Make'
+        test.sourcepath = 'code'
+        test.executable = './code/hello'
+        test.local = True
+        test.valid_systems = ['*']
+        test.valid_prog_environs = ['*']
+        test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
+        self._run_test(test)
+
     def test_sourcesdir_none_generated_sources(self):
         test = RegressionTest('hellocheck_generated_sources',
                               'unittests/resources/checks')

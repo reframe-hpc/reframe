@@ -645,8 +645,8 @@ class RegressionTest:
     # Export read-only views to interesting fields
     @property
     def current_environ(self):
-        """The programming environment that the regression test is currently executing
-        with.
+        """The programming environment that the regression test is currently
+        executing with.
 
         This is set by the framework during the :func:`setup` phase.
 
@@ -1000,7 +1000,7 @@ class RegressionTest:
                 else:
                     self.build_system = 'Make'
 
-                self.build_system.srcdir = self.sourcepath
+            self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
