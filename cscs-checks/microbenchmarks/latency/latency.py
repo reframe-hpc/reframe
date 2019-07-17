@@ -9,9 +9,9 @@ class CPULatencyTest(rfm.RegressionTest):
         super().__init__()
         self.sourcepath = 'latency.cpp'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc', 'ault:intel']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'ault:intel', 'tave:compute']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
-        #self.valid_prog_environs = ['PrgEnv-cray']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
 
@@ -21,10 +21,12 @@ class CPULatencyTest(rfm.RegressionTest):
 
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages1G']
+        if self.current_system.name in {'tave'}:
+            self.modules = ['craype-hugepages512M']
 
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'latency', self.stdout)),
-            self.num_tasks_assigned * 4)
+            self.num_tasks_assigned * len(self.executable_opts))
 
         self.perf_patterns = {
             'latencyL1': sn.extractall(
@@ -71,9 +73,12 @@ class CPULatencyTest(rfm.RegressionTest):
                 'latencyL3':  (21.5, -0.01, 0.05, 'ns'),
                 'latencyMem': (86.5, -0.01, 0.05, 'ns')
             },
-            #'*': {
-            #    'latencies': (0, None, None, 'ns')
-            #}
+            'tave:compute': {
+                'latencyL1':  (2.86, -0.01, 0.05, 'ns'),
+                'latencyL2':  (12.15, -0.01, 0.05, 'ns'),
+                'latencyL3':  (137, -0.01, 0.05, 'ns'),
+                'latencyMem': (150, -0.05, 0.05, 'ns')
+            },
         }
 
         self.maintainers = ['SK']
