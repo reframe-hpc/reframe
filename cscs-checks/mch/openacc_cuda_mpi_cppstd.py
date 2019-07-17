@@ -73,10 +73,12 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             elif self.current_system.name == 'tsa':
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.0']
                 self.build_system.ldflags = ['-acc', '-ta:tesla:cc70,cuda10.0',
-                                             '-lstdc++']
+                    '-lstdc++' '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
+                    '-lcublas', '-lcudart'
+                    ]
                 if environ.name == 'PrgEnv-pgi-nompi':
                     self.build_system.ldflags += [
-                        '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
+                        '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
                         '-lcublas', '-lcudart'
                     ]
         elif environ.name.startswith('PrgEnv-gnu'):
