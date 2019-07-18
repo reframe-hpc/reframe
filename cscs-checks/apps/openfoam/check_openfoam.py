@@ -40,7 +40,8 @@ class BlockMesh(OpenFOAMBaseTest):
 class BuoyantBoussinesqSimpleFoam(OpenFOAMBaseTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'OpenFOAM check of buoyantBoussinesqSimpleFoam: hotroom tutorial'
+        self.descr = ('OpenFOAM check of buoyantBoussinesqSimpleFoam: '
+                      'hotroom tutorial')
         self.executable = 'buoyantBoussinesqSimpleFoam'
         residual = sn.extractall(r'\sglobal\s=\s(?P<res>\S+),', self.stdout,
                                  'res', float)
@@ -255,7 +256,8 @@ class SnappyHexMesh(OpenFOAMBaseTest):
 class SurfaceFeatureExtract(OpenFOAMBaseTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'OpenFOAM check of surfaceFeatureExtract: motorbike tutorial'
+        self.descr = ('OpenFOAM check of surfaceFeatureExtract: '
+                      'motorbike tutorial')
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 

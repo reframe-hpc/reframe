@@ -44,7 +44,8 @@ class BlockMesh(OpenfoamExtendBaseTest):
 class SnappyHexMesh(OpenfoamExtendBaseTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'OpenFOAM-Extend check of snappyHexMesh: motorbike tutorial'
+        self.descr = ('OpenFOAM-Extend check of snappyHexMesh: '
+                      'motorbike tutorial')
 
 
 @rfm.simple_test
@@ -67,14 +68,15 @@ class SimpleFoam(OpenfoamExtendBaseTest):
 class SetFields(OpenfoamExtendBaseTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'OpenFOA-Extend  check of setFields: dambreak tutorial'
+        self.descr = 'OpenFOAM-Extend  check of setFields: dambreak tutorial'
 
 
 @rfm.simple_test
 class InterMixingFoam(OpenfoamExtendBaseTest):
     def __init__(self):
         super().__init__()
-        self.descr = 'OpenFOA-Extend  check of interMixingFoam: dambreak tutorial'
+        self.descr = ('OpenFOAM-Extend  check of interMixingFoam: '
+                      'dambreak tutorial')
         self.sanity_patterns = sn.assert_eq(sn.count(sn.findall(
             r'Air phase volume fraction', self.stdout)), 2944)
 
