@@ -20,12 +20,6 @@ class StreamTest(rfm.RegressionTest):
                                     'PrgEnv-intel','PrgEnv-pgi',
                                     'PrgEnv-cray_classic']
 
-        if self.current_system.name == 'kesch':
-            self.exclusive_access = True
-            self.valid_prog_environs += ['PrgEnv-cray-nompi',
-                                         'PrgEnv-gnu-nompi',
-                                         'PrgEnv-pgi-nompi']
-
         self.use_multithreading = False
 
         self.prgenv_flags = {
@@ -35,6 +29,13 @@ class StreamTest(rfm.RegressionTest):
             'PrgEnv-intel': ['-qopenmp', '-O3'],
             'PrgEnv-pgi': ['-mp', '-O3']
         }
+
+        if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-cray',
+                                        'PrgEnv-gnu']
+            self.prgenv_flags['PrgEnv-cray'] = self.prgenv_flags['PrgEnv-cray_classic']
+
         self.sourcepath = 'stream.c'
         self.build_system = 'SingleSource'
         self.num_tasks = 1
@@ -65,8 +66,6 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (117000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (117000, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (103129.0, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (55967.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-cray': {
@@ -74,8 +73,8 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (89000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (89000, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (103129.0, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (55967.0, -0.05, None, 'MB/s')},
+                'kesch:cn': {'triad': (85000, -0.05, None, 'MB/s')},
+                'kesch:pn': {'triad': (113000, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
@@ -83,7 +82,7 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (78000, -0.05, None, 'MB/s')},
+                'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
                 'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
@@ -100,8 +99,6 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
-                'kesch:cn': {'triad': (78637.0, -0.05, None, 'MB/s')},
-                'kesch:pn': {'triad': (86022.0, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             }
         }
@@ -112,10 +109,7 @@ class StreamTest(rfm.RegressionTest):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
             partition.fullname, 1)
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-        if self.current_system.name == 'kesch':
-            envname = environ.name.replace('-nompi', '')
-        else:
-            envname = environ.name
+        envname = environ.name
 
         self.build_system.cflags = self.prgenv_flags.get(envname, ['-O3'])
         if envname == 'PrgEnv-pgi':
