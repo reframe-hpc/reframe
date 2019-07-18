@@ -1,18 +1,17 @@
 import os
 
+import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.pipeline import RunOnlyRegressionTest
 
 
-class OpenFOAMBaseTest(RunOnlyRegressionTest):
-    def __init__(self, check_name, check_descr, **kwargs):
-        super().__init__('Openfoam_%s' % (check_name),
-                         os.path.dirname(__file__), **kwargs)
-
-        self.descr = check_descr
-        self.executable = check_name
+class OpenFOAMBaseTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        super().__init__()
+        dirname = self.name[0].lower() + self.name[1:]
+        self.name = 'OpenFoam_' + self.name
+        self.executable = dirname
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
-                                       'OpenFOAM', check_name)
+                                       'OpenFOAM', dirname)
 
         # OpenFOAM currently runs only on Leone
         self.valid_systems = ['leone:normal']
@@ -23,28 +22,25 @@ class OpenFOAMBaseTest(RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.num_cpus_per_task  = 1
 
-        self.maintainers = ['MaKra']
+        self.maintainers = ['MKr']
         self.tags = {'scs', 'production'}
 
         self.pre_run = ['source $FOAM_BASH']
 
 
+@rfm.simple_test
 class BlockMesh(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('blockMesh',
-                         'OpenFOAM blockMesh from the dambreak tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM blockMesh from the dambreak tutorial'
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class BuoyantBoussinesqSimpleFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'buoyantBoussinesqSimpleFoam',
-            'OpenFOAM check of buoyantBoussinesqSimpleFoam: hotroom tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of buoyantBoussinesqSimpleFoam: hotroom tutorial'
         self.executable = 'buoyantBoussinesqSimpleFoam'
         residual = sn.extractall(r'\sglobal\s=\s(?P<res>\S+),', self.stdout,
                                  'res', float)
@@ -53,35 +49,30 @@ class BuoyantBoussinesqSimpleFoam(OpenFOAMBaseTest):
             [sn.assert_found(r'^\s*[Ee]nd', self.stdout)]))
 
 
+@rfm.simple_test
 class CheckMesh(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('checkMesh',
-                         'OpenFOAM check of checkMesh: flange tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of checkMesh: flange tutorial'
         self.executable_opts = ['-latestTime', '-allTopology',
                                 '-allGeometry', '-parallel']
         self.num_tasks = 8
         self.num_tasks_per_node = 8
-
         self.sanity_patterns = sn.all([
             sn.assert_found('Finalising parallel run', self.stdout),
             sn.assert_found(r'^\s*[Ee]nd', self.stdout)
         ])
 
 
+@rfm.simple_test
 class ChtMultiRegionSimpleFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'chtMultiRegionSimpleFoam',
-            'OpenFOAM check of chtMultiRegionSimpleFoam:'
-            ' heatexchanger tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = ('OpenFOAM check of chtMultiRegionSimpleFoam:'
+                      ' heatexchanger tutorial')
         self.executable_opts = ['-parallel']
         self.num_tasks = 4
         self.num_tasks_per_node = 4
-
         residual = sn.extractall(r'\sglobal\s=\s(?P<res>\S+),', self.stdout,
                                  'res', float)[-10:]
         self.sanity_patterns = sn.all(sn.chain(
@@ -91,97 +82,83 @@ class ChtMultiRegionSimpleFoam(OpenFOAMBaseTest):
              sn.assert_found(r'^\s*[Ee]nd', self.stdout)]))
 
 
+@rfm.simple_test
 class CollapseEdges(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('collapseEdges',
-                         'OpenFOAM check of collapseEdges: flange tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of collapseEdges: flange tutorial'
         self.executable_opts = ['-latestTime', '-collapseFaces', '-parallel']
         self.num_tasks = 8
         self.num_tasks_per_node = 8
-
         self.sanity_patterns = sn.all(
             [sn.assert_found('Finalising parallel run', self.stdout),
              sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
 
 
+@rfm.simple_test
 class CreateBaffles(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'createBaffles',
-            'OpenFOAM check of createBaffles: heatexchanger tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of createBaffles: heatexchanger tutorial'
         self.executable_opts = ['-region air', '-overwrite']
-
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class DecomposePar(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'decomposePar',
-            'OpenFOAM check of decomposePar: heatexchanger tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of decomposePar: heatexchanger tutorial'
         self.executable_opts = ['-region air']
-
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class FoamyHexMesh(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('foamyHexMesh',
-                         'OpenFOAM check of foamyHexMesh: motorbike tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of foamyHexMesh: motorbike tutorial'
         self.executable_opts = ['-parallel']
         self.num_tasks = 8
         self.num_tasks_per_node = 8
-
         self.sanity_patterns = sn.all(
             [sn.assert_found('Time = 100\n', self.stdout),
              sn.assert_found('Finalising parallel run', self.stdout),
              sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
 
 
+@rfm.simple_test
 class InterMixingFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('interMixingFoam',
-                         'OpenFOAM check of interMixingFoam:'
-                         'dambreak tutorial',
-                         **kwargs)
-
-        self.sanity_patterns = sn.all(
-            [sn.assert_eq(
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of interMixingFoam: dambreak tutorial'
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(
                 sn.count(sn.findall('(?P<line>Air phase volume fraction)',
                                     self.stdout)), 2534),
-             sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
+            sn.assert_found(r'^\s*[Ee]nd', self.stdout)
+        ])
 
 
+@rfm.simple_test
 class PatchSummary(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'patchSummary',
-            'OpenFOAM check of patchSummary: motorbike tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of patchSummary: motorbike tutorial'
         self.executable_opts = ['-parallel']
         self.num_tasks = 6
         self.num_tasks_per_node = 6
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Finalising parallel run', self.stdout),
+            sn.assert_found(r'^\s*[Ee]nd', self.stdout)
+        ])
 
-        self.sanity_patterns = sn.all(
-            [sn.assert_found('Finalising parallel run', self.stdout),
-             sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
 
-
+@rfm.simple_test
 class PimpleFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('pimpleFoam',
-                         'OpenFOAM check of pimpleFoam: tjunction tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of pimpleFoam: tjunction tutorial'
         residual = sn.extractall(r'Solving for epsilon, \w+\s\w+\s=\s\d.\d+.\s'
                                  r'Final residual\s=\s(?P<res>-?\S+),',
                                  self.stdout, 'res', float)
@@ -191,12 +168,11 @@ class PimpleFoam(OpenFOAMBaseTest):
         ))
 
 
+@rfm.simple_test
 class PotentialFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('potentialFoam',
-                         'OpenFOAM check of potentialFoam: motorbike tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of potentialFoam: motorbike tutorial'
         self.executable_opts = ['-parallel']
         self.num_tasks = 6
         self.num_tasks_per_node = 6
@@ -206,118 +182,87 @@ class PotentialFoam(OpenFOAMBaseTest):
             sn.chain(sn.map(lambda x: sn.assert_lt(x, 1.e-07), residual),
                      [sn.assert_eq(5, sn.count(residual)),
                       sn.assert_found('Finalising parallel run', self.stdout),
-                      sn.assert_found(r'^\s*[Ee]nd', self.stdout)]))
+                      sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
+        )
 
 
+@rfm.simple_test
 class ReconstructPar(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'reconstructPar',
-            'OpenFOAM check of reconstructPar: heatexchanger tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of reconstructPar: heatexchanger tutorial'
         self.executable_opts = ['-latestTime', '-region air']
         self.readonly_files  = ['processor0', 'processor1',
                                 'processor2', 'processor3']
-        self.sanity_patterns = sn.all(
-            [sn.assert_found('Time = 2000', self.stdout),
-             sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Time = 2000', self.stdout),
+            sn.assert_found(r'^\s*[Ee]nd', self.stdout)
+        ])
 
 
+@rfm.simple_test
 class ReconstructParMesh(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'reconstructParMesh',
-            'OpenFOAM check of reconstructParMesh: motorbike tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of reconstructParMesh: motorbike tutorial'
         self.executable_opts = ['-constant']
         self.readonly_files  = ['processor0', 'processor1', 'processor2',
                                 'processor3', 'processor4', 'processor5']
-
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class SetFields(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('setFields',
-                         'OpenFOAM check of setFields: dambreak tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of setFields: dambreak tutorial'
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class SimpleFoam(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('simpleFoam',
-                         'OpenFOAM check of simpleFoam: motorbike tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of simpleFoam: motorbike tutorial'
         self.executable_opts = ['-parallel']
         self.num_tasks = 6
         self.num_tasks_per_node = 6
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Finalising parallel run', self.stdout),
+            sn.assert_found(r'^\s*[Ee]nd', self.stdout),
+            sn.assert_lt(sn.abs(sn.extractsingle(
+                r'time step continuity errors : \S+\s\S+ = \S+\s'
+                r'global = (?P<res>-?\S+),',
+                self.stdout, 'res', float)), 1.e-04)
+        ])
 
-        self.sanity_patterns = sn.all(
-            [sn.assert_found('Finalising parallel run', self.stdout),
-             sn.assert_found(r'^\s*[Ee]nd', self.stdout),
-             sn.assert_lt(sn.abs(sn.extractsingle(
-                 r'time step continuity errors : \S+\s\S+ = \S+\s'
-                 r'global = (?P<res>-?\S+),',
-                 self.stdout, 'res', float)), 1.e-04)])
 
-
+@rfm.simple_test
 class SnappyHexMesh(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('snappyHexMesh',
-                         'OpenFOAM check of snappyHexMesh: motorbike tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of snappyHexMesh: motorbike tutorial'
         self.executable_opts = ['-overwrite', ' -parallel']
         self.num_tasks = 6
         self.num_tasks_per_node = 6
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Finalising parallel run', self.stdout),
+            sn.assert_found(r'^\s*[Ee]nd', self.stdout)
+        ])
 
-        self.sanity_patterns = sn.all(
-            [sn.assert_found('Finalising parallel run', self.stdout),
-             sn.assert_found(r'^\s*[Ee]nd', self.stdout)])
 
-
+@rfm.simple_test
 class SurfaceFeatureExtract(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__(
-            'surfaceFeatureExtract',
-            'OpenFOAM check of surfaceFeatureExtract: motorbike tutorial',
-            **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of surfaceFeatureExtract: motorbike tutorial'
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
 
 
+@rfm.simple_test
 class TopoSet(OpenFOAMBaseTest):
-    def __init__(self, **kwargs):
-        super().__init__('topoSet',
-                         'OpenFOAM check of topoSet: heatexchanger tutorial',
-                         **kwargs)
-
+    def __init__(self):
+        super().__init__()
+        self.descr = 'OpenFOAM check of topoSet: heatexchanger tutorial'
         self.executable_opts = ['-region air', '-dict system/topoSetDict.1']
         self.sanity_patterns = sn.assert_found(r'^\s*[Ee]nd', self.stdout)
-
-
-def _get_checks(**kwargs):
-    return [FoamyHexMesh(**kwargs),
-            BuoyantBoussinesqSimpleFoam(**kwargs),
-            ChtMultiRegionSimpleFoam(**kwargs),
-            InterMixingFoam(**kwargs),
-            SimpleFoam(**kwargs),
-            PimpleFoam(**kwargs),
-            PotentialFoam(**kwargs),
-            SnappyHexMesh(**kwargs),
-            SetFields(**kwargs),
-            BlockMesh(**kwargs),
-            CheckMesh(**kwargs),
-            CollapseEdges(**kwargs),
-            CreateBaffles(**kwargs),
-            DecomposePar(**kwargs),
-            PatchSummary(**kwargs),
-            ReconstructPar(**kwargs),
-            ReconstructParMesh(**kwargs),
-            SurfaceFeatureExtract(**kwargs),
-            TopoSet(**kwargs)]

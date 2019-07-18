@@ -85,6 +85,13 @@ class RegressionCheckLoader:
         check and validates its return value."""
         from reframe.core.pipeline import RegressionTest
 
+        # Warn in case of old syntax
+        if hasattr(module, '_get_checks'):
+            getlogger().warning(
+                '_get_checks() is no more supported in test files: '
+                'please use @reframe.simple_test or @reframe.parameterized_test decorators'
+            )
+
         if not hasattr(module, '_rfm_gettests'):
             return []
 
