@@ -32,9 +32,9 @@ class StreamTest(rfm.RegressionTest):
 
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray',
-                                        'PrgEnv-gnu']
-            self.prgenv_flags['PrgEnv-cray'] = self.prgenv_flags['PrgEnv-cray_classic']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+            cray_flags = self.prgenv_flags['PrgEnv-cray_classic']
+            self.prgenv_flags['PrgEnv-cray'] = cray_flags
 
         self.sourcepath = 'stream.c'
         self.build_system = 'SingleSource'
