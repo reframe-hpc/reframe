@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class MakefileTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of Makefiles '
                       'and compile options')
         self.valid_systems = ['*']

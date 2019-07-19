@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class DeferredIterationTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of deferred '
                       'iteration via the `map` sanity function.')
         self.valid_systems = ['*']
