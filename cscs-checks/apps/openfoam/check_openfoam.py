@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 
 class OpenFOAMBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         dirname = self.name[0].lower() + self.name[1:]
         self.name = 'OpenFoam_' + self.name
         self.executable = dirname
