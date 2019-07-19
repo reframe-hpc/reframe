@@ -978,7 +978,6 @@ class TestOrderedSet(unittest.TestCase):
         assert list(reversed(s)) == list(reversed(l))
 
     def test_concat_files(self):
-        tmpdir = tempfile.mkdtemp(dir='unittests')
         with tempfile.TemporaryDirectory(dir='unittests') as tmpdir:
             with os_ext.change_dir(tmpdir):
                 file1 = 'in1.txt'
