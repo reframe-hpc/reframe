@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 class CommunicationTestBase(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
         super().__init__()
-        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
+        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
@@ -40,6 +40,34 @@ class CommunicationTestBase(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
             ]
             self.build_system.max_concurrency = 8
+        elif self.current_system.name == 'arolla':
+            self.exclusive_access = True
+            self.num_tasks = 16
+            self.num_gpus_per_node = 8
+            self.modules = [
+                'cmake',
+                'cuda92/toolkit/9.2.88',
+            ]
+            self.variables['MV2_USE_CUDA'] = '1'
+            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
+            self.build_system.config_opts += [
+                '-DMPI_VENDOR=openmpi',
+                '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
+            ]
+        elif self.current_system.name == 'tsa':
+            self.exclusive_access = True
+            self.num_tasks = 16
+            self.num_gpus_per_node = 8
+            self.modules = [
+                'cmake',
+                'cuda10.0/toolkit/10.0.130',
+            ]
+            self.variables['MV2_USE_CUDA'] = '1'
+            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
+            self.build_system.config_opts += [
+                #'-DMPI_VENDOR=mvapich2',
+                '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
+            ]
         else:
             self.num_tasks = 4
             self.num_gpus_per_node = 1
@@ -77,6 +105,12 @@ class CommunicationTestBase(rfm.RegressionTest):
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
+            'arolla:cn': {
+                'elapsed_time': (ref, None, 0.15)
+            },
+            'tsa:cn': {
+                'elapsed_time': (ref, None, 0.15)
+            },
             'daint': {
                 'elapsed_time': (ref, None, 0.15)
             },
@@ -93,7 +127,8 @@ class CommunicationTestBase(rfm.RegressionTest):
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
-        if self.current_system.name == 'kesch':
+        #if self.current_system.name == 'kesch':
+        if self.current_system.name in {'kesch', 'tsa', 'arolla'}:
             self.job.launcher.options = ['--distribution=block:block',
                                          '--cpu_bind=q']
 
