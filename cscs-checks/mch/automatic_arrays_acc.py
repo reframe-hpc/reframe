@@ -18,7 +18,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.variables = {'MV2_USE_CUDA': '1'}
         elif self.current_system.name == 'tsa':
             self.exclusive_access = True
-            self.modules = ['cuda10.0/toolkit/10.0.130']
+            self.modules = ['craype-accel-nvidia70', 'cuda10.0/toolkit/10.0.130']
 
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1

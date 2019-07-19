@@ -8,7 +8,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-pgi-nompi', 'PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
         if self.current_system.name in ['daint', 'dom']:
@@ -26,7 +26,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_37"']
         elif self.current_system.name == 'tsa':
             self.exclusive_access = True
-            self.modules = ['cuda10.0/toolkit/10.0.130']
+            self.modules = ['craype-accel-nvidia70', 'cuda10.0/toolkit/10.0.130']
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
@@ -65,26 +65,11 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
                 self.build_system.ldflags = ['-acc', '-ta:tesla:cc35,cuda8.0',
                                              '-lstdc++']
-                if environ.name == 'PrgEnv-pgi-nompi':
-                    self.build_system.ldflags += [
-                        '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
-                        '-lcublas', '-lcudart'
-                    ]
             elif self.current_system.name == 'tsa':
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.0']
                 self.build_system.ldflags = ['-acc', '-ta:tesla:cc70,cuda10.0',
                     '-lstdc++' '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
                     '-lcublas', '-lcudart'
-                    ]
-                if environ.name == 'PrgEnv-pgi-nompi':
-                    self.build_system.fflags += [
-                         '-ta=tesla,cc70,cuda10.0',
-                         '-I${EBROOTOPENMPI}/include'
-                    ]
-                    self.build_system.ldflags += [
-                        '-L${EBROOTOPENMPI}/lib', '-lmpi_mpifh',
-                        '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
-                        '-lcublas', '-lcudart'
                     ]
         elif environ.name.startswith('PrgEnv-gnu'):
             self.build_system.ldflags = ['-lstdc++']

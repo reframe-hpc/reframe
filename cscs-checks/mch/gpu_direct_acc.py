@@ -28,7 +28,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.num_tasks_per_node = 8
         elif self.current_system.name == 'tsa':
             self.exclusive_access = True
-            self.modules = ['cuda10.0/toolkit/10.0.130']
+            self.modules = ['craype-accel-nvidia70', 'cuda10.0/toolkit/10.0.130']
             self.variables = {
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
