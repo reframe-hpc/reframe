@@ -1290,8 +1290,8 @@ class CompileOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _rfm_init(self, *args, **kwargs):
+        super()._rfm_init(*args, **kwargs)
         self.local = True
 
     def setup(self, partition, environ, **job_opts):

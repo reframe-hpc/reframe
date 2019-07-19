@@ -352,7 +352,6 @@ class TestSyntax(unittest.TestCase):
     def test_regression_test(self):
         class MyTest(RegressionTest):
             def __init__(self, a, b):
-                super().__init__()
                 self.a = a
                 self.b = b
 
@@ -372,7 +371,6 @@ class TestSyntax(unittest.TestCase):
 
         class MyTest(RegressionTest):
             def __init__(self, a, b):
-                super().__init__()
                 self.a = a
                 self.b = b
 
@@ -384,7 +382,6 @@ class TestSyntax(unittest.TestCase):
     def test_user_inheritance(self):
         class MyBaseTest(RegressionTest):
             def __init__(self, a, b):
-                super().__init__()
                 self.a = a
                 self.b = b
 
@@ -399,7 +396,6 @@ class TestSyntax(unittest.TestCase):
     def test_runonly_test(self):
         class MyTest(RunOnlyRegressionTest):
             def __init__(self, a, b):
-                super().__init__()
                 self.a = a
                 self.b = b
 
@@ -412,7 +408,6 @@ class TestSyntax(unittest.TestCase):
     def test_compileonly_test(self):
         class MyTest(CompileOnlyRegressionTest):
             def __init__(self, a, b):
-                super().__init__()
                 self.a = a
                 self.b = b
 

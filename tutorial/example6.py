@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Example6Test(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Matrix-vector multiplication with L2 norm check'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
