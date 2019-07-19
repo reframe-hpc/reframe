@@ -544,7 +544,6 @@ class RegressionTest:
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
-        obj._prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -554,10 +553,14 @@ class RegressionTest:
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj.name = name
+        obj._rfm_init(name,
+                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
         return obj
 
-    def __init__(self, name=None, prefix=None):
+    def __init__(self):
+        pass
+
+    def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 

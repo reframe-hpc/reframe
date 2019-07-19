@@ -178,8 +178,8 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_run_only_sanity(self):
-        test = RunOnlyRegressionTest('runonlycheck',
-                                     'unittests/resources/checks')
+        test = RunOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.executable = './hello.sh'
         test.executable_opts = ['Hello, World!']
         test.local = True
@@ -189,8 +189,8 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_compile_only_failure(self):
-        test = CompileOnlyRegressionTest('compileonlycheck',
-                                         'unittests/resources/checks')
+        test = CompileOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.sourcepath = 'compiler_failure.c'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
@@ -199,8 +199,8 @@ class TestRegressionTest(unittest.TestCase):
         self.assertRaises(BuildError, test.compile_wait)
 
     def test_compile_only_warning(self):
-        test = CompileOnlyRegressionTest('compileonlycheckwarning',
-                                         'unittests/resources/checks')
+        test = CompileOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.build_system = 'SingleSource'
         test.build_system.srcfile = 'compiler_warning.c'
         test.build_system.cflags = ['-Wall']
@@ -254,14 +254,16 @@ class TestRegressionTest(unittest.TestCase):
         self.assertTrue(test.supports_environ('*'))
 
     def test_sourcesdir_none(self):
-        test = RegressionTest('hellocheck', 'unittests/resources/checks')
+        test = RegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         self.assertRaises(ReframeError, self._run_test, test)
 
     def test_sourcesdir_build_system(self):
-        test = RegressionTest('hellocheck_make', 'unittests/resources/checks')
+        test = RegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.build_system = 'Make'
         test.sourcepath = 'code'
         test.executable = './code/hello'
@@ -272,8 +274,8 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcesdir_none_generated_sources(self):
-        test = RegressionTest('hellocheck_generated_sources',
-                              'unittests/resources/checks')
+        test = RegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.prebuild_cmd = ["printf '#include <stdio.h>\\n int main(){ "
                              "printf(\"Hello, World!\\\\n\"); return 0; }' "
@@ -287,16 +289,16 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcesdir_none_compile_only(self):
-        test = CompileOnlyRegressionTest('hellocheck',
-                                         'unittests/resources/checks')
+        test = CompileOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         self.assertRaises(BuildError, self._run_test, test)
 
     def test_sourcesdir_none_run_only(self):
-        test = RunOnlyRegressionTest('hellocheck',
-                                     'unittests/resources/checks')
+        test = RunOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.executable = 'echo'
         test.executable_opts = ["Hello, World!"]
@@ -307,8 +309,8 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcepath_abs(self):
-        test = CompileOnlyRegressionTest('compileonlycheck',
-                                         'unittests/resources/checks')
+        test = CompileOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = [self.progenv.name]
         test.valid_systems = ['*']
         test.setup(self.partition, self.progenv)
@@ -316,8 +318,8 @@ class TestRegressionTest(unittest.TestCase):
         self.assertRaises(PipelineError, test.compile)
 
     def test_sourcepath_upref(self):
-        test = CompileOnlyRegressionTest('compileonlycheck',
-                                         'unittests/resources/checks')
+        test = CompileOnlyRegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.setup(self.partition, self.progenv)
@@ -327,7 +329,8 @@ class TestRegressionTest(unittest.TestCase):
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_extra_resources(self):
         # Load test site configuration
-        test = RegressionTest('dummycheck', 'unittests/resources/checks')
+        test = RegressionTest()
+        test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
         test.extra_resources = {
@@ -345,7 +348,7 @@ class TestRegressionTest(unittest.TestCase):
         self.assertCountEqual(expected_job_options, test.job.options)
 
 
-class TestNewStyleChecks(unittest.TestCase):
+class TestSyntax(unittest.TestCase):
     def test_regression_test(self):
         class MyTest(RegressionTest):
             def __init__(self, a, b):
@@ -356,7 +359,7 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('TestNewStyleChecks.test_regression_test.'
+        self.assertEqual('TestSyntax.test_regression_test.'
                          '<locals>.MyTest_1_2', test.name)
 
     def test_regression_test_strange_names(self):
@@ -375,7 +378,7 @@ class TestNewStyleChecks(unittest.TestCase):
 
         test = MyTest('(a*b+c)/12', C(33))
         self.assertEqual(
-            'TestNewStyleChecks.test_regression_test_strange_names.'
+            'TestSyntax.test_regression_test_strange_names.'
             '<locals>.MyTest__a_b_c__12_C_33_', test.name)
 
     def test_user_inheritance(self):
@@ -390,7 +393,7 @@ class TestNewStyleChecks(unittest.TestCase):
                 super().__init__(1, 2)
 
         test = MyTest()
-        self.assertEqual('TestNewStyleChecks.test_user_inheritance.'
+        self.assertEqual('TestSyntax.test_user_inheritance.'
                          '<locals>.MyTest', test.name)
 
     def test_runonly_test(self):
@@ -403,7 +406,7 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('TestNewStyleChecks.test_runonly_test.'
+        self.assertEqual('TestSyntax.test_runonly_test.'
                          '<locals>.MyTest_1_2', test.name)
 
     def test_compileonly_test(self):
@@ -416,7 +419,7 @@ class TestNewStyleChecks(unittest.TestCase):
         test = MyTest(1, 2)
         self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
                          test.prefix)
-        self.assertEqual('TestNewStyleChecks.test_compileonly_test.'
+        self.assertEqual('TestSyntax.test_compileonly_test.'
                          '<locals>.MyTest_1_2', test.name)
 
     def test_registration(self):
@@ -447,8 +450,8 @@ class TestSanityPatterns(unittest.TestCase):
         rt.runtime().resources.prefix = self.resourcesdir
 
         # Set up RegressionTest instance
-        self.test = RegressionTest('test_performance',
-                                   'unittests/resources/checks')
+        self.test = RegressionTest()
+        self.test._prefix = 'unittests/resources/checks'
         self.partition = rt.runtime().system.partition('gpu')
         self.progenv = self.partition.environment('builtin-gcc')
 
