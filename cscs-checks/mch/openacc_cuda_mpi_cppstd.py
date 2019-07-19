@@ -77,7 +77,12 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-lcublas', '-lcudart'
                     ]
                 if environ.name == 'PrgEnv-pgi-nompi':
+                    self.build_system.fflags += [
+                         '-ta=tesla,cc70,cuda10.0',
+                         '-I${EBROOTOPENMPI}/include'
+                    ]
                     self.build_system.ldflags += [
+                        '-L${EBROOTOPENMPI}/lib', '-lmpi_mpifh',
                         '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
                         '-lcublas', '-lcudart'
                     ]
