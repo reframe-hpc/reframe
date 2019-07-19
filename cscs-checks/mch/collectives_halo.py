@@ -45,8 +45,8 @@ class CommunicationTestBase(rfm.RegressionTest):
             self.num_tasks = 16
             self.num_gpus_per_node = 8
             self.modules = [
-                'cmake',
-                'cuda92/toolkit/9.2.88',
+                'cmake', 'cuda92/toolkit/9.2.88',
+                'craype-accel-nvidia70'
             ]
             self.variables['MV2_USE_CUDA'] = '1'
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
@@ -59,13 +59,12 @@ class CommunicationTestBase(rfm.RegressionTest):
             self.num_tasks = 16
             self.num_gpus_per_node = 8
             self.modules = [
-                'cmake',
-                'cuda10.0/toolkit/10.0.130',
+                'cmake', 'cuda10.0/toolkit/10.0.130',
+                'craype-accel-nvidia70'
             ]
             self.variables['MV2_USE_CUDA'] = '1'
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
             self.build_system.config_opts += [
-                #'-DMPI_VENDOR=mvapich2',
                 '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
             ]
         else:
@@ -89,7 +88,12 @@ class CommunicationTestBase(rfm.RegressionTest):
                 'nocomm':  0.0171947,
                 'nocomp':  0.0137893,
                 'default': 0.0138493
-            }
+            },
+            'tsa': {
+                'nocomm':  5.7878,
+                'nocomp':  5.62155,
+                'default': 5.53777
+            },
         }
         if self.current_system.name == 'dom':
             sysname = 'daint'
@@ -150,6 +154,11 @@ class AlltoallvTest(CommunicationTestBase):
                                  'nocomm':  0.0171947,
                                  'nocomp':  0.0137893,
                                  'default': 0.0138493
+                             },
+                             'tsa': {
+                                 'nocomm':  0.0171947,
+                                 'nocomp':  0.0137893,
+                                 'default': 0.0138493
                              }
                          })
         self.descr = 'Alltoall communication test'
@@ -172,7 +181,12 @@ class HaloExchangeTest(CommunicationTestBase):
                                  'nocomm':  0.978306,
                                  'nocomp':  1.36716,
                                  'default': 2.53509
-                             }
+                             },
+                             'tsa': {
+                                 'nocomm':  5.7878,
+                                 'nocomp':  5.62155,
+                                 'default': 5.53777
+                             },
                          })
         self.descr = 'Halo-cell exchange test'
         self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'

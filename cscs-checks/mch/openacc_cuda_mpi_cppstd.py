@@ -74,7 +74,6 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags = [
                     '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
                     '-lcublas', '-lcudart']
-            self.build_system.ldflags += [
 
         elif environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
