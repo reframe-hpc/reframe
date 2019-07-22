@@ -47,10 +47,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources/checks_unlisted/good.py')
         self.assertEqual(13, len(checks))
 
-    def test_load_mixed_syntax(self):
-        self.assertRaises(RegressionTestLoadError, self.loader.load_from_file,
-                          'unittests/resources/checks_unlisted/mixed.py')
-
     def test_conflicted_checks(self):
         self.loader_with_path._ignore_conflicts = False
         self.assertRaises(NameConflictError, self.loader_with_path.load_all)

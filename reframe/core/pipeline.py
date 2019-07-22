@@ -544,7 +544,6 @@ class RegressionTest:
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
-        obj._prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -554,10 +553,14 @@ class RegressionTest:
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj.name = name
+        obj._rfm_init(name,
+                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
         return obj
 
-    def __init__(self, name=None, prefix=None):
+    def __init__(self):
+        pass
+
+    def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
@@ -645,8 +648,8 @@ class RegressionTest:
     # Export read-only views to interesting fields
     @property
     def current_environ(self):
-        """The programming environment that the regression test is currently executing
-        with.
+        """The programming environment that the regression test is currently
+        executing with.
 
         This is set by the framework during the :func:`setup` phase.
 
@@ -1000,7 +1003,7 @@ class RegressionTest:
                 else:
                     self.build_system = 'Make'
 
-                self.build_system.srcdir = self.sourcepath
+            self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
@@ -1316,8 +1319,8 @@ class CompileOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _rfm_init(self, *args, **kwargs):
+        super()._rfm_init(*args, **kwargs)
         self.local = True
 
     def setup(self, partition, environ, **job_opts):

@@ -57,12 +57,7 @@ class RegressionCheckLoader:
             return (os.path.splitext(filename)[0]).replace('/', '.')
 
     def _validate_source(self, filename):
-        """Check if `filename` is a valid Reframe source file.
-
-        This is not a full validation test, but rather a first step that
-        verifies that the file defines the `_get_checks()` method correctly.
-        A second step follows, which actually loads the test file, performing
-        further tests and finalizes and validation."""
+        """Check if `filename` is a valid Reframe source file."""
 
         with open(filename, 'r') as f:
             source_tree = ast.parse(f.read(), filename)
@@ -86,25 +81,22 @@ class RegressionCheckLoader:
     def load_from_module(self, module):
         """Load user checks from module.
 
-        This method tries to call the `_get_checks()` method of the user check
-        and validates its return value."""
+        This method tries to call the `_rfm_gettests()` method of the user
+        check and validates its return value."""
         from reframe.core.pipeline import RegressionTest
 
-        old_syntax = hasattr(module, '_get_checks')
-        new_syntax = hasattr(module, '_rfm_gettests')
-        if old_syntax and new_syntax:
-            raise RegressionTestLoadError('%s: mixing old and new regression '
-                                          'test syntax is not allowed' %
-                                          module.__file__)
+        # Warn in case of old syntax
+        if hasattr(module, '_get_checks'):
+            getlogger().warning(
+                '%s: _get_checks() is no more supported in test files: '
+                'please use @reframe.simple_test or '
+                '@reframe.parameterized_test decorators' % module.__file__
+            )
 
-        if not old_syntax and not new_syntax:
+        if not hasattr(module, '_rfm_gettests'):
             return []
 
-        if old_syntax:
-            candidates = module._get_checks()
-        else:
-            candidates = module._rfm_gettests()
-
+        candidates = module._rfm_gettests()
         if not isinstance(candidates, collections.abc.Sequence):
             return []
 

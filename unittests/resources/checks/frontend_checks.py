@@ -9,7 +9,6 @@ from reframe.core.exceptions import ReframeError, PerformanceError
 
 class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.local = True
         self.executable = 'echo hello && echo perf: 10 Gflop/s'
         self.sanity_patterns = sn.assert_found('hello', self.stdout)
