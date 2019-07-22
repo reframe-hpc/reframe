@@ -10,8 +10,7 @@ import reframe as rfm
 
 @rfm.simple_test
 class KeyboardInterruptCheck(rfm.RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self):
         self.local = True
         self.executable = 'sleep 1'
         self.valid_systems = ['*']

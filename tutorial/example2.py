@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Example2aTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -36,8 +35,7 @@ class Example2aTest(rfm.RegressionTest):
 
 @rfm.simple_test
 class Example2bTest(rfm.RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self):
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
