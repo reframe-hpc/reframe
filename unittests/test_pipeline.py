@@ -578,25 +578,10 @@ class TestSanityPatterns(unittest.TestCase):
         self.test.reference = {
             'testsys:login': {
                 'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
                 'value3': (3.1, -0.1, 0.1),
-            }
-        }
-        self.test.check_performance()
-
-    def test_unknown_multiple_systems(self):
-        self.write_performance_output(performance1=1.3,
-                                      performance2=1.8,
-                                      performance3=3.3)
-        self.test.reference = {
-            'testsys:part1': {
-                'value1': (1.4, -0.1, 0.1)
             },
-            'testsys:part2': {
+            'testsys:login2': {
                 'value2': (1.7, -0.1, 0.1)
-            },
-            'testsys:part3': {
-                'value3': (3.1, -0.1, 0.1)
             }
         }
         self.test.check_performance()
