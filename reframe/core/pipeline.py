@@ -1139,6 +1139,7 @@ class RegressionTest:
                     unit = ref[3]
                 except IndexError:
                     unit = None
+
                 variables.add((varname, unit))
                 if system == '*':
                     has_default = True
@@ -1149,12 +1150,11 @@ class RegressionTest:
                 # tested variables
                 for var in variables:
                     name, unit = var
+                    ref_tuple = (0, None, None)
                     if unit:
-                        self.reference.update(
-                            {'*': {name: (0, None, None, unit)}})
-                    else:
-                        self.reference.update(
-                            {'*': {name: (0, None, None)}})
+                        ref_tuple += (unit,)
+
+                    self.reference.update({'*': {name: ref_tuple}})
 
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
