@@ -399,7 +399,7 @@ The ``setup()`` method is now very simple:
 it gets the correct compilation flags from the ``prgenv_flags`` dictionary and applies them to the build system.
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 1-4,36-63
+  :lines: 1-4,36-62
 
 .. tip::
   A regression test is like any other Python class, so you can freely define your own attributes.
@@ -600,7 +600,18 @@ Thresholds are specified as decimal fractions of the reference value. For nonneg
 In our example, the reference value for this test on ``daint:gpu`` is 50 Gflop/s ±10%. Setting a threshold value to :class:`None` disables the threshold.
 If you specify a measurement unit as well, you will be able to log it the performance logs of the test; this is handy when you are inspecting or plotting the performance values.
 
+ReFrame will always add a default ``*`` entry in the ``reference`` dictionary, if it does not exist, with the reference value of ``(0, None, None, <unit>)``, where ``unit`` is derived from the unit of each respective performance variable.
+This is useful when using ReFrame for benchmarking purposes and you would like to run a test on an unknown system.
 
+.. note::
+   Reference tuples may now optionally contain units.
+
+   .. versionadded:: 2.16
+
+.. note::
+   A default ``*`` entry is now always added to the reference dictionary.
+
+   .. versionadded:: 2.19
 
 Combining It All Together
 -------------------------
