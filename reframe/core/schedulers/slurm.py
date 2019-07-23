@@ -189,10 +189,15 @@ class SlurmJob(sched.Job):
         return None
 
     def _merge_files(self):
-        output_glob = glob.glob(self.stdout + '_*')
-        err_glob = glob.glob(self.stderr + '_*')
-        os_ext.concat_files(self.stdout, *output_glob, overwrite=True)
-        os_ext.concat_files(self.stderr, *err_glob, overwrite=True)
+        with os_ext.change_dir(self.workdir):
+            out_glob = glob.glob(self.stdout + '_*')
+            err_glob = glob.glob(self.stderr + '_*')
+            getlogger().debug(
+                'merging job array output files: %s' % ', '.join(out_glob))
+            os_ext.concat_files(self.stdout, *out_glob, overwrite=True)
+            getlogger().debug(
+                'merging job array error files: %s' % ','.join(err_glob))
+            os_ext.concat_files(self.stderr, *err_glob, overwrite=True)
 
     def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
@@ -422,6 +427,7 @@ class SlurmJob(sched.Job):
             jobs_array = parsed_args.array
             if jobs_array:
                 self._is_job_array = True
+                getlogger().debug('detected job array option: %s' % jobs_array)
             else:
                 self._is_job_array = False
 

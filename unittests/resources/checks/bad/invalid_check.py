@@ -1,17 +1,10 @@
-import os
-
-from reframe.core.pipeline import RegressionTest
+import reframe as rfm
 
 
-class SomeTest(RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__('somecheck', os.path.dirname(__file__), **kwargs)
+@rfm.simple_test
+class SomeTest(rfm.RegressionTest):
+    pass
 
 
-class InvalidTest:
-    def __init__(self, **kwargs):
-        pass
-
-
-def _get_checks(**kwargs):
-    return [SomeTest(**kwargs), InvalidTest(**kwargs)]
+class NotATest:
+    pass

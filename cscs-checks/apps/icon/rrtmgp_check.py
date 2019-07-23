@@ -6,12 +6,15 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class RRTMGPTest(rfm.RegressionTest):
+    '''This is an outdated PoC test for ICON-RRTMGP.'''
+
     def __init__(self):
         super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'RRTMGP')
+        self.prebuild_cmd = ['cp build/Makefile.conf.dom build/Makefile.conf']
         self.executable = 'python'
         self.executable_opts = [
             'util/scripts/run_tests.py',
@@ -20,7 +23,7 @@ class RRTMGPTest(rfm.RegressionTest):
         ]
         self.pre_run = [
             'pwd',
-            'module load netcdf-python/1.4.1-CrayGNU-18.08-python2',
+            'module load netcdf-python/1.4.1-CrayGNU-19.06-python2',
             'cd test'
         ]
         self.modules = ['craype-accel-nvidia60', 'cray-netcdf']
@@ -34,5 +37,4 @@ class RRTMGPTest(rfm.RegressionTest):
                 [sn.assert_gt(sn.count(values), 0, msg='regex not matched')],
                 sn.map(lambda x: sn.assert_lt(x, 1e-5), values))
         )
-        self.tags = {'production'}
         self.maintainers = ['WS', 'VK']

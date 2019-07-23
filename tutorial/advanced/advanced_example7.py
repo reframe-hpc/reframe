@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class PrerunDemoTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use of '
                       'pre- and post-run commands')
         self.valid_systems = ['*']
