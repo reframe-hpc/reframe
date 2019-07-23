@@ -1146,8 +1146,12 @@ class RegressionTest:
                     break
 
             if not has_default:
-                # If default value is not provided add one for all the
-                # tested variables
+                if not variables:
+                    # If empty, it means that self.reference was empty, so try
+                    # to infer their name from perf_patterns
+                    variables = {(name, None)
+                                 for name in self.perf_patterns.keys()}
+
                 for var in variables:
                     name, unit = var
                     ref_tuple = (0, None, None)

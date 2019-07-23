@@ -586,6 +586,13 @@ class TestSanityPatterns(unittest.TestCase):
         }
         self.test.check_performance()
 
+    def test_empty_reference(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.test.reference = {}
+        self.test.check_performance()
+
     def test_default_reference(self):
         self.write_performance_output(performance1=1.3,
                                       performance2=1.8,
