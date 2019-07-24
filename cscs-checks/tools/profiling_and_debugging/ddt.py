@@ -66,9 +66,12 @@ class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+                              'dom:gpu', 'dom:mc', 
+                              'kesch:cn', 'tsa:cn']
 
         if self.current_system.name == 'kesch' and self.lang == 'C':
+            self.build_system.ldflags = ['-lm']
+        elif self.current_system.name == 'tsa' and self.lang == 'C':
             self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
@@ -94,13 +97,14 @@ class DdtCpuCheck(DdtCheck):
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['craype-accel-nvidia35']
+            'kesch': ['craype-accel-nvidia35'],
+            'tsa': ['cuda10.0/toolkit/10.0.130','craype-accel-nvidia70']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
@@ -118,6 +122,9 @@ class DdtGpuCheck(DdtCheck):
         if self.current_system.name == 'kesch':
             arch = 'sm_37'
             self.build_system.ldflags = ['-lm', '-lcudart']
+        elif self.current_system.name == 'tsa':
+            arch = 'sm_70'
+            self.build_system.ldflags = ['-lm', '-lstdc++', '-lcudart']
         else:
             arch = 'sm_60'
             self.build_system.ldflags = ['-lstdc++']
