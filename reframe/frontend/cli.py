@@ -494,6 +494,9 @@ def main():
         if options.purge_env:
             rt.modules_system.unload_all()
 
+        # Load the environment for the current system
+        rt.system.preload_environ.load()
+
         for m in options.user_modules:
             try:
                 rt.modules_system.load_module(m, force=True)
