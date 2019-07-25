@@ -29,7 +29,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'craype-accel-nvidia70',
             ]
 
-        # This tets requires an MPI compiler, although it uses a single task
+        # This test requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
