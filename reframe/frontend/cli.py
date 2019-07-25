@@ -495,7 +495,12 @@ def main():
             rt.modules_system.unload_all()
 
         # Load the environment for the current system
-        rt.system.preload_environ.load()
+        try:
+            rt.system.preload_environ.load()
+        except EnvironError as e:
+            printer.error("failed to load current's system environment; "
+                          "please check your configuration")
+            raise
 
         for m in options.user_modules:
             try:
