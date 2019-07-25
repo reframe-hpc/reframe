@@ -578,11 +578,20 @@ class TestSanityPatterns(unittest.TestCase):
         self.test.reference = {
             'testsys:login': {
                 'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
                 'value3': (3.1, -0.1, 0.1),
+            },
+            'testsys:login2': {
+                'value2': (1.7, -0.1, 0.1)
             }
         }
-        self.assertRaises(SanityError, self.test.check_performance)
+        self.test.check_performance()
+
+    def test_empty_reference(self):
+        self.write_performance_output(performance1=1.3,
+                                      performance2=1.8,
+                                      performance3=3.3)
+        self.test.reference = {}
+        self.test.check_performance()
 
     def test_default_reference(self):
         self.write_performance_output(performance1=1.3,
