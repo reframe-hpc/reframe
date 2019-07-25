@@ -20,7 +20,7 @@ Use Cases
 
 The ReFrame framework has been in production at `CSCS <http://www.cscs.ch>`__ since the upgrade of the `Piz Daint <http://www.cscs.ch/computers/piz_daint/index.html>`__ system in early December 2016.
 
-`Read the full story <usecases.html>`__...
+`Read the full story <usecases.rst>`__...
 
 Latest Release
 ==============
