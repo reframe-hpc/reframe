@@ -93,7 +93,6 @@ program openacc_cuda_mpi_cppstd
     deallocate(f1)
     deallocate(f2)
     deallocate(f3)
-    write (*,*) "Result: OK"
   end if
 
   call MPI_Finalize(ierr);
