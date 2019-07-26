@@ -6,7 +6,7 @@ LD = $(FC)
 
 OBJS = compute_cuda.o openacc_cuda_mpi_cppstd.o std_cpp_call.o
 # OBJ2 = $(subst _,$(PE_ENV)_,$(OBJ))
-LIB  =
+LIB  =  -lcuda -lcudart -lstdc++
 
 .SUFFIXES: .o .cu .cpp .F90
 
