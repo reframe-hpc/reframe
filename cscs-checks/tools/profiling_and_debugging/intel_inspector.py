@@ -4,7 +4,8 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.parameterized_test(['C++'], ['F90'])
+# @rfm.parameterized_test(['C++'], ['F90'])
+@rfm.parameterized_test(['C++'])
 class IntelInspectorTest(rfm.RegressionTest):
     '''This test checks Intel Inspector:
     https://software.intel.com/en-us/inspector
@@ -71,8 +72,8 @@ class IntelInspectorTest(rfm.RegressionTest):
         regexversion = (r'^Intel\(R\)\sInspector\s\d+\sUpdate\s\d+\s\(build'
                         r'\s(?P<toolsversion>\d+)')
         system_default_toolversion = {
-            'daint': ['551023'],  # 2018 Update 2
-            'dom': ['597413'],    # 2019 Update 4
+            'daint': '551023',  # 2018 Update 2
+            'dom': '597413',    # 2019 Update 4
         }
         toolsversion = system_default_toolversion[self.current_system.name]
         self.sanity_patterns = sn.all([
