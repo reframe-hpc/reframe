@@ -19,6 +19,7 @@ class SystemPartition:
     _environs  = fields.TypedField('_environs', typ.List[Environment])
     _resources = fields.TypedField('_resources', typ.Dict[str, typ.List[str]])
     _local_env = fields.TypedField('_local_env', Environment, type(None))
+    _container_environs = fields.TypedField('_container_environs', typ.Dict[str, Environment])
 
     # maximum concurrent jobs
     _max_jobs  = fields.TypedField('_max_jobs', int)
@@ -35,6 +36,7 @@ class SystemPartition:
         self._resources = dict(resources)
         self._max_jobs  = max_jobs
         self._local_env = local_env
+        self._container_environs = {}
 
         # Parent system
         self._system = None
@@ -51,6 +53,10 @@ class SystemPartition:
     @property
     def environs(self):
         return utility.SequenceView(self._environs)
+
+    @property
+    def container_environs(self):
+        return utility.MappingView(self._container_environs)
 
     @property
     def fullname(self):
@@ -110,6 +116,9 @@ class SystemPartition:
            .. versionadded:: 2.8
         """
         return self._launcher
+
+    def add_container_env(self, env_name, environ):
+        self._container_environs[env_name] = environ
 
     # Instantiate managed resource `name` with `value`.
     def get_resource(self, name, **values):
