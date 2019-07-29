@@ -70,7 +70,11 @@ class IntelInspectorTest(rfm.RegressionTest):
         self.build_system.fflags = prgenv_flags
         regexversion = (r'^Intel\(R\)\sInspector\s\d+\sUpdate\s\d+\s\(build'
                         r'\s(?P<toolsversion>\d+)')
-        toolsversion = '597413'
+        system_default_toolversion = {
+            'daint': ['551023'], # 2018 Update 2
+            'dom': ['597413'],   # 2019 Update 4
+        }
+        toolsversion = system_default_toolversion[self.current_system.name]
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),
