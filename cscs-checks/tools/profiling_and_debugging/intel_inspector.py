@@ -4,8 +4,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-# @rfm.parameterized_test(['C++'], ['F90'])
-@rfm.parameterized_test(['C++'])
+@rfm.parameterized_test(['C++'], ['F90'])
 class IntelInspectorTest(rfm.RegressionTest):
     '''This test checks Intel Inspector:
     https://software.intel.com/en-us/inspector
