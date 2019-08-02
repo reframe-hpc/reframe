@@ -4,7 +4,6 @@ import reframe.utility.sanity as sn
 
 class BaseMatrixVectorTest(rfm.RegressionTest):
     def __init__(self, test_version):
-        super().__init__()
         self.descr = '%s matrix-vector multiplication' % test_version
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']

@@ -40,18 +40,22 @@ To make a test visible to the framework, you must decorate your final test class
 Let's see in more detail how the ``Example1Test`` is defined:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 4-7
+  :lines: 4-6
 
 The ``__init__()`` method is the constructor of your test.
 It is usually the only method you need to implement for your tests, especially if you don't want to customize any of the regression test pipeline stages.
-The first statement in the ``Example1Test`` constructor calls the constructor of the base class.
-This is essential for properly initializing your test.
 When your test is instantiated, the framework assigns a default name to it.
 This name is essentially a concatenation of the fully qualified name of the class and string representations of the constructor arguments, with any non-alphanumeric characters converted to underscores.
 In this example, the auto-generated test name is simply ``Example1Test``.
 You may change the name of the test later in the constructor by setting the :attr:`name <reframe.core.pipeline.RegressionTest.name>` attribute.
 
 .. note::
+   Calling ``super().__init__()`` inside the constructor of a test is no more needed.
+
+   .. versionchanged:: 2.19
+
+
+.. warning::
       ReFrame requires that the names of all the tests it loads are unique.
       In case of name clashes, it will refuse to load the conflicting test.
 
@@ -60,7 +64,7 @@ You may change the name of the test later in the constructor by setting the :att
 The next line sets a more detailed description of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 8
+  :lines: 7
   :dedent: 8
 
 This is optional and it defaults to the auto-generated test's name, if not specified.
@@ -71,7 +75,7 @@ This is optional and it defaults to the auto-generated test's name, if not speci
 The next two lines specify the systems and the programming environments that this test is valid for:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 9-10
+  :lines: 8-9
   :dedent: 8
 
 Both of these variables accept a list of system names or environment names, respectively.
@@ -87,7 +91,7 @@ If only a system name (without a partition) is specified in the :attr:`self.vali
 The next line specifies the source file that needs to be compiled:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 11
+  :lines: 10
   :dedent: 8
 
 ReFrame expects any source files, or generally resources, of the test to be inside an ``src/`` directory, which is at the same level as the regression test file.
@@ -109,7 +113,7 @@ A user can associate compilers with programming environments in the ReFrame's `s
 The next line in our first regression test specifies a list of options to be used for running the generated executable (the matrix dimension and the number of iterations in this particular example):
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 12
+  :lines: 11
   :dedent: 8
 
 Notice that you do not need to specify the executable name.
@@ -119,7 +123,7 @@ We will see in the `"Customizing Further A ReFrame Regression Test" <advanced.ht
 The next lines specify what should be checked for assessing the sanity of the result of the test:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 13-14
+  :lines: 12-13
   :dedent: 8
 
 This expression simply asks ReFrame to look for ``time for single matrix vector multiplication`` in the standard output of the test.
@@ -140,7 +144,7 @@ You can also use the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>
 The last two lines of the regression test are optional, but serve a good role in a production environment:
 
 .. literalinclude:: ../tutorial/example1.py
-  :lines: 15-16
+  :lines: 14-15
   :dedent: 8
 
 In the :attr:`maintainers <reframe.core.pipeline.RegressionTest.maintainers>` attribute you may store a list of people responsible for the maintenance of this test.
@@ -331,7 +335,7 @@ In this example, we write a regression test to compile and run the OpenMP versio
 The full code of this test follows:
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 1-34
+  :lines: 1-32
 
 This example introduces two new concepts:
 
@@ -368,7 +372,7 @@ As described in `"The Regression Test Pipeline" <pipeline.html>`__ section, it i
 The following lines show the overriden ``setup()`` method:
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 24-34
+  :lines: 23-33
   :dedent: 4
 
 The current environment is passed as argument by the framework to the ``setup()`` method, so we differentiate the build system's flags based on its name.
@@ -382,10 +386,7 @@ Finally, we need call the ``setup()`` method of the base class, in order to perf
 
 
 .. warning::
-  Setting the compiler flags in the programming environment is now deprecated.
-  Users are advised to use the build systems feature instead.
-
-   .. versionadded:: 2.14
+   Setting the compiler flags in the programming environment has been dropped completely in version 2.17.
 
 
 An alternative implementation using dictionaries
@@ -398,7 +399,7 @@ The ``setup()`` method is now very simple:
 it gets the correct compilation flags from the ``prgenv_flags`` dictionary and applies them to the build system.
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 1-4,37-64
+  :lines: 1-4,36-62
 
 .. tip::
   A regression test is like any other Python class, so you can freely define your own attributes.
@@ -422,7 +423,7 @@ Let's take the changes step-by-step:
 First we need to specify for which partitions this test is meaningful by setting the :attr:`valid_systems <reframe.core.pipeline.RegressionTest.valid_systems>` attribute:
 
 .. literalinclude:: ../tutorial/example3.py
-  :lines: 10
+  :lines: 9
   :dedent: 8
 
 We only specify the partitions that are configured with a job scheduler.
@@ -432,7 +433,7 @@ So we remove this partition from the list of the supported systems.
 The most important addition to this check are the variables controlling the distributed execution:
 
 .. literalinclude:: ../tutorial/example3.py
-  :lines: 24-26
+  :lines: 23-25
   :dedent: 8
 
 By setting these variables, we specify that this test should run with 8 MPI tasks in total, using two tasks per node.
@@ -470,7 +471,7 @@ Let's start with the OpenACC regression test:
 The things to notice in this test are the restricted list of system partitions and programming environments that this test supports and the use of the :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable:
 
 .. literalinclude:: ../tutorial/example4.py
-  :lines: 15
+  :lines: 14
   :dedent: 8
 
 The :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` variable takes a list of modules that should be loaded during the setup phase of the test.
@@ -479,7 +480,7 @@ In this particular test, we need to load the ``craype-accel-nvidia60`` module, w
 It is also important to note that in GPU-enabled tests the number of GPUs for each node have to be specified by setting the corresponding variable :attr:`num_gpus_per_node <reframe.core.pipeline.RegressionTest.num_gpus_per_node>`, as follows:
 
 .. literalinclude:: ../tutorial/example4.py
-  :lines: 16
+  :lines: 15
   :dedent: 8
 
 The regression test for the CUDA code is slightly simpler:
@@ -504,7 +505,7 @@ Let's go over it line-by-line.
 The first thing we do is to extract the norm printed in the standard output.
 
 .. literalinclude:: ../tutorial/example6.py
-  :lines: 19-21
+  :lines: 18-20
   :dedent: 8
 
 The :func:`extractsingle <reframe.utility.sanity.extractsingle>` sanity function extracts some information from a single occurrence (by default the first) of a pattern in a filename.
@@ -529,7 +530,7 @@ For a more detailed description of this and other sanity functions, please refer
 The next four lines is the actual sanity check:
 
 .. literalinclude:: ../tutorial/example6.py
-  :lines: 22-26
+  :lines: 21-25
   :dedent: 8
 
 This expression combines two conditions that need to be true, in order for the sanity check to succeed:
@@ -570,7 +571,7 @@ The are two new variables set in this test that basically enable the performance
 Let's have a closer look at each of them:
 
 .. literalinclude:: ../tutorial/example7.py
-  :lines: 20-23
+  :lines: 19-22
   :dedent: 8
 
 The :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>` attribute is a dictionary, whose keys are *performance variables* (i.e., arbitrary names assigned to the performance values we are looking for), and its values are *sanity expressions* that specify how to obtain these performance values from the output.
@@ -582,7 +583,7 @@ When the framework obtains a performance value from the output of the test it se
 Let's go over the :attr:`reference <reframe.core.pipeline.RegressionTest.reference>` dictionary of our example and explain its syntax in more detail:
 
 .. literalinclude:: ../tutorial/example7.py
-  :lines: 24-28
+  :lines: 23-27
   :dedent: 8
 
 This is a special type of dictionary that we call ``scoped dictionary``, because it defines scopes for its keys.
@@ -599,7 +600,18 @@ Thresholds are specified as decimal fractions of the reference value. For nonneg
 In our example, the reference value for this test on ``daint:gpu`` is 50 Gflop/s ±10%. Setting a threshold value to :class:`None` disables the threshold.
 If you specify a measurement unit as well, you will be able to log it the performance logs of the test; this is handy when you are inspecting or plotting the performance values.
 
+ReFrame will always add a default ``*`` entry in the ``reference`` dictionary, if it does not exist, with the reference value of ``(0, None, None, <unit>)``, where ``unit`` is derived from the unit of each respective performance variable.
+This is useful when using ReFrame for benchmarking purposes and you would like to run a test on an unknown system.
 
+.. note::
+   Reference tuples may now optionally contain units.
+
+   .. versionadded:: 2.16
+
+.. note::
+   A default ``*`` entry is now always added to the reference dictionary.
+
+   .. versionadded:: 2.19
 
 Combining It All Together
 -------------------------

@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['MPI'], ['OpenMP'])
 class MatrixVectorTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.descr = 'Matrix-vector multiplication test (%s)' % variant
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',

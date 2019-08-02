@@ -43,7 +43,7 @@ The contents of this regression test are the following (``tutorial/advanced/adva
 The important bit here is how we set up the build system for this test:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example1.py
-  :lines: 14-15
+  :lines: 13-14
   :dedent: 4
 
 
@@ -210,7 +210,7 @@ This ensures that the environment of the test is also set correctly at runtime.
 Finally, as already mentioned `previously <#working-with-makefiles>`__, since the name of the makefile is not one of the standard ones, it must be set explicitly in the build system:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example4.py
-  :lines: 17
+  :lines: 16
   :dedent: 8
 
 Setting a Time Limit for Regression Tests
@@ -224,7 +224,7 @@ The following example (``tutorial/advanced/advanced_example5.py``) demonstrates 
 The important bit here is the following line that sets the time limit for the test to one minute:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 13
+  :lines: 12
   :dedent: 8
 
 The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a three-tuple in the form ``(HOURS, MINUTES, SECONDS)``.
@@ -233,7 +233,7 @@ Time limits are implemented for all the scheduler backends.
 The sanity condition for this test verifies that associated job has been canceled due to the time limit (note that this message is SLURM-specific).
 
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 16-17
+  :lines: 15-16
   :dedent: 8
 
 Applying a sanity function iteratively
@@ -259,7 +259,7 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
 First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 14-15
+  :lines: 13-14
   :dedent: 8
 
 The ``numbers`` variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
@@ -276,7 +276,7 @@ Note that the ``and`` operator is not deferrable and will trigger the evaluation
 The full syntax for the :attr:`sanity_patterns` is the following:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 16-18
+  :lines: 15-17
   :dedent: 8
 
 Customizing the Generated Job Script
@@ -422,13 +422,13 @@ The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pi
 This is a requirement for flexible tests:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 13
+  :lines: 12
   :dedent: 8
 
 The sanity function of this test simply counts the host names and verifies that they are as many as expected:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 15-18
+  :lines: 14-17
   :dedent: 8
 
 Notice, however, that the sanity check does not use :attr:`num_tasks` for verification, but rather a different, custom attribute, the ``num_tasks_assigned``.
@@ -442,7 +442,7 @@ This happens for two reasons:
 Here is how the new deferred attribute is defined:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 22-25
+  :lines: 21-24
   :dedent: 4
 
 

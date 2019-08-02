@@ -161,9 +161,17 @@ class SiteConfiguration:
             if sys_resourcesdir:
                 sys_resourcesdir = os_ext.expandvars(sys_resourcesdir)
 
+            # Create the preload environment for the system
+            sys_preload_env = m_env.Environment(
+                name='__rfm_env_%s' % sys_name,
+                modules=config.get('modules', []),
+                variables=config.get('variables', {})
+            )
+
             system = System(name=sys_name,
                             descr=sys_descr,
                             hostnames=sys_hostnames,
+                            preload_env=sys_preload_env,
                             prefix=sys_prefix,
                             stagedir=sys_stagedir,
                             outputdir=sys_outputdir,

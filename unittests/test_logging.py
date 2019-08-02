@@ -6,9 +6,13 @@ import tempfile
 import unittest
 from datetime import datetime
 
+import reframe as rfm
 import reframe.core.logging as rlog
 from reframe.core.exceptions import ConfigError, ReframeError
-from reframe.core.pipeline import RegressionTest
+
+
+class RandomCheck(rfm.RegressionTest):
+    pass
 
 
 class TestLogger(unittest.TestCase):
@@ -29,8 +33,7 @@ class TestLogger(unittest.TestCase):
         self.logger_without_check = rlog.LoggerAdapter(self.logger)
 
         # Logger adapter with an associated check
-        self.logger_with_check = rlog.LoggerAdapter(
-            self.logger, RegressionTest('random_check', '.'))
+        self.logger_with_check = rlog.LoggerAdapter(self.logger, RandomCheck())
 
     def tearDown(self):
         os.remove(self.logfile)
@@ -62,7 +65,7 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(self.found_in_logfile('info'))
         self.assertTrue(self.found_in_logfile('verbose'))
-        self.assertTrue(self.found_in_logfile('random_check'))
+        self.assertTrue(self.found_in_logfile('RandomCheck'))
 
     def test_handler_types(self):
         self.assertTrue(issubclass(logging.Handler, rlog.Handler))
@@ -113,7 +116,7 @@ class TestLoggingConfiguration(unittest.TestCase):
                 }
             ]
         }
-        self.check = RegressionTest('random_check', '.')
+        self.check = RandomCheck()
 
     def tearDown(self):
         if os.path.exists(self.logfile):
@@ -400,7 +403,7 @@ class TestLoggingConfiguration(unittest.TestCase):
 
         rlog.getlogger().error('error outside context')
         self.assertTrue(self.found_in_logfile(
-            'random_check: %s: error from context' % sys.argv[0]))
+            'RandomCheck: %s: error from context' % sys.argv[0]))
         self.assertTrue(self.found_in_logfile(
             'reframe: %s: error outside context' % sys.argv[0]))
 
