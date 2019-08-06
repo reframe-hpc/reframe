@@ -272,7 +272,7 @@ class G2GBandwidthTest(P2PBaseTest):
                 'bw': (6288.98, -0.1, None, 'MB/s')
             },
             'tsa:cn': {
-                'bw': (6288.98, -0.1, None, 'MB/s')
+                'bw': (1630, -0.1, None, 'MB/s')
             },
             '*': {
                 'bw': (0, None, None, 'MB/s')
@@ -327,7 +327,7 @@ class G2GLatencyTest(P2PBaseTest):
                 'latency': (23.09, None, 0.1, 'us')
             },
             'tsa:cn': {
-                'latency': (23.09, None, 0.1, 'us')
+                'latency': (32.86, None, 0.1, 'us')
             },
             '*': {
                 'latency': (0, None, None, 'us')
