@@ -260,7 +260,7 @@ class ReframeSettings:
                 'partitions': {
                     'cn': {
                         'scheduler': 'nativeslurm',
-                        'access': ['--partition=test'],
+                        'access': ['--partition=normal'],
                         'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
