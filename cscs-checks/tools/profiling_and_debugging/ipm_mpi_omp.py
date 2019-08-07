@@ -34,8 +34,6 @@ class Ipm(rfm.RegressionTest):
         self.sourcesdir = os.path.join('src', lang)
         self.executable = './jacobi'
         self.build_system = 'Make'
-        if lang == 'F90':
-            self.build_system.max_concurrency = 1
 
         self.num_tasks = 3
         self.num_tasks_per_node = 3
