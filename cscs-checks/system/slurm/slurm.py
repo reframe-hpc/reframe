@@ -8,11 +8,14 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+                              'kesch:cn', 'kesch:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce']
         self.tags = {'slurm', 'maintenance', 'ops', 'production'}
         self.num_tasks_per_node = 1
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+        elif self.current_system.name == 'tsa':
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VK']
@@ -31,11 +34,14 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+                              'kesch:cn', 'kesch:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce']
         self.tags = {'slurm', 'maintenance', 'ops', 'production'}
         self.num_tasks_per_node = 1
         if self.current_system.name == 'kesch':
+            self.exclusive_access = True
+        elif self.current_system.name == 'tsa':
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VK']
@@ -53,6 +59,8 @@ class HostnameCheck(SlurmSimpleBaseCheck):
         super().__init__()
         self.executable = '/bin/hostname'
         self.hostname_string = {
+            'tsa:cn': r'tsa-cn\d{3}\b',
+            'tsa:pn': r'tsa-pp\d{3}\b',
             'kesch:cn': r'keschcn-\d{4}\b',
             'kesch:pn': r'keschpn-\d{4}\b',
             'daint:gpu': r'nid\d{5}\b',
@@ -75,7 +83,8 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
         self.num_tasks = 2
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
+                              'kesch:cn', 'kesch:pn',
+                              'tsa:cn', 'tsa:pn']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
@@ -105,7 +114,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 class DefaultRequestGPU(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tsa:cn']
         self.executable = 'nvidia-smi'
         self.sanity_patterns = sn.assert_found(
             r'NVIDIA-SMI.*Driver Version.*', self.stdout)

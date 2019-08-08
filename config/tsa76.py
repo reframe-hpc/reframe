@@ -258,9 +258,24 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
                     'cn': {
                         'scheduler': 'nativeslurm',
-                        'access': ['--partition=normal'],
+                        'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
