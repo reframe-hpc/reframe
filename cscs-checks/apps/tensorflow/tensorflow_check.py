@@ -4,7 +4,6 @@ import reframe.utility.sanity as sn
 
 class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self, model_name):
-        super().__init__()
         self.name = 'tensorflow_%s_check' % model_name
         self.descr = 'Tensorflow official %s test' % model_name
         self.valid_systems = ['daint:gpu', 'dom:gpu']
@@ -14,11 +13,14 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.num_tasks = 1
         self.num_gpus_per_node = 1
-        self.modules = ['TensorFlow/1.12.0-CrayGNU-19.03-cuda-10.0-python3']
+        tf_version = '1.14.0'
+        cuda_version = '10.1.168'
+        self.modules = ['TensorFlow/%s-CrayGNU-19.06-cuda-%s-python3' %
+                        (tf_version, cuda_version)]
 
         # Checkout to the branch corresponding to the module version of
         # TensorFlow
-        self.pre_run = ['git checkout r1.12.0']
+        self.pre_run = ['git checkout r%s' % tf_version]
         self.variables = {'PYTHONPATH': '$PYTHONPATH:.'}
 
 
