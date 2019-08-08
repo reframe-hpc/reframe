@@ -100,6 +100,11 @@ The valid attributes of a system are the following:
   - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (versions older than 3.2 are not supported).
   - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions older than 4.1 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
+
+* ``modules``: Modules to be loaded always when running on this system.
+  These modules modify the ReFrame environment.
+  This is useful when for example a particular module is needed to submit jobs on a specific system.
+* ``variables``: Environment variables to be set always when running on this system.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
@@ -113,6 +118,11 @@ For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` a
 .. note::
   .. versionadded:: 2.8
     The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
+
+.. note::
+  .. versionadded:: 2.19
+    The ``modules`` and ``variables`` configuration parameters were introduced at the system level.
+
 
 .. warning::
    .. versionchanged:: 2.18
@@ -218,9 +228,15 @@ The available partition attributes are the following:
      A new syntax for the ``scheduler`` values was introduced as well as more parallel program launchers.
      The old values for the ``scheduler`` key will continue to be supported.
 
+.. note::
    .. versionchanged:: 2.9
-      Better support for custom job resources.
+     Better support for custom job resources.
 
+.. note::
+  .. versionchanged:: 2.14
+     The ``modules`` and ``variables`` partition configuration parameters do not affect the ReFrame environment anymore.
+     They essentially define an environment to be always emitted when building and/or running the test on this partition.
+     If you want to modify the environment ReFrame runs in for a particular system, define these parameters inside the `system configuration <#system-configuration>`__.
 
 
 Supported scheduler backends
