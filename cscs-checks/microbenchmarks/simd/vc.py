@@ -57,9 +57,8 @@ class VcSimdTest(rfm.RegressionTest):
             'OMP_NUM_THREADS': str(self.num_cpus_per_task),
         }
         self.sanity_patterns = sn.assert_found('Speedup:', self.stdout)
-        regex_cyc = (r'^cycle count: (?P<cycles>\d+) \|')
-        self.cyc1 = sn.extractall(regex_cyc, self.stdout, 'cycles', int)[0]
-        self.cyc2 = sn.extractall(regex_cyc, self.stdout, 'cycles', int)[1]
+        self.cycles = sn.extractall(r'^cycle count: (?P<cycles>\d+) \|',
+                                    self.stdout, 'cycles', int)
         self.perf_patterns = {
             'speedup': self.speedup,
         }
@@ -79,5 +78,5 @@ class VcSimdTest(rfm.RegressionTest):
     @sn.sanity_function
     def speedup(self):
         # just showing how speedup is being calculated:
-        sp = sn.round(self.cyc1 / self.cyc2, 4)
+        sp = sn.round(self.cycles[0] / self.cycles[1], 4)
         return sp
