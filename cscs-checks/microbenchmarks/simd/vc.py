@@ -24,11 +24,10 @@ class VcSimdTest(rfm.RegressionTest):
     """
     def __init__(self):
         self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
+        self.valid_prog_environs = ['PrgEnv-gnu']
         self.descr = 'finitediff example'
         self.build_system = 'SingleSource'
         self.testname = 'finitediff'
-        # self.sourcepath = 'Vc/%s/main.cpp' % self.testname
         src_url = 'https://raw.githubusercontent.com/VcDevel/Vc/1.4/examples'
         src1 = '%s/tsc.h' % src_url
         src2 = '%s/finitediff/main.cpp' % src_url
@@ -37,6 +36,7 @@ class VcSimdTest(rfm.RegressionTest):
             'wget %s' % src2,
             'sed -ie "s-../tsc.h-./tsc.h-" main.cpp',
         ]
+        self.sourcesdir = None
         self.sourcepath = 'main.cpp'
         self.executable = '%s.exe' % self.testname
         self.modules = ['Vc/1.4.1-CrayGNU-19.06']
