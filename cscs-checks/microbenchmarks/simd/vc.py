@@ -73,4 +73,3 @@ class VcSimdTest(rfm.RegressionTest):
         sp = float(str(self.cyc1 / self.cyc2)[0:6])
         # sp = "{:6.4f}".format(self.cyc1 / self.cyc2)
         return sp
-
