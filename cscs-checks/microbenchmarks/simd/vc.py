@@ -78,6 +78,6 @@ class VcSimdTest(rfm.RegressionTest):
     @property
     @sn.sanity_function
     def speedup(self):
-        sp = float(str(self.cyc1 / self.cyc2)[0:6])
-        # sp = "{:6.4f}".format(self.cyc1 / self.cyc2)
+        # just showing how speedup is being calculated:
+        sp = sn.round(self.cyc1 / self.cyc2, 4)
         return sp
