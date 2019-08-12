@@ -13,9 +13,12 @@ class ScorepHybrid(rfm.RegressionTest):
         self.descr = 'SCORE-P %s check' % lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray']
+                                    'PrgEnv-cray', 'PrgEnv-cray_classic']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-g', '-homp'],
+            # 'PrgEnv-cray': ['-g', '-homp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-gnu': ['-g', '-fopenmp'],
             'PrgEnv-intel': ['-g', '-openmp'],
             'PrgEnv-pgi': ['-g', '-mp']
@@ -58,14 +61,16 @@ class ScorepHybrid(rfm.RegressionTest):
         ]
 
     def setup(self, partition, environ, **job_opts):
-        scorep_ver = '5.0'
-        tc_ver = '19.03'
-        cu_ver = '10.0'
+        scorep_ver = '6.0'
+        tc_ver = '19.06'
+        cu_ver = '10.1'
         self.scorep_modules = {
             'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (scorep_ver, tc_ver)],
             'PrgEnv-intel': ['Score-P/%s-CrayIntel-%s' % (scorep_ver, tc_ver)],
             'PrgEnv-pgi': ['Score-P/%s-CrayPGI-%s' % (scorep_ver, tc_ver)],
-            'PrgEnv-cray': ['Score-P/%s-CrayCCE-%s' % (scorep_ver, tc_ver)]
+            'PrgEnv-cray': ['Score-P/%s-CrayCCE-%s' % (scorep_ver, tc_ver)],
+            'PrgEnv-cray_classic': ['Score-P/%s-CrayCCE-%s-classic' %
+                                    (scorep_ver, tc_ver)]
         }
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.scorep_modules['PrgEnv-gnu'] = [
