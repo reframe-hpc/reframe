@@ -74,7 +74,7 @@ program openacc_cuda_mpi_cppstd
     if (sum(f1) /= EXPECTED_CUDA_SUM) then
       write (*,*) "Result : FAIL"
       write (*,*) "Expected value sum(f1): ", EXPECTED_CUDA_SUM, "actual value:", sum(f1)
-    else if (sum(f2) /= EXPECTED_CPP_STD_SUM) then
+    else if (sum(f3) /= EXPECTED_CUDA_SUM) then
       write (*,*) "Result : FAIL"
       write (*,*) "Expected value sum(f2): ", EXPECTED_CPP_STD_SUM, "actual value:", sum(f2)
     else if (data_sum(1) /= ref_val) then
