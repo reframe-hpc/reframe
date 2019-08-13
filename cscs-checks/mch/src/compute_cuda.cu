@@ -28,9 +28,9 @@ void cuda_kernel_no_copy(float* a, float* b, int n)
   const int THREADS_PER_BLOCK = 1;
   const int NUMBER_OF_BLOCKS = 10;
 
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   simple_add<<<NUMBER_OF_BLOCKS, THREADS_PER_BLOCK>>>(a, b, n);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
 
   cudaCheckErrors("cuda error");
 }
@@ -47,9 +47,9 @@ void cuda_kernel_with_copy(float* a, float* b, int n)
   cudaMemcpy(d_a, a, n*sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(d_b, b, n*sizeof(float), cudaMemcpyHostToDevice);
     
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   simple_add<<<NUMBER_OF_BLOCKS, THREADS_PER_BLOCK>>>(d_a, d_b, n);
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
 
   cudaMemcpy(a, d_a, n*sizeof(float), cudaMemcpyDeviceToHost);
   
