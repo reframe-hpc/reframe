@@ -57,7 +57,7 @@ class Cp2kCpuCheck(Cp2kCheck):
         references = {
             'maint': {
                 'small': {
-                    'dom:mc': {'time': (182.6, None, 0.05, 's')},
+                    'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (214.5, None, 0.15, 's')}
                 },
                 'large': {
@@ -66,7 +66,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             },
             'prod': {
                 'small': {
-                    'dom:mc': {'time': (174.5, None, 0.05, 's')},
+                    'dom:mc': {'time': (202.2, None, 0.05, 's')},
                     'daint:mc': {'time': (214.5, None, 0.15, 's')}
                 },
                 'large': {
