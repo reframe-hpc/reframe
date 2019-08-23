@@ -498,7 +498,7 @@ def main():
         try:
             rt.system.preload_environ.load()
         except EnvironError as e:
-            printer.error("failed to load current's system environment; "
+            printer.error("failed to load current system's environment; "
                           "please check your configuration")
             printer.debug(str(e))
             raise
