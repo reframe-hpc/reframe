@@ -500,6 +500,7 @@ def main():
         except EnvironError as e:
             printer.error("failed to load current's system environment; "
                           "please check your configuration")
+            printer.debug(str(e))
             raise
 
         for m in options.user_modules:
