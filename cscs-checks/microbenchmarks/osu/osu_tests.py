@@ -47,7 +47,6 @@ class AlltoallTest(rfm.RegressionTest):
             }
         }
 
-
     @property
     @sn.sanity_function
     def num_tasks_assigned(self):
@@ -57,7 +56,7 @@ class AlltoallTest(rfm.RegressionTest):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                self.stdout, 'latency', float) / num_nodes
+                           self.stdout, 'latency', float) / num_nodes
         }
 
         super().setup(partition, environ, **job_opts)
@@ -139,7 +138,7 @@ class AllreduceTest(rfm.RegressionTest):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                self.stdout, 'latency', float) / num_nodes
+                           self.stdout, 'latency', float) / num_nodes
         }
 
         super().setup(partition, environ, **job_opts)
