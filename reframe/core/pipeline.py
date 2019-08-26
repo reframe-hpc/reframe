@@ -7,6 +7,7 @@ __all__ = ['RegressionTest',
            'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
 
+import functools
 import inspect
 import itertools
 import os
@@ -25,6 +26,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
@@ -37,7 +39,35 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY  = 3
 
 
-class RegressionTest:
+def _run_hooks(name=None):
+    def _deco(func):
+        def hooks(obj, kind):
+            if name is None:
+                hook_name = kind + func.__name__
+            elif name is not None and name.startswith(kind):
+                hook_name = name
+            else:
+                # Just any name that does not exist
+                hook_name = 'xxx'
+
+            return obj._rfm_pipeline_hooks.get(hook_name, [])
+
+        '''Run the hooks before and after func.'''
+        @functools.wraps(func)
+        def _fn(obj, *args, **kwargs):
+            for h in hooks(obj, 'pre_'):
+                h(obj)
+
+            func(obj, *args, **kwargs)
+            for h in hooks(obj, 'post_'):
+                h(obj)
+
+        return _fn
+
+    return _deco
+
+
+class RegressionTest(metaclass=RegressionTestMeta):
     """Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
@@ -917,6 +947,7 @@ class RegressionTest:
         self.logger.debug('setting up performance logging')
         self._perf_logger = logging.getperflogger(self)
 
+    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         """The setup phase of the regression test pipeline.
 
@@ -948,6 +979,7 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
+    @_run_hooks('pre_compile')
     def compile(self):
         """The compilation phase of the regression test pipeline.
 
@@ -1033,6 +1065,7 @@ class RegressionTest:
 
             self._build_job.submit()
 
+    @_run_hooks('post_compile')
     def compile_wait(self):
         """Wait for compilation phase to finish.
 
@@ -1045,6 +1078,7 @@ class RegressionTest:
         if self._build_job.exitcode != 0:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
+    @_run_hooks('pre_run')
     def run(self):
         """The run phase of the regression test pipeline.
 
@@ -1086,6 +1120,7 @@ class RegressionTest:
 
         return self._job.finished()
 
+    @_run_hooks('post_run')
     def wait(self):
         """Wait for this test to finish.
 
@@ -1094,9 +1129,11 @@ class RegressionTest:
         self._job.wait()
         self.logger.debug('spawned job finished')
 
+    @_run_hooks()
     def sanity(self):
         self.check_sanity()
 
+    @_run_hooks()
     def performance(self):
         try:
             self.check_performance()
@@ -1216,6 +1253,7 @@ class RegressionTest:
             elif os.path.isdir(f):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
+    @_run_hooks()
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
 
