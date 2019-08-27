@@ -13,14 +13,14 @@ class VcSimdTest(rfm.RegressionTest):
         VcSimdTest
         - dom:mc
            - PrgEnv-gnu
-              * speedup: 1.3813
+              * speedup: 1.381
     > reframe --system dom:gpu -p PrgEnv-gnu -r -c vc.py --performance-report
         PERFORMANCE REPORT
         -----------------------------------------------------------------------
         VcSimdTest
         - dom:gpu
            - PrgEnv-gnu
-              * speedup: 1.3824
+              * speedup: 1.382
     """
     def __init__(self):
         self.valid_systems = ['*']
