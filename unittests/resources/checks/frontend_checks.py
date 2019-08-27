@@ -180,3 +180,48 @@ class RetriesCheck(BaseFrontendCheck):
         self.post_run = ['((current_run++))',
                          'echo $current_run > %s' % filename]
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
+
+
+@rfm.simple_test
+class DependencyT0(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.local = True
+        self.executable = 'echo DependencyT0'
+        self.sanity_patterns = sn.assert_found('Dependency', self.stdout)
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.depends_on('DependencyT1')
+
+@rfm.simple_test
+class DependencyT1(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.local = True
+        self.executable = 'echo DependencyT1'
+        self.sanity_patterns = sn.assert_found('Dependency', self.stdout)
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.depends_on('DependencyT2')
+
+@rfm.simple_test
+class DependencyT2(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.local = True
+        self.executable = 'echo DependencyT2'
+        self.sanity_patterns = sn.assert_found('Dependency', self.stdout)
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.depends_on('DependencyT3')
+
+@rfm.simple_test
+class DependencyT3(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.local = True
+        self.executable = 'echo DependencyT3'
+        print('STDOUT')
+#        if self.stdout:
+        print('STDOUT DEFINED')
+#        else:
+        print('STDOUT NOT DEFINED')
+        self.sanity_patterns = sn.assert_found('Dependency', self.stdout)
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']

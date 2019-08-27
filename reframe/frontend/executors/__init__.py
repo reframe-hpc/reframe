@@ -9,6 +9,7 @@ import reframe.core.runtime as runtime
 from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
+import reframe.frontend.dependency as dependency
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
@@ -261,7 +262,25 @@ class Runner:
         self._printer.timestamp('Started on', 'short double line')
         self._printer.info('')
         try:
-            self._runall(testcases)
+            # TODO: dependenct-specific exception handling needed here
+            dependency_graph = dependency.build_deps(testcases)
+            dependency.validate_deps(dependency_graph)
+            dependency.print_deps(dependency_graph)
+            ordered_tests = dependency.toposort(dependency_graph)
+            keep_stage_flag = []
+            for t in ordered_tests:
+                is_dependency = False
+                for c, deps in dependency_graph.items():
+                    if is_dependency is True:
+                        break
+                    if t in deps:
+                        is_dependency = True
+                        break
+                keep_stage_flag.append(is_dependency)
+            
+            print(keep_stage_flag)
+            print('CHRI')
+            self._runall(ordered_tests, keep_stage_flag)
             if self._max_retries:
                 self._retry_failed(testcases)
 
@@ -291,7 +310,7 @@ class Runner:
             self._runall(t.testcase.clone() for t in failures)
             failures = self._stats.failures()
 
-    def _runall(self, testcases):
+    def _runall(self, testcases, keep_stage_flag):
         def print_separator(check, prefix):
             self._printer.separator(
                 'short single line',
@@ -300,7 +319,8 @@ class Runner:
 
         self._policy.enter()
         last_check = None
-        for t in testcases:
+#        for t in testcases:
+        for index, t in enumerate(testcases): 
             if last_check is None or last_check.name != t.check.name:
                 if last_check is not None:
                     print_separator(last_check, 'finished processing')
@@ -310,7 +330,7 @@ class Runner:
                 last_check = t.check
 
             self._environ_snapshot.load()
-            self._policy.runcase(t)
+            self._policy.runcase(t, keep_stage_flag[index])
 
         # Close the last visual box
         if last_check is not None:

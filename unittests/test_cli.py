@@ -408,3 +408,12 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(0, returncode)
+
+    def test_dependency_cli(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'run'
+        self.more_options = ['-n', 'Dependency']
+        returncode, stdout, _ = self._run_reframe()
+        print(stdout)
+        self.assertIn('Running 4 check(s)', stdout)
+        self.assertEqual(1, returncode)

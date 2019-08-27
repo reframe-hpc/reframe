@@ -14,7 +14,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
         super().__init__()
         self._tasks = []
 
-    def runcase(self, case):
+    def runcase(self, case, keep_stage):
         super().runcase(case)
         check, partition, environ = case
 
@@ -22,6 +22,10 @@ class SerialExecutionPolicy(ExecutionPolicy):
             'RUN', '%s on %s using %s' %
             (check.name, partition.fullname, environ.name)
         )
+
+        print('Keep stage?')
+        print(keep_stage)
+
         task = RegressionTask(case)
         self._tasks.append(task)
         self.stats.add_task(task)
@@ -45,7 +49,12 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            task.cleanup(not self.keep_stage_files, False)
+            print('In policy')
+            print(case)
+            print(keep_stage)
+
+#            if not keep_stage:
+#                task.cleanup(not self.keep_stage_files, False)
 
         except TaskExit:
             return
@@ -144,7 +153,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._retired_tasks.append(task)
 
-    def runcase(self, case):
+    def runcase(self, case, keep_stage):
         super().runcase(case)
         check, partition, environ = case
 
