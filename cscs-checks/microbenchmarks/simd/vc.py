@@ -13,14 +13,14 @@ class VcSimdTest(rfm.RegressionTest):
         VcSimdTest
         - dom:mc
            - PrgEnv-gnu
-              * speedup: 1.3813 cyc
+              * speedup: 1.3813
     > reframe --system dom:gpu -p PrgEnv-gnu -r -c vc.py --performance-report
         PERFORMANCE REPORT
         -----------------------------------------------------------------------
         VcSimdTest
         - dom:gpu
            - PrgEnv-gnu
-              * speedup: 1.3824 cyc
+              * speedup: 1.3824
     """
     def __init__(self):
         self.valid_systems = ['*']
@@ -77,5 +77,5 @@ class VcSimdTest(rfm.RegressionTest):
     @sn.sanity_function
     def speedup(self):
         # just showing how speedup is being calculated:
-        sp = sn.round(self.cycles[0] / self.cycles[1], 4)
+        sp = sn.round(self.cycles[0] / self.cycles[1], 3)
         return sp
