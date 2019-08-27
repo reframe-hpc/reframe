@@ -23,7 +23,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             }
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             self.num_tasks = 8
             self.num_tasks_per_node = 8
             self.num_gpus_per_node = 8
