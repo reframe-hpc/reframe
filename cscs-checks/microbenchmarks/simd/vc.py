@@ -32,8 +32,7 @@ class VcSimdTest(rfm.RegressionTest):
         src1 = '%s/tsc.h' % src_url
         src2 = '%s/finitediff/main.cpp' % src_url
         self.prebuild_cmd = [
-            'wget %s' % src1,
-            'wget %s' % src2,
+            'wget %s %s' % (src1, src2),
             'sed -ie "s-../tsc.h-./tsc.h-" main.cpp',
         ]
         self.sourcesdir = None
@@ -64,13 +63,13 @@ class VcSimdTest(rfm.RegressionTest):
         }
         self.reference = {
             'dom:gpu': {
-                'speedup': (1.38, -0.2, 0.2, 'cyc')
+                'speedup': (1.38, -0.2, 0.2, '')
             },
             'dom:mc': {
-                'speedup': (1.32, -0.2, 0.2, 'cyc')
+                'speedup': (1.32, -0.2, 0.2, '')
             },
             '*': {
-                'speedup': (1.0, None, None, 'cyc')
+                'speedup': (1.0, None, None, '')
             }
         }
 
