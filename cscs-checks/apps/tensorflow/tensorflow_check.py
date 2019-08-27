@@ -20,7 +20,10 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
 
         # Checkout to the branch corresponding to the module version of
         # TensorFlow
-        self.pre_run = ['git checkout r%s' % tf_version]
+        # FIXME: Currently the branch for Tensorflow 1.14.0 is not
+        # available, we use the one for 1.13.0
+        # self.pre_run = ['git checkout r%s' % tf_version]
+        self.pre_run = ['git checkout r1.13.0']
         self.variables = {'PYTHONPATH': '$PYTHONPATH:.'}
 
 
