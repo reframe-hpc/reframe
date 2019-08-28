@@ -8,8 +8,8 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu',
-                               'kesch:cn', 'arolla:cn', 'tsa:cn']
-        self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray', 
+                              'kesch:cn', 'arolla:cn', 'tsa:cn']
+        self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray',
                                     'PrgEnv-pgi', 'PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
@@ -36,7 +36,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             }
         elif self.current_system.name == 'arolla':
             self.exclusive_access = True
-            self.modules = ['cuda92/toolkit/9.2.88', 
+            self.modules = ['cuda92/toolkit/9.2.88',
                             'craype-accel-nvidia70']
             self.num_tasks = 8
             self.num_tasks_per_node = 8
@@ -48,7 +48,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             }
         elif self.current_system.name == 'tsa':
             self.exclusive_access = True
-            self.modules = ['cuda10.0/toolkit/10.0.130', 
+            self.modules = ['cuda10.0/toolkit/10.0.130',
                             'craype-accel-nvidia70']
             self.num_tasks = 8
             self.num_tasks_per_node = 8
@@ -88,19 +88,19 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
                 self.build_system.ldflags = [
-                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++', 
+                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
                     '-lcublas', '-lcudart']
             elif self.current_system.name == 'arolla':
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.0']
                 self.build_system.ldflags = [
-                    '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++', 
+                    '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++',
                     '-L/cm/shared/apps/cuda92/toolkit/9.2.88/lib64',
                     '-lcublas', '-lcudart']
             elif self.current_system.name == 'tsa':
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.0']
                 self.build_system.ldflags = [
-                    '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++', 
+                    '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++',
                     '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
                     '-lcublas', '-lcudart']
 
