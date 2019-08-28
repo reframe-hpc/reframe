@@ -16,7 +16,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             # FIXME: workaround -- the variable should not be needed since
             # there is no GPUdirect in this check
             self.variables = {
-                'CRAY_ACCEL_TARGET': 'nvidia35', 
+                'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1'
             }
         # This tets requires an MPI compiler, although it uses a single task
