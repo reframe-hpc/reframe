@@ -2,10 +2,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class CommunicationTestBase(rfm.RegressionTest):
+class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
         super().__init__()
-        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'arolla:cn', 'tsa:cn']
+        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
@@ -19,18 +19,18 @@ class CommunicationTestBase(rfm.RegressionTest):
 
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.num_tasks = 144
+            self.num_tasks = 32
             self.num_gpus_per_node = 16
             self.num_tasks_per_node = 16
             self.num_tasks_per_socket = 8
-            self.modules = ['craype-accel-nvidia35', 'cmake']
+            self.modules = ['cmake']
             self.variables['MV2_USE_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DMPI_VENDOR=mvapich2',
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
             ]
             self.build_system.max_concurrency = 1
-        elif self.current_system.name in {'daint', 'dom'}:
+        else:
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
@@ -40,38 +40,6 @@ class CommunicationTestBase(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
             ]
             self.build_system.max_concurrency = 8
-        elif self.current_system.name == 'arolla':
-            self.exclusive_access = True
-            self.num_tasks = 16
-            self.num_gpus_per_node = 8
-            self.modules = [
-                'cmake', 'cuda92/toolkit/9.2.88',
-                'craype-accel-nvidia70'
-            ]
-            self.variables['MV2_USE_CUDA'] = '1'
-            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
-            self.build_system.config_opts += [
-                '-DMPI_VENDOR=openmpi',
-                '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
-            ]
-        elif self.current_system.name == 'tsa':
-            self.exclusive_access = True
-            self.num_tasks = 16
-            self.num_gpus_per_node = 8
-            self.modules = [
-                'cmake', 'cuda10.0/toolkit/10.0.130',
-                'craype-accel-nvidia70'
-            ]
-            self.variables['MV2_USE_CUDA'] = '1'
-            self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
-            self.build_system.config_opts += [
-                '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
-            ]
-        else:
-            self.num_tasks = 4
-            self.num_gpus_per_node = 1
-            self.num_tasks_per_node = 1
-            self.build_system.max_concurrency = 1
 
         self.sanity_patterns = sn.assert_found(r'ELAPSED TIME:', self.stdout)
         self.perf_patterns = {
@@ -88,31 +56,16 @@ class CommunicationTestBase(rfm.RegressionTest):
                 'nocomm':  0.0171947,
                 'nocomp':  0.0137893,
                 'default': 0.0138493
-            },
-            'tsa': {
-                'nocomm':  5.7878,
-                'nocomp':  5.62155,
-                'default': 5.53777
-            },
+            }
         }
         if self.current_system.name == 'dom':
             sysname = 'daint'
         else:
             sysname = self.current_system.name
 
-        try:
-            ref = bench_reference[sysname][variant]
-        except KeyError:
-            ref = 0.0
-
+        ref = bench_reference[sysname][variant]
         self.reference = {
             'kesch:cn': {
-                'elapsed_time': (ref, None, 0.15)
-            },
-            'arolla:cn': {
-                'elapsed_time': (ref, None, 0.15)
-            },
-            'tsa:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
             'daint': {
@@ -120,9 +73,6 @@ class CommunicationTestBase(rfm.RegressionTest):
             },
             'dom': {
                 'elapsed_time': (ref, None, 0.15)
-            },
-            '*': {
-                'elapsed_time': (ref, None, None)
             }
         }
 
@@ -131,17 +81,13 @@ class CommunicationTestBase(rfm.RegressionTest):
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
-        #if self.current_system.name == 'kesch':
-        if self.current_system.name in {'kesch', 'tsa', 'arolla'}:
+        if self.current_system.name == 'kesch':
             self.job.launcher.options = ['--distribution=block:block',
                                          '--cpu_bind=q']
 
 
-# the values default, nocomm and nocomp refer to the different parts
-# of the check where the time is measured; default == all
-# nocomm == no communication  nocomp == no computation
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class AlltoallvTest(CommunicationTestBase):
+class AlltoallvTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -154,21 +100,15 @@ class AlltoallvTest(CommunicationTestBase):
                                  'nocomm':  0.0171947,
                                  'nocomp':  0.0137893,
                                  'default': 0.0138493
-                             },
-                             'tsa': {
-                                 'nocomm':  0.0171947,
-                                 'nocomp':  0.0137893,
-                                 'default': 0.0138493
                              }
                          })
-        self.descr = 'Alltoall communication test'
         self.strict_check = False
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         self.prebuild_cmd = ['git checkout alltoallv']
 
 
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class HaloExchangeTest(CommunicationTestBase):
+class HaloExchangeTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -181,13 +121,7 @@ class HaloExchangeTest(CommunicationTestBase):
                                  'nocomm':  0.978306,
                                  'nocomp':  1.36716,
                                  'default': 2.53509
-                             },
-                             'tsa': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
-                             },
+                             }
                          })
-        self.descr = 'Halo-cell exchange test'
         self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout barebones']
