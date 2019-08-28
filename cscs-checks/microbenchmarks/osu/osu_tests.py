@@ -57,14 +57,12 @@ class FlexAlltoallTest(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'tsa:cn']
+                              'kesch:cn', 'kesch:pn', 'leone:normal']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        elif self.current_system.name == 'tsa':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-gnu']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                        'PrgEnv-intel']
 
         self.descr = 'Flexible Alltoall OSU test'
         self.build_system = 'Make'
@@ -141,6 +139,32 @@ class AllreduceTest(rfm.RegressionTest):
         }
 
 
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
+class AlltoallMonchAcceptanceTest(AlltoallTest):
+    def __init__(self, num_tasks):
+        super().__init__('monch_acceptance')
+        self.valid_systems = ['monch:compute']
+        self.num_tasks = num_tasks
+        reference_by_node = {
+            2: {
+                'perf': (2.71, None, 0.1)
+            },
+            4: {
+                'perf': (3.75, None, 0.1)
+            },
+            6: {
+                'perf': (6.28, None, 0.1)
+            },
+            8: {
+                'perf': (8.15, None, 0.1)
+            },
+        }
+        self.reference = {
+            'monch:compute': reference_by_node[self.num_tasks]
+        }
+
+
 class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
@@ -154,10 +178,6 @@ class P2PBaseTest(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
-        elif self.current_system.name == 'tsa':
-            self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-gnu',
-                                        'PrgEnv-pgi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
@@ -178,7 +198,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn', 'tsa:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
@@ -195,10 +215,10 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             'dom:mc': {
                 'bw': (9472.59, -0.20, None, 'MB/s')
             },
-            'kesch:cn': {
-                'bw': (6311.48, -0.15, None, 'MB/s')
+            'monch:compute': {
+                'bw': (6317.84, -0.15, None, 'MB/s')
             },
-            'tsa:cn': {
+            'kesch:cn': {
                 'bw': (6311.48, -0.15, None, 'MB/s')
             },
             '*': {
@@ -209,6 +229,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
+        self.tags |= {'monch_acceptance'}
 
 
 @rfm.required_version('>=2.16')
@@ -217,7 +238,7 @@ class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn', 'tsa:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
@@ -234,11 +255,11 @@ class P2PCPULatencyTest(P2PBaseTest):
             'dom:mc': {
                 'latency': (1.27, None, 0.2, 'us')
             },
+            'monch:compute': {
+                'latency': (1.27, None, 0.1, 'us')
+            },
             'kesch:cn': {
                 'latency': (1.17, None, 0.1, 'us')
-            },
-            'tsa:cn': {
-                'latency': (1.77, None, 0.1, 'us')
             },
             '*': {
                 'latency': (0, None, None, 'us')
@@ -248,6 +269,7 @@ class P2PCPULatencyTest(P2PBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
+        self.tags |= {'monch_acceptance'}
 
 
 @rfm.required_version('>=2.16')
@@ -255,7 +277,7 @@ class P2PCPULatencyTest(P2PBaseTest):
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -271,9 +293,6 @@ class G2GBandwidthTest(P2PBaseTest):
             'kesch:cn': {
                 'bw': (6288.98, -0.1, None, 'MB/s')
             },
-            'tsa:cn': {
-                'bw': (1630, -0.1, None, 'MB/s')
-            },
             '*': {
                 'bw': (0, None, None, 'MB/s')
             }
@@ -282,8 +301,6 @@ class G2GBandwidthTest(P2PBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
-
-    def setup(self, partition, environ, **job_opts):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
@@ -291,18 +308,8 @@ class G2GBandwidthTest(P2PBaseTest):
         elif self.current_system.name == 'kesch':
             self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
-        elif self.current_system.name == 'tsa':
-            self.modules = ['cuda10.0/toolkit/10.0.130','craype-accel-nvidia70']
-            self.build_system.cppflags = ['-D_ENABLE_CUDA_ -I$CUDA_ROOT/targets/x86_64-linux/include']
-            self.build_system.ldflags = ['-L$CUDA_ROOT/targets/x86_64-linux/lib -lcudart -lcuda']
-            if environ.name.startswith('PrgEnv-cce'):
-                self.variables = {'MV2_USE_CUDA': '1'}
-                self.build_system.ldflags += ['-L$CUDA_ROOT/targets/x86_64-linux/lib/stubs -lcuda']
-            else:
-                self.variables = {'OMPI_MCA_btl_openib_want_cuda_gdr': 'true'}
-                self.build_system.ldflags += ['-lcuda']
 
-        super().setup(partition, environ, **job_opts)
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
 @rfm.required_version('>=2.16')
@@ -310,7 +317,7 @@ class G2GBandwidthTest(P2PBaseTest):
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tsa:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -326,9 +333,6 @@ class G2GLatencyTest(P2PBaseTest):
             'kesch:cn': {
                 'latency': (23.09, None, 0.1, 'us')
             },
-            'tsa:cn': {
-                'latency': (32.86, None, 0.1, 'us')
-            },
             '*': {
                 'latency': (0, None, None, 'us')
             }
@@ -337,8 +341,6 @@ class G2GLatencyTest(P2PBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
- 
-    def setup(self, partition, environ, **job_opts):
         if self.current_system.name in ['daint', 'dom']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
@@ -346,15 +348,5 @@ class G2GLatencyTest(P2PBaseTest):
         elif self.current_system.name == 'kesch':
             self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
-        elif self.current_system.name == 'tsa':
-            self.modules = ['cuda10.0/toolkit/10.0.130','craype-accel-nvidia70']
-            self.build_system.cppflags = ['-D_ENABLE_CUDA_ -I$CUDA_ROOT/targets/x86_64-linux/include']
-            self.build_system.ldflags = ['-L$CUDA_ROOT/targets/x86_64-linux/lib -lcudart']
-            if environ.name.startswith('PrgEnv-cce'):
-                self.variables = {'MV2_USE_CUDA': '1'}
-                self.build_system.ldflags += ['-L$CUDA_ROOT/targets/x86_64-linux/lib/stubs -lcuda']
-            else:
-                self.variables = {'OMPI_MCA_btl_openib_want_cuda_gdr': 'true'}
-                self.build_system.ldflags += ['-lcuda']
 
-        super().setup(partition, environ, **job_opts)
+        self.build_system.cppflags = ['-D_ENABLE_CUDA_']
