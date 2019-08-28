@@ -19,7 +19,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
 
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.num_tasks = 32
+            self.num_tasks = 144
             self.num_gpus_per_node = 16
             self.num_tasks_per_node = 16
             self.num_tasks_per_socket = 8
