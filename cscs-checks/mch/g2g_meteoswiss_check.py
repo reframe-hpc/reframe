@@ -14,9 +14,7 @@ class G2GMeteoswissTest(rfm.RegressionTest):
         #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.exclusive_access = True
-        self.modules = ['cmake',
-            #'craype-accel-nvidia35'
-        ]
+        self.modules = ['cmake']
         self.pre_run = ["export EXECUTABLE=$(ls src/ | "
                         "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"]
         self.executable = 'build/src/comm_overlap_benchmark'
