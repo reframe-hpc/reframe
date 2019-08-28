@@ -13,7 +13,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-std=c++11']
+        self.build_system.cxxflags = ['-std=c++11', '-O3']
         if self.current_system.name in {'dom', 'daint'}:
             self.num_gpus_per_node = 1
             gpu_arch = '60'
@@ -74,10 +74,10 @@ class KernelLatencyTest(rfm.RegressionTest):
             },
             'async': {
                 'dom:gpu': {
-                    'latency': (2.2, None, 0.15, 'us')
+                    'latency': (2.2, None, 0.10, 'us')
                 },
                 'daint:gpu': {
-                    'latency': (2.2, None, 0.15, 'us')
+                    'latency': (2.2, None, 0.10, 'us')
                 },
                 'kesch:cn': {
                     'latency': (5.7, None, 0.10, 'us')
