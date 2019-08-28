@@ -349,10 +349,11 @@ class ReframeSettings:
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.5'],
+                                'pgi/18.5-gcc-5.4.0-2.26',
+                                'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0.61'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': '/apps/escha/UES/jenkins/RH7.5/pgi_PE18.5/easybuild/software/PrgEnv-pgi/18.5/bin/mpif90',
+                    'ftn': 'mpif90',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
