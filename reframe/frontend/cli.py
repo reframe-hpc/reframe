@@ -494,10 +494,18 @@ def main():
         if options.purge_env:
             rt.modules_system.unload_all()
 
+        # Load the environment for the current system
+        try:
+            rt.system.preload_environ.load()
+        except EnvironError as e:
+            printer.error("failed to load current system's environment; "
+                          "please check your configuration")
+            printer.debug(str(e))
+            raise
+
         for m in options.user_modules:
             try:
                 rt.modules_system.load_module(m, force=True)
-                raise EnvironError("test")
             except EnvironError as e:
                 printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)

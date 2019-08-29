@@ -35,7 +35,6 @@ program openacc_cuda_mpi_cppstd
   !$acc end host_data
   !$acc end data
 
-
   if(mpi_rank == 0) then
 
     ! Allocate and initialize arrays on the GPU
@@ -93,7 +92,6 @@ program openacc_cuda_mpi_cppstd
     deallocate(f1)
     deallocate(f2)
     deallocate(f3)
-    write (*,*) "Result: OK"
   end if
 
   call MPI_Finalize(ierr);

@@ -1027,7 +1027,7 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                                        login=True, trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1127,6 +1127,39 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+            # Check if default reference perf values are provided and
+            # store all the variables  tested in the performance check
+            has_default = False
+            variables = set()
+            for key, ref in self.reference.items():
+                keyparts = key.split(self.reference.scope_separator)
+                system = keyparts[0]
+                varname = keyparts[-1]
+                try:
+                    unit = ref[3]
+                except IndexError:
+                    unit = None
+
+                variables.add((varname, unit))
+                if system == '*':
+                    has_default = True
+                    break
+
+            if not has_default:
+                if not variables:
+                    # If empty, it means that self.reference was empty, so try
+                    # to infer their name from perf_patterns
+                    variables = {(name, None)
+                                 for name in self.perf_patterns.keys()}
+
+                for var in variables:
+                    name, unit = var
+                    ref_tuple = (0, None, None)
+                    if unit:
+                        ref_tuple += (unit,)
+
+                    self.reference.update({'*': {name: ref_tuple}})
+
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.

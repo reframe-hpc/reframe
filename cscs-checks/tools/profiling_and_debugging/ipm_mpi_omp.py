@@ -8,30 +8,32 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['C++'], ['F90'])
 class Ipm(rfm.RegressionTest):
     def __init__(self, lang):
-        super().__init__()
         self.name = 'Ipm_%s' % lang.replace('+', 'p')
+        self.descr = self.name
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                    'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
-            'PrgEnv-cray': ['-O2', '-g', '-homp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-intel': ['-O2', '-g', '-openmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
         ipm_ver = '2.0.6'
-        tc_ver = '19.03'
+        tc_ver = '19.06'
         self.ipm_modules = {
             'PrgEnv-gnu': ['IPM/%s-CrayGNU-%s' % (ipm_ver, tc_ver)],
             'PrgEnv-cray': ['IPM/%s-CrayCCE-%s' % (ipm_ver, tc_ver)],
+            'PrgEnv-cray_classic': [
+                'IPM/%s-CrayCCE-%s-classic' % (ipm_ver, tc_ver)],
             'PrgEnv-intel': ['IPM/%s-CrayIntel-%s' % (ipm_ver, tc_ver)],
             'PrgEnv-pgi': ['IPM/%s-CrayPGI-%s' % (ipm_ver, tc_ver)]
         }
         self.sourcesdir = os.path.join('src', lang)
         self.executable = './jacobi'
         self.build_system = 'Make'
-        if lang == 'F90':
-            self.build_system.max_concurrency = 1
 
         self.num_tasks = 3
         self.num_tasks_per_node = 3
