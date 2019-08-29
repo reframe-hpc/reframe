@@ -350,7 +350,7 @@ class ReframeSettings:
                     'type': 'ProgEnvironment',
                     'modules': [
                         'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
-                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0.61'],
+                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
