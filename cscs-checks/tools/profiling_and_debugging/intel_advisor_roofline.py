@@ -33,7 +33,6 @@ class IntelRooflineAdvisorTest(rfm.RegressionTest):
         G3_SOA_VECTOR: gflops, 10.62 arithmetic_intensity', 0.166  57ms <- fast
     '''
     def __init__(self, repeat, toolversion, datalayout):
-        super().__init__()
         self.descr = 'Roofline Analysis test with Intel Advisor'
         # for reference: advisor/2019 was failing on dom with:
         # "Exceeded job memory limit" (webrt#36087)
