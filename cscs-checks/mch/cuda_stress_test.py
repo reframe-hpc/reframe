@@ -33,7 +33,7 @@ class CudaStressTest(rfm.RegressionTest):
                 'time': (1.39758, None, 0.05)
             },
             'kesch:cn': {
-                'time': (2.12769, None, 0.05)
+                'time': (2.25, None, 0.05)
             }
         }
         self.tags = {'production', 'mch'}
