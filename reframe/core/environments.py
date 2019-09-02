@@ -334,3 +334,19 @@ class ProgEnvironment(Environment):
     @property
     def nvcc(self):
         return self._nvcc
+
+    def details(self):
+        base_details = super().details()
+        extra_details = [
+            '    CC: %s' % self.cc,
+            '    CXX: %s' % self.cxx,
+            '    FTN: %s' % self.ftn,
+            '    NVCC: %s' % self.nvcc or '',
+            '    CFLAGS: %s' % (self.cflags or ''),
+            '    CXXFLAGS: %s' % (self.cxxflags or ''),
+            '    FFLAGS: %s' % (self.fflags or ''),
+            '    CPPFLAGS: %s' % (self.cppflags or ''),
+            '    LDFLAGS: %s' % (self.ldflags or '')
+        ]
+
+        return '\n'.join([base_details, '\n'.join(extra_details)])
