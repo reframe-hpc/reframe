@@ -13,6 +13,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                                     'PrgEnv-pgi', 'PrgEnv-gnu']
         self.build_system = 'Make'
         self.build_system.fflags = ['-O2']
+
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
             self.num_tasks = 12
@@ -73,11 +74,13 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             if self.current_system.name == 'arolla':
                 self.build_system.ldflags = [
                     '-L/cm/shared/apps/cuda92/toolkit/9.2.88/lib64',
-                    '-lcublas', '-lcudart']
+                    '-lcublas', '-lcudart'
+                ]
             elif self.current_system.name == 'tsa':
                 self.build_system.ldflags = [
                     '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
-                    '-lcublas', '-lcudart']
+                    '-lcublas', '-lcudart'
+                ]
 
         elif environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
@@ -97,13 +100,15 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++',
                     '-L/cm/shared/apps/cuda92/toolkit/9.2.88/lib64',
-                    '-lcublas', '-lcudart']
+                    '-lcublas', '-lcudart'
+                ]
             elif self.current_system.name == 'tsa':
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.0']
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc70,cuda10.0', '-lstdc++',
                     '-L/cm/shared/apps/cuda10.0/toolkit/10.0.130/lib64',
-                    '-lcublas', '-lcudart']
+                    '-lcublas', '-lcudart'
+                ]
 
         elif environ.name.startswith('PrgEnv-gnu'):
             self.build_system.ldflags = ['-lstdc++']
