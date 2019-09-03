@@ -10,8 +10,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
 
-        # FIXME: temporary workaround until the mvapich module is fixed;
-        #        'PrgEnv-pgi-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom']:
             self.modules = ['craype-accel-nvidia60']
