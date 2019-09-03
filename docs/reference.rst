@@ -31,6 +31,18 @@ Regression test classes and related utilities
    .. versionadded:: 2.13
 
 
+.. py:decorator:: reframe.run_after
+
+   This is an alias of :func:`reframe.core.decorators.run_after`.
+
+   .. versionadded:: 2.20
+
+.. py:decorator:: reframe.run_before
+
+   This is an alias of :func:`reframe.core.decorators.run_before`.
+
+   .. versionadded:: 2.20
+
 .. py:decorator:: reframe.simple_test
 
    This is an alias of :func:`reframe.core.decorators.simple_test`.

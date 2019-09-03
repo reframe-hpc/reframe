@@ -177,9 +177,23 @@ def _runx(phase):
     return deco
 
 
-def run_before(phase):
-    return _runx('pre_' + phase)
+def run_before(stage):
+    '''Run the decorated function before the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('pre_' + stage)
 
 
-def run_after(phase):
-    return _runx('post_' + phase)
+def run_after(stage):
+    '''Run the decorated function after the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('post_' + stage)
