@@ -177,6 +177,15 @@ class Environment:
                           self.modules, self.variables)
 
 
+def format_flags(flags):
+    if flags is None:
+        return '<None>'
+    elif len(flags) == 0:
+        return "''"
+    else:
+        return ' '.join(flags)
+
+
 def swap_environments(src, dst):
     src.unload()
     dst.load()
@@ -342,11 +351,11 @@ class ProgEnvironment(Environment):
             '    CXX: %s' % self.cxx,
             '    FTN: %s' % self.ftn,
             '    NVCC: %s' % self.nvcc,
-            '    CFLAGS: %s' % self.cflags,
-            '    CXXFLAGS: %s' % self.cxxflags,
-            '    FFLAGS: %s' % self.fflags,
-            '    CPPFLAGS: %s' % self.cppflags,
-            '    LDFLAGS: %s' % self.ldflags
+            '    CFLAGS: %s' % format_flags(self.cflags),
+            '    CXXFLAGS: %s' % format_flags(self.cxxflags),
+            '    FFLAGS: %s' % format_flags(self.fflags),
+            '    CPPFLAGS: %s' % format_flags(self.cppflags),
+            '    LDFLAGS: %s' % format_flags(self.ldflags)
         ]
 
         return '\n'.join([base_details, '\n'.join(extra_details)])
