@@ -63,6 +63,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 'default': 0.0138493
             }
         }
+
         if self.current_system.name == 'dom':
             sysname = 'daint'
         else:
@@ -82,7 +83,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             },
             'dom': {
                 'elapsed_time': (ref, None, 0.15)
-            }
+            },
             '*': {
                 'elapsed_time': (ref, None, None)
             }
