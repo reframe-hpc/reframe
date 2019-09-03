@@ -132,7 +132,6 @@ class IorWriteCheck(IorCheck):
                 r'^Max Write:\s+(?P<write_bw>\S+) MiB/sec', self.stdout,
                 'write_bw', float)
         }
-        # Convert from MiB/s to bytes/s
         self.tags |= {'write'}
 
 
@@ -152,5 +151,4 @@ class IorReadCheck(IorCheck):
                 r'^Max Read:\s+(?P<read_bw>\S+) MiB/sec', self.stdout,
                 'read_bw', float)
         }
-        # Convert from MiB/s to bytes/s
         self.tags |= {'read'}
