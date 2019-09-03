@@ -25,7 +25,7 @@ def get_connection():
         host='object.cscs.ch',
         port=443,
         calling_format=boto.s3.connection.OrdinaryCallingFormat()
-        )
+    )
     return conn
 
 
