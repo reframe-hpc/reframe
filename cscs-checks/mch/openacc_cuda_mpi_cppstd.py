@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class OpenaccCudaCpp(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi', 'PrgEnv-gnu']
@@ -40,7 +39,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             }
 
         self.executable = 'openacc_cuda_mpi_cppstd'
-        self.sanity_patterns = sn.assert_found(r'Result:\s+OK', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Result : OK', self.stdout)
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production', 'mch'}
 
