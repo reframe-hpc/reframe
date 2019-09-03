@@ -12,10 +12,12 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.descr = 'Jacobi (without tool) %s check' % lang
         self.name = '%s_%s' % (type(self).__name__, lang.replace('+', 'p'))
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                    'PrgEnv-intel', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                    'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-O2', '-g', '-homp'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
@@ -42,6 +44,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # OpenMP support varies between compilers:
         self.openmp_versions = ScopedDict({
             'PrgEnv-cray': {'version': 201511},
+            'PrgEnv-cray_classic': {'version': 201511},
             'PrgEnv-gnu': {'version': 201511},
             'PrgEnv-intel': {'version': 201611},
             'PrgEnv-pgi': {'version': 201307},
@@ -66,19 +69,9 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             }
         }
         if lang == 'C++':
-            self.reference_prgenv = {
-                'PrgEnv-cray': (0.38, -0.6, None, 's'),
-                'PrgEnv-gnu': (0.38, -0.6, None, 's'),
-                'PrgEnv-intel': (0.38, -0.6, None, 's'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
-            }
+            self.reference_lang = (0.38, -0.6, None, 's')
         elif lang == 'F90':
-            self.reference_prgenv = {
-                'PrgEnv-cray': (0.17, -0.6, None, 's'),
-                'PrgEnv-gnu': (0.17, -0.6, None, 's'),
-                'PrgEnv-intel': (0.17, -0.6, None, 's'),
-                'PrgEnv-pgi': (18.0, -0.6, None, 's'),
-            }
+            self.reference_lang = (0.17, -0.6, None, 's')
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
@@ -97,4 +90,4 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
         ])
         if self.current_system.name in {'dom', 'daint'}:
-            self.reference['*:elapsed_time'] = self.reference_prgenv[envname]
+            self.reference['*:elapsed_time'] = self.reference_lang

@@ -66,11 +66,9 @@ class NetCDFTest(rfm.RegressionTest):
                 self.build_system.ldflags = ['-B' + self.linkage]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
-            if (environ.name == 'PrgEnv-pgi' and
-                # NOTE: Workaround to fix static linking for C++ with
-                # PrgEnv-pgi
-                self.lang == 'cpp' and
-                self.linkage == 'static'):
-                self.build_system.ldflags += ['-lstdc++']
+            if environ.name == 'PrgEnv-pgi' and self.lang == 'cpp':
+                # FIXME: Workaround to fix compilation for PrgEnv-pgi
+                # Cray Case: #243751
+                self.build_system.cppflags = ['-D_GLIBCXX_USE_CXX11_ABI=0']
 
         super().setup(partition, environ, **job_opts)

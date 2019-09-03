@@ -1,4 +1,5 @@
 import functools
+import glob
 import itertools
 import re
 import time
@@ -26,7 +27,10 @@ def slurm_state_completed(state):
         'PREEMPTED',
         'TIMEOUT',
     }
-    return state in completion_states
+    if state:
+        return all(s in completion_states for s in state.split(','))
+
+    return False
 
 
 def slurm_state_pending(state):
@@ -46,7 +50,10 @@ def slurm_state_pending(state):
         'STOPPED',
         'SUSPENDED',
     }
-    return state in pending_states
+    if state:
+        return any(s in pending_states for s in state.split(','))
+
+    return False
 
 
 _run_strict = functools.partial(os_ext.run_command, check=True)
@@ -79,6 +86,7 @@ class SlurmJob(sched.Job):
                                 'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
         self._is_cancelling = False
+        self._is_job_array = None
         self._update_state_count = 0
 
     def _format_option(self, var, option):
@@ -116,9 +124,13 @@ class SlurmJob(sched.Job):
             self._format_option(self.num_tasks_per_socket,
                                 '--ntasks-per-socket={0}'),
             self._format_option(self.num_cpus_per_task, '--cpus-per-task={0}'),
-            self._format_option(self.stdout, '--output={0}'),
-            self._format_option(self.stderr, '--error={0}'),
         ]
+
+        # Slurm replaces '%a' by the corresponding SLURM_ARRAY_TASK_ID
+        outfile_fmt = '--output={0}' + ('_%a' if self.is_job_array else '')
+        errfile_fmt = '--error={0}' + ('_%a' if self.is_job_array else '')
+        preamble += [self._format_option(self.stdout, outfile_fmt),
+                     self._format_option(self.stderr, errfile_fmt)]
 
         if self.time_limit is not None:
             preamble.append(self._format_option('%d:%d:%d' % self.time_limit,
@@ -175,6 +187,17 @@ class SlurmJob(sched.Job):
             return partition_match.group('partition')
 
         return None
+
+    def _merge_files(self):
+        with os_ext.change_dir(self.workdir):
+            out_glob = glob.glob(self.stdout + '_*')
+            err_glob = glob.glob(self.stderr + '_*')
+            getlogger().debug(
+                'merging job array output files: %s' % ', '.join(out_glob))
+            os_ext.concat_files(self.stdout, *out_glob, overwrite=True)
+            getlogger().debug(
+                'merging job array error files: %s' % ','.join(err_glob))
+            os_ext.concat_files(self.stderr, *err_glob, overwrite=True)
 
     def filter_nodes(self, nodes, options):
         option_parser = ArgumentParser()
@@ -274,23 +297,33 @@ class SlurmJob(sched.Job):
             (datetime.now().strftime('%F'), self._jobid)
         )
         self._update_state_count += 1
-        state_match = re.search(
-            r'^(?P<jobid>\d+)\|(?P<state>\S+)([^\|]*)\|'
+
+        # This matches the format for both normal jobs as well as job arrays.
+        # For job arrays the job_id has one of the following formats:
+        #   * <job_id>_<array_task_id>
+        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+        state_match = list(re.finditer(
+            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
             r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
-            completed.stdout, re.MULTILINE)
-        if state_match is None:
+            completed.stdout, re.MULTILINE))
+        if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
                               completed.stdout)
             return
 
-        self._state = state_match.group('state')
+        # Join the states with ',' in case of job arrays
+        self._state = ','.join(s.group('state') for s in state_match)
         if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked()
 
         if slurm_state_completed(self._state):
-            self._exitcode = int(state_match.group('exitcode'))
+            # Since Slurm exitcodes are positive take the maximum one
+            self._exitcode = max(
+                int(s.group('exitcode')) for s in state_match)
 
-        self._set_nodelist(state_match.group('nodespec'))
+        # Use ',' to join nodes to be consistent with Slurm syntax
+        self._set_nodelist(','.join(s.group('nodespec') for s in state_match))
 
     def _cancel_if_blocked(self):
         if self._is_cancelling or not slurm_state_pending(self._state):
@@ -302,7 +335,9 @@ class SlurmJob(sched.Job):
             # does not show up in the output of squeue
             return
 
-        self._check_and_cancel(completed.stdout)
+        # For slurm job arrays the squeue output consists of multiple lines
+        for reason_descr in completed.stdout.splitlines():
+            self._check_and_cancel(reason_descr)
 
     def _check_and_cancel(self, reason_descr):
         """Check if blocking reason ``reason_descr`` is unrecoverable and
@@ -347,6 +382,9 @@ class SlurmJob(sched.Job):
 
         # Quickly return in case we have finished already
         if slurm_state_completed(self._state):
+            if self.is_job_array:
+                self._merge_files()
+
             return
 
         intervals = itertools.cycle(settings().job_poll_intervals)
@@ -354,6 +392,9 @@ class SlurmJob(sched.Job):
         while not slurm_state_completed(self._state):
             time.sleep(next(intervals))
             self._update_state()
+
+        if self._is_job_array:
+            self._merge_files()
 
     def cancel(self):
         super().cancel()
@@ -376,6 +417,21 @@ class SlurmJob(sched.Job):
             return False
         else:
             return slurm_state_completed(self._state)
+
+    @property
+    def is_job_array(self):
+        if self._is_job_array is None:
+            option_parser = ArgumentParser()
+            option_parser.add_argument('-a', '--array')
+            parsed_args, _ = option_parser.parse_known_args(self.options)
+            jobs_array = parsed_args.array
+            if jobs_array:
+                self._is_job_array = True
+                getlogger().debug('detected job array option: %s' % jobs_array)
+            else:
+                self._is_job_array = False
+
+        return self._is_job_array
 
 
 @register_scheduler('squeue')
@@ -403,9 +459,9 @@ class SqueueJob(SlurmJob):
         # job id.
         completed = os_ext.run_command('squeue -h -j %s -o "%%T|%%N|%%r"' %
                                        self._jobid)
-        state_match = re.search(r'^(?P<state>\S+)\|(?P<nodespec>\S*)\|'
-                                r'(?P<reason>.+)', completed.stdout)
-        if state_match is None:
+        state_match = list(re.finditer(r'^(?P<state>\S+)\|(?P<nodespec>\S*)\|'
+                                       r'(?P<reason>.+)', completed.stdout))
+        if not state_match:
             # Assume that job has finished
             self._state = 'CANCELLED' if self._cancelled else 'COMPLETED'
 
@@ -415,10 +471,15 @@ class SqueueJob(SlurmJob):
 
             return
 
-        self._state = state_match.group('state')
-        self._set_nodelist(state_match.group('nodespec'))
-        if not self._is_cancelling and slurm_state_pending(self._state):
-            self._check_and_cancel(state_match.group('reason'))
+        # Join the states with ',' in case of job arrays
+        self._state = ','.join(s.group('state') for s in state_match)
+
+        # Use ',' to join nodes to be consistent with Slurm syntax
+        self._set_nodelist(','.join(s.group('nodespec') for s in state_match))
+
+        if not self._is_cancelling and not slurm_state_pending(self._state):
+            for s in state_match:
+                self._check_and_cancel(s.group('reason'))
 
     def cancel(self):
         # There is no reliable way to get the state of the job after it has

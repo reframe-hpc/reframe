@@ -41,24 +41,28 @@ class GpuBurnTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall('OK', self.stdout)), self.num_tasks_assigned)
 
+        patt = r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s  (?P<temp>\S*) Celsius'
         self.perf_patterns = {
-            'perf': sn.min(sn.extractall(
-                r'GPU\s+\d+\(\S*\): (?P<perf>\S*) GF\/s', self.stdout,
-                'perf', float))
+            'perf': sn.min(sn.extractall(patt, self.stdout, 'perf', float)),
+            'max_temp': sn.max(sn.extractall(patt, self.stdout, 'temp', float))
         }
 
         self.reference = {
             'dom:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
             },
             'daint:gpu': {
-                'perf': (4115, -0.10, None, 'Gflop/s')
+                'perf': (4115, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
             },
             'kesch:cn': {
-                'perf': (950, -0.10, None, 'Gflop/s')
+                'perf': (950, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
             },
             '*': {
-                'perf': (0, None, None, 'Gflop/s')
+                'perf': (0, None, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
             }
         }
 

@@ -76,7 +76,11 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
         elif partitiontype == 'mc':
             self.job.options = ['--constraint="mc&perf"']
 
-        toolsversion = '597835'
+        system_default_toolversion = {
+            'daint': '551022',  # 2018 Update 2
+            'dom': '597835',    # 2019 Update 4
+        }
+        toolsversion = system_default_toolversion[self.current_system.name]
         self.sanity_patterns = sn.all([
             # check the job:
             sn.assert_found('SUCCESS', self.stdout),

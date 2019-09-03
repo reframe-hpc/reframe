@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class ExampleCompileOnlyTest(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the class'
                       'CompileOnlyRegressionTest')
         self.valid_systems = ['*']

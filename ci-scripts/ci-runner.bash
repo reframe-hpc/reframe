@@ -50,7 +50,7 @@ run_tutorial_checks()
 run_user_checks()
 {
     cmd="./bin/reframe -C config/cscs.py --exec-policy=async --save-log-files \
--r -t production $@"
+-r --flex-alloc-tasks=2 -t production|benchmark $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -180,7 +180,7 @@ else
     echo "Running unit tests"
     echo "=================="
 
-    checked_exec ./test_reframe.py --rfm-user-config=config/cscs.py
+    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py
 
     echo "==================================="
     echo "Running unit tests with PBS backend"
