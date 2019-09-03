@@ -341,12 +341,12 @@ class ProgEnvironment(Environment):
             '    CC: %s' % self.cc,
             '    CXX: %s' % self.cxx,
             '    FTN: %s' % self.ftn,
-            '    NVCC: %s' % self.nvcc or '',
-            '    CFLAGS: %s' % (self.cflags or ''),
-            '    CXXFLAGS: %s' % (self.cxxflags or ''),
-            '    FFLAGS: %s' % (self.fflags or ''),
-            '    CPPFLAGS: %s' % (self.cppflags or ''),
-            '    LDFLAGS: %s' % (self.ldflags or '')
+            '    NVCC: %s' % self.nvcc,
+            '    CFLAGS: %s' % self.cflags,
+            '    CXXFLAGS: %s' % self.cxxflags,
+            '    FFLAGS: %s' % self.fflags,
+            '    CPPFLAGS: %s' % self.cppflags,
+            '    LDFLAGS: %s' % self.ldflags
         ]
 
         return '\n'.join([base_details, '\n'.join(extra_details)])
