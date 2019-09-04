@@ -26,8 +26,11 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
-            self.variables = {'MV2_USE_CUDA': '1'}
+            self.modules = ['cudatoolkit/8.0.61']
+            self.variables = {
+                'CRAY_ACCEL_TARGET': 'nvidia35',
+                'MV2_USE_CUDA': '1'
+            }
 
         self.executable = self.name
         self.build_system = 'SingleSource'
