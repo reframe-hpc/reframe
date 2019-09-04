@@ -345,6 +345,14 @@ class ProgEnvironment(Environment):
         return self._nvcc
 
     def details(self):
+        def format_flags(flags):
+            if flags is None:
+                return '<None>'
+            elif len(flags) == 0:
+                return "''"
+            else:
+                return ' '.join(flags)
+
         base_details = super().details()
         extra_details = [
             '    CC: %s' % self.cc,
