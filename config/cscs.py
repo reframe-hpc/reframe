@@ -222,13 +222,7 @@ class ReframeSettings:
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -237,14 +231,43 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
+
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
@@ -348,8 +371,10 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.5'],
+                    'modules': [
+                        'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
+                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
+                    ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
@@ -425,6 +450,41 @@ class ReframeSettings:
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
+            },
+
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
             },
 
             'leone': {
