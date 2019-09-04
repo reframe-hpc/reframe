@@ -306,7 +306,7 @@ class G2GBandwidthTest(P2PBaseTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
         elif self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit/8.0.61']
+            self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
@@ -346,7 +346,7 @@ class G2GLatencyTest(P2PBaseTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
         elif self.current_system.name == 'kesch':
-            self.modules = ['cudatoolkit/8.0.61']
+            self.modules = ['craype-accel-nvidia35']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']

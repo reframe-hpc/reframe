@@ -100,7 +100,7 @@ class DdtGpuCheck(DdtCheck):
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['cudatoolkit/8.0.61']
+            'kesch': ['craype-accel-nvidia35']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
