@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         null_kernel<<<1, 1>>>();
 
         auto t_start = std::chrono::system_clock::now();
-        const int kernel_count = 1000;
+        const int kernel_count = 5000;
 
         for (int j = 0; j < kernel_count; ++j) {
             null_kernel<<<1, 1>>>();
