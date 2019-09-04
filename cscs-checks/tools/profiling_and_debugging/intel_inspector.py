@@ -71,7 +71,7 @@ class IntelInspectorTest(rfm.RegressionTest):
         regexversion = (r'^Intel\(R\)\sInspector\s\d+\sUpdate\s\d+\s\(build'
                         r'\s(?P<toolsversion>\d+)')
         system_default_toolversion = {
-            'daint': '551023',  # 2018 Update 2
+            'daint': '579146',  # 2018 Update 2
             'dom': '597413',    # 2019 Update 4
         }
         toolsversion = system_default_toolversion[self.current_system.name]
