@@ -342,7 +342,7 @@ class ReframeSettings:
                     ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': '/apps/escha/UES/jenkins/RH7.5/pgi_PE18.5/easybuild/software/openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0/bin/mpif90',
+                    'ftn': 'mpif90',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
