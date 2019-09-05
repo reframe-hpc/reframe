@@ -342,7 +342,7 @@ class ReframeSettings:
                     ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
