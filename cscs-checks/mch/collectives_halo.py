@@ -2,7 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-class CommunicationTestBase(rfm.RegressionTest):
+class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
         super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
@@ -23,7 +23,7 @@ class CommunicationTestBase(rfm.RegressionTest):
             self.num_gpus_per_node = 16
             self.num_tasks_per_node = 16
             self.num_tasks_per_socket = 8
-            self.modules = ['craype-accel-nvidia35', 'cmake']
+            self.modules = ['cmake']
             self.variables['MV2_USE_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DMPI_VENDOR=mvapich2',
@@ -63,6 +63,7 @@ class CommunicationTestBase(rfm.RegressionTest):
                 'default': 0.0138493
             }
         }
+
         if self.current_system.name == 'dom':
             sysname = 'daint'
         else:
@@ -98,11 +99,8 @@ class CommunicationTestBase(rfm.RegressionTest):
                                          '--cpu_bind=q']
 
 
-# the values default, nocomm and nocomp refer to the different parts
-# of the check where the time is measured; default == all
-# nocomm == no communication  nocomp == no computation
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class AlltoallvTest(CommunicationTestBase):
+class AlltoallvTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -117,14 +115,13 @@ class AlltoallvTest(CommunicationTestBase):
                                  'default': 0.0138493
                              }
                          })
-        self.descr = 'Alltoall communication test'
         self.strict_check = False
         self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
         self.prebuild_cmd = ['git checkout alltoallv']
 
 
 @rfm.parameterized_test(['default'], ['nocomm'], ['nocomp'])
-class HaloExchangeTest(CommunicationTestBase):
+class HaloExchangeTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
@@ -139,6 +136,5 @@ class HaloExchangeTest(CommunicationTestBase):
                                  'default': 2.53509
                              }
                          })
-        self.descr = 'Halo-cell exchange test'
         self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout barebones']

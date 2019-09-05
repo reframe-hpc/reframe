@@ -33,10 +33,10 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
                               'kesch:pn']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-gnu-c2sm']
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo']
         else:
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-c2sm']
+            self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['CDO']
 
         self.maintainers = ['SO']

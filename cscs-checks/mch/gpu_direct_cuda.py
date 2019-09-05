@@ -22,7 +22,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             self.variables = {
                 'MV2_USE_CUDA': '1',
                 'G2G': '1',

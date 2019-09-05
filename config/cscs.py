@@ -222,13 +222,7 @@ class ReframeSettings:
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -237,13 +231,7 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -348,8 +336,10 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PE/17.06',
-                                'PrgEnv-pgi/18.5'],
+                    'modules': [
+                        'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
+                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
+                    ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
