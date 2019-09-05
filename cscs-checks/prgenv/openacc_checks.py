@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['mpi'], ['nompi'])
 class OpenACCFortranCheck(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         if variant == 'nompi':
             self.num_tasks = 1
         else:
