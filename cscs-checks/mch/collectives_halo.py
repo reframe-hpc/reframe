@@ -116,7 +116,7 @@ class AlltoallvTest(CollectivesBaseTest):
                              }
                          })
         self.strict_check = False
-        self.sourcesdir = 'https://github.com/cosunae/comm_overlap_bench'
+        self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout alltoallv']
 
 
@@ -136,5 +136,5 @@ class HaloExchangeTest(CollectivesBaseTest):
                                  'default': 2.53509
                              }
                          })
-        self.sourcesdir = 'https://github.com/MeteoSwiss-APN/comm_overlap_bench.git'
+        self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout barebones']
