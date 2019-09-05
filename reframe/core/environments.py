@@ -177,15 +177,6 @@ class Environment:
                           self.modules, self.variables)
 
 
-def format_flags(flags):
-    if flags is None:
-        return '<None>'
-    elif len(flags) == 0:
-        return "''"
-    else:
-        return ' '.join(flags)
-
-
 def swap_environments(src, dst):
     src.unload()
     dst.load()
