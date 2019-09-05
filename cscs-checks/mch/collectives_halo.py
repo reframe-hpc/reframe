@@ -4,7 +4,6 @@ import reframe.utility.sanity as sn
 
 class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
-        super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
