@@ -3,9 +3,9 @@ import reframe.utility.sanity as sn
 
 
 @rfm.required_version('>=2.16')
-@rfm.simple_test
+@rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
-    def __init__(self):
+    def __init__(self, variant):
         super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
@@ -25,13 +25,13 @@ class AlltoallTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {'production', 'benchmark'}
+        self.tags = {variant, 'benchmark'}
         self.reference = {
             'dom:gpu': {
-                'latency': (1.31, None, 0.1, 'us')
+                'latency': (8.23, None, 0.1, 'us')
             },
             'daint:gpu': {
-                'latency': (1.31, None, 2.0, 'us')
+                'latency': (20.73, None, 2.0, 'us')
             },
             '*': {
                 'latency': (0, None, None, 'us')
@@ -39,7 +39,10 @@ class AlltoallTest(rfm.RegressionTest):
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
-        self.num_tasks = 0
+        if self.current_system.name == 'daint':
+            self.num_tasks = 16
+        else:
+            self.num_tasks = 6
 
         self.extra_resources = {
             'switches': {
@@ -47,21 +50,8 @@ class AlltoallTest(rfm.RegressionTest):
             }
         }
 
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
 
-    def setup(self, partition, environ, **job_opts):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                           self.stdout, 'latency', float) / num_nodes
-        }
-
-        super().setup(partition, environ, **job_opts)
-
-
+@rfm.required_version('>=2.18')
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
@@ -83,16 +73,27 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
+        }
+        self.reference = {
+            '*': {
+                'latency': (0, None, None, 'us')
+            },
+        }
         self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
 @rfm.required_version('>=2.16')
-@rfm.simple_test
+@rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
-    def __init__(self):
+    def __init__(self, variant):
         super().__init__()
         self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc']
+        if variant == 'small':
+            self.valid_systems += ['dom:gpu', 'dom:mc']
 
         self.descr = 'Allreduce OSU microbenchmark'
         self.build_system = 'Make'
@@ -104,22 +105,40 @@ class AllreduceTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.maintainers = ['RS', 'VK']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
-        self.tags = {'production', 'benchmark'}
-        self.num_tasks = 0
-        self.reference = {
-            'dom:gpu': {
-                'latency': (1.0, None, 0.10, 'us')
-            },
-            'daint:gpu': {
-                'latency': (1.302, None, 0.40, 'us')
-            },
-            'daint:mc': {
-                'latency': (1.456, None, 0.20, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
-            }
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
         }
+        self.tags = {'production', 'benchmark'}
+        if variant == 'small':
+            self.num_tasks = 6
+            self.reference = {
+                'dom:gpu': {
+                    'latency': (6.0, None, 0.10, 'us')
+                },
+                'daint:gpu': {
+                    'latency': (7.81, None, 0.25, 'us')
+                },
+                'daint:mc': {
+                    'latency': (8.79, None, 0.25, 'us')
+                },
+                '*': {
+                    'latency': (0, None, None, 'us')
+                }
+            }
+        else:
+            self.num_tasks = 16
+            self.reference = {
+                'daint:gpu': {
+                    'latency': (16.87, None, 0.40, 'us')
+                },
+                'daint:mc': {
+                    'latency': (10.85, None, 0.20, 'us')
+                },
+                '*': {
+                    'latency': (0, None, None, 'us')
+                }
+            }
 
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
@@ -129,19 +148,31 @@ class AllreduceTest(rfm.RegressionTest):
             }
         }
 
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks
 
-    def setup(self, partition, environ, **job_opts):
-        num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                           self.stdout, 'latency', float) / num_nodes
+# FIXME: This test is obsolete; it is kept only for reference.
+@rfm.parameterized_test(*({'num_tasks': i} for i in range(2, 10, 2)))
+class AlltoallMonchAcceptanceTest(AlltoallTest):
+    def __init__(self, num_tasks):
+        super().__init__('monch_acceptance')
+        self.valid_systems = ['monch:compute']
+        self.num_tasks = num_tasks
+        reference_by_node = {
+            2: {
+                'perf': (2.71, None, 0.1)
+            },
+            4: {
+                'perf': (3.75, None, 0.1)
+            },
+            6: {
+                'perf': (6.28, None, 0.1)
+            },
+            8: {
+                'perf': (8.15, None, 0.1)
+            },
         }
-
-        super().setup(partition, environ, **job_opts)
+        self.reference = {
+            'monch:compute': reference_by_node[self.num_tasks]
+        }
 
 
 class P2PBaseTest(rfm.RegressionTest):
