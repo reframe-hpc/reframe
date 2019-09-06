@@ -51,6 +51,7 @@ class AlltoallTest(rfm.RegressionTest):
         }
 
 
+@rfm.required_version('>=2.18')
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
@@ -72,6 +73,15 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
+        self.perf_patterns = {
+            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
+                                        self.stdout, 'latency', float)
+        }
+        self.reference = {
+            '*': {
+                'latency': (0, None, None, 'us')
+            },
+        }
         self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
