@@ -207,10 +207,8 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.assertEqual([socket.gethostname()], self.testjob.nodelist)
 
     def test_submit_timelimit(self):
-        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
-
         super().test_submit_timelimit()
-        self.assertEqual(self.testjob.state, LOCAL_JOB_TIMEOUT)
+        self.assertEqual(self.testjob.state, 'TIMEOUT')
 
     def test_cancel_with_grace(self):
         # This test emulates a spawned process that ignores the SIGTERM signal
@@ -224,8 +222,6 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         # killed immediately after the grace period of 2 seconds expires.
         #
         # We also check that the additional spawned process is also killed.
-        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
-
         self.parallel_cmd = 'sleep 5 &'
         self.pre_run = ['trap -- "" TERM']
         self.post_run = ['echo $!', 'wait']
@@ -250,7 +246,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
 
         self.assertGreaterEqual(t_grace.total_seconds(), 2)
         self.assertLess(t_grace.total_seconds(), 5)
-        self.assertEqual(LOCAL_JOB_TIMEOUT, self.testjob.state)
+        self.assertEqual(self.testjob.state, 'TIMEOUT')
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
@@ -267,8 +263,6 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         #  spawned sleep will ignore it. We need to make sure that our
         #  implementation grants the sleep process a grace period and then
         #  kills it.
-        from reframe.core.schedulers.local import LOCAL_JOB_TIMEOUT
-
         self.pre_run = []
         self.post_run = []
         self.parallel_cmd = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
@@ -291,7 +285,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
             sleep_pid = int(f.read())
 
         self.assertGreaterEqual(t_grace.total_seconds(), 2)
-        self.assertEqual(LOCAL_JOB_TIMEOUT, self.testjob.state)
+        self.assertEqual(self.testjob.state, 'TIMEOUT')
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
@@ -385,10 +379,8 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.skipTest("SLURM's minimum time limit is 60s")
 
     def test_cancel(self):
-        from reframe.core.schedulers.slurm import SLURM_JOB_CANCELLED
-
         super().test_cancel()
-        self.assertEqual(self.testjob.state, SLURM_JOB_CANCELLED)
+        self.assertEqual(self.testjob.state, 'CANCELLED')
 
     def test_guess_num_tasks(self):
         self.testjob._num_tasks = 0

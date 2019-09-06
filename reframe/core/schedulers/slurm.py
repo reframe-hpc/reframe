@@ -14,24 +14,39 @@ from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
 
 
-class SlurmJobState(sched.JobState):
-    pass
+def slurm_state_completed(state):
+    completion_states = {
+        'BOOT_FAIL',
+        'CANCELLED',
+        'COMPLETED',
+        'DEADLINE',
+        'FAILED',
+        'NODE_FAIL',
+        'OUT_OF_MEMORY',
+        'PREEMPTED',
+        'TIMEOUT',
+    }
+    return state in completion_states
 
 
-# Slurm Job states
-SLURM_JOB_BOOT_FAIL   = SlurmJobState('BOOT_FAIL')
-SLURM_JOB_CANCELLED   = SlurmJobState('CANCELLED')
-SLURM_JOB_COMPLETED   = SlurmJobState('COMPLETED')
-SLURM_JOB_CONFIGURING = SlurmJobState('CONFIGURING')
-SLURM_JOB_COMPLETING  = SlurmJobState('COMPLETING')
-SLURM_JOB_FAILED      = SlurmJobState('FAILED')
-SLURM_JOB_NODE_FAILED = SlurmJobState('NODE_FAILED')
-SLURM_JOB_PENDING     = SlurmJobState('PENDING')
-SLURM_JOB_PREEMPTED   = SlurmJobState('PREEMPTED')
-SLURM_JOB_RESIZING    = SlurmJobState('RESIZING')
-SLURM_JOB_RUNNING     = SlurmJobState('RUNNING')
-SLURM_JOB_SUSPENDED   = SlurmJobState('SUSPENDED')
-SLURM_JOB_TIMEOUT     = SlurmJobState('TIMEOUT')
+def slurm_state_pending(state):
+    pending_states = {
+        'COMPLETING',
+        'CONFIGURING',
+        'PENDING',
+        'RESV_DEL_HOLD',
+        'REQUEUE_FED',
+        'REQUEUE_HOLD',
+        'REQUEUED',
+        'RESIZING',
+        'REVOKED',
+        'SIGNALING',
+        'SPECIAL_EXIT',
+        'STAGE_OUT',
+        'STOPPED',
+        'SUSPENDED',
+    }
+    return state in pending_states
 
 
 _run_strict = functools.partial(os_ext.run_command, check=True)
@@ -49,15 +64,6 @@ class SlurmJob(sched.Job):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._prefix = '#SBATCH'
-        self._completion_states = [SLURM_JOB_BOOT_FAIL,
-                                   SLURM_JOB_CANCELLED,
-                                   SLURM_JOB_COMPLETED,
-                                   SLURM_JOB_FAILED,
-                                   SLURM_JOB_NODE_FAILED,
-                                   SLURM_JOB_PREEMPTED,
-                                   SLURM_JOB_TIMEOUT]
-        self._pending_states = [SLURM_JOB_CONFIGURING,
-                                SLURM_JOB_PENDING]
 
         # Reasons to cancel a pending job: if the job is expected to remain
         # pending for a much longer time then usual (mostly if a sysadmin
@@ -277,17 +283,17 @@ class SlurmJob(sched.Job):
                               completed.stdout)
             return
 
-        self._state = SlurmJobState(state_match.group('state'))
+        self._state = state_match.group('state')
         if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked()
 
-        if self._state in self._completion_states:
+        if slurm_state_completed(self._state):
             self._exitcode = int(state_match.group('exitcode'))
 
         self._set_nodelist(state_match.group('nodespec'))
 
     def _cancel_if_blocked(self):
-        if self._is_cancelling or self._state not in self._pending_states:
+        if self._is_cancelling or not slurm_state_pending(self._state):
             return
 
         completed = _run_strict('squeue -h -j %s -o %%r' % self._jobid)
@@ -340,12 +346,12 @@ class SlurmJob(sched.Job):
         super().wait()
 
         # Quickly return in case we have finished already
-        if self._state in self._completion_states:
+        if slurm_state_completed(self._state):
             return
 
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state()
-        while self._state not in self._completion_states:
+        while not slurm_state_completed(self._state):
             time.sleep(next(intervals))
             self._update_state()
 
@@ -369,7 +375,7 @@ class SlurmJob(sched.Job):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
-            return self._state in self._completion_states
+            return slurm_state_completed(self._state)
 
 
 @register_scheduler('squeue')
@@ -401,8 +407,7 @@ class SqueueJob(SlurmJob):
                                 r'(?P<reason>.+)', completed.stdout)
         if state_match is None:
             # Assume that job has finished
-            self._state = (SLURM_JOB_CANCELLED if self._cancelled
-                           else SLURM_JOB_COMPLETED)
+            self._state = 'CANCELLED' if self._cancelled else 'COMPLETED'
 
             # Set exit code manually, if not set already by the polling
             if self._exitcode is None:
@@ -410,9 +415,9 @@ class SqueueJob(SlurmJob):
 
             return
 
-        self._state = SlurmJobState(state_match.group('state'))
+        self._state = state_match.group('state')
         self._set_nodelist(state_match.group('nodespec'))
-        if not self._is_cancelling and self._state in self._pending_states:
+        if not self._is_cancelling and slurm_state_pending(self._state):
             self._check_and_cancel(state_match.group('reason'))
 
     def cancel(self):
