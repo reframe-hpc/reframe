@@ -1059,7 +1059,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                                        login=True, trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 

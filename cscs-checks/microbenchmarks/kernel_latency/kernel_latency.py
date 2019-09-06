@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['sync'], ['async'])
 class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
-        super().__init__()
         # List known partitions here so as to avoid specifying them every time
         # with --system
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
@@ -14,13 +13,13 @@ class KernelLatencyTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
         self.build_system = 'SingleSource'
-        self.build_system.cxxflags = ['-std=c++11']
+        self.build_system.cxxflags = ['-std=c++11', '-O3']
         if self.current_system.name in {'dom', 'daint'}:
             self.num_gpus_per_node = 1
             gpu_arch = '60'
             self.modules = ['craype-accel-nvidia60']
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
-                                        'PrgEnv-gnu']
+            self.valid_prog_environs = ['PrgEnv-cray_classic', 'PrgEnv-cray',
+                                        'PrgEnv-pgi', 'PrgEnv-gnu']
         elif self.current_system.name == 'kesch':
             self.num_gpus_per_node = 16
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
