@@ -742,7 +742,7 @@ class TestDependencies(unittest.TestCase):
             executors.generate_testcases([t0, t1, t2, t3, t4,
                                           t5, t6, t7, t8])
         )
-        cases, *_ = dependency.toposort(deps)
+        cases = dependency.toposort(deps)
         cases_order = []
         tests = util.OrderedSet()
         visited_tests = set()

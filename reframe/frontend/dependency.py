@@ -2,6 +2,9 @@
 # Test case graph functionality
 #
 
+import collections
+import itertools
+
 import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
@@ -46,7 +49,9 @@ def build_deps(cases):
     # e stands for environment
     # t stands for target
 
-    graph = {}
+    # We use an ordered dict here, because we need to keep the order of
+    # partitions and environments
+    graph = collections.OrderedDict()
     for c in cases:
         cname = c.check.name
         pname = c.partition.fullname
@@ -131,49 +136,21 @@ def validate_deps(graph):
         sources -= visited
 
 
-def _reverse_deps(graph):
-    ret = {}
-    for n, deps in graph.items():
-        ret.setdefault(n, util.OrderedSet({}))
-        for d in deps:
-            try:
-                ret[d] |= {n}
-            except KeyError:
-                ret[d] = util.OrderedSet({n})
-
-    return ret
-
-
 def toposort(graph):
     test_deps = _reduce_deps(graph)
-    rev_deps  = _reverse_deps(test_deps)
-    levels = {}
     visited = util.OrderedSet()
 
-    def dfs_visit(node, lvl):
-        lvl += 1
-        try:
-            levels[node] = max(levels[node], lvl)
-        except KeyError:
-            levels[node] = lvl
-
-        for adj in rev_deps[node]:
+    def visit(node):
+        # Do a DFS visit of all the adjacent nodes
+        for adj in test_deps[node]:
             if adj not in visited:
-                dfs_visit(adj, lvl)
+                visit(adj)
 
         visited.add(node)
 
-    roots = set(t for t, deps in test_deps.items() if not deps)
-    for r in roots:
-        dfs_visit(r, -1)
-
-    # Group by level number
-    nodes_per_level = {}
-    for node, lvl in levels.items():
-        try:
-            nodes_per_level[lvl].append(node)
-        except KeyError:
-            nodes_per_level[lvl] = [node]
+    for r in test_deps.keys():
+        if r not in visited:
+            visit(r)
 
     # Index test cases by test name
     cases_by_name = {}
@@ -183,23 +160,4 @@ def toposort(graph):
         except KeyError:
             cases_by_name[c.check.name] = [c]
 
-    # Now arrange the test cases based on the topologically sorted tests
-    ret = []
-    for lvl, nodes in nodes_per_level.items():
-        for n in nodes:
-            ret += cases_by_name[n]
-
-    # Assign nodes to the levels that they can be safely cleaned up
-    cleanup_seq = {}
-    for node, deps in rev_deps.items():
-        if deps:
-            lvl = max(levels[n] for n in deps)
-        else:
-            lvl = levels[node]
-
-        try:
-            cleanup_seq[lvl].append(node)
-        except KeyError:
-            cleanup_seq[lvl] = [node]
-
-    return ret, nodes_per_level, cleanup_seq
+    return list(itertools.chain(*(cases_by_name[n] for n in visited)))
