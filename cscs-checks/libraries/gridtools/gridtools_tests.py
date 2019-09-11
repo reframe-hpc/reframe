@@ -22,6 +22,8 @@ class GridToolsCheck(rfm.RegressionTest):
         self.modules = ['CMake', 'Boost']
         if is_cuda_test:
             self.modules.append('craype-accel-nvidia60')
+            if self.current_system.name is 'dom':
+                self.modules.append('cray-libsci_acc/19.06.1')
         self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
         self.build_system = 'CMake'
 
