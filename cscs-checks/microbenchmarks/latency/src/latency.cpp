@@ -9,14 +9,22 @@
 #include <thread>
 #include <pthread.h>
 
+#ifndef PAGESIZE
 #define PAGESIZE 4096
+#endif
+
+#ifndef CACHELINESIZE
 #define CACHELINESIZE 64
+#endif
 
 // only used for runtime estimation
 #define L1 32768
 #define L2 262144
 #define L3 25600*1024
+
+#ifndef GHZ
 #define GHZ 3.3
+#endif
 
 /**********************************************/
 
@@ -53,11 +61,18 @@ int main(int argc, char ** argv)
     set_affinity(pthread_self(), 0);
     bool simulate_large_pages = false;
 
+    if (argc < 2)
+    {
+        std::cout << "Measure latencies for various levels of "
+                  << "the memory hierarchy (buffer sizes)" << std::endl;
+        std::cout << "Usage: latency <buffer sizes>" << std::endl;
+    }
+
     for (int iarg = 1; iarg < argc; ++iarg)
     {
-        unsigned buffer_size = std::stoi(argv[iarg]);
+        unsigned buffer_size_inp = std::stoi(argv[iarg]);
 
-        buffer_size = (buffer_size / PAGESIZE + 1) * PAGESIZE;
+        unsigned buffer_size = (buffer_size_inp / PAGESIZE + 1) * PAGESIZE;
 
         unsigned group_size;
         if (simulate_large_pages) {
@@ -75,7 +90,6 @@ int main(int argc, char ** argv)
         unsigned group_elements = group_size / sizeof(CacheLine);
 
         size_t reps = estimate_reps(buffer_size, L1, L2, L3);
-        if (argc > 2) reps = std::stoi(argv[2]);
 
         CacheLine* chain;
         if (posix_memalign(reinterpret_cast<void**>(&chain),
@@ -94,7 +108,7 @@ int main(int argc, char ** argv)
         double ns_per_load = duration / reps * 1e9;
         double clocks = GHZ * ns_per_load;
 
-        std::cout << "latency (ns): " << ns_per_load
+        std::cout << "latency (ns) for input size " << buffer_size_inp << ": " << ns_per_load
                   << " clocks: " << clocks << " size " << buffer_size
                   << " ngroups: " << buffer_size/group_size << std::endl;
 
@@ -115,14 +129,8 @@ void convert_to_pointers(CacheLine* start, std::vector<unsigned> const& path)
 
 size_t chainload(CacheLine* next, size_t reps)
 {
-    // compiler doesn't unroll
-    for (size_t i = 0; i < reps; i+=4)
-    {
+    for (size_t i = 0; i < reps; i++)
         next = next->payload;
-        next = next->payload;
-        next = next->payload;
-        next = next->payload;
-    }
 
     return reinterpret_cast<size_t>(next);
 }
@@ -146,12 +154,15 @@ std::vector<unsigned> random_permutation(unsigned length)
 
 // convert any permutation visit_sequence to a path
 // --
-// A path is equivalent to a permutation of [0, length-1]
+// visit_sequence is the order in which we want to visit the nodes
+// --
+// Each element of the path contains a "pointer" (index) to the next
+// element to visit according to the visit sequence.
+// For example, a visit_sequence of 12034 will produce the path 32041.
+// --
+// Mathematically: A path is equivalent to a permutation of [0, length-1]
 // that contains no valid permutation in any subset
 // [0,n] for n < length-1
-// --
-// e.g for length=5, 12034 would be invalid, because 120 is
-// a valid permutation of [0,2], leading to a closed loop
 std::vector<unsigned> make_path(std::vector<unsigned> const& visit_sequence)
 {
     std::vector<unsigned> path(visit_sequence.size());
@@ -205,9 +216,9 @@ std::vector<unsigned> random_grouped_path(unsigned length, unsigned groupsize)
 
 size_t estimate_reps(unsigned sz, unsigned l1, unsigned l2, unsigned l3)
 {
-    const double l1_lat_ns = 1.2;
+    const double l1_lat_ns = 1;
     const double l2_lat_ns = 3;
-    const double l3_lat_ns = 12;
+    const double l3_lat_ns = 10;
     const double mem_lat_ns = 100;
 
     const double target_time = 0.25;

@@ -28,44 +28,43 @@ class CPULatencyTest(rfm.RegressionTest):
             sn.count(sn.findall(r'latency', self.stdout)),
             self.num_tasks_assigned * len(self.executable_opts))
 
+        def lat_pattern(index):
+            return sn.extractsingle(
+                r'latency \(ns\) for input size %s: (?P<bw>\S+) clocks' %
+                    self.executable_opts[index],
+                self.stdout, 'bw', float)
+
         self.perf_patterns = {
-            'latencyL1': sn.extractall(
-                r'latency \(ns\): (?P<bw>\S+) clocks',
-                self.stdout, 'bw', float)[0],
-            'latencyL2': sn.extractall(
-                r'latency \(ns\): (?P<bw>\S+) clocks',
-                self.stdout, 'bw', float)[1],
-            'latencyL3': sn.extractall(
-                r'latency \(ns\): (?P<bw>\S+) clocks',
-                self.stdout, 'bw', float)[2],
-            'latencyMem': sn.extractall(
-                r'latency \(ns\): (?P<bw>\S+) clocks',
-                self.stdout, 'bw', float)[3]
+            'latencyL1': lat_pattern(0),
+            'latencyL2': lat_pattern(1),
+            'latencyL3': lat_pattern(2),
+            'latencyMem': lat_pattern(3),
         }
+
         self.reference = {
             'dom:mc': {
                 'latencyL1':  (1.21, -0.01, 0.26, 'ns'),
                 'latencyL2':  (3.65, -0.01, 0.26, 'ns'),
                 'latencyL3':  (18.83, -0.01, 0.05, 'ns'),
-                'latencyMem': (80.0, -0.01, 0.05, 'ns')
+                'latencyMem': (76.6, -0.01, 0.05, 'ns')
             },
             'dom:gpu': {
                 'latencyL1':  (1.14, -0.01, 0.26, 'ns'),
                 'latencyL2':  (3.44, -0.01, 0.26, 'ns'),
                 'latencyL3':  (15.65, -0.01, 0.05, 'ns'),
-                'latencyMem': (75.0, -0.01, 0.05, 'ns')
+                'latencyMem': (71.7, -0.01, 0.05, 'ns')
             },
             'daint:mc': {
                 'latencyL1':  (1.21, -0.01, 0.26, 'ns'),
                 'latencyL2':  (3.65, -0.01, 0.26, 'ns'),
                 'latencyL3':  (18.83, -0.01, 0.05, 'ns'),
-                'latencyMem': (80.0, -0.01, 0.05, 'ns')
+                'latencyMem': (76.6, -0.01, 0.05, 'ns')
             },
             'daint:gpu': {
                 'latencyL1':  (1.14, -0.01, 0.26, 'ns'),
                 'latencyL2':  (3.44, -0.01, 0.26, 'ns'),
                 'latencyL3':  (15.65, -0.01, 0.05, 'ns'),
-                'latencyMem': (75.0, -0.01, 0.05, 'ns')
+                'latencyMem': (71.7, -0.01, 0.05, 'ns')
             },
             'ault:intel': {
                 'latencyL1':  (1.08, -0.01, 0.26, 'ns'),
