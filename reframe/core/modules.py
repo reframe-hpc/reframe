@@ -380,20 +380,32 @@ class ModulesSystemImpl(abc.ABC):
 class TModImpl(ModulesSystemImpl):
     """Module system for TMod (Tcl)."""
 
-    MIN_VERSION = (3, 2)
+    MIN_VERSION = (3, 1)
 
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
+        version_smaller_than_3_2 = False
         try:
             completed = os_ext.run_command('modulecmd -V')
         except OSError as e:
-            raise ConfigError(
-                'could not find a sane TMod installation: %s' % e) from e
+            try:
+                modulecmd = os.getenv('MODULESHOME')
+                modulecmd = os.path.join(modulecmd, 'modulecmd.tcl')
+                completed = os_ext.run_command(modulecmd)
+                version_smaller_than_3_2 = True
+            except OSError as e:
+                raise ConfigError(
+                    'could not find a sane TMod installation: %s' % e) from e
 
-        version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
-                                  re.MULTILINE)
-        tcl_version_match = re.search(r'^TCL_VERSION=(\S+)', completed.stdout,
+        if version_smaller_than_3_2:
+            version_match = re.search(r'Release Tcl (\S+)', completed.stderr,
                                       re.MULTILINE)
+            tcl_version_match = version_match
+        else:
+            version_match = re.search(r'^VERSION=(\S+)', completed.stdout,
+                                      re.MULTILINE)
+            tcl_version_match = re.search(r'^TCL_VERSION=(\S+)', completed.stdout,
+                                          re.MULTILINE)
 
         if version_match is None or tcl_version_match is None:
             raise ConfigError('could not find a sane TMod installation')
@@ -412,6 +424,7 @@ class TModImpl(ModulesSystemImpl):
 
         self._version = version
         self._command = 'modulecmd python'
+
         try:
             # Try the Python bindings now
             completed = os_ext.run_command(self._command)
