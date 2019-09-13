@@ -21,16 +21,12 @@ class IorCheck(rfm.RegressionTest):
                 'valid_systems': ['dom:gpu'],
                 'dom': {
                     'num_tasks': 2,
-                    # We will be using 1 task per node to avoid cache
-                    # effects on read. The option "-C" could be used
-                    # with many tasks per node. 8 tasks are enough
-                    # to get ~peak perf (write 5.4 GB/s, read 4.3 GB/s)
                 }
             },
-            '/scratch/snx1600': {
-                'valid_systems': ['daint:gpu'],
-                'daint': {}
-            },
+            #'/scratch/snx1600': {
+            #    'valid_systems': [],
+            #    'daint': {}
+            #},
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu'],
                 'dom': {
@@ -38,8 +34,10 @@ class IorCheck(rfm.RegressionTest):
                 }
             },
             '/scratch/snx3000': {
-                'valid_systems': ['daint:gpu'],
-                'daint': {}
+                'valid_systems': ['daint:gpu', 'daint:mc'],
+                'daint': {
+                    'num_tasks': 10,
+                }
             },
             '/users': {
                 'valid_systems': ['daint:gpu', 'dom:gpu', 'fulen:normal'],
@@ -112,7 +110,8 @@ class IorCheck(rfm.RegressionTest):
 
         self.maintainers = ['SO', 'GLR']
 
-        if self.current_system.name == 'dom':
+        systems_to_test = ['dom', 'daint']
+        if self.current_system.name in systems_to_test:
             self.tags = {'production'}
 
 
