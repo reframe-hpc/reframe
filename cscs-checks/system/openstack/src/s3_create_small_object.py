@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
 import time
+import sys
 import tools
+
+system = sys.argv[1]
 
 conn = tools.get_connection()
 
 nobjects = 10
 
-bkt_name = 'reframe_s3_bucket_0'
+bkt_name = '%s_reframe_s3_bucket_0' % system
 bkt = conn.get_bucket(bkt_name)
 
 start = time.time()

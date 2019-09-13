@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import boto.s3.connection
 
 
@@ -29,11 +30,11 @@ def get_connection():
     return conn
 
 
-def delete_reframe_buckets(conn):
+def delete_reframe_buckets(conn, system):
     print('Removing Reframe test buckets')
     buckets = conn.get_all_buckets()
     for bkt in buckets:
-        if re.search('reframe', bkt.name):
+        if re.search(system, bkt.name):
             print('Removing bucket %s and its objects' % bkt.name)
             for obj in bkt.list():
                 print('Removing object %s' % obj.name)

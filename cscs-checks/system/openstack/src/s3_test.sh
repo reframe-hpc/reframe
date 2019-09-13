@@ -6,4 +6,4 @@ pip install boto
 
 which python
 
-python $1
+python $1 $2
