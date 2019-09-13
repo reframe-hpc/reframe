@@ -334,3 +334,27 @@ class ProgEnvironment(Environment):
     @property
     def nvcc(self):
         return self._nvcc
+
+    def details(self):
+        def format_flags(flags):
+            if flags is None:
+                return '<None>'
+            elif len(flags) == 0:
+                return "''"
+            else:
+                return ' '.join(flags)
+
+        base_details = super().details()
+        extra_details = [
+            '    CC: %s' % self.cc,
+            '    CXX: %s' % self.cxx,
+            '    FTN: %s' % self.ftn,
+            '    NVCC: %s' % self.nvcc,
+            '    CFLAGS: %s' % format_flags(self.cflags),
+            '    CXXFLAGS: %s' % format_flags(self.cxxflags),
+            '    FFLAGS: %s' % format_flags(self.fflags),
+            '    CPPFLAGS: %s' % format_flags(self.cppflags),
+            '    LDFLAGS: %s' % format_flags(self.ldflags)
+        ]
+
+        return '\n'.join([base_details, '\n'.join(extra_details)])
