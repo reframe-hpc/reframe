@@ -22,6 +22,6 @@ class Example4Test(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def setup(self, partition, environ, **job_opts):
-        self.build_system.cflags = self.prgenv_flags[environ.name]
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('compile')
+    def setflags(self):
+        self.build_system.cflags = self.prgenv_flags[self.current_environ.name]
