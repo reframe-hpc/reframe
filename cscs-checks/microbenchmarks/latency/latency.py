@@ -11,7 +11,7 @@ class CPULatencyTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'ault:intel', 'ault:amdvega', 'tave:compute']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray']
+        self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
 
@@ -31,8 +31,7 @@ class CPULatencyTest(rfm.RegressionTest):
         def lat_pattern(index):
             return sn.extractsingle(
                 r'latency \(ns\) for input size %s: (?P<bw>\S+) clocks' %
-                    self.executable_opts[index],
-                self.stdout, 'bw', float)
+                self.executable_opts[index], self.stdout, 'bw', float)
 
         self.perf_patterns = {
             'latencyL1': lat_pattern(0),
