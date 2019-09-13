@@ -23,10 +23,6 @@ class IorCheck(rfm.RegressionTest):
                     'num_tasks': 2,
                 }
             },
-            #'/scratch/snx1600': {
-            #    'valid_systems': [],
-            #    'daint': {}
-            #},
             '/scratch/snx3000tds': {
                 'valid_systems': ['dom:gpu'],
                 'dom': {
