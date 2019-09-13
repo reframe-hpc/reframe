@@ -7,7 +7,6 @@ import reframe.utility.sanity as sn
 
 class IorCheck(rfm.RegressionTest):
     def __init__(self, base_dir):
-        super().__init__()
         self.descr = 'IOR check (%s)' % base_dir
         self.tags = {'ops', base_dir}
 
@@ -112,7 +111,6 @@ class IorCheck(rfm.RegressionTest):
 
 
 @rfm.parameterized_test(['/scratch/snx1600tds'],
-                        ['/scratch/snx1600'],
                         ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
@@ -131,7 +129,6 @@ class IorWriteCheck(IorCheck):
 
 
 @rfm.parameterized_test(['/scratch/snx1600tds'],
-                        ['/scratch/snx1600'],
                         ['/scratch/snx3000tds'],
                         ['/scratch/snx3000'],
                         ['/users'],
