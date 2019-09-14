@@ -50,7 +50,7 @@ run_tutorial_checks()
 run_user_checks()
 {
     cmd="./bin/reframe -C config/cscs.py --exec-policy=async --save-log-files \
--r -t production $@"
+-r --flex-alloc-tasks=2 -t production|benchmark $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
 }

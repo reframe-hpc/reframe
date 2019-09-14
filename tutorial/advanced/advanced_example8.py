@@ -45,8 +45,8 @@ class MatrixVectorTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setflags(self):
         if self.prgenv_flags is not None:
-            self.build_system.cflags = self.prgenv_flags[environ.name]
-
-        super().setup(partition, environ, **job_opts)
+            env = self.current_environ.name
+            self.build_system.cflags = self.prgenv_flags[env]
