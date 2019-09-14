@@ -140,17 +140,23 @@ def toposort(graph):
     test_deps = _reduce_deps(graph)
     visited = util.OrderedSet()
 
-    def visit(node):
+    def visit(node, path):
+        # We assume an acyclic graph
+        assert node not in path
+
+        path.add(node)
+
         # Do a DFS visit of all the adjacent nodes
         for adj in test_deps[node]:
             if adj not in visited:
-                visit(adj)
+                visit(adj, path)
 
+        path.pop()
         visited.add(node)
 
     for r in test_deps.keys():
         if r not in visited:
-            visit(r)
+            visit(r, util.OrderedSet())
 
     # Index test cases by test name
     cases_by_name = {}
