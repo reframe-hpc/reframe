@@ -51,11 +51,10 @@ class AlltoallTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.18')
+@rfm.required_version('>=2.19')
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal']
