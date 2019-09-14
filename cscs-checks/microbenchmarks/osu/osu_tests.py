@@ -2,11 +2,10 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
@@ -84,11 +83,10 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
@@ -176,7 +174,6 @@ class AlltoallMonchAcceptanceTest(AlltoallTest):
 
 class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
@@ -201,7 +198,7 @@ class P2PBaseTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -241,7 +238,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
@@ -281,7 +278,7 @@ class P2PCPULatencyTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -321,7 +318,7 @@ class G2GBandwidthTest(P2PBaseTest):
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
