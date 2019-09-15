@@ -55,7 +55,7 @@ class MpipCheck(rfm.RegressionTest):
             # hence mpip will report different line numbers:
             if self.current_system.name == 'daint':
                 mpi_isendline = '142'
-            else self.current_system.name == 'dom':
+            else:
                 mpi_isendline = '140'
         elif lang == 'F90':
             mpi_isendline = '146'
