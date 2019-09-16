@@ -7,15 +7,15 @@ class S3apiCheck(rfm.RunOnlyRegressionTest):
         super().__init__()
         endpoint = 'object.cscs.ch'
         self.descr = 'S3API check for (%s)' % endpoint
-        self.tags = {'ops', endpoint}
-        self.valid_systems = ['dom:gpu', 'daint:gpu', 'daint:mc']
+        self.tags = {'ops', 'object_store'}
+        self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        # self.sourcesdir = None
         self.time_limit = (0, 5, 0)
         self.maintainers = ['VH', 'GLR']
         self.executable = 's3_test.sh'
         if self.current_system.name in ['dom']:
-            self.tags = {'production'}
+            self.tags |= {'production'}
+
 
 @rfm.simple_test
 class S3apiCreateBucket(S3apiCheck):
@@ -35,7 +35,7 @@ class S3apiCreateBucket(S3apiCheck):
         self.reference = {
             '*': {
                 # below 1.1 secs is ok
-                'bucket_ctime': (1, None, 0.01),
+                'bucket_ctime': (1, None, 0.01, 's'),
             }
         }
 
@@ -58,7 +58,7 @@ class S3apiCreateSmallObject(S3apiCheck):
         self.reference = {
             '*': {
                 # below 1.1 secs is ok
-                'object_ctime': (1, None, 0.01),
+                'object_ctime': (1, None, 0.01, 's'),
             }
         }
 
@@ -81,7 +81,7 @@ class S3apiUploadLargeObject(S3apiCheck):
         self.reference = {
             '*': {
                 # above 10MB/s is ok
-                'upload_rate': (10485760, -0.5, None),
+                'upload_rate': (10485760, -0.5, None, 'MB/s'),
             }
         }
 
@@ -104,7 +104,7 @@ class S3apiDownloadLargeObject(S3apiCheck):
         self.reference = {
             '*': {
                 # above 10MB/s is ok
-                'download_rate': (10485760, -0.5, None),
+                'download_rate': (10485760, -0.5, None, 'MB/s'),
             }
         }
 
@@ -127,6 +127,6 @@ class S3apiDeleteBucketObject(S3apiCheck):
         self.reference = {
             '*': {
                 # below 1.1 secs is ok
-                'object_dtime': (1, None, 0.01),
+                'object_dtime': (1, None, 0.01, 's'),
             }
         }

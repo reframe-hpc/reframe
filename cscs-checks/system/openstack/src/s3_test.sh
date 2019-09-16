@@ -1,6 +1,6 @@
 #!/bin/sh
 
-virtualenv s3virtenv
+python3 -m venv s3virtenv
 source s3virtenv/bin/activate
 pip install boto
 
