@@ -1,11 +1,15 @@
 #
-# Decorators for registering tests with the framework
+# Decorators used for the definition of tests
 #
 
-__all__ = ['parameterized_test', 'simple_test', 'required_version']
+__all__ = [
+    'parameterized_test', 'simple_test', 'required_version',
+    'run_before', 'run_after'
+]
 
 
 import collections
+import functools
 import inspect
 import sys
 import traceback
@@ -155,3 +159,41 @@ def required_version(*versions):
         return cls
 
     return _skip_tests
+
+
+def _runx(phase):
+    def deco(func):
+        if hasattr(func, '_rfm_attach'):
+            func._rfm_attach.append(phase)
+        else:
+            func._rfm_attach = [phase]
+
+        @functools.wraps(func)
+        def _fn(*args, **kwargs):
+            func(*args, **kwargs)
+
+        return _fn
+
+    return deco
+
+
+def run_before(stage):
+    '''Run the decorated function before the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('pre_' + stage)
+
+
+def run_after(stage):
+    '''Run the decorated function after the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('post_' + stage)
