@@ -192,6 +192,17 @@ class RegressionTest:
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
+    #: The container platform to be used for this test.
+    #:
+    #: If the `self.container_platform` is defined on the test, both
+    #: `self.executable` and `self.executable_opts` are ignored.
+    #:
+    #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.19
+    container_platform = ContainerPlatformField('container_platform', type(None))
+
     #: List of shell commands to execute before launching this job.
     #:
     #: These commands do not execute in the context of ReFrame.
@@ -578,6 +589,7 @@ class RegressionTest:
         self.tags = set()
         self.maintainers = []
         self._perfvalues = {}
+        self.container_platform = None
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -1055,6 +1067,24 @@ class RegressionTest:
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        if self.container_platform:
+            try:
+                self._extra_env = self._current_partition.container_environs[self.container_platform.__class__.__name__]
+            except KeyError as e:
+                self.logger.debug('no configuration found for container platform: %s' % e)
+
+            self.container_platform.validate()
+            self.container_platform.mount_points = [
+                (self._stagedir, self.container_platform.workdir)
+            ]
+
+            # We replace executable and executable_opts in the case of containers.
+            self.executable = self.container_platform.emit_launch_cmds()
+            self.executable_opts = []
+            pre_run_container = self.container_platform.emit_prepare_cmds()
+            if pre_run_container:
+                self.pre_run += pre_run_container
+
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
@@ -1253,20 +1283,9 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    #: The container platform to be used for this test.
-    #:
-    #: If the `self.container_platform` is defined on the test, both
-    #: `self.executable` and `self.executable_opts` are ignored.
-    #:
-    #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
-    #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.19
-    container_platform = ContainerPlatformField('container_platform', type(None))
 
     def __init__(self, name=None, prefix=None):
         super().__init__(name, prefix)
-        self.container_platform = None
 
     def compile(self):
         """The compilation phase of the regression test pipeline.
@@ -1292,24 +1311,6 @@ class RunOnlyRegressionTest(RegressionTest):
             else:
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
-
-        if self.container_platform:
-            try:
-                self._extra_env = self._current_partition.container_environs[self.container_platform.__class__.__name__]
-            except KeyError as e:
-                self.logger.debug('no configuration found for container platform: %s' % e)
-
-            self.container_platform.validate()
-            self.container_platform.mount_points = [
-                (self._stagedir, self.container_platform.workdir)
-            ]
-
-            # We replace executable and executable_opts in the case of containers.
-            self.executable = self.container_platform.emit_launch_cmds()
-            self.executable_opts = []
-            pre_run_container = self.container_platform.emit_prepare_cmds()
-            if pre_run_container:
-                self.pre_run += pre_run_container
 
         super().run()
 
