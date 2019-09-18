@@ -14,7 +14,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
         super().__init__()
         self._tasks = []
 
-    def runcase(self, case, keep_stage):
+    def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
 
@@ -22,9 +22,6 @@ class SerialExecutionPolicy(ExecutionPolicy):
             'RUN', '%s on %s using %s' %
             (check.name, partition.fullname, environ.name)
         )
-
-        print('Keep stage?')
-        print(keep_stage)
 
         task = RegressionTask(case)
         self._tasks.append(task)
@@ -49,12 +46,10 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            print('In policy')
-            print(case)
-            print(keep_stage)
-
-#            if not keep_stage:
-#                task.cleanup(not self.keep_stage_files, False)
+            # Execute cleanup of current case if all dependent cases have been
+            # executed
+            if self.dependency_count[case] == 0:
+                task.cleanup(not self.keep_stage_files, False)
 
         except TaskExit:
             return
@@ -64,6 +59,21 @@ class SerialExecutionPolicy(ExecutionPolicy):
         except BaseException:
             task.fail(sys.exc_info())
         finally:
+
+            # Execute cleanup of dependencies if all dependent cases have been
+            # executed
+            for dep in self.dependency_tree[case]:
+                self.dependency_count[dep] = -1
+                if self.dependency_count[dep] == 0:
+                    # Check if dep has failed before cleaning
+                    for t in self.stats.tasks():
+                        if t.testcase == dep and t.failed is False:
+                            dependency_clean_up_task = RegressionTask(dep)
+                            dependency_clean_up_task.cleanup(
+                                not self.keep_stage_files,
+                                False)
+                            break
+
             self.printer.status('FAIL' if task.failed else 'OK',
                                 task.check.info(), just='right')
 
@@ -153,7 +163,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._retired_tasks.append(task)
 
-    def runcase(self, case, keep_stage):
+    def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
 

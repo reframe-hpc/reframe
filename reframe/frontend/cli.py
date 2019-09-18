@@ -11,6 +11,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
+import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
@@ -487,6 +488,12 @@ def main():
 
         # Act on checks
 
+        # Build dependency graph and reorder test case accordingly
+        dependency_graph = dependency.build_deps(testcases)
+        dependency.validate_deps(dependency_graph)
+        dependency.print_deps(dependency_graph)
+        testcases = dependency.toposort(dependency_graph)
+
         # Unload regression's module and load user-specified modules
         if settings.reframe_module:
             rt.modules_system.unload_module(settings.reframe_module)
@@ -557,6 +564,10 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
+            exec_policy.dependency_tree = dependency_graph
+            exec_policy.dependency_count = dependency.create_deps_count(
+                dependency_graph)
+
             try:
                 max_retries = int(options.max_retries)
             except ValueError:

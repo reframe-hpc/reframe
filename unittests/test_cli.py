@@ -414,6 +414,13 @@ class TestFrontend(unittest.TestCase):
         self.action = 'run'
         self.more_options = ['-n', 'Dependency']
         returncode, stdout, _ = self._run_reframe()
-        print(stdout)
         self.assertIn('Running 4 check(s)', stdout)
-        self.assertEqual(1, returncode)
+        self.assertEqual(0, returncode)
+
+    def test_multi_dependency_cli(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.action = 'run'
+        self.more_options = ['-n', 'MultiDependency']
+        returncode, stdout, _ = self._run_reframe()
+        self.assertIn('Running 7 check(s)', stdout)
+        self.assertEqual(0, returncode)

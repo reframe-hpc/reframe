@@ -27,6 +27,8 @@ class TestCase:
         self.__partition = copy.deepcopy(partition)
         self.__environ = copy.deepcopy(environ)
         self.__check._case = weakref.ref(self)
+
+        # TODO: this member is not used
         self.__deps = []
 
     def __iter__(self):
@@ -262,25 +264,7 @@ class Runner:
         self._printer.timestamp('Started on', 'short double line')
         self._printer.info('')
         try:
-            # TODO: dependenct-specific exception handling needed here
-            dependency_graph = dependency.build_deps(testcases)
-            dependency.validate_deps(dependency_graph)
-            dependency.print_deps(dependency_graph)
-            ordered_tests = dependency.toposort(dependency_graph)
-            keep_stage_flag = []
-            for t in ordered_tests:
-                is_dependency = False
-                for c, deps in dependency_graph.items():
-                    if is_dependency is True:
-                        break
-                    if t in deps:
-                        is_dependency = True
-                        break
-                keep_stage_flag.append(is_dependency)
-            
-            print(keep_stage_flag)
-            print('CHRI')
-            self._runall(ordered_tests, keep_stage_flag)
+            self._runall(testcases)
             if self._max_retries:
                 self._retry_failed(testcases)
 
@@ -310,7 +294,7 @@ class Runner:
             self._runall(t.testcase.clone() for t in failures)
             failures = self._stats.failures()
 
-    def _runall(self, testcases, keep_stage_flag):
+    def _runall(self, testcases):
         def print_separator(check, prefix):
             self._printer.separator(
                 'short single line',
@@ -319,8 +303,7 @@ class Runner:
 
         self._policy.enter()
         last_check = None
-#        for t in testcases:
-        for index, t in enumerate(testcases): 
+        for t in testcases:
             if last_check is None or last_check.name != t.check.name:
                 if last_check is not None:
                     print_separator(last_check, 'finished processing')
@@ -330,7 +313,7 @@ class Runner:
                 last_check = t.check
 
             self._environ_snapshot.load()
-            self._policy.runcase(t, keep_stage_flag[index])
+            self._policy.runcase(t)
 
         # Close the last visual box
         if last_check is not None:
@@ -370,6 +353,10 @@ class ExecutionPolicy(abc.ABC):
         self.task_listeners = []
 
         self.stats = None
+
+        # Check dependencies data
+        self.dependency_tree = []
+        self.dependency_count = []
 
     def __repr__(self):
         return debug.repr(self)
