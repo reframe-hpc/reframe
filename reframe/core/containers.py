@@ -78,9 +78,66 @@ class Docker(ContainerPlatform):
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        docker_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
-        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(docker_opts),
+        run_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
+        run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(run_opts),
                                                       self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
+
+    def validate(self):
+        super().validate()
+
+
+class ShifterNG(ContainerPlatform):
+    """An implementation of ContainerPlatform to run containers with
+    ShifterNG."""
+    def __init__(self):
+        self.with_mpi = False
+        super().__init__()
+
+    def emit_prepare_cmds(self):
+        pass
+
+    def emit_launch_cmds(self):
+        super().emit_launch_cmds()
+        run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
+                    mp for mp in self.mount_points]
+        if self.with_mpi:
+            mpi_opt = '--mpi '
+        else:
+            mpi_opt = ''
+
+        run_cmd = 'shifter run %s%s %s bash -c ' % (mpi_opt,
+                                                    ' '.join(run_opts),
+                                                    self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
+
+    def validate(self):
+        super().validate()
+
+
+class Singularity(ContainerPlatform):
+    """An implementation of ContainerPlatform to run containers with
+    Singularity."""
+    def __init__(self):
+        self.with_cuda = False
+        super().__init__()
+
+    def emit_prepare_cmds(self):
+        pass
+
+    def emit_launch_cmds(self):
+        super().emit_launch_cmds()
+        exec_opts = ['-B"%s","%s"' % mp for mp in self.mount_points]
+        if self.with_cuda:
+            cuda_opt = '--nv '
+        else:
+            cuda_opt = ''
+
+        run_cmd = 'singularity exec %s%s %s bash -c ' % (cuda_opt,
+                                                         ' '.join(exec_opts),
+                                                         self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
 

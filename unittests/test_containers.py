@@ -64,5 +64,43 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def exp_cmd_custom_registry(self):
-        return ('docker run --rm -v "/path/one":"/one" registry/custom/name:tag '
+        return ('docker run --rm -v "/path/one":"/one" '
+                'registry/custom/name:tag '
+                "bash -c 'cd /stagedir; cmd'")
+
+
+class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
+    def create_container_platform(self):
+        return containers.ShifterNG()
+
+    @property
+    def exp_cmd_mount_points(self):
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+
+    @property
+    def exp_cmd_custom_registry(self):
+        self.container_platform.with_mpi = True
+        return ('shifter run --mpi '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                'registry/custom/name:tag '
+                "bash -c 'cd /stagedir; cmd'")
+
+
+class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
+    def create_container_platform(self):
+        return containers.Singularity()
+
+    @property
+    def exp_cmd_mount_points(self):
+        return ('singularity exec -B"/path/one","/one" -B"/path/two","/two" '
+                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+
+    @property
+    def exp_cmd_custom_registry(self):
+        self.container_platform.with_cuda = True
+        return ('singularity exec --nv -B"/path/one","/one" '
+                'registry/custom/name:tag '
                 "bash -c 'cd /stagedir; cmd'")

@@ -551,7 +551,6 @@ class RegressionTest:
     _current_environ = fields.TypedField('_current_environ',
                                          Environment, type(None))
     _user_environ = fields.TypedField('_user_environ', Environment, type(None))
-    _extra_env = fields.TypedField('_extra_env', Environment, type(None))
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
 
@@ -631,7 +630,6 @@ class RegressionTest:
         self._current_partition = None
         self._current_environ = None
         self._user_environ = None
-        self._extra_env = None
 
         # Associated job
         self._job = None
@@ -1069,9 +1067,12 @@ class RegressionTest:
 
         if self.container_platform:
             try:
-                self._extra_env = self._current_partition.container_environs[self.container_platform.__class__.__name__]
+                cp_name = self.container_platform.__class__.__name__
+                cp_env = self._current_partition.container_environs[cp_name]
             except KeyError as e:
-                self.logger.debug('no configuration found for container platform: %s' % e)
+                cp_env = None
+                self.logger.debug('no configuration found for container '
+                                  'platform: %s' % e)
 
             self.container_platform.validate()
             self.container_platform.mount_points = [
@@ -1090,8 +1091,9 @@ class RegressionTest:
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
         environs = [self._current_partition.local_env,
                     self._current_environ, self._user_environ]
-        if self._extra_env:
-            environs.append(self._extra_env)
+        if cp_env:
+            environs = [self._current_partition.local_env,
+                        self._current_environ, cp_env, self._user_environ]
 
         with os_ext.change_dir(self._stagedir):
             try:
@@ -1282,8 +1284,6 @@ class RunOnlyRegressionTest(RegressionTest):
     This class is also directly available under the top-level :mod:`reframe`
     module.
     """
-
-
     def __init__(self, name=None, prefix=None):
         super().__init__(name, prefix)
 
