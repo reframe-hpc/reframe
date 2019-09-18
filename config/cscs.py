@@ -11,6 +11,72 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
+            'ault': {
+                'descr': 'Ault TDS',
+                'hostnames': ['ault'],
+                'modules_system': 'lmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+                    'amdv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 2x NVIDIA V100',
+                        'max_jobs': 100,
+                    },
+                    'amdvega': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pamdvega'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'AMD Naples 32c + 3x AMD GFX900',
+                        'max_jobs': 100,
+                    },
+                    'intelv100': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintelv100'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
+                        'max_jobs': 100,
+                    },
+                    'intel': {
+                        'scheduler': 'nativeslurm',
+                        'access':  ['-pintel'],
+                        'environs': ['PrgEnv-gnu'],
+                        'descr': 'Intel Skylake 36c',
+                        'max_jobs': 100,
+                    }
+                }
+            },
+
+            'tave': {
+                'descr': 'Grand Tave',
+                'hostnames': ['tave'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Login nodes',
+                        'max_jobs': 4
+                    },
+                    'compute': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'descr': 'Intel Xeon Phi',
+                        'max_jobs': 100,
+                    }
+                }
+            },
+
             'daint': {
                 'descr': 'Piz Daint',
                 'hostnames': ['daint'],
@@ -61,12 +127,14 @@ class ReframeSettings:
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
+                    # FIXME: temporarily disable PrgEnv-pgi on all partitions
                     'login': {
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
@@ -75,8 +143,9 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -88,8 +157,9 @@ class ReframeSettings:
                         'scheduler': 'nativeslurm',
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
+                                     'PrgEnv-gnu', 'PrgEnv-intel',
+                                     'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
@@ -136,7 +206,7 @@ class ReframeSettings:
 
             'kesch': {
                 'descr': 'Kesch MCH',
-                'hostnames': ['keschln-\d+'],
+                'hostnames': [r'keschln-\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
@@ -152,13 +222,7 @@ class ReframeSettings:
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -167,13 +231,7 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -243,32 +301,63 @@ class ReframeSettings:
         },
 
         'environments': {
+
+            'ault': {
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
+                    'modules': ['gcc', 'cuda/10.1', 'openmpi'],
+                    'cc':  'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'builtin': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'cc',
+                    'cxx': '',
+                    'ftn': '',
+                },
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                }
+            },
+
             'kesch': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-pgi/18.5'],
                     'cc': 'pgcc',
                     'cxx': 'pgc++',
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_gdr'],
+                    'modules': [
+                        'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
+                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
+                    ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-CrayCCE/17.06'],
                 },
                 'PrgEnv-cray-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'modules': ['PE/17.06',
+                                'gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
                         'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
                     },
@@ -278,7 +367,8 @@ class ReframeSettings:
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -326,6 +416,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'leone': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -335,6 +426,7 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
             },
+
             'monch': {
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -344,10 +436,16 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 }
             },
+
             '*': {
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
+                },
+
+                'PrgEnv-cray_classic': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray', 'cce/9.0.0-classic'],
                 },
 
                 'PrgEnv-gnu': {
