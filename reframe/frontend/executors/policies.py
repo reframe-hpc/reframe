@@ -63,7 +63,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
             # Execute cleanup of dependencies if all dependent cases have been
             # executed
             for dep in self.dependency_tree[case]:
-                self.dependency_count[dep] = -1
+                self.dependency_count[dep] -= 1
                 if self.dependency_count[dep] == 0:
                     # Check if dep has failed before cleaning
                     for t in self.stats.tasks():
