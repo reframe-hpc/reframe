@@ -190,6 +190,9 @@ class ReframeSettings:
                             },
                             'Singularity': {
                                 'modules': ['singularity']
+                            },
+                            'Sarus': {
+                                'modules': ['sarus/cle7up01-test']
                             }
                         },
                         'modules': ['daint-mc'],

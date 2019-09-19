@@ -145,6 +145,35 @@ class Singularity(ContainerPlatform):
         super().validate()
 
 
+class Sarus(ContainerPlatform):
+    """An implementation of ContainerPlatform to run containers with
+    Sarus."""
+    def __init__(self):
+        self.with_mpi = False
+        super().__init__()
+
+    def emit_prepare_cmds(self):
+        pass
+
+    def emit_launch_cmds(self):
+        super().emit_launch_cmds()
+        run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
+                    mp for mp in self.mount_points]
+        if self.with_mpi:
+            mpi_opt = '--mpi '
+        else:
+            mpi_opt = ''
+
+        run_cmd = 'sarus run %s%s %s bash -c ' % (mpi_opt,
+                                                  ' '.join(run_opts),
+                                                  self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
+
+    def validate(self):
+        super().validate()
+
+
 class ContainerPlatformField(fields.TypedField):
     """A field representing a container platforms.
 
