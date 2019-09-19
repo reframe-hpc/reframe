@@ -1,5 +1,6 @@
 import abc
 import copy
+import collections
 import sys
 import weakref
 
@@ -355,7 +356,7 @@ class ExecutionPolicy(abc.ABC):
         self.stats = None
 
         # Check dependencies data
-        self.dependency_tree = []
+        self.dependency_tree = collections.OrderedDict()
         self.dependency_count = []
 
     def __repr__(self):
