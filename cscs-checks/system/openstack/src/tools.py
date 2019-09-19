@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 import boto.s3.connection
 
 
@@ -42,6 +43,8 @@ def delete_reframe_buckets(conn, system):
                 obj.delete()
             #for debugging, listing again the bucket content after
             # having deleted its objects
+            print('Sleeping some seconds to give time to the delete op.')
+            time.sleep(10)
             for obj in bkt.list():
                 print('This object is still in the bucket: %s' % obj.name)
             print('Deleting bucket %s.' % bkt.name)
