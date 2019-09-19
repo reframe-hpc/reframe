@@ -259,6 +259,16 @@ class Runner:
         return self._stats
 
     def runall(self, testcases):
+
+        # Build dependency graph and reorder test case accordingly
+        dependency_graph = dependency.build_deps(testcases)
+        dependency.validate_deps(dependency_graph)
+        dependency.print_deps(dependency_graph)
+        testcases = dependency.toposort(dependency_graph)
+        self._policy.dependency_tree = dependency_graph
+        self._policy.dependency_count = dependency.create_deps_count(
+            dependency_graph)
+
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
