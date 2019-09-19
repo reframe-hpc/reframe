@@ -41,6 +41,14 @@ def delete_reframe_buckets(conn, system):
             for obj in bkt.list():
                 print('Removing object %s' % obj.name)
                 obj.delete()
+            print('Removing bucket %s and its objects' % bkt.name)
+            for obj in bkt.list():
+                print('Removing object %s' % obj.name)
+                obj.delete()
+            print('Removing bucket %s and its objects' % bkt.name)
+            for obj in bkt.list():
+                print('Removing object %s' % obj.name)
+                obj.delete()
             #for debugging, listing again the bucket content after
             # having deleted its objects
             print('Sleeping some seconds to give time to the delete op.')
