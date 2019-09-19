@@ -1091,7 +1091,7 @@ class RegressionTest:
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
         environs = [self._current_partition.local_env,
                     self._current_environ, self._user_environ]
-        if cp_env:
+        if self.container_platform and cp_env:
             environs = [self._current_partition.local_env,
                         self._current_environ, cp_env, self._user_environ]
 
