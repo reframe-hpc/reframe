@@ -7,3 +7,5 @@ pip install boto
 which python
 
 python $1 $2
+
+deactivate

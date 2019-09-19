@@ -3,6 +3,7 @@
 import time
 import sys
 import subprocess
+import tempfile
 import tools
 
 system = sys.argv[1]
@@ -14,8 +15,8 @@ nobjects = 10
 bkt_name = '%s_reframe_s3_bucket_0' % system
 bkt = conn.get_bucket(bkt_name)
 
-test_file = 'testfile.txt'
-cmd = 'dd if=/dev/zero of=%s bs=1M count=1024' % test_file
+test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
+cmd = 'dd if=/dev/zero of=%s bs=1M count=1024' % test_file.name
 p = subprocess.Popen(cmd.split(),
                      stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE)
@@ -27,7 +28,7 @@ for count in range(nobjects):
     obj_name = 'obj_large_%d' % count
     print('Creating object %s' % obj_name)
     obj = bkt.new_key(obj_name)
-    obj.set_contents_from_filename(test_file)
+    obj.set_contents_from_filename(test_file.name)
 
 end = time.time()
 
