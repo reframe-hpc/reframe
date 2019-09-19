@@ -1,6 +1,7 @@
 import copy
 import itertools
 import os
+import pytest
 import re
 import sys
 import tempfile
@@ -408,3 +409,24 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(0, returncode)
+
+    @fixtures.switch_to_user_runtime
+    def test_unload_module(self):
+        # This test is mostly for ensuring coverage. `_run_reframe()` restores
+        # the current environment, so it is not easy to verify that the modules
+        # are indeed unloaded. However, this functionality is tested elsewhere
+        # more exhaustively.
+
+        ms = rt.runtime().modules_system
+        if ms.name == 'nomod':
+            pytest.skip('no modules system found')
+
+        ms.searchpath_add('unittests/modules')
+        ms.load_module('testmod_foo')
+        self.more_options = ['-u testmod_foo']
+        self.action = 'list'
+        returncode, stdout, stderr = self._run_reframe()
+        assert stdout != ''
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert returncode == 0
