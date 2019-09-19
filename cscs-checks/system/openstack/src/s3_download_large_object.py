@@ -20,7 +20,7 @@ start = time.time()
 
 for count in range(nobjects):
     obj_name = 'obj_large_%d' % count
-    print('Downloaing object %s to file %s' % (obj_name, test_file))
+    print('Downloading object %s to file %s' % (obj_name, test_file))
     obj = bkt.new_key(obj_name)
     obj.get_contents_to_filename(test_file)
 
