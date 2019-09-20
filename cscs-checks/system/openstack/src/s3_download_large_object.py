@@ -17,6 +17,8 @@ print(conn.get_all_buckets())
 bkt_name = '%s_reframe_s3_bucket_0' % system
 bkt = conn.get_bucket(bkt_name)
 
+print(bkt.list())
+
 test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
 
 start = time.time()
