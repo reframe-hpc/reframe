@@ -16,8 +16,8 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         tf_version = '1.14.0'
         cuda_version = '10.1.168'
         tc_version = '19.09'
-        self.modules = ['TensorFlow/%s-CrayGNU-19.09-cuda-%s-python3' %
-                        (tf_version, cuda_version)]
+        self.modules = ['TensorFlow/%s-CrayGNU-%s-cuda-%s-python3' %
+                        (tf_version, tc_version, cuda_version)]
 
         # Checkout to the branch corresponding to the module version of
         # TensorFlow
