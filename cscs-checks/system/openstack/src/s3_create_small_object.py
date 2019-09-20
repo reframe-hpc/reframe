@@ -10,7 +10,7 @@ conn = tools.get_connection()
 
 nobjects = 10
 
-print('All buckets: ', conne.get_all_buckets())
+print('All buckets: ', conn.get_all_buckets())
 
 bkt_name = '%s_reframe_s3_bucket_0' % system
 bkt = conn.get_bucket(bkt_name)
