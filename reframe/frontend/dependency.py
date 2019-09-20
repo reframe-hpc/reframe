@@ -2,6 +2,9 @@
 # Test case graph functionality
 #
 
+import collections
+import itertools
+
 import reframe as rfm
 import reframe.utility as util
 from reframe.core.exceptions import DependencyError
@@ -46,7 +49,9 @@ def build_deps(cases):
     # e stands for environment
     # t stands for target
 
-    graph = {}
+    # We use an ordered dict here, because we need to keep the order of
+    # partitions and environments
+    graph = collections.OrderedDict()
     for c in cases:
         cname = c.check.name
         pname = c.partition.fullname
@@ -131,83 +136,34 @@ def validate_deps(graph):
         sources -= visited
 
 
-def _reverse_deps(graph):
-    ret = {}
-    for n, deps in graph.items():
-        ret.setdefault(n, util.OrderedSet({}))
-        for d in deps:
-            try:
-                ret[d] |= {n}
-            except KeyError:
-                ret[d] = util.OrderedSet({n})
-
-    return ret
-
-
 def toposort(graph):
-    # NOTES on implementation:
-    #
-    # 1. This function assumes a directed acyclic graph.
-    # 2. The purpose of this function is to topologically sort the test cases,
-    #    not only the tests. However, since we do not allow cycles between
-    #    tests in any case (even if this could be classified a
-    #    pseudo-dependency), we first do a topological sort of the tests and we
-    #    subsequently sort the test cases by partition and by programming
-    #    environment.
-    # 3. To achieve this 3-step sorting with a single sort operations, we rank
-    #    the test cases by associating them with an integer key based on the
-    #    result of the topological sort of the tests and by choosing an
-    #    arbitrary ordering of the partitions and the programming environment.
-
     test_deps = _reduce_deps(graph)
-    rev_deps  = _reverse_deps(test_deps)
+    visited = util.OrderedSet()
 
-    # We do a BFS traversal from each root
-    visited = {}
-    roots = set(t for t, deps in test_deps.items() if not deps)
-    for r in roots:
-        unvisited = util.OrderedSet([r])
-        visited[r] = util.OrderedSet()
-        while unvisited:
-            # Next node is one whose all dependencies are already visited
-            # FIXME: This makes sorting's complexity O(V^2)
-            node = None
-            for n in unvisited:
-                if test_deps[n] <= visited[r]:
-                    node = n
-                    break
+    def visit(node, path):
+        # We assume an acyclic graph
+        assert node not in path
 
-            # If node is None, graph has a cycle and this is a bug; this
-            # function assumes acyclic graphs only
-            assert node is not None
+        path.add(node)
 
-            unvisited.remove(node)
-            adjacent = rev_deps[node]
-            unvisited |= util.OrderedSet(
-                n for n in adjacent if n not in visited
-            )
-            visited[r].add(node)
+        # Do a DFS visit of all the adjacent nodes
+        for adj in test_deps[node]:
+            if adj not in visited:
+                visit(adj, path)
 
-    # Combine all individual sequences into a single one
-    ordered_tests = util.OrderedSet()
-    for tests in visited.values():
-        ordered_tests |= tests
+        path.pop()
+        visited.add(node)
 
-    # Get all partitions and programming environments from test cases
-    partitions = util.OrderedSet()
-    environs = util.OrderedSet()
+    for r in test_deps.keys():
+        if r not in visited:
+            visit(r, util.OrderedSet())
+
+    # Index test cases by test name
+    cases_by_name = {}
     for c in graph.keys():
-        partitions.add(c.partition.fullname)
-        environs.add(c.environ.name)
+        try:
+            cases_by_name[c.check.name].append(c)
+        except KeyError:
+            cases_by_name[c.check.name] = [c]
 
-    # Rank test cases; we first need to calculate the base for the rank number
-    base = max(len(partitions), len(environs)) + 1
-    ranks = {}
-    for i, test in enumerate(ordered_tests):
-        for j, part in enumerate(partitions):
-            for k, env in enumerate(environs):
-                ranks[test, part, env] = i*base**2 + j*base + k
-
-    return sorted(graph.keys(),
-                  key=lambda x: ranks[x.check.name,
-                                      x.partition.fullname, x.environ.name])
+    return list(itertools.chain(*(cases_by_name[n] for n in visited)))

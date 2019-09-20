@@ -12,7 +12,6 @@ class CudaCheck(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-gnu-nompi']
-
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         if self.current_system.name == 'kesch':
