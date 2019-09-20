@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Example7Test(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Matrix-vector multiplication (CUDA performance test)'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-cray', 'PrgEnv-pgi']

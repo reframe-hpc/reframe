@@ -175,7 +175,7 @@ class System:
     _partitions = fields.TypedField('_partitions', typ.List[SystemPartition])
     _modules_system = fields.TypedField('_modules_system',
                                         typ.Str[r'(\w|-)+'], type(None))
-
+    _preload_env = fields.TypedField('_preload_env', Environment, type(None))
     _prefix = fields.TypedField('_prefix', str)
     _stagedir  = fields.TypedField('_stagedir', str, type(None))
     _outputdir = fields.TypedField('_outputdir', str, type(None))
@@ -183,13 +183,14 @@ class System:
     _resourcesdir = fields.TypedField('_resourcesdir', str)
 
     def __init__(self, name, descr=None, hostnames=[], partitions=[],
-                 prefix='.', stagedir=None, outputdir=None, perflogdir=None,
-                 resourcesdir='.', modules_system=None):
+                 preload_env=None, prefix='.', stagedir=None, outputdir=None,
+                 perflogdir=None, resourcesdir='.', modules_system=None):
         self._name  = name
         self._descr = descr or name
         self._hostnames  = list(hostnames)
         self._partitions = list(partitions)
         self._modules_system = modules_system
+        self._preload_env = preload_env
         self._prefix = prefix
         self._stagedir = stagedir
         self._outputdir = outputdir
@@ -219,6 +220,15 @@ class System:
     def modules_system(self):
         """The modules system name associated with this system."""
         return self._modules_system
+
+    @property
+    def preload_environ(self):
+        """The environment to load whenever ReFrame runs on this system.
+
+        .. note::
+           .. versionadded:: 2.19
+        """
+        return self._preload_env
 
     @property
     def prefix(self):

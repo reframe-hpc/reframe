@@ -49,6 +49,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <cstdlib>
 
 #include <nvml.h>
 #include <cuda.h>
@@ -508,13 +509,14 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid, int 
     printf("Node %s:\n", hostname);
 
     // printf(" Tested %d GPUs: ", (int)clientPid.size());
-    for (size_t i = 0; i < clientPid.size(); ++i)
-        printf("  GPU %2d(%s): %4.0f GF/s\n", (int)i,clientFaulty.at(i) ? "FAULTY" : "OK", clientGflops.at(i));
+    for (size_t i = 0; i < clientPid.size(); ++i) {
+        printf("  GPU %2d(%s): %4.0f GF/s  %i Celsius\n", (int)i,clientFaulty.at(i) ? "FAULTY" : "OK", clientGflops.at(i), clientTemp.at(i));
+    }
     printf("\n");
 }
 
 template<class T> void launch(int runLength, bool useDoubles) {
-    // system("nvidia-smi -L");
+    //    std::system("nvidia-smi -L");
 
     // Initializing A and B with random data
     T *A = (T*) malloc(sizeof(T)*SIZE*SIZE);

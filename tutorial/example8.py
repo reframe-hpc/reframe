@@ -4,7 +4,6 @@ import reframe.utility.sanity as sn
 
 class BaseMatrixVectorTest(rfm.RegressionTest):
     def __init__(self, test_version):
-        super().__init__()
         self.descr = '%s matrix-vector multiplication' % test_version
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -27,11 +26,11 @@ class BaseMatrixVectorTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setflags(self):
         if self.prgenv_flags is not None:
-            self.build_system.cflags = self.prgenv_flags[environ.name]
-
-        super().setup(partition, environ, **job_opts)
+            env = self.current_environ.name
+            self.build_system.cflags = self.prgenv_flags[env]
 
 
 @rfm.simple_test

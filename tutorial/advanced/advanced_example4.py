@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class EnvironmentVariableTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('ReFrame tutorial demonstrating the use'
                       'of environment variables provided by loaded modules')
         self.valid_systems = ['daint:gpu']

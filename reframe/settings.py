@@ -11,11 +11,8 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
-            # Generic system used also in unit tests
             'generic': {
                 'descr': 'Generic example system',
-
-                # Adjust to your system's hostname
                 'hostnames': ['localhost'],
                 'partitions': {
                     'login': {

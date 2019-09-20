@@ -100,6 +100,11 @@ The valid attributes of a system are the following:
   - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (versions older than 3.2 are not supported).
   - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions older than 4.1 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
+
+* ``modules``: Modules to be loaded always when running on this system.
+  These modules modify the ReFrame environment.
+  This is useful when for example a particular module is needed to submit jobs on a specific system.
+* ``variables``: Environment variables to be set always when running on this system.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
@@ -113,6 +118,11 @@ For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` a
 .. note::
   .. versionadded:: 2.8
     The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
+
+.. note::
+  .. versionadded:: 2.19
+    The ``modules`` and ``variables`` configuration parameters were introduced at the system level.
+
 
 .. warning::
    .. versionchanged:: 2.18
@@ -218,9 +228,15 @@ The available partition attributes are the following:
      A new syntax for the ``scheduler`` values was introduced as well as more parallel program launchers.
      The old values for the ``scheduler`` key will continue to be supported.
 
+.. note::
    .. versionchanged:: 2.9
-      Better support for custom job resources.
+     Better support for custom job resources.
 
+.. note::
+  .. versionchanged:: 2.14
+     The ``modules`` and ``variables`` partition configuration parameters do not affect the ReFrame environment anymore.
+     They essentially define an environment to be always emitted when building and/or running the test on this partition.
+     If you want to modify the environment ReFrame runs in for a particular system, define these parameters inside the `system configuration <#system-configuration>`__.
 
 
 Supported scheduler backends
@@ -314,17 +330,57 @@ The possible attributes of an environment are the following:
 System Auto-Detection
 ---------------------
 
-When the ReFrame is launched, it tries to auto-detect the current system based on its site configuration. The auto-detection process is as follows:
+When ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
 
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found the hostname will be obtained from the standard ``hostname`` command. Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
+If this cannot be found the hostname will be obtained from the standard ``hostname`` command. 
+Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
-If the system cannot be auto-detected, ReFrame will fail with an error message.
+If the system cannot be auto-detected, ReFrame will issue a warning and fall back to a generic system configuration, which is equivalent to the following:
+
+.. code-block:: python
+
+   site_configuration = {
+       'systems': {
+           'generic': {
+               'descr': 'Generic fallback system configuration',
+               'hostnames': ['localhost'],
+               'partitions': {
+                   'login': {
+                       'scheduler': 'local',
+                       'environs': ['builtin-gcc'],
+                       'descr': 'Login nodes'
+                   }
+               }
+           }
+       },
+       'environments': {
+           '*': {
+               'builtin-gcc': {
+                   'type': 'ProgEnvironment',
+                   'cc':  'gcc',
+                   'cxx': 'g++',
+                   'ftn': 'gfortran',
+               }
+           }
+       }
+   }
+
+
+
+
 You can override completely the auto-detection process by specifying a system or a system partition with the ``--system`` option (e.g., ``--system daint`` or ``--system daint:gpu``).
 
+.. note::
+   Instead of issuing an error, ReFrame falls back to a generic system configuration in case system auto-detection fails.
 
-Showing configuration
----------------------
+   .. versionchanged:: 2.19
+
+
+
+
+Viewing the current system configuration
+----------------------------------------
 
 .. versionadded:: 2.16
 

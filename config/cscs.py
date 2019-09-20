@@ -262,13 +262,7 @@ class ReframeSettings:
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -277,13 +271,7 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-cray-c2sm',
-                                     'PrgEnv-pgi-c2sm',
-                                     'PrgEnv-gnu-c2sm',
-                                     'PrgEnv-cray-c2sm-gpu',
-                                     'PrgEnv-pgi-c2sm-gpu',
-                                     'PrgEnv-gnu-c2sm-gpu'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -380,29 +368,36 @@ class ReframeSettings:
             'kesch': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-pgi/18.5'],
                     'cc': 'pgcc',
                     'cxx': 'pgc++',
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/17.10_gdr'],
+                    'modules': [
+                        'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
+                        'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
+                    ],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray/1.0.2_gdr'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-CrayCCE/17.06'],
                 },
                 'PrgEnv-cray-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['gmvapich2/17.02_cuda_8.0_gdr'],
+                    'modules': ['PE/17.06',
+                                'gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
                         'LD_PRELOAD': '$(pkg-config --variable=libdir mvapich2-gdr)/libmpi.so'
                     },
@@ -412,7 +407,8 @@ class ReframeSettings:
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
+                    'modules': ['PE/17.06',
+                                'PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',

@@ -7,6 +7,7 @@ __all__ = ['RegressionTest',
            'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
 
+import functools
 import inspect
 import itertools
 import os
@@ -26,6 +27,7 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
@@ -38,7 +40,35 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY  = 3
 
 
-class RegressionTest:
+def _run_hooks(name=None):
+    def _deco(func):
+        def hooks(obj, kind):
+            if name is None:
+                hook_name = kind + func.__name__
+            elif name is not None and name.startswith(kind):
+                hook_name = name
+            else:
+                # Just any name that does not exist
+                hook_name = 'xxx'
+
+            return obj._rfm_pipeline_hooks.get(hook_name, [])
+
+        '''Run the hooks before and after func.'''
+        @functools.wraps(func)
+        def _fn(obj, *args, **kwargs):
+            for h in hooks(obj, 'pre_'):
+                h(obj)
+
+            func(obj, *args, **kwargs)
+            for h in hooks(obj, 'post_'):
+                h(obj)
+
+        return _fn
+
+    return _deco
+
+
+class RegressionTest(metaclass=RegressionTestMeta):
     """Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
@@ -556,7 +586,6 @@ class RegressionTest:
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
-        obj._prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
 
         # Create a test name from the class name and the constructor's
         # arguments
@@ -566,10 +595,14 @@ class RegressionTest:
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj.name = name
+        obj._rfm_init(name,
+                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
         return obj
 
-    def __init__(self, name=None, prefix=None):
+    def __init__(self):
+        pass
+
+    def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
 
@@ -658,8 +691,8 @@ class RegressionTest:
     # Export read-only views to interesting fields
     @property
     def current_environ(self):
-        """The programming environment that the regression test is currently executing
-        with.
+        """The programming environment that the regression test is currently
+        executing with.
 
         This is set by the framework during the :func:`setup` phase.
 
@@ -927,6 +960,7 @@ class RegressionTest:
         self.logger.debug('setting up performance logging')
         self._perf_logger = logging.getperflogger(self)
 
+    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         """The setup phase of the regression test pipeline.
 
@@ -958,6 +992,7 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
+    @_run_hooks('pre_compile')
     def compile(self):
         """The compilation phase of the regression test pipeline.
 
@@ -1013,7 +1048,7 @@ class RegressionTest:
                 else:
                     self.build_system = 'Make'
 
-                self.build_system.srcdir = self.sourcepath
+            self.build_system.srcdir = self.sourcepath
         else:
             if not self.build_system:
                 self.build_system = 'SingleSource'
@@ -1037,12 +1072,13 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                                        login=True, trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
             self._build_job.submit()
 
+    @_run_hooks('post_compile')
     def compile_wait(self):
         """Wait for compilation phase to finish.
 
@@ -1055,6 +1091,7 @@ class RegressionTest:
         if self._build_job.exitcode != 0:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
+    @_run_hooks('pre_run')
     def run(self):
         """The run phase of the regression test pipeline.
 
@@ -1122,6 +1159,7 @@ class RegressionTest:
 
         return self._job.finished()
 
+    @_run_hooks('post_run')
     def wait(self):
         """Wait for this test to finish.
 
@@ -1130,9 +1168,11 @@ class RegressionTest:
         self._job.wait()
         self.logger.debug('spawned job finished')
 
+    @_run_hooks()
     def sanity(self):
         self.check_sanity()
 
+    @_run_hooks()
     def performance(self):
         try:
             self.check_performance()
@@ -1163,6 +1203,39 @@ class RegressionTest:
             return
 
         with os_ext.change_dir(self._stagedir):
+            # Check if default reference perf values are provided and
+            # store all the variables  tested in the performance check
+            has_default = False
+            variables = set()
+            for key, ref in self.reference.items():
+                keyparts = key.split(self.reference.scope_separator)
+                system = keyparts[0]
+                varname = keyparts[-1]
+                try:
+                    unit = ref[3]
+                except IndexError:
+                    unit = None
+
+                variables.add((varname, unit))
+                if system == '*':
+                    has_default = True
+                    break
+
+            if not has_default:
+                if not variables:
+                    # If empty, it means that self.reference was empty, so try
+                    # to infer their name from perf_patterns
+                    variables = {(name, None)
+                                 for name in self.perf_patterns.keys()}
+
+                for var in variables:
+                    name, unit = var
+                    ref_tuple = (0, None, None)
+                    if unit:
+                        ref_tuple += (unit,)
+
+                    self.reference.update({'*': {name: ref_tuple}})
+
             # We first evaluate and log all performance values and then we
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
@@ -1219,6 +1292,7 @@ class RegressionTest:
             elif os.path.isdir(f):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
+    @_run_hooks()
     def cleanup(self, remove_files=False, unload_env=True):
         """The cleanup phase of the regression test pipeline.
 
@@ -1328,8 +1402,8 @@ class CompileOnlyRegressionTest(RegressionTest):
     module.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _rfm_init(self, *args, **kwargs):
+        super()._rfm_init(*args, **kwargs)
         self.local = True
 
     def setup(self, partition, environ, **job_opts):

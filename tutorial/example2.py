@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Example2aTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -21,23 +20,22 @@ class Example2aTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name == 'PrgEnv-cray':
+    @rfm.run_before('compile')
+    def setflags(self):
+        env = self.current_environ.name
+        if env == 'PrgEnv-cray':
             self.build_system.cflags = ['-homp']
-        elif environ.name == 'PrgEnv-gnu':
+        elif env == 'PrgEnv-gnu':
             self.build_system.cflags = ['-fopenmp']
-        elif environ.name == 'PrgEnv-intel':
+        elif env == 'PrgEnv-intel':
             self.build_system.cflags = ['-openmp']
-        elif environ.name == 'PrgEnv-pgi':
+        elif env == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mp']
-
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
 class Example2bTest(rfm.RegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self):
         self.descr = 'Matrix-vector multiplication example with OpenMP'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -59,6 +57,6 @@ class Example2bTest(rfm.RegressionTest):
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
 
-    def setup(self, partition, environ, **job_opts):
-        self.build_system.cflags = self.prgenv_flags[environ.name]
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('compile')
+    def setflags(self):
+        self.build_system.cflags = self.prgenv_flags[self.current_environ.name]
