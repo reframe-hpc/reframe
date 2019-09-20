@@ -11,7 +11,7 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         tfshortver = '1.14'
         self.sourcesdir = 'https://github.com/tensorflow/benchmarks'
-        self.modules = ['Horovod/0.16.4-CrayGNU-19.06-tf-%s.0' % tfshortver]
+        self.modules = ['Horovod/0.16.4-CrayGNU-19.09-tf-%s.0' % tfshortver]
         if variant == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 8
