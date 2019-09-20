@@ -34,27 +34,17 @@ def get_connection():
 def delete_reframe_buckets(conn, system):
     print('Removing Reframe test buckets')
     buckets = conn.get_all_buckets()
-    print('All buckets: ', buckets)
+    # Remove objects in the buckets
     for bkt in buckets:
-        if re.search(system, bkt.name):
-            print('Removing bucket %s and its objects' % bkt.name)
-            for obj in bkt.list():
-                print('Removing object %s' % obj.name)
-                obj.delete()
-                time.sleep(1)
-            print('Removing bucket %s and its objects' % bkt.name)
-            for obj in bkt.list():
-                print('Removing object %s' % obj.name)
-                obj.delete()
-            print('Removing bucket %s and its objects' % bkt.name)
-            for obj in bkt.list():
-                print('Removing object %s' % obj.name)
-                obj.delete()
-            #for debugging, listing again the bucket content after
-            # having deleted its objects
-            print('Sleeping some seconds to give time to the delete op.')
-            time.sleep(10)
-            for obj in bkt.list():
-                print('This object is still in the bucket: %s' % obj.name)
-            print('Deleting bucket %s.' % bkt.name)
-            conn.delete_bucket(bkt.name)
+        if not re.search(system, bkt.name):
+            continue   
+        objs = [obj.name for obj in bkt.list()]
+        print('Deleting %d objects from bucket %s.' % (len(objs), bkt.name))
+        bkt.delete_keys(objs)
+    # Remove buckets
+    bkts = [bkt.name for bkt in buckets if re.search(system, bkt.name)]
+    for bkt in bkts:
+        print('Deleting bucket %s' % bkt)
+        conn.delete_bucket(bkt)
+
+        

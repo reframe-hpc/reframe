@@ -9,3 +9,4 @@ which python
 python $1 $2
 
 deactivate
+/bin/rm -fr s3virtenv
