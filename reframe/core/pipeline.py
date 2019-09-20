@@ -1358,9 +1358,6 @@ class RunOnlyRegressionTest(RegressionTest):
     This class is also directly available under the top-level :mod:`reframe`
     module.
     """
-    def __init__(self, name=None, prefix=None):
-        super().__init__(name, prefix)
-
     def compile(self):
         """The compilation phase of the regression test pipeline.
 
