@@ -1,6 +1,6 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
-
+import getpass
 
 class S3apiCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -13,6 +13,7 @@ class S3apiCheck(rfm.RunOnlyRegressionTest):
         self.time_limit = (0, 5, 0)
         self.maintainers = ['VH', 'GLR']
         self.executable = 's3_test.sh'
+        self.username = getpass.getuser()
         if self.current_system.name in ['dom']:
             self.tags |= {'production'}
 
@@ -22,7 +23,8 @@ class S3apiCreateBucket(S3apiCheck):
     def __init__(self):
         super().__init__()
         self.executable_opts = ['s3_create_bucket.py',
-                                self.current_system.name]
+                                self.current_system.name,
+                                self.username]
 
         self.sanity_patterns = sn.assert_found(r'Average bucket creation time',
                                                self.stdout)
@@ -45,7 +47,8 @@ class S3apiCreateSmallObject(S3apiCheck):
     def __init__(self):
         super().__init__()
         self.executable_opts = ['s3_create_small_object.py',
-                                self.current_system.name]
+                                self.current_system.name,
+                                self.username]
 
         self.sanity_patterns = sn.assert_found(r'Average object creation time',
                                                self.stdout)
@@ -68,7 +71,8 @@ class S3apiUploadLargeObject(S3apiCheck):
     def __init__(self):
         super().__init__()
         self.executable_opts = ['s3_upload_large_object.py',
-                                self.current_system.name]
+                                self.current_system.name,
+                                self.username]
 
         self.sanity_patterns = sn.assert_found(r'Average upload rate',
                                                self.stdout)
@@ -91,7 +95,8 @@ class S3apiDownloadLargeObject(S3apiCheck):
     def __init__(self):
         super().__init__()
         self.executable_opts = ['s3_download_large_object.py',
-                                self.current_system.name]
+                                self.current_system.name,
+                                self.username]
 
         self.sanity_patterns = sn.assert_found(r'Average download rate',
                                                self.stdout)
@@ -114,7 +119,8 @@ class S3apiDeleteBucketObject(S3apiCheck):
     def __init__(self):
         super().__init__()
         self.executable_opts = ['s3_delete.py',
-                                self.current_system.name]
+                                self.current_system.name,
+                                self.username]
 
         self.sanity_patterns = sn.assert_found(r'Average deletion time',
                                                self.stdout)

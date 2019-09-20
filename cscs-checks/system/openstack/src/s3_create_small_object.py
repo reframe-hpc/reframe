@@ -5,6 +5,7 @@ import sys
 import tools
 
 system = sys.argv[1]
+username = sys.argv[2]
 
 conn = tools.get_connection()
 
@@ -12,7 +13,7 @@ nobjects = 10
 
 print('All buckets: ', conn.get_all_buckets())
 
-bkt_name = '%s_reframe_s3_bucket_0' % system
+bkt_name = '%s_%s_reframe_s3_bucket_0' % (system, username)
 bkt = conn.get_bucket(bkt_name)
 
 start = time.time()

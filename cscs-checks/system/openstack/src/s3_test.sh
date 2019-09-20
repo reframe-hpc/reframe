@@ -6,7 +6,7 @@ pip install boto
 
 which python
 
-python $1 $2
+python $1 $2 $3
 
 deactivate
 /bin/rm -fr s3virtenv

@@ -5,17 +5,18 @@ import sys
 import tools
 
 system = sys.argv[1]
+username = sys.argv[2]
 
 conn = tools.get_connection()
 
 # Initial cleanup
-tools.delete_reframe_buckets(conn, system)
+tools.delete_reframe_buckets(conn, system, username)
 
 nbuckets = 10
 start = time.time()
 
 for count in range(nbuckets):
-    bkt_name = '%s_reframe_s3_bucket_%d' % (system, count)
+    bkt_name = '%s_%s_reframe_s3_bucket_%d' % (system, username, count)
     print('Creating bucket %s' % bkt_name)
     conn.create_bucket(bkt_name)
 

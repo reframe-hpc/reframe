@@ -5,11 +5,12 @@ import sys
 import tools
 
 system = sys.argv[1]
+username = sys.argv[2]
 
 conn = tools.get_connection()
 
 start = time.time()
-tools.delete_reframe_buckets(conn, system)
+tools.delete_reframe_buckets(conn, system, username)
 end = time.time()
 nbuckets = 30  # 10 buckets + 10 small + 10 large objects
 elapsed_secs = end - start

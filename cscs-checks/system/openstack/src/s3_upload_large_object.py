@@ -7,12 +7,13 @@ import tempfile
 import tools
 
 system = sys.argv[1]
+username = sys.argv[2]
 
 conn = tools.get_connection()
 
 nobjects = 10
 
-bkt_name = '%s_reframe_s3_bucket_0' % system
+bkt_name = '%s_%s_reframe_s3_bucket_0' % (system, username)
 bkt = conn.get_bucket(bkt_name)
 
 test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)

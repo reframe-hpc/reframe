@@ -31,20 +31,20 @@ def get_connection():
     return conn
 
 
-def delete_reframe_buckets(conn, system):
+def delete_reframe_buckets(conn, system, username):
     print('Removing Reframe test buckets')
     buckets = conn.get_all_buckets()
-    # Remove objects in the buckets
+    # Remove objects/buckets
     for bkt in buckets:
         if not re.search(system, bkt.name):
+            continue   
+        if not re.search(username, bkt.name):
             continue   
         objs = [obj.name for obj in bkt.list()]
         print('Deleting %d objects from bucket %s.' % (len(objs), bkt.name))
         bkt.delete_keys(objs)
-    # Remove buckets
-    bkts = [bkt.name for bkt in buckets if re.search(system, bkt.name)]
-    for bkt in bkts:
         print('Deleting bucket %s' % bkt)
         conn.delete_bucket(bkt)
+
 
         
