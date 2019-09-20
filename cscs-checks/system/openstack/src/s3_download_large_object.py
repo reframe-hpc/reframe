@@ -3,6 +3,7 @@
 import time
 import sys
 import subprocess
+import tempfile
 import tools
 
 system = sys.argv[1]
@@ -11,18 +12,20 @@ conn = tools.get_connection()
 
 nobjects = 10
 
+print(conn.get_all_buckets())
+
 bkt_name = '%s_reframe_s3_bucket_0' % system
 bkt = conn.get_bucket(bkt_name)
 
-test_file = 'testfile.txt'
+test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
 
 start = time.time()
 
 for count in range(nobjects):
     obj_name = 'obj_large_%d' % count
-    print('Downloading object %s to file %s' % (obj_name, test_file))
+    print('Downloading object %s to file %s' % (obj_name, test_file.name))
     obj = bkt.new_key(obj_name)
-    obj.get_contents_to_filename(test_file)
+    obj.get_contents_to_filename(test_file.name)
 
 end = time.time()
 
