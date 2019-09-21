@@ -2,10 +2,11 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
+        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
@@ -50,10 +51,10 @@ class AlltoallTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.19')
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
+        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'leone:normal']
@@ -71,22 +72,14 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.perf_patterns = {
-            'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
-                                        self.stdout, 'latency', float)
-        }
-        self.reference = {
-            '*': {
-                'latency': (0, None, None, 'us')
-            },
-        }
         self.tags = {'diagnostic', 'ops', 'benchmark'}
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
     def __init__(self, variant):
+        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
@@ -174,6 +167,7 @@ class AlltoallMonchAcceptanceTest(AlltoallTest):
 
 class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
+        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
@@ -198,7 +192,7 @@ class P2PBaseTest(rfm.RegressionTest):
         }
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -238,7 +232,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
@@ -278,7 +272,7 @@ class P2PCPULatencyTest(P2PBaseTest):
         self.tags |= {'monch_acceptance'}
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
@@ -312,13 +306,13 @@ class G2GBandwidthTest(P2PBaseTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
         elif self.current_system.name == 'kesch':
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
 
-@rfm.required_version('>=2.19')
+@rfm.required_version('>=2.16')
 @rfm.simple_test
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
@@ -352,7 +346,7 @@ class G2GLatencyTest(P2PBaseTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
         elif self.current_system.name == 'kesch':
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             self.variables = {'MV2_USE_CUDA': '1'}
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
