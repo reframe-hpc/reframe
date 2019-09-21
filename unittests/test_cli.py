@@ -430,3 +430,4 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert returncode == 0
+        ms.unload_module('testmod_foo')

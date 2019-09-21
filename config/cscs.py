@@ -481,6 +481,7 @@ class ReframeSettings:
         'modes': {
             '*': {
                 'maintenance': [
+                    '--unload-module=reframe',
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/maintenance',
@@ -492,6 +493,7 @@ class ReframeSettings:
                     '--timestamp=%F_%H-%M-%S'
                 ],
                 'production': [
+                    '--unload-module=reframe',
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/production',
