@@ -176,14 +176,17 @@ class RuntimeContext:
 
     This class essentially groups the current host system and the associated
     resources of the framework on the current system.
+    It also encapsulates other runtime parameters that are relevant to the
+    framework's execution.
 
     There is a single instance of this class globally in the framework.
 
     .. note::
        .. versionadded:: 2.13
+
     """
 
-    def __init__(self, dict_config, sysdescr=None):
+    def __init__(self, dict_config, sysdescr=None, **kwargs):
         self._site_config = config.SiteConfiguration(dict_config)
         if sysdescr is not None:
             sysname, _, partname = sysdescr.partition(':')
@@ -202,6 +205,7 @@ class RuntimeContext:
         self._modules_system = ModulesSystem.create(
             self._system.modules_system)
         self._current_run = 0
+        self._non_default_craype = kwargs.get('non_default_craype', False)
 
     def _autodetect_system(self):
         """Auto-detect system."""
@@ -260,6 +264,26 @@ class RuntimeContext:
         """
         return self._modules_system
 
+    @property
+    def non_default_craype(self):
+        """True if a non-default Cray PE is tested.
+
+        This will cause ReFrame to set the ``LD_LIBRARY_PATH`` as follows after
+        all modules have been loaded:
+
+        .. code:: shell
+
+            export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+
+
+        This property is set through the ``--non-default-craype`` command-line
+        option.
+
+        :type: :class:`bool` (default: :class:`False`)
+
+        """
+        return self._non_default_craype
+
     def show_config(self):
         """Return a textual representation of the current runtime."""
         return str(self._system)
@@ -269,11 +293,11 @@ class RuntimeContext:
 _runtime_context = None
 
 
-def init_runtime(dict_config, sysname=None):
+def init_runtime(dict_config, sysname=None, **kwargs):
     global _runtime_context
 
     if _runtime_context is None:
-        _runtime_context = RuntimeContext(dict_config, sysname)
+        _runtime_context = RuntimeContext(dict_config, sysname, **kwargs)
 
 
 def runtime():
