@@ -18,7 +18,8 @@ print(conn.get_all_buckets())
 bkt_name = '%s_%s_reframe_s3_bucket_0' % (system, username)
 bkt = conn.get_bucket(bkt_name)
 
-print(bkt.list())
+print('Working in bucket: %s' bkt.name)
+print('Content of this bucket: %s' bkt.list())
 
 test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
 
@@ -26,7 +27,7 @@ start = time.time()
 
 for count in range(nobjects):
     obj_name = 'obj_large_%d' % count
-    print('Downloading object %s to file %s' % (obj_name, test_file.name))
+    print('Downloading object %s from bucket %s to file %s' % (obj_name, bkt.name, test_file.name))
     obj = bkt.new_key(obj_name)
     obj.get_contents_to_filename(test_file.name)
 
