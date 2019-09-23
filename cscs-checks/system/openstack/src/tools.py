@@ -45,6 +45,9 @@ def delete_reframe_buckets(conn, system, username):
         bkts.append(bkt.name)
         print('Deleting objects from bucket %s: %s' % (bkt.name, objs))
         bkt.delete_keys(objs)
+        # Bucket removed sometimes fails saying that there are still
+        # objects in it. Giving some time.
+        time.sleep(60)
     # Remove buckets
     for bkt in bkts:
         print('Deleting bucket %s' % bkt)
