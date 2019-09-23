@@ -18,8 +18,8 @@ print(conn.get_all_buckets())
 bkt_name = '%s_%s_reframe_s3_bucket_0' % (system, username)
 bkt = conn.get_bucket(bkt_name)
 
-print('Working in bucket: %s' bkt.name)
-print('Content of this bucket: %s' bkt.list())
+print('Working in bucket: %s' % bkt.name)
+print('Content of this bucket: %s' % bkt.list())
 
 test_file = tempfile.NamedTemporaryFile(dir='/tmp', delete=False)
 
