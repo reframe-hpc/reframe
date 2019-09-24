@@ -25,3 +25,8 @@ end = time.time()
 elapsed_secs = end - start
 avg_creation_time = float(elapsed_secs)/nbuckets
 print('Average bucket creation time (s): %f' % avg_creation_time)
+
+# Using a shared object to serialize the tests.
+# This will be removed ones the test dependency feature is available.
+state = 'create_bucket_done'
+tools.set_state(conn, system, username, state)

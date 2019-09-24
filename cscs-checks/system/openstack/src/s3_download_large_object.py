@@ -11,6 +11,9 @@ username = sys.argv[2]
 
 conn = tools.get_connection()
 
+# Wait until the create small object test is done
+tools.wait_for_state(conn, system, username, 'upload_large_object_done')
+
 nobjects = 10
 
 print(conn.get_all_buckets())
@@ -37,3 +40,6 @@ elapsed_secs = end - start
 size_bytes = pow(2, 30) * nobjects
 avg_download_rate = float(size_bytes/elapsed_secs)
 print('Average download rate (bytes/s): %f' % avg_download_rate)
+
+state = 'download_large_object_done'
+tools.set_state(conn, system, username, state)

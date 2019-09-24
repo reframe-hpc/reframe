@@ -34,21 +34,40 @@ def get_connection():
 def delete_reframe_buckets(conn, system, username):
     print('Removing Reframe test buckets')
     buckets = conn.get_all_buckets()
-    bkts = []
-    # Remove objects
+    # Remove objects/buckets
     for bkt in buckets:
         if not re.search(system, bkt.name):
             continue
         if not re.search(username, bkt.name):
             continue
-        objs = [obj.name for obj in bkt.list()]
-        bkts.append(bkt.name)
-        print('Deleting objects from bucket %s: %s' % (bkt.name, objs))
-        bkt.delete_keys(objs)
-        # Bucket removed sometimes fails saying that there are still
-        # objects in it. Giving some time.
-        time.sleep(60)
-    # Remove buckets
-    for bkt in bkts:
-        print('Deleting bucket %s' % bkt)
-        conn.delete_bucket(bkt)
+        for obj in bkt.list():
+            print('Deleting object %s/%s' % (bkt.name, obj.name))
+            obj.delete()
+        print('Deleting bucket %s' % bkt.name)
+        bkt.delete()
+
+
+def wait_for_state(conn, system, username, state):
+    bkt_name = '%s_%s_reframe_s3' % (system, username)
+    obj_name = 'state'
+    while True:
+        print('Waiting <%s> status' % state)
+        time.sleep(1)
+        if conn.lookup(bkt_name):
+            bkt = conn.get_bucket(bkt_name)
+            if bkt.get_key(obj_name):
+                obj = bkt.get_key(obj_name)
+                content = obj.get_contents_as_string(encoding='utf-8')
+                if content == state:
+                    break
+        
+def set_state(conn, system, username, state):
+    print('Setting state to <%s>.' % state)
+    bkt_name = '%s_%s_reframe_s3' % (system, username)
+    obj_name = 'state'
+    bkt = conn.lookup(bkt_name)
+    if bkt is None:
+        bkt = conn.create_bucket(bkt_name)
+    obj = bkt.new_key(obj_name)
+    obj.set_contents_from_string(state)
+    

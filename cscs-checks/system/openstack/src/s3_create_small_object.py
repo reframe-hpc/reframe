@@ -9,6 +9,9 @@ username = sys.argv[2]
 
 conn = tools.get_connection()
 
+# Wait until the create bucket test is done
+tools.wait_for_state(conn, system, username, 'create_bucket_done')
+
 nobjects = 10
 
 print('All buckets: ', conn.get_all_buckets())
@@ -29,3 +32,6 @@ end = time.time()
 elapsed_secs = end - start
 avg_creation_time = float(elapsed_secs)/nobjects
 print('Average object creation time (s): %f' % avg_creation_time)
+
+state = 'create_small_object_done'
+tools.set_state(conn, system, username, state)
