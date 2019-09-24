@@ -78,14 +78,14 @@ class S3apiUploadLargeObject(S3apiCheck):
                                                self.stdout)
         self.perf_patterns = {
             'upload_rate': sn.extractsingle(
-                r'Average upload rate \(bytes/s\):\s(?P<rate>\S+)',
+                r'Average upload rate \(MiB/s\):\s(?P<rate>\S+)',
                 self.stdout, 'rate', float)
         }
 
         self.reference = {
             '*': {
-                # above 10MB/s is ok
-                'upload_rate': (10485760, -0.5, None, 'MB/s'),
+                # above 10MiB/s is ok
+                'upload_rate': (10, -0.5, None, 'MiB/s'),
             }
         }
 
@@ -102,14 +102,14 @@ class S3apiDownloadLargeObject(S3apiCheck):
                                                self.stdout)
         self.perf_patterns = {
             'download_rate': sn.extractsingle(
-                r'Average download rate \(bytes/s\):\s(?P<rate>\S+)',
+                r'Average download rate \(MiB/s\):\s(?P<rate>\S+)',
                 self.stdout, 'rate', float)
         }
 
         self.reference = {
             '*': {
-                # above 10MB/s is ok
-                'download_rate': (10485760, -0.5, None, 'MB/s'),
+                # above 10MiB/s is ok
+                'download_rate': (10, -0.5, None, 'MiB/s'),
             }
         }
 

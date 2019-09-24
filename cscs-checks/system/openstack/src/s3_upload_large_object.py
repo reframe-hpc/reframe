@@ -37,9 +37,9 @@ for count in range(nobjects):
 end = time.time()
 
 elapsed_secs = end - start
-size_bytes = pow(2, 30) * nobjects
-avg_upload_rate = float(size_bytes/elapsed_secs)
-print('Average upload rate (bytes/s): %f' % avg_upload_rate)
+size_mb = 1024 * nobjects
+avg_upload_rate = float(size_mb/elapsed_secs)
+print('Average upload rate (MiB/s): %f' % avg_upload_rate)
 
 state = 'upload_large_object_done'
 tools.set_state(conn, system, username, state)
