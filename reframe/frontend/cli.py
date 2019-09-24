@@ -53,8 +53,7 @@ def list_checks(checks, printer, detailed=False):
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
-    output_options = argparser.add_argument_group(
-        'Options controlling regression directories')
+    output_options = argparser.add_argument_group('Options controlling output')
     locate_options = argparser.add_argument_group(
         'Options for locating checks')
     select_options = argparser.add_argument_group(
@@ -63,18 +62,20 @@ def main():
         'Options controlling actions')
     run_options = argparser.add_argument_group(
         'Options controlling execution of checks')
+    env_options = argparser.add_argument_group(
+        'Options controlling environment')
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
     output_options.add_argument(
         '--prefix', action='store', metavar='DIR',
-        help='Set regression prefix directory to DIR')
+        help='Set output directory prefix to DIR')
     output_options.add_argument(
         '-o', '--output', action='store', metavar='DIR',
-        help='Set regression output directory to DIR')
+        help='Set output directory to DIR')
     output_options.add_argument(
         '-s', '--stage', action='store', metavar='DIR',
-        help='Set regression stage directory to DIR')
+        help='Set stage directory to DIR')
     output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
         help='Set directory prefix for the performance logs '
@@ -184,6 +185,26 @@ def main():
         dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
         help="Strategy for flexible task allocation (default: 'idle').")
 
+    env_options.add_argument(
+        '-M', '--map-module', action='append', metavar='MAPPING',
+        dest='module_mappings', default=[],
+        help='Apply a single module mapping')
+    env_options.add_argument(
+        '-m', '--module', action='append', default=[],
+        metavar='MOD', dest='user_modules',
+        help='Load module MOD before running the regression suite')
+    env_options.add_argument(
+        '--module-mappings', action='store', metavar='FILE',
+        dest='module_map_file',
+        help='Apply module mappings defined in FILE')
+    env_options.add_argument(
+        '-u', '--unload-module', action='append', metavar='MOD',
+        dest='unload_modules', default=[],
+        help='Unload module MOD before running the regression suite')
+    env_options.add_argument(
+        '--purge-env', action='store_true', dest='purge_env', default=False,
+        help='Purge environment before running the regression suite')
+
     # Miscellaneous options
     misc_options.add_argument(
         '-C', '--config-file', action='store', dest='config_file',
@@ -193,25 +214,10 @@ def main():
              '(default: %s' % os.path.join(reframe.INSTALL_PREFIX,
                                            'reframe/settings.py'))
     misc_options.add_argument(
-        '-M', '--map-module', action='append', metavar='MAPPING',
-        dest='module_mappings', default=[],
-        help='Apply a single module mapping')
-    misc_options.add_argument(
-        '-m', '--module', action='append', default=[],
-        metavar='MOD', dest='user_modules',
-        help='Load module MOD before running the regression')
-    misc_options.add_argument(
-        '--module-mappings', action='store', metavar='FILE',
-        dest='module_map_file',
-        help='Apply module mappings defined in FILE')
-    misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
-    misc_options.add_argument(
-        '--purge-env', action='store_true', dest='purge_env', default=False,
-        help='Purge modules environment before running any tests')
     misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
@@ -488,11 +494,17 @@ def main():
         # Act on checks
 
         # Unload regression's module and load user-specified modules
-        if settings.reframe_module:
-            rt.modules_system.unload_module(settings.reframe_module)
+        if hasattr(settings, 'reframe_module'):
+            printer.warning(
+                "the 'reframe_module' configuration option will be ignored; "
+                "please use the '-u' or '--unload-module' options"
+            )
 
         if options.purge_env:
             rt.modules_system.unload_all()
+        else:
+            for m in options.unload_modules:
+                rt.modules_system.unload_module(m)
 
         # Load the environment for the current system
         try:

@@ -4,7 +4,6 @@
 
 
 class ReframeSettings:
-    reframe_module = 'reframe'
     job_poll_intervals = [1, 2, 3]
     job_submit_timeout = 60
     checks_path = ['checks/']
@@ -482,6 +481,7 @@ class ReframeSettings:
         'modes': {
             '*': {
                 'maintenance': [
+                    '--unload-module=reframe',
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/maintenance',
@@ -493,6 +493,7 @@ class ReframeSettings:
                     '--timestamp=%F_%H-%M-%S'
                 ],
                 'production': [
+                    '--unload-module=reframe',
                     '--exec-policy=async',
                     '--strict',
                     '--output=$APPS/UES/$USER/regression/production',
