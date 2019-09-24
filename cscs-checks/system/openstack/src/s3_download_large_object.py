@@ -30,7 +30,8 @@ start = time.time()
 
 for count in range(nobjects):
     obj_name = 'obj_large_%d' % count
-    print('Downloading object %s from bucket %s to file %s' % (obj_name, bkt.name, test_file.name))
+    print('Downloading object %s from bucket %s to file %s'
+          % (obj_name, bkt.name, test_file.name))
     obj = bkt.new_key(obj_name)
     obj.get_contents_to_filename(test_file.name)
 

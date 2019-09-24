@@ -19,4 +19,3 @@ nobjects = 30  # 10 buckets + 10 small + 10 large objects
 elapsed_secs = end - start
 avg_deletion_time = float(elapsed_secs)/nobjects
 print('Average deletion time (s): %f' % avg_deletion_time)
-

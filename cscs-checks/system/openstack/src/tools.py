@@ -60,7 +60,8 @@ def wait_for_state(conn, system, username, state):
                 content = obj.get_contents_as_string(encoding='utf-8')
                 if content == state:
                     break
-        
+
+
 def set_state(conn, system, username, state):
     print('Setting state to <%s>.' % state)
     bkt_name = '%s_%s_reframe_s3' % (system, username)
@@ -70,4 +71,3 @@ def set_state(conn, system, username, state):
         bkt = conn.create_bucket(bkt_name)
     obj = bkt.new_key(obj_name)
     obj.set_contents_from_string(state)
-    
