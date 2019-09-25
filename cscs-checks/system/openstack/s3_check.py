@@ -2,6 +2,7 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 import getpass
 
+
 class S3apiCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
