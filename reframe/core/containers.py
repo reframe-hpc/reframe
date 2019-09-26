@@ -148,7 +148,7 @@ class Singularity(ContainerPlatform):
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        exec_opts = ['-B"%s","%s"' % mp for mp in self.mount_points]
+        exec_opts = ['-B"%s:%s"' % mp for mp in self.mount_points]
         if self.requires_cuda:
             exec_opts.append('--nv')
 
