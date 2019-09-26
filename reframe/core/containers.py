@@ -14,7 +14,24 @@ class ContainerPlatform(abc.ABC):
 
     registry = fields.TypedField('registry', str, type(None))
     image = fields.TypedField('image', str, type(None))
+
+    #: Add to the launch command an option to enable MPI support.
+    #:
+    #: Some container platforms like ShifterNG require a command-line
+    #: argument to enable the MPI support. 
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
     requires_mpi = fields.TypedField('requires_mpi', bool)
+
+    #: Add to the launch command an option to enable CUDA support.
+    #:
+    #: Some container platforms like Singularity require a command-line
+    #: argument to enable CUDA support. 
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    requires_cuda = fields.TypedField('requires_cuda', bool)
     commands = fields.TypedField('commands', typ.List[str])
     mount_points = fields.TypedField('mount_points',
                                      typ.List[typ.Tuple[str, str]])
@@ -24,6 +41,7 @@ class ContainerPlatform(abc.ABC):
         self.registry = None
         self.image = None
         self.requires_mpi = False
+        self.requires_cuda = False
         self.commands = []
         self.mount_points  = []
         self.workdir = '/rfm_workdir'
@@ -53,7 +71,6 @@ class ContainerPlatform(abc.ABC):
         if self.registry:
             self.image = '/'.join([self.registry, self.image])
 
-    @abc.abstractmethod
     def validate(self):
         """Validates this container platform.
 
@@ -71,10 +88,10 @@ class ContainerPlatform(abc.ABC):
 
 
 class Docker(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with Docker."""
+    """An implementation of ContainerPlatform for running containers with Docker."""
 
     def emit_prepare_cmds(self):
-        pass
+        return []
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
@@ -84,94 +101,61 @@ class Docker(ContainerPlatform):
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
 
-    def validate(self):
-        super().validate()
-
 
 class ShifterNG(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with
+    """An implementation of ContainerPlatform for running containers with
     ShifterNG."""
     def __init__(self):
-        self.with_mpi = False
+        self.requires_mpi = False
         super().__init__()
 
     def emit_prepare_cmds(self):
-        pass
+        return []
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
+        self._run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
                     mp for mp in self.mount_points]
-        if self.with_mpi:
-            mpi_opt = '--mpi '
-        else:
-            mpi_opt = ''
+        if self.requires_mpi:
+            self._run_opts.append('--mpi')
 
-        run_cmd = 'shifter run %s%s %s bash -c ' % (mpi_opt,
-                                                    ' '.join(run_opts),
-                                                    self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
-
-    def validate(self):
-        super().validate()
-
-
-class Singularity(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with
-    Singularity."""
-    def __init__(self):
-        self.with_cuda = False
-        super().__init__()
-
-    def emit_prepare_cmds(self):
-        pass
-
-    def emit_launch_cmds(self):
-        super().emit_launch_cmds()
-        exec_opts = ['-B"%s","%s"' % mp for mp in self.mount_points]
-        if self.with_cuda:
-            cuda_opt = '--nv '
-        else:
-            cuda_opt = ''
-
-        run_cmd = 'singularity exec %s%s %s bash -c ' % (cuda_opt,
-                                                         ' '.join(exec_opts),
-                                                         self.image)
-        return run_cmd + "'" + '; '.join(
-            ['cd ' + self.workdir] + self.commands) + "'"
-
-    def validate(self):
-        super().validate()
-
-
-class Sarus(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with
-    Sarus."""
-    def __init__(self):
-        self.with_mpi = False
-        super().__init__()
-
-    def emit_prepare_cmds(self):
-        pass
-
-    def emit_launch_cmds(self):
-        super().emit_launch_cmds()
-        run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
-                    mp for mp in self.mount_points]
-        if self.with_mpi:
-            mpi_opt = '--mpi '
-        else:
-            mpi_opt = ''
-
-        run_cmd = 'sarus run %s%s %s bash -c ' % (mpi_opt,
-                                                  ' '.join(run_opts),
+        run_cmd = 'shifter run %s %s bash -c ' % (' '.join(self._run_opts),
                                                   self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
 
-    def validate(self):
-        super().validate()
+
+class Sarus(ShifterNG):
+    """An implementation of ContainerPlatform for running containers with
+    Sarus."""
+    def emit_launch_cmds(self):
+        super().emit_launch_cmds()
+        run_cmd = 'sarus run %s %s bash -c ' % (' '.join(self._run_opts),
+                                                self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
+
+
+class Singularity(ContainerPlatform):
+    """An implementation of ContainerPlatform for running containers with
+    Singularity."""
+    def __init__(self):
+        self.requires_cuda = False
+        super().__init__()
+
+    def emit_prepare_cmds(self):
+        return [] 
+
+    def emit_launch_cmds(self):
+        super().emit_launch_cmds()
+        exec_opts = ['-B"%s","%s"' % mp for mp in self.mount_points]
+        if self.requires_cuda:
+            exec_opts.append('--nv')
+
+        run_cmd = 'singularity exec %s %s bash -c ' % (' '.join(exec_opts),
+                                                       self.image)
+        return run_cmd + "'" + '; '.join(
+            ['cd ' + self.workdir] + self.commands) + "'"
 
 
 class ContainerPlatformField(fields.TypedField):

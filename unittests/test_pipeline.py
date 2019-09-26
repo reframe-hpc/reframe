@@ -105,6 +105,18 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     @fixtures.switch_to_user_runtime
+    def test_containers(self):
+        #self.setup_remote_execution()
+        print('xxx:', self.partition)  #.container_environs.__dict__)
+        self.setup_local_execution()
+        test = self.loader.load_from_file(
+            'unittests/resources/checks_unlisted/containers.py')[0]
+
+        # Use test environment for the regression check
+        # test.valid_prog_environs = [self.prgenv.name]
+        self._run_test(test)
+
+    @fixtures.switch_to_user_runtime
     def test_hellocheck_make(self):
         self.setup_remote_execution()
         test = self.loader.load_from_file(
@@ -119,7 +131,7 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.prgenv.name]
+        # test.valid_prog_environs = [self.prgenv.name]
 
         # Test also the prebuild/postbuild functionality
         test.prebuild_cmd  = ['touch prebuild', 'mkdir prebuild_dir']
@@ -128,7 +140,7 @@ class TestRegressionTest(unittest.TestCase):
                            'prebuild_dir', 'postbuild_dir']
 
         # Force local execution of the test
-        test.local = True
+        # test.local = True
         self._run_test(test)
 
     def test_hellocheck_local_prepost_run(self):

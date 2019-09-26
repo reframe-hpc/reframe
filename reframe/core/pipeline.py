@@ -1104,24 +1104,23 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         if self.container_platform:
             try:
-                cp_name = self.container_platform.__class__.__name__
+                cp_name = type(self.container_platform).__name__
                 cp_env = self._current_partition.container_environs[cp_name]
             except KeyError as e:
-                cp_env = None
-                self.logger.debug('no configuration found for container '
-                                  'platform: %s' % e)
+                raise PipelineError('no configuration found for container '
+                                    'platform: %s' % e) from None
 
             self.container_platform.validate()
-            self.container_platform.mount_points = [
+            self.container_platform.mount_points += [
                 (self._stagedir, self.container_platform.workdir)
             ]
 
             # We replace executable and executable_opts in the case of containers.
             self.executable = self.container_platform.emit_launch_cmds()
             self.executable_opts = []
-            pre_run_container = self.container_platform.emit_prepare_cmds()
-            if pre_run_container:
-                self.pre_run += pre_run_container
+            prepare_container = self.container_platform.emit_prepare_cmds()
+            if prepare_container:
+                self.pre_run += prepare_container
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
@@ -1358,6 +1357,7 @@ class RunOnlyRegressionTest(RegressionTest):
     This class is also directly available under the top-level :mod:`reframe`
     module.
     """
+
     def compile(self):
         """The compilation phase of the regression test pipeline.
 

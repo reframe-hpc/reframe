@@ -168,6 +168,9 @@ class ReframeSettings:
                             },
                             'Singularity': {
                                 'modules': ['singularity']
+                            },
+                            'Sarus': {
+                                'modules': ['sarus/cle7up01-test']
                             }
                         },
                         'modules': ['daint-gpu'],
@@ -334,7 +337,7 @@ class ReframeSettings:
                         'modules': [],
                         'access': [],
                         'environs': ['builtin-gcc'],
-                        'descr': 'Login nodes'
+                        'descr': 'Login nodes',
                     }
                 }
             }
