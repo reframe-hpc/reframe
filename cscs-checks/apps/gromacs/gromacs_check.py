@@ -7,7 +7,6 @@ import reframe.utility.sanity as sn
 
 class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, output_file):
-        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.executable = 'gmx_mpi'
 
@@ -45,7 +44,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod', 'maint']))
@@ -90,7 +89,7 @@ class GromacsGPUCheck(GromacsBaseCheck):
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
-@rfm.required_version('>=2.16')
+@rfm.required_version('>=2.19')
 @rfm.parameterized_test(*([s, v]
                           for s in ['small', 'large']
                           for v in ['prod']))
@@ -133,4 +132,3 @@ class GromacsCPUCheck(GromacsBaseCheck):
         }
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
-
