@@ -123,7 +123,7 @@ class GromacsCPUCheck(GromacsBaseCheck):
             },
             'prod': {
                 'small': {
-                    'dom:mc': {'perf': (42.7, -0.05, None, 'ns/day')},
+                    'dom:mc': {'perf': (41.0, -0.05, None, 'ns/day')},
                     'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')}
                 },
                 'large': {
@@ -134,27 +134,3 @@ class GromacsCPUCheck(GromacsBaseCheck):
         self.reference = references[variant][scale]
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
-
-# FIXME: This test is obsolete; it is kept only for reference.
-@rfm.parameterized_test([1], [2], [4], [6], [8])
-class GromacsCPUMonchAcceptance(GromacsBaseCheck):
-    def __init__(self, num_nodes):
-        super().__init__('md.log')
-
-        self.valid_systems = ['monch:compute']
-        self.descr = 'GROMACS %d-node CPU check on monch' % num_nodes
-        self.name = 'gromacs_cpu_monch_%d_node_check' % num_nodes
-        self.executable_opts = ('mdrun -dlb yes -ntomp 1 -npme -1 '
-                                '-nsteps 5000 -nb cpu -s herflat.tpr ').split()
-
-        self.tags = {'monch_acceptance'}
-        self.num_tasks_per_node = 20
-        self.num_tasks = num_nodes * self.num_tasks_per_node
-
-        reference_by_nodes = {1: 2.6, 2: 5.1, 4: 11.1, 6: 15.8, 8: 20.6}
-
-        self.reference = {
-            'monch:compute': {
-                'perf': (reference_by_nodes[num_nodes], -0.15, None)
-            }
-        }
