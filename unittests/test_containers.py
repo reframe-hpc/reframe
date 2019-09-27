@@ -18,7 +18,12 @@ class _ContainerPlatformTest(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def expected_cmd_custom_registry(self):
+    def expected_cmd_prepare(self):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def expected_cmd_with_run_opts(self):
         pass
 
     def setUp(self):
@@ -43,13 +48,17 @@ class _ContainerPlatformTest(abc.ABC):
         with pytest.raises(ContainerError):
             self.container_platform.validate()
 
-    def test_custom_registry(self):
-        self.container_platform.registry = 'registry/custom'
+    def test_prepare_command(self):
+        self.container_platform.image = 'name:tag'
+        assert (self.expected_cmd_prepare ==
+                self.container_platform.emit_prepare_cmds())
+
+    def test_run_opts(self):
         self.container_platform.image = 'name:tag'
         self.container_platform.commands = ['cmd']
         self.container_platform.mount_points = [('/path/one', '/one')]
         self.container_platform.workdir = '/stagedir'
-        assert (self.expected_cmd_custom_registry ==
+        assert (self.expected_cmd_with_run_opts ==
                 self.container_platform.emit_launch_cmds())
 
 
@@ -63,10 +72,13 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
                 "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
-    def expected_cmd_custom_registry(self):
+    def expected_cmd_prepare(self):
+        return []
+
+    @property
+    def expected_cmd_with_run_opts(self):
         return ('docker run --rm -v "/path/one":"/one" '
-                'registry/custom/name:tag '
-                "bash -c 'cd /stagedir; cmd'")
+                "name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
@@ -81,12 +93,15 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
                 "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
-    def expected_cmd_custom_registry(self):
+    def expected_cmd_prepare(self):
+        return ['shifter pull name:tag']
+
+    @property
+    def expected_cmd_with_run_opts(self):
         self.container_platform.requires_mpi = True
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mpi registry/custom/name:tag '
-                "bash -c 'cd /stagedir; cmd'")
+                "--mpi name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSarus(_ContainerPlatformTest, unittest.TestCase):
@@ -101,12 +116,15 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
                 "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
-    def expected_cmd_custom_registry(self):
+    def expected_cmd_prepare(self):
+        return ['sarus pull name:tag']
+
+    @property
+    def expected_cmd_with_run_opts(self):
         self.container_platform.requires_mpi = True
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                '--mpi registry/custom/name:tag '
-                "bash -c 'cd /stagedir; cmd'")
+                "--mpi name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
@@ -115,12 +133,15 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_mount_points(self):
-        return ('singularity exec -B"/path/one","/one" -B"/path/two","/two" '
+        return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
                 "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
-    def expected_cmd_custom_registry(self):
+    def expected_cmd_prepare(self):
+        return []
+
+    @property
+    def expected_cmd_with_run_opts(self):
         self.container_platform.requires_cuda = True
-        return ('singularity exec -B"/path/one","/one" --nv '
-                'registry/custom/name:tag '
-                "bash -c 'cd /stagedir; cmd'")
+        return ('singularity exec -B"/path/one:/one" --nv '
+                "name:tag bash -c 'cd /stagedir; cmd'")

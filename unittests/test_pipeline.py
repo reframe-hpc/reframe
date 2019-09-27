@@ -105,18 +105,6 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     @fixtures.switch_to_user_runtime
-    def test_containers(self):
-        #self.setup_remote_execution()
-        print('xxx:', self.partition)  #.container_environs.__dict__)
-        self.setup_local_execution()
-        test = self.loader.load_from_file(
-            'unittests/resources/checks_unlisted/containers.py')[0]
-
-        # Use test environment for the regression check
-        # test.valid_prog_environs = [self.prgenv.name]
-        self._run_test(test)
-
-    @fixtures.switch_to_user_runtime
     def test_hellocheck_make(self):
         self.setup_remote_execution()
         test = self.loader.load_from_file(
@@ -803,3 +791,64 @@ class TestSanityPatterns(unittest.TestCase):
         self.assertIn('v1', log_output)
         self.assertIn('v2', log_output)
         self.assertIn('v3', log_output)
+
+
+class _TestContainersBase(TestRegressionTest):
+    def setup_test(self, platform):
+        self.setup_remote_execution()
+        test = self.loader.load_from_file(
+            'unittests/resources/checks_unlisted/containers.py')[0]
+        test.valid_prog_environs = [self.prgenv.name]
+        test.container_platform = platform
+        test.container_platform.commands = [
+            'pwd', 'ls', 'cat /etc/os-release']
+        test.container_platform.workdir = '/workdir'
+        return test
+
+    def run_test(self, test):
+        try:
+            self._run_test(test)
+        except PipelineError:
+            self.skipTest('no configuration found for container platform: %s' %
+                          type(test.container_platform).__name__)
+
+
+class TestContainerPlatformsTest(TestRegressionTest):
+    def setup_test(self, platform, image):
+        self.setup_remote_execution()
+        test = self.loader.load_from_file(
+            'unittests/resources/checks_unlisted/containers.py')[0]
+        test.valid_prog_environs = [self.prgenv.name]
+        test.container_platform = platform
+        test.container_platform.image = image
+        test.container_platform.commands = [
+            'pwd', 'ls', 'cat /etc/os-release']
+        test.container_platform.workdir = '/workdir'
+        return test
+
+    def run_test(self, test):
+        try:
+            self._run_test(test)
+        except PipelineError:
+            self.skipTest('no configuration found for container platform: %s' %
+                          type(test.container_platform).__name__)
+
+    @fixtures.switch_to_user_runtime
+    def test_singularity(self):
+        test = self.setup_test('Singularity', 'docker://ubuntu:18.04')
+        self.run_test(test)
+
+    @fixtures.switch_to_user_runtime
+    def test_docker(self):
+        test = self.setup_test('Docker', 'ubuntu:18.04')
+        self.run_test(test)
+
+    @fixtures.switch_to_user_runtime
+    def test_shifter(self):
+        test = self.setup_test('ShifterNG', 'ubuntu:18.04')
+        self.run_test(test)
+
+    @fixtures.switch_to_user_runtime
+    def test_sarus(self):
+        test = self.setup_test('Sarus', 'ubuntu:18.04')
+        self.run_test(test)

@@ -12,13 +12,12 @@ class ContainerPlatform(abc.ABC):
     :func:`emit_prepare_cmds` and :func:`emit_launch_cmds` abstract functions.
     """
 
-    registry = fields.TypedField('registry', str, type(None))
     image = fields.TypedField('image', str, type(None))
 
     #: Add to the launch command an option to enable MPI support.
     #:
     #: Some container platforms like ShifterNG require a command-line
-    #: argument to enable the MPI support. 
+    #: argument to enable the MPI support.
     #:
     #: :type: boolean
     #: :default: :class:`False`
@@ -27,7 +26,7 @@ class ContainerPlatform(abc.ABC):
     #: Add to the launch command an option to enable CUDA support.
     #:
     #: Some container platforms like Singularity require a command-line
-    #: argument to enable CUDA support. 
+    #: argument to enable CUDA support.
     #:
     #: :type: boolean
     #: :default: :class:`False`
@@ -38,7 +37,6 @@ class ContainerPlatform(abc.ABC):
     workdir = fields.TypedField('workdir', str, type(None))
 
     def __init__(self):
-        self.registry = None
         self.image = None
         self.requires_mpi = False
         self.requires_cuda = False
@@ -68,9 +66,6 @@ class ContainerPlatform(abc.ABC):
             This method is relevant only to developers of new container
             platforms.
         """
-        if self.registry:
-            self.image = '/'.join([self.registry, self.image])
-
     def validate(self):
         """Validates this container platform.
 
@@ -110,12 +105,12 @@ class ShifterNG(ContainerPlatform):
         super().__init__()
 
     def emit_prepare_cmds(self):
-        return []
+        return ['shifter pull %s' % self.image]
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
         self._run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
-                    mp for mp in self.mount_points]
+                          mp for mp in self.mount_points]
         if self.requires_mpi:
             self._run_opts.append('--mpi')
 
@@ -128,6 +123,9 @@ class ShifterNG(ContainerPlatform):
 class Sarus(ShifterNG):
     """An implementation of ContainerPlatform for running containers with
     Sarus."""
+    def emit_prepare_cmds(self):
+        return ['sarus pull %s' % self.image]
+
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
         run_cmd = 'sarus run %s %s bash -c ' % (' '.join(self._run_opts),
@@ -144,7 +142,7 @@ class Singularity(ContainerPlatform):
         super().__init__()
 
     def emit_prepare_cmds(self):
-        return [] 
+        return []
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()

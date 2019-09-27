@@ -163,9 +163,6 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
-                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -188,9 +185,6 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
-                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
