@@ -186,7 +186,7 @@ class RuntimeContext:
 
     """
 
-    def __init__(self, dict_config, sysdescr=None, **kwargs):
+    def __init__(self, dict_config, sysdescr=None, **options):
         self._site_config = config.SiteConfiguration(dict_config)
         if sysdescr is not None:
             sysname, _, partname = sysdescr.partition(':')
@@ -205,7 +205,7 @@ class RuntimeContext:
         self._modules_system = ModulesSystem.create(
             self._system.modules_system)
         self._current_run = 0
-        self._non_default_craype = kwargs.get('non_default_craype', False)
+        self._non_default_craype = options.get('non_default_craype', False)
 
     def _autodetect_system(self):
         """Auto-detect system."""
@@ -293,11 +293,11 @@ class RuntimeContext:
 _runtime_context = None
 
 
-def init_runtime(dict_config, sysname=None, **kwargs):
+def init_runtime(dict_config, sysname=None, **options):
     global _runtime_context
 
     if _runtime_context is None:
-        _runtime_context = RuntimeContext(dict_config, sysname, **kwargs)
+        _runtime_context = RuntimeContext(dict_config, sysname, **options)
 
 
 def runtime():
