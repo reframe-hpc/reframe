@@ -481,7 +481,7 @@ class TestHooks(unittest.TestCase):
         _run(test, self.partition, self.prgenv)
         assert test.var == 3
 
-    def test_required_deps(self):
+    def test_require_deps(self):
         import unittests.resources.checks.hellocheck as mod
         import reframe.frontend.dependency as dependency
         import reframe.frontend.executors as executors
