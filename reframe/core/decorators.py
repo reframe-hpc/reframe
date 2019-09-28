@@ -4,7 +4,7 @@
 
 __all__ = [
     'parameterized_test', 'simple_test', 'required_version',
-    'run_before', 'run_after'
+    'require_deps', 'run_before', 'run_after'
 ]
 
 
@@ -168,6 +168,13 @@ def _runx(phase):
         else:
             func._rfm_attach = [phase]
 
+        try:
+            # no need to resolve dependencies independently; this function is
+            # already attached to a different phase
+            func._rfm_resolve_deps = False
+        except AttributeError:
+            pass
+
         @functools.wraps(func)
         def _fn(*args, **kwargs):
             func(*args, **kwargs)
@@ -197,3 +204,15 @@ def run_after(stage):
 
     '''
     return _runx('post_' + stage)
+
+
+def require_deps(func):
+    tests = inspect.getfullargspec(func).args[1:]
+    func._rfm_resolve_deps = True
+
+    @functools.wraps(func)
+    def _fn(obj, *args):
+        newargs = [functools.partial(obj.getdep, t) for t in tests]
+        func(obj, *newargs)
+
+    return _fn

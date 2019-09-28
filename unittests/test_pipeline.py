@@ -481,6 +481,49 @@ class TestHooks(unittest.TestCase):
         _run(test, self.partition, self.prgenv)
         assert test.var == 3
 
+    def test_required_deps(self):
+        import unittests.resources.checks.hellocheck as mod
+        import reframe.frontend.dependency as dependency
+        import reframe.frontend.executors as executors
+
+        class T0(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.x = 1
+
+        class T1(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.depends_on('T0')
+
+            @rfm.require_deps
+            def sety(self, T0):
+                self.y = T0().x + 1
+
+            @rfm.run_before('run')
+            @rfm.require_deps
+            def setz(self, T0):
+                self.z = T0().x + 2
+
+        cases = executors.generate_testcases([T0(), T1()])
+        deps = dependency.build_deps(cases)
+        for c in dependency.toposort(deps):
+            _run(*c)
+
+        for c in cases:
+            t = c.check
+            if t.name == 'T0':
+                assert t.x == 1
+            elif t.name == 'T1':
+                assert t.y == 2
+                assert t.z == 3
+
 
 class TestSyntax(unittest.TestCase):
     def test_regression_test(self):

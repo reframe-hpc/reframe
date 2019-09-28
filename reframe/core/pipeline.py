@@ -1297,7 +1297,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         self._userdeps.append((target, how, subdeps))
 
-    def getdep(self, target, environ):
+    def getdep(self, target, environ=None):
+        if self.current_environ is None:
+            raise DependencyError(
+                'cannot resolve dependencies before the setup phase'
+            )
+
+        if environ is None:
+            environ = self.current_environ.name
+
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
