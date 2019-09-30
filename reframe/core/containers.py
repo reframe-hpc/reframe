@@ -14,7 +14,7 @@ class ContainerPlatform(abc.ABC):
 
     image = fields.TypedField('image', str, type(None))
 
-    #: Add to the launch command an option to enable MPI support.
+    #: Add an option to the launch command to enable MPI support.
     #:
     #: Some container platforms like ShifterNG require a command-line
     #: argument to enable the MPI support.
@@ -23,7 +23,7 @@ class ContainerPlatform(abc.ABC):
     #: :default: :class:`False`
     requires_mpi = fields.TypedField('requires_mpi', bool)
 
-    #: Add to the launch command an option to enable CUDA support.
+    #: Add an option to the launch command to enable CUDA support.
     #:
     #: Some container platforms like Singularity require a command-line
     #: argument to enable CUDA support.

@@ -793,37 +793,24 @@ class TestSanityPatterns(unittest.TestCase):
         self.assertIn('v3', log_output)
 
 
-class _TestContainersBase(TestRegressionTest):
-    def setup_test(self, platform):
-        self.setup_remote_execution()
-        test = self.loader.load_from_file(
-            'unittests/resources/checks_unlisted/containers.py')[0]
-        test.valid_prog_environs = [self.prgenv.name]
-        test.container_platform = platform
-        test.container_platform.commands = [
-            'pwd', 'ls', 'cat /etc/os-release']
-        test.container_platform.workdir = '/workdir'
-        return test
-
-    def run_test(self, test):
-        try:
-            self._run_test(test)
-        except PipelineError:
-            self.skipTest('no configuration found for container platform: %s' %
-                          type(test.container_platform).__name__)
-
-
 class TestContainerPlatformsTest(TestRegressionTest):
     def setup_test(self, platform, image):
         self.setup_remote_execution()
         test = self.loader.load_from_file(
             'unittests/resources/checks_unlisted/containers.py')[0]
         test.valid_prog_environs = [self.prgenv.name]
+        test.valid_systems = ['*']
         test.container_platform = platform
         test.container_platform.image = image
         test.container_platform.commands = [
             'pwd', 'ls', 'cat /etc/os-release']
         test.container_platform.workdir = '/workdir'
+        test.sanity_patterns = sn.all([
+            sn.assert_found(r'^' + test.container_platform.workdir,
+                            test.stdout),
+            sn.assert_found(r'^container_test.txt', test.stdout),
+            sn.assert_found(r'18.04.3 LTS \(Bionic Beaver\)', test.stdout),
+        ])
         return test
 
     def run_test(self, test):
