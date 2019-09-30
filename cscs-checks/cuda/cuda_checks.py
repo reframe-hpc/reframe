@@ -16,7 +16,7 @@ class CudaCheck(rfm.RegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
         if self.current_system.name == 'kesch':
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
         else:
             self.modules = ['craype-accel-nvidia60']
 
