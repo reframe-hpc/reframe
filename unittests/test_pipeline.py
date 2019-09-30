@@ -48,7 +48,7 @@ class TestRegressionTest(unittest.TestCase):
         # Set runtime prefix
         rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
 
-    def _tearDown(self):
+    def tearDown(self):
         os_ext.rmtree(rt.runtime().resources.prefix)
         os_ext.rmtree('.rfm_testing', ignore_errors=True)
 
