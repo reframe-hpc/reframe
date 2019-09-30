@@ -571,6 +571,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     _user_environ = fields.TypedField('_user_environ', Environment, type(None))
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
+    _cdt_environ = fields.TypedField('_cdt_environ', Environment)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -598,11 +599,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd  = []
+        self.prebuild_cmd = []
         self.postbuild_cmd = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run  = []
+        self.pre_run = []
         self.post_run = []
         self.keep_files = []
         self.readonly_files = []
@@ -674,6 +675,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Weak reference to the test case associated with this check
         self._case = None
+
+        if rt.runtime().non_default_craype:
+            self._cdt_environ = Environment(
+                name='__rfm_cdt_environ',
+                variables={
+                    'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
+                }
+            )
+        else:
+            # Just an empty environment
+            self._cdt_environ = Environment('__rfm_cdt_environ')
 
     # Export read-only views to interesting fields
     @property
@@ -879,6 +891,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         self.logger.debug("loading user's environment")
         self._user_environ.load()
+        self._cdt_environ.load()
         environ_save.load()
 
     def _setup_paths(self):
@@ -913,10 +926,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         if self.local:
             scheduler_type = getscheduler('local')
-            launcher_type  = getlauncher('local')
+            launcher_type = getlauncher('local')
         else:
             scheduler_type = self._current_partition.scheduler
-            launcher_type  = self._current_partition.launcher
+            launcher_type = self._current_partition.launcher
 
         self._job = scheduler_type(
             name='rfm_%s_job' % self.name,
@@ -1049,8 +1062,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
-        environs = [self._current_partition.local_env,
-                    self._current_environ, self._user_environ]
+        environs = [self._current_partition.local_env, self._current_environ,
+                    self._user_environ, self._cdt_environ]
+
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
             launcher=getlauncher('local')(),
@@ -1091,8 +1105,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
-        environs = [self._current_partition.local_env,
-                    self._current_environ, self._user_environ]
+        environs = [self._current_partition.local_env, self._current_environ,
+                    self._user_environ, self._cdt_environ]
+
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs, login=True)
@@ -1275,6 +1290,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         if unload_env:
             self.logger.debug("unloading test's environment")
+            self._cdt_environ.unload()
             self._user_environ.unload()
             self._current_environ.unload()
             self._current_partition.local_env.unload()
