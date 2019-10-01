@@ -29,7 +29,7 @@ def settings():
 
 
 class SiteConfiguration:
-    """Holds the configuration of systems and environments"""
+    '''Holds the configuration of systems and environments'''
     _modes = fields.ScopedDictField('_modes', types.List[str])
 
     def __init__(self, dict_config=None):

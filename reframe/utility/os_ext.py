@@ -82,10 +82,10 @@ def run_command_async(cmd,
 
 
 def osuser():
-    """Return the name of the current OS user.
+    '''Return the name of the current OS user.
 
     If the name cannot be retrieved, :class:`None` will be returned.
-    """
+    '''
     try:
         return getpass.getuser()
     except BaseException:
@@ -93,10 +93,10 @@ def osuser():
 
 
 def osgroup():
-    """Return the group name of the current OS user.
+    '''Return the group name of the current OS user.
 
     If the name cannot be retrieved, :class:`None` will be returned.
-    """
+    '''
     try:
         return grp.getgrgid(os.getgid()).gr_name
     except KeyError:
@@ -105,10 +105,10 @@ def osgroup():
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False):
-    """Same as shutil.copytree() but valid also if 'dst' exists.
+    '''Same as shutil.copytree() but valid also if 'dst' exists.
 
     In this case it will first remove it and then call the standard
-    shutil.copytree()."""
+    shutil.copytree().'''
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
                          "`%s' into one of its descendants `%s'" % (src, dst))
@@ -123,12 +123,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 def copytree_virtual(src, dst, file_links=[],
                      symlinks=False, copy_function=shutil.copy2,
                      ignore_dangling_symlinks=False):
-    """Copy `dst` to `src`, but create symlinks for the files in `file_links`.
+    '''Copy `dst` to `src`, but create symlinks for the files in `file_links`.
 
     If `file_links` is empty, this is equivalent to `copytree()`.  The rest of
     the arguments are passed as-is to `copytree()`.  Paths in `file_links` must
     be relative to `src`. If you try to pass `.` in `file_links`, `OSError`
-    will be raised."""
+    will be raised.'''
 
     if not hasattr(file_links, '__iter__'):
         raise TypeError('expecting an iterable as file_links')
@@ -175,7 +175,7 @@ def copytree_virtual(src, dst, file_links=[],
 
 
 def rmtree(*args, max_retries=3, **kwargs):
-    """Persistent version of ``shutil.rmtree()``.
+    '''Persistent version of ``shutil.rmtree()``.
 
     If ``shutil.rmtree()`` fails with ``ENOTEMPTY`` or ``EBUSY``, retry up to
     ``max_retries`times to delete the directory.
@@ -193,7 +193,7 @@ def rmtree(*args, max_retries=3, **kwargs):
 
     If ``onerror``  is specified in  ``kwargs`` and is not  :class:`None`, this
     function is completely equivalent to ``shutil.rmtree()``.
-    """
+    '''
     if 'onerror' in kwargs and kwargs['onerror'] is not None:
         shutil.rmtree(*args, **kwargs)
         return
@@ -212,14 +212,14 @@ def rmtree(*args, max_retries=3, **kwargs):
 
 
 def inpath(entry, pathvar):
-    """Check if entry is in pathvar. pathvar is a string of the form
-    `entry1:entry2:entry3`."""
+    '''Check if entry is in pathvar. pathvar is a string of the form
+    `entry1:entry2:entry3`.'''
     return entry in set(pathvar.split(':'))
 
 
 def subdirs(dirname, recurse=False):
-    """Returns a list of dirname + its subdirectories. If recurse is True,
-    recursion is performed in pre-order."""
+    '''Returns a list of dirname + its subdirectories. If recurse is True,
+    recursion is performed in pre-order.'''
     dirs = []
     if os.path.isdir(dirname):
         dirs.append(dirname)
@@ -231,7 +231,7 @@ def subdirs(dirname, recurse=False):
 
 
 def follow_link(path):
-    """Return the final target of a symlink chain"""
+    '''Return the final target of a symlink chain'''
     while os.path.islink(path):
         path = os.readlink(path)
 
@@ -239,13 +239,13 @@ def follow_link(path):
 
 
 def samefile(path1, path2):
-    """Check if paths refer to the same file.
+    '''Check if paths refer to the same file.
 
     If paths exist, this is equivalent to `os.path.samefile()`. If only one of
     the paths exists, it will be followed if it is a symbolic link and its
     final target will be compared to the other path. If both paths do not
     exist, a simple string comparison will be performed (after they have been
-    normalized)."""
+    normalized).'''
 
     # normalise the paths first
     path1 = os.path.normpath(path1)
@@ -263,7 +263,7 @@ def mkstemp_path(*args, **kwargs):
 
 
 def force_remove_file(filename):
-    """Remove filename ignoring errors if the file does not exist."""
+    '''Remove filename ignoring errors if the file does not exist.'''
     try:
         os.remove(filename)
     except FileNotFoundError:
@@ -271,8 +271,8 @@ def force_remove_file(filename):
 
 
 class change_dir:
-    """Context manager which changes the current working directory to the
-       provided one."""
+    '''Context manager which changes the current working directory to the
+       provided one.'''
 
     def __init__(self, dir_name):
         self._wd_save = os.getcwd()
@@ -286,13 +286,13 @@ class change_dir:
 
 
 def is_url(s):
-    """Check if string is an URL."""
+    '''Check if string is an URL.'''
     parsed = urlparse(s)
     return parsed.scheme != '' and parsed.netloc != ''
 
 
 def git_clone(url, targetdir=None):
-    """Clone git repository from an URL."""
+    '''Clone git repository from an URL.'''
     if not git_repo_exists(url):
         raise ReframeError('git repository does not exist')
 
@@ -301,7 +301,7 @@ def git_clone(url, targetdir=None):
 
 
 def git_repo_exists(url, timeout=5):
-    """Check if URL refers to git valid repository."""
+    '''Check if URL refers to git valid repository.'''
     try:
         os.environ['GIT_TERMINAL_PROMPT'] = '0'
         run_command('git ls-remote -h %s' % url, check=True,
@@ -313,12 +313,12 @@ def git_repo_exists(url, timeout=5):
 
 
 def expandvars(path):
-    """Expand environment variables in ``path`` and
+    '''Expand environment variables in ``path`` and
         perform any command substitution
 
     This function is the same as ``os.path.expandvars()``, except that it
     understands also the syntax: $(cmd)`` or `cmd`.
-    """
+    '''
     cmd_subst = re.compile(r'`(.*)`|\$\((.*)\)')
     cmd_subst_m = cmd_subst.search(path)
     if not cmd_subst_m:
@@ -335,7 +335,7 @@ def expandvars(path):
 
 
 def concat_files(dst, *files, sep='\n', overwrite=False):
-    """Concatenate ``files`` into ``dst``.
+    '''Concatenate ``files`` into ``dst``.
 
        :arg dst: The name of the output file.
        :arg files: The files to concatenate.
@@ -344,7 +344,7 @@ def concat_files(dst, *files, sep='\n', overwrite=False):
        :raises TypeError: In case ``files`` it not an iterable object.
        :raises ValueError: In case ``output`` already exists and ovewrite is
            :class:`False`.
-    """
+    '''
     if not isinstance(files, collections.abc.Iterable):
         raise TypeError("'%s' object is not iterable" %
                         files.__class__.__name__)

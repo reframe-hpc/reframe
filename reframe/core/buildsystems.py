@@ -7,11 +7,11 @@ from reframe.core.exceptions import BuildSystemError
 
 
 class BuildSystem(abc.ABC):
-    """The abstract base class of any build system.
+    '''The abstract base class of any build system.
 
     Concrete build systems inherit from this class and must override the
     :func:`emit_build_commands` abstract function.
-    """
+    '''
 
     #: The C compiler to be used.
     #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
@@ -115,7 +115,7 @@ class BuildSystem(abc.ABC):
 
     @abc.abstractmethod
     def emit_build_commands(self, environ):
-        """Return the list of commands for building using this build system.
+        '''Return the list of commands for building using this build system.
 
         The build commands may always assume to be issued from the top-level
         directory of the code that is to be built.
@@ -129,7 +129,7 @@ class BuildSystem(abc.ABC):
 
         .. note::
             This method is relevant only to developers of new build systems.
-        """
+        '''
 
     def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
@@ -170,7 +170,7 @@ class BuildSystem(abc.ABC):
 
 
 class Make(BuildSystem):
-    """A build system for compiling codes using ``make``.
+    '''A build system for compiling codes using ``make``.
 
     The generated build command has the following form:
 
@@ -186,7 +186,7 @@ class Make(BuildSystem):
     invocation, you should make sure not to set any of the correspoding
     attributes and set also the :attr:`BuildSystem.flags_from_environ` flag to
     :class:`False`.
-    """
+    '''
 
     #: Append these options to the ``make`` invocation.
     #: This variable is also useful for passing variables or targets to
@@ -288,7 +288,7 @@ class Make(BuildSystem):
 
 
 class SingleSource(BuildSystem):
-    """A build system for compiling a single source file.
+    '''A build system for compiling a single source file.
 
     The generated build command will have the following form:
 
@@ -314,7 +314,7 @@ class SingleSource(BuildSystem):
     For CUDA codes, the language assumed is C++ (for the compilation flags) and
     the compiler used is :attr:`BuildSystem.nvcc`.
 
-    """
+    '''
 
     #: The source file to compile.
     #: This is automatically set by the framework based on the
@@ -444,7 +444,7 @@ class SingleSource(BuildSystem):
 
 
 class ConfigureBasedBuildSystem(BuildSystem):
-    """Abstract base class for configured-based build systems."""
+    '''Abstract base class for configured-based build systems.'''
 
     #: The top-level directory of the code.
     #:
@@ -489,7 +489,7 @@ class ConfigureBasedBuildSystem(BuildSystem):
 
 
 class CMake(ConfigureBasedBuildSystem):
-    """A build system for compiling CMake-based projects.
+    '''A build system for compiling CMake-based projects.
 
     This build system will emit the following commands:
 
@@ -498,7 +498,7 @@ class CMake(ConfigureBasedBuildSystem):
     2. Invoke ``cmake`` to configure the project by setting the corresponding
        CMake flags for compilers and compiler flags.
     3. Issue ``make`` to compile the code.
-    """
+    '''
 
     def _combine_flags(self, cppflags, xflags):
         if cppflags is None:
@@ -572,7 +572,7 @@ class CMake(ConfigureBasedBuildSystem):
 
 
 class Autotools(ConfigureBasedBuildSystem):
-    """A build system for compiling Autotools-based projects.
+    '''A build system for compiling Autotools-based projects.
 
     This build system will emit the following commands:
 
@@ -581,7 +581,7 @@ class Autotools(ConfigureBasedBuildSystem):
     2. Invoke ``configure`` to configure the project by setting the
        corresponding flags for compilers and compiler flags.
     3. Issue ``make`` to compile the code.
-    """
+    '''
 
     def emit_build_commands(self, environ):
         prepare_cmd = []
@@ -644,11 +644,11 @@ class Autotools(ConfigureBasedBuildSystem):
 
 
 class BuildSystemField(fields.TypedField):
-    """A field representing a build system.
+    '''A field representing a build system.
 
     You may either assign an instance of :class:`BuildSystem` or a string
     representing the name of the concrete class of a build system.
-    """
+    '''
 
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, BuildSystem, *other_types)

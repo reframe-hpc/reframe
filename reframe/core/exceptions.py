@@ -12,7 +12,7 @@ import reframe.utility as utility
 
 
 class ReframeBaseError(BaseException):
-    """Base exception for any ReFrame error."""
+    '''Base exception for any ReFrame error.'''
 
     def __init__(self, *args):
         self._message = str(args[0]) if args else None
@@ -30,91 +30,91 @@ class ReframeBaseError(BaseException):
 
 
 class ReframeError(ReframeBaseError, Exception):
-    """Base exception for soft errors.
+    '''Base exception for soft errors.
 
     Soft errors may be treated by simply printing the exception's message and
     trying to continue execution if possible.
-    """
+    '''
 
 
 class ReframeFatalError(ReframeBaseError):
-    """A fatal framework error.
+    '''A fatal framework error.
 
     Execution must be aborted.
-    """
+    '''
 
 
 class ReframeSyntaxError(ReframeError):
-    """Raised when the syntax of regression tests is not correct."""
+    '''Raised when the syntax of regression tests is not correct.'''
 
 
 class RegressionTestLoadError(ReframeError):
-    """Raised when the regression test cannot be loaded."""
+    '''Raised when the regression test cannot be loaded.'''
 
 
 class NameConflictError(RegressionTestLoadError):
-    """Raised when there is a name clash in the test suite."""
+    '''Raised when there is a name clash in the test suite.'''
 
 
 class TaskExit(ReframeError):
-    """Raised when a regression task must exit the pipeline prematurely."""
+    '''Raised when a regression task must exit the pipeline prematurely.'''
 
 
 class AbortTaskError(ReframeError):
-    """Raised into a regression task to denote that it has been aborted due to
+    '''Raised into a regression task to denote that it has been aborted due to
     an external reason (e.g., keyboard interrupt, fatal error in other places
     etc.)
-    """
+    '''
 
 
 class ConfigError(ReframeError):
-    """Raised when a configuration error occurs."""
+    '''Raised when a configuration error occurs.'''
 
 
 class UnknownSystemError(ConfigError):
-    """Raised when the host system cannot be identified."""
+    '''Raised when the host system cannot be identified.'''
 
 
 class SystemAutodetectionError(UnknownSystemError):
-    """Raised when the host system cannot be auto-detected"""
+    '''Raised when the host system cannot be auto-detected'''
 
 
 class LoggingError(ReframeError):
-    """Raised when an error related to logging has occurred."""
+    '''Raised when an error related to logging has occurred.'''
 
 
 class EnvironError(ReframeError):
-    """Raised when an error related to an environment occurs."""
+    '''Raised when an error related to an environment occurs.'''
 
 
 class SanityError(ReframeError):
-    """Raised to denote an error in sanity checking."""
+    '''Raised to denote an error in sanity checking.'''
 
 
 class PerformanceError(ReframeError):
-    """Raised to denote an error in performance checking."""
+    '''Raised to denote an error in performance checking.'''
 
 
 class PipelineError(ReframeError):
-    """Raised when a condition prevents the regression test pipeline to continue
+    '''Raised when a condition prevents the regression test pipeline to continue
     and the error may not be described by another more specific exception.
-    """
+    '''
 
 
 class StatisticsError(ReframeError):
-    """Raised to denote an error in dealing with statistics."""
+    '''Raised to denote an error in dealing with statistics.'''
 
 
 class BuildSystemError(ReframeError):
-    """Raised when a build system is not configured properly."""
+    '''Raised when a build system is not configured properly.'''
 
 
 class ContainerError(ReframeError):
-    """Raised when a container platform is not configured properly."""
+    '''Raised when a container platform is not configured properly.'''
 
 
 class BuildError(ReframeError):
-    """Raised when a build fails."""
+    '''Raised when a build fails.'''
 
     def __init__(self, stdout, stderr):
         super().__init__()
@@ -125,7 +125,7 @@ class BuildError(ReframeError):
 
 
 class SpawnedProcessError(ReframeError):
-    """Raised when a spawned OS command has failed."""
+    '''Raised when a spawned OS command has failed.'''
 
     def __init__(self, command, stdout, stderr, exitcode):
         super().__init__()
@@ -166,7 +166,7 @@ class SpawnedProcessError(ReframeError):
 
 
 class SpawnedProcessTimeout(SpawnedProcessError):
-    """Raised when a spawned OS command has timed out."""
+    '''Raised when a spawned OS command has timed out.'''
 
     def __init__(self, command, stdout, stderr, timeout):
         super().__init__(command, stdout, stderr, None)
@@ -189,7 +189,7 @@ class SpawnedProcessTimeout(SpawnedProcessError):
 
 
 class JobError(ReframeError):
-    """Job related errors."""
+    '''Job related errors.'''
 
     def __init__(self, msg=None, jobid=None):
         message = '[jobid=%s]' % jobid
@@ -205,19 +205,19 @@ class JobError(ReframeError):
 
 
 class JobBlockedError(JobError):
-    """Raised by job schedulers when a job is blocked indefinitely."""
+    '''Raised by job schedulers when a job is blocked indefinitely.'''
 
 
 class JobNotStartedError(JobError):
-    """Raised when trying to operate on a unstarted job."""
+    '''Raised when trying to operate on a unstarted job.'''
 
 
 class DependencyError(ReframeError):
-    """Raised when a dependency problem is encountered."""
+    '''Raised when a dependency problem is encountered.'''
 
 
 class ReframeDeprecationWarning(DeprecationWarning):
-    """Warning for deprecated features of the ReFrame framework."""
+    '''Warning for deprecated features of the ReFrame framework.'''
 
 
 warnings.filterwarnings('default', category=ReframeDeprecationWarning)
@@ -275,8 +275,8 @@ def format_exception(exc_type, exc_value, tb):
 
 
 def user_deprecation_warning(message):
-    """Raise a deprecation warning at the user stack frame that eventually calls
-    this."""
+    '''Raise a deprecation warning at the user stack frame that eventually calls
+    this.'''
 
     # Unroll the stack and issue the warning from the first stack frame that is
     # outside the framework.

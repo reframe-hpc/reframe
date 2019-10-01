@@ -9,12 +9,12 @@ from reframe.core.runtime import runtime
 
 
 class Environment:
-    """This class abstracts away an environment to run regression tests.
+    '''This class abstracts away an environment to run regression tests.
 
     It is simply a collection of modules to be loaded and environment variables
     to be set when this environment is loaded by the framework.
     Users may not create or modify directly environments.
-    """
+    '''
     name = fields.TypedField('name', typ.Str[r'(\w|-)+'])
     modules = fields.TypedField('modules', typ.List[str])
     variables = fields.TypedField('variables', typ.Dict[str, str])
@@ -31,33 +31,33 @@ class Environment:
 
     @property
     def name(self):
-        """The name of this environment.
+        '''The name of this environment.
 
         :type: :class:`str`
-        """
+        '''
         return self._name
 
     @property
     def modules(self):
-        """The modules associated with this environment.
+        '''The modules associated with this environment.
 
         :type: :class:`list` of :class:`str`
-        """
+        '''
         return util.SequenceView(self._modules)
 
     @property
     def variables(self):
-        """The environment variables associated with this environment.
+        '''The environment variables associated with this environment.
 
         :type: dictionary of :class:`str` keys/values.
-        """
+        '''
         return util.MappingView(self._variables)
 
     @property
     def is_loaded(self):
-        """:class:`True` if this environment is loaded,
+        ''':class:`True` if this environment is loaded,
         :class:`False` otherwise.
-        """
+        '''
         is_module_loaded = runtime().modules_system.is_module_loaded
         return (all(map(is_module_loaded, self._modules)) and
                 all(os.environ.get(k, None) == os_ext.expandvars(v)
@@ -158,7 +158,7 @@ class Environment:
                 self._variables == other._variables)
 
     def details(self):
-        """Return a detailed description of this environment."""
+        '''Return a detailed description of this environment.'''
         variables = '\n'.join(' '*8 + '- %s=%s' % (k, v)
                               for k, v in self.variables.items())
         lines = [
@@ -204,7 +204,7 @@ class EnvironmentSnapshot(Environment):
 
 
 class save_environment:
-    """A context manager for saving and restoring the current environment."""
+    '''A context manager for saving and restoring the current environment.'''
 
     def __init__(self):
         self.environ_save = EnvironmentSnapshot()
@@ -218,7 +218,7 @@ class save_environment:
 
 
 class ProgEnvironment(Environment):
-    """A class representing a programming environment.
+    '''A class representing a programming environment.
 
     This type of environment adds also attributes for setting the compiler and
     compilation flags.
@@ -231,7 +231,7 @@ class ProgEnvironment(Environment):
     If you want to disable completely the propagation of the compilation flags
     to the ``make`` invocation, even if they are set, you should set the
     :attr:`propagate` attribute to :class:`False`.
-    """
+    '''
 
     _cc = fields.TypedField('_cc', str)
     _cxx = fields.TypedField('_cxx', str)
@@ -269,66 +269,66 @@ class ProgEnvironment(Environment):
 
     @property
     def cc(self):
-        """The C compiler of this programming environment.
+        '''The C compiler of this programming environment.
 
         :type: :class:`str`
-        """
+        '''
         return self._cc
 
     @property
     def cxx(self):
-        """The C++ compiler of this programming environment.
+        '''The C++ compiler of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._cxx
 
     @property
     def ftn(self):
-        """The Fortran compiler of this programming environment.
+        '''The Fortran compiler of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._ftn
 
     @property
     def cppflags(self):
-        """The preprocessor flags of this programming environment.
+        '''The preprocessor flags of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._cppflags
 
     @property
     def cflags(self):
-        """The C compiler flags of this programming environment.
+        '''The C compiler flags of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._cflags
 
     @property
     def cxxflags(self):
-        """The C++ compiler flags of this programming environment.
+        '''The C++ compiler flags of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._cxxflags
 
     @property
     def fflags(self):
-        """The Fortran compiler flags of this programming environment.
+        '''The Fortran compiler flags of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._fflags
 
     @property
     def ldflags(self):
-        """The linker flags of this programming environment.
+        '''The linker flags of this programming environment.
 
         :type: :class:`str` or :class:`None`
-        """
+        '''
         return self._ldflags
 
     @property

@@ -1,12 +1,12 @@
-"""Provides utilities for deferred execution of expressions."""
+'''Provides utilities for deferred execution of expressions.'''
 
 import builtins
 import functools
 
 
 def deferrable(func):
-    """Function decorator for converting a function to a deferred
-    expression."""
+    '''Function decorator for converting a function to a deferred
+    expression.'''
     @functools.wraps(func)
     def _deferred(*args, **kwargs):
         return _DeferredExpression(func, *args, **kwargs)
@@ -15,7 +15,7 @@ def deferrable(func):
 
 
 class _DeferredExpression:
-    """Represents an expression whose evaluation has been deferred.
+    '''Represents an expression whose evaluation has been deferred.
 
     This class simply stores a callable and its arguments and will evaluate it
     as soon as the `evaluate()` method is called. This class implements the
@@ -32,7 +32,7 @@ class _DeferredExpression:
     and evaluate them all.
 
     `_DeferredExpression` are immutable objects.
-    """
+    '''
 
     def __init__(self, fn, *args, **kwargs):
         self._fn = fn
@@ -57,19 +57,19 @@ class _DeferredExpression:
             return ret
 
     def __bool__(self):
-        """The truthy value of a deferred expression.
+        '''The truthy value of a deferred expression.
 
         This causes the immediate evaulation of the deferred expression.
-        """
+        '''
         return builtins.bool(self.evaluate())
 
     def __str__(self):
-        """Evaluate the deferred expresion and return its string
-        representation."""
+        '''Evaluate the deferred expresion and return its string
+        representation.'''
         return str(self.evaluate())
 
     def __iter__(self):
-        """Evaluate the deferred expression and iterate over the result."""
+        '''Evaluate the deferred expression and iterate over the result.'''
         return iter(self.evaluate())
 
     # Overload Python operators to be able to defer any expression
@@ -115,14 +115,14 @@ class _DeferredExpression:
 
     @deferrable
     def __contains__(seq, key):
-        """This method triggers the evaluation of the resulting expression.
+        '''This method triggers the evaluation of the resulting expression.
 
         If you want a really deferred check, you should use
         `reframe.utility.sanity.contains()`.  This happens because Python
         always converts the result of `__contains__()` to a boolean value by
         calling `bool()`, which in our case it triggers the evaluation of the
         expression.
-        """
+        '''
         return key in seq
 
     @deferrable
@@ -154,11 +154,11 @@ class _DeferredExpression:
         return a % b
 
     def __divmod__(self, other):
-        """This is not deferrable.
+        '''This is not deferrable.
 
         Instead it returns a tuple of deferrables that compute the floordiv and
         the mod.
-        """
+        '''
         return (self.__floordiv__(other), self.__mod__(other))
 
     @deferrable
@@ -215,11 +215,11 @@ class _DeferredExpression:
         return b % a
 
     def __rdivmod__(self, other):
-        """This is not deferrable.
+        '''This is not deferrable.
 
         Instead it returns a tuple of deferrables that compute the rfloordiv
         and the rmod.
-        """
+        '''
         return (self.__rfloordiv__(other), self.__rmod__(other))
 
     @deferrable
@@ -338,10 +338,10 @@ class _DeferredExpression:
 # Utility functions
 
 def evaluate(expr):
-    """Evaluate a deferred expression.
+    '''Evaluate a deferred expression.
 
     If `expr` is not a deferred expression, it will returned as is.
-    """
+    '''
     if isinstance(expr, _DeferredExpression):
         return expr.evaluate()
     else:
