@@ -52,18 +52,18 @@ class _TestJob(abc.ABC):
     @property
     @abc.abstractmethod
     def sched_name(self):
-        """Return the registered name of the scheduler."""
+        '''Return the registered name of the scheduler.'''
 
     @property
     @abc.abstractmethod
     def launcher(self):
-        """Return a launcher to use for this test."""
+        '''Return a launcher to use for this test.'''
 
     @abc.abstractmethod
     def setup_user(self, msg=None):
-        """Configure the test for running with the user supplied job scheduler
+        '''Configure the test for running with the user supplied job scheduler
         configuration or skip it.
-        """
+        '''
         partition = fixtures.partition_with_scheduler(self.sched_name)
         if partition is None:
             msg = msg or "scheduler '%s' not configured" % self.sched_name
@@ -72,7 +72,7 @@ class _TestJob(abc.ABC):
         self.testjob.options += partition.access
 
     def assertScriptSanity(self, script_file):
-        """Assert the sanity of the produced script file."""
+        '''Assert the sanity of the produced script file.'''
         with open(self.testjob.script_filename) as fp:
             matches = re.findall(r'echo prerun|echo postrun|hostname',
                                  fp.read())

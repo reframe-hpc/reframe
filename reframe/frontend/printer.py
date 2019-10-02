@@ -5,14 +5,14 @@ import reframe.utility.color as color
 
 
 class PrettyPrinter:
-    """Pretty printing facility for the framework.
+    '''Pretty printing facility for the framework.
 
     It takes care of formatting the progress output and adds some more
     cosmetics to specific levels of messages, such as warnings and errors.
 
     The actual printing is delegated to an internal logger, which is
     responsible for printing.
-    """
+    '''
 
     def __init__(self):
         self.colorize = True

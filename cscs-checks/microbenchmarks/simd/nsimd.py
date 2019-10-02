@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class NsimdTest(rfm.RegressionTest):
-    """
+    '''
     Testing https://github.com/agenium-scale/nsimd
     Example job (with --performance-report) will look like:
     ----------------------------------------------------------------------
@@ -68,7 +68,7 @@ class NsimdTest(rfm.RegressionTest):
 
         # MIPP_sqrt
         mipp::store(_r + i, mipp::sqrt<f64>(mipp::load<f64>(_0 + i)));
-    """
+    '''
     def __init__(self):
         self.valid_systems = ['dom:mc', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']

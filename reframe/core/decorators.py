@@ -69,7 +69,7 @@ def _validate_test(cls):
 
 
 def simple_test(cls):
-    """Class decorator for registering parameterless tests with ReFrame.
+    '''Class decorator for registering parameterless tests with ReFrame.
 
     The decorated class must derive from
     :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
@@ -77,7 +77,7 @@ def simple_test(cls):
 
     .. versionadded:: 2.13
 
-    """
+    '''
 
     _validate_test(cls)
     _register_test(cls)
@@ -85,7 +85,7 @@ def simple_test(cls):
 
 
 def parameterized_test(*inst):
-    """Class decorator for registering multiple instantiations of a test class.
+    '''Class decorator for registering multiple instantiations of a test class.
 
    The decorated class must derive from
    :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
@@ -101,7 +101,7 @@ def parameterized_test(*inst):
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
 
-    """
+    '''
     def _do_register(cls):
         _validate_test(cls)
         for args in inst:
@@ -113,7 +113,7 @@ def parameterized_test(*inst):
 
 
 def required_version(*versions):
-    """Class decorator for specifying the required ReFrame versions for the
+    '''Class decorator for specifying the required ReFrame versions for the
     following test.
 
     If the test is not compatible with the current ReFrame version it will be
@@ -140,7 +140,7 @@ def required_version(*versions):
 
     .. versionadded:: 2.13
 
-    """
+    '''
     if not versions:
         raise ValueError('no versions specified')
 
