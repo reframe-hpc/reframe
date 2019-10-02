@@ -557,7 +557,6 @@ def main():
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
             exec_policy.sched_options = options.job_options
-
             try:
                 max_retries = int(options.max_retries)
             except ValueError:
