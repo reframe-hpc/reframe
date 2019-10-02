@@ -11,7 +11,7 @@ from reframe.utility import ScopedDict
 
 
 class Field:
-    """Base class for attribute validators."""
+    '''Base class for attribute validators.'''
 
     def __init__(self, fieldname):
         self._name = fieldname
@@ -33,7 +33,7 @@ class Field:
 
 
 class ForwardField:
-    """Simple field that forwards set/get to a target object."""
+    '''Simple field that forwards set/get to a target object.'''
 
     def __init__(self, obj, attr):
         self._target = obj
@@ -50,7 +50,7 @@ class ForwardField:
 
 
 class TypedField(Field):
-    """Stores a field of predefined type"""
+    '''Stores a field of predefined type'''
 
     def __init__(self, fieldname, main_type, *other_types):
         super().__init__(fieldname)
@@ -72,21 +72,21 @@ class TypedField(Field):
 
 
 class CopyOnWriteField(Field):
-    """Holds a copy of the variable that is assigned to it the first time"""
+    '''Holds a copy of the variable that is assigned to it the first time'''
 
     def __set__(self, obj, value):
         super().__set__(obj, copy.deepcopy(value))
 
 
 class ConstantField(Field):
-    """Holds a constant.
+    '''Holds a constant.
 
     Attempt to set it will raise an exception. This field may be accessed also
     from the class and will return the same constant value.
 
     :arg value: the value of this field.
 
-    """
+    '''
 
     def __init__(self, value):
         super().__init__('__readonly')
@@ -100,7 +100,7 @@ class ConstantField(Field):
 
 
 class TimerField(TypedField):
-    """Stores a timer in the form of a tuple '(hh, mm, ss)'"""
+    '''Stores a timer in the form of a tuple ``(hh, mm, ss)``'''
 
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, types.Tuple[int, int, int], *other_types)
@@ -123,10 +123,10 @@ class TimerField(TypedField):
 
 
 class AbsolutePathField(TypedField):
-    """A string field that stores an absolute path.
+    '''A string field that stores an absolute path.
 
     Any string assigned to such a field, will be converted to an absolute path.
-    """
+    '''
 
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, str, *other_types)
@@ -141,9 +141,9 @@ class AbsolutePathField(TypedField):
 
 
 class ScopedDictField(TypedField):
-    """Stores a ScopedDict with a specific type.
+    '''Stores a ScopedDict with a specific type.
 
-    It also handles implicit conversions from ordinary dicts."""
+    It also handles implicit conversions from ordinary dicts.'''
 
     def __init__(self, fieldname, valuetype, *other_types):
         super().__init__(fieldname,
@@ -159,7 +159,7 @@ class ScopedDictField(TypedField):
 
 
 class DeprecatedField(Field):
-    """Field wrapper for deprecating fields."""
+    '''Field wrapper for deprecating fields.'''
 
     OP_SET = 1
     OP_GET = 2

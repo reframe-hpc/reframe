@@ -61,7 +61,7 @@ class PbsJob(sched.Job):
         return self._prefix + ' ' + option
 
     def _run_command(self, cmd, timeout=None):
-        """Run command cmd and re-raise any exception as a JobError."""
+        '''Run command cmd and re-raise any exception as a JobError.'''
         try:
             return os_ext.run_command(cmd, check=True, timeout=timeout)
         except SpawnedProcessError as e:

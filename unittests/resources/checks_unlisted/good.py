@@ -15,7 +15,7 @@ class MyBaseTest(RegressionTest):
         self.b = b
 
     def __eq__(self, other):
-        """This is just for unit tests for convenience."""
+        '''This is just for unit tests for convenience.'''
         if not isinstance(other, MyBaseTest):
             return NotImplemented
 
@@ -32,7 +32,7 @@ class AnotherBaseTest(RegressionTest):
         self.b = b
 
     def __eq__(self, other):
-        """This is just for unit tests for convenience."""
+        '''This is just for unit tests for convenience.'''
         if not isinstance(other, AnotherBaseTest):
             return NotImplemented
 
