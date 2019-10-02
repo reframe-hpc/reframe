@@ -43,7 +43,7 @@ def _do_import_module_from_file(filename, module_name=None):
 
 
 def import_module_from_file(filename):
-    """Import module from file."""
+    '''Import module from file.'''
 
     # Expand and sanitize filename
     filename = os.path.abspath(os.path.expandvars(filename))
@@ -62,9 +62,9 @@ def import_module_from_file(filename):
 
 
 def allx(iterable):
-    """Same as the built-in all, except that it returns :class:`False` if
+    '''Same as the built-in all, except that it returns :class:`False` if
     ``iterable`` is empty.
-    """
+    '''
 
     # Generators must be treated specially, because there is no way to get
     # their size without consuming their elements.
@@ -84,11 +84,11 @@ def allx(iterable):
 
 
 def decamelize(s, delim='_'):
-    """Decamelize the string ``s``.
+    '''Decamelize the string ``s``.
 
     For example, ``MyBaseClass`` will be converted to ``my_base_class``.
     The delimiter may be changed by setting the ``delim`` argument.
-    """
+    '''
 
     if not isinstance(s, str):
         raise TypeError('decamelize() requires a string argument')
@@ -100,9 +100,9 @@ def decamelize(s, delim='_'):
 
 
 def toalphanum(s):
-    """Convert string ``s`` be replacing any non-alphanumeric character with
+    '''Convert string ``s`` by replacing any non-alphanumeric character with
     ``_``.
-    """
+    '''
 
     if not isinstance(s, str):
         raise TypeError('toalphanum() requires a string argument')
@@ -114,12 +114,12 @@ def toalphanum(s):
 
 
 class ScopedDict(UserDict):
-    """This is a special dict that imposes scopes on its keys.
+    '''This is a special dict that imposes scopes on its keys.
 
-    When a key is not found it will be searched up in the scope hierarchy."""
+    When a key is not found it will be searched up in the scope hierarchy.'''
 
     def __init__(self, mapping={}, scope_sep=':', global_scope='*'):
-        """Initialize a ScopedDict
+        '''Initialize a ScopedDict
 
         Keyword arguments:
         mapping -- A two-level mapping of the form
@@ -132,7 +132,7 @@ class ScopedDict(UserDict):
                    strings, otherwise TypeError will be raised
 
         scope_sep -- character that separates the scopes
-        global_scope -- key to look up for the global scope"""
+        global_scope -- key to look up for the global scope'''
         super().__init__(mapping)
         self._scope_sep = scope_sep
         self._global_scope = global_scope
@@ -224,12 +224,12 @@ class ScopedDict(UserDict):
         self.data[scope][lookup_key] = value
 
     def __delitem__(self, key):
-        """Deletes either a key or a scope if key refers to a scope.
+        '''Deletes either a key or a scope if key refers to a scope.
 
         If key refers to both a scope and a key, the key will be deleted.
         If key refers to scope, the whole scope entry will be deleted.
         If not, the exact key requested will be deleted.
-        No key resolution will be performed."""
+        No key resolution will be performed.'''
         scope, lookup_key = self._keyinfo(key)
         if scope in self.data and lookup_key in self.data[scope]:
             del self.data[scope][lookup_key]
@@ -245,7 +245,7 @@ class ScopedDict(UserDict):
 
 @functools.total_ordering
 class OrderedSet(collections.abc.MutableSet):
-    """An ordered set."""
+    '''An ordered set.'''
 
     def __init__(self, *args):
         # We need to allow construction without arguments
@@ -433,7 +433,7 @@ class OrderedSet(collections.abc.MutableSet):
 
 
 class SequenceView(collections.abc.Sequence):
-    """A read-only view of a sequence."""
+    '''A read-only view of a sequence.'''
 
     def __init__(self, container):
         if not isinstance(container, collections.abc.Sequence):
@@ -479,7 +479,7 @@ class SequenceView(collections.abc.Sequence):
 
 
 class MappingView(collections.abc.Mapping):
-    """A read-only view of a mapping."""
+    '''A read-only view of a mapping.'''
 
     def __init__(self, mapping):
         if not isinstance(mapping, collections.abc.Mapping):

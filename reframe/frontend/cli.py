@@ -218,6 +218,12 @@ def main():
         help='Disable coloring of output')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
+
+    # FIXME: This should move to env_options as soon as
+    # https://github.com/eth-cscs/reframe/pull/946 is merged
+    misc_options.add_argument(
+        '--non-default-craype', action='store_true', default=False,
+        help='Test a non-default Cray PE')
     misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
@@ -270,7 +276,8 @@ def main():
         printer.inc_verbosity(options.verbose)
 
     try:
-        runtime.init_runtime(settings.site_configuration, options.system)
+        runtime.init_runtime(settings.site_configuration, options.system,
+                             non_default_craype=options.non_default_craype)
     except SystemAutodetectionError:
         printer.warning(
             'could not find a configuration entry for the current system; '
@@ -301,7 +308,8 @@ def main():
                 }
             }
         }
-        runtime.init_runtime(settings.site_configuration, 'generic')
+        runtime.init_runtime(settings.site_configuration, 'generic',
+                             non_default_craype=options.non_default_craype)
     except Exception as e:
         printer.error('configuration error: %s' % e)
         printer.verbose(''.join(traceback.format_exception(*sys.exc_info())))

@@ -1,4 +1,4 @@
-"""Dynamic recursive type checking of aggregate data structures.
+'''Dynamic recursive type checking of aggregate data structures.
 
 This module defines types for aggregate data structures, such as lists,
 dictionaries etc. that you can use with the ``isinstance`` builtin function to
@@ -55,7 +55,7 @@ The type hierarchy of the types defined in this module is the following
 In the above example ``T`` may refer to any type, so that ``List[List[int]]``
 is an instance of ``List``, but not an instance of ``List[int]``.
 
-"""
+'''
 
 import abc
 import re
@@ -71,7 +71,7 @@ class _TypeFactory(abc.ABCMeta):
 # types
 
 class _ContainerType(_TypeFactory):
-    """A metaclass for containers with uniformly typed elements."""
+    '''A metaclass for containers with uniformly typed elements.'''
 
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
@@ -106,10 +106,10 @@ class _ContainerType(_TypeFactory):
 
 
 class _TupleType(_ContainerType):
-    """A metaclass for tuples.
+    '''A metaclass for tuples.
 
     Tuples may contain uniformly-typed elements or non-uniformly typed ones.
-    """
+    '''
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):
@@ -148,7 +148,7 @@ class _TupleType(_ContainerType):
 
 
 class _MappingType(_TypeFactory):
-    """A metaclass for type checking mapping types."""
+    '''A metaclass for type checking mapping types.'''
 
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
@@ -195,7 +195,7 @@ class _MappingType(_TypeFactory):
 
 
 class StrType(_ContainerType):
-    """A metaclass for type checking string types."""
+    '''A metaclass for type checking string types.'''
 
     def __instancecheck__(cls, inst):
         if not issubclass(type(inst), cls):

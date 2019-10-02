@@ -109,11 +109,11 @@ class TestDeferredContainerOps(unittest.TestCase):
 
 
 class V:
-    """A simple mutable wrapper of an integer value.
+    '''A simple mutable wrapper of an integer value.
 
     This class is used as a testbed for checking the behaviour of applying
     augmented operators on a deferred expression.
-    """
+    '''
 
     def __init__(self, value):
         self._value = value

@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class VcSimdTest(rfm.RegressionTest):
-    """
+    '''
     Testing https://github.com/VcDevel/Vc
     Example performance report will look like:
     > reframe --system dom:mc -p PrgEnv-gnu -r -c vc.py --performance-report
@@ -21,7 +21,7 @@ class VcSimdTest(rfm.RegressionTest):
         - dom:gpu
            - PrgEnv-gnu
               * speedup: 1.382
-    """
+    '''
     def __init__(self):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['PrgEnv-gnu']

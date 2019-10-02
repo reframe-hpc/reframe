@@ -290,7 +290,7 @@ class SlurmJob(sched.Job):
                               self._get_nodes_by_name(nodespec)]
 
     def _update_state(self):
-        """Check the status of the job."""
+        '''Check the status of the job.'''
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
@@ -340,8 +340,8 @@ class SlurmJob(sched.Job):
             self._check_and_cancel(reason_descr)
 
     def _check_and_cancel(self, reason_descr):
-        """Check if blocking reason ``reason_descr`` is unrecoverable and
-        cancel the job in this case."""
+        '''Check if blocking reason ``reason_descr`` is unrecoverable and
+        cancel the job in this case.'''
 
         # The reason description may have two parts as follows:
         # "ReqNodeNotAvail, UnavailableNodes:nid00[408,411-415]"
@@ -436,7 +436,7 @@ class SlurmJob(sched.Job):
 
 @register_scheduler('squeue')
 class SqueueJob(SlurmJob):
-    """A Slurm job that uses squeue to query its state."""
+    '''A Slurm job that uses squeue to query its state.'''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -490,7 +490,7 @@ class SqueueJob(SlurmJob):
 
 
 class SlurmNode:
-    """Class representing a Slurm node."""
+    '''Class representing a Slurm node.'''
 
     def __init__(self, node_descr):
         self._name = self._extract_attribute('NodeName', node_descr)

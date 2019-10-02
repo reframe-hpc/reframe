@@ -11,12 +11,12 @@ from reframe.core.exceptions import DependencyError
 
 
 def build_deps(cases):
-    """Build dependency graph from test cases.
+    '''Build dependency graph from test cases.
 
     The graph is represented as an adjacency list in a Python dictionary
     holding test cases. The dependency information is also encoded inside each
     test cases.
-    """
+    '''
 
     # Index cases for quick access
     cases_by_part = {}
@@ -83,7 +83,7 @@ def print_deps(graph):
 
 
 def _reduce_deps(graph):
-    """Reduce test case graph to a test-only graph."""
+    '''Reduce test case graph to a test-only graph.'''
     ret = {}
     for case, deps in graph.items():
         test_deps = util.OrderedSet(d.check.name for d in deps)
@@ -96,7 +96,7 @@ def _reduce_deps(graph):
 
 
 def validate_deps(graph):
-    """Validate dependency graph."""
+    '''Validate dependency graph.'''
 
     # Reduce test case graph to a test name only graph; this disallows
     # pseudo-dependencies as follows:

@@ -14,12 +14,12 @@ from reframe.core.logging import getlogger
 
 
 class Job(abc.ABC):
-    """A job descriptor.
+    '''A job descriptor.
 
     .. caution::
        This is an abstract class.
        Users may not create jobs directly.
-    """
+    '''
 
     #: Options to be passed to the backend job scheduler.
     #:
@@ -124,14 +124,14 @@ class Job(abc.ABC):
 
     @property
     def num_tasks(self):
-        """The number of tasks assigned to this job.
+        '''The number of tasks assigned to this job.
 
         This attribute is useful in a flexible regression test for determining
         the actual number of tasks that ReFrame assigned to the test.
 
         For more information on flexible task allocation, please refer to the
         `tutorial <advanced.html#flexible-regression-tests>`__.
-        """
+        '''
         return self._num_tasks
 
     @property
@@ -297,7 +297,7 @@ class Job(abc.ABC):
 
     @property
     def nodelist(self):
-        """The list of node names assigned to this job.
+        '''The list of node names assigned to this job.
 
         This attribute is :class:`None` if no nodes are assigned to the job
         yet.
@@ -319,5 +319,5 @@ class Job(abc.ABC):
 
         .. versionadded:: 2.17
 
-        """
+        '''
         return self._nodelist
