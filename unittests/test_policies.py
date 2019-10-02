@@ -12,6 +12,7 @@ import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError, JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -530,6 +531,14 @@ class TestDependencies(unittest.TestCase):
         # Pick a check to test getdep()
         check_e0 = find_case('Test1_exact', 'e0', cases).check
         check_e1 = find_case('Test1_exact', 'e1', cases).check
+
+        with pytest.raises(DependencyError):
+            check_e0.getdep('Test0')
+
+        # Set the current environment
+        check_e0._current_environ = Environment('e0')
+        check_e1._current_environ = Environment('e1')
+
         assert check_e0.getdep('Test0', 'e0').name == 'Test0'
         assert check_e0.getdep('Test0', 'e1').name == 'Test0'
         assert check_e1.getdep('Test0', 'e1').name == 'Test0'
