@@ -617,8 +617,8 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
 
 @deferrable
 def extractsingle(patt, filename, tag=0, conv=None, item=0, encoding='utf-8'):
-    '''Extract a single value from the capturing group ``tag`` of a matching regex
-    ``patt`` in the file ``filename``.
+    '''Extract a single value from the capturing group ``tag`` of a matching
+    regex ``patt`` in the file ``filename``.
 
     This function is equivalent to ``extractall(patt, filename, tag,
     conv)[item]``, except that it raises a ``SanityError`` if ``item`` is out

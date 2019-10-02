@@ -96,8 +96,9 @@ class PerformanceError(ReframeError):
 
 
 class PipelineError(ReframeError):
-    '''Raised when a condition prevents the regression test pipeline to continue
-    and the error may not be described by another more specific exception.
+    '''Raised when a condition prevents the regression test pipeline to
+    continue and the error may not be described by another more specific
+    exception.
     '''
 
 
@@ -275,8 +276,8 @@ def format_exception(exc_type, exc_value, tb):
 
 
 def user_deprecation_warning(message):
-    '''Raise a deprecation warning at the user stack frame that eventually calls
-    this.'''
+    '''Raise a deprecation warning at the user stack frame that eventually
+    calls this.'''
 
     # Unroll the stack and issue the warning from the first stack frame that is
     # outside the framework.

@@ -56,8 +56,8 @@ def switch_to_user_runtime(fn):
 # FIXME: This may conflict in the unlikely situation that a user defines a
 # system named `kesch` with a partition named `pn`.
 def partition_with_scheduler(name=None, skip_partitions=['kesch:pn']):
-    '''Retrieve a system partition from the runtime whose scheduler is registered
-    with ``name``.
+    '''Retrieve a system partition from the runtime whose scheduler is
+    registered with ``name``.
 
     If ``name`` is :class:`None`, any partition with a non-local scheduler will
     be returned.

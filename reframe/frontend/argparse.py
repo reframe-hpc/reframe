@@ -109,8 +109,8 @@ class ArgumentParser(_ArgumentHolder):
         self._holder.print_help()
 
     def parse_args(self, args=None, namespace=None):
-        '''Convert argument strings to objects and return them as attributes of a
-        namespace.
+        '''Convert argument strings to objects and return them as attributes of
+        a namespace.
 
         If `namespace` is `None`, this method is equivalent to
         `argparse.ArgumentParser.parse_args()`.
