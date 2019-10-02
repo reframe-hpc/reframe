@@ -96,7 +96,6 @@ class NsimdTest(rfm.RegressionTest):
             '-lsleef'
         ]
         self.maintainers = ['JG']
-        self.tags = {'diagnostic'}
         self.exclusive = True
         self.num_tasks = 1
         self.num_tasks_per_node = 1
