@@ -59,7 +59,7 @@ class _DeferredExpression:
     def __bool__(self):
         '''The truthy value of a deferred expression.
 
-        This causes the immediate evaulation of the deferred expression.
+        This causes the immediate evaluation of the deferred expression.
         '''
         return builtins.bool(self.evaluate())
 

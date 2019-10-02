@@ -100,7 +100,7 @@ def decamelize(s, delim='_'):
 
 
 def toalphanum(s):
-    '''Convert string ``s`` be replacing any non-alphanumeric character with
+    '''Convert string ``s`` by replacing any non-alphanumeric character with
     ``_``.
     '''
 

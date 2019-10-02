@@ -286,13 +286,13 @@ class change_dir:
 
 
 def is_url(s):
-    '''Check if string is an URL.'''
+    '''Check if string is a URL.'''
     parsed = urlparse(s)
     return parsed.scheme != '' and parsed.netloc != ''
 
 
 def git_clone(url, targetdir=None):
-    '''Clone git repository from an URL.'''
+    '''Clone git repository from a URL.'''
     if not git_repo_exists(url):
         raise ReframeError('git repository does not exist')
 

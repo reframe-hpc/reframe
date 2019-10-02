@@ -735,7 +735,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @property
     def logger(self):
-        '''A logger associated with the this test.
+        '''A logger associated with this test.
 
         You can use this logger to log information for your test.
         '''
@@ -1252,7 +1252,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         shutil.copy(script, dst)
 
     def _copy_to_outputdir(self):
-        '''Copy checks interesting files to the output directory.'''
+        '''Copy check's interesting files to the output directory.'''
         self.logger.debug('copying interesting files to output directory')
         self._copy_job_files(self._job, self.outputdir)
         self._copy_job_files(self._build_job, self.outputdir)
