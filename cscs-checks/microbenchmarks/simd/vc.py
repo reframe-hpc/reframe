@@ -44,7 +44,7 @@ class VcSimdTest(rfm.RegressionTest):
             '-I$EBROOTVC/include']
         self.build_system.ldflags = ['-L$EBROOTVC/lib', '-lVc']
         self.maintainers = ['JG']
-        self.tags = {'benchmark', 'diagnostic'}
+        self.tags = {'diagnostic'}
         self.exclusive = True
         self.num_tasks = 1
         self.num_tasks_per_node = 1
