@@ -169,19 +169,16 @@ def toposort(graph):
     return list(itertools.chain(*(cases_by_name[n] for n in visited)))
 
 
-def create_deps_count(graph):
+def create_ref_count(graph):
 
     # TODO: create unit test
-    deps_count = {}
-    for test, deps in graph.items():
-        try:
-            deps_count[test] += 1
-        except KeyError:
-            deps_count[test] = 0
-        for dep in deps:
+    ref_count = {}
+    for node, deps in graph.items():
+        ref_count.setdefault(node,0)
+        for adj in deps:
             try:
-                deps_count[dep] += 1
+                ref_count[adj] += 1
             except KeyError:
-                deps_count[dep] = 0
+                ref_count[adj] = 0
 
-    return deps_count
+    return ref_count
