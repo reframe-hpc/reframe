@@ -42,11 +42,11 @@ def init_runtime():
 
 
 def switch_to_user_runtime(fn):
-    """Decorator to switch to the user supplied configuration.
+    '''Decorator to switch to the user supplied configuration.
 
     If no such configuration exists, this decorator returns the target function
     untouched.
-    """
+    '''
     if USER_SITE_CONFIG is None:
         return fn
 
@@ -56,13 +56,13 @@ def switch_to_user_runtime(fn):
 # FIXME: This may conflict in the unlikely situation that a user defines a
 # system named `kesch` with a partition named `pn`.
 def partition_with_scheduler(name=None, skip_partitions=['kesch:pn']):
-    """Retrieve a system partition from the runtime whose scheduler is registered
-    with ``name``.
+    '''Retrieve a system partition from the runtime whose scheduler is
+    registered with ``name``.
 
     If ``name`` is :class:`None`, any partition with a non-local scheduler will
     be returned.
     Partitions specified in ``skip_partitions`` will be skipped from searching.
-    """
+    '''
 
     system = rt.runtime().system
     for p in system.partitions:

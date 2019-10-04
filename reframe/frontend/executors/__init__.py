@@ -16,9 +16,9 @@ ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
 
 
 class TestCase:
-    """A combination of a regression check, a system partition
+    '''A combination of a regression check, a system partition
     and a programming environment.
-    """
+    '''
 
     def __init__(self, check, partition, environ):
         self.__check_orig = check
@@ -75,7 +75,7 @@ def generate_testcases(checks,
                        skip_system_check=False,
                        skip_environ_check=False,
                        allowed_environs=None):
-    """Generate concrete test cases from checks."""
+    '''Generate concrete test cases from checks.'''
 
     def supports_partition(c, p):
         return skip_system_check or c.supports_system(p.fullname)
@@ -99,8 +99,8 @@ def generate_testcases(checks,
 
 
 class RegressionTask:
-    """A class representing a :class:`RegressionTest` through the regression
-    pipeline."""
+    '''A class representing a :class:`RegressionTest` through the regression
+    pipeline.'''
 
     def __init__(self, case, listeners=[]):
         self._case = case
@@ -215,24 +215,24 @@ class RegressionTask:
 class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
-        """Called whenever the run() method of a RegressionTask is called."""
+        '''Called whenever the run() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):
-        """Called whenever a RegressionTask finishes."""
+        '''Called whenever a RegressionTask finishes.'''
 
     @abc.abstractmethod
     def on_task_failure(self, task):
-        """Called when a regression test has failed."""
+        '''Called when a regression test has failed.'''
 
     @abc.abstractmethod
     def on_task_success(self, task):
-        """Called when a regression test has succeeded."""
+        '''Called when a regression test has succeeded.'''
 
 
 class Runner:
-    """Responsible for executing a set of regression tests based on an
-    execution policy."""
+    '''Responsible for executing a set of regression tests based on an
+    execution policy.'''
 
     def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
@@ -321,9 +321,9 @@ class Runner:
 
 
 class ExecutionPolicy(abc.ABC):
-    """Base abstract class for execution policies.
+    '''Base abstract class for execution policies.
 
-    An execution policy implements the regression check pipeline."""
+    An execution policy implements the regression check pipeline.'''
 
     def __init__(self):
         # Options controlling the check execution
@@ -362,7 +362,7 @@ class ExecutionPolicy(abc.ABC):
 
     @abc.abstractmethod
     def runcase(self, case):
-        """Run a test case."""
+        '''Run a test case.'''
 
         if self.strict_check:
             case.check.strict_check = True

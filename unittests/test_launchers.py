@@ -30,7 +30,7 @@ class FakeJob(Job):
 
 
 class _TestLauncher(abc.ABC):
-    """Base class for launcher tests."""
+    '''Base class for launcher tests.'''
 
     def setUp(self):
         self.job = FakeJob(name='fake_job',
@@ -58,17 +58,17 @@ class _TestLauncher(abc.ABC):
     @property
     @abc.abstractmethod
     def launcher(self):
-        """The launcher to be tested."""
+        '''The launcher to be tested.'''
 
     @property
     @abc.abstractmethod
     def expected_command(self):
-        """The command expected to be emitted by the launcher."""
+        '''The command expected to be emitted by the launcher.'''
 
     @property
     @abc.abstractmethod
     def expected_minimal_command(self):
-        """The command expected to be emitted by the launcher."""
+        '''The command expected to be emitted by the launcher.'''
 
     def test_run_command(self):
         emitted_command = self.launcher.run_command(self.job)

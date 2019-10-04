@@ -12,6 +12,7 @@ import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+from reframe.core.environments import Environment
 from reframe.core.exceptions import DependencyError, JobNotStartedError
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -195,7 +196,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
 
 class TaskEventMonitor(executors.TaskEventListener):
-    """Event listener for monitoring the execution of the asynchronous
+    '''Event listener for monitoring the execution of the asynchronous
     execution policy.
 
     We need to make sure two things for the async policy:
@@ -206,7 +207,7 @@ class TaskEventMonitor(executors.TaskEventListener):
        reasonably long runtime, we mean that that the regression tests must run
        enough time, so as to allow the policy to execute all the tests until
        their "run" phase, before the first submitted test finishes.
-    """
+    '''
 
     def __init__(self):
         super().__init__()
@@ -245,8 +246,8 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
             p._max_jobs = value
 
     def read_timestamps(self, tasks):
-        """Read the timestamps and sort them to permit simple
-        concurrency tests."""
+        '''Read the timestamps and sort them to permit simple
+        concurrency tests.'''
         from reframe.core.deferrable import evaluate
 
         self.begin_stamps = []
@@ -400,12 +401,12 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
 
 class TestDependencies(unittest.TestCase):
     class Node:
-        """A node in the test case graph.
+        '''A node in the test case graph.
 
         It's simply a wrapper to a (test_name, partition, environment) tuple
         that can interact seemlessly with a real test case.
         It's meant for convenience in unit testing.
-        """
+        '''
 
         def __init__(self, cname, pname, ename):
             self.cname, self.pname, self.ename = cname, pname, ename
@@ -530,6 +531,14 @@ class TestDependencies(unittest.TestCase):
         # Pick a check to test getdep()
         check_e0 = find_case('Test1_exact', 'e0', cases).check
         check_e1 = find_case('Test1_exact', 'e1', cases).check
+
+        with pytest.raises(DependencyError):
+            check_e0.getdep('Test0')
+
+        # Set the current environment
+        check_e0._current_environ = Environment('e0')
+        check_e1._current_environ = Environment('e1')
+
         assert check_e0.getdep('Test0', 'e0').name == 'Test0'
         assert check_e0.getdep('Test0', 'e1').name == 'Test0'
         assert check_e1.getdep('Test0', 'e1').name == 'Test0'
