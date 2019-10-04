@@ -6,11 +6,11 @@ from reframe.core.exceptions import ContainerError
 
 
 class ContainerPlatform(abc.ABC):
-    """The abstract base class of any container platform.
+    '''The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
     :func:`emit_prepare_cmds` and :func:`emit_launch_cmds` abstract functions.
-    """
+    '''
 
     registry = fields.TypedField('registry', str, type(None))
     image = fields.TypedField('image', str, type(None))
@@ -30,7 +30,7 @@ class ContainerPlatform(abc.ABC):
 
     @abc.abstractmethod
     def emit_prepare_cmds(self):
-        """Returns commands that are necessary before running with this
+        '''Returns commands that are necessary before running with this
         container platform.
 
         :raises: `ContainerError` in case of errors.
@@ -38,31 +38,31 @@ class ContainerPlatform(abc.ABC):
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
 
     @abc.abstractmethod
     def emit_launch_cmds(self):
-        """Returns the command for running with this container platform.
+        '''Returns the command for running with this container platform.
 
         :raises: `ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
         if self.registry:
             self.image = '/'.join([self.registry, self.image])
 
     @abc.abstractmethod
     def validate(self):
-        """Validates this container platform.
+        '''Validates this container platform.
 
         :raises: `ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
         if self.image is None:
             raise ContainerError('no image specified')
 
@@ -71,7 +71,7 @@ class ContainerPlatform(abc.ABC):
 
 
 class Docker(ContainerPlatform):
-    """An implementation of ContainerPlatform to run containers with Docker."""
+    '''An implementation of ContainerPlatform to run containers with Docker.'''
 
     def emit_prepare_cmds(self):
         pass
@@ -89,11 +89,11 @@ class Docker(ContainerPlatform):
 
 
 class ContainerPlatformField(fields.TypedField):
-    """A field representing a container platforms.
+    '''A field representing a container platforms.
 
     You may either assign an instance of :class:`ContainerPlatform:` or a
     string representing the name of the concrete class of a container platform.
-    """
+    '''
 
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, ContainerPlatform, *other_types)

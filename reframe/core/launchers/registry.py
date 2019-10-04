@@ -7,7 +7,7 @@ _LAUNCHERS = {}
 
 
 def register_launcher(name, local=False):
-    """Class decorator for registering new job launchers.
+    '''Class decorator for registering new job launchers.
 
     .. caution::
        This decorator is only relevant to developers of new job launchers.
@@ -20,7 +20,7 @@ def register_launcher(name, local=False):
         :class:`False` otherwise.
     :raises ValueError: if a job launcher is already registered with
         the same name.
-    """
+    '''
 
     # See reference.rst for documentation
     def _register_launcher(cls):
@@ -37,7 +37,7 @@ def register_launcher(name, local=False):
 
 
 def getlauncher(name):
-    """Get launcher by its registered name.
+    '''Get launcher by its registered name.
 
     The available names are those specified in the
     :doc:`configuration file </configure>`.
@@ -69,7 +69,7 @@ def getlauncher(name):
         :class:`reframe.core.launchers.JobLauncher`.
     :raises reframe.core.exceptions.ConfigError: if no launcher is
         registered with that name.
-    """
+    '''
     try:
         return _LAUNCHERS[name]
     except KeyError:
@@ -79,3 +79,4 @@ def getlauncher(name):
 # Import the launchers modules to trigger their registration
 import reframe.core.launchers.local  # noqa: F401, F403
 import reframe.core.launchers.mpi    # noqa: F401, F403
+import reframe.core.launchers.ssh    # noqa: F401, F403

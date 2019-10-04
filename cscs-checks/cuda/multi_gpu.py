@@ -65,7 +65,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'VK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
-        """generates search pattern for performance analysis"""
+        '''generates search pattern for performance analysis'''
         if xfer_kind == 'h2d':
             first_part = 'bandwidthTest-H2D-Pinned'
         elif xfer_kind == 'd2h':

@@ -4,7 +4,7 @@ from reframe.core.exceptions import StatisticsError
 
 
 class TestStats:
-    """Stores test case statistics."""
+    '''Stores test case statistics.'''
 
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]

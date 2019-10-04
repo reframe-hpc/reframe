@@ -96,9 +96,9 @@ logging.Handler.setLevel = set_handler_level
 
 
 class MultiFileHandler(logging.FileHandler):
-    """A file handler that allows writing on different log files based on
+    '''A file handler that allows writing on different log files based on
     information from the log record.
-    """
+    '''
 
     def __init__(self, prefix, mode='a', encoding=None):
         super().__init__(prefix, mode, encoding, delay=True)
@@ -404,7 +404,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             return []
 
     def _update_check_extras(self):
-        """Return a dictionary with all the check-specific information."""
+        '''Return a dictionary with all the check-specific information.'''
         if self.check is None:
             return
 
@@ -473,8 +473,8 @@ class LoggerAdapter(logging.LoggerAdapter):
         super().error(message, *args, **kwargs)
 
     def inc_verbosity(self, num_steps):
-        """Convenience function for increasing the verbosity
-        of the logger step-wise."""
+        '''Convenience function for increasing the verbosity
+        of the logger step-wise.'''
         log_levels = sorted(_log_level_names.keys())[1:]
         for h in self.std_stream_handlers:
             level_idx = log_levels.index(h.level)

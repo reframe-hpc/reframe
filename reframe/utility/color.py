@@ -39,7 +39,7 @@ WHITE   = ColorRGB(255, 255, 255)
 
 
 class _AnsiPalette:
-    """Class for colorizing strings using ANSI meta-characters."""
+    '''Class for colorizing strings using ANSI meta-characters.'''
 
     escape_seq = '\033'
     reset_term = '[0m'
@@ -73,12 +73,12 @@ class _AnsiPalette:
 
 
 def colorize(string, foreground, *, palette='ANSI'):
-    """Colorize a string.
+    '''Colorize a string.
 
     :arg string: The string to be colorized.
     :arg foreground: The foreground color.
     :arg palette: The palette to get colors from.
-    """
+    '''
     if palette != 'ANSI':
         raise ValueError('unknown color palette: %s' % palette)
 

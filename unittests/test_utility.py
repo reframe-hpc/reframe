@@ -263,7 +263,7 @@ class TestCopyTree(unittest.TestCase):
         open(os.path.join(self.prefix, 'foo.txt'), 'w').close()
 
     def verify_target_directory(self, file_links=[]):
-        """Verify the directory structure"""
+        '''Verify the directory structure'''
         self.assertTrue(
             os.path.exists(os.path.join(self.target, 'bar', 'bar.txt')))
         self.assertTrue(

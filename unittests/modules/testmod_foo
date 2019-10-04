@@ -3,7 +3,7 @@ proc ModulesHelp { } {
     Helper module for PyRegression unit tests
 }
 
-module-whatis { Helper module for PyRegression unit tests }
+module-whatis { Helper module for ReFrame unit tests }
 
 conflict testmod_foo
 conflict testmod_bar

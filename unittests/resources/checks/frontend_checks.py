@@ -81,7 +81,7 @@ class PerformanceFailureCheck(BaseFrontendCheck):
 
 @rfm.simple_test
 class CustomPerformanceFailureCheck(BaseFrontendCheck):
-    """Simulate a performance check that ignores completely logging"""
+    '''Simulate a performance check that ignores completely logging'''
 
     def __init__(self):
         super().__init__()
@@ -94,7 +94,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
 
 
 class KeyboardInterruptCheck(BaseFrontendCheck):
-    """Simulate keyboard interrupt during test's execution."""
+    '''Simulate keyboard interrupt during test's execution.'''
 
     def __init__(self, phase='wait'):
         super().__init__()
@@ -118,7 +118,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
 
 
 class SystemExitCheck(BaseFrontendCheck):
-    """Simulate system exit from within a check."""
+    '''Simulate system exit from within a check.'''
 
     def __init__(self):
         super().__init__()
@@ -154,15 +154,15 @@ class SleepCheck(BaseFrontendCheck):
 
 
 class SleepCheckPollFail(SleepCheck):
-    """Emulate a test failing in the polling phase."""
+    '''Emulate a test failing in the polling phase.'''
 
     def poll(self):
         raise ValueError
 
 
 class SleepCheckPollFailLate(SleepCheck):
-    """Emulate a test failing in the polling phase
-    after the test has finished."""
+    '''Emulate a test failing in the polling phase
+    after the test has finished.'''
 
     def poll(self):
         if self._job.finished():

@@ -69,11 +69,11 @@ class _TestModulesSystem(abc.ABC):
 
     @abc.abstractmethod
     def expected_load_instr(self, module):
-        """Expected load instruction."""
+        '''Expected load instruction.'''
 
     @abc.abstractmethod
     def expected_unload_instr(self, module):
-        """Expected unload instruction."""
+        '''Expected unload instruction.'''
 
     def test_emit_load_commands(self):
         self.modules_system.module_map = {
@@ -216,7 +216,7 @@ class TestModule(unittest.TestCase):
 
 
 class ModulesSystemEmulator(modules.ModulesSystemImpl):
-    """A convenience class that simulates a modules system."""
+    '''A convenience class that simulates a modules system.'''
 
     def __init__(self):
         self._loaded_modules = set()

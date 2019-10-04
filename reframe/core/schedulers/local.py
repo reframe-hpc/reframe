@@ -59,7 +59,7 @@ class LocalJob(sched.Job):
             'local scheduler does not support filtering of available nodes')
 
     def _kill_all(self):
-        """Send SIGKILL to all the processes of the spawned job."""
+        '''Send SIGKILL to all the processes of the spawned job.'''
         try:
             os.killpg(self._jobid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
@@ -69,17 +69,17 @@ class LocalJob(sched.Job):
                 'pid %s already dead or assigned elsewhere' % self._jobid)
 
     def _term_all(self):
-        """Send SIGTERM to all the processes of the spawned job."""
+        '''Send SIGTERM to all the processes of the spawned job.'''
         os.killpg(self._jobid, signal.SIGTERM)
 
     def _wait_all(self, timeout=0):
-        """Wait for all the processes of spawned job to finish.
+        '''Wait for all the processes of spawned job to finish.
 
         Keyword arguments:
 
         timeout -- Timeout period for this wait call in seconds (may be a real
                    number, too). If `None` or `0`, no timeout will be set.
-        """
+        '''
         t_wait = datetime.now()
         self._proc.wait(timeout=timeout or None)
         t_wait = datetime.now() - t_wait
@@ -103,13 +103,13 @@ class LocalJob(sched.Job):
             return
 
     def cancel(self):
-        """Cancel job.
+        '''Cancel job.
 
         The SIGTERM signal will be sent first to all the processes of this job
         and after a grace period (default 2s) the SIGKILL signal will be send.
 
         This function waits for the spawned process tree to finish.
-        """
+        '''
         super().cancel()
         self._term_all()
 
@@ -119,14 +119,14 @@ class LocalJob(sched.Job):
         self.wait()
 
     def wait(self):
-        """Wait for the spawned job to finish.
+        '''Wait for the spawned job to finish.
 
         As soon as the parent job process finishes, all of its spawned
         subprocesses will be forced to finish, too.
 
         Upon return, the whole process tree of the spawned job process will be
         cleared, unless any of them has called `setsid()`.
-        """
+        '''
         super().wait()
         if self._state is not None:
             # Job has been already waited for
@@ -157,12 +157,12 @@ class LocalJob(sched.Job):
             self._f_stderr.close()
 
     def finished(self):
-        """Check if the spawned process has finished.
+        '''Check if the spawned process has finished.
 
         This function does not wait the process. It just queries its state. If
         the process has finished, you *must* call wait() to properly cleanup
         after it.
-        """
+        '''
         super().finished()
         self._proc.poll()
         if self._proc.returncode is None:
