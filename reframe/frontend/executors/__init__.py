@@ -28,8 +28,6 @@ class TestCase:
         self.__partition = copy.deepcopy(partition)
         self.__environ = copy.deepcopy(environ)
         self.__check._case = weakref.ref(self)
-
-        # TODO: this member is not used
         self.__deps = []
 
     def __iter__(self):
@@ -263,10 +261,9 @@ class Runner:
         # Build dependency graph and reorder test case accordingly
         dependency_graph = dependency.build_deps(testcases)
         dependency.validate_deps(dependency_graph)
-        dependency.print_deps(dependency_graph)
         testcases = dependency.toposort(dependency_graph)
         self._policy.dependency_tree = dependency_graph
-        self._policy.dependency_count = dependency.create_deps_count(
+        self._policy.ref_count = dependency.create_ref_count(
             dependency_graph)
 
         num_checks = len({tc.check.name for tc in testcases})
@@ -367,7 +364,10 @@ class ExecutionPolicy(abc.ABC):
 
         # Check dependencies data
         self.dependency_tree = collections.OrderedDict()
-        self.dependency_count = []
+        # For each check to be executed in a refame run
+        # ref_count[c] stores the number of checks depending
+        # on check c
+        self.ref_count = []
 
     def __repr__(self):
         return debug.repr(self)
