@@ -5,7 +5,7 @@ import reframe.utility.typecheck as typ
 
 
 class JobLauncher(abc.ABC):
-    """A job launcher.
+    '''A job launcher.
 
     A job launcher is the executable that actually launches a distributed
     program to multiple nodes, e.g., ``mpirun``, ``srun`` etc.
@@ -18,7 +18,7 @@ class JobLauncher(abc.ABC):
        .. versionchanged:: 2.8
           Job launchers do not get a reference to a job during their
           initialization.
-    """
+    '''
 
     #: List of options to be passed to the job launcher invocation.
     #:
@@ -31,7 +31,7 @@ class JobLauncher(abc.ABC):
 
     @abc.abstractmethod
     def command(self, job):
-        """The launcher command.
+        '''The launcher command.
 
         :arg job: A :class:`reframe.core.schedulers.Job` that will be used by
             this launcher to properly emit its options.
@@ -39,14 +39,14 @@ class JobLauncher(abc.ABC):
             number of tasks associated to the job etc.
         :returns: a list of command line arguments (including the launcher
             executable).
-        """
+        '''
 
     def run_command(self, job):
         return ' '.join(self.command(job) + self.options)
 
 
 class LauncherWrapper(JobLauncher):
-    """Wrap a launcher object so as to modify its invocation.
+    '''Wrap a launcher object so as to modify its invocation.
 
     This is useful for parallel debuggers.
     For example, to launch a regression test using the `DDT
@@ -76,7 +76,7 @@ class LauncherWrapper(JobLauncher):
     :arg target_launcher: The launcher to wrap.
     :arg wrapper_command: The wrapper command.
     :arg wrapper_options: List of options to pass to the wrapper command.
-    """
+    '''
 
     def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
         super().__init__(target_launcher.options)

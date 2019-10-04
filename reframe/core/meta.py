@@ -8,8 +8,10 @@ class RegressionTestMeta(type):
         super().__init__(name, bases, namespace, **kwargs)
 
         # Set up the hooks for the pipeline stages based on the _rfm_attach
-        # attribute
+        # attribute; all dependencies will be resolved first in the post-setup
+        # phase if not assigned elsewhere
         hooks = {}
+        fn_with_deps = []
         for v in namespace.values():
             if hasattr(v, '_rfm_attach'):
                 for phase in v._rfm_attach:
@@ -18,4 +20,11 @@ class RegressionTestMeta(type):
                     except KeyError:
                         hooks[phase] = [v]
 
+            try:
+                if v._rfm_resolve_deps:
+                    fn_with_deps.append(v)
+            except AttributeError:
+                pass
+
+        hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
         cls._rfm_pipeline_hooks = hooks
