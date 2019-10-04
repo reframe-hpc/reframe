@@ -79,3 +79,4 @@ def getlauncher(name):
 # Import the launchers modules to trigger their registration
 import reframe.core.launchers.local  # noqa: F401, F403
 import reframe.core.launchers.mpi    # noqa: F401, F403
+import reframe.core.launchers.ssh    # noqa: F401, F403
