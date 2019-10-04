@@ -20,7 +20,7 @@ from reframe.core.modules import ModulesSystem
 
 
 class HostSystem:
-    """The host system of the framework.
+    '''The host system of the framework.
 
     The host system is a representation of the system that the framework
     currently runs on.If the framework is properly configured, the host
@@ -36,7 +36,7 @@ class HostSystem:
 
     .. note::
        .. versionadded:: 2.13
-    """
+    '''
 
     def __init__(self, system, partname=None):
         self._system = system
@@ -48,10 +48,10 @@ class HostSystem:
 
     @property
     def partitions(self):
-        """The partitions of this system.
+        '''The partitions of this system.
 
         :type: :class:`list[reframe.core.systems.SystemPartition]`.
-        """
+        '''
 
         if not self._partname:
             return self._system.partitions
@@ -59,10 +59,10 @@ class HostSystem:
         return [p for p in self._system.partitions if p.name == self._partname]
 
     def partition(self, name):
-        """Return the system partition ``name``.
+        '''Return the system partition ``name``.
 
         :type: :class:`reframe.core.systems.SystemPartition`.
-        """
+        '''
         for p in self.partitions:
             if p.name == name:
                 return p
@@ -86,11 +86,11 @@ class HostSystem:
 
 
 class HostResources:
-    """Resources associated with ReFrame execution on the current host.
+    '''Resources associated with ReFrame execution on the current host.
 
     .. note::
        .. versionadded:: 2.13
-    """
+    '''
 
     #: The prefix directory of ReFrame execution.
     #: This is always an absolute path.
@@ -141,7 +141,7 @@ class HostResources:
 
     @property
     def output_prefix(self):
-        """The output prefix directory of ReFrame."""
+        '''The output prefix directory of ReFrame.'''
         if self.outputdir is None:
             return os.path.join(self.prefix, 'output', self.timestamp)
         else:
@@ -149,7 +149,7 @@ class HostResources:
 
     @property
     def stage_prefix(self):
-        """The stage prefix directory of ReFrame."""
+        '''The stage prefix directory of ReFrame.'''
         if self.stagedir is None:
             return os.path.join(self.prefix, 'stage', self.timestamp)
         else:
@@ -172,7 +172,7 @@ class HostResources:
 
 
 class RuntimeContext:
-    """The runtime context of the framework.
+    '''The runtime context of the framework.
 
     This class essentially groups the current host system and the associated
     resources of the framework on the current system.
@@ -184,7 +184,7 @@ class RuntimeContext:
     .. note::
        .. versionadded:: 2.13
 
-    """
+    '''
 
     def __init__(self, dict_config, sysdescr=None, **options):
         self._site_config = config.SiteConfiguration(dict_config)
@@ -208,7 +208,7 @@ class RuntimeContext:
         self._non_default_craype = options.get('non_default_craype', False)
 
     def _autodetect_system(self):
-        """Auto-detect system."""
+        '''Auto-detect system.'''
 
         # Try to detect directly the cluster name from /etc/xthostname (Cray
         # specific)
@@ -242,31 +242,31 @@ class RuntimeContext:
 
     @property
     def system(self):
-        """The current host system.
+        '''The current host system.
 
         :type: :class:`reframe.core.runtime.HostSystem`
-        """
+        '''
         return self._system
 
     @property
     def resources(self):
-        """The framework resources.
+        '''The framework resources.
 
         :type: :class:`reframe.core.runtime.HostResources`
-        """
+        '''
         return self._resources
 
     @property
     def modules_system(self):
-        """The modules system used by the current host system.
+        '''The modules system used by the current host system.
 
         :type: :class:`reframe.core.modules.ModulesSystem`.
-        """
+        '''
         return self._modules_system
 
     @property
     def non_default_craype(self):
-        """True if a non-default Cray PE is tested.
+        '''True if a non-default Cray PE is tested.
 
         This will cause ReFrame to set the ``LD_LIBRARY_PATH`` as follows after
         all modules have been loaded:
@@ -281,11 +281,11 @@ class RuntimeContext:
 
         :type: :class:`bool` (default: :class:`False`)
 
-        """
+        '''
         return self._non_default_craype
 
     def show_config(self):
-        """Return a textual representation of the current runtime."""
+        '''Return a textual representation of the current runtime.'''
         return str(self._system)
 
 
@@ -301,13 +301,13 @@ def init_runtime(dict_config, sysname=None, **options):
 
 
 def runtime():
-    """Retrieve the framework's runtime context.
+    '''Retrieve the framework's runtime context.
 
     :type: :class:`reframe.core.runtime.RuntimeContext`
 
     .. note::
        .. versionadded:: 2.13
-    """
+    '''
     if _runtime_context is None:
         raise ReframeFatalError('no runtime context is configured')
 
@@ -317,7 +317,7 @@ def runtime():
 # The following utilities are useful only for the unit tests
 
 class temp_runtime:
-    """Context manager to temporarily switch to another runtime."""
+    '''Context manager to temporarily switch to another runtime.'''
 
     def __init__(self, dict_config, sysname=None):
         global _runtime_context
@@ -336,8 +336,8 @@ class temp_runtime:
 
 
 def switch_runtime(dict_config, sysname=None):
-    """Function decorator for temporarily changing the runtime for a
-    function."""
+    '''Function decorator for temporarily changing the runtime for a
+    function.'''
     def _runtime_deco(fn):
         @functools.wraps(fn)
         def _fn(*args, **kwargs):
