@@ -13,24 +13,6 @@ class ContainerPlatform(abc.ABC):
     """
 
     image = fields.TypedField('image', str, type(None))
-
-    #: Add an option to the launch command to enable MPI support.
-    #:
-    #: Some container platforms like ShifterNG require a command-line
-    #: argument to enable the MPI support.
-    #:
-    #: :type: boolean
-    #: :default: :class:`False`
-    requires_mpi = fields.TypedField('requires_mpi', bool)
-
-    #: Add an option to the launch command to enable CUDA support.
-    #:
-    #: Some container platforms like Singularity require a command-line
-    #: argument to enable CUDA support.
-    #:
-    #: :type: boolean
-    #: :default: :class:`False`
-    requires_cuda = fields.TypedField('requires_cuda', bool)
     commands = fields.TypedField('commands', typ.List[str])
     mount_points = fields.TypedField('mount_points',
                                      typ.List[typ.Tuple[str, str]])
@@ -38,8 +20,8 @@ class ContainerPlatform(abc.ABC):
 
     def __init__(self):
         self.image = None
-        self.requires_mpi = False
-        self.requires_cuda = False
+        self.with_mpi = False
+        self.with_cuda = False
         self.commands = []
         self.mount_points  = []
         self.workdir = '/rfm_workdir'
@@ -83,7 +65,7 @@ class ContainerPlatform(abc.ABC):
 
 
 class Docker(ContainerPlatform):
-    """An implementation of ContainerPlatform for running containers with Docker."""
+    """An implementation of :class:`ContainerPlatform` for running containers with Docker."""
 
     def emit_prepare_cmds(self):
         return []
@@ -98,10 +80,17 @@ class Docker(ContainerPlatform):
 
 
 class ShifterNG(ContainerPlatform):
-    """An implementation of ContainerPlatform for running containers with
+    """An implementation of :class:`ContainerPlatform` for running containers with
     ShifterNG."""
+
+    #: Add an option to the launch command to enable MPI support.
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    with_mpi = fields.TypedField('with_mpi', bool)
+
     def __init__(self):
-        self.requires_mpi = False
+        self.with_mpi = False
         super().__init__()
 
     def emit_prepare_cmds(self):
@@ -109,36 +98,43 @@ class ShifterNG(ContainerPlatform):
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        self._run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
+        self.run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
                           mp for mp in self.mount_points]
-        if self.requires_mpi:
-            self._run_opts.append('--mpi')
+        if self.with_mpi:
+            self.run_opts.append('--mpi')
 
-        run_cmd = 'shifter run %s %s bash -c ' % (' '.join(self._run_opts),
+        run_cmd = 'shifter run %s %s bash -c ' % (' '.join(self.run_opts),
                                                   self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
 
 
 class Sarus(ShifterNG):
-    """An implementation of ContainerPlatform for running containers with
+    """An implementation of :class:`ContainerPlatform` for running containers with
     Sarus."""
     def emit_prepare_cmds(self):
         return ['sarus pull %s' % self.image]
 
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
-        run_cmd = 'sarus run %s %s bash -c ' % (' '.join(self._run_opts),
+        run_cmd = 'sarus run %s %s bash -c ' % (' '.join(self.run_opts),
                                                 self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
 
 
 class Singularity(ContainerPlatform):
-    """An implementation of ContainerPlatform for running containers with
+    """An implementation of :class:`ContainerPlatform` for running containers with
     Singularity."""
+
+    #: Add an option to the launch command to enable CUDA support.
+    #:
+    #: :type: boolean
+    #: :default: :class:`False`
+    with_cuda = fields.TypedField('with_cuda', bool)
+
     def __init__(self):
-        self.requires_cuda = False
+        self.with_cuda = False
         super().__init__()
 
     def emit_prepare_cmds(self):
@@ -147,7 +143,7 @@ class Singularity(ContainerPlatform):
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
         exec_opts = ['-B"%s:%s"' % mp for mp in self.mount_points]
-        if self.requires_cuda:
+        if self.with_cuda:
             exec_opts.append('--nv')
 
         run_cmd = 'singularity exec %s %s bash -c ' % (' '.join(exec_opts),

@@ -98,7 +98,7 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        self.container_platform.requires_mpi = True
+        self.container_platform.with_mpi = True
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 "--mpi name:tag bash -c 'cd /stagedir; cmd'")
@@ -121,7 +121,7 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        self.container_platform.requires_mpi = True
+        self.container_platform.with_mpi = True
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 "--mpi name:tag bash -c 'cd /stagedir; cmd'")
@@ -142,6 +142,6 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        self.container_platform.requires_cuda = True
+        self.container_platform.with_cuda = True
         return ('singularity exec -B"/path/one:/one" --nv '
                 "name:tag bash -c 'cd /stagedir; cmd'")

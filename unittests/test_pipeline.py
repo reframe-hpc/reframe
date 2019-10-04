@@ -119,7 +119,7 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        # test.valid_prog_environs = [self.prgenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
 
         # Test also the prebuild/postbuild functionality
         test.prebuild_cmd  = ['touch prebuild', 'mkdir prebuild_dir']
@@ -128,7 +128,7 @@ class TestRegressionTest(unittest.TestCase):
                            'prebuild_dir', 'postbuild_dir']
 
         # Force local execution of the test
-        # test.local = True
+        test.local = True
         self._run_test(test)
 
     def test_hellocheck_local_prepost_run(self):
@@ -796,8 +796,9 @@ class TestSanityPatterns(unittest.TestCase):
 class TestContainerPlatformsTest(TestRegressionTest):
     def setup_test(self, platform, image):
         self.setup_remote_execution()
-        test = self.loader.load_from_file(
-            'unittests/resources/checks_unlisted/containers.py')[0]
+        test = rfm.RunOnlyRegressionTest()
+        test.name = 'Test%s' % platform
+        test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = [self.prgenv.name]
         test.valid_systems = ['*']
         test.container_platform = platform
@@ -808,7 +809,7 @@ class TestContainerPlatformsTest(TestRegressionTest):
         test.sanity_patterns = sn.all([
             sn.assert_found(r'^' + test.container_platform.workdir,
                             test.stdout),
-            sn.assert_found(r'^container_test.txt', test.stdout),
+            sn.assert_found(r'^hello.c', test.stdout),
             sn.assert_found(r'18.04.3 LTS \(Bionic Beaver\)', test.stdout),
         ])
         return test
