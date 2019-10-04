@@ -22,7 +22,6 @@ class SerialExecutionPolicy(ExecutionPolicy):
             'RUN', '%s on %s using %s' %
             (check.name, partition.fullname, environ.name)
         )
-
         task = RegressionTask(case)
         self._tasks.append(task)
         self.stats.add_task(task)
@@ -48,7 +47,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
             # Execute cleanup of current case if all dependent cases have been
             # executed
-            if self.dependency_count[case] == 0:
+            if self.ref_count[case] == 0:
                 task.cleanup(not self.keep_stage_files, False)
 
         except TaskExit:
@@ -63,8 +62,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
             # Execute cleanup of dependencies if all dependent cases have been
             # executed
             for dep in self.dependency_tree[case]:
-                self.dependency_count[dep] -= 1
-                if self.dependency_count[dep] == 0:
+                self.ref_count[dep] -= 1
+                if self.ref_count[dep] == 0:
                     # Check if dep has failed before cleaning
                     for t in self.stats.tasks():
                         if t.testcase == dep and t.failed is False:
