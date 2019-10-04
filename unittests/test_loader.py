@@ -32,11 +32,11 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_recursive(self):
         checks = self.loader.load_from_dir('unittests/resources/checks',
                                            recurse=True)
-        self.assertEqual(22, len(checks))
+        self.assertEqual(11, len(checks))
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all()
-        self.assertEqual(21, len(checks))
+        self.assertEqual(10, len(checks))
 
     def test_load_all_with_prefix(self):
         checks = self.loader_with_prefix.load_all()
