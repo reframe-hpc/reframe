@@ -239,9 +239,9 @@ class ReframeSettings:
                 }
             },
 
-            'tsa': {
-                'descr': 'Tsa MCH',
-                'hostnames': [r'tsa-\w+\d+'],
+            'arolla': {
+                'descr': 'Arolla MCH',
+                'hostnames': [r'arolla-\w+\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
@@ -250,7 +250,7 @@ class ReframeSettings:
                         'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
-                        'descr': 'Tsa login nodes',
+                        'descr': 'Arolla login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
@@ -258,7 +258,7 @@ class ReframeSettings:
                         'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
-                        'descr': 'Tsa post-processing nodes',
+                        'descr': 'Arolla post-processing nodes',
                     },
                     'cn': {
                         'scheduler': 'nativeslurm',
@@ -266,7 +266,7 @@ class ReframeSettings:
                         'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
-                        'descr': 'Tsa compute nodes',
+                        'descr': 'Arolla compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }
@@ -407,83 +407,45 @@ class ReframeSettings:
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
-                'PrgEnv-cray-c2sm': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/base'],
-                },
-                'PrgEnv-cray-c2sm-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/gpu'],
-                },
-                'PrgEnv-pgi-c2sm': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-pgi-c2sm-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/gpu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-gnu-c2sm': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-gnu-c2sm-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/gpu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
             },
 
-            'tsa': {
-                'descr': 'Tsa MCH',
-                'hostnames': [r'tsa-\w+\d+'],
-                'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/UES/reframe/resources',
-                'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
-                        'descr': 'Tsa login nodes',
-                    },
-                    'pn': {
-                        'scheduler': 'nativeslurm',
-                        'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
-                        'descr': 'Tsa post-processing nodes',
-                    },
-                    'cn': {
-                        'scheduler': 'nativeslurm',
-                        'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
-                        'descr': 'Tsa compute nodes',
-                        'resources': {
-                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
-                        }
-                    }
-                }
+            'arolla': {
+                'PrgEnv-pgi-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/18.10'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
+                },
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/18.10'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpifort',
+                },
+                'PrgEnv-cce': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cce/18.12'],
+                },
+                'PrgEnv-cce-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cce/18.12']
+                },
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/18.12'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/18.12'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                },
             },
 
             'leone': {
