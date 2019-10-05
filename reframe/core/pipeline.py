@@ -935,13 +935,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
             workdir=self._stagedir,
-            num_tasks=self.num_tasks,
-            num_tasks_per_node=self.num_tasks_per_node,
-            num_tasks_per_core=self.num_tasks_per_core,
-            num_tasks_per_socket=self.num_tasks_per_socket,
-            num_cpus_per_task=self.num_cpus_per_task,
-            use_smt=self.use_multithreading,
-            time_limit=self.time_limit,
             sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
@@ -1102,6 +1095,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        self.job.num_tasks = self.num_tasks
+        self.job.num_tasks_per_node = self.num_tasks_per_node
+        self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_cpus_per_task = self.num_cpus_per_task
+        self.job.use_smt = self.use_multithreading
+        self.job.time_limit = self.time_limit
+
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
@@ -1119,6 +1119,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         msg = ('spawned job (%s=%s)' %
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
         self.logger.debug(msg)
+
+        # Update num_tasks if test is flexible
+        if self.job.sched_flex_alloc_tasks:
+            self.num_tasks = self.job.num_tasks
 
     def poll(self):
         '''Poll the test's state.

@@ -21,6 +21,18 @@ class Job(abc.ABC):
        Users may not create jobs directly.
     '''
 
+    num_tasks = fields.TypedField('num_tasks', int)
+    num_tasks_per_node = fields.TypedField('num_tasks_per_node',
+                                           int,  type(None))
+    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
+                                           int,  type(None))
+    num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
+                                             int,  type(None))
+    num_cpus_per_tasks = fields.TypedField('num_cpus_per_task',
+                                           int,  type(None))
+    use_smt = fields.TypedField('use_smt', bool,  type(None))
+    time_limit = fields.TimerField('time_limit', type(None))
+
     #: Options to be passed to the backend job scheduler.
     #:
     #: :type: :class:`List[str]`
@@ -65,21 +77,21 @@ class Job(abc.ABC):
                  sched_options=[]):
 
         # Mutable fields
+        self.num_tasks = num_tasks
+        self.num_tasks_per_node = num_tasks_per_node
+        self.num_tasks_per_core = num_tasks_per_core
+        self.num_tasks_per_socket = num_tasks_per_socket
+        self.num_cpus_per_task = num_cpus_per_task
+        self.use_smt = use_smt
+        self.time_limit = time_limit
         self.options = list(sched_options)
         self.launcher = launcher
 
         self._name = name
         self._workdir = workdir
-        self._num_tasks = num_tasks
-        self._num_tasks_per_node = num_tasks_per_node
-        self._num_tasks_per_core = num_tasks_per_core
-        self._num_tasks_per_socket = num_tasks_per_socket
-        self._num_cpus_per_task = num_cpus_per_task
-        self._use_smt = use_smt
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
-        self._time_limit = time_limit
         self._nodelist = None
 
         # Backend scheduler related information
@@ -123,18 +135,6 @@ class Job(abc.ABC):
         return self._workdir
 
     @property
-    def num_tasks(self):
-        '''The number of tasks assigned to this job.
-
-        This attribute is useful in a flexible regression test for determining
-        the actual number of tasks that ReFrame assigned to the test.
-
-        For more information on flexible task allocation, please refer to the
-        `tutorial <advanced.html#flexible-regression-tests>`__.
-        '''
-        return self._num_tasks
-
-    @property
     def script_filename(self):
         return self._script_filename
 
@@ -145,30 +145,6 @@ class Job(abc.ABC):
     @property
     def stderr(self):
         return self._stderr
-
-    @property
-    def time_limit(self):
-        return self._time_limit
-
-    @property
-    def num_cpus_per_task(self):
-        return self._num_cpus_per_task
-
-    @property
-    def num_tasks_per_core(self):
-        return self._num_tasks_per_core
-
-    @property
-    def num_tasks_per_node(self):
-        return self._num_tasks_per_node
-
-    @property
-    def num_tasks_per_socket(self):
-        return self._num_tasks_per_socket
-
-    @property
-    def use_smt(self):
-        return self._use_smt
 
     @property
     def sched_flex_alloc_tasks(self):
@@ -222,9 +198,9 @@ class Job(abc.ABC):
                                'required %s, found %s' %
                                (nodes_required, nodes_found))
 
-            self._num_tasks = guessed_num_tasks
+            self.num_tasks = guessed_num_tasks
             getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
-                              self._num_tasks)
+                              self.num_tasks)
 
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
