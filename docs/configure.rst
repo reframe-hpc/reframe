@@ -269,6 +269,21 @@ ReFrame supports the following parallel job launchers:
 * ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
 * ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
 * ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
+* ``ssh``: *[new in 2.20]* Programs on the configured partition will be launched using SSH.
+  This option uses the partition's ``access`` parameter (see `above <#partition-configuration>`__) in order to determine the remote host and any additional options to be passed to the SSH client.
+  The ``ssh`` command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
+  Here is an example configuration for the ``ssh`` launcher:
+
+  .. code:: python
+
+    'partition_name': {
+        'scheduler': 'local+ssh',
+        'access': ['-l admin', 'remote.host'],
+        'environs': ['builtin'],
+    }
+
+  Note that the environment is not propagated to the remote host, so the ``environs`` variable has no practical meaning except for enabling the testing of this partition.
+
 
 There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:
 
