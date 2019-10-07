@@ -45,8 +45,8 @@ class Ipm(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
             'PKG_CONFIG_PATH':
-                '$PAT_BUILD_PAPI_BASEDIR/lib64/pkgconfig:$PKG_CONFIG_PATH',
-            'LD_LIBRARY_PATH': '$PAT_BUILD_PAPI_BASEDIR/lib64:'
+                '$PAT_BUILD_PAPI_LIBDIR/pkgconfig:$PKG_CONFIG_PATH',
+            'LD_LIBRARY_PATH': '$PAT_BUILD_PAPI_LIBDIR:'
                                '$LD_LIBRARY_PATH',
             # The list of available hardware performance counters depends
             # on the cpu type:
