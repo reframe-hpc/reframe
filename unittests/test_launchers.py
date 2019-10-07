@@ -203,3 +203,22 @@ class TestLocalLauncher(_TestLauncher, unittest.TestCase):
     @property
     def expected_minimal_command(self):
         return ''
+
+
+class TestSSHLauncher(_TestLauncher, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.job._sched_access = ['-l user', '-p 22222', 'host']
+        self.minimal_job._sched_access = ['host']
+
+    @property
+    def launcher(self):
+        return getlauncher('ssh')(['--foo'])
+
+    @property
+    def expected_command(self):
+        return 'ssh -o BatchMode=yes -l user -p 22222 --foo host'
+
+    @property
+    def expected_minimal_command(self):
+        return 'ssh -o BatchMode=yes --foo host'
