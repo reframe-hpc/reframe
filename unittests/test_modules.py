@@ -3,8 +3,8 @@ import os
 import unittest
 from tempfile import NamedTemporaryFile
 
+import reframe.core.environments as env
 import reframe.core.modules as modules
-from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
@@ -12,11 +12,11 @@ from unittests.fixtures import TEST_MODULES
 
 class _TestModulesSystem(abc.ABC):
     def setUp(self):
-        self.environ_save = EnvironmentSnapshot()
+        self.environ_save = env.snapshot()
         self.modules_system.searchpath_add(TEST_MODULES)
 
     def tearDown(self):
-        self.environ_save.load()
+        self.environ_save.restore()
 
     def test_searchpath(self):
         self.assertIn(TEST_MODULES, self.modules_system.searchpath)

@@ -5,6 +5,7 @@
 import abc
 
 import reframe.core.debug as debug
+import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.shell as shell
 import reframe.utility.typecheck as typ
@@ -205,9 +206,7 @@ class Job(abc.ABC):
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.emit_preamble())
-            for e in environs:
-                builder.write(e.emit_load_commands())
-
+            builder.write(env.emit_load_commands(*environs))
             for c in commands:
                 builder.write_body(c)
 

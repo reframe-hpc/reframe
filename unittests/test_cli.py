@@ -10,16 +10,16 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
 import reframe.core.config as config
+import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
-from reframe.core.environments import EnvironmentSnapshot
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
     # Save current execution context
     argv_save = sys.argv
-    environ_save = EnvironmentSnapshot()
+    environ_save = env.snapshot()
     sys.argv = argv
     exitcode = None
 
@@ -35,7 +35,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
                 exitcode = e.code
             finally:
                 # Restore execution context
-                environ_save.load()
+                environ_save.restore()
                 sys.argv = argv_save
 
     return (exitcode,
