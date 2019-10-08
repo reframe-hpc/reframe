@@ -72,9 +72,9 @@ class Environment:
         if not isinstance(other, type(self)):
             return NotImplemented
 
-        return (self._name == other._name and
-                set(self._modules) == set(other._modules) and
-                self._variables == other._variables)
+        return (self.name == other.name and
+                set(self.modules) == set(other.modules) and
+                self.variables == other.variables)
 
     def __str__(self):
         return self.name
@@ -95,6 +95,18 @@ class _EnvironmentSnapshot(Environment):
         '''Restore this environment snapshot.'''
         os.environ.clear()
         os.environ.update(self._variables)
+
+    def __eq__(self, other):
+        if not isinstance(other, Environment):
+            return NotImplemented
+
+        # Order of variables is not important when comparing snapshots
+        for k, v in self.variables.items():
+            if other.variables[k] != v:
+                return False
+
+        return (self.name == other.name and
+                set(self.modules) == set(other.modules))
 
 
 def snapshot():

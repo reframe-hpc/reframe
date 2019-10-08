@@ -114,6 +114,7 @@ class TestEnvironment(unittest.TestCase):
         env1 = env.Environment('env1', modules=['foo', 'bar'])
         env2 = env.Environment('env1', modules=['bar', 'foo'])
         assert env1 == env2
+        assert env2 == env1
 
     def test_not_equal(self):
         env1 = env.Environment('env1', modules=['foo', 'bar'])
@@ -122,7 +123,7 @@ class TestEnvironment(unittest.TestCase):
 
         # Variables are ordered, because they might depend on each other
         env1 = env.Environment('env1', variables=[('a', 1), ('b', 2)])
-        env1 = env.Environment('env1', variables=[('b', 2), ('a', 1)])
+        env2 = env.Environment('env1', variables=[('b', 2), ('a', 1)])
         assert env1 != env2
 
     @fixtures.switch_to_user_runtime
