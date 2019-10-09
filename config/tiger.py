@@ -4,7 +4,6 @@
 
 
 class ReframeSettings:
-    reframe_module = 'reframe'
     job_poll_intervals = [1, 2, 3]
     job_submit_timeout = 60
     checks_path = ['checks/']
@@ -16,7 +15,7 @@ class ReframeSettings:
                 'descr': 'Cray Tiger',
                 'hostnames': ['tiger'],
                 'modules_system': 'tmod',
-                # 'resourcesdir': '/apps/common/UES/reframe/resources',
+                'resourcesdir': '/home/users/jpiccinali/reframe.git/RESOURCES',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -62,6 +61,11 @@ class ReframeSettings:
                 'PrgEnv-cray': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
+                },
+
+                'PrgEnv-cray_classic': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray', 'cce/9.1.0.129-classic'],
                 },
 
                 'PrgEnv-gnu': {
