@@ -29,14 +29,12 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
                                                    self.stdout)
         elif partition.fullname == 'daint:gpu':
             self.sanity_patterns = sn.assert_found(
-                                       'Vendor:   NVIDIA Corporation',
-                                       self.stdout)
+                'Vendor:   NVIDIA Corporation', self.stdout)
             self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
                                                    self.stdout)
         elif partition.fullname == 'dom:gpu':
             self.sanity_patterns = sn.assert_found(
-                                       'Vendor:   NVIDIA Corporation',
-                                       self.stdout)
+                'Vendor:   NVIDIA Corporation', self.stdout)
             self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
                                                    self.stdout)
 

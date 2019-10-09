@@ -1,14 +1,14 @@
-
+from paraview.simple import *
 import os
 basename = os.getenv('SCRATCH')
 if basename is None:
     basename = "/tmp"
 
-from paraview.simple import *
 
 Version = str(GetParaViewVersion())
 if(GetParaViewVersion() > 5.6):
-    from paraview.modules.vtkPVClientServerCoreCorePython import vtkProcessModule
+    from paraview.modules.vtkPVClientServerCoreCorePython import
+        vtkProcessModule
     info = GetOpenGLInformation(location=servermanager.vtkSMSession.SERVERS)
 else:
     from paraview.servermanager import vtkProcessModule
@@ -73,7 +73,7 @@ IndexedColors = [
 ]
 
 a=[]
-for i in range(nbprocs):
+for i in range( nbprocs ):
     a.append(str(i))
     a.append(str(i))
 processIdLUT.Annotations = a
