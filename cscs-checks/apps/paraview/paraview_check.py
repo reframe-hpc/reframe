@@ -13,11 +13,9 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks = 12
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
-        #self.pre_run = ['module use /scratch/snx3000tds/jfavre/daint/modules/all']
 
         self.time_limit = (0, 1, 0)
         self.executable = 'pvbatch'
-        #self.executable_opts = ['coloredSphere.py']
         self.executable_opts = ['newcoloredSphere.py']
 
         self.maintainers = ['JF']
@@ -25,13 +23,21 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         if partition.fullname == 'daint:mc':
-            self.sanity_patterns = sn.assert_found('Vendor:   VMware, Inc.', self.stdout)
-            self.sanity_patterns = sn.assert_found('Renderer: llvmpipe', self.stdout)
+            self.sanity_patterns = sn.assert_found('Vendor:   VMware, Inc.',
+                                                   self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: llvmpipe',
+                                                   self.stdout)
         elif partition.fullname == 'daint:gpu':
-            self.sanity_patterns = sn.assert_found('Vendor:   NVIDIA Corporation', self.stdout)
-            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100', self.stdout)
+            self.sanity_patterns = sn.assert_found(
+                                       'Vendor:   NVIDIA Corporation',
+                                       self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
+                                                   self.stdout)
         elif partition.fullname == 'dom:gpu':
-            self.sanity_patterns = sn.assert_found('Vendor:   NVIDIA Corporation', self.stdout)
-            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100', self.stdout)
+            self.sanity_patterns = sn.assert_found(
+                                       'Vendor:   NVIDIA Corporation',
+                                       self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
+                                                   self.stdout)
 
         super().setup(partition, environ, **job_opts)
