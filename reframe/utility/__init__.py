@@ -472,10 +472,16 @@ class SequenceView(collections.abc.Sequence):
         return NotImplemented
 
     def __eq__(self, other):
-        if not isinstance(other, collections.abc.Sequence):
-            return NotImplemented
+        if isinstance(other, SequenceView):
+            return self.__container == other.__container
 
         return self.__container == other
+
+    def __repr__(self):
+        return '%s(%r)' % (type(self).__name__, self.__container)
+
+    def __str__(self):
+        return str(self.__container)
 
 
 class MappingView(collections.abc.Mapping):
@@ -511,8 +517,17 @@ class MappingView(collections.abc.Mapping):
     def __len__(self, *args, **kwargs):
         return self.__mapping.__len__(*args, **kwargs)
 
-    def __eq__(self, *args, **kwargs):
-        return self.__mapping.__eq__(*args, **kwargs)
+    def __eq__(self, other):
+        if isinstance(other, MappingView):
+            return self.__mapping == other.__mapping
+
+        return self.__mapping.__eq__(other)
 
     def __ne__(self, *args, **kwargs):
         return self.__mapping.__ne__(*args, **kwargs)
+
+    def __repr__(self):
+        return '%s(%r)' % (type(self).__name__, self.__mapping)
+
+    def __str__(self):
+        return str(self.__mapping)

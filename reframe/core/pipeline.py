@@ -13,6 +13,7 @@ import itertools
 import os
 import shutil
 
+import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
@@ -21,7 +22,6 @@ import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
@@ -567,11 +567,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, type(None))
     _current_environ = fields.TypedField('_current_environ',
-                                         Environment, type(None))
-    _user_environ = fields.TypedField('_user_environ', Environment, type(None))
+                                         env.Environment, type(None))
+    _cdt_environ = fields.TypedField('_cdt_environ', env.Environment)
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
-    _cdt_environ = fields.TypedField('_cdt_environ', Environment)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -650,7 +649,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Runtime information of the test
         self._current_partition = None
         self._current_environ = None
-        self._user_environ = None
 
         # Associated job
         self._job = None
@@ -677,7 +675,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._case = None
 
         if rt.runtime().non_default_craype:
-            self._cdt_environ = Environment(
+            self._cdt_environ = env.Environment(
                 name='__rfm_cdt_environ',
                 variables={
                     'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
@@ -685,7 +683,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             )
         else:
             # Just an empty environment
-            self._cdt_environ = Environment('__rfm_cdt_environ')
+            self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
     # Export read-only views to interesting fields
     @property
@@ -870,30 +868,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return self.local or self._current_partition.scheduler.is_local
 
-    def _setup_environ(self, environ):
-        '''Setup the current environment and load it.'''
-
-        self._current_environ = environ
-
-        # Set up user environment
-        self._user_environ = Environment(type(self).__name__, self.modules,
-                                         self.variables.items())
-
-        # Temporarily load the test's environment to record the actual module
-        # load/unload sequence
-        environ_save = EnvironmentSnapshot()
-        # First load the local environment of the partition
-        self.logger.debug('loading environment for the current partition')
-        self._current_partition.local_env.load()
-
-        self.logger.debug("loading current programming environment")
-        self._current_environ.load()
-
-        self.logger.debug("loading user's environment")
-        self._user_environ.load()
-        self._cdt_environ.load()
-        environ_save.load()
-
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('setting up paths')
@@ -935,13 +909,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
             workdir=self._stagedir,
-            num_tasks=self.num_tasks,
-            num_tasks_per_node=self.num_tasks_per_node,
-            num_tasks_per_core=self.num_tasks_per_core,
-            num_tasks_per_socket=self.num_tasks_per_socket,
-            num_cpus_per_task=self.num_cpus_per_task,
-            use_smt=self.use_multithreading,
-            time_limit=self.time_limit,
             sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
@@ -972,7 +939,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         '''
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
         if self.perf_patterns is not None:
@@ -1062,8 +1029,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
-                    self._user_environ, self._cdt_environ]
+                    user_environ, self._cdt_environ]
 
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
@@ -1102,11 +1071,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        self.job.num_tasks = self.num_tasks
+        self.job.num_tasks_per_node = self.num_tasks_per_node
+        self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_cpus_per_task = self.num_cpus_per_task
+        self.job.use_smt = self.use_multithreading
+        self.job.time_limit = self.time_limit
+
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
-                    self._user_environ, self._cdt_environ]
+                    user_environ, self._cdt_environ]
 
         with os_ext.change_dir(self._stagedir):
             try:
@@ -1119,6 +1097,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         msg = ('spawned job (%s=%s)' %
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
         self.logger.debug(msg)
+
+        # Update num_tasks if test is flexible
+        if self.job.sched_flex_alloc_tasks:
+            self.num_tasks = self.job.num_tasks
 
     def poll(self):
         '''Poll the test's state.
@@ -1269,13 +1251,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     @_run_hooks()
-    def cleanup(self, remove_files=False, unload_env=True):
+    def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
 
         :arg remove_files: If :class:`True`, the stage directory associated
             with this test will be removed.
-        :arg unload_env: If :class:`True`, the environment that was used to run
-            this test will be unloaded.
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
@@ -1288,14 +1268,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.logger.debug('removing stage directory')
             os_ext.rmtree(self._stagedir)
 
-        if unload_env:
-            self.logger.debug("unloading test's environment")
-            self._cdt_environ.unload()
-            self._user_environ.unload()
-            self._current_environ.unload()
-            self._current_partition.local_env.unload()
-
     # Dependency API
+
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
@@ -1397,7 +1371,7 @@ class CompileOnlyRegressionTest(RegressionTest):
         '''
         # No need to setup the job for compile-only checks
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
 
     @property
