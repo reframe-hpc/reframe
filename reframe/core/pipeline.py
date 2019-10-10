@@ -227,7 +227,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: If the `self.container_platform` is defined on the test, both
     #: `self.executable` and `self.executable_opts` are ignored.
     #:
-    #: :type: :class:`str` or :class:`reframe.core.containers.ContainerPlatform`.
+    #: :type: :class:`str` or
+    #: :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     #:
     #: .. versionadded:: 2.19
@@ -1130,9 +1131,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
             ]
 
             # We replace executable and executable_opts in the case of containers.
-            self.executable = self.container_platform.emit_launch_cmds()
+            self.executable = self.container_platform.launch_command()
             self.executable_opts = []
-            prepare_container = self.container_platform.emit_prepare_cmds()
+            prepare_container = self.container_platform.emit_prepare_commands()
             if prepare_container:
                 self.pre_run += prepare_container
 

@@ -36,7 +36,7 @@ class _ContainerPlatformTest(abc.ABC):
         self.container_platform.commands = ['cmd1', 'cmd2']
         self.container_platform.workdir = '/stagedir'
         assert (self.expected_cmd_mount_points ==
-                self.container_platform.emit_launch_cmds())
+                self.container_platform.launch_command())
 
     def test_missing_image(self):
         self.container_platform.commands = ['cmd']
@@ -51,7 +51,7 @@ class _ContainerPlatformTest(abc.ABC):
     def test_prepare_command(self):
         self.container_platform.image = 'name:tag'
         assert (self.expected_cmd_prepare ==
-                self.container_platform.emit_prepare_cmds())
+                self.container_platform.emit_prepare_commands())
 
     def test_run_opts(self):
         self.container_platform.image = 'name:tag'
@@ -59,7 +59,7 @@ class _ContainerPlatformTest(abc.ABC):
         self.container_platform.mount_points = [('/path/one', '/one')]
         self.container_platform.workdir = '/stagedir'
         assert (self.expected_cmd_with_run_opts ==
-                self.container_platform.emit_launch_cmds())
+                self.container_platform.launch_command())
 
 
 class TestDocker(_ContainerPlatformTest, unittest.TestCase):
