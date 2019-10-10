@@ -40,7 +40,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             },
             'PrgEnv-pgi': {
                 'daint:gpu': {'time': (6.4E-05, None, 0.15)},
-                'dom:gpu': {'time': (6.3E-05, None, 0.15)},
+                'dom:gpu': {'time': (7.5e-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
             }
         }

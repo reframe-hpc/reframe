@@ -46,18 +46,18 @@ class RegressionCheckLoader:
         return debug.repr(self)
 
     def _module_name(self, filename):
-        """Figure out a module name from filename.
+        '''Figure out a module name from filename.
 
         If filename is an absolute path, module name will the basename without
         the extension. Otherwise, it will be the same as path with `/' replaced
-        by `.' and without the final file extension."""
+        by `.' and without the final file extension.'''
         if os.path.isabs(filename):
             return os.path.splitext(os.path.basename(filename))[0]
         else:
             return (os.path.splitext(filename)[0]).replace('/', '.')
 
     def _validate_source(self, filename):
-        """Check if `filename` is a valid Reframe source file."""
+        '''Check if `filename` is a valid Reframe source file.'''
 
         with open(filename, 'r') as f:
             source_tree = ast.parse(f.read(), filename)
@@ -79,10 +79,10 @@ class RegressionCheckLoader:
         return self._recurse
 
     def load_from_module(self, module):
-        """Load user checks from module.
+        '''Load user checks from module.
 
         This method tries to call the `_rfm_gettests()` method of the user
-        check and validates its return value."""
+        check and validates its return value.'''
         from reframe.core.pipeline import RegressionTest
 
         # Warn in case of old syntax
@@ -146,9 +146,9 @@ class RegressionCheckLoader:
         return checks
 
     def load_all(self):
-        """Load all checks in self._load_path.
+        '''Load all checks in self._load_path.
 
-        If a prefix exists, it will be prepended to each path."""
+        If a prefix exists, it will be prepended to each path.'''
         checks = []
         for d in self._load_path:
             d = os.path.join(self._prefix, d)

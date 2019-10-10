@@ -30,7 +30,7 @@ class FakeJob(Job):
 
 
 class _TestLauncher(abc.ABC):
-    """Base class for launcher tests."""
+    '''Base class for launcher tests.'''
 
     def setUp(self):
         self.job = FakeJob(name='fake_job',
@@ -58,17 +58,17 @@ class _TestLauncher(abc.ABC):
     @property
     @abc.abstractmethod
     def launcher(self):
-        """The launcher to be tested."""
+        '''The launcher to be tested.'''
 
     @property
     @abc.abstractmethod
     def expected_command(self):
-        """The command expected to be emitted by the launcher."""
+        '''The command expected to be emitted by the launcher.'''
 
     @property
     @abc.abstractmethod
     def expected_minimal_command(self):
-        """The command expected to be emitted by the launcher."""
+        '''The command expected to be emitted by the launcher.'''
 
     def test_run_command(self):
         emitted_command = self.launcher.run_command(self.job)
@@ -203,3 +203,22 @@ class TestLocalLauncher(_TestLauncher, unittest.TestCase):
     @property
     def expected_minimal_command(self):
         return ''
+
+
+class TestSSHLauncher(_TestLauncher, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.job._sched_access = ['-l user', '-p 22222', 'host']
+        self.minimal_job._sched_access = ['host']
+
+    @property
+    def launcher(self):
+        return getlauncher('ssh')(['--foo'])
+
+    @property
+    def expected_command(self):
+        return 'ssh -o BatchMode=yes -l user -p 22222 --foo host'
+
+    @property
+    def expected_minimal_command(self):
+        return 'ssh -o BatchMode=yes --foo host'

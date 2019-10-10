@@ -6,11 +6,11 @@ from reframe.core.exceptions import ContainerError
 
 
 class ContainerPlatform(abc.ABC):
-    """The abstract base class of any container platform.
+    '''The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
     :func:`emit_prepare_cmds` and :func:`emit_launch_cmds` abstract functions.
-    """
+    '''
 
     image = fields.TypedField('image', str, type(None))
     commands = fields.TypedField('commands', typ.List[str])
@@ -28,7 +28,7 @@ class ContainerPlatform(abc.ABC):
 
     @abc.abstractmethod
     def emit_prepare_cmds(self):
-        """Returns commands that are necessary before running with this
+        '''Returns commands that are necessary before running with this
         container platform.
 
         :raises: `ContainerError` in case of errors.
@@ -36,27 +36,28 @@ class ContainerPlatform(abc.ABC):
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
 
     @abc.abstractmethod
     def emit_launch_cmds(self):
-        """Returns the command for running with this container platform.
+        '''Returns the command for running with this container platform.
 
         :raises: `ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
+
     def validate(self):
-        """Validates this container platform.
+        '''Validates this container platform.
 
         :raises: `ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
             platforms.
-        """
+        '''
         if self.image is None:
             raise ContainerError('no image specified')
 
@@ -65,7 +66,8 @@ class ContainerPlatform(abc.ABC):
 
 
 class Docker(ContainerPlatform):
-    """An implementation of :class:`ContainerPlatform` for running containers with Docker."""
+    '''An implementation of :class:`ContainerPlatform` for running containers
+    with Docker.'''
 
     def emit_prepare_cmds(self):
         return []
@@ -80,8 +82,8 @@ class Docker(ContainerPlatform):
 
 
 class ShifterNG(ContainerPlatform):
-    """An implementation of :class:`ContainerPlatform` for running containers with
-    ShifterNG."""
+    '''An implementation of :class:`ContainerPlatform` for running containers
+    with ShifterNG.'''
 
     #: Add an option to the launch command to enable MPI support.
     #:
@@ -99,7 +101,7 @@ class ShifterNG(ContainerPlatform):
     def emit_launch_cmds(self):
         super().emit_launch_cmds()
         self.run_opts = ['--mount=type=bind,source="%s",destination="%s"' %
-                          mp for mp in self.mount_points]
+                         mp for mp in self.mount_points]
         if self.with_mpi:
             self.run_opts.append('--mpi')
 
@@ -110,8 +112,9 @@ class ShifterNG(ContainerPlatform):
 
 
 class Sarus(ShifterNG):
-    """An implementation of :class:`ContainerPlatform` for running containers with
-    Sarus."""
+    '''An implementation of :class:`ContainerPlatform` for running containers with
+    Sarus.'''
+
     def emit_prepare_cmds(self):
         return ['sarus pull %s' % self.image]
 
@@ -124,8 +127,8 @@ class Sarus(ShifterNG):
 
 
 class Singularity(ContainerPlatform):
-    """An implementation of :class:`ContainerPlatform` for running containers with
-    Singularity."""
+    '''An implementation of :class:`ContainerPlatform` for running containers
+    with Singularity.'''
 
     #: Add an option to the launch command to enable CUDA support.
     #:
@@ -153,11 +156,11 @@ class Singularity(ContainerPlatform):
 
 
 class ContainerPlatformField(fields.TypedField):
-    """A field representing a container platforms.
+    '''A field representing a container platforms.
 
     You may either assign an instance of :class:`ContainerPlatform:` or a
     string representing the name of the concrete class of a container platform.
-    """
+    '''
 
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, ContainerPlatform, *other_types)
