@@ -112,8 +112,8 @@ class ShifterNG(ContainerPlatform):
 
 
 class Sarus(ShifterNG):
-    '''An implementation of :class:`ContainerPlatform` for running containers with
-    Sarus.'''
+    '''An implementation of :class:`ContainerPlatform` for running containers
+    with Sarus.'''
 
     def emit_prepare_cmds(self):
         return ['sarus pull %s' % self.image]

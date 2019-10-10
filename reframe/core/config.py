@@ -208,10 +208,14 @@ class SiteConfiguration:
                                        resources=part_resources,
                                        local_env=part_local_env,
                                        max_jobs=part_max_jobs)
-                for cp, env_spec in partconfig.get('container_platforms', {}).items():
-                    cp_env = m_env.Environment(name='__rfm_env_%s' % cp,
-                                               modules=env_spec.get('modules', []),
-                                               variables=env_spec.get('variables', {}))
+
+                container_platforms = partconfig.get('container_platforms', {})
+                for cp, env_spec in container_platforms.items():
+                    cp_env = m_env.Environment(
+                        name='__rfm_env_%s' % cp,
+                        modules=env_spec.get('modules', []),
+                        variables=env_spec.get('variables', {})
+                    )
                     part.add_container_env(cp, cp_env)
 
                 system.add_partition(part)

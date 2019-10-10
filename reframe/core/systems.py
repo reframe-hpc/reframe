@@ -19,7 +19,8 @@ class SystemPartition:
     _environs  = fields.TypedField('_environs', typ.List[Environment])
     _resources = fields.TypedField('_resources', typ.Dict[str, typ.List[str]])
     _local_env = fields.TypedField('_local_env', Environment, type(None))
-    _container_environs = fields.TypedField('_container_environs', typ.Dict[str, Environment])
+    _container_environs = fields.TypedField('_container_environs',
+                                            typ.Dict[str, Environment])
 
     # maximum concurrent jobs
     _max_jobs  = fields.TypedField('_max_jobs', int)
