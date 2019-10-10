@@ -1,13 +1,10 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
-
 @rfm.simple_test
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.name = 'paraview_check'
-        self.descr = 'ParaView check'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 12
