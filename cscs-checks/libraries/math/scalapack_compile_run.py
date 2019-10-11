@@ -75,14 +75,14 @@ class ScaLAPACKSanity(ScaLAPACKTest):
 # class ScaLAPACKPerf(ScaLAPACKTest):
 #     def __init__(self, linkage):
 #         super().__init__(linkage)
-# 
+#
 #         self.tags |= {'monch_acceptance'}
 #         self.sourcepath = 'scalapack_performance_compile_run.f'
 #         self.valid_systems = ['monch:compute']
 #         self.valid_prog_environs = ['PrgEnv-gnu']
 #         self.num_tasks = 64
 #         self.num_tasks_per_node = 16
-# 
+#
 #         self.sanity_patterns = sn.assert_found(r'Run', self.stdout)
 #         self.perf_patterns = {
 #             'perf': sn.max(
@@ -90,7 +90,7 @@ class ScaLAPACKSanity(ScaLAPACKTest):
 #                               self.stdout, 'gflops', float)
 #             )
 #         }
-# 
+#
 #         self.reference = {
 #             'monch:compute': {
 #                 'perf': (24., -0.1, None)
