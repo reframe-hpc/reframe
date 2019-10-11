@@ -8,7 +8,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -57,7 +57,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35']
-            elif self.current_system.name in ['daint', 'dom']:
+            elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:
             envname = environ.name
