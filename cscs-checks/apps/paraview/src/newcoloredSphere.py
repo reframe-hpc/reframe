@@ -8,7 +8,7 @@ Version = str(GetParaViewVersion())
 if(GetParaViewVersion() > 5.6):
     from paraview.modules.vtkPVClientServerCoreCorePython import (
         vtkProcessModule)
-    info = GetOpenGLInformation(location=servermanager.vtkSMSession.SERVERS)
+    info = GetOpenGLInformation(location=servermanager.vtkSMSession.RENDER_SERVER)
 else:
     from paraview.servermanager import vtkProcessModule
     from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
@@ -72,7 +72,7 @@ IndexedColors = [
 ]
 
 a = []
-for i in range( nbprocs ):
+for i in range(nbprocs):
     a.extend((str(i), str(i)))
 processIdLUT.Annotations = a
 processIdLUT.IndexedColors = IndexedColors
