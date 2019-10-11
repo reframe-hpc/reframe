@@ -8,7 +8,8 @@ Version = str(GetParaViewVersion())
 if(GetParaViewVersion() > 5.6):
     from paraview.modules.vtkPVClientServerCoreCorePython import (
         vtkProcessModule)
-    info = GetOpenGLInformation(location=servermanager.vtkSMSession.RENDER_SERVER)
+    info = GetOpenGLInformation(
+        location=servermanager.vtkSMSession.RENDER_SERVER)
 else:
     from paraview.servermanager import vtkProcessModule
     from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
