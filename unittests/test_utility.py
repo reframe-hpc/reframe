@@ -767,10 +767,12 @@ class TestReadOnlyViews(unittest.TestCase):
         self.assertEqual(1, l[0])
         self.assertEqual(3, len(l))
         self.assertIn(2, l)
-        self.assertEqual(list(l), [1, 2, 2])
+        self.assertEqual(l, [1, 2, 2])
+        self.assertEqual(l, util.SequenceView([1, 2, 2]))
         self.assertEqual(list(reversed(l)), [2, 2, 1])
         self.assertEqual(1, l.index(2))
         self.assertEqual(2, l.count(2))
+        self.assertEqual(str(l), str([1, 2, 2]))
 
         # Assert immutability
         m = l + [3, 4]
@@ -832,6 +834,8 @@ class TestReadOnlyViews(unittest.TestCase):
         self.assertEqual(2, d.get('b'))
         self.assertEqual(3, d.get('c', 3))
         self.assertEqual({'a': 1, 'b': 2}, d)
+        self.assertEqual(d, util.MappingView({'b': 2, 'a': 1}))
+        self.assertEqual(str(d), str({'a': 1, 'b': 2}))
         self.assertNotEqual({'a': 1, 'b': 2, 'c': 3}, d)
 
         # Assert immutability

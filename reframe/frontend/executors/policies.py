@@ -45,7 +45,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            task.cleanup(not self.keep_stage_files, False)
+            task.cleanup(not self.keep_stage_files)
 
         except TaskExit:
             return
@@ -222,7 +222,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if not self.skip_performance_check:
             task.performance()
 
-        task.cleanup(not self.keep_stage_files, False)
+        task.cleanup(not self.keep_stage_files)
 
     def _failall(self, cause):
         '''Mark all tests as failures'''

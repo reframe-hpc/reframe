@@ -115,7 +115,7 @@ class LocalJob(sched.Job):
 
         # Set the time limit to the grace period and let wait() do the final
         # killing
-        self._time_limit = (0, 0, self.cancel_grace_period)
+        self.time_limit = (0, 0, self.cancel_grace_period)
         self.wait()
 
     def wait(self):
