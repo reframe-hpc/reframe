@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 12
         self.num_tasks_per_node = 12
@@ -33,6 +33,11 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
             self.sanity_patterns = sn.assert_found(
                 'Vendor:   NVIDIA Corporation', self.stdout)
             self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
+                                                   self.stdout)
+        elif partition.fullname == 'dom:mc':
+            self.sanity_patterns = sn.assert_found('Vendor:   VMware, Inc.',
+                                                   self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: llvmpipe',
                                                    self.stdout)
 
         super().setup(partition, environ, **job_opts)
