@@ -1,6 +1,7 @@
 import reframe as rfm
 import reframe.utility.sanity as sn
 
+
 @rfm.simple_test
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -13,7 +14,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
 
         self.time_limit = (0, 1, 0)
         self.executable = 'pvbatch'
-        self.executable_opts = ['newcoloredSphere.py']
+        self.executable_opts = ['coloredSphere.py']
 
         self.maintainers = ['JF']
         self.tags = {'scs', 'production'}
