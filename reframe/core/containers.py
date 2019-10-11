@@ -9,7 +9,8 @@ class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
-    :func:`emit_prepare_commands()` and :func:`launch_command` abstract functions.
+    :func:`emit_prepare_commands()` and :func:`launch_command()` abstract
+    methods.
     '''
 
     image = fields.TypedField('image', str, type(None))

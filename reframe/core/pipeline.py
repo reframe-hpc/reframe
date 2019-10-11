@@ -1099,7 +1099,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 (self._stagedir, self.container_platform.workdir)
             ]
 
-            # We replace executable and executable_opts in the case of containers.
+            # We replace executable and executable_opts in case of containers
             self.executable = self.container_platform.launch_command()
             self.executable_opts = []
             prepare_container = self.container_platform.emit_prepare_commands()
