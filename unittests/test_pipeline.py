@@ -14,6 +14,26 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
 from reframe.frontend.loader import RegressionCheckLoader
 
 
+def _setup_local_execution():
+    partition = rt.runtime().system.partition('login')
+    environ = partition.environment('builtin-gcc')
+    return partition, environ
+
+
+def _setup_remote_execution():
+    partition = fixtures.partition_with_scheduler()
+    if partition is None:
+        pytest.skip('job submission not supported')
+
+    try:
+        environ = partition.environs[0]
+    except IndexError:
+        pytest.skip('no environments configured for partition: %s' %
+                    partition.fullname)
+
+    return partition, environ
+
+
 def _run(test, partition, prgenv):
     test.setup(partition, prgenv)
     test.compile()
@@ -26,23 +46,8 @@ def _run(test, partition, prgenv):
 
 
 class TestRegressionTest(unittest.TestCase):
-    def setup_local_execution(self):
-        self.partition = rt.runtime().system.partition('login')
-        self.prgenv = self.partition.environment('builtin-gcc')
-
-    def setup_remote_execution(self):
-        self.partition = fixtures.partition_with_scheduler()
-        if self.partition is None:
-            self.skipTest('job submission not supported')
-
-        try:
-            self.prgenv = self.partition.environs[0]
-        except IndexError:
-            self.skipTest('no environments configured for partition: %s' %
-                          self.partition.fullname)
-
     def setUp(self):
-        self.setup_local_execution()
+        self.partition, self.prgenv = _setup_local_execution()
         self.loader = RegressionCheckLoader(['unittests/resources/checks'])
 
         # Set runtime prefix
@@ -93,7 +98,7 @@ class TestRegressionTest(unittest.TestCase):
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck(self):
-        self.setup_remote_execution()
+        self.partition, self.prgenv = _setup_remote_execution()
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]
 
@@ -103,7 +108,7 @@ class TestRegressionTest(unittest.TestCase):
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck_make(self):
-        self.setup_remote_execution()
+        self.partition, self.prgenv = _setup_remote_execution()
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck_make.py')[0]
 
@@ -833,50 +838,95 @@ class TestSanityPatterns(unittest.TestCase):
         self.assertIn('v3', log_output)
 
 
-class TestContainerPlatformsTest(TestRegressionTest):
-    def setup_test(self, platform, image):
-        self.setup_remote_execution()
-        test = rfm.RunOnlyRegressionTest()
-        test.name = 'Test%s' % platform
-        test._prefix = 'unittests/resources/checks'
-        test.valid_prog_environs = [self.prgenv.name]
-        test.valid_systems = ['*']
-        test.container_platform = platform
-        test.container_platform.image = image
-        test.container_platform.commands = [
-            'pwd', 'ls', 'cat /etc/os-release']
-        test.container_platform.workdir = '/workdir'
-        test.sanity_patterns = sn.all([
-            sn.assert_found(r'^' + test.container_platform.workdir,
-                            test.stdout),
-            sn.assert_found(r'^hello.c', test.stdout),
-            sn.assert_found(r'18.04.3 LTS \(Bionic Beaver\)', test.stdout),
-        ])
+class TestRegressionTestWithContainer(unittest.TestCase):
+    def temp_prefix(self):
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+    def create_test(self, platform, image):
+        class ContainerTest(rfm.RunOnlyRegressionTest):
+            def __init__(self, platform):
+                self._prefix = 'unittests/resources/checks'
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.container_platform = platform
+                self.container_platform.image = image
+                self.container_platform.commands = [
+                    'pwd', 'ls', 'cat /etc/os-release'
+                ]
+                self.container_platform.workdir = '/workdir'
+                self.sanity_patterns = sn.all([
+                    sn.assert_found(
+                        r'^' + self.container_platform.workdir, self.stdout),
+                    sn.assert_found(r'^hello.c', self.stdout),
+                    sn.assert_found(
+                        r'18\.04\.\d+ LTS \(Bionic Beaver\)', self.stdout),
+                ])
+
+        test = ContainerTest(platform)
         return test
 
-    def run_test(self, test):
-        try:
-            self._run_test(test)
-        except PipelineError:
-            self.skipTest('no configuration found for container platform: %s' %
-                          type(test.container_platform).__name__)
+    def _skip_if_not_configured(self, partition, platform):
+        if platform not in partition.container_environs.keys():
+            pytest.skip('%s is not configured on the system' % platform)
 
     @fixtures.switch_to_user_runtime
     def test_singularity(self):
-        test = self.setup_test('Singularity', 'docker://ubuntu:18.04')
-        self.run_test(test)
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'Singularity')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Singularity', 'docker://ubuntu:18.04'),
+                 partition, environ)
 
     @fixtures.switch_to_user_runtime
     def test_docker(self):
-        test = self.setup_test('Docker', 'ubuntu:18.04')
-        self.run_test(test)
+        partition, environ = _setup_local_execution()
+        self._skip_if_not_configured(partition, 'Docker')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Docker', 'ubuntu:18.04'),
+                 partition, environ)
 
     @fixtures.switch_to_user_runtime
     def test_shifter(self):
-        test = self.setup_test('ShifterNG', 'ubuntu:18.04')
-        self.run_test(test)
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'ShifterNG')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('ShifterNG', 'ubuntu:18.04'),
+                 partition, environ)
 
     @fixtures.switch_to_user_runtime
     def test_sarus(self):
-        test = self.setup_test('Sarus', 'ubuntu:18.04')
-        self.run_test(test)
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'Sarus')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Sarus', 'ubuntu:18.04'),
+                 partition, environ)
+
+    def test_unknown_platform(self):
+        partition, environ = _setup_local_execution()
+        with pytest.raises(ValueError):
+            with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+                rt.runtime().resources.prefix = dirname
+                _run(self.create_test('foo', 'ubuntu:18.04'),
+                     partition, environ)
+
+    def test_not_configured_platform(self):
+        partition, environ = _setup_local_execution()
+        platform = None
+        for cp in ['Docker', 'Singularity', 'Sarus', 'ShifterNG']:
+            if cp not in partition.container_environs.keys():
+                platform = cp
+                break
+
+        if platform is None:
+            pytest.skip('cannot find a not configured supported platform')
+
+        with pytest.raises(PipelineError):
+            with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+                rt.runtime().resources.prefix = dirname
+                _run(self.create_test(platform, 'ubuntu:18.04'),
+                     partition, environ)

@@ -98,7 +98,26 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        self.container_platform.with_mpi = True
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "name:tag bash -c 'cd /stagedir; cmd'")
+
+
+class TestShifterNGWithMPI(TestShifterNG):
+    def create_container_platform(self):
+        ret = containers.ShifterNG()
+        ret.with_mpi = True
+        return ret
+
+    @property
+    def expected_cmd_mount_points(self):
+        return ('shifter run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "--mpi name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+
+    @property
+    def expected_cmd_with_run_opts(self):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 "--mpi name:tag bash -c 'cd /stagedir; cmd'")
@@ -118,6 +137,26 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_prepare(self):
         return ['sarus pull name:tag']
+
+    @property
+    def expected_cmd_with_run_opts(self):
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                "name:tag bash -c 'cd /stagedir; cmd'")
+
+
+class TestSarusWithMPI(TestSarus):
+    def create_container_platform(self):
+        ret = containers.Sarus()
+        ret.with_mpi = True
+        return ret
+
+    @property
+    def expected_cmd_mount_points(self):
+        return ('sarus run '
+                '--mount=type=bind,source="/path/one",destination="/one" '
+                '--mount=type=bind,source="/path/two",destination="/two" '
+                "--mpi name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_with_run_opts(self):
@@ -142,6 +181,27 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        self.container_platform.with_cuda = True
-        return ('singularity exec -B"/path/one:/one" --nv '
+        return ('singularity exec -B"/path/one:/one" '
                 "name:tag bash -c 'cd /stagedir; cmd'")
+
+
+class TestSingularityWithCuda(TestSingularity):
+    def create_container_platform(self):
+        ret = containers.Singularity()
+        ret.with_cuda = True
+        return ret
+
+    @property
+    def expected_cmd_mount_points(self):
+        return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
+                "--nv name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+
+    @property
+    def expected_cmd_prepare(self):
+        return []
+
+    @property
+    def expected_cmd_with_run_opts(self):
+        self.container_platform.with_cuda = True
+        return ('singularity exec -B"/path/one:/one" '
+                "--nv name:tag bash -c 'cd /stagedir; cmd'")

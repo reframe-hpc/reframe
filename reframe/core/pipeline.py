@@ -1091,8 +1091,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 cp_name = type(self.container_platform).__name__
                 cp_env = self._current_partition.container_environs[cp_name]
             except KeyError as e:
-                raise PipelineError('no configuration found for container '
-                                    'platform: %s' % e) from None
+                raise PipelineError(
+                    'container platform not configured '
+                    'on the current partition: %s' % e) from None
 
             self.container_platform.validate()
             self.container_platform.mount_points += [
