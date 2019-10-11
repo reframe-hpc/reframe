@@ -156,7 +156,7 @@ if [ $CI_GENERIC -eq 1 ]; then
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
-    tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
+    tutorialchecks=( $(git diff v2.17-backports...HEAD --name-only --oneline --no-merges | \
                        grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
@@ -194,7 +194,7 @@ else
     fi
 
     # Find modified or added user checks
-    userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
+    userchecks=( $(git diff v2.17-backports...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
 
     if [ ${#userchecks[@]} -ne 0 ]; then
