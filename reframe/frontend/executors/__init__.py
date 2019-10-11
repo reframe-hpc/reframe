@@ -4,9 +4,9 @@ import sys
 import weakref
 
 import reframe.core.debug as debug
+import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
@@ -153,7 +153,7 @@ class RegressionTask:
 
     def setup(self, *args, **kwargs):
         self._safe_call(self.check.setup, *args, **kwargs)
-        self._environ = EnvironmentSnapshot()
+        self._environ = env.snapshot()
 
     def compile(self):
         self._safe_call(self.check.compile)
@@ -193,7 +193,7 @@ class RegressionTask:
         self._notify_listeners('on_task_failure')
 
     def resume(self):
-        self._environ.load()
+        self._environ.restore()
 
     def abort(self, cause=None):
         logging.getlogger().debug('aborting: %s' % self.check.info())
@@ -241,7 +241,7 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._environ_snapshot = EnvironmentSnapshot()
+        self._environ_snapshot = env.snapshot()
 
     def __repr__(self):
         return debug.repr(self)
@@ -274,7 +274,7 @@ class Runner:
                 (len(testcases), num_checks, num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
-            self._environ_snapshot.load()
+            self._environ_snapshot.restore()
 
     def _retry_failed(self, cases):
         rt = runtime.runtime()
@@ -309,7 +309,7 @@ class Runner:
                 print_separator(t.check, 'started processing')
                 last_check = t.check
 
-            self._environ_snapshot.load()
+            self._environ_snapshot.restore()
             self._policy.runcase(t)
 
         # Close the last visual box

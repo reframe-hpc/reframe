@@ -85,9 +85,6 @@ class TestRegressionTest(unittest.TestCase):
         for k in test.variables.keys():
             self.assertNotIn(k, os.environ)
 
-        # Manually unload the environment
-        self.prgenv.unload()
-
     def _run_test(self, test, compile_only=False):
         _run(test, self.partition, self.prgenv)
         self.assertFalse(os.path.exists(test.stagedir))
