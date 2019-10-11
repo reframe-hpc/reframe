@@ -34,7 +34,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.compilation_time_seconds = None
 
         self.maintainers = ['CB', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         result = sn.findall(r'Hello World from thread \s*(\d+) out '
@@ -137,7 +137,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
-            'PrgEnv-cray': self.cray_omp_flags(lang),
+            'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],
@@ -193,7 +193,7 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
         self.sourcepath += '_mpi_openmp.' + lang
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
-            'PrgEnv-cray': self.cray_omp_flags(lang),
+            'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
             'PrgEnv-cray_classic': ['-homp'],
             'PrgEnv-gnu': ['-fopenmp'],
             'PrgEnv-intel': ['-qopenmp'],

@@ -40,7 +40,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if self.current_system.name == 'kesch':

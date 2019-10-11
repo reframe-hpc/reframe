@@ -11,7 +11,7 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['PrgEnv-cray']
         reference = {
-            'CRAY_CPU_TARGET': 'haswell',
+            'CRAY_CPU_TARGET': ('haswell', 'broadwell'),
             'CRAYPE_NETWORK_TARGET': 'aries',
             'MODULEPATH': r'[\S+]',
             'MODULESHOME': r'/opt/cray/pe/modules/[\d+\.+]',
@@ -29,7 +29,7 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.all(
             sn.map(self.assert_envvar, list(reference.items())))
         self.maintainers = ['RS', 'LM']
-        self.tags = {'maintenance', 'production'}
+        self.tags = {'maintenance', 'production', 'craype'}
 
     def assert_envvar(self, v):
         return sn.assert_found('='.join(v), self.stdout)
