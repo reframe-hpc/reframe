@@ -20,7 +20,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'kesch:cn']
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
             self.modules = ['cray-netcdf']
@@ -40,7 +40,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if self.current_system.name == 'kesch':
