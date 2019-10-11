@@ -108,7 +108,7 @@ class IorCheck(rfm.RegressionTest):
 
         systems_to_test = ['dom', 'daint']
         if self.current_system.name in systems_to_test:
-            self.tags |= {'production'}
+            self.tags |= {'production', 'resources'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)

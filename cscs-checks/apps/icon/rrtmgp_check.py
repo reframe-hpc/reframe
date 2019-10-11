@@ -14,6 +14,7 @@ class RRTMGPTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'RRTMGP')
+        self.tags = {'resources'}
         self.prebuild_cmd = ['cp build/Makefile.conf.dom build/Makefile.conf']
         self.executable = 'python'
         self.executable_opts = [

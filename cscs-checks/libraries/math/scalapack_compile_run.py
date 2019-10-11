@@ -27,7 +27,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O3']
         self.maintainers = ['CB', 'LM', 'MKr']
-        self.tags = {'production'}
+        self.tags = {'production', 'resources'}
 
 
 @rfm.required_version('>=2.14')
@@ -68,31 +68,31 @@ class ScaLAPACKSanity(ScaLAPACKTest):
         ])
 
 
-# FIXME: This test is obsolete; it is kept only for reference.
-# NOTE:  The test case is very small, but larger cases did not succeed!
-@rfm.required_version('>=2.14')
-@rfm.parameterized_test(['dynamic'])
-class ScaLAPACKPerf(ScaLAPACKTest):
-    def __init__(self, linkage):
-        super().__init__(linkage)
-
-        self.tags |= {'monch_acceptance'}
-        self.sourcepath = 'scalapack_performance_compile_run.f'
-        self.valid_systems = ['monch:compute']
-        self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 64
-        self.num_tasks_per_node = 16
-
-        self.sanity_patterns = sn.assert_found(r'Run', self.stdout)
-        self.perf_patterns = {
-            'perf': sn.max(
-                sn.extractall(r'GFLOPS/s:\s+(?P<gflops>\S+)',
-                              self.stdout, 'gflops', float)
-            )
-        }
-
-        self.reference = {
-            'monch:compute': {
-                'perf': (24., -0.1, None)
-            }
-        }
+# # FIXME: This test is obsolete; it is kept only for reference.
+# # NOTE:  The test case is very small, but larger cases did not succeed!
+# @rfm.required_version('>=2.14')
+# @rfm.parameterized_test(['dynamic'])
+# class ScaLAPACKPerf(ScaLAPACKTest):
+#     def __init__(self, linkage):
+#         super().__init__(linkage)
+# 
+#         self.tags |= {'monch_acceptance'}
+#         self.sourcepath = 'scalapack_performance_compile_run.f'
+#         self.valid_systems = ['monch:compute']
+#         self.valid_prog_environs = ['PrgEnv-gnu']
+#         self.num_tasks = 64
+#         self.num_tasks_per_node = 16
+# 
+#         self.sanity_patterns = sn.assert_found(r'Run', self.stdout)
+#         self.perf_patterns = {
+#             'perf': sn.max(
+#                 sn.extractall(r'GFLOPS/s:\s+(?P<gflops>\S+)',
+#                               self.stdout, 'gflops', float)
+#             )
+#         }
+# 
+#         self.reference = {
+#             'monch:compute': {
+#                 'perf': (24., -0.1, None)
+#             }
+#         }

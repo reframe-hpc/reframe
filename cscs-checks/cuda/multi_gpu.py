@@ -61,7 +61,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
             'kesch:cn:d2d': (137408, -0.1, None, 'MB/s')
         }
-        self.tags = {'diagnostic', 'mch'}
+        self.tags = {'diagnostic', 'mch', 'resources'}
         self.maintainers = ['AJ', 'VK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):

@@ -72,7 +72,7 @@ class ErtP100Test(rfm.RegressionTest):
         ]
         self.build_system.ldflags = ['-O3']
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'resources'}
         gpu_blocks, gpu_threads = gpudims
         self.name = 'ertgpu_Run.{}_FLOPS.{}_GPUBlocks.{}_GPUThreads.{}'.format(
             repeat, flop, gpu_blocks, gpu_threads)

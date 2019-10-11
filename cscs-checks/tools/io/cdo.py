@@ -40,7 +40,7 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
             self.modules = ['CDO']
 
         self.maintainers = ['SO']
-        self.tags = {'production', 'mch'}
+        self.tags = {'production', 'mch', 'resources'}
 
 
 # Check that the netCDF loaded by the CDO module supports the nc4 filetype

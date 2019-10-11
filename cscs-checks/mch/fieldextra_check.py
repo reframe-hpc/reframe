@@ -8,7 +8,7 @@ class FieldextraTestBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.maintainers = ['MKr']
-        self.tags = {'mch'}
+        self.tags = {'mch', 'resources'}
 
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']

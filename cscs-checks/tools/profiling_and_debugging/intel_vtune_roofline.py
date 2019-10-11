@@ -76,7 +76,7 @@ class IntelRooflineVtuneTest(rfm.RegressionTest):
         # NOTE: -allow-multiple-runs requires to install vtune drivers
         # TODO: -collect memory-access
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'resources'}
         self.sanity_patterns = sn.all([
             sn.assert_found('loop complete.', self.stdout),
             sn.assert_eq(sn.extractsingle(
