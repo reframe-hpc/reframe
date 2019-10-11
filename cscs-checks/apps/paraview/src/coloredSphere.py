@@ -1,78 +1,98 @@
-
-# Version = "4.4"  # tested succesfully on Fri Nov 13 15:54:52 CET 2015
-Version = "5.4"    # tested succesfully on Fri Nov 13 15:54:52 CET 2015
-
+from paraview.simple import *
 import os
 basename = os.getenv('SCRATCH')
+if basename is None:
+    basename = "/tmp"
 
-try: paraview.simple
-except: from paraview.simple import *
-from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
+Version = str(GetParaViewVersion())
+if(GetParaViewVersion() > 5.6):
+    from paraview.modules.vtkPVClientServerCoreCorePython import (
+        vtkProcessModule)
+    info = GetOpenGLInformation(location=servermanager.vtkSMSession.RENDER_SERVER)
+else:
+    from paraview.servermanager import vtkProcessModule
+    from vtk.vtkPVClientServerCoreRendering import vtkPVOpenGLInformation
+    info = vtkPVOpenGLInformation()
+    info.CopyFromObject(None)
 
-info = vtkPVOpenGLInformation()
-info.CopyFromObject(None)
-print("Vendor:   %s" % info.GetVendor())
-print("Version:  %s" % info.GetVersion())
-print("Renderer: %s" % info.GetRenderer())
-# should print
-# "Vendor:   NVIDIA Corporation"
-# "Version:  4.5.0 NVIDIA 375.66"
-# "Renderer: Tesla P100-PCIE-16GB/PCIe/SSE2"
+rank = vtkProcessModule.GetProcessModule().GetPartitionId()
+nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()
+
+if rank == 0:
+    print("ParaView Version ", Version)
+    print("rank=", rank, "/", nbprocs)
+    print("Vendor:   %s" % info.GetVendor())
+    print("Version:  %s" % info.GetVersion())
+    print("Renderer: %s" % info.GetRenderer())
+
+Vendor = info.GetVendor().split()[0]
+
+"""
+>>> info.GetRenderer()
+'SWR (LLVM 8.0, 256 bits)'
+>>> info.GetVendor()
+'Intel Corporation'
+>>> info.GetVersion()
+'3.3 (Core Profile) Mesa 18.3.3'
+"""
 
 view = GetRenderView()
+view.CameraPosition = [1.642208, 1.973803, 2.14555]
+view.CameraViewUp = [-0.410182, -0.492857, 0.76736]
+view.CameraFocalPoint = [0.0, 0.0, 0.0]
+view.OrientationAxesVisibility = 0
 
 sphere = Sphere()
-sphere.ThetaResolution = 2048
-sphere.PhiResolution = 2048
+sphere.ThetaResolution = 1024
+sphere.PhiResolution = 1024
 
 pidscal = ProcessIdScalars(sphere)
 
-rep = Show(pidscal)
+rep = Show(pidscal, view)
+ColorBy(rep, 'ProcessId')
+processIdLUT = GetColorTransferFunction('ProcessId')
+processIdLUT.AnnotationsInitialized = 1
+processIdLUT.InterpretValuesAsCategories = 1
 
-if(GetParaViewVersion() >= 5.5):
-  from vtkmodules.vtkPVClientServerCoreCorePython import vtkProcessModule
-else:
-  from vtkPVClientServerCoreCorePython import vtkProcessModule
+# we take colors from the pre-defined "KAAMS" found in
+# ParaViewCore/ServerManager/Rendering/ColorMaps.json
+IndexedColors = [
+    1.0, 1.0, 1.0,
+    1.0, 0.0, 0.0,
+    0.0, 1.0, 0.0,
+    0.0, 0.0, 1.0,
+    1.0, 1.0, 0.0,
+    1.0, 0.0, 1.0,
+    0.0, 1.0, 1.0,
+    0.63, 0.63, 1.0,
+    0.67, 0.5, 0.33,
+    1.0, 0.5, 0.75,
+    0.53, 0.35, 0.7,
+    1.0, 0.75, 0.5
+]
 
-print("rank=", vtkProcessModule.GetProcessModule().GetPartitionId())
-print("total=", vtkProcessModule.GetProcessModule().GetNumberOfLocalPartitions())
-nbprocs = servermanager.ActiveConnection.GetNumberOfDataPartitions()
-drange = [0, nbprocs-1]
+a = []
+for i in range(nbprocs):
+    a.extend((str(i), str(i)))
+processIdLUT.Annotations = a
+processIdLUT.IndexedColors = IndexedColors
 
-lt = MakeBlueToRedLT(drange[0], drange[1])
-lt.NumberOfTableValues = nbprocs
+processIdLUTColorBar = GetScalarBar(processIdLUT, view)
+processIdLUTColorBar.Title = 'PId'
+processIdLUTColorBar.ComponentTitle = ''
 
-rep.LookupTable = lt
-rep.ColorArrayName = ("POINT_DATA", "ProcessId")
+# set color bar visibility
+processIdLUTColorBar.Visibility = 1
 
-bar = CreateScalarBar(LookupTable=lt, Title="PID")
-bar.TitleColor = [0, 0, 0]
-bar.LabelColor = [0, 0, 0]
-# bar.NumberOfLabels = 6
-view.Representations.append(bar)
+# show color legend
+rep.SetScalarBarVisibility(view, True)
 
 view.Background = [.7, .7, .7]
-view.CameraViewUp = [0, 1, 0]
-view.StillRender()
-view.ResetCamera()
+
+Render()
+
 view.ViewSize = [1024, 1024]
 # change the pathname to a place where you have write access
-SaveScreenshot(filename=basename + "/coloredSphere_v" + Version + "_00.png",
-               view=view)
-# SaveScreenshot(filename = "/users/jfavre/coloredSphere_v" + Version + "_00.png", view=view)
-
-view.CameraViewUp = [0, 0, 1]
-view.CameraFocalPoint = [0, 0, 0]
-view.CameraPosition = [0, 1, 0]
-view.ResetCamera()
-# change the pathname to a place where you have write access
-SaveScreenshot(filename=basename + "/coloredSphere_v" + Version + "_01.png",
-               view=view)
-
-view.CameraViewUp = [0, 0, 1]
-view.CameraFocalPoint = [0, 0, 0]
-view.CameraPosition = [0, -1, 0]
-view.ResetCamera()
-# change the pathname to a place where you have write access
-SaveScreenshot(filename=basename + "/coloredSphere_v" + Version + "_02.png",
-               view=view)
+filename = basename + "/coloredSphere_v" + Version + "." + Vendor + ".png"
+SaveScreenshot(filename=filename, view=view)
+print("writing ", filename)
