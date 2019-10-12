@@ -2,7 +2,7 @@ import os
 import sys
 
 
-VERSION = '2.17.2'
+VERSION = '2.17.3'
 INSTALL_PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 MIN_PYTHON_VERSION = (3, 5, 0)
 
