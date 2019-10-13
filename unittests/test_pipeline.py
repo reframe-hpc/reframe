@@ -20,8 +20,8 @@ def _setup_local_execution():
     return partition, environ
 
 
-def _setup_remote_execution():
-    partition = fixtures.partition_with_scheduler()
+def _setup_remote_execution(scheduler=None):
+    partition = fixtures.partition_with_scheduler(scheduler)
     if partition is None:
         pytest.skip('job submission not supported')
 
@@ -881,7 +881,7 @@ class TestRegressionTestWithContainer(unittest.TestCase):
 
     @fixtures.switch_to_user_runtime
     def test_docker(self):
-        partition, environ = _setup_local_execution()
+        partition, environ = _setup_remote_execution('local')
         self._skip_if_not_configured(partition, 'Docker')
         with tempfile.TemporaryDirectory(dir='unittests') as dirname:
             rt.runtime().resources.prefix = dirname
