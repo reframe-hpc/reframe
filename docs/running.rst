@@ -543,27 +543,31 @@ The performance report is printed after the output of the regression tests and h
   Check1
   - system:partition
       - PrgEnv1
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
       - PrgEnv2
-          : perf_variable1: <value> <units>
-          : perf_variable2: <value> <units>
+          * num_tasks: <num_tasks>
+          * perf_variable1: <value> <units>
+          * perf_variable2: <value> <units>
           * ...
   ------------------------------------------------------------------------------
   Check2
   - system:partition
       - PrgEnv1
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
       - PrgEnv2
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
   ------------------------------------------------------------------------------
 
-Achieved performance values are listed by system partition and programming environment for each performance test that has run.
+The number of tasks and the achieved performance values are listed by system partition and programming environment for each performance test that has run.
 Performance variables are the variables collected through the :attr:`reframe.core.pipeline.RegressionTest.perf_patterns` attribute.
 
 The following command will run the CUDA matrix-vector multiplication example from the `tutorial <tutorial.html>`__ and will produce a performance report:
