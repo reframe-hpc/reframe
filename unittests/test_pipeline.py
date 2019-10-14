@@ -1,5 +1,6 @@
 import os
 import pytest
+import re
 import tempfile
 import unittest
 
@@ -43,6 +44,15 @@ def _run(test, partition, prgenv):
     test.check_sanity()
     test.check_performance()
     test.cleanup(remove_files=True)
+
+
+def _cray_cle_version():
+    completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
+    matched = re.match('^RELEASE=(\S+)', completed.stdout)
+    if matched is None:
+        return None
+
+    return matched.group(1)
 
 
 class TestRegressionTest(unittest.TestCase):
@@ -872,6 +882,10 @@ class TestRegressionTestWithContainer(unittest.TestCase):
 
     @fixtures.switch_to_user_runtime
     def test_singularity(self):
+        cle_version = _cray_cle_version()
+        if cle_version is not None and cle_version.startswith('6.0'):
+            pytest.skip('test not supported on Cray CLE6')
+
         partition, environ = _setup_remote_execution()
         self._skip_if_not_configured(partition, 'Singularity')
         with tempfile.TemporaryDirectory(dir='unittests') as dirname:
