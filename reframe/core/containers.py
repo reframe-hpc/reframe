@@ -21,8 +21,6 @@ class ContainerPlatform(abc.ABC):
 
     def __init__(self):
         self.image = None
-        self.with_mpi = False
-        self.with_cuda = False
         self.commands = []
         self.mount_points  = []
         self.workdir = '/rfm_workdir'
