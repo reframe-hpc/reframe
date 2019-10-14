@@ -48,7 +48,7 @@ def _run(test, partition, prgenv):
 
 def _cray_cle_version():
     completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
-    matched = re.match('^RELEASE=(\S+)', completed.stdout)
+    matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
     if matched is None:
         return None
 
