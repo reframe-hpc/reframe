@@ -6,22 +6,39 @@ import reframe.utility.sanity as sn
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.name = 'paraview_gpu_check'
-        self.descr = 'ParaView GPU check'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 12
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
 
-        # FIXME: The test runs fine, but the process does not exit until the
-        # job times out
         self.time_limit = (0, 1, 0)
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
 
-        self.sanity_patterns = sn.assert_found(
-            'Vendor:   NVIDIA Corporation', self.stdout)
-
         self.maintainers = ['JF']
         self.tags = {'scs', 'production'}
+
+    def setup(self, partition, environ, **job_opts):
+        if partition.fullname == 'daint:mc':
+            self.sanity_patterns = sn.assert_found('Vendor:   VMware, Inc.',
+                                                   self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: llvmpipe',
+                                                   self.stdout)
+        elif partition.fullname == 'daint:gpu':
+            self.sanity_patterns = sn.assert_found(
+                'Vendor:   NVIDIA Corporation', self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
+                                                   self.stdout)
+        elif partition.fullname == 'dom:gpu':
+            self.sanity_patterns = sn.assert_found(
+                'Vendor:   NVIDIA Corporation', self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: Tesla P100',
+                                                   self.stdout)
+        elif partition.fullname == 'dom:mc':
+            self.sanity_patterns = sn.assert_found('Vendor:   VMware, Inc.',
+                                                   self.stdout)
+            self.sanity_patterns = sn.assert_found('Renderer: llvmpipe',
+                                                   self.stdout)
+
+        super().setup(partition, environ, **job_opts)
