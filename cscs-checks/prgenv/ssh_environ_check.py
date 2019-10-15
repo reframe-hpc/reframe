@@ -11,7 +11,7 @@ class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['PrgEnv-cray']
         reference = {
-            'CRAY_CPU_TARGET': ('haswell', 'broadwell'),
+            'CRAY_CPU_TARGET': ('haswell'),
             'CRAYPE_NETWORK_TARGET': 'aries',
             'MODULEPATH': r'[\S+]',
             'MODULESHOME': r'/opt/cray/pe/modules/[\d+\.+]',
