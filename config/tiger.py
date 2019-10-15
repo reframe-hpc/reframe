@@ -36,7 +36,8 @@ class ReframeSettings:
                         'descr': 'Hybrid nodes (Broadwell/P100)',
                         'max_jobs': 100,
                         'resources': {
-                            'switches': ['--switches={num_switches}']
+                            'switches': ['--switches={num_switches}'],
+                            'mem-per-cpu': ['--mem-per-cpu={mem_per_cpu}']
                         }
                     }
                 }
