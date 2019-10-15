@@ -27,7 +27,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.fflags = ['-O3']
         self.maintainers = ['CB', 'LM', 'MKr']
-        self.tags = {'production', 'resources'}
+        self.tags = {'production', 'external-resources'}
 
 
 @rfm.required_version('>=2.14')

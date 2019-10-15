@@ -35,7 +35,7 @@ class SdeBaseTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found('Total FLOPs =', self.rpt)
         self.post_run = ['SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
         self.maintainers = ['JG']
-        self.tags = {'scs', 'resources'}
+        self.tags = {'scs', 'external-resources'}
 
     @property
     @sn.sanity_function

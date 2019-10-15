@@ -52,7 +52,7 @@ class HPCGCheckRef(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'benchmark', 'resources'}
+        self.tags = {'diagnostic', 'benchmark', 'external-resources'}
 
     @property
     @sn.sanity_function

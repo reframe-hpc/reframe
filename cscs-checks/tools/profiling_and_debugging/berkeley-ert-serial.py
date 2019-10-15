@@ -4,41 +4,43 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
+#{{{ base
 class ErtTestBase(rfm.RegressionTest):
-    '''
+    """
     The Empirical Roofline Tool, ERT, automatically generates roofline data.
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit/
-    '''
+    """
 
     def __init__(self):
-        super().__init__()
         self.descr = 'Empirical Roofline Toolkit'
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+        self.sourcesdir = os.path.join(self.current_system.external-external-resourcesdir,
                                        'roofline', 'ert')
         self.build_system = 'SingleSource'
         self.sourcepath = 'kernel1.c driver1.c'
         self.executable = 'ert.exe'
         self.build_system.ldflags = ['-O3', '-fopenmp']
-        self.sourcesdir = os.path.join(self.current_system.resourcesdir,
+        self.sourcesdir = os.path.join(self.current_system.external-external-resourcesdir,
                                        'roofline', 'ert')
         self.rpt = '%s.rpt' % self.executable
         self.maintainers = ['JG']
-        self.tags = {'scs', 'external-resources'}
+        self.tags = {'scs', 'external-external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
         if self.num_tasks != 36:
             self.job.launcher.options = ['--cpu-bind=verbose,none']
+#}}}
 
-
+#{{{ test
 @rfm.parameterized_test(
     *[[num_ranks, flop]
-      for num_ranks in [36, 18, 12, 9, 6, 4, 3, 2, 1]
-      for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
+      for num_ranks in [1]
+      for flop in [256, 512, 1024]])
+      #for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
 class ErtBroadwellTest(ErtTestBase):
     def __init__(self, num_ranks, flop):
         super().__init__()
-        ompthread = 36 // num_ranks
+        ompthread = 1
         self.valid_systems = ['daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.build_system.cppflags = [
@@ -50,7 +52,7 @@ class ErtBroadwellTest(ErtTestBase):
             '-DERT_TRIALS_MIN=1',
             '-DERT_WORKING_SET_MIN=1',
         ]
-        self.name = 'ert_FLOPS.{:04d}_MPI.{:03d}_OpenMP.{:03d}'.format(
+        self.name = 'ert_serial_FLOPS.{:04d}_MPI.{:03d}_OpenMP.{:03d}'.format(
             flop, num_ranks, ompthread)
         self.exclusive = True
         self.num_tasks = num_ranks
@@ -76,7 +78,7 @@ class ErtBroadwellTest(ErtTestBase):
                 'python2 summary.py < max > sum',
                 # give enough time for all the dependent jobs to collect data:
                 'sleep 60',
-                'cat ../ert_FLOPS*/sum | python2 roofline.py > rpt',
+                'cat ../ert_serial_FLOPS*/sum | python2 roofline.py > rpt',
             ]
 
         else:
@@ -113,7 +115,7 @@ class ErtBroadwellTest(ErtTestBase):
             # OPENMP_THREADS 1
             # FLOPS          8
             # MPI_PROCS      36
-            #
+            # 
             #   5647.33 L1 EMP
             #   *******
             #   3203.86 L2 EMP
@@ -136,11 +138,11 @@ class ErtBroadwellTest(ErtTestBase):
             gflops = sn.extractsingle(regex_gflops, self.roofline_rpt,
                                       'GFLOPs', float)
             L1bw = sn.extractsingle(regex_L1bw, self.roofline_rpt,
-                                    'L1bw', float)
+                                      'L1bw', float)
             L2bw = sn.extractsingle(regex_L2bw, self.roofline_rpt,
-                                    'L2bw', float)
+                                      'L2bw', float)
             L3bw = sn.extractsingle(regex_L3bw, self.roofline_rpt,
-                                    'L3bw', float)
+                                      'L3bw', float)
             DRAMbw = sn.extractsingle(regex_DRAMbw, self.roofline_rpt,
                                       'DRAMbw', float)
 
@@ -162,3 +164,7 @@ class ErtBroadwellTest(ErtTestBase):
                     'DRAMbw': (ref_DRAMbw, -0.1, 0.3, 'GB/s'),
                 }
             }
+
+        # else:
+
+#}}}

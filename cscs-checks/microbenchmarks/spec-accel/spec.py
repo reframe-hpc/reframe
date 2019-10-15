@@ -53,7 +53,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'resources'}
+        self.tags = {'diagnostic', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         self.pre_run = ['source ./shrc', 'mv %s config' %

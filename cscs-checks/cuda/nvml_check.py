@@ -22,4 +22,4 @@ class NvmlCheck(rfm.RegressionTest):
             r"compute\s+mode\s+'Exclusive Process'", self.stdout)
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'resources'}
+        self.tags = {'production', 'external-resources'}

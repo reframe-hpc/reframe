@@ -33,7 +33,7 @@ class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
             }
         }
 
-        self.tags = {'scs', 'resources'}
+        self.tags = {'scs', 'external-resources'}
         self.maintainers = ['TR', 'VH']
 
 

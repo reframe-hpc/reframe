@@ -28,7 +28,7 @@ class OpenfoamExtendBaseTest(rfm.RunOnlyRegressionTest):
                 r'Finalising parallel run', self.stdout)
 
         self.maintainers = ['MKr']
-        self.tags = {'scs', 'production', 'resources'}
+        self.tags = {'scs', 'production', 'external-resources'}
         self.pre_run = ['source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
 
 
