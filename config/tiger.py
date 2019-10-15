@@ -15,7 +15,7 @@ class ReframeSettings:
                 'descr': 'Cray Tiger',
                 'hostnames': ['tiger'],
                 'modules_system': 'tmod',
-                'resourcesdir': '/home/users/jpiccinali/reframe.git/RESOURCES',
+                'resourcesdir': '$HOME/RESOURCES',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
