@@ -10,7 +10,7 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
-            'tiger':{
+            'tiger': {
                 # export SCRATCH=/lus/scratch/$USER
                 'descr': 'Cray Tiger',
                 'hostnames': ['tiger'],
@@ -159,17 +159,6 @@ class ReframeSettings:
     perf_logging_config = {
         'level': 'DEBUG',
         'handlers': [
-            #@ {
-            #@     'type': 'graylog',
-            #@     'host': 'your-server-here',
-            #@     'port': 12345,
-            #@     'level': 'INFO',
-            #@     'format': '%(message)s',
-            #@     'extras': {
-            #@         'facility': 'reframe',
-            #@         'data-version': '1.0',
-            #@     }
-            #@ },
             {
                 'type': 'filelog',
                 'prefix': '%(check_system)s/%(check_partition)s',
