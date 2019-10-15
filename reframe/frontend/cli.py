@@ -7,6 +7,7 @@ import traceback
 
 import reframe
 import reframe.core.config as config
+import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
@@ -380,15 +381,15 @@ def main():
     if options.show_config_env:
         envname = options.show_config_env
         for p in rt.system.partitions:
-            env = p.environment(envname)
-            if env:
+            environ = p.environment(envname)
+            if environ:
                 break
 
-        if env is None:
+        if environ is None:
             printer.error('no such environment: ' + envname)
             sys.exit(1)
 
-        printer.info(env.details())
+        printer.info(environ.details())
         sys.exit(0)
 
     if hasattr(settings, 'perf_logging_config'):
@@ -516,7 +517,7 @@ def main():
 
         # Load the environment for the current system
         try:
-            rt.system.preload_environ.load()
+            env.load(rt.system.preload_environ)
         except EnvironError as e:
             printer.error("failed to load current system's environment; "
                           "please check your configuration")
