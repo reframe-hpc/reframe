@@ -93,12 +93,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.compilation_time_seconds = (
             datetime.now() - self.compilation_time_seconds).total_seconds()
 
-    def cray_omp_flags(self, lang):
-        if lang != 'f90' and self.current_system.name in {'daint', 'dom'}:
-            return ['-fopenmp']
-
-        return ['-homp']
-
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
