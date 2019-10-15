@@ -174,7 +174,7 @@ def create_ref_count(graph):
     # TODO: create unit test
     ref_count = {}
     for node, deps in graph.items():
-        ref_count.setdefault(node,0)
+        ref_count.setdefault(node, 0)
         for adj in deps:
             try:
                 ref_count[adj] += 1
