@@ -6,8 +6,7 @@ import reframe.utility.sanity as sn
 
 @rfm.simple_test
 class NvmlCheck(rfm.RegressionTest):
-    """
-    This test checks gpu modes with nvml:
+    ''' This test checks gpu modes with nvml:
     * COMPUTE MODE:
     result = nvmlDeviceGetComputeMode(device, &compute_mode);
 
@@ -19,7 +18,7 @@ class NvmlCheck(rfm.RegressionTest):
                      Graphics operations < are not allowed.
     NVML_GOM_LOW_DP Designed for running graphics applications that do not
                     require < high bandwidth double precision.
-    """
+    '''
     def __init__(self):
         super().__init__()
         self.descr = 'check GPU compute mode'
