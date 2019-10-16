@@ -15,4 +15,4 @@ class CrayCPUTargetTest(rfm.RunOnlyRegressionTest):
                                                self.stdout)
 
         self.maintainers = ['TM']
-        self.tags = {'production', 'maintenance'}
+        self.tags = {'production', 'maintenance', 'craype'}

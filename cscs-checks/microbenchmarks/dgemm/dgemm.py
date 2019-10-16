@@ -43,7 +43,7 @@ class DGEMMTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
-        self.tags = {'benchmark', 'diagnostic'}
+        self.tags = {'benchmark', 'diagnostic', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
 

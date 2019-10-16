@@ -40,7 +40,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         if self.current_system.name == 'kesch':
@@ -66,9 +66,5 @@ class NetCDFTest(rfm.RegressionTest):
                 self.build_system.ldflags = ['-B' + self.linkage]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
-            if environ.name == 'PrgEnv-pgi' and self.lang == 'cpp':
-                # FIXME: Workaround to fix compilation for PrgEnv-pgi
-                # Cray Case: #243751
-                self.build_system.cppflags = ['-D_GLIBCXX_USE_CXX11_ABI=0']
 
         super().setup(partition, environ, **job_opts)

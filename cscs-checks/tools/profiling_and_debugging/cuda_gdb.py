@@ -46,7 +46,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         ])
 
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
