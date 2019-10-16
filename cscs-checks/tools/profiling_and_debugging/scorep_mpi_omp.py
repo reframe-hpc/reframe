@@ -12,11 +12,12 @@ class ScorepHybrid(rfm.RegressionTest):
         self.name = 'scorep_mpi_omp_%s' % lang.replace('+', 'p')
         self.descr = 'SCORE-P %s check' % lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
-        # scorep fails with latest clang based cce compiler:
+
+        # Score-P fails with latest clang based cce compiler:
         # src/measurement/thread/fork_join/scorep_thread_fork_join_omp.c:402:
         # Fatal: Bug 'TPD == 0': Invalid OpenMP thread specific data object.
         # -> removing cce from supported compiler for now.
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
             'PrgEnv-gnu': ['-g', '-fopenmp'],
             'PrgEnv-intel': ['-g', '-openmp'],
