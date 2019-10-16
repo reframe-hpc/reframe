@@ -21,7 +21,7 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
                                     self.stdout, 'pi', float)
         self.sanity_patterns = sn.assert_lt(sn.abs(pi_value - math.pi), 0.01)
         self.maintainers = ['TM']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if partition.fullname == 'daint:gpu':

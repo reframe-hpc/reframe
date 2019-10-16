@@ -27,7 +27,7 @@ class CudaCheck(rfm.RegressionTest):
             self.nvidia_sm = '37'
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
 
 @rfm.required_version('>=2.14')

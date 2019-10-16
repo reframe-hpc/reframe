@@ -47,7 +47,7 @@ class DdtCheck(rfm.RegressionTest):
             'Cuda': 94
         }
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.post_run = ['ddt -V ; which ddt ;']
         self.keep_files = ['ddtreport.txt']
 

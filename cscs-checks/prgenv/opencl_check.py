@@ -9,7 +9,7 @@ class OpenCLCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.maintainers = ['TM', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']

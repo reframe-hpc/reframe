@@ -66,4 +66,4 @@ class FFTWTest(rfm.RegressionTest):
             }
 
         self.maintainers = ['AJ']
-        self.tags = {'benchmark', 'scs'}
+        self.tags = {'benchmark', 'scs', 'craype'}
