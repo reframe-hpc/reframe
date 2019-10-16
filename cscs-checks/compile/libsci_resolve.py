@@ -11,7 +11,7 @@ class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
                               'dom:login', 'dom:gpu']
         self.modules = ['craype-haswell']
         self.maintainers = ['AJ']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
 
 @rfm.required_version('>=2.14')
@@ -91,4 +91,4 @@ class MKLResolveTest(LibSciResolveBaseTest):
         ])
 
         self.maintainers = ['AJ']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}

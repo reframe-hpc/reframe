@@ -36,4 +36,4 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'mch'}
+        self.tags = {'production', 'mch', 'craype'}
