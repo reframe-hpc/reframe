@@ -19,6 +19,7 @@ class NvmlCheck(rfm.RegressionTest):
     NVML_GOM_LOW_DP Designed for running graphics applications that do not
                     require < high bandwidth double precision.
     '''
+
     def __init__(self):
         super().__init__()
         self.descr = 'check GPU compute mode'
@@ -37,4 +38,4 @@ class NvmlCheck(rfm.RegressionTest):
             self.stdout)
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'external-resources'}
