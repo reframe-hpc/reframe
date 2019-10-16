@@ -37,6 +37,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 self.modules = ['craype-accel-nvidia60']
             else:
                 self.modules = ['craype-accel-nvidia60', 'CMake']
+
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
