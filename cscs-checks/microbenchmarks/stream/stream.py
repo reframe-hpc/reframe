@@ -102,7 +102,7 @@ class StreamTest(rfm.RegressionTest):
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             }
         }
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):

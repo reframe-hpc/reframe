@@ -41,7 +41,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
         }
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         # gdb4hpc has its own way to launch a debugging job and needs an
         # additional jobscript. The reframe jobscript can be copied for that
         # purpose, by adding the cray_debug_ comments around the job launch
