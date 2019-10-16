@@ -31,6 +31,11 @@ class ReframeSettings:
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100
                     },
@@ -41,6 +46,11 @@ class ReframeSettings:
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100
                     }

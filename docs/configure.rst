@@ -43,6 +43,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=gpu'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Hybrid nodes (Haswell/P100)',
                        'max_jobs': 100
                    },
@@ -53,6 +58,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=mc'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Multicore nodes (Broadwell)',
                        'max_jobs': 100
                    }
@@ -149,6 +159,8 @@ The available partition attributes are the following:
 
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
   The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+
+* ``container_platforms``: A dictionary with the container platforms supported in the partition and the corresponding modules to load them.
 
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 

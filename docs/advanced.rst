@@ -160,6 +160,62 @@ For standard regression tests, this happens at the beginning of the compilation 
 Furthermore, in this particular test the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` consists only of standard Bash shell commands.
 For this reason, we can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` informing ReFrame that the test does not have any resources.
 
+Testing applications within containers
+--------------------------------------
+
+ReFrame can test as well applications that run within a container.
+Tests with containers can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>`.
+However, in such tests, ReFrame ignores the attributes :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` in favor of the container platform object :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>`.
+This is an object of type :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>`.
+
+All details to run the container are set through the container platform.
+The container platform is instantiated by assigning to it a string with the name of the platform.
+For instance, when a line like the following is on a test:
+
+.. code:: python 
+
+    self.container_platform = 'Singularity'
+
+the container platform is initialized and Singularity is set as engine to run the container.
+
+The container platform requires two main attributes to be set: :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>`, to specify the name of an image from a registry, and :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>`, to provide the list of commands to be run inside the container. For instance, with the following two lines
+
+.. code-block:: python
+
+    self.container_platform.image = 'docker://ubuntu:18.04'
+    self.container_platform.commands = ['pwd', 'ls', 'cat /etc/os-release']
+
+ReFrame will run the container as
+
+.. code:: shell
+
+    singularity exec -B"/path/to/src:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+
+This is, the container is launched with the resources directory folder mounted at ``/rfm_reframe`` and before running any command, the current directory is set to that location.
+The commands are then run from ``/rfm_reframe`` one after the other.
+Once the commands are executed, the container is stopped and ReFrame goes on to the sanity and/or performance checks.
+
+A full code of a test with containers can be found on ``/tutorial/advanced/advanced_example10.py``:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+
+In this test, the sanity check verifies that the current directory is :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>`, that the content of the resources directory is there, and that the operating system running on the container is Ubuntu 18.04.
+
+In this example, the test uses the default mount point for the resources directory, but if needed, a custom location can be specified with the :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute of the container platform:
+
+.. code:: python
+
+    self.container_platform.workdir = '/my_workfir'
+
+Besides the resources directory, additional mount points can be specified through the container platform's attribute :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>`:
+
+.. code-block:: python
+
+    self.container_platform.mount_points = [('/path/host/directory1', '/path/container/mount_point1'),
+                                            ('/path/host/directory2', '/path/container/mount_point2')]
+
+Here Singularity is used as container platform, but other container engines like Docker and Shifter are also supported in ReFrame.
+
 Implementing a Compile-Only Regression Test
 -------------------------------------------
 
