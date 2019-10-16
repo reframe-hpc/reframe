@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 class GpuBurnTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.descr = 'GPU burn test'
         self.valid_prog_environs = ['PrgEnv-gnu']
 
@@ -22,7 +22,7 @@ class GpuBurnTest(rfm.RegressionTest):
             self.executable_opts = ['-d', '40']
             self.num_gpus_per_node = 16
             gpu_arch = '37'
-        elif self.current_system.name in {'daint', 'dom'}:
+        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.modules = ['craype-accel-nvidia60']
             self.executable_opts = ['-d', '20']
             self.num_gpus_per_node = 1
