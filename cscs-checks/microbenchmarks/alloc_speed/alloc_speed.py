@@ -69,4 +69,4 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.reference = self.sys_reference[hugepages]
 
         self.maintainers = ['AK', 'VH']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}

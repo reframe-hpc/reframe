@@ -42,4 +42,4 @@ class NvprofCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
 
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
