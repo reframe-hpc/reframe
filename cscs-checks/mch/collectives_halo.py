@@ -4,7 +4,7 @@ import reframe.utility.sanity as sn
 
 class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
-        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn']
+        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
@@ -29,11 +29,15 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
             ]
             self.build_system.max_concurrency = 1
-        elif self.current_system.name in {'daint', 'dom'}:
+        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.num_tasks = 4
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
-            self.modules = ['craype-accel-nvidia60', 'CMake']
+            if self.current_system.name in {'tiger'}:
+                self.modules = ['craype-accel-nvidia60']
+            else:
+                self.modules = ['craype-accel-nvidia60', 'CMake']
+
             self.variables['MPICH_RDMA_ENABLED_CUDA'] = '1'
             self.build_system.config_opts += [
                 '-DCUDA_COMPUTE_CAPABILITY="sm_60"'
