@@ -493,6 +493,52 @@ class TestHooks(unittest.TestCase):
         _run(test, self.partition, self.prgenv)
         assert test.var == 3
 
+    def test_inherited_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+        class MyTest(BaseTest):
+            pass
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 1
+
+    def test_overriden_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+        class MyTest(BaseTest):
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 5
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 5
+
     def test_require_deps(self):
         import unittests.resources.checks.hellocheck as mod
         import reframe.frontend.dependency as dependency
