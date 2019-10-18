@@ -21,6 +21,7 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
+from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
@@ -220,6 +221,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
+
+    #: The container platform to be used for this test.
+    #:
+    #: If the `self.container_platform` is defined on the test, both
+    #: `self.executable` and `self.executable_opts` are ignored.
+    #:
+    #: :type: :class:`str` or
+    #: :class:`reframe.core.containers.ContainerPlatform`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.19
+    container_platform = ContainerPlatformField(
+        'container_platform', type(None))
 
     #: List of shell commands to execute before launching this job.
     #:
@@ -609,6 +623,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.tags = set()
         self.maintainers = []
         self._perfvalues = {}
+        self.container_platform = None
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -1071,6 +1086,27 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        if self.container_platform:
+            try:
+                cp_name = type(self.container_platform).__name__
+                cp_env = self._current_partition.container_environs[cp_name]
+            except KeyError as e:
+                raise PipelineError(
+                    'container platform not configured '
+                    'on the current partition: %s' % e) from None
+
+            self.container_platform.validate()
+            self.container_platform.mount_points += [
+                (self._stagedir, self.container_platform.workdir)
+            ]
+
+            # We replace executable and executable_opts in case of containers
+            self.executable = self.container_platform.launch_command()
+            self.executable_opts = []
+            prepare_container = self.container_platform.emit_prepare_commands()
+            if prepare_container:
+                self.pre_run += prepare_container
+
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
         self.job.num_tasks_per_core = self.num_tasks_per_core
@@ -1083,8 +1119,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
-        environs = [self._current_partition.local_env, self._current_environ,
-                    user_environ, self._cdt_environ]
+        environs = [
+            self._current_partition.local_env,
+            self._current_environ,
+            user_environ,
+            self._cdt_environ
+        ]
+        if self.container_platform and cp_env:
+            environs = [
+                self._current_partition.local_env,
+                self._current_environ,
+                cp_env,
+                user_environ,
+                self._cdt_environ
+            ]
 
         with os_ext.change_dir(self._stagedir):
             try:
