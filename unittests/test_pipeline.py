@@ -508,12 +508,23 @@ class TestHooks(unittest.TestCase):
             def x(self):
                 self.var += 1
 
-        class MyTest(BaseTest):
+        class C(rfm.RegressionTest):
+            @rfm.run_before('run')
+            def y(self):
+                self.foo = 1
+
+        class DerivedTest(BaseTest, C):
+            @rfm.run_after('setup')
+            def z(self):
+                self.var += 1
+
+        class MyTest(DerivedTest):
             pass
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
-        assert test.var == 1
+        assert test.var == 2
+        assert test.foo == 1
 
     def test_overriden_hooks(self):
         import unittests.resources.checks.hellocheck as mod
@@ -525,19 +536,30 @@ class TestHooks(unittest.TestCase):
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.var = 0
+                self.foo = 0
 
             @rfm.run_after('setup')
             def x(self):
                 self.var += 1
 
-        class MyTest(BaseTest):
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 1
+
+        class DerivedTest(BaseTest):
             @rfm.run_after('setup')
             def x(self):
                 self.var += 5
 
+        class MyTest(DerivedTest):
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 10
+
         test = MyTest()
         _run(test, self.partition, self.prgenv)
         assert test.var == 5
+        assert test.foo == 10
 
     def test_require_deps(self):
         import unittests.resources.checks.hellocheck as mod
