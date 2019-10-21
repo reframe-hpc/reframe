@@ -38,7 +38,7 @@ class AmberBaseCheck(rfm.RunOnlyRegressionTest):
                                      output_file, 'perf', float, item=1)
         }
         self.maintainers = ['SO', 'VH']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
 
 
 @rfm.required_version('>=2.16')

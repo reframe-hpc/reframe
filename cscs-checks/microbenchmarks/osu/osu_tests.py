@@ -25,7 +25,7 @@ class AlltoallTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {variant, 'benchmark'}
+        self.tags = {variant, 'benchmark', 'craype'}
         self.reference = {
             'dom:gpu': {
                 'latency': (8.23, None, 0.1, 'us')
@@ -72,7 +72,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
-        self.tags = {'diagnostic', 'ops', 'benchmark'}
+        self.tags = {'diagnostic', 'ops', 'benchmark', 'craype'}
 
 
 @rfm.required_version('>=2.16')
@@ -99,7 +99,7 @@ class AllreduceTest(rfm.RegressionTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        self.tags = {'production', 'benchmark'}
+        self.tags = {'production', 'benchmark', 'craype'}
         if variant == 'small':
             self.num_tasks = 6
             self.reference = {
@@ -182,7 +182,7 @@ class P2PBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
         self.maintainers = ['RS', 'VK']
-        self.tags = {'production', 'benchmark'}
+        self.tags = {'production', 'benchmark', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 
         self.extra_resources = {

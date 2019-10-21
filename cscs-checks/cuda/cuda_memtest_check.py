@@ -37,7 +37,7 @@ class CudaMemtest(rfm.RegressionTest):
             *assert_finished_tests,
             sn.assert_not_found('(?i)ERROR', self.stdout),
             sn.assert_not_found('(?i)ERROR', self.stderr)])
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'craype'}
 
     @property
     @sn.sanity_function
