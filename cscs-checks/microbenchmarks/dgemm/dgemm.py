@@ -17,10 +17,10 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
-            'kesch:cn', 'kesch:pn'
+            'kesch:cn', 'kesch:pn', 'tiger:gpu'
         ]
 
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -43,7 +43,7 @@ class DGEMMTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VH', 'VK']
-        self.tags = {'benchmark', 'diagnostic'}
+        self.tags = {'benchmark', 'diagnostic', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
 
@@ -63,6 +63,8 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 12
         elif partition.fullname in ['daint:mc', 'dom:mc']:
             self.num_cpus_per_task = 36
+        elif partition.fullname in ['tiger:gpu']:
+            self.num_cpus_per_task = 18
         elif partition.fullname in ['kesch:cn', 'kesch:pn']:
             self.num_cpus_per_task = 12
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']

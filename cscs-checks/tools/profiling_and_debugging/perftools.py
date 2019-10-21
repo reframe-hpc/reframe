@@ -24,7 +24,10 @@ class PerftoolsCheck(rfm.RegressionTest):
         else:
             self.sourcesdir = os.path.join('src', lang)
 
-        self.modules = ['craype-accel-nvidia60', 'perftools-lite']
+        self.modules = ['perftools-lite']
+        if lang == 'Cuda':
+            self.modules += ['craype-accel-nvidia60']
+
         self.build_system = 'Make'
         # NOTE: Restrict concurrency to allow creation of Fortran modules
         if lang == 'F90':
@@ -74,7 +77,7 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
                                                self.stdout)
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, environ, partition, **job_opts):
         super().setup(environ, partition, **job_opts)
