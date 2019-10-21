@@ -6,10 +6,10 @@ import reframe.utility.sanity as sn
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu', 
                               'kesch:cn', 'arolla:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -23,7 +23,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         elif self.current_system.name == 'arolla':
             self.exclusive_access = True
             self.variables = {
-                'CRAY_ACCEL_TARGET': 'nvidia35',
+                'CRAY_ACCEL_TARGET': 'nvidia70',
                 'MV2_USE_CUDA': '1'
             }
         # This tets requires an MPI compiler, although it uses a single task
@@ -57,7 +57,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'mch'}
+        self.tags = {'production', 'mch', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
@@ -73,7 +73,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla,cc35']
             elif self.current_system.name == 'arolla':
                 self.build_system.fflags += ['-ta=tesla,cc70']
-            elif self.current_system.name in ['daint', 'dom']:
+            elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:
             envname = environ.name

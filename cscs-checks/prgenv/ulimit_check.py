@@ -18,4 +18,4 @@ class UlimitCheck(rfm.RegressionTest):
         ])
 
         self.maintainers = ['RS', 'VK']
-        self.tags = {'production', 'scs'}
+        self.tags = {'production', 'scs', 'craype'}

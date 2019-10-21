@@ -12,10 +12,13 @@ class ScorepHybrid(rfm.RegressionTest):
         self.name = 'scorep_mpi_omp_%s' % lang.replace('+', 'p')
         self.descr = 'SCORE-P %s check' % lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi',
-                                    'PrgEnv-cray']
+
+        # Score-P fails with latest clang based cce compiler:
+        # src/measurement/thread/fork_join/scorep_thread_fork_join_omp.c:402:
+        # Fatal: Bug 'TPD == 0': Invalid OpenMP thread specific data object.
+        # -> removing cce from supported compiler for now.
+        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-g', '-homp'],
             'PrgEnv-gnu': ['-g', '-fopenmp'],
             'PrgEnv-intel': ['-g', '-openmp'],
             'PrgEnv-pgi': ['-g', '-mp']
@@ -58,14 +61,13 @@ class ScorepHybrid(rfm.RegressionTest):
         ]
 
     def setup(self, partition, environ, **job_opts):
-        scorep_ver = '5.0'
-        tc_ver = '19.03'
-        cu_ver = '10.0'
+        scorep_ver = '6.0'
+        tc_ver = '19.09'
+        cu_ver = '10.1'
         self.scorep_modules = {
             'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (scorep_ver, tc_ver)],
             'PrgEnv-intel': ['Score-P/%s-CrayIntel-%s' % (scorep_ver, tc_ver)],
             'PrgEnv-pgi': ['Score-P/%s-CrayPGI-%s' % (scorep_ver, tc_ver)],
-            'PrgEnv-cray': ['Score-P/%s-CrayCCE-%s' % (scorep_ver, tc_ver)]
         }
         if partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.scorep_modules['PrgEnv-gnu'] = [

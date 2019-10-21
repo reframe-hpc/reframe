@@ -450,7 +450,8 @@ class ReframeSettings:
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/18.10'],
+                    'modules': ['PrgEnv-pgi/18.10',
+                                'openmpi/4.0.1-pgi-18.10-gcc-7.4.0-2.31.1-cuda-9.2'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpifort',

@@ -41,7 +41,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
                 'num_switches': 1
             }
         }
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
 
 
 @rfm.required_version('>=2.19')
