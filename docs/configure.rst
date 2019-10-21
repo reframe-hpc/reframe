@@ -160,7 +160,32 @@ The available partition attributes are the following:
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
   The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
 
-* ``container_platforms``: A dictionary with the container platforms supported in the partition and the corresponding modules to load them.
+* ``container_platforms``: *[new in 2.20]* A set of key/value pairs specifying the supported container platforms for this partition and how their environment is set up.
+  Supported platform names are the following (names are case sensitive):
+
+    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
+    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
+    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io>`__ container runtime.
+
+  Each configured container runtime is associated optionally with an environment (modules and environment variables) that is providing it.
+  This environment is specified as a dictionary in the following format:
+
+   .. code:: python
+
+      {
+          'modules': ['mod1', 'mod2', ...]
+          'variables': {'ENV1': 'VAL1', 'ENV2': 'VAL2', ...}
+      }
+
+
+   If no special environment arrangement is needed for a configured container platform, you can simply specify an empty dictionary as an environment configuration, as it is shown in the following example:
+
+   .. code:: python
+
+      'container_platforms': {
+          'Docker': {}
+      }
+
 
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 
