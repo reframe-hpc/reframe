@@ -160,62 +160,6 @@ For standard regression tests, this happens at the beginning of the compilation 
 Furthermore, in this particular test the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` consists only of standard Bash shell commands.
 For this reason, we can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` informing ReFrame that the test does not have any resources.
 
-Testing applications within containers
---------------------------------------
-
-ReFrame can test as well applications that run within a container.
-Tests with containers can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>`.
-However, in such tests, ReFrame ignores the attributes :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` in favor of the container platform object :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>`.
-This is an object of type :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>`.
-
-All details to run the container are set through the container platform.
-The container platform is instantiated by assigning to it a string with the name of the platform.
-For instance, when a line like the following is on a test:
-
-.. code:: python 
-
-    self.container_platform = 'Singularity'
-
-the container platform is initialized and Singularity is set as engine to run the container.
-
-The container platform requires two main attributes to be set: :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>`, to specify the name of an image from a registry, and :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>`, to provide the list of commands to be run inside the container. For instance, with the following two lines
-
-.. code-block:: python
-
-    self.container_platform.image = 'docker://ubuntu:18.04'
-    self.container_platform.commands = ['pwd', 'ls', 'cat /etc/os-release']
-
-ReFrame will run the container as
-
-.. code:: shell
-
-    singularity exec -B"/path/to/src:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
-
-This is, the container is launched with the resources directory folder mounted at ``/rfm_reframe`` and before running any command, the current directory is set to that location.
-The commands are then run from ``/rfm_reframe`` one after the other.
-Once the commands are executed, the container is stopped and ReFrame goes on to the sanity and/or performance checks.
-
-A full code of a test with containers can be found on ``/tutorial/advanced/advanced_example10.py``:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example10.py
-
-In this test, the sanity check verifies that the current directory is :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>`, that the content of the resources directory is there, and that the operating system running on the container is Ubuntu 18.04.
-
-In this example, the test uses the default mount point for the resources directory, but if needed, a custom location can be specified with the :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute of the container platform:
-
-.. code:: python
-
-    self.container_platform.workdir = '/my_workfir'
-
-Besides the resources directory, additional mount points can be specified through the container platform's attribute :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>`:
-
-.. code-block:: python
-
-    self.container_platform.mount_points = [('/path/host/directory1', '/path/container/mount_point1'),
-                                            ('/path/host/directory2', '/path/container/mount_point2')]
-
-Here Singularity is used as container platform, but other container engines like Docker and Shifter are also supported in ReFrame.
-
 Implementing a Compile-Only Regression Test
 -------------------------------------------
 
@@ -504,3 +448,60 @@ Here is how the new deferred attribute is defined:
 
 The behavior of the flexible task allocation is controlled by the ``--flex-alloc-tasks`` command line option.
 See the corresponding `section <running.html#controlling-the-flexible-task-allocation>`__ for more information.
+
+
+Testing containerized applications
+----------------------------------
+
+.. versionadded:: 2.20
+
+
+ReFrame can be used also to test applications that run inside a container.
+A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>`.
+The following example shows a simple test that runs some basic commands inside an Ubuntu 18.04 container and checks that the test has indeed run inside the container and that the stage directory was correctly mounted:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+
+A container-based test in ReFrame requires that the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` is set:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 13
+
+This attribute accepts a string that corresponds to the name of the platform and it instantiates the appropriate :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>` object behind the scenes.
+In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
+If such a platform is not configured for the current system, the test will fail.
+For a complete list of supported container platforms, the user is referred to the `configuration documentation <configure.html#partition-configuration>`__.
+
+As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 14-17
+
+These two attributes are mandatory for container-based check.
+The :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>` attribute provides the list of commands to be run inside the container.
+It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` are ignored in case of container-based tests.
+
+In the above example, ReFrame will run the container as follows:
+
+.. code:: shell
+
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+
+By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
+The user commands then are then run from that directory one after the other.
+Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and/or performance checks.
+
+Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 18
+
+Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
+
+.. code-block:: python
+
+    self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
+                                            ('/path/to/host/dir2', '/path/to/container/mount_point2')]
+
+
+For a complete list of the available attributes of a specific container platform, the reader is referred to `reference guide <reference.html#container-platforms>`__.

@@ -12,9 +12,10 @@ class Example10Test(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray']
         self.container_platform = 'Singularity'
         self.container_platform.image = 'docker://ubuntu:18.04'
-        self.container_platform.workdir = '/workdir'
         self.container_platform.commands = [
-            'pwd', 'ls', 'cat /etc/os-release']
+            'pwd', 'ls', 'cat /etc/os-release'
+        ]
+        self.container_platform.workdir = '/workdir'
         self.sanity_patterns = sn.all([
             sn.assert_found(r'^' + self.container_platform.workdir,
                             self.stdout),

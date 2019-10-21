@@ -9,8 +9,7 @@ class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
-    :func:`emit_prepare_commands()` and :func:`launch_command()` abstract
-    methods.
+    :func:`emit_prepare_commands` and :func:`launch_command` abstract methods.
     '''
 
     image = fields.TypedField('image', str, type(None))
@@ -30,7 +29,7 @@ class ContainerPlatform(abc.ABC):
         '''Returns commands that are necessary before running with this
         container platform.
 
-        :raises: `ContainerError` in case of errors.
+        :raises: :class:`ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
@@ -41,7 +40,7 @@ class ContainerPlatform(abc.ABC):
     def launch_command(self):
         '''Returns the command for running with this container platform.
 
-        :raises: `ContainerError` in case of errors.
+        :raises: :class:`ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container
@@ -51,7 +50,7 @@ class ContainerPlatform(abc.ABC):
     def validate(self):
         '''Validates this container platform.
 
-        :raises: `ContainerError` in case of errors.
+        :raises: :class:`ContainerError` in case of errors.
 
         .. note:
             This method is relevant only to developers of new container

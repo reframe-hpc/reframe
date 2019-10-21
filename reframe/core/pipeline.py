@@ -224,14 +224,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: The container platform to be used for this test.
     #:
-    #: If the `self.container_platform` is defined on the test, both
-    #: `self.executable` and `self.executable_opts` are ignored.
+    #: If the :attr:`container_platform` is defined on the test, both
+    #: :attr:`executable` and :attr:`executable_opts` are ignored.
     #:
     #: :type: :class:`str` or
-    #: :class:`reframe.core.containers.ContainerPlatform`.
+    #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     #:
-    #: .. versionadded:: 2.19
+    #: .. versionadded:: 2.20
     container_platform = ContainerPlatformField(
         'container_platform', type(None))
 
