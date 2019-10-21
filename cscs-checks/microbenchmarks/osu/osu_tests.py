@@ -275,7 +275,7 @@ class G2GBandwidthTest(P2PBaseTest):
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
                                    self.stdout, 'bw', float)
         }
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
@@ -315,7 +315,7 @@ class G2GLatencyTest(P2PBaseTest):
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
                                         self.stdout, 'latency', float)
         }
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.num_gpus_per_node  = 1
             self.modules = ['craype-accel-nvidia60']
             self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
