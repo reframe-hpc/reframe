@@ -100,31 +100,6 @@ class ReframeSettings:
             }
         },
 
-        'modes': {
-            '*': {
-                'maintenance': [
-                    '--exec-policy=async',
-                    '--strict',
-                    '--output=$APPS/UES/$USER/regression/maintenance',
-                    '--perflogdir=$APPS/UES/$USER/regression/maintenance/logs',
-                    '--stage=$SCRATCH/regression/maintenance/stage',
-                    '--reservation=maintenance',
-                    '--save-log-files',
-                    '--tag=maintenance',
-                    '--timestamp=%F_%H-%M-%S'
-                ],
-                'production': [
-                    '--exec-policy=async',
-                    '--strict',
-                    '--output=$APPS/UES/$USER/regression/production',
-                    '--perflogdir=$APPS/UES/$USER/regression/production/logs',
-                    '--stage=$SCRATCH/regression/production/stage',
-                    '--save-log-files',
-                    '--tag=production',
-                    '--timestamp=%F_%H-%M-%S'
-                ]
-            }
-        }
     }
 
     logging_config = {
