@@ -16,10 +16,12 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
             self.variables = {
                 'MPICH_RDMA_ENABLED_CUDA': '1',
-                # this is mandatory to have the Cray wrapper compiling
-                # OpenACC codes correctly:
-                'PATH': '%s:$PATH' % os.environ['CRAY_BINUTILS_BIN']
             }
+
+            if self.current_system.name in ['tiger']:
+                craypath = '%s:$PATH' % os.environ['CRAY_BINUTILS_BIN']
+                self.variables['PATH'] = craypath
+
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
