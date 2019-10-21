@@ -48,8 +48,8 @@ Finally, you may access all previous versions of ReFrame [here](https://github.c
 
 You may find the official documentation of the latest release and the current master in the following links:
 
-- [Latest release](https://reframe-hpc.readthedocs.io)
-- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
+- [Latest release](https://reframe-hpc.readthedocs.io/en/stable)
+- [Current master](https://reframe-hpc.readthedocs.io)
 
 
 ### Building the documentation locally

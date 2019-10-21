@@ -14,7 +14,7 @@ class GPUShmemTest(rfm.RegressionTest):
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.num_gpus_per_node = 1
-        if self.current_system.name in {'daint', 'dom'}:
+        if self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.modules = ['craype-accel-nvidia60']
 
         self.sanity_patterns = sn.assert_eq(
@@ -41,7 +41,7 @@ class GPUShmemTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'benchmark', 'diagnostic'}
+        self.tags = {'benchmark', 'diagnostic', 'craype'}
 
     @property
     @sn.sanity_function
