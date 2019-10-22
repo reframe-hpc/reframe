@@ -557,6 +557,7 @@ class ReframeSettings:
                 'format': (
                     '%(asctime)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
+                    'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '

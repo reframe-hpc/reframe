@@ -964,6 +964,7 @@ The attributes of this handler are the following:
 
 * ``format``: The syntax of this attribute is the same as of the standard logging facility, except that it adds a couple more performance-specific formatting placeholders:
 
+  - ``check_perf_num_tasks``: The number of tasks assigned to the test.
   - ``check_perf_lower_thres``: The lower threshold of the difference from the reference value expressed as a fraction of the reference.
   - ``check_perf_upper_thres``: The upper threshold of the difference from the reference value expressed as a fraction of the reference.
   - ``check_perf_ref``: The reference performance value of a certain performance variable.
@@ -971,14 +972,17 @@ The attributes of this handler are the following:
   - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
   - ``check_perf_unit``: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
 
+.. note::
+   .. versionchanged:: 2.20
+      Added support for logging the `num_tasks` in performance logs.
+
 Using the default performance log format, the resulting log entries look like the following:
 
 .. code-block:: none
 
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-gnu|jobid=749667|perf=49.152408|ref=50.0 (l=-0.1, u=0.1)
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-pgi|jobid=749668|perf=48.930356|ref=50.0 (l=-0.1, u=0.1)
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-cray|jobid=749666|perf=48.914735|ref=50.0 (l=-0.1, u=0.1)
-
+    2019-10-17T09:40:54|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-cray|jobid=808493|num_tasks=1|perf=49.440872|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
+    2019-10-17T09:41:04|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-gnu|jobid=808494|num_tasks=1|perf=49.842667|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
+    2019-10-17T09:41:13|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-pgi|jobid=808495|num_tasks=1|perf=50.421853|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
 
 The interpretation of the performance values depends on the individual tests.
 The above output is from the CUDA performance test we presented in the `tutorial <tutorial.html#writing-a-performance-test>`__, so the value refers to the achieved Gflop/s.
@@ -1001,6 +1005,7 @@ An example configuration of such a handler is the following:
       'format': (
           '%(asctime)s|reframe %(version)s|'
           '%(check_info)s|jobid=%(check_jobid)s|'
+          'num_tasks=%(check_num_tasks)s|'
           '%(check_perf_var)s=%(check_perf_value)s|'
           'ref=%(check_perf_ref)s '
           '(l=%(check_perf_lower_thres)s, '

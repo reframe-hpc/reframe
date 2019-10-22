@@ -1206,7 +1206,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                         (tag, self._current_partition.fullname))
 
                 self._perfvalues[key] = (value, *self.reference[key])
-                self._perf_logger.log_performance(logging.INFO, tag, value,
+                self._perf_logger.log_performance(logging.INFO, self.num_tasks, tag, value,
                                                   *self.reference[key])
 
             for key, values in self._perfvalues.items():

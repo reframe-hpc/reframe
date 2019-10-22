@@ -373,6 +373,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_environ': None,
                 'check_outputdir': None,
                 'check_stagedir': None,
+                'check_num_tasks': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -425,10 +426,11 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
 
-    def log_performance(self, level, tag, value, ref,
+    def log_performance(self, level, num_tasks, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
 
         # Update the performance-relevant extras and log the message
+        self.extra['check_num_tasks'] = num_tasks
         self.extra['check_perf_var'] = tag
         self.extra['check_perf_value'] = value
         self.extra['check_perf_ref'] = ref
