@@ -1057,7 +1057,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1136,7 +1136,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
