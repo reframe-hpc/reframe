@@ -37,7 +37,7 @@ class TrilinosTest(rfm.RegressionTest):
                                                self.stdout)
 
         self.maintainers = ['WS', 'AJ']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         prgenv_flags = self.prgenv_flags[environ.name]
