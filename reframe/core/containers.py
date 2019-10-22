@@ -9,14 +9,39 @@ class ContainerPlatform(abc.ABC):
     '''The abstract base class of any container platform.
 
     Concrete container platforms inherit from this class and must override the
-    :func:`emit_prepare_commands()` and :func:`launch_command()` abstract
-    methods.
+    :func:`emit_prepare_commands` and :func:`launch_command` abstract methods.
     '''
 
+    #: The container image to be used for running the test.
+    #:
+    #: :type: :class:`str` or :class:`None`
+    #: :default: :class:`None`
     image = fields.TypedField('image', str, type(None))
+
+    #: The commands to be executed within the container.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
     commands = fields.TypedField('commands', typ.List[str])
+
+    #: List of mount point pairs for directories to mount inside the container.
+    #:
+    #: Each mount point is specified as a tuple of
+    #: ``(/path/in/host, /path/in/container)``.
+    #:
+    #: :type: :class:`list[tuple[str, str]]`
+    #: :default: ``[]``
     mount_points = fields.TypedField('mount_points',
                                      typ.List[typ.Tuple[str, str]])
+
+    #: The working directory of ReFrame inside the container.
+    #:
+    #: This is the directory where the test's stage directory is mounted inside
+    #: the container. This directory is always mounted regardless if
+    #: :attr:`mount_points` is set or not.
+    #:
+    #: :type: :class:`str`
+    #: :default: ``/rfm_workdir``
     workdir = fields.TypedField('workdir', str, type(None))
 
     def __init__(self):
@@ -27,36 +52,30 @@ class ContainerPlatform(abc.ABC):
 
     @abc.abstractmethod
     def emit_prepare_commands(self):
-        '''Returns commands that are necessary before running with this
-        container platform.
+        '''Returns commands for preparing this container for running.
 
-        :raises: `ContainerError` in case of errors.
+        Such a command could be for pulling the container image from a
+        repository.
 
         .. note:
+
             This method is relevant only to developers of new container
-            platforms.
+            platform backends.
+
         '''
 
     @abc.abstractmethod
     def launch_command(self):
-        '''Returns the command for running with this container platform.
-
-        :raises: `ContainerError` in case of errors.
+        '''Returns the command for running :attr:`commands` with this container
+        platform.
 
         .. note:
             This method is relevant only to developers of new container
             platforms.
+
         '''
 
     def validate(self):
-        '''Validates this container platform.
-
-        :raises: `ContainerError` in case of errors.
-
-        .. note:
-            This method is relevant only to developers of new container
-            platforms.
-        '''
         if self.image is None:
             raise ContainerError('no image specified')
 
@@ -65,8 +84,8 @@ class ContainerPlatform(abc.ABC):
 
 
 class Docker(ContainerPlatform):
-    '''An implementation of :class:`ContainerPlatform` for running containers
-    with Docker.'''
+    '''Container platform backend for running containers with `Docker
+    <https://www.docker.com/>`__.'''
 
     def emit_prepare_commands(self):
         return []
@@ -81,8 +100,7 @@ class Docker(ContainerPlatform):
 
 
 class ShifterNG(ContainerPlatform):
-    '''An implementation of :class:`ContainerPlatform` for running containers
-    with ShifterNG.'''
+    '''Container platform backend for running containers with ShifterNG.'''
 
     #: Add an option to the launch command to enable MPI support.
     #:
@@ -112,8 +130,7 @@ class ShifterNG(ContainerPlatform):
 
 
 class Sarus(ShifterNG):
-    '''An implementation of :class:`ContainerPlatform` for running containers
-    with Sarus.'''
+    '''Container platform backend for running containers with Sarus.'''
 
     def __init__(self):
         super().__init__()
@@ -121,10 +138,10 @@ class Sarus(ShifterNG):
 
 
 class Singularity(ContainerPlatform):
-    '''An implementation of :class:`ContainerPlatform` for running containers
-    with Singularity.'''
+    '''Container platform backend for running containers with `Singularity
+    <https://sylabs.io/>`__.'''
 
-    #: Add an option to the launch command to enable CUDA support.
+    #: Enable CUDA support when launching the container.
     #:
     #: :type: boolean
     #: :default: :class:`False`
@@ -150,12 +167,6 @@ class Singularity(ContainerPlatform):
 
 
 class ContainerPlatformField(fields.TypedField):
-    '''A field representing a container platforms.
-
-    You may either assign an instance of :class:`ContainerPlatform:` or a
-    string representing the name of the concrete class of a container platform.
-    '''
-
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, ContainerPlatform, *other_types)
 
