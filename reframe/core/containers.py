@@ -99,8 +99,8 @@ class Docker(ContainerPlatform):
             ['cd ' + self.workdir] + self.commands) + "'"
 
 
-class ShifterNG(ContainerPlatform):
-    '''Container platform backend for running containers with ShifterNG.'''
+class Sarus(ContainerPlatform):
+    '''Container platform backend for running containers with Sarus.'''
 
     #: Add an option to the launch command to enable MPI support.
     #:
@@ -111,7 +111,7 @@ class ShifterNG(ContainerPlatform):
     def __init__(self):
         super().__init__()
         self.with_mpi = False
-        self._command = 'shifter'
+        self._command = 'sarus'
 
     def emit_prepare_commands(self):
         return [self._command + ' pull %s' % self.image]
@@ -129,12 +129,12 @@ class ShifterNG(ContainerPlatform):
             ['cd ' + self.workdir] + self.commands) + "'"
 
 
-class Sarus(ShifterNG):
-    '''Container platform backend for running containers with Sarus.'''
+class ShifterNG(Sarus):
+    '''Container platform backend for running containers with ShifterNG.'''
 
     def __init__(self):
         super().__init__()
-        self._command = 'sarus'
+        self._command = 'shifter'
 
 
 class Singularity(ContainerPlatform):
