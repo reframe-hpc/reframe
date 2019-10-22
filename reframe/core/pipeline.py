@@ -51,7 +51,21 @@ def _run_hooks(name=None):
                 # Just any name that does not exist
                 hook_name = 'xxx'
 
-            return obj._rfm_pipeline_hooks.get(hook_name, [])
+            func_names = set()
+            ret = []
+            for cls in type(obj).mro():
+                try:
+                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
+                    if any(fn.__name__ in func_names for fn in funcs):
+                        # hook has been overriden
+                        continue
+
+                    func_names |= {fn.__name__ for fn in funcs}
+                    ret += funcs
+                except AttributeError:
+                    pass
+
+            return ret
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -1070,7 +1084,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1149,7 +1163,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
