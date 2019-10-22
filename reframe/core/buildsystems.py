@@ -644,12 +644,6 @@ class Autotools(ConfigureBasedBuildSystem):
 
 
 class BuildSystemField(fields.TypedField):
-    '''A field representing a build system.
-
-    You may either assign an instance of :class:`BuildSystem` or a string
-    representing the name of the concrete class of a build system.
-    '''
-
     def __init__(self, fieldname, *other_types):
         super().__init__(fieldname, BuildSystem, *other_types)
 
