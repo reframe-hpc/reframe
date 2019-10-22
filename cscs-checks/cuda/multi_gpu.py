@@ -64,7 +64,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'tiger:gpu:d2h': (0, None, None, 'MB/s'),
             'tiger:gpu:d2d': (0, None, None, 'MB/s'),
         }
-        self.tags = {'diagnostic', 'mch', 'craype', 'external-resources'}
+        self.tags = {'diagnostic', 'benchmark', 'mch',
+                     'craype', 'external-resources'}
         self.maintainers = ['AJ', 'VK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
