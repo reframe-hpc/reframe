@@ -94,9 +94,9 @@ class SpecAccelCheckOpenCL(SpecAccelCheckBase):
                            'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
                            'ge', 'srad', 'heartwall', 'bplustree'],
             'PrgEnv-cray': ['systest', 'tpacf', 'stencil', 'lbm', 'fft',
-                           'spmv', 'mriq', 'bfs', 'cutcp', 'kmeans',
-                           'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
-                           'ge', 'srad', 'heartwall', 'bplustree'],
+                            'spmv', 'mriq', 'bfs', 'cutcp', 'kmeans',
+                            'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
+                            'ge', 'srad', 'heartwall', 'bplustree'],
             'PrgEnv-pgi': ['systest', 'tpacf', 'stencil', 'lbm', 'fft',
                            'spmv', 'mriq', 'bfs', 'kmeans',
                            'lavamd', 'cfd', 'nw', 'hotspot', 'lud',
@@ -111,8 +111,8 @@ class SpecAccelCheckOpenCL(SpecAccelCheckBase):
                             7.0, 23.1, 10.8, 24.9, 8.7, 24.4, 16.2,
                             15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
             'PrgEnv-pgi': [10.7, 30, 17.0, 10.9, 11.91, 27.8,
-                            7.0, 23.1, 24.9, 8.7, 24.4, 16.2,
-                            15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
+                           7.0, 23.1, 24.9, 8.7, 24.4, 16.2,
+                           15.7, 15.6, 11.1, 20.0, 41.9, 26.2],
         }
 
         super().__init__(valid_prog_environs)
@@ -127,8 +127,8 @@ class SpecAccelCheckOpenACC(SpecAccelCheckBase):
 
         self.benchmarks = {
             'PrgEnv-cray': ['ostencil', 'olbm', 'omriq', 'md', 'ep',
-                           'clvrleaf', 'cg', 'seismic', 'sp', 'csp',
-                           'miniGhost', 'ilbdc', 'swim', 'bt'],
+                            'clvrleaf', 'cg', 'seismic', 'sp', 'csp',
+                            'miniGhost', 'ilbdc', 'swim', 'bt'],
             'PrgEnv-pgi': ['ostencil', 'olbm', 'omriq', 'md', 'ep',
                            'clvrleaf', 'cg', 'seismic', 'sp', 'csp',
                            'ilbdc', 'swim', 'bt'],
@@ -138,7 +138,7 @@ class SpecAccelCheckOpenACC(SpecAccelCheckBase):
             'PrgEnv-cray': [18, 26, 121, 20, 73, 59, 41,
                             50, 71, 34, 72, 41, 34, 378],
             'PrgEnv-pgi': [18, 40, 116, 20, 71, 57, 45,
-                            56, 33, 32, 41, 48, 15]
+                           56, 33, 32, 41, 48, 15]
         }
 
         super().__init__(valid_prog_environs)
