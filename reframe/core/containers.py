@@ -100,9 +100,10 @@ class Docker(ContainerPlatform):
 
 
 class Sarus(ContainerPlatform):
-    '''Container platform backend for running containers with Sarus.'''
+    '''Container platform backend for running containers with `Sarus
+    <https://sarus.readthedocs.io>`__.'''
 
-    #: Add an option to the launch command to enable MPI support.
+    #: Enable MPI support when launching the container.
     #:
     #: :type: boolean
     #: :default: :class:`False`
@@ -130,7 +131,8 @@ class Sarus(ContainerPlatform):
 
 
 class ShifterNG(Sarus):
-    '''Container platform backend for running containers with ShifterNG.'''
+    '''Container platform backend for running containers with `ShifterNG
+    <https://user.cscs.ch/tools/containers/>`__.'''
 
     def __init__(self):
         super().__init__()
