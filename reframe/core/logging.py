@@ -413,6 +413,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_info'] = self.check.info()
         self.extra['check_outputdir'] = self.check.outputdir
         self.extra['check_stagedir'] = self.check.stagedir
+        self.extra['check_num_tasks'] = self.check.num_tasks
         self.extra['check_tags'] = ','.join(self.check.tags)
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
@@ -426,11 +427,10 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
 
-    def log_performance(self, level, num_tasks, tag, value, ref,
+    def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
 
         # Update the performance-relevant extras and log the message
-        self.extra['check_num_tasks'] = num_tasks
         self.extra['check_perf_var'] = tag
         self.extra['check_perf_value'] = value
         self.extra['check_perf_ref'] = ref
