@@ -1,5 +1,5 @@
 #
-# Minimal settings for ReFrame tutorial on Piz Daint
+# CSCS ReFrame settings
 #
 
 
@@ -10,10 +10,12 @@ class ReframeSettings:
     checks_path_recurse = True
     site_configuration = {
         'systems': {
-            'daint': {
-                'descr': 'Piz Daint',
-                'hostnames': ['daint'],
+            'tiger': {
+                # export SCRATCH=/lus/scratch/$USER
+                'descr': 'Cray Tiger',
+                'hostnames': ['tiger'],
                 'modules_system': 'tmod',
+                'resourcesdir': '$HOME/RESOURCES',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
@@ -27,32 +29,29 @@ class ReframeSettings:
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
-                        'modules': ['daint-gpu'],
-                        'access':  ['--constraint=gpu'],
+                        'modules': ['craype-broadwell'],
+                        'access':  ['--constraint=P100'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
-                        'container_platforms': {
-                            'Singularity': {
-                                'modules': ['Singularity']
-                            }
-                        },
-                        'descr': 'Hybrid nodes (Haswell/P100)',
-                        'max_jobs': 100
-                    },
+                        'descr': 'Hybrid nodes (Broadwell/P100)',
+                        'max_jobs': 100,
+                        'resources': {
+                            'switches': ['--switches={num_switches}'],
+                            'mem-per-cpu': ['--mem-per-cpu={mem_per_cpu}']
+                        }
+                    }
+                }
+            },
 
-                    'mc': {
-                        'scheduler': 'nativeslurm',
-                        'modules': ['daint-mc'],
-                        'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
-                                     'PrgEnv-intel', 'PrgEnv-pgi'],
-                        'container_platforms': {
-                            'Singularity': {
-                                'modules': ['Singularity']
-                            }
-                        },
-                        'descr': 'Multicore nodes (Broadwell)',
-                        'max_jobs': 100
+            'generic': {
+                'descr': 'Generic example system',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'modules': [],
+                        'access': [],
+                        'environs': ['builtin-gcc'],
+                        'descr': 'Login nodes'
                     }
                 }
             }
@@ -64,6 +63,12 @@ class ReframeSettings:
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
+
+                'PrgEnv-cray_classic': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cray', 'cce/9.1.0.129-classic'],
+                },
+
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
@@ -77,9 +82,24 @@ class ReframeSettings:
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
+                },
+
+                'builtin': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'cc',
+                    'cxx': '',
+                    'ftn': '',
+                },
+
+                'builtin-gcc': {
+                    'type': 'ProgEnvironment',
+                    'cc':  'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 }
             }
-        }
+        },
+
     }
 
     logging_config = {
@@ -90,7 +110,7 @@ class ReframeSettings:
                 'name': 'reframe.log',
                 'level': 'DEBUG',
                 'format': '[%(asctime)s] %(levelname)s: '
-                          '%(check_name)s: %(message)s',
+                          '%(check_info)s: %(message)s',
                 'append': False,
             },
 
@@ -124,7 +144,8 @@ class ReframeSettings:
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
-                    'u=%(check_perf_upper_thres)s)'
+                    'u=%(check_perf_upper_thres)s)|'
+                    '%(check_perf_unit)s'
                 ),
                 'append': True
             }
