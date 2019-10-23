@@ -373,6 +373,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_environ': None,
                 'check_outputdir': None,
                 'check_stagedir': None,
+                'check_num_tasks': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -412,6 +413,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         self.extra['check_info'] = self.check.info()
         self.extra['check_outputdir'] = self.check.outputdir
         self.extra['check_stagedir'] = self.check.stagedir
+        self.extra['check_num_tasks'] = self.check.num_tasks
         self.extra['check_tags'] = ','.join(self.check.tags)
         if self.check.current_system:
             self.extra['check_system'] = self.check.current_system.name
