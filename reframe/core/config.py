@@ -29,7 +29,7 @@ def settings():
 
 
 class SiteConfiguration:
-    """Holds the configuration of systems and environments"""
+    '''Holds the configuration of systems and environments'''
     _modes = fields.ScopedDictField('_modes', types.List[str])
 
     def __init__(self, dict_config=None):
@@ -199,14 +199,25 @@ class SiteConfiguration:
                 part_access = partconfig.get('access', [])
                 part_resources = partconfig.get('resources', {})
                 part_max_jobs = partconfig.get('max_jobs', 1)
-                system.add_partition(SystemPartition(name=part_name,
-                                                     descr=part_descr,
-                                                     scheduler=part_scheduler,
-                                                     launcher=part_launcher,
-                                                     access=part_access,
-                                                     environs=part_environs,
-                                                     resources=part_resources,
-                                                     local_env=part_local_env,
-                                                     max_jobs=part_max_jobs))
+                part = SystemPartition(name=part_name,
+                                       descr=part_descr,
+                                       scheduler=part_scheduler,
+                                       launcher=part_launcher,
+                                       access=part_access,
+                                       environs=part_environs,
+                                       resources=part_resources,
+                                       local_env=part_local_env,
+                                       max_jobs=part_max_jobs)
+
+                container_platforms = partconfig.get('container_platforms', {})
+                for cp, env_spec in container_platforms.items():
+                    cp_env = m_env.Environment(
+                        name='__rfm_env_%s' % cp,
+                        modules=env_spec.get('modules', []),
+                        variables=env_spec.get('variables', {})
+                    )
+                    part.add_container_env(cp, cp_env)
+
+                system.add_partition(part)
 
             self._systems[sys_name] = system

@@ -36,10 +36,10 @@ class NvprofCheck(rfm.RegressionTest):
         # the programming environment should be adapted / fixed
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             self.build_system.ldflags += ['-lcudart', '-lm']
         else:
             self.modules = ['craype-accel-nvidia60']
 
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}

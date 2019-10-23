@@ -7,11 +7,13 @@ __all__ = ['RegressionTest',
            'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
 
+import functools
 import inspect
 import itertools
 import os
 import shutil
 
+import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
@@ -19,12 +21,13 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
+from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment, EnvironmentSnapshot
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
@@ -37,8 +40,50 @@ DEPEND_BY_ENV = 2
 DEPEND_FULLY  = 3
 
 
-class RegressionTest:
-    """Base class for regression tests.
+def _run_hooks(name=None):
+    def _deco(func):
+        def hooks(obj, kind):
+            if name is None:
+                hook_name = kind + func.__name__
+            elif name is not None and name.startswith(kind):
+                hook_name = name
+            else:
+                # Just any name that does not exist
+                hook_name = 'xxx'
+
+            func_names = set()
+            ret = []
+            for cls in type(obj).mro():
+                try:
+                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
+                    if any(fn.__name__ in func_names for fn in funcs):
+                        # hook has been overriden
+                        continue
+
+                    func_names |= {fn.__name__ for fn in funcs}
+                    ret += funcs
+                except AttributeError:
+                    pass
+
+            return ret
+
+        '''Run the hooks before and after func.'''
+        @functools.wraps(func)
+        def _fn(obj, *args, **kwargs):
+            for h in hooks(obj, 'pre_'):
+                h(obj)
+
+            func(obj, *args, **kwargs)
+            for h in hooks(obj, 'post_'):
+                h(obj)
+
+        return _fn
+
+    return _deco
+
+
+class RegressionTest(metaclass=RegressionTestMeta):
+    '''Base class for regression tests.
 
     All regression tests must eventually inherit from this class.
     This class provides the implementation of the pipeline phases that the
@@ -64,7 +109,7 @@ class RegressionTest:
 
        .. versionchanged:: 2.13
 
-    """
+    '''
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
@@ -190,6 +235,32 @@ class RegressionTest:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
+
+    #: The container platform to be used for launching this test.
+    #:
+    #: If this field is set, the test will run inside a container using the
+    #: specified container runtime. Container-specific options must be defined
+    #: additionally after this field is set:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.container_platform = 'Singularity'
+    #:    self.container_platform.image = 'docker://ubuntu:18.04'
+    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:
+    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
+    #: attributes are ignored. The container platform's :attr:`commands` will
+    #: be used instead. For more information on the container platform support,
+    #: see the `tutorial <advanced.html#testing-containerized-applications>`__
+    #: and the `reference guide <reference.html#container-platforms>`__.
+    #:
+    #: :type: :class:`str` or
+    #:     :class:`reframe.core.containers.ContainerPlatform`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.20
+    container_platform = ContainerPlatformField('container_platform',
+                                                type(None))
 
     #: List of shell commands to execute before launching this job.
     #:
@@ -537,8 +608,8 @@ class RegressionTest:
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, type(None))
     _current_environ = fields.TypedField('_current_environ',
-                                         Environment, type(None))
-    _user_environ = fields.TypedField('_user_environ', Environment, type(None))
+                                         env.Environment, type(None))
+    _cdt_environ = fields.TypedField('_cdt_environ', env.Environment)
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
 
@@ -568,17 +639,18 @@ class RegressionTest:
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd  = []
+        self.prebuild_cmd = []
         self.postbuild_cmd = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run  = []
+        self.pre_run = []
         self.post_run = []
         self.keep_files = []
         self.readonly_files = []
         self.tags = set()
         self.maintainers = []
         self._perfvalues = {}
+        self.container_platform = None
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -619,7 +691,6 @@ class RegressionTest:
         # Runtime information of the test
         self._current_partition = None
         self._current_environ = None
-        self._user_environ = None
 
         # Associated job
         self._job = None
@@ -645,36 +716,47 @@ class RegressionTest:
         # Weak reference to the test case associated with this check
         self._case = None
 
+        if rt.runtime().non_default_craype:
+            self._cdt_environ = env.Environment(
+                name='__rfm_cdt_environ',
+                variables={
+                    'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
+                }
+            )
+        else:
+            # Just an empty environment
+            self._cdt_environ = env.Environment('__rfm_cdt_environ')
+
     # Export read-only views to interesting fields
     @property
     def current_environ(self):
-        """The programming environment that the regression test is currently
+        '''The programming environment that the regression test is currently
         executing with.
 
         This is set by the framework during the :func:`setup` phase.
 
         :type: :class:`reframe.core.environments.Environment`.
-        """
+        '''
         return self._current_environ
 
     @property
     def current_partition(self):
-        """The system partition the regression test is currently executing on.
+        '''The system partition the regression test is currently executing on.
 
         This is set by the framework during the :func:`setup` phase.
 
         :type: :class:`reframe.core.systems.SystemPartition`.
-        """
+        '''
         return self._current_partition
 
     @property
     def current_system(self):
-        """The system the regression test is currently executing on.
+        '''The system the regression test is currently executing on.
 
         This is set by the framework during the initialization phase.
 
         :type: :class:`reframe.core.runtime.HostSystem`.
-        """
+        '''
         return rt.runtime().system
 
     @property
@@ -683,56 +765,56 @@ class RegressionTest:
 
     @property
     def job(self):
-        """The job descriptor associated with this test.
+        '''The job descriptor associated with this test.
 
         This is set by the framework during the :func:`setup` phase.
 
         :type: :class:`reframe.core.schedulers.Job`.
-        """
+        '''
         return self._job
 
     @property
     def logger(self):
-        """A logger associated with the this test.
+        '''A logger associated with this test.
 
         You can use this logger to log information for your test.
-        """
+        '''
         return logging.getlogger()
 
     @property
     def prefix(self):
-        """The prefix directory of the test.
+        '''The prefix directory of the test.
 
         :type: :class:`str`.
-        """
+        '''
         return self._prefix
 
     @property
     def stagedir(self):
-        """The stage directory of the test.
+        '''The stage directory of the test.
 
         This is set during the :func:`setup` phase.
 
         :type: :class:`str`.
-        """
+        '''
         return self._stagedir
 
     @property
     def outputdir(self):
-        """The output directory of the test.
+        '''The output directory of the test.
 
         This is set during the :func:`setup` phase.
 
         .. versionadded:: 2.13
 
         :type: :class:`str`.
-        """
+        '''
         return self._outputdir
 
     @property
     @deferrable
     def stdout(self):
-        """The name of the file containing the standard output of the test.
+        '''The name of the file containing the standard output of the test.
 
         This is set during the :func:`setup` phase.
 
@@ -740,13 +822,13 @@ class RegressionTest:
         expressions.
 
         :type: :class:`str`.
-        """
+        '''
         return self._job.stdout
 
     @property
     @deferrable
     def stderr(self):
-        """The name of the file containing the standard error of the test.
+        '''The name of the file containing the standard error of the test.
 
         This is set during the :func:`setup` phase.
 
@@ -754,7 +836,7 @@ class RegressionTest:
         expressions.
 
         :type: :class:`str`.
-        """
+        '''
         return self._job.stderr
 
     @property
@@ -768,7 +850,7 @@ class RegressionTest:
         return self._build_job.stderr
 
     def info(self):
-        """Provide live information of a running test.
+        '''Provide live information of a running test.
 
         This method is used by the front-end to print the status message during
         the test's execution.
@@ -787,7 +869,7 @@ class RegressionTest:
 
            .. versionadded:: 2.10
 
-        """
+        '''
         ret = self.name
         if self.current_partition:
             ret += ' on %s' % self.current_partition.fullname
@@ -818,41 +900,18 @@ class RegressionTest:
         return env_name in self.valid_prog_environs
 
     def is_local(self):
-        """Check if the test will execute locally.
+        '''Check if the test will execute locally.
 
         A test executes locally if the :attr:`local` attribute is set or if the
         current partition's scheduler does not support job submission.
-        """
+        '''
         if self._current_partition is None:
             return self.local
 
         return self.local or self._current_partition.scheduler.is_local
 
-    def _setup_environ(self, environ):
-        """Setup the current environment and load it."""
-
-        self._current_environ = environ
-
-        # Set up user environment
-        self._user_environ = Environment(type(self).__name__, self.modules,
-                                         self.variables.items())
-
-        # Temporarily load the test's environment to record the actual module
-        # load/unload sequence
-        environ_save = EnvironmentSnapshot()
-        # First load the local environment of the partition
-        self.logger.debug('loading environment for the current partition')
-        self._current_partition.local_env.load()
-
-        self.logger.debug("loading current programming environment")
-        self._current_environ.load()
-
-        self.logger.debug("loading user's environment")
-        self._user_environ.load()
-        environ_save.load()
-
     def _setup_paths(self):
-        """Setup the check's dynamic paths."""
+        '''Setup the check's dynamic paths.'''
         self.logger.debug('setting up paths')
         try:
             resources = rt.runtime().resources
@@ -866,7 +925,7 @@ class RegressionTest:
             raise PipelineError('failed to set up paths') from e
 
     def _setup_job(self, **job_opts):
-        """Setup the job related to this check."""
+        '''Setup the job related to this check.'''
 
         self.logger.debug('setting up the job descriptor')
 
@@ -883,22 +942,15 @@ class RegressionTest:
 
         if self.local:
             scheduler_type = getscheduler('local')
-            launcher_type  = getlauncher('local')
+            launcher_type = getlauncher('local')
         else:
             scheduler_type = self._current_partition.scheduler
-            launcher_type  = self._current_partition.launcher
+            launcher_type = self._current_partition.launcher
 
         self._job = scheduler_type(
             name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
             workdir=self._stagedir,
-            num_tasks=self.num_tasks,
-            num_tasks_per_node=self.num_tasks_per_node,
-            num_tasks_per_core=self.num_tasks_per_core,
-            num_tasks_per_socket=self.num_tasks_per_socket,
-            num_cpus_per_task=self.num_cpus_per_task,
-            use_smt=self.use_multithreading,
-            time_limit=self.time_limit,
             sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
@@ -917,8 +969,9 @@ class RegressionTest:
         self.logger.debug('setting up performance logging')
         self._perf_logger = logging.getperflogger(self)
 
+    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
-        """The setup phase of the regression test pipeline.
+        '''The setup phase of the regression test pipeline.
 
         :arg partition: The system partition to set up this test for.
         :arg environ: The environment to set up this test for.
@@ -926,9 +979,9 @@ class RegressionTest:
             When overriding this method users should always pass through
             ``job_opts`` to the base class method.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
-        """
+        '''
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
         if self.perf_patterns is not None:
@@ -948,11 +1001,12 @@ class RegressionTest:
                           (url, self._stagedir))
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
+    @_run_hooks('pre_compile')
     def compile(self):
-        """The compilation phase of the regression test pipeline.
+        '''The compilation phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
-        """
+        '''
         if not self._current_environ:
             raise PipelineError('no programming environment set')
 
@@ -1017,8 +1071,11 @@ class RegressionTest:
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
-        environs = [self._current_partition.local_env,
-                    self._current_environ, self._user_environ]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
+        environs = [self._current_partition.local_env, self._current_environ,
+                    user_environ, self._cdt_environ]
+
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
             launcher=getlauncher('local')(),
@@ -1027,17 +1084,18 @@ class RegressionTest:
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
             self._build_job.submit()
 
+    @_run_hooks('post_compile')
     def compile_wait(self):
-        """Wait for compilation phase to finish.
+        '''Wait for compilation phase to finish.
 
         .. versionadded:: 2.13
-        """
+        '''
         self._build_job.wait()
         self.logger.debug('compilation finished')
 
@@ -1045,23 +1103,67 @@ class RegressionTest:
         if self._build_job.exitcode != 0:
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
+    @_run_hooks('pre_run')
     def run(self):
-        """The run phase of the regression test pipeline.
+        '''The run phase of the regression test pipeline.
 
         This call is non-blocking.
         It simply submits the job associated with this test and returns.
-        """
+        '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
+
+        if self.container_platform:
+            try:
+                cp_name = type(self.container_platform).__name__
+                cp_env = self._current_partition.container_environs[cp_name]
+            except KeyError as e:
+                raise PipelineError(
+                    'container platform not configured '
+                    'on the current partition: %s' % e) from None
+
+            self.container_platform.validate()
+            self.container_platform.mount_points += [
+                (self._stagedir, self.container_platform.workdir)
+            ]
+
+            # We replace executable and executable_opts in case of containers
+            self.executable = self.container_platform.launch_command()
+            self.executable_opts = []
+            prepare_container = self.container_platform.emit_prepare_commands()
+            if prepare_container:
+                self.pre_run += prepare_container
+
+        self.job.num_tasks = self.num_tasks
+        self.job.num_tasks_per_node = self.num_tasks_per_node
+        self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_cpus_per_task = self.num_cpus_per_task
+        self.job.use_smt = self.use_multithreading
+        self.job.time_limit = self.time_limit
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
-        environs = [self._current_partition.local_env,
-                    self._current_environ, self._user_environ]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
+        environs = [
+            self._current_partition.local_env,
+            self._current_environ,
+            user_environ,
+            self._cdt_environ
+        ]
+        if self.container_platform and cp_env:
+            environs = [
+                self._current_partition.local_env,
+                self._current_environ,
+                cp_env,
+                user_environ,
+                self._cdt_environ
+            ]
+
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
@@ -1071,8 +1173,12 @@ class RegressionTest:
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
         self.logger.debug(msg)
 
+        # Update num_tasks if test is flexible
+        if self.job.sched_flex_alloc_tasks:
+            self.num_tasks = self.job.num_tasks
+
     def poll(self):
-        """Poll the test's state.
+        '''Poll the test's state.
 
         :returns: :class:`True` if the associated job has finished,
             :class:`False` otherwise.
@@ -1080,23 +1186,26 @@ class RegressionTest:
             If no job descriptor is yet associated with this test,
             :class:`True` is returned.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
-        """
+        '''
         if not self._job:
             return True
 
         return self._job.finished()
 
+    @_run_hooks('post_run')
     def wait(self):
-        """Wait for this test to finish.
+        '''Wait for this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
-        """
+        '''
         self._job.wait()
         self.logger.debug('spawned job finished')
 
+    @_run_hooks()
     def sanity(self):
         self.check_sanity()
 
+    @_run_hooks()
     def performance(self):
         try:
             self.check_performance()
@@ -1105,10 +1214,10 @@ class RegressionTest:
                 raise
 
     def check_sanity(self):
-        """The sanity checking phase of the regression test pipeline.
+        '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
-        """
+        '''
         if self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
 
@@ -1118,11 +1227,11 @@ class RegressionTest:
                 raise SanityError()
 
     def check_performance(self):
-        """The performance checking phase of the regression test pipeline.
+        '''The performance checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the performance check
             fails.
-        """
+        '''
         if self.perf_patterns is None:
             return
 
@@ -1200,7 +1309,7 @@ class RegressionTest:
         shutil.copy(script, dst)
 
     def _copy_to_outputdir(self):
-        """Copy checks interesting files to the output directory."""
+        '''Copy check's interesting files to the output directory.'''
         self.logger.debug('copying interesting files to output directory')
         self._copy_job_files(self._job, self.outputdir)
         self._copy_job_files(self._build_job, self.outputdir)
@@ -1216,14 +1325,13 @@ class RegressionTest:
             elif os.path.isdir(f):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
-    def cleanup(self, remove_files=False, unload_env=True):
-        """The cleanup phase of the regression test pipeline.
+    @_run_hooks()
+    def cleanup(self, remove_files=False):
+        '''The cleanup phase of the regression test pipeline.
 
         :arg remove_files: If :class:`True`, the stage directory associated
             with this test will be removed.
-        :arg unload_env: If :class:`True`, the environment that was used to run
-            this test will be unloaded.
-        """
+        '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
             self.logger.debug('skipping copy to output dir '
@@ -1235,13 +1343,8 @@ class RegressionTest:
             self.logger.debug('removing stage directory')
             os_ext.rmtree(self._stagedir)
 
-        if unload_env:
-            self.logger.debug("unloading test's environment")
-            self._user_environ.unload()
-            self._current_environ.unload()
-            self._current_partition.local_env.unload()
-
     # Dependency API
+
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
@@ -1259,7 +1362,15 @@ class RegressionTest:
 
         self._userdeps.append((target, how, subdeps))
 
-    def getdep(self, target, environ):
+    def getdep(self, target, environ=None):
+        if self.current_environ is None:
+            raise DependencyError(
+                'cannot resolve dependencies before the setup phase'
+            )
+
+        if environ is None:
+            environ = self.current_environ.name
+
         if self._case is None or self._case() is None:
             raise DependencyError('no test case is associated with this test')
 
@@ -1276,30 +1387,30 @@ class RegressionTest:
 
 
 class RunOnlyRegressionTest(RegressionTest):
-    """Base class for run-only regression tests.
+    '''Base class for run-only regression tests.
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
-    """
+    '''
 
     def compile(self):
-        """The compilation phase of the regression test pipeline.
+        '''The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.
-        """
+        '''
 
     def compile_wait(self):
-        """Wait for compilation phase to finish.
+        '''Wait for compilation phase to finish.
 
         This is a no-op for this type of test.
-        """
+        '''
 
     def run(self):
-        """The run phase of the regression test pipeline.
+        '''The run phase of the regression test pipeline.
 
         The resources of the test are copied to the stage directory and the
         rest of execution is delegated to the :func:`RegressionTest.run()`.
-        """
+        '''
         if self.sourcesdir:
             if os_ext.is_url(self.sourcesdir):
                 self._clone_to_stagedir(self.sourcesdir)
@@ -1311,7 +1422,7 @@ class RunOnlyRegressionTest(RegressionTest):
 
 
 class CompileOnlyRegressionTest(RegressionTest):
-    """Base class for compile-only regression tests.
+    '''Base class for compile-only regression tests.
 
     These tests are by default local and will skip the run phase of the
     regression test pipeline.
@@ -1321,21 +1432,21 @@ class CompileOnlyRegressionTest(RegressionTest):
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
-    """
+    '''
 
     def _rfm_init(self, *args, **kwargs):
         super()._rfm_init(*args, **kwargs)
         self.local = True
 
     def setup(self, partition, environ, **job_opts):
-        """The setup stage of the regression test pipeline.
+        '''The setup stage of the regression test pipeline.
 
         Similar to the :func:`RegressionTest.setup`, except that no job
         descriptor is set up for this test.
-        """
+        '''
         # No need to setup the job for compile-only checks
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
 
     @property
@@ -1349,13 +1460,13 @@ class CompileOnlyRegressionTest(RegressionTest):
         return self._build_job.stderr
 
     def run(self):
-        """The run stage of the regression test pipeline.
+        '''The run stage of the regression test pipeline.
 
         Implemented as no-op.
-        """
+        '''
 
     def wait(self):
-        """Wait for this test to finish.
+        '''Wait for this test to finish.
 
         Implemented as no-op
-        """
+        '''

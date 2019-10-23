@@ -4,7 +4,6 @@
 
 
 class ReframeSettings:
-    reframe_module = 'reframe'
     job_poll_intervals = [1, 2, 3]
     job_submit_timeout = 60
     checks_path = ['checks/']
@@ -32,6 +31,11 @@ class ReframeSettings:
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100
                     },
@@ -42,6 +46,11 @@ class ReframeSettings:
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100
                     }

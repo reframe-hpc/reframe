@@ -13,7 +13,7 @@ import reframe.utility.sanity as sn
       # self.repeat replaces '-DERT_NUM_EXPERIMENTS=2':
       for repeat in [1, 2]])
 class ErtP100Test(rfm.RegressionTest):
-    """
+    '''
     The Empirical Roofline Tool, ERT, empirically generates roofline data:
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit/
 
@@ -39,7 +39,7 @@ class ErtP100Test(rfm.RegressionTest):
         gpu_blocks = max_threads // gpu_threads
         nth = gpu_threads * gpu_blocks
         print('{} {} {} {}'.format(gpu_blocks, gpu_threads, nth, max_threads))
-    """
+    '''
     def __init__(self, gpudims, flop, repeat):
         super().__init__()
         max_gpu_blocks = 3584
@@ -72,7 +72,7 @@ class ErtP100Test(rfm.RegressionTest):
         ]
         self.build_system.ldflags = ['-O3']
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
         gpu_blocks, gpu_threads = gpudims
         self.name = 'ertgpu_Run.{}_FLOPS.{}_GPUBlocks.{}_GPUThreads.{}'.format(
             repeat, flop, gpu_blocks, gpu_threads)

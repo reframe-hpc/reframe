@@ -17,7 +17,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.executable = 'cuda-gdb cuda_gdb_check'
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
         else:
             self.modules = ['craype-accel-nvidia60']
 
@@ -46,7 +46,7 @@ class CudaGdbCheck(rfm.RegressionTest):
         ])
 
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)

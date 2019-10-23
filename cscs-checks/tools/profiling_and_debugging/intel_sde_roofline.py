@@ -68,7 +68,7 @@ class IntelRooflineSdeTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found('Total FLOPs =', self.rpt)
         self.post_run = ['SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
         self.sanity_patterns = sn.all([
             sn.assert_eq(sn.extractsingle(
                 r'^Intel\(R\) Software Development Emulator\.  Version:  '

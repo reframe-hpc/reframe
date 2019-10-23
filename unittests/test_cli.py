@@ -1,6 +1,7 @@
 import copy
 import itertools
 import os
+import pytest
 import re
 import sys
 import tempfile
@@ -9,16 +10,16 @@ from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
 import reframe.core.config as config
+import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
-from reframe.core.environments import EnvironmentSnapshot
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
     # Save current execution context
     argv_save = sys.argv
-    environ_save = EnvironmentSnapshot()
+    environ_save = env.snapshot()
     sys.argv = argv
     exitcode = None
 
@@ -34,7 +35,7 @@ def run_command_inline(argv, funct, *args, **kwargs):
                 exitcode = e.code
             finally:
                 # Restore execution context
-                environ_save.load()
+                environ_save.restore()
                 sys.argv = argv_save
 
     return (exitcode,
@@ -408,3 +409,25 @@ class TestFrontend(unittest.TestCase):
         self.assertNotIn('Traceback', stdout)
         self.assertNotIn('Traceback', stderr)
         self.assertEqual(0, returncode)
+
+    @fixtures.switch_to_user_runtime
+    def test_unload_module(self):
+        # This test is mostly for ensuring coverage. `_run_reframe()` restores
+        # the current environment, so it is not easy to verify that the modules
+        # are indeed unloaded. However, this functionality is tested elsewhere
+        # more exhaustively.
+
+        ms = rt.runtime().modules_system
+        if ms.name == 'nomod':
+            pytest.skip('no modules system found')
+
+        ms.searchpath_add('unittests/modules')
+        ms.load_module('testmod_foo')
+        self.more_options = ['-u testmod_foo']
+        self.action = 'list'
+        returncode, stdout, stderr = self._run_reframe()
+        assert stdout != ''
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert returncode == 0
+        ms.unload_module('testmod_foo')

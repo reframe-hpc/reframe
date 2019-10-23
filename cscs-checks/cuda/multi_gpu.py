@@ -61,11 +61,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
             'kesch:cn:d2d': (137408, -0.1, None, 'MB/s')
         }
-        self.tags = {'diagnostic', 'mch'}
+        self.tags = {'diagnostic', 'mch', 'craype', 'external-resources'}
         self.maintainers = ['AJ', 'VK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
-        """generates search pattern for performance analysis"""
+        '''generates search pattern for performance analysis'''
         if xfer_kind == 'h2d':
             first_part = 'bandwidthTest-H2D-Pinned'
         elif xfer_kind == 'd2h':

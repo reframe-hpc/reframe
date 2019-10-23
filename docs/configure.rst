@@ -43,6 +43,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=gpu'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Hybrid nodes (Haswell/P100)',
                        'max_jobs': 100
                    },
@@ -53,6 +58,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=mc'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Multicore nodes (Broadwell)',
                        'max_jobs': 100
                    }
@@ -149,6 +159,33 @@ The available partition attributes are the following:
 
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
   The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+
+* ``container_platforms``: *[new in 2.20]* A set of key/value pairs specifying the supported container platforms for this partition and how their environment is set up.
+  Supported platform names are the following (names are case sensitive):
+
+    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
+    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
+    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io>`__ container runtime.
+
+  Each configured container runtime is associated optionally with an environment (modules and environment variables) that is providing it.
+  This environment is specified as a dictionary in the following format:
+
+   .. code:: python
+
+      {
+          'modules': ['mod1', 'mod2', ...]
+          'variables': {'ENV1': 'VAL1', 'ENV2': 'VAL2', ...}
+      }
+
+
+   If no special environment arrangement is needed for a configured container platform, you can simply specify an empty dictionary as an environment configuration, as it is shown in the following example:
+
+   .. code:: python
+
+      'container_platforms': {
+          'Docker': {}
+      }
+
 
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 
@@ -269,6 +306,21 @@ ReFrame supports the following parallel job launchers:
 * ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
 * ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
 * ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
+* ``ssh``: *[new in 2.20]* Programs on the configured partition will be launched using SSH.
+  This option uses the partition's ``access`` parameter (see `above <#partition-configuration>`__) in order to determine the remote host and any additional options to be passed to the SSH client.
+  The ``ssh`` command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
+  Here is an example configuration for the ``ssh`` launcher:
+
+  .. code:: python
+
+    'partition_name': {
+        'scheduler': 'local+ssh',
+        'access': ['-l admin', 'remote.host'],
+        'environs': ['builtin'],
+    }
+
+  Note that the environment is not propagated to the remote host, so the ``environs`` variable has no practical meaning except for enabling the testing of this partition.
+
 
 There exist also the following aliases for specific combinations of job schedulers and parallel program launchers:
 

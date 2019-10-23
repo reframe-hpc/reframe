@@ -225,8 +225,8 @@ class TestFields(unittest.TestCase):
                           "tester.field = [('a', 1), ('b', 2)]",
                           globals(), locals())
         self.assertRaises(TypeError, exec,
-                          """tester.field = {'a': {1: 'k1'},
-                                             'b': {2: 'k2'}}""",
+                          '''tester.field = {'a': {1: 'k1'},
+                                             'b': {2: 'k2'}}''',
                           globals(), locals())
 
         # Test assigning a ScopedDict already

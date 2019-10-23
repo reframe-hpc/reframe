@@ -47,7 +47,7 @@ class DdtCheck(rfm.RegressionTest):
             'Cuda': 94
         }
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.post_run = ['ddt -V ; which ddt ;']
         self.keep_files = ['ddtreport.txt']
 
@@ -100,7 +100,7 @@ class DdtGpuCheck(DdtCheck):
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['craype-accel-nvidia35']
+            'kesch': ['cudatoolkit/8.0.61']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])

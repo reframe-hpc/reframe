@@ -22,7 +22,7 @@ class Ipm(rfm.RegressionTest):
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
         ipm_ver = '2.0.6'
-        tc_ver = '19.06'
+        tc_ver = '19.09'
         self.ipm_modules = {
             'PrgEnv-gnu': ['IPM/%s-CrayGNU-%s' % (ipm_ver, tc_ver)],
             'PrgEnv-cray': ['IPM/%s-CrayCCE-%s' % (ipm_ver, tc_ver)],
@@ -45,8 +45,8 @@ class Ipm(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
             'PKG_CONFIG_PATH':
-                '$PAT_BUILD_PAPI_BASEDIR/lib64/pkgconfig:$PKG_CONFIG_PATH',
-            'LD_LIBRARY_PATH': '$PAT_BUILD_PAPI_BASEDIR/lib64:'
+                '$PAT_BUILD_PAPI_LIBDIR/pkgconfig:$PKG_CONFIG_PATH',
+            'LD_LIBRARY_PATH': '$PAT_BUILD_PAPI_LIBDIR:'
                                '$LD_LIBRARY_PATH',
             # The list of available hardware performance counters depends
             # on the cpu type:

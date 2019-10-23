@@ -52,18 +52,18 @@ class _TestJob(abc.ABC):
     @property
     @abc.abstractmethod
     def sched_name(self):
-        """Return the registered name of the scheduler."""
+        '''Return the registered name of the scheduler.'''
 
     @property
     @abc.abstractmethod
     def launcher(self):
-        """Return a launcher to use for this test."""
+        '''Return a launcher to use for this test.'''
 
     @abc.abstractmethod
     def setup_user(self, msg=None):
-        """Configure the test for running with the user supplied job scheduler
+        '''Configure the test for running with the user supplied job scheduler
         configuration or skip it.
-        """
+        '''
         partition = fixtures.partition_with_scheduler(self.sched_name)
         if partition is None:
             msg = msg or "scheduler '%s' not configured" % self.sched_name
@@ -72,7 +72,7 @@ class _TestJob(abc.ABC):
         self.testjob.options += partition.access
 
     def assertScriptSanity(self, script_file):
-        """Assert the sanity of the produced script file."""
+        '''Assert the sanity of the produced script file.'''
         with open(self.testjob.script_filename) as fp:
             matches = re.findall(r'echo prerun|echo postrun|hostname',
                                  fp.read())
@@ -81,22 +81,22 @@ class _TestJob(abc.ABC):
 
     def setup_job(self):
         # Mock up a job submission
-        self.testjob._time_limit = (0, 5, 0)
-        self.testjob._num_tasks = 16
-        self.testjob._num_tasks_per_node = 2
-        self.testjob._num_tasks_per_core = 1
-        self.testjob._num_tasks_per_socket = 1
-        self.testjob._num_cpus_per_task = 18
-        self.testjob._use_smt = True
+        self.testjob.time_limit = (0, 5, 0)
+        self.testjob.num_tasks = 16
+        self.testjob.num_tasks_per_node = 2
+        self.testjob.num_tasks_per_core = 1
+        self.testjob.num_tasks_per_socket = 1
+        self.testjob.num_cpus_per_task = 18
+        self.testjob.use_smt = True
+        self.testjob.options = ['--gres=gpu:4',
+                                '#DW jobdw capacity=100GB',
+                                '#DW stage_in source=/foo']
         self.testjob._sched_nodelist = 'nid000[00-17]'
         self.testjob._sched_exclude_nodelist = 'nid00016'
         self.testjob._sched_partition = 'foo'
         self.testjob._sched_reservation = 'bar'
         self.testjob._sched_account = 'spam'
         self.testjob._sched_exclusive_access = True
-        self.testjob.options = ['--gres=gpu:4',
-                                '#DW jobdw capacity=100GB',
-                                '#DW stage_in source=/foo']
 
     def test_prepare(self):
         self.testjob.prepare(self.commands, self.environs)
@@ -115,7 +115,7 @@ class _TestJob(abc.ABC):
     def test_submit_timelimit(self, check_elapsed_time=True):
         self.setup_user()
         self.parallel_cmd = 'sleep 10'
-        self.testjob._time_limit = (0, 0, 2)
+        self.testjob.time_limit = (0, 0, 2)
         self.testjob.prepare(self.commands, self.environs)
         t_job = datetime.now()
         self.testjob.submit()
@@ -171,7 +171,7 @@ class _TestJob(abc.ABC):
             self.assertNotEqual(l, '')
 
     def test_guess_num_tasks(self):
-        self.testjob._num_tasks = 0
+        self.testjob.num_tasks = 0
         with self.assertRaises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
@@ -224,7 +224,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.parallel_cmd = 'sleep 5 &'
         self.pre_run = ['trap -- "" TERM']
         self.post_run = ['echo $!', 'wait']
-        self.testjob._time_limit = (0, 1, 0)
+        self.testjob.time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
 
         self.testjob.prepare(self.commands, self.environs)
@@ -347,21 +347,21 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def test_prepare_no_smt(self):
         self.setup_job()
-        self.testjob._use_smt = None
+        self.testjob.use_smt = None
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNone(re.search(r'--hint', fp.read()))
 
     def test_prepare_with_smt(self):
         self.setup_job()
-        self.testjob._use_smt = True
+        self.testjob.use_smt = True
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=multithread', fp.read()))
 
     def test_prepare_without_smt(self):
         self.setup_job()
-        self.testjob._use_smt = False
+        self.testjob.use_smt = False
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
             self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
@@ -382,7 +382,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         self.assertEqual(self.testjob.state, 'CANCELLED')
 
     def test_guess_num_tasks(self):
-        self.testjob._num_tasks = 0
+        self.testjob.num_tasks = 0
         self.testjob._sched_flex_alloc_tasks = 'all'
         # monkey patch `get_all_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
@@ -466,7 +466,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
 
     def test_prepare_no_cpus(self):
         self.setup_job()
-        self.testjob._num_cpus_per_task = None
+        self.testjob.num_cpus_per_task = None
         self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
         super().test_prepare()
         num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
@@ -614,8 +614,8 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         # of the default partition
         self.testjob._get_default_partition = lambda: 'pdef'
         self.testjob._sched_flex_alloc_tasks = 'all'
-        self.testjob._num_tasks_per_node = 4
-        self.testjob._num_tasks = 0
+        self.testjob.num_tasks_per_node = 4
+        self.testjob.num_tasks = 0
 
     def tearDown(self):
         os_ext.rmtree(self.workdir)
@@ -748,26 +748,26 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_no_num_tasks_per_node(self):
-        self.testjob._num_tasks_per_node = None
+        self.testjob.num_tasks_per_node = None
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 1)
 
     def test_not_enough_idle_nodes(self):
         self.testjob._sched_flex_alloc_tasks = 'idle'
-        self.testjob._num_tasks = -12
+        self.testjob.num_tasks = -12
         with self.assertRaises(JobError):
             self.prepare_job()
 
     def test_not_enough_nodes_constraint_partition(self):
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
-        self.testjob._num_tasks = -8
+        self.testjob.num_tasks = -8
         with self.assertRaises(JobError):
             self.prepare_job()
 
     def test_enough_nodes_constraint_partition(self):
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
-        self.testjob._num_tasks = -4
+        self.testjob.num_tasks = -4
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
 

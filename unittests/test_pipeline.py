@@ -1,7 +1,10 @@
 import os
+import pytest
+import re
 import tempfile
 import unittest
 
+import reframe as rfm
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
@@ -9,29 +12,52 @@ import unittests.fixtures as fixtures
 from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      ReframeSyntaxError, PerformanceError,
                                      SanityError)
-from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
-                                   RunOnlyRegressionTest)
 from reframe.frontend.loader import RegressionCheckLoader
 
 
+def _setup_local_execution():
+    partition = rt.runtime().system.partition('login')
+    environ = partition.environment('builtin-gcc')
+    return partition, environ
+
+
+def _setup_remote_execution(scheduler=None):
+    partition = fixtures.partition_with_scheduler(scheduler)
+    if partition is None:
+        pytest.skip('job submission not supported')
+
+    try:
+        environ = partition.environs[0]
+    except IndexError:
+        pytest.skip('no environments configured for partition: %s' %
+                    partition.fullname)
+
+    return partition, environ
+
+
+def _run(test, partition, prgenv):
+    test.setup(partition, prgenv)
+    test.compile()
+    test.compile_wait()
+    test.run()
+    test.wait()
+    test.check_sanity()
+    test.check_performance()
+    test.cleanup(remove_files=True)
+
+
+def _cray_cle_version():
+    completed = os_ext.run_command('cat /etc/opt/cray/release/cle-release')
+    matched = re.match(r'^RELEASE=(\S+)', completed.stdout)
+    if matched is None:
+        return None
+
+    return matched.group(1)
+
+
 class TestRegressionTest(unittest.TestCase):
-    def setup_local_execution(self):
-        self.partition = rt.runtime().system.partition('login')
-        self.progenv = self.partition.environment('builtin-gcc')
-
-    def setup_remote_execution(self):
-        self.partition = fixtures.partition_with_scheduler()
-        if self.partition is None:
-            self.skipTest('job submission not supported')
-
-        try:
-            self.progenv = self.partition.environs[0]
-        except IndexError:
-            self.skipTest('no environments configured for partition: %s' %
-                          self.partition.fullname)
-
     def setUp(self):
-        self.setup_local_execution()
+        self.partition, self.prgenv = _setup_local_execution()
         self.loader = RegressionCheckLoader(['unittests/resources/checks'])
 
         # Set runtime prefix
@@ -64,50 +90,40 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
         test.modules = ['testmod_foo']
         test.variables = {'_FOO_': '1', '_BAR_': '2'}
         test.local = True
 
-        test.setup(self.partition, self.progenv)
+        test.setup(self.partition, self.prgenv)
 
         for k in test.variables.keys():
             self.assertNotIn(k, os.environ)
 
-        # Manually unload the environment
-        self.progenv.unload()
-
     def _run_test(self, test, compile_only=False):
-        test.setup(self.partition, self.progenv)
-        test.compile()
-        test.compile_wait()
-        test.run()
-        test.wait()
-        test.check_sanity()
-        test.check_performance()
-        test.cleanup(remove_files=True)
+        _run(test, self.partition, self.prgenv)
         self.assertFalse(os.path.exists(test.stagedir))
         for f in self.keep_files_list(test, compile_only):
             self.assertTrue(os.path.exists(f))
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck(self):
-        self.setup_remote_execution()
+        self.partition, self.prgenv = _setup_remote_execution()
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
         self._run_test(test)
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck_make(self):
-        self.setup_remote_execution()
+        self.partition, self.prgenv = _setup_remote_execution()
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck_make.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
         self._run_test(test)
 
     def test_hellocheck_local(self):
@@ -115,7 +131,7 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
 
         # Test also the prebuild/postbuild functionality
         test.prebuild_cmd  = ['touch prebuild', 'mkdir prebuild_dir']
@@ -136,7 +152,7 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         # Use test environment for the regression check
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
 
         # Test also the prebuild/postbuild functionality
         test.pre_run  = ['echo prerun: `pwd`']
@@ -178,7 +194,7 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_run_only_sanity(self):
-        test = RunOnlyRegressionTest()
+        test = rfm.RunOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.executable = './hello.sh'
         test.executable_opts = ['Hello, World!']
@@ -189,17 +205,17 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_compile_only_failure(self):
-        test = CompileOnlyRegressionTest()
+        test = rfm.CompileOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.sourcepath = 'compiler_failure.c'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        test.setup(self.partition, self.progenv)
+        test.setup(self.partition, self.prgenv)
         test.compile()
         self.assertRaises(BuildError, test.compile_wait)
 
     def test_compile_only_warning(self):
-        test = CompileOnlyRegressionTest()
+        test = rfm.CompileOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.build_system = 'SingleSource'
         test.build_system.srcfile = 'compiler_warning.c'
@@ -254,7 +270,7 @@ class TestRegressionTest(unittest.TestCase):
         self.assertTrue(test.supports_environ('*'))
 
     def test_sourcesdir_none(self):
-        test = RegressionTest()
+        test = rfm.RegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
@@ -262,7 +278,7 @@ class TestRegressionTest(unittest.TestCase):
         self.assertRaises(ReframeError, self._run_test, test)
 
     def test_sourcesdir_build_system(self):
-        test = RegressionTest()
+        test = rfm.RegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.build_system = 'Make'
         test.sourcepath = 'code'
@@ -274,7 +290,7 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcesdir_none_generated_sources(self):
-        test = RegressionTest()
+        test = rfm.RegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.prebuild_cmd = ["printf '#include <stdio.h>\\n int main(){ "
@@ -289,7 +305,7 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcesdir_none_compile_only(self):
-        test = CompileOnlyRegressionTest()
+        test = rfm.CompileOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
@@ -297,7 +313,7 @@ class TestRegressionTest(unittest.TestCase):
         self.assertRaises(BuildError, self._run_test, test)
 
     def test_sourcesdir_none_run_only(self):
-        test = RunOnlyRegressionTest()
+        test = rfm.RunOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.sourcesdir = None
         test.executable = 'echo'
@@ -309,27 +325,27 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_sourcepath_abs(self):
-        test = CompileOnlyRegressionTest()
+        test = rfm.CompileOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
-        test.valid_prog_environs = [self.progenv.name]
+        test.valid_prog_environs = [self.prgenv.name]
         test.valid_systems = ['*']
-        test.setup(self.partition, self.progenv)
+        test.setup(self.partition, self.prgenv)
         test.sourcepath = '/usr/src'
         self.assertRaises(PipelineError, test.compile)
 
     def test_sourcepath_upref(self):
-        test = CompileOnlyRegressionTest()
+        test = rfm.CompileOnlyRegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        test.setup(self.partition, self.progenv)
+        test.setup(self.partition, self.prgenv)
         test.sourcepath = '../hellosrc'
         self.assertRaises(PipelineError, test.compile)
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_extra_resources(self):
         # Load test site configuration
-        test = RegressionTest()
+        test = rfm.RegressionTest()
         test._prefix = 'unittests/resources/checks'
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
@@ -348,9 +364,250 @@ class TestRegressionTest(unittest.TestCase):
         self.assertCountEqual(expected_job_options, test.job.options)
 
 
+class TestHooks(unittest.TestCase):
+    def setUp(self):
+        self.partition = rt.runtime().system.partition('login')
+        self.prgenv = self.partition.environment('builtin-gcc')
+
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+    def tearDown(self):
+        os_ext.rmtree(rt.runtime().resources.prefix)
+
+    def test_setup_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+
+            @rfm.run_before('setup')
+            def prefoo(self):
+                assert self.current_environ is None
+                os.environ['_RFM_PRE_SETUP'] = 'foo'
+
+            @rfm.run_after('setup')
+            def postfoo(self):
+                assert self.current_environ is not None
+                os.environ['_RFM_POST_SETUP'] = 'foo'
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert '_RFM_PRE_SETUP' in os.environ
+        assert '_RFM_POST_SETUP' in os.environ
+
+    def test_compile_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+
+            @rfm.run_before('compile')
+            def setflags(self):
+                os.environ['_RFM_PRE_COMPILE'] = 'FOO'
+
+            @rfm.run_after('compile')
+            def check_executable(self):
+                exec_file = os.path.join(self.stagedir, self.executable)
+
+                # Make sure that this hook is executed after compile_wait()
+                assert os.path.exists(exec_file)
+
+    def test_run_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+
+            @rfm.run_before('run')
+            def setflags(self):
+                self.post_run = ['echo hello > greetings.txt']
+
+            @rfm.run_after('run')
+            def check_executable(self):
+                outfile = os.path.join(self.stagedir, 'greetings.txt')
+
+                # Make sure that this hook is executed after wait()
+                assert os.path.exists(outfile)
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+
+    def test_multiple_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+            @rfm.run_after('setup')
+            def y(self):
+                self.var += 1
+
+            @rfm.run_after('setup')
+            def z(self):
+                self.var += 1
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 3
+
+    def test_stacked_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_before('setup')
+            @rfm.run_after('setup')
+            @rfm.run_after('compile')
+            def x(self):
+                self.var += 1
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 3
+
+    def test_inherited_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+        class C(rfm.RegressionTest):
+            @rfm.run_before('run')
+            def y(self):
+                self.foo = 1
+
+        class DerivedTest(BaseTest, C):
+            @rfm.run_after('setup')
+            def z(self):
+                self.var += 1
+
+        class MyTest(DerivedTest):
+            pass
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 2
+        assert test.foo == 1
+
+    def test_overriden_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+                self.foo = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 1
+
+        class DerivedTest(BaseTest):
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 5
+
+        class MyTest(DerivedTest):
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 10
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 5
+        assert test.foo == 10
+
+    def test_require_deps(self):
+        import unittests.resources.checks.hellocheck as mod
+        import reframe.frontend.dependency as dependency
+        import reframe.frontend.executors as executors
+
+        class T0(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.x = 1
+
+        class T1(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.depends_on('T0')
+
+            @rfm.require_deps
+            def sety(self, T0):
+                self.y = T0().x + 1
+
+            @rfm.run_before('run')
+            @rfm.require_deps
+            def setz(self, T0):
+                self.z = T0().x + 2
+
+        cases = executors.generate_testcases([T0(), T1()])
+        deps = dependency.build_deps(cases)
+        for c in dependency.toposort(deps):
+            _run(*c)
+
+        for c in cases:
+            t = c.check
+            if t.name == 'T0':
+                assert t.x == 1
+            elif t.name == 'T1':
+                assert t.y == 2
+                assert t.z == 3
+
+
 class TestSyntax(unittest.TestCase):
     def test_regression_test(self):
-        class MyTest(RegressionTest):
+        class MyTest(rfm.RegressionTest):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -369,7 +626,7 @@ class TestSyntax(unittest.TestCase):
             def __repr__(self):
                 return 'C(%s)' % self.a
 
-        class MyTest(RegressionTest):
+        class MyTest(rfm.RegressionTest):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -380,7 +637,7 @@ class TestSyntax(unittest.TestCase):
             '<locals>.MyTest__a_b_c__12_C_33_', test.name)
 
     def test_user_inheritance(self):
-        class MyBaseTest(RegressionTest):
+        class MyBaseTest(rfm.RegressionTest):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -394,7 +651,7 @@ class TestSyntax(unittest.TestCase):
                          '<locals>.MyTest', test.name)
 
     def test_runonly_test(self):
-        class MyTest(RunOnlyRegressionTest):
+        class MyTest(rfm.RunOnlyRegressionTest):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -406,7 +663,7 @@ class TestSyntax(unittest.TestCase):
                          '<locals>.MyTest_1_2', test.name)
 
     def test_compileonly_test(self):
-        class MyTest(CompileOnlyRegressionTest):
+        class MyTest(rfm.CompileOnlyRegressionTest):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -445,12 +702,12 @@ class TestSanityPatterns(unittest.TestCase):
         rt.runtime().resources.prefix = self.resourcesdir
 
         # Set up RegressionTest instance
-        self.test = RegressionTest()
+        self.test = rfm.RegressionTest()
         self.test._prefix = 'unittests/resources/checks'
         self.partition = rt.runtime().system.partition('gpu')
-        self.progenv = self.partition.environment('builtin-gcc')
+        self.prgenv = self.partition.environment('builtin-gcc')
 
-        self.test.setup(self.partition, self.progenv)
+        self.test.setup(self.partition, self.prgenv)
         self.test.reference = {
             'testsys': {
                 'value1': (1.4, -0.1, 0.1),
@@ -657,3 +914,101 @@ class TestSanityPatterns(unittest.TestCase):
         self.assertIn('v1', log_output)
         self.assertIn('v2', log_output)
         self.assertIn('v3', log_output)
+
+
+class TestRegressionTestWithContainer(unittest.TestCase):
+    def temp_prefix(self):
+        # Set runtime prefix
+        rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
+
+    def create_test(self, platform, image):
+        class ContainerTest(rfm.RunOnlyRegressionTest):
+            def __init__(self, platform):
+                self._prefix = 'unittests/resources/checks'
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.container_platform = platform
+                self.container_platform.image = image
+                self.container_platform.commands = [
+                    'pwd', 'ls', 'cat /etc/os-release'
+                ]
+                self.container_platform.workdir = '/workdir'
+                self.sanity_patterns = sn.all([
+                    sn.assert_found(
+                        r'^' + self.container_platform.workdir, self.stdout),
+                    sn.assert_found(r'^hello.c', self.stdout),
+                    sn.assert_found(
+                        r'18\.04\.\d+ LTS \(Bionic Beaver\)', self.stdout),
+                ])
+
+        test = ContainerTest(platform)
+        return test
+
+    def _skip_if_not_configured(self, partition, platform):
+        if platform not in partition.container_environs.keys():
+            pytest.skip('%s is not configured on the system' % platform)
+
+    @fixtures.switch_to_user_runtime
+    def test_singularity(self):
+        cle_version = _cray_cle_version()
+        if cle_version is not None and cle_version.startswith('6.0'):
+            pytest.skip('test not supported on Cray CLE6')
+
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'Singularity')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Singularity', 'docker://ubuntu:18.04'),
+                 partition, environ)
+
+    @fixtures.switch_to_user_runtime
+    def test_docker(self):
+        partition, environ = _setup_remote_execution('local')
+        self._skip_if_not_configured(partition, 'Docker')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Docker', 'ubuntu:18.04'),
+                 partition, environ)
+
+    @fixtures.switch_to_user_runtime
+    def test_shifter(self):
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'ShifterNG')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('ShifterNG', 'ubuntu:18.04'),
+                 partition, environ)
+
+    @fixtures.switch_to_user_runtime
+    def test_sarus(self):
+        partition, environ = _setup_remote_execution()
+        self._skip_if_not_configured(partition, 'Sarus')
+        with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+            rt.runtime().resources.prefix = dirname
+            _run(self.create_test('Sarus', 'ubuntu:18.04'),
+                 partition, environ)
+
+    def test_unknown_platform(self):
+        partition, environ = _setup_local_execution()
+        with pytest.raises(ValueError):
+            with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+                rt.runtime().resources.prefix = dirname
+                _run(self.create_test('foo', 'ubuntu:18.04'),
+                     partition, environ)
+
+    def test_not_configured_platform(self):
+        partition, environ = _setup_local_execution()
+        platform = None
+        for cp in ['Docker', 'Singularity', 'Sarus', 'ShifterNG']:
+            if cp not in partition.container_environs.keys():
+                platform = cp
+                break
+
+        if platform is None:
+            pytest.skip('cannot find a not configured supported platform')
+
+        with pytest.raises(PipelineError):
+            with tempfile.TemporaryDirectory(dir='unittests') as dirname:
+                rt.runtime().resources.prefix = dirname
+                _run(self.create_test(platform, 'ubuntu:18.04'),
+                     partition, environ)

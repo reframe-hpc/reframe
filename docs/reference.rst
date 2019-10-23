@@ -31,6 +31,18 @@ Regression test classes and related utilities
    .. versionadded:: 2.13
 
 
+.. py:decorator:: reframe.run_after
+
+   This is an alias of :func:`reframe.core.decorators.run_after`.
+
+   .. versionadded:: 2.20
+
+.. py:decorator:: reframe.run_before
+
+   This is an alias of :func:`reframe.core.decorators.run_before`.
+
+   .. versionadded:: 2.20
+
 .. py:decorator:: reframe.simple_test
 
    This is an alias of :func:`reframe.core.decorators.simple_test`.
@@ -124,4 +136,20 @@ It is up to the concrete build system implementations on how to use or not these
 .. automodule:: reframe.core.buildsystems
    :members:
    :exclude-members: BuildSystemField
+   :show-inheritance:
+
+
+Container platforms
+-------------------
+
+.. versionadded:: 2.20
+
+ReFrame can run a regression test inside a container.
+To achieve that you have to set the :attr:`reframe.core.pipeline.RegressionTest.container_platform` attribute and then set up the container platform (e.g., image to load, commands to execute).
+The :class:`reframe.core.ContainerPlatform` abstract base class define the basic interface and a minimal set of attributes that all concrete container platforms must implement.
+Concrete container platforms may also define additional fields that are specific to them.
+
+.. automodule:: reframe.core.containers
+   :members:
+   :exclude-members: ContainerPlatformField
    :show-inheritance:

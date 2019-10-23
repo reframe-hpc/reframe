@@ -908,7 +908,7 @@ ReFrame supports an additional logging facility for recording performance values
 This is configured by the ``perf_logging_config`` variables, whose syntax is the same as for the ``logging_config``:
 
 .. literalinclude:: ../reframe/settings.py
-  :lines: 80-99
+  :lines: 77-96
   :dedent: 4
 
 Performance logging introduces two new log record handlers, specifically designed for this purpose.
@@ -1247,3 +1247,28 @@ For example, using the following options would run a flexible test on all the no
 
 .. warning::
    Test cases resulting from flexible ReFrame tests may not be run using the asynchronous execution policy, because the nodes satisfying the required criteria will be allocated for the first test case, causing all subsequent ones to fail.
+
+Testing non-default Cray Programming Environments
+-------------------------------------------------
+
+.. versionadded:: 2.20
+
+
+Cray machines provide a set of compilers, scientific software libraries and an MPI implementation that is optimized for the Cray hardware.
+These comprise the Cray Programming Environment (PE).
+All the functionality of the PE is structured around the default versions (or modules) of the libraries.
+If a non-default library or a non-default PE are to be tested, users have to do the following after having loaded all of their Cray modules:
+
+.. code:: bash
+
+   export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+
+
+In order to test a non-default Cray Programming Environment with ReFrame you have to pass the ``--non-default-craype``.
+This will cause ReFrame to export ``LD_LIBRARY_PATH`` as shown above.
+Here is an example that shows how to test a non-default Cray PE with ReFrame:
+
+.. code:: bash
+
+   module load cdt/19.08
+   reframe <options> --non-default-craype  -r

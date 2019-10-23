@@ -45,7 +45,7 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            task.cleanup(not self.keep_stage_files, False)
+            task.cleanup(not self.keep_stage_files)
 
         except TaskExit:
             return
@@ -194,7 +194,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             raise
 
     def _poll_tasks(self):
-        """Update the counts of running checks per partition."""
+        '''Update the counts of running checks per partition.'''
         getlogger().debug('updating counts for running test cases')
         getlogger().debug('polling %s task(s)' % len(self._running_tasks))
         for t in self._running_tasks:
@@ -222,10 +222,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if not self.skip_performance_check:
             task.performance()
 
-        task.cleanup(not self.keep_stage_files, False)
+        task.cleanup(not self.keep_stage_files)
 
     def _failall(self, cause):
-        """Mark all tests as failures"""
+        '''Mark all tests as failures'''
         try:
             while True:
                 self._running_tasks.pop().abort(cause)

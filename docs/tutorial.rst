@@ -335,7 +335,7 @@ In this example, we write a regression test to compile and run the OpenMP versio
 The full code of this test follows:
 
 .. literalinclude:: ../tutorial/example2.py
-  :lines: 1-32
+  :lines: 1-33
 
 This example introduces two new concepts:
 
@@ -367,22 +367,99 @@ More on the build systems feature can be found `here <reference.html#build-syste
 
 Getting back to our test, simply setting the ``cflags`` to ``-fopenmp`` globally in the test will make it fail for programming environments other than ``PrgEnv-gnu``, since the OpenMP flags vary for the different compilers.
 Ideally, we need to set the ``cflags`` differently for each programming environment.
-To achieve this we need to override the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method of the :class:`RegressionTest <reframe.core.pipeline.RegressionTest>`.
-As described in `"The Regression Test Pipeline" <pipeline.html>`__ section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
-The following lines show the overriden ``setup()`` method:
+To achieve this we need to define a method that will set the compilation flags based on the current programming environment (i.e., the environment that test currently runs with) and schedule it to run before the ``compile`` stage of the test pipeline as follows:
 
 .. literalinclude:: ../tutorial/example2.py
   :lines: 23-33
   :dedent: 4
 
-The current environment is passed as argument by the framework to the ``setup()`` method, so we differentiate the build system's flags based on its name.
-Finally, we need call the ``setup()`` method of the base class, in order to perform the actual setup of the test.
+In this function we retrieve the current environment from the :attr:`current_environ <reframe.core.RegressionTest.current_environ>` attribute, so we can then differentiate the build system's flags based on its name.
+Note that we cannot retrieve the current programming environment inside the test's constructor, since as described in in `"The Regression Test Pipeline" <pipeline.html>`__ section, it is during the setup phase that a regression test is prepared for a new system partition and a new programming environment.
+The second important thing in this function is the ``@run_before('compile')`` decorator.
+This decorator will attach this function to the ``compile`` stage of the pipeline and will execute it before entering this stage.
+There are six pipeline stages that are defined and can accept this type of hooks: ``setup``, ``compile``, ``run``, ``sanity``, ``performance`` and ``cleanup``.
+Similarly, to the ``@run_before`` decorator, there is also the ``@run_after``, which will run the decorated function after the specified pipeline stage.
+The decorated function may have any name, but it should be a method of the test taking no arguments (i.e., its sole argument should the ``self``).
 
-.. tip::
+You may attach multiple functions to the same stage as in the following example:
 
-  The :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` implements the six phases of the regression test pipeline in separate methods.
-  Individual regression tests may override them to provide alternative implementations, but in most practical cases, only the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` may need to be overriden.
-  You will hardly ever need to override any of the other methods and, in fact, you should be very careful when doing it.
+.. code:: python
+
+    @rfm.run_before('compile')
+    def setflags(self):
+        env = self.current_environ.name
+        if env == 'PrgEnv-cray':
+            self.build_system.cflags = ['-homp']
+        elif env == 'PrgEnv-gnu':
+            self.build_system.cflags = ['-fopenmp']
+        elif env == 'PrgEnv-intel':
+            self.build_system.cflags = ['-openmp']
+        elif env == 'PrgEnv-pgi':
+            self.build_system.cflags = ['-mp']
+
+    @rfm.run_before('compile')
+    def set_more_flags(self):
+        self.build_system.flags += ['-g']
+
+In this case, the decorated functions will be executed before the compilation stage in the order that they are defined in the regression test.
+
+There is also the possibility to attach a single function to multiple stages by stacking the ``@run_before`` or ``@run_after`` decorators.
+In the following example ``var`` will be set to ``2`` after the setup phase is executed:
+
+.. code:: python
+
+    def __init__(self):
+        ...
+        self.var = 0
+
+
+    @rfm.run_before('setup')
+    @rfm.run_after('setup')
+    def inc(self):
+        self.var += 1
+
+Another important feature of the hooks syntax, is that hooks are inherited by derived tests, unless you override the function and re-hook it explicitly.
+In the following example, the :func:`setflags()` will be executed before the compilation phase of the :class:`DerivedTest`:
+
+.. code:: python
+
+   class BaseTest(rfm.RegressionTest):
+       def __init__(self):
+           ...
+           self.build_system = 'Make'
+
+       @rfm.run_before('compile')
+       def setflags(self):
+           if self.current_environ.name == 'X':
+               self.build_system.cppflags = ['-Ifoo']
+
+
+    @rfm.simple_test
+    class DerivedTest(BaseTest):
+       def __init__(self):
+           super().__init__()
+           ...
+
+
+If you override a hooked function in a derived class, the base class' hook will not be executed, unless you explicitly call it with ``super()``.
+In the following example, we completely disable the :func:`setflags()` hook of the base class:
+
+
+.. code:: python
+
+    @rfm.simple_test
+    class DerivedTest(BaseTest):
+       @rfm.run_before('compile')
+       def setflags(self):
+           pass
+
+
+Notice that in order to redefine a hook, you need not only redefine the method in the derived class, but you should hook it at the same pipeline phase.
+Otherwise, the base class hook will be executed.
+
+
+.. note::
+   You may still configure your test per programming environment and per system partition by overriding the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method, as in ReFrame versions prior to 2.20, but this is now discouraged since it is more error prone, as you have to memorize the signature of the pipeline methods that you override and also remember to call ``super()``.
 
 
 .. warning::
@@ -626,7 +703,7 @@ Here is the final example code that combines all the tests discussed before:
 This test abstracts away the common functionality found in almost all of our tutorial tests (executable options, sanity checking, etc.) to a base class, from which all the concrete regression tests derive.
 Each test then redefines only the parts that are specific to it.
 Notice also that only the actual tests, i.e., the derived classes, are made visible to the framework through the ``@simple_test`` decorator.
-Decorating the base class has now meaning, because it does not correspond to an actual test.
+Decorating the base class has no meaning, because it does not correspond to an actual test.
 
 The total line count of this refactored example is less than half of that of the individual tutorial tests.
 Another interesting thing to note here is the base class accepting additional additional parameters to its constructor, so that the concrete subclasses can initialize it based on their needs.

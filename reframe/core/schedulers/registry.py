@@ -7,7 +7,7 @@ _SCHEDULERS = {}
 
 
 def register_scheduler(name, local=False):
-    """Class decorator for registering new schedulers."""
+    '''Class decorator for registering new schedulers.'''
 
     def _register_scheduler(cls):
         if name in _SCHEDULERS:

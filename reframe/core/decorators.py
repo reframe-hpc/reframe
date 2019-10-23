@@ -1,11 +1,15 @@
 #
-# Decorators for registering tests with the framework
+# Decorators used for the definition of tests
 #
 
-__all__ = ['parameterized_test', 'simple_test', 'required_version']
+__all__ = [
+    'parameterized_test', 'simple_test', 'required_version',
+    'require_deps', 'run_before', 'run_after'
+]
 
 
 import collections
+import functools
 import inspect
 import sys
 import traceback
@@ -65,7 +69,7 @@ def _validate_test(cls):
 
 
 def simple_test(cls):
-    """Class decorator for registering parameterless tests with ReFrame.
+    '''Class decorator for registering parameterless tests with ReFrame.
 
     The decorated class must derive from
     :class:`reframe.core.pipeline.RegressionTest`.  This decorator is also
@@ -73,7 +77,7 @@ def simple_test(cls):
 
     .. versionadded:: 2.13
 
-    """
+    '''
 
     _validate_test(cls)
     _register_test(cls)
@@ -81,7 +85,7 @@ def simple_test(cls):
 
 
 def parameterized_test(*inst):
-    """Class decorator for registering multiple instantiations of a test class.
+    '''Class decorator for registering multiple instantiations of a test class.
 
    The decorated class must derive from
    :class:`reframe.core.pipeline.RegressionTest`. This decorator is also
@@ -97,7 +101,7 @@ def parameterized_test(*inst):
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
 
-    """
+    '''
     def _do_register(cls):
         _validate_test(cls)
         for args in inst:
@@ -109,7 +113,7 @@ def parameterized_test(*inst):
 
 
 def required_version(*versions):
-    """Class decorator for specifying the required ReFrame versions for the
+    '''Class decorator for specifying the required ReFrame versions for the
     following test.
 
     If the test is not compatible with the current ReFrame version it will be
@@ -136,7 +140,7 @@ def required_version(*versions):
 
     .. versionadded:: 2.13
 
-    """
+    '''
     if not versions:
         raise ValueError('no versions specified')
 
@@ -155,3 +159,60 @@ def required_version(*versions):
         return cls
 
     return _skip_tests
+
+
+def _runx(phase):
+    def deco(func):
+        if hasattr(func, '_rfm_attach'):
+            func._rfm_attach.append(phase)
+        else:
+            func._rfm_attach = [phase]
+
+        try:
+            # no need to resolve dependencies independently; this function is
+            # already attached to a different phase
+            func._rfm_resolve_deps = False
+        except AttributeError:
+            pass
+
+        @functools.wraps(func)
+        def _fn(*args, **kwargs):
+            func(*args, **kwargs)
+
+        return _fn
+
+    return deco
+
+
+def run_before(stage):
+    '''Run the decorated function before the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('pre_' + stage)
+
+
+def run_after(stage):
+    '''Run the decorated function after the specified pipeline stage.
+
+    The decorated function must be a method of a regression test.
+
+    .. versionadded:: 2.20
+
+    '''
+    return _runx('post_' + stage)
+
+
+def require_deps(func):
+    tests = inspect.getfullargspec(func).args[1:]
+    func._rfm_resolve_deps = True
+
+    @functools.wraps(func)
+    def _fn(obj, *args):
+        newargs = [functools.partial(obj.getdep, t) for t in tests]
+        func(obj, *newargs)
+
+    return _fn

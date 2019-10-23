@@ -16,11 +16,11 @@ from reframe.utility import OrderedSet
 
 
 class Module:
-    """Module wrapper.
+    '''Module wrapper.
 
     This class represents internally a module. Concrete module system
     implementation should deal only with that.
-    """
+    '''
 
     def __init__(self, name):
         if not isinstance(name, str):
@@ -73,11 +73,11 @@ class Module:
 
 
 class ModulesSystem:
-    """A modules system abstraction inside ReFrame.
+    '''A modules system abstraction inside ReFrame.
 
     This class interfaces between the framework internals and the actual
     modules systems implementation.
-    """
+    '''
 
     module_map = fields.TypedField('module_map',
                                    types.Dict[str, types.List[str]])
@@ -100,12 +100,12 @@ class ModulesSystem:
         self.module_map = {}
 
     def resolve_module(self, name):
-        """Resolve module ``name`` in the registered module map.
+        '''Resolve module ``name`` in the registered module map.
 
         :returns: the list of real modules names pointed to by ``name``.
         :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
             contains a cycle.
-        """
+        '''
         ret = OrderedSet()
         visited = set()
         unvisited = [(name, None)]
@@ -146,21 +146,21 @@ class ModulesSystem:
         return(self._backend)
 
     def loaded_modules(self):
-        """Return a list of loaded modules.
+        '''Return a list of loaded modules.
 
         This method returns a list of strings.
-        """
+        '''
         return [str(m) for m in self._backend.loaded_modules()]
 
     def conflicted_modules(self, name):
-        """Return the list of the modules conflicting with module ``name``.
+        '''Return the list of the modules conflicting with module ``name``.
 
         If module ``name`` resolves to multiple real modules, then the returned
         list will be the concatenation of the conflict lists of all the real
         modules.
 
         This method returns a list of strings.
-        """
+        '''
         ret = []
         for m in self.resolve_module(name):
             ret += self._conflicted_modules(m)
@@ -171,14 +171,14 @@ class ModulesSystem:
         return [str(m) for m in self._backend.conflicted_modules(Module(name))]
 
     def load_module(self, name, force=False):
-        """Load the module ``name``.
+        '''Load the module ``name``.
 
         If ``force`` is set, forces the loading, unloading first any
         conflicting modules currently loaded. If module ``name`` refers to
         multiple real modules, all of the target modules will be loaded.
 
         Returns the list of unloaded modules as strings.
-        """
+        '''
         ret = []
         for m in self.resolve_module(name):
             ret += self._load_module(m, force)
@@ -205,11 +205,11 @@ class ModulesSystem:
         return [str(m) for m in unload_list]
 
     def unload_module(self, name):
-        """Unload module ``name``.
+        '''Unload module ``name``.
 
         If module ``name`` refers to multiple real modules, all the referred to
         modules will be unloaded in reverse order.
-        """
+        '''
         for m in reversed(self.resolve_module(name)):
             self._unload_module(m)
 
@@ -217,11 +217,11 @@ class ModulesSystem:
         self._backend.unload_module(Module(name))
 
     def is_module_loaded(self, name):
-        """Check if module ``name`` is loaded.
+        '''Check if module ``name`` is loaded.
 
         If module ``name`` refers to multiple real modules, this method will
         return :class:`True` only if all the referees are loaded.
-        """
+        '''
         return all(self._is_module_loaded(m)
                    for m in self.resolve_module(name))
 
@@ -229,12 +229,12 @@ class ModulesSystem:
         return self._backend.is_module_loaded(Module(name))
 
     def load_mapping(self, mapping):
-        """Update the internal module mappings using a single mapping.
+        '''Update the internal module mappings using a single mapping.
 
         :arg mapping: a string specifying the module mapping.
             Example syntax: ``'m0: m1 m2'``.
 
-        """
+        '''
         key, *rest = mapping.split(':')
         if len(rest) != 1:
             raise ConfigError('invalid mapping syntax: %s' % mapping)
@@ -250,7 +250,7 @@ class ModulesSystem:
         self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
-        """Update the internal module mappings from mappings read from file."""
+        '''Update the internal module mappings from mappings read from file.'''
         with open(filename) as fp:
             for lineno, line in enumerate(fp, start=1):
                 line = line.strip().split('#')[0]
@@ -264,39 +264,39 @@ class ModulesSystem:
 
     @property
     def name(self):
-        """Return the name of this module system."""
+        '''Return the name of this module system.'''
         return self._backend.name()
 
     @property
     def version(self):
-        """Return the version of this module system."""
+        '''Return the version of this module system.'''
         return self._backend.version()
 
     def unload_all(self):
-        """Unload all loaded modules."""
+        '''Unload all loaded modules.'''
         return self._backend.unload_all()
 
     @property
     def searchpath(self):
-        """The module system search path as a list of directories."""
+        '''The module system search path as a list of directories.'''
         return self._backend.searchpath()
 
     def searchpath_add(self, *dirs):
-        """Add ``dirs`` to the module system search path."""
+        '''Add ``dirs`` to the module system search path.'''
         return self._backend.searchpath_add(*dirs)
 
     def searchpath_remove(self, *dirs):
-        """Remove ``dirs`` from the module system search path."""
+        '''Remove ``dirs`` from the module system search path.'''
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name):
-        """Return the appropriate shell command for loading module ``name``."""
+        '''Return the appropriate shell command for loading module ``name``.'''
         return [self._backend.emit_load_instr(Module(name))
                 for name in self.resolve_module(name)]
 
     def emit_unload_commands(self, name):
-        """Return the appropriate shell command for unloading module
-        ``name``."""
+        '''Return the appropriate shell command for unloading module
+        ``name``.'''
         return [self._backend.emit_unload_instr(Module(name))
                 for name in reversed(self.resolve_module(name))]
 
@@ -305,70 +305,70 @@ class ModulesSystem:
 
 
 class ModulesSystemImpl(abc.ABC):
-    """Abstract base class for module systems."""
+    '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
     def loaded_modules(self):
-        """Return a list of loaded modules.
+        '''Return a list of loaded modules.
 
         This method returns a list of Module instances.
-        """
+        '''
 
     @abc.abstractmethod
     def conflicted_modules(self, module):
-        """Return the list of conflicted modules.
+        '''Return the list of conflicted modules.
 
         This method returns a list of Module instances.
-        """
+        '''
 
     @abc.abstractmethod
     def load_module(self, module):
-        """Load the module ``name``.
+        '''Load the module ``name``.
 
         If ``force`` is set, forces the loading,
         unloading first any conflicting modules currently loaded.
 
-        Returns the unloaded modules as a list of module instances."""
+        Returns the unloaded modules as a list of module instances.'''
 
     @abc.abstractmethod
     def unload_module(self, module):
-        """Unload module ``module``."""
+        '''Unload module ``module``.'''
 
     @abc.abstractmethod
     def is_module_loaded(self, module):
-        """Check presence of module ``module``."""
+        '''Check presence of module ``module``.'''
 
     @abc.abstractmethod
     def name(self):
-        """Return the name of this module system."""
+        '''Return the name of this module system.'''
 
     @abc.abstractmethod
     def version(self):
-        """Return the version of this module system."""
+        '''Return the version of this module system.'''
 
     @abc.abstractmethod
     def unload_all(self):
-        """Unload all loaded modules."""
+        '''Unload all loaded modules.'''
 
     @abc.abstractmethod
     def searchpath(self):
-        """The module system search path as a list of directories."""
+        '''The module system search path as a list of directories.'''
 
     @abc.abstractmethod
     def searchpath_add(self, *dirs):
-        """Add ``dirs`` to the module system search path."""
+        '''Add ``dirs`` to the module system search path.'''
 
     @abc.abstractmethod
     def searchpath_remove(self, *dirs):
-        """Remove ``dirs`` from the module system search path."""
+        '''Remove ``dirs`` from the module system search path.'''
 
     @abc.abstractmethod
     def emit_load_instr(self, module):
-        """Emit the instruction that loads module."""
+        '''Emit the instruction that loads module.'''
 
     @abc.abstractmethod
     def emit_unload_instr(self, module):
-        """Emit the instruction that unloads module."""
+        '''Emit the instruction that unloads module.'''
 
     def __repr__(self):
         return type(self).__name__ + '()'
@@ -378,7 +378,7 @@ class ModulesSystemImpl(abc.ABC):
 
 
 class TModImpl(ModulesSystemImpl):
-    """Module system for TMod (Tcl)."""
+    '''Module system for TMod (Tcl).'''
 
     MIN_VERSION = (3, 1)
 
@@ -513,7 +513,7 @@ class TModImpl(ModulesSystemImpl):
 
 
 class TMod4Impl(TModImpl):
-    """Module system for TMod 4."""
+    '''Module system for TMod 4.'''
 
     MIN_VERSION = (4, 1)
 
@@ -568,7 +568,7 @@ class TMod4Impl(TModImpl):
 
 
 class LModImpl(TModImpl):
-    """Module system for Lmod (Tcl/Lua)."""
+    '''Module system for Lmod (Tcl/Lua).'''
 
     def __init__(self):
         # Try to figure out if we are indeed using LMOD
@@ -634,7 +634,7 @@ class LModImpl(TModImpl):
 
 
 class NoModImpl(ModulesSystemImpl):
-    """A convenience class that implements a no-op a modules system."""
+    '''A convenience class that implements a no-op a modules system.'''
 
     def loaded_modules(self):
         return []

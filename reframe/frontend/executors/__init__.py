@@ -4,9 +4,9 @@ import sys
 import weakref
 
 import reframe.core.debug as debug
+import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
-from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
@@ -16,9 +16,9 @@ ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
 
 
 class TestCase:
-    """A combination of a regression check, a system partition
+    '''A combination of a regression check, a system partition
     and a programming environment.
-    """
+    '''
 
     def __init__(self, check, partition, environ):
         self.__check_orig = check
@@ -75,7 +75,7 @@ def generate_testcases(checks,
                        skip_system_check=False,
                        skip_environ_check=False,
                        allowed_environs=None):
-    """Generate concrete test cases from checks."""
+    '''Generate concrete test cases from checks.'''
 
     def supports_partition(c, p):
         return skip_system_check or c.supports_system(p.fullname)
@@ -99,8 +99,8 @@ def generate_testcases(checks,
 
 
 class RegressionTask:
-    """A class representing a :class:`RegressionTest` through the regression
-    pipeline."""
+    '''A class representing a :class:`RegressionTest` through the regression
+    pipeline.'''
 
     def __init__(self, case, listeners=[]):
         self._case = case
@@ -153,7 +153,7 @@ class RegressionTask:
 
     def setup(self, *args, **kwargs):
         self._safe_call(self.check.setup, *args, **kwargs)
-        self._environ = EnvironmentSnapshot()
+        self._environ = env.snapshot()
 
     def compile(self):
         self._safe_call(self.check.compile)
@@ -193,7 +193,7 @@ class RegressionTask:
         self._notify_listeners('on_task_failure')
 
     def resume(self):
-        self._environ.load()
+        self._environ.restore()
 
     def abort(self, cause=None):
         logging.getlogger().debug('aborting: %s' % self.check.info())
@@ -215,24 +215,24 @@ class RegressionTask:
 class TaskEventListener(abc.ABC):
     @abc.abstractmethod
     def on_task_run(self, task):
-        """Called whenever the run() method of a RegressionTask is called."""
+        '''Called whenever the run() method of a RegressionTask is called.'''
 
     @abc.abstractmethod
     def on_task_exit(self, task):
-        """Called whenever a RegressionTask finishes."""
+        '''Called whenever a RegressionTask finishes.'''
 
     @abc.abstractmethod
     def on_task_failure(self, task):
-        """Called when a regression test has failed."""
+        '''Called when a regression test has failed.'''
 
     @abc.abstractmethod
     def on_task_success(self, task):
-        """Called when a regression test has succeeded."""
+        '''Called when a regression test has succeeded.'''
 
 
 class Runner:
-    """Responsible for executing a set of regression tests based on an
-    execution policy."""
+    '''Responsible for executing a set of regression tests based on an
+    execution policy.'''
 
     def __init__(self, policy, printer=None, max_retries=0):
         self._policy = policy
@@ -241,7 +241,7 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._environ_snapshot = EnvironmentSnapshot()
+        self._environ_snapshot = env.snapshot()
 
     def __repr__(self):
         return debug.repr(self)
@@ -274,7 +274,7 @@ class Runner:
                 (len(testcases), num_checks, num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
-            self._environ_snapshot.load()
+            self._environ_snapshot.restore()
 
     def _retry_failed(self, cases):
         rt = runtime.runtime()
@@ -309,7 +309,7 @@ class Runner:
                 print_separator(t.check, 'started processing')
                 last_check = t.check
 
-            self._environ_snapshot.load()
+            self._environ_snapshot.restore()
             self._policy.runcase(t)
 
         # Close the last visual box
@@ -321,9 +321,9 @@ class Runner:
 
 
 class ExecutionPolicy(abc.ABC):
-    """Base abstract class for execution policies.
+    '''Base abstract class for execution policies.
 
-    An execution policy implements the regression check pipeline."""
+    An execution policy implements the regression check pipeline.'''
 
     def __init__(self):
         # Options controlling the check execution
@@ -362,7 +362,7 @@ class ExecutionPolicy(abc.ABC):
 
     @abc.abstractmethod
     def runcase(self, case):
-        """Run a test case."""
+        '''Run a test case.'''
 
         if self.strict_check:
             case.check.strict_check = True

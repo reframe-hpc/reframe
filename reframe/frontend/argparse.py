@@ -73,12 +73,12 @@ class _ArgumentGroup(_ArgumentHolder):
 
 
 class ArgumentParser(_ArgumentHolder):
-    """Reframe's extended argument parser.
+    '''Reframe's extended argument parser.
 
     This argument parser behaves almost identical to the original
     `argparse.ArgumenParser`. In fact, it uses such a parser internally,
     delegating all the calls to it. The key difference is how newly parsed
-    options are combined with existing namespaces in `parse_args()`."""
+    options are combined with existing namespaces in `parse_args()`.'''
 
     def __init__(self, **kwargs):
         super().__init__(argparse.ArgumentParser(**kwargs))
@@ -109,8 +109,8 @@ class ArgumentParser(_ArgumentHolder):
         self._holder.print_help()
 
     def parse_args(self, args=None, namespace=None):
-        """Convert argument strings to objects and return them as attributes of a
-        namespace.
+        '''Convert argument strings to objects and return them as attributes of
+        a namespace.
 
         If `namespace` is `None`, this method is equivalent to
         `argparse.ArgumentParser.parse_args()`.
@@ -120,7 +120,7 @@ class ArgumentParser(_ArgumentHolder):
         for it will be looked up first in `namespace` and if not found there,
         it will be assigned the default value as specified in its corresponding
         `add_argument()` call. If no default value was specified either, the
-        attribute will be set to `None`."""
+        attribute will be set to `None`.'''
 
         # We always pass an empty namespace to our internal argparser and we do
         # the namespace resolution ourselves. We do this, because we want the
@@ -141,7 +141,7 @@ class ArgumentParser(_ArgumentHolder):
 
 
 def format_options(namespace):
-    """Format parsed arguments in ``namespace``."""
+    '''Format parsed arguments in ``namespace``.'''
     ret = 'Command-line configuration:\n'
     ret += '\n'.join(['    %s=%s' % (attr, val)
                       for attr, val in sorted(namespace.__dict__.items())])

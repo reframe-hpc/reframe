@@ -5,10 +5,10 @@ import reframe.utility.sanity as sn
 
 
 class ErtTestBase(rfm.RegressionTest):
-    """
+    '''
     The Empirical Roofline Tool, ERT, automatically generates roofline data.
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit/
-    """
+    '''
 
     def __init__(self):
         super().__init__()
@@ -23,7 +23,7 @@ class ErtTestBase(rfm.RegressionTest):
                                        'roofline', 'ert')
         self.rpt = '%s.rpt' % self.executable
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)

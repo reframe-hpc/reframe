@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['single'], ['funneled'], ['serialized'], ['multiple'])
 class MpiInitTest(rfm.RegressionTest):
-    """This test checks the value returned by calling MPI_Init_thread.
+    '''This test checks the value returned by calling MPI_Init_thread.
 
     Output should look the same for every prgenv (cray, gnu, intel, pgi)
     (mpi_thread_multiple seems to be not supported):
@@ -26,7 +26,7 @@ class MpiInitTest(rfm.RegressionTest):
     ['mpi_thread_supported=MPI_THREAD_SERIALIZED
       mpi_thread_queried=MPI_THREAD_SERIALIZED 2']
 
-    """
+    '''
 
     def __init__(self, required_thread):
         super().__init__()
@@ -61,7 +61,7 @@ class MpiInitTest(rfm.RegressionTest):
                          self.mpithread_version[required_thread])
         ])
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
 
 @rfm.simple_test
@@ -88,7 +88,7 @@ class MpiHelloTest(rfm.RegressionTest):
             self.stdout, 'nprocs', int)
         self.sanity_patterns = sn.assert_eq(num_processes,
                                             self.num_tasks_assigned-1)
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'craype'}
 
     @property
     @sn.sanity_function

@@ -3,8 +3,8 @@ import os
 import unittest
 from tempfile import NamedTemporaryFile
 
+import reframe.core.environments as env
 import reframe.core.modules as modules
-from reframe.core.environments import EnvironmentSnapshot
 from reframe.core.exceptions import ConfigError, EnvironError
 from reframe.core.runtime import runtime
 from unittests.fixtures import TEST_MODULES
@@ -12,11 +12,11 @@ from unittests.fixtures import TEST_MODULES
 
 class _TestModulesSystem(abc.ABC):
     def setUp(self):
-        self.environ_save = EnvironmentSnapshot()
+        self.environ_save = env.snapshot()
         self.modules_system.searchpath_add(TEST_MODULES)
 
     def tearDown(self):
-        self.environ_save.load()
+        self.environ_save.restore()
 
     def test_searchpath(self):
         self.assertIn(TEST_MODULES, self.modules_system.searchpath)
@@ -69,11 +69,11 @@ class _TestModulesSystem(abc.ABC):
 
     @abc.abstractmethod
     def expected_load_instr(self, module):
-        """Expected load instruction."""
+        '''Expected load instruction.'''
 
     @abc.abstractmethod
     def expected_unload_instr(self, module):
-        """Expected unload instruction."""
+        '''Expected unload instruction.'''
 
     def test_emit_load_commands(self):
         self.modules_system.module_map = {
@@ -216,7 +216,7 @@ class TestModule(unittest.TestCase):
 
 
 class ModulesSystemEmulator(modules.ModulesSystemImpl):
-    """A convenience class that simulates a modules system."""
+    '''A convenience class that simulates a modules system.'''
 
     def __init__(self):
         self._loaded_modules = set()
