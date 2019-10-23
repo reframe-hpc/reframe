@@ -68,6 +68,11 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            }
+                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -94,6 +99,14 @@ class ReframeSettings:
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            },
+                            'Singularity': {
+                                'modules': ['singularity']
+                            }
+                        },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -107,6 +120,14 @@ class ReframeSettings:
 
                     'mc': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            },
+                            'Singularity': {
+                                'modules': ['singularity']
+                            }
+                        },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -140,6 +161,11 @@ class ReframeSettings:
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['singularity']
+                            },
+                        },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
@@ -154,6 +180,11 @@ class ReframeSettings:
 
                     'mc': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['singularity']
+                            },
+                        },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
@@ -293,7 +324,7 @@ class ReframeSettings:
                         'modules': [],
                         'access': [],
                         'environs': ['builtin-gcc'],
-                        'descr': 'Login nodes'
+                        'descr': 'Login nodes',
                     }
                 }
             }

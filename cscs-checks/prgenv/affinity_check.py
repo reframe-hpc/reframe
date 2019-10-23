@@ -17,7 +17,7 @@ class AffinityTestBase(rfm.RegressionTest):
         self.executable = './affinity/affinity'
         self.variant = variant
         self.maintainers = ['RS', 'VK']
-        self.tags = {'production', 'scs', 'maintenance'}
+        self.tags = {'production', 'scs', 'maintenance', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
 

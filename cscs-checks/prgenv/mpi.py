@@ -61,7 +61,7 @@ class MpiInitTest(rfm.RegressionTest):
                          self.mpithread_version[required_thread])
         ])
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
 
 @rfm.simple_test
@@ -88,7 +88,7 @@ class MpiHelloTest(rfm.RegressionTest):
             self.stdout, 'nprocs', int)
         self.sanity_patterns = sn.assert_eq(num_processes,
                                             self.num_tasks_assigned-1)
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'craype'}
 
     @property
     @sn.sanity_function
