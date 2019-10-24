@@ -51,7 +51,21 @@ def _run_hooks(name=None):
                 # Just any name that does not exist
                 hook_name = 'xxx'
 
-            return obj._rfm_pipeline_hooks.get(hook_name, [])
+            func_names = set()
+            ret = []
+            for cls in type(obj).mro():
+                try:
+                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
+                    if any(fn.__name__ in func_names for fn in funcs):
+                        # hook has been overriden
+                        continue
+
+                    func_names |= {fn.__name__ for fn in funcs}
+                    ret += funcs
+                except AttributeError:
+                    pass
+
+            return ret
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -222,18 +236,31 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
-    #: The container platform to be used for this test.
+    #: The container platform to be used for launching this test.
     #:
-    #: If the `self.container_platform` is defined on the test, both
-    #: `self.executable` and `self.executable_opts` are ignored.
+    #: If this field is set, the test will run inside a container using the
+    #: specified container runtime. Container-specific options must be defined
+    #: additionally after this field is set:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.container_platform = 'Singularity'
+    #:    self.container_platform.image = 'docker://ubuntu:18.04'
+    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:
+    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
+    #: attributes are ignored. The container platform's :attr:`commands` will
+    #: be used instead. For more information on the container platform support,
+    #: see the `tutorial <advanced.html#testing-containerized-applications>`__
+    #: and the `reference guide <reference.html#container-platforms>`__.
     #:
     #: :type: :class:`str` or
-    #: :class:`reframe.core.containers.ContainerPlatform`.
+    #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     #:
-    #: .. versionadded:: 2.19
-    container_platform = ContainerPlatformField(
-        'container_platform', type(None))
+    #: .. versionadded:: 2.20
+    container_platform = ContainerPlatformField('container_platform',
+                                                type(None))
 
     #: List of shell commands to execute before launching this job.
     #:
@@ -1057,7 +1084,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1136,7 +1163,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
