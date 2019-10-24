@@ -258,7 +258,6 @@ class Runner:
 
     def runall(self, testcases):
 
-
         num_checks = len({tc.check.name for tc in testcases})
         self._printer.separator('short double line',
                                 'Running %d check(s)' % num_checks)
@@ -329,7 +328,7 @@ class ExecutionPolicy(abc.ABC):
 
     An execution policy implements the regression check pipeline.'''
 
-    def __init__(self, dependency_graph = None):
+    def __init__(self, dependency_graph=None):
         # Options controlling the check execution
         self.skip_system_check = False
         self.force_local = False

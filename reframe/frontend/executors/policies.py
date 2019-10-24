@@ -10,7 +10,7 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
 
 
 class SerialExecutionPolicy(ExecutionPolicy):
-    def __init__(self, dependency_graph = None):
+    def __init__(self, dependency_graph=None):
         super().__init__(dependency_graph)
         self._tasks = []
 
@@ -110,7 +110,7 @@ class PollRateFunction:
 
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
-    def __init__(self, dependency_graph = None):
+    def __init__(self, dependency_graph=None):
 
         super().__init__(dependency_graph)
 
