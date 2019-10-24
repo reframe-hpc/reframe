@@ -10,8 +10,8 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
 
 
 class SerialExecutionPolicy(ExecutionPolicy):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dependency_graph = None):
+        super().__init__(dependency_graph)
         self._tasks = []
 
     def runcase(self, case):
@@ -47,8 +47,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
             # Execute cleanup of current case if all dependent cases have been
             # executed
-            if self.ref_count[case] == 0:
-                task.cleanup(not self.keep_stage_files, False)
+            if self.ref_count is None or self.ref_count[case] == 0:
+                task.cleanup(not self.keep_stage_files)
 
         except TaskExit:
             return
@@ -61,17 +61,17 @@ class SerialExecutionPolicy(ExecutionPolicy):
 
             # Execute cleanup of dependencies if all dependent cases have been
             # executed
-            for dep in self.dependency_tree[case]:
-                self.ref_count[dep] -= 1
-                if self.ref_count[dep] == 0:
-                    # Check if dep has failed before cleaning
-                    for t in self.stats.tasks():
-                        if t.testcase == dep and t.failed is False:
-                            dependency_clean_up_task = RegressionTask(dep)
-                            dependency_clean_up_task.cleanup(
-                                not self.keep_stage_files,
-                                False)
-                            break
+            if self.dependency_graph is not None:
+                for dep in self.dependency_graph[case]:
+                    self.ref_count[dep] -= 1
+                    if self.ref_count[dep] == 0:
+                        # Check if dep has failed before cleaning
+                        for t in self.stats.tasks():
+                            if t.testcase == dep and t.failed is False:
+                                dependency_clean_up_task = RegressionTask(dep)
+                                dependency_clean_up_task.cleanup(
+                                    not self.keep_stage_files)
+                                break
 
             self.printer.status('FAIL' if task.failed else 'OK',
                                 task.check.info(), just='right')
@@ -110,9 +110,9 @@ class PollRateFunction:
 
 
 class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
-    def __init__(self):
+    def __init__(self, dependency_graph = None):
 
-        super().__init__()
+        super().__init__(dependency_graph)
 
         # All currently running tasks
         self._running_tasks = []
@@ -240,7 +240,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if not self.skip_performance_check:
             task.performance()
 
-        task.cleanup(not self.keep_stage_files, False)
+        task.cleanup(not self.keep_stage_files)
 
     def _failall(self, cause):
         '''Mark all tests as failures'''

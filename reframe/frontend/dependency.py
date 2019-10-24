@@ -179,6 +179,6 @@ def create_ref_count(graph):
             try:
                 ref_count[adj] += 1
             except KeyError:
-                ref_count[adj] = 0
+                ref_count[adj] = 1
 
     return ref_count
