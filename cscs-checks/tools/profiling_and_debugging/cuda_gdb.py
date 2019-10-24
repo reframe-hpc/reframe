@@ -16,6 +16,8 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.sourcesdir = 'src/Cuda'
         self.executable = 'cuda-gdb'
         self.executable_opts = ['-x .in.cudagdb ./cuda_gdb_check']
+        # unload xalt to avoid runtime error:
+        self.pre_run = ['unset LD_PRELOAD']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
