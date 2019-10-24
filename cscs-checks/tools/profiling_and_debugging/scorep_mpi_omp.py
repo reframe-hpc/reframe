@@ -62,7 +62,7 @@ class ScorepHybrid(rfm.RegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         scorep_ver = '6.0'
-        tc_ver = '19.09'
+        tc_ver = '19.10'
         cu_ver = '10.1'
         self.scorep_modules = {
             'PrgEnv-gnu': ['Score-P/%s-CrayGNU-%s' % (scorep_ver, tc_ver)],
