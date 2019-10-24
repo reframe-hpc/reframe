@@ -1,0 +1,3 @@
+break _jacobi-cuda-kernel.cu:59
+run
+print *residue_d
