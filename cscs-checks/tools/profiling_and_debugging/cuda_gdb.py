@@ -14,7 +14,10 @@ class CudaGdbCheck(rfm.RegressionTest):
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
-        self.executable = 'cuda-gdb cuda_gdb_check'
+        self.executable = 'cuda-gdb'
+        self.executable_opts = ['-x .in.cudagdb ./cuda_gdb_check']
+        # unload xalt to avoid runtime error:
+        self.pre_run = ['unset LD_PRELOAD']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
@@ -35,24 +38,13 @@ class CudaGdbCheck(rfm.RegressionTest):
                                          '-lcudart', '-lm']
 
         self.sanity_patterns = sn.all([
-            sn.assert_found(r'^\(cuda-gdb\) Breakpoint 1 at .*: file ',
-                            self.stdout),
+            sn.assert_found(r'^Breakpoint 1 at .*: file ', self.stdout),
             sn.assert_found(r'_jacobi-cuda-kernel.cu, line 59\.', self.stdout),
-            sn.assert_found(r'^\(cuda-gdb\) Starting program:', self.stdout),
             sn.assert_found(r'^\(cuda-gdb\) quit', self.stdout),
             sn.assert_lt(sn.abs(sn.extractsingle(
-                r'^\(cuda-gdb\)\s+\$1\s+=\s+(?P<result>\S+)', self.stdout,
+                r'\$1\s+=\s+(?P<result>\S+)', self.stdout,
                 'result', float)), 1e-5)
         ])
 
         self.maintainers = ['MK', 'JG']
         self.tags = {'production', 'craype'}
-
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.job.launcher = LauncherWrapper(
-            self.job.launcher, 'printf', [
-                r"'break _jacobi-cuda-kernel.cu:59\n",
-                r"run\n", r"print *residue_d'", ' | '
-            ]
-        )
