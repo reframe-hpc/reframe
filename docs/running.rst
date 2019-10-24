@@ -543,27 +543,31 @@ The performance report is printed after the output of the regression tests and h
   Check1
   - system:partition
       - PrgEnv1
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
       - PrgEnv2
-          : perf_variable1: <value> <units>
-          : perf_variable2: <value> <units>
+          * num_tasks: <num_tasks>
+          * perf_variable1: <value> <units>
+          * perf_variable2: <value> <units>
           * ...
   ------------------------------------------------------------------------------
   Check2
   - system:partition
       - PrgEnv1
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
       - PrgEnv2
+          * num_tasks: <num_tasks>
           * perf_variable1: <value> <units>
           * perf_variable2: <value> <units>
           * ...
   ------------------------------------------------------------------------------
 
-Achieved performance values are listed by system partition and programming environment for each performance test that has run.
+The number of tasks and the achieved performance values are listed by system partition and programming environment for each performance test that has run.
 Performance variables are the variables collected through the :attr:`reframe.core.pipeline.RegressionTest.perf_patterns` attribute.
 
 The following command will run the CUDA matrix-vector multiplication example from the `tutorial <tutorial.html>`__ and will produce a performance report:
@@ -840,6 +844,7 @@ All handlers accept the following set of attributes (keys) in their configuratio
     If a job or process is not yet created, ``-1`` will be printed.
   - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
     If ReFrame is not in the context of regression test, ``reframe`` will be printed.
+  - ``check_num_tasks``: The number of tasks assigned to the regression test.
   - ``check_outputdir``: The output directory associated with the currently executing test.
   - ``check_partition``: The system partition where this test is currently executing.
   - ``check_stagedir``: The stage directory associated with the currently executing test.
@@ -967,14 +972,17 @@ The attributes of this handler are the following:
   - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
   - ``check_perf_unit``: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
 
+.. note::
+   .. versionchanged:: 2.20
+      Support for logging `num_tasks` in performance logs was added.
+
 Using the default performance log format, the resulting log entries look like the following:
 
 .. code-block:: none
 
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-gnu|jobid=749667|perf=49.152408|ref=50.0 (l=-0.1, u=0.1)
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-pgi|jobid=749668|perf=48.930356|ref=50.0 (l=-0.1, u=0.1)
-  2018-05-30T00:14:53|reframe 2.13-dev0|Example7Test on daint:gpu using PrgEnv-cray|jobid=749666|perf=48.914735|ref=50.0 (l=-0.1, u=0.1)
-
+    2019-10-23T13:46:05|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-cray|jobid=813559|num_tasks=1|perf=49.681565|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
+    2019-10-23T13:46:27|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-gnu|jobid=813560|num_tasks=1|perf=50.737651|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
+    2019-10-23T13:46:48|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-pgi|jobid=813561|num_tasks=1|perf=50.720164|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
 
 The interpretation of the performance values depends on the individual tests.
 The above output is from the CUDA performance test we presented in the `tutorial <tutorial.html#writing-a-performance-test>`__, so the value refers to the achieved Gflop/s.
@@ -997,6 +1005,7 @@ An example configuration of such a handler is the following:
       'format': (
           '%(asctime)s|reframe %(version)s|'
           '%(check_info)s|jobid=%(check_jobid)s|'
+          'num_tasks=%(check_num_tasks)s|'
           '%(check_perf_var)s=%(check_perf_value)s|'
           'ref=%(check_perf_ref)s '
           '(l=%(check_perf_lower_thres)s, '
