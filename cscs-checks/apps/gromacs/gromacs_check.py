@@ -51,7 +51,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
 class GromacsGPUCheck(GromacsBaseCheck):
     def __init__(self, scale, variant):
         super().__init__('md.log')
-        self.valid_systems = ['daint:gpu']
+        self.valid_systems = ['daint:gpu', 'tiger:gpu']
         self.descr = 'GROMACS GPU check'
         self.executable_opts = ['mdrun', '-dlb yes', '-ntomp 1', '-npme 0',
                                 '-s herflat.tpr']
