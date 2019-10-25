@@ -118,8 +118,13 @@ subroutine Init (myData)
         endif
         call MPI_Get_version(version, subversion, iErr)
         write (6,'(3(A,I1))') 'MPI-', version, '.', subversion, '#', provided
+#ifdef _OPENMP
         write (6,*) 'Jacobi', myData%iNumProcs, 'MPI process(es) with', &
-                    omp_get_max_threads(), 'OpenMP-', _OPENMP, ' thread(s)/process'
+              omp_get_max_threads(), 'OpenMP-', _OPENMP, ' thread(s)/process'
+#else
+        write (6,*) 'Jacobi', myData%iNumProcs, 'MPI process(es) with', &
+               ' 0 OpenMP-xxx thread(s)/process'
+#endif
 
 ! MPI_Get_library_version:
         call MPI_Get_library_version(mpilibversion, resultlen, iErr)
