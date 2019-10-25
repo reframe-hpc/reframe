@@ -23,7 +23,7 @@ class MpipCheck(rfm.RegressionTest):
             'PrgEnv-pgi': ['-g', '-mp', '-O2']
         }
         # unload xalt to avoid _buffer_decode error:
-        self.prebuild_cmd = ['module rm 2.7.10 ;module list -t']
+        self.prebuild_cmd = ['module rm xalt ;module list -t']
         self.modules = ['mpiP']
         self.build_system = 'Make'
         self.num_iterations = 500
@@ -40,7 +40,7 @@ class MpipCheck(rfm.RegressionTest):
             self.build_system.max_concurrency = 1
 
         # unload xalt to avoid _buffer_decode error:
-        self.pre_run = ['module rm 2.7.10']
+        self.pre_run = ['module rm xalt']
         self.num_tasks = 96
         self.num_tasks_per_node = 24
         self.num_cpus_per_task = 1
