@@ -579,7 +579,7 @@ The following command will run the CUDA matrix-vector multiplication example fro
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example7.py -r --performance-report
-  Reframe version: 2.18-dev1
+  Reframe version: 2.20-dev2
   Launched by user: USER
   Launched on host: daint101
   Reframe paths
@@ -590,7 +590,7 @@ The following command will run the CUDA matrix-vector multiplication example fro
       Output dir prefix    : /path/to/reframe/output/
       Perf. logging prefix : /path/to/reframe/perflogs
   [==========] Running 1 check(s)
-  [==========] Started on Mon Apr 15 13:49:34 2019
+  [==========] Started on Thu Oct 24 17:46:55 2019
 
   [----------] started processing Example7Test (Matrix-vector multiplication (CUDA performance test))
   [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
@@ -602,25 +602,28 @@ The following command will run the CUDA matrix-vector multiplication example fro
   [----------] finished processing Example7Test (Matrix-vector multiplication (CUDA performance test))
 
   [  PASSED  ] Ran 3 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Mon Apr 15 13:55:22 2019
+  [==========] Finished on Thu Oct 24 17:47:34 2019
   ==============================================================================
   PERFORMANCE REPORT
   ------------------------------------------------------------------------------
   Example7Test
   - daint:gpu
      - PrgEnv-cray
-        * perf: 49.994311 Gflop/s
+        * num_tasks: 1
+        * perf: 49.403965 Gflop/s
      - PrgEnv-gnu
-        * perf: 50.748701 Gflop/s
+        * num_tasks: 1
+        * perf: 50.093877 Gflop/s
      - PrgEnv-pgi
-        * perf: 49.844147 Gflop/s
+        * num_tasks: 1
+        * perf: 50.549009 Gflop/s
   ------------------------------------------------------------------------------
 
 
 For completeness, we show here the corresponding section from the ``Example7Test``, so that the connection between the test's code and the output becomes clear:
 
 .. literalinclude:: ../tutorial/example7.py
-  :lines: 20-28
+  :lines: 19-27
   :dedent: 8
 
 
@@ -788,7 +791,7 @@ Logging in ReFrame is configured by the ``logging_config`` variable in the ``ref
 The default configuration looks as follows:
 
 .. literalinclude:: ../reframe/settings.py
-  :lines: 51-78
+  :lines: 47-74
   :dedent: 4
 
 Note that this configuration dictionary is not the same as the one used by Python's logging framework.
@@ -913,7 +916,7 @@ ReFrame supports an additional logging facility for recording performance values
 This is configured by the ``perf_logging_config`` variables, whose syntax is the same as for the ``logging_config``:
 
 .. literalinclude:: ../reframe/settings.py
-  :lines: 77-96
+  :lines: 76-95
   :dedent: 4
 
 Performance logging introduces two new log record handlers, specifically designed for this purpose.
