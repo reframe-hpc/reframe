@@ -50,15 +50,6 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if self.ref_count is None or self.ref_count[case] == 0:
                 task.cleanup(not self.keep_stage_files)
 
-        except TaskExit:
-            return
-        except ABORT_REASONS as e:
-            task.abort(e)
-            raise
-        except BaseException:
-            task.fail(sys.exc_info())
-        finally:
-
             # Execute cleanup of dependencies if all dependent cases have been
             # executed
             if self.dependency_graph is not None:
@@ -68,11 +59,17 @@ class SerialExecutionPolicy(ExecutionPolicy):
                         # Check if dep has failed before cleaning
                         for t in self.stats.tasks():
                             if t.testcase == dep and t.failed is False:
-                                dependency_clean_up_task = RegressionTask(dep)
-                                dependency_clean_up_task.cleanup(
-                                    not self.keep_stage_files)
+                                t.cleanup(not self.keep_stage_files)
                                 break
 
+        except TaskExit:
+            return
+        except ABORT_REASONS as e:
+            task.abort(e)
+            raise
+        except BaseException:
+            task.fail(sys.exc_info())
+        finally:
             self.printer.status('FAIL' if task.failed else 'OK',
                                 task.check.info(), just='right')
 
