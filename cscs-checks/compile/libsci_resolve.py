@@ -51,9 +51,8 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
 
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
-        regex = (r'.*\(NEEDED\).*'
-                 r'libsci_acc_(?P<prgenv>[A-Za-z]+)_((?P<cver>[A-Za-z0-9]+)_)?'
-                 r'(?P<version>\S+)(?=(\.a)|(\.so))')
+        regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'
+                 r'((?P<cver>[A-Za-z0-9]+)_)?(?P<version>\S+)\.so')
         prgenv = self.prgenv_names[self.current_environ.name]
         cver = self.compiler_version.get(self.current_system.name,
                                          self.compiler_version_default)
@@ -89,12 +88,8 @@ class MKLResolveTest(LibSciResolveBaseTest):
         # self.build_system.fflags = ['-Wl,-ydgemm_', '-mkl']
         self.build_system.fflags = ['-mkl']
         self.postbuild_cmd = ['readelf -d %s' % self.executable]
-
-        # interesting enough, on Dora the linking here is static.
-        # So there is REAL need for the end term (?=(.a)|(.so)).
-        # not sure if we need to check against the version here
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'
-                 r'(?=(.a)|(.so))')
+                 r'\.so')
         self.sanity_patterns = sn.all([
             sn.assert_eq(
                 sn.extractsingle(regex, self.stdout, 'prgenv'), 'intel'),
