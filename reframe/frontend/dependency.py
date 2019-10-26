@@ -15,7 +15,7 @@ def build_deps(cases):
 
     The graph is represented as an adjacency list in a Python dictionary
     holding test cases. The dependency information is also encoded inside each
-    test cases.
+    test case.
     '''
 
     # Index cases for quick access
@@ -31,7 +31,7 @@ def build_deps(cases):
         cases_revmap[cname, pname, ename] = c
 
     def resolve_dep(target, from_map, *args):
-        errmsg = 'could not resolve dependency: %s' % target
+        errmsg = 'could not resolve dependency: %s -> %s' % (target, args)
         try:
             ret = from_map[args]
         except KeyError:
@@ -73,6 +73,11 @@ def build_deps(cases):
                                                   tname, pname, te))
 
         graph[c] = util.OrderedSet(c.deps)
+
+    # Calculate in-degree of each node
+    for u, adjacent in graph.items():
+        for v in adjacent:
+            v.in_degree += 1
 
     return graph
 

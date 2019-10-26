@@ -13,7 +13,9 @@ import reframe.frontend.executors.policies as policies
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
-from reframe.core.exceptions import DependencyError, JobNotStartedError
+from reframe.core.exceptions import (
+    DependencyError, JobNotStartedError, TaskDependencyError
+)
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
@@ -49,6 +51,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def runall(self, checks, *args, **kwargs):
         cases = executors.generate_testcases(checks, *args, **kwargs)
+        depgraph = dependency.build_deps(cases)
+        dependency.validate_deps(depgraph)
+        cases = dependency.toposort(depgraph)
         self.runner.runall(cases)
 
     def _num_failures_stage(self, stage):
@@ -193,6 +198,33 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(run_to_pass, rt.runtime().current_run)
         self.assertEqual(0, len(self.runner.stats.failures()))
         os.remove(fp.name)
+
+    def test_dependencies(self):
+        self.loader = RegressionCheckLoader(
+            ['unittests/resources/checks_unlisted/test_with_deps.py']
+        )
+
+        # Setup the runner
+        self.checks = self.loader.load_all()
+        self.runall(self.checks)
+
+        stats = self.runner.stats
+        assert stats.num_cases() == 8
+        assert len(stats.failures()) == 2
+        for tf in stats.failures():
+            check = tf.testcase.check
+            exc_type, exc_value, _ = tf.exc_info
+            if check.name == 'T7':
+                assert isinstance(exc_value, TaskDependencyError)
+
+        # Check that cleanup is executed properly for successful tests as well
+        for t in stats.tasks():
+            check = t.testcase.check
+            if t.failed:
+                continue
+
+            if t.ref_count == 0:
+                assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
 
 
 class TaskEventMonitor(executors.TaskEventListener):
@@ -398,6 +430,10 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.assertEqual(num_tasks, stats.num_cases())
         self.assertEqual(num_tasks, len(stats.failures()))
 
+    def test_dependencies(self):
+        pytest.skip('test with dependencies are not supported '
+                    'by the asynchronous execution policy')
+
 
 class TestDependencies(unittest.TestCase):
     class Node:
@@ -436,6 +472,11 @@ class TestDependencies(unittest.TestCase):
     def num_deps(graph, cname):
         return sum(len(deps) for c, deps in graph.items()
                    if c.check.name == cname)
+
+    def in_degree(graph, node):
+        for v in graph.keys():
+            if v == node:
+                return v.num_dependents
 
     def find_check(name, checks):
         for c in checks:
@@ -479,6 +520,7 @@ class TestDependencies(unittest.TestCase):
         Node = TestDependencies.Node
         has_edge = TestDependencies.has_edge
         num_deps = TestDependencies.num_deps
+        in_degree = TestDependencies.in_degree
         find_check = TestDependencies.find_check
         find_case = TestDependencies.find_case
 
@@ -527,6 +569,22 @@ class TestDependencies(unittest.TestCase):
             assert has_edge(deps,
                             Node('Test1_exact', p, 'e1'),
                             Node('Test0', p, 'e1'))
+
+        # Check in-degree of Test0
+
+        # 2 from Test1_fully,
+        # 1 from Test1_by_env,
+        # 1 from Test1_exact,
+        # 1 from Test1_default
+        assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 5
+        assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 5
+
+        # 2 from Test1_fully,
+        # 1 from Test1_by_env,
+        # 2 from Test1_exact,
+        # 1 from Test1_default
+        assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 6
+        assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 6
 
         # Pick a check to test getdep()
         check_e0 = find_case('Test1_exact', 'e0', cases).check

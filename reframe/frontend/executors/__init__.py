@@ -28,6 +28,9 @@ class TestCase:
         self.__check._case = weakref.ref(self)
         self.__deps = []
 
+        # Incoming dependencies
+        self.in_degree = 0
+
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
         #       c, p, e = case
@@ -65,6 +68,10 @@ class TestCase:
     @property
     def deps(self):
         return self.__deps
+
+    @property
+    def num_dependents(self):
+        return self.in_degree
 
     def clone(self):
         # Return a fresh clone, i.e., one based on the original check
@@ -105,10 +112,14 @@ class RegressionTask:
     def __init__(self, case, listeners=[]):
         self._case = case
         self._failed_stage = None
-        self._current_stage = None
+        self._current_stage = 'startup'
         self._exc_info = (None, None, None)
         self._environ = None
         self._listeners = list(listeners)
+
+        # Reference count for dependent tests; safe to cleanup the test only
+        # if it is zero
+        self.ref_count = case.num_dependents
 
         # Test case has finished, but has not been waited for yet
         self.zombie = False
@@ -183,9 +194,11 @@ class RegressionTask:
     def performance(self):
         self._safe_call(self.check.performance)
 
+    def finalize(self):
+        self._notify_listeners('on_task_success')
+
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
-        self._notify_listeners('on_task_success')
 
     def fail(self, exc_info=None):
         self._failed_stage = self._current_stage
