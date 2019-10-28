@@ -3,7 +3,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 from reframe.core.deferrable import make_deferrable
 
-
+#
+# The following tests implement the dependency graph below:
+#
 #
 #       t0
 #       ^
@@ -20,6 +22,12 @@ from reframe.core.deferrable import make_deferrable
 #       ^
 #       |
 #       t3
+#
+#
+# Each test has an id, which is the digit in its name and it produces its
+# output in the 'out.txt' file. Each test sums up its own id with the output
+# produced by its parents and writes in its output file.
+#
 
 
 class BaseTest(rfm.RunOnlyRegressionTest):
