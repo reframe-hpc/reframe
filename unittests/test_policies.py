@@ -49,11 +49,13 @@ class TestSerialExecutionPolicy(unittest.TestCase):
     def tearDown(self):
         os_ext.rmtree(rt.runtime().resources.prefix)
 
-    def runall(self, checks, *args, **kwargs):
+    def runall(self, checks, sort=False, *args, **kwargs):
         cases = executors.generate_testcases(checks, *args, **kwargs)
-        depgraph = dependency.build_deps(cases)
-        dependency.validate_deps(depgraph)
-        cases = dependency.toposort(depgraph)
+        if sort:
+            depgraph = dependency.build_deps(cases)
+            dependency.validate_deps(depgraph)
+            cases = dependency.toposort(depgraph)
+
         self.runner.runall(cases)
 
     def _num_failures_stage(self, stage):
@@ -206,7 +208,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         # Setup the runner
         self.checks = self.loader.load_all()
-        self.runall(self.checks)
+        self.runall(self.checks, sort=True)
 
         stats = self.runner.stats
         assert stats.num_cases() == 8
