@@ -203,7 +203,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_dependencies(self):
         self.loader = RegressionCheckLoader(
-            ['unittests/resources/checks_unlisted/test_with_deps.py']
+            ['unittests/resources/checks_unlisted/deps_complex.py']
         )
 
         # Setup the runner
@@ -494,7 +494,7 @@ class TestDependencies(unittest.TestCase):
 
     def setUp(self):
         self.loader = RegressionCheckLoader([
-            'unittests/resources/checks_unlisted/dependencies/normal.py'
+            'unittests/resources/checks_unlisted/deps_simple.py'
         ])
 
         # Set runtime prefix
