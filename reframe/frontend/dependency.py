@@ -85,8 +85,10 @@ def build_deps(cases, default_cases=None):
                 c.deps.extend(resolve_dep(c, cases_by_part,
                                           default_cases_by_part, tname, pname))
             elif how == rfm.DEPEND_BY_ENV:
-                c.deps.append(resolve_dep(c, cases_revmap, default_cases_revmap,
-                                          tname, pname, ename))
+                c.deps.append(
+                    resolve_dep(c, cases_revmap, default_cases_revmap,
+                                tname, pname, ename)
+                )
             elif how == rfm.DEPEND_EXACT:
                 for env, tenvs in subdeps.items():
                     if env != ename:
