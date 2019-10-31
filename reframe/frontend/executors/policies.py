@@ -220,7 +220,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if any(not self._task_index[c].succeeded for c in task.testcase.deps):
                 self.printer.status(
                     'WAIT', '%s on %s using %s' %
-                    (check.name, partition.fullname, environ.name),
+                    (check.name, partname, environ.name),
                     just='right'
                 )
                 self._waiting_tasks[partname].append(task)
@@ -245,11 +245,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 # Test's environment is already loaded; no need to be reloaded
                 self._reschedule(task, load_env=False)
             else:
-                self.printer.status("HOLD",
-                    "%s on %s using %s"
-                    % (check.name, partition.fullname, environ.name),
-                    just = 'right'
-                )
+                self.printer.status('HOLD', task.check.info(), just='right')
                 self._ready_tasks[partname].append(task)
         except TaskExit:
             if not task.failed:
@@ -265,7 +261,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             raise
 
     def _cleanup_all(self):
-        for task in self._retired_tasks[:]:
+        for task in self._retired_tasks:
             if task.ref_count == 0:
                 task.cleanup(not self.keep_stage_files)
                 self._retired_tasks.remove(task)
