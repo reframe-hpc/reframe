@@ -145,13 +145,18 @@ class RegressionTask:
     def failed_stage(self):
         return self._failed_stage
 
+    @property
+    def succeeded(self):
+        return self._current_stage == 'finalize' or self._current_stage == 'cleanup'
+
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
             callback = getattr(l, callback_name)
             callback(self)
 
     def _safe_call(self, fn, *args, **kwargs):
-        self._current_stage = fn.__name__
+        if fn.__name__ != 'poll':
+            self._current_stage = fn.__name__
         try:
             with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
@@ -196,6 +201,7 @@ class RegressionTask:
         self._safe_call(self.check.performance)
 
     def finalize(self):
+        self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
 
     def cleanup(self, *args, **kwargs):
