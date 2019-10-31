@@ -3,16 +3,20 @@ import sys
 import time
 from datetime import datetime
 
-from reframe.core.exceptions import TaskExit
+from reframe.core.exceptions import (TaskDependencyError, TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
-class SerialExecutionPolicy(ExecutionPolicy):
+class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
-        self._tasks = []
+        self._task_index = {}
+
+        # Tasks that have finished, but have not performed their cleanup phase
+        self._retired_tasks = []
+        self.task_listeners.append(self)
 
     def runcase(self, case):
         super().runcase(case)
@@ -22,10 +26,14 @@ class SerialExecutionPolicy(ExecutionPolicy):
             'RUN', '%s on %s using %s' %
             (check.name, partition.fullname, environ.name)
         )
-        task = RegressionTask(case)
-        self._tasks.append(task)
+        task = RegressionTask(case, self.task_listeners)
+        self._task_index[case] = task
         self.stats.add_task(task)
         try:
+            # Do not run test if any of its dependencies has failed
+            if any(self._task_index[c].failed for c in case.deps):
+                raise TaskDependencyError('dependencies failed')
+
             task.setup(partition, environ,
                        sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
                        sched_account=self.sched_account,
@@ -45,7 +53,8 @@ class SerialExecutionPolicy(ExecutionPolicy):
             if not self.skip_performance_check:
                 task.performance()
 
-            task.cleanup(not self.keep_stage_files)
+            self._retired_tasks.append(task)
+            task.finalize()
 
         except TaskExit:
             return
@@ -57,6 +66,32 @@ class SerialExecutionPolicy(ExecutionPolicy):
         finally:
             self.printer.status('FAIL' if task.failed else 'OK',
                                 task.check.info(), just='right')
+
+    def _cleanup_all(self):
+        for task in self._retired_tasks:
+            if task.ref_count == 0:
+                task.cleanup(not self.keep_stage_files)
+                self._retired_tasks.remove(task)
+
+    def on_task_run(self, task):
+        pass
+
+    def on_task_exit(self, task):
+        pass
+
+    def on_task_failure(self, task):
+        pass
+
+    def on_task_success(self, task):
+        # update reference count of dependencies
+        for c in task.testcase.deps:
+            self._task_index[c].ref_count -= 1
+
+        self._cleanup_all()
+
+    def exit(self):
+        # Clean up all remaining tasks
+        self._cleanup_all()
 
 
 class PollRateFunction:
@@ -108,9 +143,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Ready tasks to be executed per partition
         self._ready_tasks = {}
 
-        # The tasks associated with the running checks
-        self._tasks = []
-
         # Job limit per partition
         self._max_jobs = {}
 
@@ -154,7 +186,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
-        self._tasks.append(task)
         self.stats.add_task(task)
         try:
             task.setup(partition, environ,
@@ -222,6 +253,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         if not self.skip_performance_check:
             task.performance()
 
+        task.finalize()
         task.cleanup(not self.keep_stage_files)
 
     def _failall(self, cause):
