@@ -217,7 +217,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.fail((type(exc), exc, None))
                 return
 
-            if any(not self._task_index[c].succeeded for c in task.testcase.deps):
+            if any(
+                not self._task_index[c].succeeded for c in task.testcase.deps
+            ):
                 self.printer.status(
                     'WAIT', '%s on %s using %s' %
                     (check.name, partname, environ.name),
@@ -281,7 +283,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     exc = TaskDependencyError("dependencies failed")
                     task.fail((type(exc), exc, None))
 
-                elif all(self._task_index[c].succeeded for c in task.testcase.deps):
+                elif all(
+                    self._task_index[c].succeeded for c in task.testcase.deps
+                ):
                     self._waiting_tasks[partname].remove(task)
                     task.setup(
                         task.testcase.partition,
@@ -378,7 +382,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while self._running_tasks or self._completed_tasks or self._retired_tasks:
+        while (self._running_tasks or self._completed_tasks
+               or self._retired_tasks):
             getlogger().debug('running tasks: %s' % len(self._running_tasks))
             num_polls += len(self._running_tasks)
             try:

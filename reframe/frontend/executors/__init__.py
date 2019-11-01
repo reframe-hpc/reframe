@@ -147,7 +147,8 @@ class RegressionTask:
 
     @property
     def succeeded(self):
-        return self._current_stage == 'finalize' or self._current_stage == 'cleanup'
+        return (self._current_stage == 'finalize'
+                or self._current_stage == 'cleanup')
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
