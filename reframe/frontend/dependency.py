@@ -10,37 +10,60 @@ import reframe.utility as util
 from reframe.core.exceptions import DependencyError
 
 
-def build_deps(cases):
+def build_deps(cases, default_cases=None):
     '''Build dependency graph from test cases.
 
     The graph is represented as an adjacency list in a Python dictionary
     holding test cases. The dependency information is also encoded inside each
-    test cases.
+    test case.
     '''
 
     # Index cases for quick access
-    cases_by_part = {}
-    cases_revmap = {}
-    for c in cases:
-        cname = c.check.name
-        pname = c.partition.fullname
-        ename = c.environ.name
-        cases_by_part.setdefault((cname, pname), [])
-        cases_revmap.setdefault((cname, pname, ename), None)
-        cases_by_part[cname, pname].append(c)
-        cases_revmap[cname, pname, ename] = c
+    def build_partition_index(cases):
+        if cases is None:
+            return {}
 
-    def resolve_dep(target, from_map, *args):
-        errmsg = 'could not resolve dependency: %s' % target
+        ret = {}
+        for c in cases:
+            cname, pname = c.check.name, c.partition.fullname
+            ret.setdefault((cname, pname), [])
+            ret[cname, pname].append(c)
+
+        return ret
+
+    def build_cases_index(cases):
+        if cases is None:
+            return {}
+
+        ret = {}
+        for c in cases:
+            cname = c.check.name
+            pname = c.partition.fullname
+            ename = c.environ.name
+            ret.setdefault((cname, pname, ename), c)
+
+        return ret
+
+    def resolve_dep(target, from_map, fallback_map, *args):
+        errmsg = 'could not resolve dependency: %s -> %s' % (target, args)
         try:
             ret = from_map[args]
         except KeyError:
-            raise DependencyError(errmsg)
-        else:
-            if not ret:
-                raise DependencyError(errmsg)
+            # try to resolve the dependency in the fallback map
+            try:
+                ret = fallback_map[args]
+            except KeyError:
+                raise DependencyError(errmsg) from None
 
-            return ret
+        if not ret:
+            raise DependencyError(errmsg)
+
+        return ret
+
+    cases_by_part = build_partition_index(cases)
+    cases_revmap  = build_cases_index(cases)
+    default_cases_by_part = build_partition_index(default_cases)
+    default_cases_revmap  = build_cases_index(default_cases)
 
     # NOTE on variable names
     #
@@ -59,20 +82,30 @@ def build_deps(cases):
         for dep in c.check.user_deps():
             tname, how, subdeps = dep
             if how == rfm.DEPEND_FULLY:
-                c.deps.extend(resolve_dep(c, cases_by_part, tname, pname))
+                c.deps.extend(resolve_dep(c, cases_by_part,
+                                          default_cases_by_part, tname, pname))
             elif how == rfm.DEPEND_BY_ENV:
-                c.deps.append(resolve_dep(c, cases_revmap,
-                                          tname, pname, ename))
+                c.deps.append(
+                    resolve_dep(c, cases_revmap, default_cases_revmap,
+                                tname, pname, ename)
+                )
             elif how == rfm.DEPEND_EXACT:
                 for env, tenvs in subdeps.items():
                     if env != ename:
                         continue
 
                     for te in tenvs:
-                        c.deps.append(resolve_dep(c, cases_revmap,
-                                                  tname, pname, te))
+                        c.deps.append(
+                            resolve_dep(c, cases_revmap, default_cases_revmap,
+                                        tname, pname, te)
+                        )
 
         graph[c] = util.OrderedSet(c.deps)
+
+    # Calculate in-degree of each node
+    for u, adjacent in graph.items():
+        for v in adjacent:
+            v.in_degree += 1
 
     return graph
 
@@ -136,9 +169,23 @@ def validate_deps(graph):
         sources -= visited
 
 
-def toposort(graph):
+def toposort(graph, is_subgraph=False):
+    '''Return a list of the graph nodes topologically sorted.
+
+    If ``is_subgraph`` is ``True``, graph will by treated a subgraph, meaning
+    that any dangling edges will be ignored.
+    '''
     test_deps = _reduce_deps(graph)
     visited = util.OrderedSet()
+
+    def retrieve(d, key, default):
+        try:
+            return d[key]
+        except KeyError:
+            if is_subgraph:
+                return default
+            else:
+                raise
 
     def visit(node, path):
         # We assume an acyclic graph
@@ -147,7 +194,7 @@ def toposort(graph):
         path.add(node)
 
         # Do a DFS visit of all the adjacent nodes
-        for adj in test_deps[node]:
+        for adj in retrieve(test_deps, node, []):
             if adj not in visited:
                 visit(adj, path)
 
@@ -166,4 +213,5 @@ def toposort(graph):
         except KeyError:
             cases_by_name[c.check.name] = [c]
 
-    return list(itertools.chain(*(cases_by_name[n] for n in visited)))
+    return list(itertools.chain(*(retrieve(cases_by_name, n, [])
+                                  for n in visited)))

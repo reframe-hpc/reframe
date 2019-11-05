@@ -7,6 +7,7 @@ import reframe.core.debug as debug
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
+import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
                                      ReframeFatalError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
@@ -27,6 +28,9 @@ class TestCase:
         self.__environ = copy.deepcopy(environ)
         self.__check._case = weakref.ref(self)
         self.__deps = []
+
+        # Incoming dependencies
+        self.in_degree = 0
 
     def __iter__(self):
         # Allow unpacking a test case with a single liner:
@@ -65,6 +69,10 @@ class TestCase:
     @property
     def deps(self):
         return self.__deps
+
+    @property
+    def num_dependents(self):
+        return self.in_degree
 
     def clone(self):
         # Return a fresh clone, i.e., one based on the original check
@@ -105,10 +113,14 @@ class RegressionTask:
     def __init__(self, case, listeners=[]):
         self._case = case
         self._failed_stage = None
-        self._current_stage = None
+        self._current_stage = 'startup'
         self._exc_info = (None, None, None)
         self._environ = None
         self._listeners = list(listeners)
+
+        # Reference count for dependent tests; safe to cleanup the test only
+        # if it is zero
+        self.ref_count = case.num_dependents
 
         # Test case has finished, but has not been waited for yet
         self.zombie = False
@@ -183,9 +195,11 @@ class RegressionTask:
     def performance(self):
         self._safe_call(self.check.performance)
 
+    def finalize(self):
+        self._notify_listeners('on_task_success')
+
     def cleanup(self, *args, **kwargs):
         self._safe_call(self.check.cleanup, *args, **kwargs)
-        self._notify_listeners('on_task_success')
 
     def fail(self, exc_info=None):
         self._failed_stage = self._current_stage
@@ -288,7 +302,12 @@ class Runner:
                 'Retrying %d failed check(s) (retry %d/%d)' %
                 (num_failed_checks, rt.current_run, self._max_retries)
             )
-            self._runall(t.testcase.clone() for t in failures)
+
+            # Clone failed cases and rebuild dependencies among them
+            failed_cases = [t.testcase.clone() for t in failures]
+            cases_graph = dependency.build_deps(failed_cases, cases)
+            failed_cases = dependency.toposort(cases_graph, is_subgraph=True)
+            self._runall(failed_cases)
             failures = self._stats.failures()
 
     def _runall(self, testcases):
