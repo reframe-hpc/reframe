@@ -4,11 +4,9 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.14')
 @rfm.parameterized_test(['Cuda'], ['C++'], ['F90'])
 class PerftoolsCheck(rfm.RegressionTest):
     def __init__(self, lang):
-        super().__init__()
         self.name = 'jacobi_perftools_%s' % lang.replace('+', 'p')
         self.descr = '%s check' % lang
         if lang != 'Cuda':
@@ -25,6 +23,8 @@ class PerftoolsCheck(rfm.RegressionTest):
             self.sourcesdir = os.path.join('src', lang)
 
         self.modules = ['perftools-lite']
+        # unload xalt to avoid conflict with perftools:
+        self.prebuild_cmd = ['module rm xalt ;module list -t']
         if lang == 'Cuda':
             self.modules += ['craype-accel-nvidia60']
 
@@ -34,10 +34,9 @@ class PerftoolsCheck(rfm.RegressionTest):
             self.build_system.max_concurrency = 1
 
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-O2', '-g', '-h nomessage=3140',
+            'PrgEnv-cray': ['-O2', '-g',
                             '-homp' if lang == 'F90' else '-fopenmp'],
-            'PrgEnv-cray_classic': ['-O2', '-g', '-h nomessage=3140',
-                                    '-homp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-gnu': ['-O2', '-g', '-fopenmp'],
             'PrgEnv-intel': ['-O2', '-g', '-qopenmp'],
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
@@ -70,13 +69,29 @@ class PerftoolsCheck(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic'
         }
-        if self.num_tasks == 1:
-            # will be fixed in perftools/7.1
-            self.variables['PAT_RT_REPORT_METHOD'] = 'pe'
-
-        self.sanity_patterns = sn.assert_found('Table 1:  Profile by Function',
-                                               self.stdout)
-        self.maintainers = ['MK', 'JG']
+        # keeping as reminder:  needed with perftools<7.1:
+        # if self.num_tasks == 1:
+        #     self.variables['PAT_RT_REPORT_METHOD'] = 'pe'
+        self.post_run = ['grep INFO rfm_*_build.err']
+        self.sanity_patterns = sn.all([
+            sn.assert_found('SUCCESS', self.stdout),
+            sn.assert_found(r'^INFO: creating the CrayPat-instrumented exec',
+                            self.stdout),
+            sn.assert_found('Table 1:  Profile by Function', self.stdout),
+        ])
+        self.perf_patterns = {
+            'Elapsed': self.perftools_seconds,
+            'High Memory per PE': self.perftools_highmem,
+            'Instr per Cycle': self.perftools_ipc,
+        }
+        self.reference = {
+            '*': {
+                'Elapsed': (0, None, None, 's'),
+                'High Memory per PE': (0, None, None, 'MiBytes'),
+                'Instr per Cycle': (0, None, None, ''),
+            }
+        }
+        self.maintainers = ['JG', 'MK']
         self.tags = {'production', 'craype'}
 
     def setup(self, environ, partition, **job_opts):
@@ -85,3 +100,24 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.build_system.cflags = flags
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
+
+    @property
+    @sn.sanity_function
+    def perftools_seconds(self):
+        regex = r'^Avg Process Time:\s+(?P<sec>\S+) secs'
+        result = sn.extractsingle(regex, self.stdout, 'sec', float)
+        return result
+
+    @property
+    @sn.sanity_function
+    def perftools_highmem(self):
+        regex = r'High Memory:\s+\S+ MiBytes\s+(?P<MBytes>\S+) MiBytes per PE'
+        result = sn.extractsingle(regex, self.stdout, 'MBytes', float)
+        return result
+
+    @property
+    @sn.sanity_function
+    def perftools_ipc(self):
+        regex = r'^Instr per Cycle:\s+(?P<ipc>\S+)'
+        result = sn.extractsingle(regex, self.stdout, 'ipc', float)
+        return result
