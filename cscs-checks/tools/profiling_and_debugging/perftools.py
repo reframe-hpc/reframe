@@ -89,7 +89,7 @@ class PerftoolsCheck(rfm.RegressionTest):
                 'Elapsed': (0, None, None, 's'),
                 'High Memory per PE': (0, None, None, 'MiBytes'),
                 'Instr per Cycle': (0, None, None, ''),
-                }
+            }
         }
         self.maintainers = ['JG', 'MK']
         self.tags = {'production', 'craype'}
