@@ -21,7 +21,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -45,7 +45,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         if environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
-            if self.current_system.name in ['daint', 'dom']:
+            if self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
             else:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']

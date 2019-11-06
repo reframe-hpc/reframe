@@ -21,7 +21,11 @@ class DdtCheck(rfm.RegressionTest):
         self.executable = './jacobi'
         self.sourcesdir = os.path.join('src', lang)
         self.valid_prog_environs = ['PrgEnv-gnu']
+        if self.current_system.name in ['tiger']:
+            self.modules = ['forge']
+        else:
         self.modules = ['ddt']
+
         self.prgenv_flags = {
             # 'PrgEnv-cray': ' -O2 -homp',
             'PrgEnv-gnu': ['-g', '-O2', '-fopenmp'],
@@ -100,7 +104,8 @@ class DdtGpuCheck(DdtCheck):
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['cudatoolkit/8.0.61']
+            'kesch': ['cudatoolkit/8.0.61'],
+            'tiger': ['craype-accel-nvidia60'],
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
