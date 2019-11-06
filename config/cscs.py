@@ -137,6 +137,22 @@ class ReframeSettings:
                         'resources': {
                             'switches': ['--switches={num_switches}']
                         }
+                    },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
                     }
                 }
             },
@@ -196,6 +212,22 @@ class ReframeSettings:
                             'switches': ['--switches={num_switches}']
                         }
                     },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
+                    }
                 }
             },
 
@@ -570,17 +602,17 @@ class ReframeSettings:
     perf_logging_config = {
         'level': 'DEBUG',
         'handlers': [
-            #@ {
-            #@     'type': 'graylog',
-            #@     'host': 'your-server-here',
-            #@     'port': 12345,
-            #@     'level': 'INFO',
-            #@     'format': '%(message)s',
-            #@     'extras': {
-            #@         'facility': 'reframe',
-            #@         'data-version': '1.0',
-            #@     }
-            #@ },
+            # @ {
+            # @     'type': 'graylog',
+            # @     'host': 'your-server-here',
+            # @     'port': 12345,
+            # @     'level': 'INFO',
+            # @     'format': '%(message)s',
+            # @     'extras': {
+            # @         'facility': 'reframe',
+            # @         'data-version': '1.0',
+            # @     }
+            # @ },
             {
                 'type': 'filelog',
                 'prefix': '%(check_system)s/%(check_partition)s',
