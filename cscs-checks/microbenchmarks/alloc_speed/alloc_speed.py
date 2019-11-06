@@ -11,7 +11,8 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-O3', '-std=c++11']
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
             self.valid_systems += ['kesch:cn', 'kesch:pn']

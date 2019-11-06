@@ -23,7 +23,7 @@ class NvmlCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'check GPU compute mode'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'

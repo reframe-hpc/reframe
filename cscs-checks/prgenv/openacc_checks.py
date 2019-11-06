@@ -11,7 +11,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.num_tasks = 2
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'

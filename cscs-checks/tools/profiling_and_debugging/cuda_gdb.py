@@ -10,7 +10,7 @@ class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'

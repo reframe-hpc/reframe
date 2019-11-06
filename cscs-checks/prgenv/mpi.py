@@ -30,7 +30,8 @@ class MpiInitTest(rfm.RegressionTest):
 
     def __init__(self, required_thread):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
@@ -68,10 +69,9 @@ class MpiInitTest(rfm.RegressionTest):
 class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
-                              'leone:normal', 'monch:compute']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'kesch:pn', 'leone:normal',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True

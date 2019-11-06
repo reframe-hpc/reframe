@@ -8,7 +8,7 @@ class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
         super().__init__()
         self.strict_check = False
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
@@ -56,7 +56,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
+                              'dom:gpu', 'dom:mc', 'tiger:gpu',
                               'kesch:cn', 'kesch:pn', 'leone:normal']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
@@ -83,7 +83,7 @@ class AllreduceTest(rfm.RegressionTest):
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
-            self.valid_systems += ['dom:gpu', 'dom:mc']
+            self.valid_systems += ['dom:gpu', 'dom:mc', 'tiger:gpu']
 
         self.descr = 'Allreduce OSU microbenchmark'
         self.build_system = 'Make'
@@ -171,7 +171,7 @@ class P2PBaseTest(rfm.RegressionTest):
 class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
                               'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
@@ -211,7 +211,7 @@ class P2PCPUBandwidthTest(P2PBaseTest):
 class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
                               'dom:gpu', 'dom:mc', 'kesch:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
@@ -251,7 +251,7 @@ class P2PCPULatencyTest(P2PBaseTest):
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -291,7 +291,7 @@ class G2GBandwidthTest(P2PBaseTest):
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',

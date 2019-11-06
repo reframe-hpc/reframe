@@ -65,8 +65,8 @@ class DdtCheck(rfm.RegressionTest):
 class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'tiger:gpu']
 
         if self.current_system.name == 'kesch' and self.lang == 'C':
             self.build_system.ldflags = ['-lm']
@@ -94,7 +94,7 @@ class DdtCpuCheck(DdtCheck):
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.system_modules = {
