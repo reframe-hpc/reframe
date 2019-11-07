@@ -70,8 +70,7 @@ class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal',
-                              'tiger:gpu']
+                              'kesch:cn', 'kesch:pn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
