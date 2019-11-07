@@ -33,9 +33,12 @@ class NvmlCheck(rfm.RegressionTest):
             'patch -i ./nvml_example.patch'
         ]
         self.build_system.ldflags = ['-lnvidia-ml']
-        self.sanity_patterns = sn.assert_found(
-            r"\s+Changing device.s compute mode from 'Exclusive Process' to ",
-            self.stdout)
+        if self.current_system.name in {'dom', 'daint'}:
+            regex = (r"\s+Changing device.s compute mode from "
+                     r"'Exclusive Process' to ")
+        else:
+            regex = r"\s+Changing device.s compute mode from 'Default' to "
 
+        self.sanity_patterns = sn.assert_found(regex, self.stdout)
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production', 'craype', 'external-resources'}

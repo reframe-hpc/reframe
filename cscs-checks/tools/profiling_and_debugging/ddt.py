@@ -24,7 +24,7 @@ class DdtCheck(rfm.RegressionTest):
         if self.current_system.name in ['tiger']:
             self.modules = ['forge']
         else:
-        self.modules = ['ddt']
+            self.modules = ['ddt']
 
         self.prgenv_flags = {
             # 'PrgEnv-cray': ' -O2 -homp',
