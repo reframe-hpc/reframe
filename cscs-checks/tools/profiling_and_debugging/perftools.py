@@ -10,10 +10,10 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.name = 'jacobi_perftools_%s' % lang.replace('+', 'p')
         self.descr = '%s check' % lang
         if lang != 'Cuda':
-            self.valid_systems = ['daint:gpu', 'dom:gpu',
-                                  'daint:mc', 'dom:mc']
+            self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc',
+                                  'tiger:gpu']
         else:
-            self.valid_systems = ['daint:gpu', 'dom:gpu']
+            self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']

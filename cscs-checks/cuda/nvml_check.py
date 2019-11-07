@@ -23,7 +23,7 @@ class NvmlCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'check GPU compute mode'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'
@@ -33,9 +33,12 @@ class NvmlCheck(rfm.RegressionTest):
             'patch -i ./nvml_example.patch'
         ]
         self.build_system.ldflags = ['-lnvidia-ml']
-        self.sanity_patterns = sn.assert_found(
-            r"\s+Changing device.s compute mode from 'Exclusive Process' to ",
-            self.stdout)
+        if self.current_system.name in {'dom', 'daint'}:
+            regex = (r"\s+Changing device.s compute mode from "
+                     r"'Exclusive Process' to ")
+        else:
+            regex = r"\s+Changing device.s compute mode from 'Default' to "
 
+        self.sanity_patterns = sn.assert_found(regex, self.stdout)
         self.maintainers = ['AJ', 'VK']
         self.tags = {'production', 'craype', 'external-resources'}

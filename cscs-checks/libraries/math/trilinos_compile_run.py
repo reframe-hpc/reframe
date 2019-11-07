@@ -7,9 +7,8 @@ import reframe.utility.sanity as sn
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc']
-
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if linkage == 'static':
