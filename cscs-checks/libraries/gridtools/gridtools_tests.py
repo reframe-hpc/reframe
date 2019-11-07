@@ -11,20 +11,16 @@ import reframe.utility.sanity as sn
                         ['simple_hori_diff_cuda'])
 class GridToolsCheck(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
-
         # Check if this is a device check
-        is_cuda_test = 'cuda' in variant
-
         self.descr = 'GridTools test base'
-
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['CMake', 'Boost']
+        is_cuda_test = 'cuda' in variant
         if is_cuda_test:
             self.modules.append('craype-accel-nvidia60')
+
         self.sourcesdir = 'https://github.com/GridTools/gridtools.git'
         self.build_system = 'CMake'
-
         self.build_system.config_opts = [
             '-DBoost_NO_BOOST_CMAKE="true"',
             '-DCMAKE_BUILD_TYPE:STRING=Release',
@@ -190,6 +186,5 @@ class GridToolsCheck(rfm.RegressionTest):
         self.executable = os.path.join('regression', variant)
         self.executable_opts = self.variant_data[variant]['executable_opts']
         self.reference = self.variant_data[variant]['reference']
-
-        self.tags = {'scs', 'benchmarking'}
+        self.tags = {'scs', 'benchmark'}
         self.maintainers = ['CB']
