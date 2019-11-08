@@ -270,6 +270,9 @@ class TaskEventMonitor(executors.TaskEventListener):
     def on_task_failure(self, task):
         pass
 
+    def on_task_setup(self, task):
+        pass
+
 
 class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):

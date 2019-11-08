@@ -147,8 +147,7 @@ class RegressionTask:
 
     @property
     def succeeded(self):
-        return (self._current_stage == 'finalize'
-                or self._current_stage == 'cleanup')
+        return self._current_stage in {'finalize', 'cleanup'}
 
     def _notify_listeners(self, callback_name):
         for l in self._listeners:
@@ -158,6 +157,7 @@ class RegressionTask:
     def _safe_call(self, fn, *args, **kwargs):
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
+
         try:
             with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
@@ -172,6 +172,7 @@ class RegressionTask:
     def setup(self, *args, **kwargs):
         self._safe_call(self.check.setup, *args, **kwargs)
         self._environ = env.snapshot()
+        self._notify_listeners('on_task_setup')
 
     def compile(self):
         self._safe_call(self.check.compile)
@@ -234,6 +235,10 @@ class RegressionTask:
 
 
 class TaskEventListener(abc.ABC):
+    @abc.abstractmethod
+    def on_task_setup(self, task):
+        '''Called whenever the setup() method of a RegressionTask is called.'''
+
     @abc.abstractmethod
     def on_task_run(self, task):
         '''Called whenever the run() method of a RegressionTask is called.'''

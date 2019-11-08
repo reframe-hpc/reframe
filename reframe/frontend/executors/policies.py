@@ -12,6 +12,8 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
+
+        # Index tasks by test cases
         self._task_index = {}
 
         # Tasks that have finished, but have not performed their cleanup phase
@@ -71,7 +73,13 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for task in self._retired_tasks:
             if task.ref_count == 0:
                 task.cleanup(not self.keep_stage_files)
-                self._retired_tasks.remove(task)
+
+        # Remove cleaned up tests
+        self._retired_tasks[:] = [
+            t for t in self._retired_tasks if t.ref_count]
+
+    def on_task_setup(self, task):
+        pass
 
     def on_task_run(self, task):
         pass
@@ -130,6 +138,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
 
         super().__init__()
+
+        # Index tasks by test cases
         self._task_index = {}
 
         # All currently running tasks
@@ -147,8 +157,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Ready tasks to be executed per partition
         self._ready_tasks = {}
 
-        # Tasks that are waiting for dependencies per partition
-        self._waiting_tasks = {}
+        # Tasks that are waiting for dependencies
+        self._waiting_tasks = []
 
         # Job limit per partition
         self._max_jobs = {}
@@ -166,6 +176,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             partname = task.check.current_partition.fullname
             self._running_tasks_counts[partname] -= 1
 
+    def deps_failed(self, task):
+        return any(self._task_index[c].failed for c in task.testcase.deps)
+
+    def deps_succeeded(self, task):
+        return all(self._task_index[c].succeeded for c in task.testcase.deps)
+
+    def on_task_setup(self, task):
+        partname = task.check.current_partition.fullname
+        self._ready_tasks[partname].append(task)
+
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
         self._running_tasks_counts[partname] += 1
@@ -174,19 +194,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_failure(self, task):
         self._remove_from_running(task)
         self.printer.status('FAIL', task.check.info(), just='right')
-        for c in task.testcase.deps:
-            self._task_index[c].ref_count -= 1
-        self._poll_waiting()
-        self._cleanup_all()
 
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
+
         self._retired_tasks.append(task)
-        self._poll_waiting()
-        self._cleanup_all()
 
     def on_task_exit(self, task):
         task.wait()
@@ -200,7 +215,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Set partition-based counters, if not set already
         self._running_tasks_counts.setdefault(partition.fullname, 0)
         self._ready_tasks.setdefault(partition.fullname, [])
-        self._waiting_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
         task = RegressionTask(case, self.task_listeners)
@@ -212,20 +226,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = partition.fullname
-            if any(self._task_index[c].failed for c in task.testcase.deps):
+            if self.deps_failed(task):
                 exc = TaskDependencyError('dependencies failed')
                 task.fail((type(exc), exc, None))
                 return
 
-            if any(
-                not self._task_index[c].succeeded for c in task.testcase.deps
-            ):
+            if not self.deps_succeeded(task):
                 self.printer.status(
-                    'WAIT', '%s on %s using %s' %
+                    'DEP', '%s on %s using %s' %
                     (check.name, partname, environ.name),
                     just='right'
                 )
-                self._waiting_tasks[partname].append(task)
+                self._waiting_tasks.append(task)
                 return
 
             task.setup(partition, environ,
@@ -245,10 +257,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             if self._running_tasks_counts[partname] < partition.max_jobs:
                 # Test's environment is already loaded; no need to be reloaded
+                # Task was put in _ready_tasks during setup
+                self._ready_tasks[partname].remove(task)
                 self._reschedule(task, load_env=False)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
-                self._ready_tasks[partname].append(task)
         except TaskExit:
             if not task.failed:
                 self._reschedule(task, load_env=False)
@@ -266,7 +279,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for task in self._retired_tasks:
             if task.ref_count == 0:
                 task.cleanup(not self.keep_stage_files)
-                self._retired_tasks.remove(task)
+
+        # Remove cleaned up tests
+        self._retired_tasks[:] = [
+            t for t in self._retired_tasks if t.ref_count]
 
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
@@ -275,30 +291,28 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for t in self._running_tasks:
             t.poll()
 
-    def _poll_waiting(self):
-        for partname, _ in self._running_tasks_counts.items():
-            for task in self._waiting_tasks[partname]:
-                if any(self._task_index[c].failed for c in task.testcase.deps):
-                    self._waiting_tasks[partname].remove(task)
-                    exc = TaskDependencyError("dependencies failed")
-                    task.fail((type(exc), exc, None))
+    def _setup_all(self):
+        tasks_to_remove = []
+        for task in self._waiting_tasks:
+            if self.deps_failed(task):
+                tasks_to_remove.append(task)
+                exc = TaskDependencyError('dependencies failed')
+                task.fail((type(exc), exc, None))
 
-                elif all(
-                    self._task_index[c].succeeded for c in task.testcase.deps
-                ):
-                    self._waiting_tasks[partname].remove(task)
-                    task.setup(
-                        task.testcase.partition,
-                        task.testcase.environ,
-                        sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
-                        sched_account=self.sched_account,
-                        sched_partition=self.sched_partition,
-                        sched_reservation=self.sched_reservation,
-                        sched_nodelist=self.sched_nodelist,
-                        sched_exclude_nodelist=self.sched_exclude_nodelist,
-                        sched_options=self.sched_options,
-                    )
-                    self._ready_tasks[partname].append(task)
+            elif self.deps_succeeded(task):
+                tasks_to_remove.append(task)
+                task.setup(task.testcase.partition,
+                           task.testcase.environ,
+                           sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
+                           sched_account=self.sched_account,
+                           sched_partition=self.sched_partition,
+                           sched_reservation=self.sched_reservation,
+                           sched_nodelist=self.sched_nodelist,
+                           sched_exclude_nodelist=self.sched_exclude_nodelist,
+                           sched_options=self.sched_options)
+
+        self._waiting_tasks[:] = [
+            t for t in self._waiting_tasks if t not in tasks_to_remove]
 
     def _finalize_all(self):
         getlogger().debug('finalizing tasks: %s', len(self._completed_tasks))
@@ -331,20 +345,18 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except IndexError:
             pass
 
-        for waiting_list in self._waiting_tasks.values():
-            getlogger().debug("waiting list size: %s" % len(waiting_list))
-            for task in waiting_list:
-                task.abort(cause)
+        for task in self._waiting_tasks:
+            task.abort(cause)
 
         for ready_list in self._ready_tasks.values():
             getlogger().debug('ready list size: %s' % len(ready_list))
             for task in ready_list:
                 task.abort(cause)
 
-        for task in self._completed_tasks:
+        for task in self._retired_tasks:
             task.abort(cause)
 
-        for task in self._retired_tasks:
+        for task in self._completed_tasks:
             task.abort(cause)
 
     def _reschedule(self, task, load_env=True):
@@ -382,14 +394,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while (self._running_tasks or self._completed_tasks
-               or self._retired_tasks):
+        while (self._running_tasks or self._waiting_tasks):
             getlogger().debug('running tasks: %s' % len(self._running_tasks))
             num_polls += len(self._running_tasks)
             try:
                 self._poll_tasks()
-                self._reschedule_all()
                 self._finalize_all()
+                self._setup_all()
+                self._reschedule_all()
+                self._cleanup_all()
                 t_elapsed = (datetime.now() - t_start).total_seconds()
                 real_rate = num_polls / t_elapsed
                 getlogger().debug(
