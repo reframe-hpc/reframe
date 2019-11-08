@@ -77,7 +77,7 @@ class IntelVTuneAmplifierTest(rfm.RegressionTest):
             self.job.options = ['--constraint="mc&perf"']
 
         system_default_toolversion = {
-            'daint': '551022',  # 2018 Update 2
+            'daint': '597835',  # 2019 Update 4
             'dom': '597835',    # 2019 Update 4
         }
         toolsversion = system_default_toolversion[self.current_system.name]
