@@ -66,7 +66,7 @@ class ReframeSettings:
 
                 'PrgEnv-cray_classic': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray', 'cce/9.1.0.129-classic'],
+                    'modules': ['PrgEnv-cray', 'cce/9.1.0-classic'],
                 },
 
                 'PrgEnv-gnu': {

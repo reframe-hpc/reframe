@@ -137,6 +137,22 @@ class ReframeSettings:
                         'resources': {
                             'switches': ['--switches={num_switches}']
                         }
+                    },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
                     }
                 }
             },
@@ -196,6 +212,22 @@ class ReframeSettings:
                             'switches': ['--switches={num_switches}']
                         }
                     },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
+                    }
                 }
             },
 
