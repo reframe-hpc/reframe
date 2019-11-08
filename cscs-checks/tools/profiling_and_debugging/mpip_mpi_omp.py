@@ -54,12 +54,6 @@ class MpipCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         if lang == 'Cpp':
-            # PrgEnv-gnu toolchain on daint currently sets gcc/6 as default,
-            # PrgEnv-gnu toolchain on   dom currently sets gcc/7 as default,
-            # hence mpip will report different line numbers:
-            if self.current_system.name == 'daint':
-                mpi_isendline = '142'
-            else:
                 mpi_isendline = '140'
         elif lang == 'F90':
             mpi_isendline = '146'
