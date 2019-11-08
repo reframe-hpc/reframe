@@ -14,9 +14,12 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp', '-O2'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-gnu': ['-g', '-fopenmp', '-O2'],
             'PrgEnv-intel': ['-g', '-qopenmp', '-O2'],
             'PrgEnv-pgi': ['-g', '-mp', '-O2']
