@@ -9,7 +9,7 @@ class FFTWTest(rfm.RegressionTest):
         super().__init__()
         self.sourcepath = 'fftw_benchmark.c'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.modules = ['cray-fftw']
         self.num_tasks_per_node = 12
         self.num_gpus_per_node = 0
