@@ -196,11 +196,6 @@ else
     # Find modified or added user checks
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
-    if [[ $(hostname) =~ daint ]]; then
-        # FIXME: temporarily disable running modified checks on Daint
-        userchecks=()
-    fi
-
     if [ ${#userchecks[@]} -ne 0 ]; then
         userchecks_path=""
         for check in ${userchecks[@]}; do
