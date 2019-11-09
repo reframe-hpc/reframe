@@ -75,14 +75,24 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             # check job status:
             sn.assert_found('SUCCESS', self.stdout),
             # check txt report:
-            sn.assert_found('MPI_Allreduce', self.rpt_file_txt),
             sn.assert_found(
                 r'^\s+\d+ms\s+\d+.\d+%.*_jacobi.\w+:\d+', self.rpt_file_txt),
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
+
+        self.perf_patterns = {
+            'jacobi_elapsed': self.report_flat_pctg,
+        }
+
+        self.reference = {
+            '*': {
+                'jacobi_elapsed': (0, None, None, '%'),
+            }
+       }
+
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'performance'}
 
     def setup(self, environ, partition, **job_opts):
         super().setup(environ, partition, **job_opts)
@@ -91,3 +101,12 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
         self.build_system.ldflags = flags + ['`pkg-config --libs libprofiler`']
+
+# {{{ 
+    @property
+    @sn.sanity_function
+    def report_flat_pctg(self):
+        regex = r'^\s+\d+ms\s+(?P<pctg>\d+.\d+)%.*_jacobi.\w+:\d+'
+        result = sn.extractsingle(regex, self.rpt_file_txt, 'pctg', float)
+        return result
+#}}}
