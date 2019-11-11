@@ -1,3 +1,4 @@
+import itertools
 import math
 import sys
 import time
@@ -76,7 +77,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [
-            t for t in self._retired_tasks if t.ref_count]
+            t for t in self._retired_tasks if t.ref_count
+        ]
 
     def on_task_setup(self, task):
         pass
@@ -258,7 +260,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if self._running_tasks_counts[partname] < partition.max_jobs:
                 # Test's environment is already loaded; no need to be reloaded
                 # Task was put in _ready_tasks during setup
-                self._ready_tasks[partname].remove(task)
+                self._ready_tasks[partname].pop()
                 self._reschedule(task, load_env=False)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
@@ -282,7 +284,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [
-            t for t in self._retired_tasks if t.ref_count]
+            t for t in self._retired_tasks if t.ref_count
+        ]
 
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
@@ -292,15 +295,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             t.poll()
 
     def _setup_all(self):
-        tasks_to_remove = []
+        still_waiting = []
         for task in self._waiting_tasks:
             if self.deps_failed(task):
-                tasks_to_remove.append(task)
                 exc = TaskDependencyError('dependencies failed')
                 task.fail((type(exc), exc, None))
-
             elif self.deps_succeeded(task):
-                tasks_to_remove.append(task)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
@@ -310,9 +310,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                            sched_nodelist=self.sched_nodelist,
                            sched_exclude_nodelist=self.sched_exclude_nodelist,
                            sched_options=self.sched_options)
+            else:
+                still_waiting.append(task)
 
-        self._waiting_tasks[:] = [
-            t for t in self._waiting_tasks if t not in tasks_to_remove]
+        self._waiting_tasks[:] = still_waiting
 
     def _finalize_all(self):
         getlogger().debug('finalizing tasks: %s', len(self._completed_tasks))
@@ -345,18 +346,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         except IndexError:
             pass
 
-        for task in self._waiting_tasks:
-            task.abort(cause)
-
         for ready_list in self._ready_tasks.values():
             getlogger().debug('ready list size: %s' % len(ready_list))
             for task in ready_list:
                 task.abort(cause)
 
-        for task in self._retired_tasks:
-            task.abort(cause)
-
-        for task in self._completed_tasks:
+        for task in itertools.chain(self._waiting_tasks,
+                                    self._retired_tasks,
+                                    self._completed_tasks):
             task.abort(cause)
 
     def _reschedule(self, task, load_env=True):
