@@ -81,16 +81,9 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
-        self.perf_patterns = {
-            'jacobi_elapsed': self.report_flat_pctg,
-        }
-        self.reference = {
-            '*': {
-                'jacobi_elapsed': (0, None, None, '%'),
-            }
-        }
+        self.perf_patterns = { 'jacobi_elapsed%': self.report_flat_pctg, }
         self.maintainers = ['JG']
-        self.tags = {'performance'}
+        self.tags = {'performance-tools'}
 
     def setup(self, environ, partition, **job_opts):
         super().setup(environ, partition, **job_opts)
@@ -104,6 +97,15 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
     @property
     @sn.sanity_function
     def report_flat_pctg(self):
+        '''
+        A typical report looks like:
+        flat  flat%   sum%        cum   cum%
+        50ms 15.62% 15.62%       50ms 15.62%  GNII_DlaProgress ??:?
+        30ms  9.38% 50.00%       30ms  9.38
+          L__Z6JacobiR10JacobiData_67__par_region1_2_2 GperftoolsMpiCheck_Cpp/
+          _jacobi.cc:82
+        This functions extracts flat% of the first jacobi function call found.
+        '''
         regex = r'^\s+\d+ms\s+(?P<pctg>\d+.\d+)%.*_jacobi.\w+:\d+'
         result = sn.extractsingle(regex, self.rpt_file_txt, 'pctg', float)
         return result
