@@ -270,6 +270,9 @@ class TaskEventMonitor(executors.TaskEventListener):
     def on_task_failure(self, task):
         pass
 
+    def on_task_setup(self, task):
+        pass
+
 
 class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):
@@ -435,10 +438,6 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         stats = self.runner.stats
         self.assertEqual(num_tasks, stats.num_cases())
         self.assertEqual(num_tasks, len(stats.failures()))
-
-    def test_dependencies(self):
-        pytest.skip('test with dependencies are not supported '
-                    'by the asynchronous execution policy')
 
 
 class TestDependencies(unittest.TestCase):
