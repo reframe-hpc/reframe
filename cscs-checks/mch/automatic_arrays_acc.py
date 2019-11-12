@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
@@ -35,11 +35,11 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.arrays_reference = {
             'PrgEnv-cray': {
                 'daint:gpu': {'time': (5.7E-05, None, 0.15)},
-                'dom:gpu': {'time': (7.5E-05, None, 0.15)},
+                'dom:gpu': {'time': (5.7E-05, None, 0.15)},
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
             'PrgEnv-pgi': {
-                'daint:gpu': {'time': (6.4E-05, None, 0.15)},
+                'daint:gpu': {'time': (7.5E-05, None, 0.15)},
                 'dom:gpu': {'time': (7.5e-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
             }

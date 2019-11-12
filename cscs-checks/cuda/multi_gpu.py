@@ -10,7 +10,7 @@ from reframe.core.deferrable import evaluate
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
+        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
