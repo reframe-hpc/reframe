@@ -289,7 +289,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def read_timestamps(self, tasks):
         '''Read the timestamps and sort them to permit simple
         concurrency tests.'''
-        from reframe.core.deferrable import evaluate
+        from reframe.utility.sanity import evaluate
 
         self.begin_stamps = []
         self.end_stamps = []

@@ -1,40 +1,39 @@
 import unittest
-
-from reframe.core.deferrable import deferrable, evaluate, make_deferrable
+import reframe.utility.sanity as sn
 
 
 class TestDeferredUtilities(unittest.TestCase):
-    def test_make_deferrable(self):
+    def test_defer(self):
         from reframe.core.deferrable import _DeferredExpression
 
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertIsInstance(a, _DeferredExpression)
 
     def test_evaluate(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(3, a.evaluate())
-        self.assertEqual(3, evaluate(a))
-        self.assertEqual(3, evaluate(3))
+        self.assertEqual(3, sn.evaluate(a))
+        self.assertEqual(3, sn.evaluate(3))
 
     def test_implicit_eval(self):
         # Call to bool() on a deferred expression triggers its immediate
         # evaluation.
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(3, a)
 
     def test_str(self):
-        self.assertEqual('[1, 2]', str(make_deferrable([1, 2])))
+        self.assertEqual('[1, 2]', str(sn.defer([1, 2])))
 
     def test_iter(self):
         l = [1, 2, 3]
-        dl = make_deferrable(l)
+        dl = sn.defer(l)
         l.append(4)
         for i, e in enumerate(dl, start=1):
             self.assertEqual(i, e)
 
 
 class TestKeywordArgs(unittest.TestCase):
-    @deferrable
+    @sn.sanity_function
     def add(self, a, b):
         return a + b
 
@@ -48,7 +47,7 @@ class TestDeferredRichComparison(unittest.TestCase):
         self._value = 0
 
     @property
-    @deferrable
+    @sn.sanity_function
     def value(self):
         return self._value
 
@@ -91,21 +90,21 @@ class TestDeferredRichComparison(unittest.TestCase):
 class TestDeferredContainerOps(unittest.TestCase):
     def test_list_getitem(self):
         l = [1, 2]
-        expr = make_deferrable(l)[1] == 3
+        expr = sn.defer(l)[1] == 3
         l[1] = 3
         self.assertTrue(expr)
 
     def test_list_contains(self):
         l = [1, 2]
-        self.assertIn(2, make_deferrable(l))
+        self.assertIn(2, sn.defer(l))
 
     def test_set_contains(self):
         s = {1, 2}
-        self.assertIn(2, make_deferrable(s))
+        self.assertIn(2, sn.defer(s))
 
     def test_dict_contains(self):
         d = {1: 'a', 2: 'b'}
-        self.assertIn(2, make_deferrable(d))
+        self.assertIn(2, sn.defer(d))
 
 
 class V:
@@ -172,37 +171,37 @@ class V:
 
 class TestDeferredNumericOps(unittest.TestCase):
     def test_add(self):
-        a = make_deferrable(1)
+        a = sn.defer(1)
         self.assertEqual(4, a + 3)
         self.assertEqual(4, 3 + a)
 
     def test_sub(self):
-        a = make_deferrable(1)
+        a = sn.defer(1)
         self.assertEqual(-2, a - 3)
         self.assertEqual(2, 3 - a)
 
     def test_mul(self):
-        a = make_deferrable(1)
+        a = sn.defer(1)
         self.assertEqual(3, a * 3)
         self.assertEqual(3, 3 * a)
 
     def test_truediv(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(1.5, a / 2)
         self.assertEqual(2 / 3, 2 / a)
 
     def test_floordiv(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(1, a // 2)
         self.assertEqual(0, 2 // a)
 
     def test_mod(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(1, a % 2)
         self.assertEqual(2, 2 % a)
 
     def test_divmod(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         q, r = divmod(a, 2)
         self.assertEqual(1, q)
         self.assertEqual(1, r)
@@ -213,135 +212,135 @@ class TestDeferredNumericOps(unittest.TestCase):
         self.assertEqual(2, r)
 
     def test_pow(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(9, a**2)
         self.assertEqual(8, 2**a)
 
     def test_lshift(self):
-        a = make_deferrable(1)
+        a = sn.defer(1)
         self.assertEqual(4, a << 2)
         self.assertEqual(2 << 1, 2 << a)
 
     def test_rshift(self):
-        a = make_deferrable(8)
+        a = sn.defer(8)
         self.assertEqual(1, a >> 3)
         self.assertEqual(3 >> 8, 3 >> a)
 
     def test_and(self):
-        a = make_deferrable(7)
+        a = sn.defer(7)
         self.assertEqual(2, a & 2)
         self.assertEqual(2, 2 & a)
 
     def test_xor(self):
-        a = make_deferrable(7)
+        a = sn.defer(7)
         self.assertEqual(0, a ^ 7)
         self.assertEqual(0, 7 ^ a)
 
     def test_or(self):
-        a = make_deferrable(2)
+        a = sn.defer(2)
         self.assertEqual(7, a | 5)
         self.assertEqual(7, 5 | a)
 
     def test_expr_chaining(self):
-        a = make_deferrable(2)
+        a = sn.defer(2)
         self.assertEqual(64, a**((a + 1) * a))
 
     def test_neg(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(-3, -a)
 
     def test_pos(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(+3, +a)
 
     def test_abs(self):
-        a = make_deferrable(-3)
+        a = sn.defer(-3)
         self.assertEqual(3, abs(a))
 
     def test_invert(self):
-        a = make_deferrable(3)
+        a = sn.defer(3)
         self.assertEqual(~3, ~a)
 
     def test_iadd(self):
         v = V(1)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv += V(3)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(4, v._value)
 
     def test_isub(self):
         v = V(1)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv -= V(3)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(-2, v._value)
 
     def test_imul(self):
         v = V(1)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv *= V(3)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(3, v._value)
 
     def test_itruediv(self):
         v = V(3)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv /= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(1.5, v._value)
 
     def test_ifloordiv(self):
         v = V(3)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv //= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(1, v._value)
 
     def test_imod(self):
         v = V(3)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv %= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(1, v._value)
 
     def test_ipow(self):
         v = V(3)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv **= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(9, v._value)
 
     def test_ilshift(self):
         v = V(1)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv <<= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(4, v._value)
 
     def test_irshift(self):
         v = V(8)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv >>= V(3)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(1, v._value)
 
     def test_iand(self):
         v = V(7)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv &= V(2)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(2, v._value)
 
     def test_ixor(self):
         v = V(7)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv ^= V(7)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(0, v._value)
 
     def test_ior(self):
         v = V(2)
-        dv = make_deferrable(v)
+        dv = sn.defer(v)
         dv |= V(5)
-        evaluate(dv)
+        sn.evaluate(dv)
         self.assertEqual(7, v._value)
