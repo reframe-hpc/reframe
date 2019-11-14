@@ -381,23 +381,33 @@ class TestAsserts(unittest.TestCase):
         )
 
         # Check invalid thresholds
-        self.assertRaisesRegex(SanityError,
-                               r'invalid high threshold value: -0\.1',
-                               sn.evaluate, sn.assert_reference(0.9, 1, -0.2, -0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: 0\.2',
-                               sn.evaluate, sn.assert_reference(0.9, 1, 0.2, 0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: 1\.2',
-                               sn.evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1))
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid high threshold value: -0\.1',
+            sn.evaluate, sn.assert_reference(0.9, 1, -0.2, -0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: 0\.2',
+            sn.evaluate, sn.assert_reference(0.9, 1, 0.2, 0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: 1\.2',
+            sn.evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1)
+        )
 
         # check invalid thresholds greater than 1
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: -2\.0',
-                               sn.evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid high threshold value: 1\.5',
-                               sn.evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5))
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: -2\.0',
+            sn.evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid high threshold value: 1\.5',
+            sn.evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5)
+        )
 
     def _write_tempfile(self):
         ret = None
