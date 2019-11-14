@@ -13,7 +13,8 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
         super().__init__()
         self.descr = 'LibSciAcc symlink check of %s' % lib_name
         self.valid_systems = ['daint:login', 'daint:gpu',
-                              'dom:login', 'dom:gpu']
+                              'dom:login', 'dom:gpu',
+                              'tiger:login', 'tiger:gpu']
 
         # The prgenv is irrelevant for this case, so just chose one
         self.valid_prog_environs = ['PrgEnv-cray']

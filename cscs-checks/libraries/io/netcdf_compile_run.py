@@ -19,7 +19,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.linkage = linkage
         self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']

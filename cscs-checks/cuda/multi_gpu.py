@@ -10,7 +10,7 @@ from reframe.core.deferrable import evaluate
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
+        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -39,7 +39,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                                 '--end=%d' % self.max_buffer_size, '--csv']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
             self.num_gpus_per_node = 1
         else:
@@ -59,9 +59,13 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'dom:gpu:d2d': (499000, -0.1, None, 'MB/s'),
             'kesch:cn:h2d':   (7583, -0.1, None, 'MB/s'),
             'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'kesch:cn:d2d': (137408, -0.1, None, 'MB/s')
+            'kesch:cn:d2d': (137408, -0.1, None, 'MB/s'),
+            'tiger:gpu:h2d': (0, None, None, 'MB/s'),
+            'tiger:gpu:d2h': (0, None, None, 'MB/s'),
+            'tiger:gpu:d2d': (0, None, None, 'MB/s'),
         }
-        self.tags = {'diagnostic', 'mch', 'craype', 'external-resources'}
+        self.tags = {'diagnostic', 'benchmark', 'mch',
+                     'craype', 'external-resources'}
         self.maintainers = ['AJ', 'VK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):

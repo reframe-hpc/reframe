@@ -10,13 +10,17 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
     '''This test checks gperftools:
     https://gperftools.github.io/gperftools/cpuprofile.html
     '''
+
     def __init__(self, lang):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
+                                    'PrgEnv-intel', 'PrgEnv-pgi']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-g', '-h nomessage=3140', '-homp', '-O2'],
+            'PrgEnv-cray': ['-O2', '-g',
+                            '-homp' if lang == 'F90' else '-fopenmp'],
+            'PrgEnv-cray_classic': ['-O2', '-g', '-homp'],
             'PrgEnv-gnu': ['-g', '-fopenmp', '-O2'],
             'PrgEnv-intel': ['-g', '-qopenmp', '-O2'],
             'PrgEnv-pgi': ['-g', '-mp', '-O2']
@@ -72,14 +76,14 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             # check job status:
             sn.assert_found('SUCCESS', self.stdout),
             # check txt report:
-            sn.assert_found('MPI_Allreduce', self.rpt_file_txt),
             sn.assert_found(
                 r'^\s+\d+ms\s+\d+.\d+%.*_jacobi.\w+:\d+', self.rpt_file_txt),
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
+        self.perf_patterns = { 'jacobi_elapsed%': self.report_flat_pctg, }
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'performance-tools'}
 
     def setup(self, environ, partition, **job_opts):
         super().setup(environ, partition, **job_opts)
@@ -88,3 +92,21 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
         self.build_system.cxxflags = flags
         self.build_system.fflags = flags
         self.build_system.ldflags = flags + ['`pkg-config --libs libprofiler`']
+
+# {{{
+    @property
+    @sn.sanity_function
+    def report_flat_pctg(self):
+        '''
+        A typical report looks like:
+        flat  flat%   sum%        cum   cum%
+        50ms 15.62% 15.62%       50ms 15.62%  GNII_DlaProgress ??:?
+        30ms  9.38% 50.00%       30ms  9.38
+          L__Z6JacobiR10JacobiData_67__par_region1_2_2 GperftoolsMpiCheck_Cpp/
+          _jacobi.cc:82
+        This functions extracts flat% of the first jacobi function call found.
+        '''
+        regex = r'^\s+\d+ms\s+(?P<pctg>\d+.\d+)%.*_jacobi.\w+:\d+'
+        result = sn.extractsingle(regex, self.rpt_file_txt, 'pctg', float)
+        return result
+# }}}

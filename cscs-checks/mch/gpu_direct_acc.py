@@ -1,3 +1,4 @@
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -8,12 +9,19 @@ class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'tests gpu-direct for Fortran OpenACC'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn',
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
-            self.variables = {'MPICH_RDMA_ENABLED_CUDA': '1'}
+            self.variables = {
+                'MPICH_RDMA_ENABLED_CUDA': '1',
+            }
+
+            if self.current_system.name in ['tiger']:
+                craypath = '%s:$PATH' % os.environ['CRAY_BINUTILS_BIN']
+                self.variables['PATH'] = craypath
+
             self.num_tasks = 2
             self.num_gpus_per_node = 1
             self.num_tasks_per_node = 1
@@ -42,6 +50,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
 
         self.sourcepath = 'gpu_direct_acc.F90'
         self.build_system = 'SingleSource'
+        self.prebuild_cmd = ['module list -l']
         self.sanity_patterns = sn.all([
             sn.assert_found(r'GPU with OpenACC', self.stdout),
             sn.assert_found(r'Result :\s+OK', self.stdout)

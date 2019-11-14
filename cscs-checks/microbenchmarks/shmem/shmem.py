@@ -9,7 +9,7 @@ class GPUShmemTest(rfm.RegressionTest):
         super().__init__()
         self.sourcepath = 'shmem.cu'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_tasks = 0
         self.num_tasks_per_node = 1

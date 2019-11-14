@@ -448,3 +448,60 @@ Here is how the new deferred attribute is defined:
 
 The behavior of the flexible task allocation is controlled by the ``--flex-alloc-tasks`` command line option.
 See the corresponding `section <running.html#controlling-the-flexible-task-allocation>`__ for more information.
+
+
+Testing containerized applications
+----------------------------------
+
+.. versionadded:: 2.20
+
+
+ReFrame can be used also to test applications that run inside a container.
+A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>`.
+The following example shows a simple test that runs some basic commands inside an Ubuntu 18.04 container and checks that the test has indeed run inside the container and that the stage directory was correctly mounted:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+
+A container-based test in ReFrame requires that the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` is set:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 12
+
+This attribute accepts a string that corresponds to the name of the platform and it instantiates the appropriate :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>` object behind the scenes.
+In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
+If such a platform is not configured for the current system, the test will fail.
+For a complete list of supported container platforms, the user is referred to the `configuration documentation <configure.html#partition-configuration>`__.
+
+As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 13-16
+
+These two attributes are mandatory for container-based check.
+The :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>` attribute provides the list of commands to be run inside the container.
+It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the :class:`RegressionTest <reframe.core.pipeline.RegressionTest>` are ignored in case of container-based tests.
+
+In the above example, ReFrame will run the container as follows:
+
+.. code:: shell
+
+    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+
+By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
+The user commands then are then run from that directory one after the other.
+Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and/or performance checks.
+
+Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
+
+.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+  :lines: 17
+
+Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
+
+.. code-block:: python
+
+    self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
+                                            ('/path/to/host/dir2', '/path/to/container/mount_point2')]
+
+
+For a complete list of the available attributes of a specific container platform, the reader is referred to `reference guide <reference.html#container-platforms>`__.

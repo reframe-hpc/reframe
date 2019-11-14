@@ -8,7 +8,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'kesch:cn', 'arolla:cn', 'tsa:cn']
+                              'kesch:cn', 'arolla:cn', 'tsa:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray',
                                     'PrgEnv-pgi']
         self.build_system = 'Make'

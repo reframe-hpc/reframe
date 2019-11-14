@@ -26,9 +26,6 @@ class DGEMMTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
         self.num_tasks = 0
-        self.num_tasks_per_node = 1
-        self.num_tasks_per_core = 1
-        self.num_tasks_per_socket = 1
         self.use_multithreading = False
         self.executable_opts = ['6144', '12288', '3072']
         self.build_system = 'SingleSource'

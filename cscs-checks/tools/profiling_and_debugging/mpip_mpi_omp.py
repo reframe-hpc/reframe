@@ -22,6 +22,8 @@ class MpipCheck(rfm.RegressionTest):
             'PrgEnv-intel': ['-g', '-qopenmp', '-O2'],
             'PrgEnv-pgi': ['-g', '-mp', '-O2']
         }
+        # unload xalt to avoid _buffer_decode error:
+        self.prebuild_cmd = ['module rm xalt ;module list -t']
         self.modules = ['mpiP']
         self.build_system = 'Make'
         self.num_iterations = 500
@@ -37,6 +39,8 @@ class MpipCheck(rfm.RegressionTest):
         if lang == 'F90':
             self.build_system.max_concurrency = 1
 
+        # unload xalt to avoid _buffer_decode error:
+        self.pre_run = ['module rm xalt']
         self.num_tasks = 96
         self.num_tasks_per_node = 24
         self.num_cpus_per_task = 1
@@ -50,12 +54,6 @@ class MpipCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         if lang == 'Cpp':
-            # PrgEnv-gnu toolchain on daint currently sets gcc/6 as default,
-            # PrgEnv-gnu toolchain on   dom currently sets gcc/7 as default,
-            # hence mpip will report different line numbers:
-            if self.current_system.name == 'daint':
-                mpi_isendline = '142'
-            else:
                 mpi_isendline = '140'
         elif lang == 'F90':
             mpi_isendline = '146'
@@ -66,7 +64,7 @@ class MpipCheck(rfm.RegressionTest):
             # check performance report:
             sn.assert_found('Single collector task', self.rpt_file),
             sn.assert_eq(sn.extractsingle(
-                r'^.*_jacobi.*\s+(?P<mpi_isendline>\d+)\s.*Isend',
+                r'^\s+\d\s+\d\s_jacobi.{4}\s+(?P<mpi_isendline>\d+)\s.*Isend',
                 self.rpt_file, 'mpi_isendline'), mpi_isendline),
         ])
         self.maintainers = ['JG']
