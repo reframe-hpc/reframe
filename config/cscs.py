@@ -337,6 +337,41 @@ class ReframeSettings:
                 }
             },
 
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
+
             'leone': {
                 'descr': 'Leone',
                 'hostnames': ['leone'],
@@ -506,6 +541,45 @@ class ReframeSettings:
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu/18.12'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                },
+            },
+
+            'tsa': {
+                'PrgEnv-pgi-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.5'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
+                },
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.5'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpifort',
+                },
+                'PrgEnv-cce': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cce/19.04'],
+                },
+                'PrgEnv-cce-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-cce/19.04']
+                },
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/18.1'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpif90',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/18.1'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
