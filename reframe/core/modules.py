@@ -384,7 +384,7 @@ class ModulesSystemImpl(abc.ABC):
 class TModImpl(ModulesSystemImpl):
     '''Base class for TMod Module system (Tcl).'''
 
-     MIN_VERSION = (3, 2)
+    MIN_VERSION = (3, 2)
 
     def __init__(self):
         # Try to figure out if we are indeed using the TCL version
@@ -504,7 +504,7 @@ class TModImpl(ModulesSystemImpl):
         return 'module unload %s' % module
 
 
-class TMod31Impl(ModulesSystemImpl):
+class TMod31Impl(TModImpl):
     '''Module system for TMod (Tcl).'''
 
     MIN_VERSION = (3, 1)
