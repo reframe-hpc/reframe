@@ -62,6 +62,7 @@ import builtins
 import glob as pyglob
 import itertools
 import re
+import sys
 
 import reframe.utility as util
 from reframe.core.deferrable import deferrable, _DeferredExpression
@@ -180,6 +181,37 @@ def max(*args):
 def min(*args):
     '''Replacement for the built-in :func:`min() <python:min>` function.'''
     return builtins.min(*args)
+
+
+@deferrable
+def print(*objects, sep=' ', end='\n', file=None, flush=False):
+    '''Replacement for the built-in :func:`print() <python:print>` function.
+
+    The only difference is that this function returns the ``objects``, so that
+    you can use it transparently inside a complex sanity expression. For
+    example, you could write the following to print the matches returned from
+    the :func:`extractall()` function:
+
+    .. code:: python
+
+        self.sanity_patterns = sn.assert_eq(
+            sn.count(sn.print(sn.extract_all(...))), 10
+        )
+
+    .. note::
+
+       The only difference to the standard builtin :func:`print()
+       <python:print>` function is that the default value here is ``None``.
+       This is only to ensure that the ``file`` argument is not bound always
+       to the ``sys.stdout`` when this function is deferred. If ``file`` is
+       ``None``, then it is set internally to ``sys.stdout``.
+    '''
+
+    if file is None:
+        file = sys.stdout
+
+    builtins.print(*objects, sep=sep, end=end, file=file, flush=flush)
+    return objects
 
 
 @deferrable

@@ -1,7 +1,12 @@
+import contextlib
+import io
 import itertools
 import os
+import sys
 import unittest
+
 from tempfile import NamedTemporaryFile
+
 
 import reframe.utility.sanity as sn
 from reframe.core.exceptions import SanityError
@@ -123,6 +128,42 @@ class TestDeferredBuiltins(unittest.TestCase):
 
         l.append(0)
         self.assertEqual(0, sn.min(dl))
+
+    def test_print_stdout(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            x, y = sn.evaluate(sn.print(1, sn.defer(2)))
+
+        assert stdout.getvalue() == '1 2\n'
+        assert x == 1
+        assert y == 2
+
+    def test_print_stderr(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            x, y = sn.evaluate(sn.print(1, sn.defer(2), file=sys.stderr))
+
+        assert stderr.getvalue() == '1 2\n'
+        assert x == 1
+        assert y == 2
+
+    def test_print_separator(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            x, y = sn.evaluate(sn.print(1, sn.defer(2), sep='|'))
+
+        assert stdout.getvalue() == '1|2\n'
+        assert x == 1
+        assert y == 2
+
+    def test_print_end(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            x, y = sn.evaluate(sn.print(1, sn.defer(2), end=''))
+
+        assert stdout.getvalue() == '1 2'
+        assert x == 1
+        assert y == 2
 
     def test_reversed(self):
         l = [1, 2, 3]
