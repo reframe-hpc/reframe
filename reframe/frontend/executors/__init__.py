@@ -214,9 +214,6 @@ class RegressionTask:
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
 
-    def resume(self):
-        self._environ.restore()
-
     def abort(self, cause=None):
         logging.getlogger().debug('aborting: %s' % self.check.info())
         exc = AbortTaskError()
