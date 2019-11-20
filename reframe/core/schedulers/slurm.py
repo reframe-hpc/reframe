@@ -69,6 +69,17 @@ class SlurmJob(sched.Job):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
+    @staticmethod
+    def _get_nodes_from_description(descriptions):
+        nodes = set()
+        if descriptions:
+            for descr in descriptions:
+                with suppress(JobError):
+                    slurm_node = SlurmNode(descr)
+                    nodes.add(slurm_node)
+
+        return nodes
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._prefix = '#SBATCH'
@@ -171,23 +182,14 @@ class SlurmJob(sched.Job):
 
         self._jobid = int(jobid_match.group('jobid'))
 
-    def get_all_node_descriptions(self):
+    def get_all_nodes(self):
         try:
             completed = _run_strict('scontrol -a show -o nodes')
         except SpawnedProcessError as e:
             raise JobError('could not retrieve node information') from e
 
-        return completed.stdout.splitlines()
-
-    def get_all_nodes(self):
-        node_descriptions = self.get_all_node_descriptions()
-        nodes = set()
-        for descr in node_descriptions:
-            with suppress(JobError):
-                slurm_node = SlurmNode(descr)
-                nodes.add(slurm_node)
-
-        return nodes
+        node_descriptions = completed.stdout.splitlines()
+        return SlurmJob._get_nodes_from_description(node_descriptions)
 
     def _get_default_partition(self):
         completed = _run_strict('scontrol -a show -o partitions')
@@ -276,20 +278,13 @@ class SlurmJob(sched.Job):
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
-        return {SlurmNode(descr) for descr in node_descriptions}
+        return SlurmJob._get_nodes_from_description(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
         completed = os_ext.run_command('scontrol -a show -o node %s' %
                                        nodespec)
         node_descriptions = completed.stdout.splitlines()
-        nodes_avail = set()
-        for descr in node_descriptions:
-            try:
-                nodes_avail.add(SlurmNode(descr))
-            except JobError:
-                pass
-
-        return nodes_avail
+        return SlurmJob._get_nodes_from_description(node_descriptions)
 
     def _set_nodelist(self, nodespec):
         if self._nodelist is not None:
