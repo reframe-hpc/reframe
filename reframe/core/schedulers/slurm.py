@@ -4,6 +4,7 @@ import itertools
 import re
 import time
 from argparse import ArgumentParser
+from contextlib import suppress
 from datetime import datetime
 
 import reframe.core.schedulers as sched
@@ -170,14 +171,23 @@ class SlurmJob(sched.Job):
 
         self._jobid = int(jobid_match.group('jobid'))
 
-    def get_all_nodes(self):
+    def get_all_node_descriptions(self):
         try:
             completed = _run_strict('scontrol -a show -o nodes')
         except SpawnedProcessError as e:
             raise JobError('could not retrieve node information') from e
 
-        node_descriptions = completed.stdout.splitlines()
-        return {SlurmNode(descr) for descr in node_descriptions}
+        return completed.stdout.splitlines()
+
+    def get_all_nodes(self):
+        node_descriptions = self.get_all_node_descriptions()
+        nodes = set()
+        for descr in node_descriptions:
+            with suppress(JobError):
+                slurm_node = SlurmNode(descr)
+                nodes.add(slurm_node)
+
+        return nodes
 
     def _get_default_partition(self):
         completed = _run_strict('scontrol -a show -o partitions')
