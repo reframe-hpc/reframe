@@ -94,7 +94,7 @@ this decorator:
 
 This decorator is an alias to the :func:`reframe.core.deferrable.deferrable`
 decorator.
-<The following function definition is equivalent to the above:
+The following function definition is equivalent to the above:
 ::
 
     @deferrable
