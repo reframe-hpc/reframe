@@ -69,17 +69,6 @@ class SlurmJob(sched.Job):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
-    @staticmethod
-    def _get_nodes_from_description(descriptions):
-        nodes = set()
-        if descriptions:
-            for descr in descriptions:
-                with suppress(JobError):
-                    slurm_node = SlurmNode(descr)
-                    nodes.add(slurm_node)
-
-        return nodes
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._prefix = '#SBATCH'
@@ -189,7 +178,7 @@ class SlurmJob(sched.Job):
             raise JobError('could not retrieve node information') from e
 
         node_descriptions = completed.stdout.splitlines()
-        return SlurmJob._get_nodes_from_description(node_descriptions)
+        return create_nodes(node_descriptions)
 
     def _get_default_partition(self):
         completed = _run_strict('scontrol -a show -o partitions')
@@ -278,13 +267,13 @@ class SlurmJob(sched.Job):
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
-        return SlurmJob._get_nodes_from_description(node_descriptions)
+        return create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
         completed = os_ext.run_command('scontrol -a show -o node %s' %
                                        nodespec)
         node_descriptions = completed.stdout.splitlines()
-        return SlurmJob._get_nodes_from_description(node_descriptions)
+        return create_nodes(node_descriptions)
 
     def _set_nodelist(self, nodespec):
         if self._nodelist is not None:
@@ -492,6 +481,15 @@ class SqueueJob(SlurmJob):
         # _update_state() will make sure to return the approriate state.
         super().cancel()
         self._cancelled = True
+
+
+def create_nodes(descriptions):
+    nodes = set()
+    for descr in descriptions:
+        with suppress(JobError):
+            nodes.add(SlurmNode(descr))
+
+    return nodes
 
 
 class SlurmNode:

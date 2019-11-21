@@ -15,7 +15,7 @@ from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.schedulers.slurm import SlurmNode, SlurmJob
+from reframe.core.schedulers.slurm import SlurmNode, create_nodes
 
 
 class _TestJob(abc.ABC):
@@ -591,7 +591,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
 
                              'Node invalid_node2 not found']
 
-        return SlurmJob._get_nodes_from_description(node_descriptions)
+        return create_nodes(node_descriptions)
 
     def create_reservation_nodes(obj, res):
         return {n for n in obj.testjob.get_all_nodes() if n.name != 'nid00001'}
