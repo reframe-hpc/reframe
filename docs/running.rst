@@ -1242,7 +1242,7 @@ This option accepts three values:
   1. ``idle``: (default) In this case, ReFrame will set the number of tasks to the number of idle nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
   2. ``all``: In this case, ReFrame will set the number of tasks to the number of all the nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
 
-  3. Any positive integer: In this case, ReFrame will set the number of tasks to the given value.
+  3. Any positive integer which is a multiple of :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>`: In this case, ReFrame will set the number of tasks to the given value.
 
 The flexible allocation of number of tasks takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as ``--partition``, ``--reservation``, ``--nodelist``, ``--exclude-nodes`` and ``--job-option`` (if the scheduler option passed to the latter imposes a restriction).
 Notice that ReFrame will issue an error if the resulting number of nodes is zero.

@@ -193,11 +193,10 @@ class Job(abc.ABC):
                                'this backend') from e
 
             if guessed_num_tasks < min_num_tasks:
-                nodes_required = min_num_tasks // num_tasks_per_node
-                nodes_found = guessed_num_tasks // num_tasks_per_node
-                raise JobError('could not find enough nodes: '
-                               'required %s, found %s' %
-                               (nodes_required, nodes_found))
+                raise JobError(
+                    'could not satisfy the minimum task requirement: '
+                    'required %s, requested %s' %
+                    (min_num_tasks, guessed_num_tasks))
 
             self.num_tasks = guessed_num_tasks
             getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
@@ -215,10 +214,16 @@ class Job(abc.ABC):
         pass
 
     def guess_num_tasks(self):
+        num_tasks_per_node = self.num_tasks_per_node or 1
         if isinstance(self.sched_flex_alloc_tasks, int):
             if self.sched_flex_alloc_tasks <= 0:
                 raise JobError('invalid number of flex_alloc_tasks: %s' %
                                self.sched_flex_alloc_tasks)
+            elif self.sched_flex_alloc_tasks % num_tasks_per_node != 0:
+                raise JobError(
+                    'invalid number of flex_alloc_tasks: %s, it must be a '
+                    'multiple of num_tasks_per_node: %s' %
+                    (self.sched_flex_alloc_tasks, num_tasks_per_node))
 
             return self.sched_flex_alloc_tasks
 
@@ -237,7 +242,6 @@ class Job(abc.ABC):
                 'flex_alloc_tasks: selecting idle nodes: '
                 'available nodes now: %s' % len(available_nodes))
 
-        num_tasks_per_node = self.num_tasks_per_node or 1
         num_tasks = len(available_nodes) * num_tasks_per_node
         return num_tasks
 

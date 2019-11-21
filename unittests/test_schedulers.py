@@ -632,6 +632,12 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         with self.assertRaises(JobError):
             self.prepare_job()
 
+    def test_non_mult_flex_alloc_tasks(self):
+        self.testjob._sched_flex_alloc_tasks = 7
+        self.testjob._sched_access = ['--constraint=f1']
+        with self.assertRaises(JobError):
+            self.prepare_job()
+
     def test_negative_flex_alloc_tasks(self):
         self.testjob._sched_flex_alloc_tasks = -4
         self.testjob._sched_access = ['--constraint=f1']
