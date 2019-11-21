@@ -115,7 +115,6 @@ class RegressionTask:
         self._failed_stage = None
         self._current_stage = 'startup'
         self._exc_info = (None, None, None)
-        self._environ = None
         self._listeners = list(listeners)
 
         # Reference count for dependent tests; safe to cleanup the test only
@@ -171,7 +170,6 @@ class RegressionTask:
 
     def setup(self, *args, **kwargs):
         self._safe_call(self.check.setup, *args, **kwargs)
-        self._environ = env.snapshot()
         self._notify_listeners('on_task_setup')
 
     def compile(self):
@@ -213,9 +211,6 @@ class RegressionTask:
         self._failed_stage = self._current_stage
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
-
-    def resume(self):
-        self._environ.restore()
 
     def abort(self, cause=None):
         logging.getlogger().debug('aborting: %s' % self.check.info())
@@ -267,7 +262,6 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        self._environ_snapshot = env.snapshot()
 
     def __repr__(self):
         return debug.repr(self)
@@ -300,7 +294,6 @@ class Runner:
                 (len(testcases), num_checks, num_failures), just='center'
             )
             self._printer.timestamp('Finished on', 'short double line')
-            self._environ_snapshot.restore()
 
     def _retry_failed(self, cases):
         rt = runtime.runtime()
@@ -340,7 +333,6 @@ class Runner:
                 print_separator(t.check, 'started processing')
                 last_check = t.check
 
-            self._environ_snapshot.restore()
             self._policy.runcase(t)
 
         # Close the last visual box
