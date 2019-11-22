@@ -198,13 +198,12 @@ def print(*objects, sep=' ', end='\n', file=None, flush=False):
             sn.count(sn.print(sn.extract_all(...))), 10
         )
 
-    .. note::
-
-       The only difference to the standard builtin :func:`print()
-       <python:print>` function is that the default value here is ``None``.
-       This is only to ensure that the ``file`` argument is not bound always
-       to the ``sys.stdout`` when this function is deferred. If ``file`` is
-       ``None``, then it is set internally to ``sys.stdout``.
+    If ``file`` is None, :func:`print` will print its arguments to the
+    standard output. Unlike the builtin :func:`print() <python:print>`
+    function, we don't bind the ``file`` argument to :attr:`sys.stdout` by
+    default. This would capture :attr:`sys.stdout` at the time this function
+    is defined and would prevent it from seeing changes to :attr:`sys.stdout`,
+    such as redirects, in the future.
     '''
 
     if file is None:
