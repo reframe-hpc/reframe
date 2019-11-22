@@ -64,7 +64,7 @@ import itertools
 import re
 
 import reframe.utility as util
-from reframe.core.deferrable import deferrable, evaluate
+from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.exceptions import SanityError
 
 
@@ -674,6 +674,28 @@ def allx(iterable):
     .. versionadded:: 2.13
     '''
     return util.allx(iterable)
+
+
+@deferrable
+def defer(x):
+    '''Defer the evaluation of variable ``x``.
+
+    .. versionadded:: 2.21
+    '''
+    return x
+
+
+def evaluate(expr):
+    '''Evaluate a deferred expression.
+
+    If ``expr`` is not a deferred expression, it will be returned as is.
+
+    .. versionadded:: 2.21
+    '''
+    if isinstance(expr, _DeferredExpression):
+        return expr.evaluate()
+    else:
+        return expr
 
 
 @deferrable

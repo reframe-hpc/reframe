@@ -4,7 +4,6 @@ import unittest
 from tempfile import NamedTemporaryFile
 
 import reframe.utility.sanity as sn
-from reframe.core.deferrable import evaluate, make_deferrable
 from reframe.core.exceptions import SanityError
 from unittests.fixtures import TEST_RESOURCES_CHECKS
 
@@ -32,7 +31,7 @@ class TestDeferredBuiltins(unittest.TestCase):
         self.assertEqual(1.0, sn.abs(1.0))
         self.assertEqual(0.0, sn.abs(0.0))
         self.assertEqual(1.0, sn.abs(-1.0))
-        self.assertEqual(2.0, sn.abs(make_deferrable(-2.0)))
+        self.assertEqual(2.0, sn.abs(sn.defer(-2.0)))
 
     def test_and(self):
         expr = sn.and_(self.a, self.b)
@@ -71,19 +70,19 @@ class TestDeferredBuiltins(unittest.TestCase):
         self.assertFalse(expr)
 
     def test_enumerate(self):
-        de = sn.enumerate(make_deferrable([1, 2]), start=1)
+        de = sn.enumerate(sn.defer([1, 2]), start=1)
         for i, e in de:
             self.assertEqual(i, e)
 
     def test_filter(self):
         df = sn.filter(lambda x: x if x % 2 else None,
-                       make_deferrable([1, 2, 3, 4, 5]))
+                       sn.defer([1, 2, 3, 4, 5]))
 
         for i, x in sn.enumerate(df, start=1):
             self.assertEqual(2*i - 1, x)
 
         # Alternative testing
-        self.assertEqual([1, 3, 5], list(evaluate(df)))
+        self.assertEqual([1, 3, 5], list(sn.evaluate(df)))
 
     def test_hasattr(self):
         e = sn.hasattr(self, '_c')
@@ -94,7 +93,7 @@ class TestDeferredBuiltins(unittest.TestCase):
 
     def test_len(self):
         l = [1, 2]
-        dl = make_deferrable(l)
+        dl = sn.defer(l)
         self.assertEqual(2, sn.len(dl))
 
         l.append(3)
@@ -107,11 +106,11 @@ class TestDeferredBuiltins(unittest.TestCase):
             self.assertEqual(2*i + 1, x)
 
         # Alternative test
-        self.assertEqual([3, 5, 7], list(evaluate(dm)))
+        self.assertEqual([3, 5, 7], list(sn.evaluate(dm)))
 
     def test_max(self):
         l = [1, 2]
-        dl = make_deferrable(l)
+        dl = sn.defer(l)
         self.assertEqual(2, sn.max(dl))
 
         l.append(3)
@@ -119,7 +118,7 @@ class TestDeferredBuiltins(unittest.TestCase):
 
     def test_min(self):
         l = [1, 2]
-        dl = make_deferrable(l)
+        dl = sn.defer(l)
         self.assertEqual(1, sn.min(dl))
 
         l.append(0)
@@ -128,29 +127,29 @@ class TestDeferredBuiltins(unittest.TestCase):
     def test_reversed(self):
         l = [1, 2, 3]
         dr = sn.reversed(l)
-        self.assertEqual([3, 2, 1], list(evaluate(dr)))
+        self.assertEqual([3, 2, 1], list(sn.evaluate(dr)))
 
     def test_round(self):
-        self.assertEqual(1.0, sn.round(make_deferrable(1.4)))
+        self.assertEqual(1.0, sn.round(sn.defer(1.4)))
 
     def test_setattr(self):
         dset = sn.setattr(self, '_a', 5)
         self.assertEqual(0, self._a)
-        evaluate(dset)
+        sn.evaluate(dset)
         self.assertEqual(5, self._a)
 
     def test_sorted(self):
         l = [2, 3, 1]
         ds = sn.sorted(l)
-        self.assertEqual([1, 2, 3], list(evaluate(ds)))
+        self.assertEqual([1, 2, 3], list(sn.evaluate(ds)))
 
     def test_sum(self):
         self.assertEqual(3, sn.sum([1, 1, 1]))
-        self.assertEqual(3, sn.sum(make_deferrable([1, 1, 1])))
+        self.assertEqual(3, sn.sum(sn.defer([1, 1, 1])))
 
     def test_zip(self):
         la = [1, 2, 3]
-        lb = make_deferrable(['a', 'b', 'c'])
+        lb = sn.defer(['a', 'b', 'c'])
 
         la_new = []
         lb_new = []
@@ -173,26 +172,26 @@ class TestAsserts(unittest.TestCase):
         self.assertTrue(sn.assert_true([1]))
         self.assertTrue(sn.assert_true(range(1)))
         self.assertRaisesRegex(SanityError, 'False is not True',
-                               evaluate, sn.assert_true(False))
+                               sn.evaluate, sn.assert_true(False))
         self.assertRaisesRegex(SanityError, '0 is not True',
-                               evaluate, sn.assert_true(0))
+                               sn.evaluate, sn.assert_true(0))
         self.assertRaisesRegex(SanityError, r'\[\] is not True',
-                               evaluate, sn.assert_true([]))
+                               sn.evaluate, sn.assert_true([]))
         self.assertRaisesRegex(SanityError, r'range\(.+\) is not True',
-                               evaluate, sn.assert_true(range(0)))
+                               sn.evaluate, sn.assert_true(range(0)))
         self.assertRaisesRegex(SanityError, 'not true',
-                               evaluate, sn.assert_true(0, msg='not true'))
+                               sn.evaluate, sn.assert_true(0, msg='not true'))
 
     def test_assert_true_with_deferrables(self):
-        self.assertTrue(sn.assert_true(make_deferrable(True)))
-        self.assertTrue(sn.assert_true(make_deferrable(1)))
-        self.assertTrue(sn.assert_true(make_deferrable([1])))
+        self.assertTrue(sn.assert_true(sn.defer(True)))
+        self.assertTrue(sn.assert_true(sn.defer(1)))
+        self.assertTrue(sn.assert_true(sn.defer([1])))
         self.assertRaisesRegex(SanityError, 'False is not True',
-                               evaluate, sn.assert_true(make_deferrable(False)))
+                               sn.evaluate, sn.assert_true(sn.defer(False)))
         self.assertRaisesRegex(SanityError, '0 is not True',
-                               evaluate, sn.assert_true(make_deferrable(0)))
+                               sn.evaluate, sn.assert_true(sn.defer(0)))
         self.assertRaisesRegex(SanityError, r'\[\] is not True',
-                               evaluate, sn.assert_true(make_deferrable([])))
+                               sn.evaluate, sn.assert_true(sn.defer([])))
 
     def test_assert_false(self):
         self.assertTrue(sn.assert_false(False))
@@ -200,125 +199,125 @@ class TestAsserts(unittest.TestCase):
         self.assertTrue(sn.assert_false([]))
         self.assertTrue(sn.assert_false(range(0)))
         self.assertRaisesRegex(SanityError, 'True is not False',
-                               evaluate, sn.assert_false(True))
+                               sn.evaluate, sn.assert_false(True))
         self.assertRaisesRegex(SanityError, '1 is not False',
-                               evaluate, sn.assert_false(1))
+                               sn.evaluate, sn.assert_false(1))
         self.assertRaisesRegex(SanityError, r'\[1\] is not False',
-                               evaluate, sn.assert_false([1]))
+                               sn.evaluate, sn.assert_false([1]))
         self.assertRaisesRegex(SanityError, r'range\(.+\) is not False',
-                               evaluate, sn.assert_false(range(1)))
+                               sn.evaluate, sn.assert_false(range(1)))
 
     def test_assert_false_with_deferrables(self):
-        self.assertTrue(sn.assert_false(make_deferrable(False)))
-        self.assertTrue(sn.assert_false(make_deferrable(0)))
-        self.assertTrue(sn.assert_false(make_deferrable([])))
+        self.assertTrue(sn.assert_false(sn.defer(False)))
+        self.assertTrue(sn.assert_false(sn.defer(0)))
+        self.assertTrue(sn.assert_false(sn.defer([])))
         self.assertRaisesRegex(SanityError, 'True is not False',
-                               evaluate, sn.assert_false(make_deferrable(True)))
+                               sn.evaluate, sn.assert_false(sn.defer(True)))
         self.assertRaisesRegex(SanityError, '1 is not False',
-                               evaluate, sn.assert_false(make_deferrable(1)))
+                               sn.evaluate, sn.assert_false(sn.defer(1)))
         self.assertRaisesRegex(SanityError, r'\[1\] is not False',
-                               evaluate, sn.assert_false(make_deferrable([1])))
+                               sn.evaluate, sn.assert_false(sn.defer([1])))
 
     def test_assert_eq(self):
         self.assertTrue(sn.assert_eq(1, 1))
         self.assertTrue(sn.assert_eq(1, True))
         self.assertRaisesRegex(SanityError, '1 != 2',
-                               evaluate, sn.assert_eq(1, 2))
+                               sn.evaluate, sn.assert_eq(1, 2))
         self.assertRaisesRegex(SanityError, '1 != False',
-                               evaluate, sn.assert_eq(1, False))
+                               sn.evaluate, sn.assert_eq(1, False))
         self.assertRaisesRegex(
             SanityError, '1 is not equals to 2',
-            evaluate, sn.assert_eq(1, 2, '{0} is not equals to {1}'))
+            sn.evaluate, sn.assert_eq(1, 2, '{0} is not equals to {1}'))
 
     def test_assert_eq_with_deferrables(self):
-        self.assertTrue(sn.assert_eq(1, make_deferrable(1)))
-        self.assertTrue(sn.assert_eq(make_deferrable(1), True))
+        self.assertTrue(sn.assert_eq(1, sn.defer(1)))
+        self.assertTrue(sn.assert_eq(sn.defer(1), True))
         self.assertRaisesRegex(SanityError, '1 != 2',
-                               evaluate, sn.assert_eq(make_deferrable(1), 2))
+                               sn.evaluate, sn.assert_eq(sn.defer(1), 2))
         self.assertRaisesRegex(SanityError, '1 != False',
-                               evaluate, sn.assert_eq(make_deferrable(1), False))
+                               sn.evaluate, sn.assert_eq(sn.defer(1), False))
 
     def test_assert_ne(self):
         self.assertTrue(sn.assert_ne(1, 2))
         self.assertTrue(sn.assert_ne(1, False))
         self.assertRaisesRegex(SanityError, '1 == 1',
-                               evaluate, sn.assert_ne(1, 1))
+                               sn.evaluate, sn.assert_ne(1, 1))
         self.assertRaisesRegex(SanityError, '1 == True',
-                               evaluate, sn.assert_ne(1, True))
+                               sn.evaluate, sn.assert_ne(1, True))
 
     def test_assert_ne_with_deferrables(self):
-        self.assertTrue(sn.assert_ne(1, make_deferrable(2)))
-        self.assertTrue(sn.assert_ne(make_deferrable(1), False))
+        self.assertTrue(sn.assert_ne(1, sn.defer(2)))
+        self.assertTrue(sn.assert_ne(sn.defer(1), False))
         self.assertRaisesRegex(SanityError, '1 == 1',
-                               evaluate, sn.assert_ne(make_deferrable(1), 1))
+                               sn.evaluate, sn.assert_ne(sn.defer(1), 1))
         self.assertRaisesRegex(SanityError, '1 == True',
-                               evaluate, sn.assert_ne(make_deferrable(1), True))
+                               sn.evaluate, sn.assert_ne(sn.defer(1), True))
 
     def test_assert_gt(self):
         self.assertTrue(sn.assert_gt(3, 1))
         self.assertRaisesRegex(SanityError, '1 <= 3',
-                               evaluate, sn.assert_gt(1, 3))
+                               sn.evaluate, sn.assert_gt(1, 3))
 
     def test_assert_gt_with_deferrables(self):
-        self.assertTrue(sn.assert_gt(3, make_deferrable(1)))
+        self.assertTrue(sn.assert_gt(3, sn.defer(1)))
         self.assertRaisesRegex(SanityError, '1 <= 3',
-                               evaluate, sn.assert_gt(1, make_deferrable(3)))
+                               sn.evaluate, sn.assert_gt(1, sn.defer(3)))
 
     def test_assert_ge(self):
         self.assertTrue(sn.assert_ge(3, 1))
         self.assertTrue(sn.assert_ge(3, 3))
         self.assertRaisesRegex(SanityError, '1 < 3',
-                               evaluate, sn.assert_ge(1, 3))
+                               sn.evaluate, sn.assert_ge(1, 3))
 
     def test_assert_ge_with_deferrables(self):
-        self.assertTrue(sn.assert_ge(3, make_deferrable(1)))
-        self.assertTrue(sn.assert_ge(3, make_deferrable(3)))
+        self.assertTrue(sn.assert_ge(3, sn.defer(1)))
+        self.assertTrue(sn.assert_ge(3, sn.defer(3)))
         self.assertRaisesRegex(SanityError, '1 < 3',
-                               evaluate, sn.assert_ge(1, make_deferrable(3)))
+                               sn.evaluate, sn.assert_ge(1, sn.defer(3)))
 
     def test_assert_lt(self):
         self.assertTrue(sn.assert_lt(1, 3))
         self.assertRaisesRegex(SanityError, '3 >= 1',
-                               evaluate, sn.assert_lt(3, 1))
+                               sn.evaluate, sn.assert_lt(3, 1))
 
     def test_assert_lt_with_deferrables(self):
-        self.assertTrue(sn.assert_lt(1, make_deferrable(3)))
+        self.assertTrue(sn.assert_lt(1, sn.defer(3)))
         self.assertRaisesRegex(SanityError, '3 >= 1',
-                               evaluate, sn.assert_lt(3, make_deferrable(1)))
+                               sn.evaluate, sn.assert_lt(3, sn.defer(1)))
 
     def test_assert_le(self):
         self.assertTrue(sn.assert_le(1, 1))
         self.assertTrue(sn.assert_le(3, 3))
         self.assertRaisesRegex(SanityError, '3 > 1',
-                               evaluate, sn.assert_le(3, 1))
+                               sn.evaluate, sn.assert_le(3, 1))
 
     def test_assert_le_with_deferrables(self):
-        self.assertTrue(sn.assert_le(1, make_deferrable(3)))
-        self.assertTrue(sn.assert_le(3, make_deferrable(3)))
+        self.assertTrue(sn.assert_le(1, sn.defer(3)))
+        self.assertTrue(sn.assert_le(3, sn.defer(3)))
         self.assertRaisesRegex(SanityError, '3 > 1',
-                               evaluate, sn.assert_le(3, make_deferrable(1)))
+                               sn.evaluate, sn.assert_le(3, sn.defer(1)))
 
     def test_assert_in(self):
         self.assertTrue(sn.assert_in(1, [1, 2, 3]))
         self.assertRaisesRegex(SanityError, r'0 is not in \[1, 2, 3\]',
-                               evaluate, sn.assert_in(0, [1, 2, 3]))
+                               sn.evaluate, sn.assert_in(0, [1, 2, 3]))
 
     def test_assert_in_with_deferrables(self):
-        self.assertTrue(sn.assert_in(1, make_deferrable([1, 2, 3])))
+        self.assertTrue(sn.assert_in(1, sn.defer([1, 2, 3])))
         self.assertRaisesRegex(
             SanityError, r'0 is not in \[1, 2, 3\]',
-            evaluate, sn.assert_in(0, make_deferrable([1, 2, 3])))
+            sn.evaluate, sn.assert_in(0, sn.defer([1, 2, 3])))
 
     def test_assert_not_in(self):
         self.assertTrue(sn.assert_not_in(0, [1, 2, 3]))
         self.assertRaisesRegex(SanityError, r'1 is in \[1, 2, 3\]',
-                               evaluate, sn.assert_not_in(1, [1, 2, 3]))
+                               sn.evaluate, sn.assert_not_in(1, [1, 2, 3]))
 
     def test_assert_not_in_with_deferrables(self):
-        self.assertTrue(sn.assert_not_in(0, make_deferrable([1, 2, 3])))
+        self.assertTrue(sn.assert_not_in(0, sn.defer([1, 2, 3])))
         self.assertRaisesRegex(
             SanityError, r'1 is in \[1, 2, 3\]',
-            evaluate, sn.assert_not_in(1, make_deferrable([1, 2, 3])))
+            sn.evaluate, sn.assert_not_in(1, sn.defer([1, 2, 3])))
 
     def test_assert_bounded(self):
         self.assertTrue(sn.assert_bounded(1, -1.5, 1.5))
@@ -327,15 +326,15 @@ class TestAsserts(unittest.TestCase):
         self.assertTrue(sn.assert_bounded(1))
         self.assertRaisesRegex(SanityError,
                                r'value 1 not within bounds -0\.5\.\.0\.5',
-                               evaluate, sn.assert_bounded(1, -0.5, 0.5))
+                               sn.evaluate, sn.assert_bounded(1, -0.5, 0.5))
         self.assertRaisesRegex(SanityError,
                                r'value 1 not within bounds -inf\.\.0\.5',
-                               evaluate, sn.assert_bounded(1, upper=0.5))
+                               sn.evaluate, sn.assert_bounded(1, upper=0.5))
         self.assertRaisesRegex(SanityError,
                                r'value 1 not within bounds 1\.5\.\.inf',
-                               evaluate, sn.assert_bounded(1, lower=1.5))
+                               sn.evaluate, sn.assert_bounded(1, lower=1.5))
         self.assertRaisesRegex(
-            SanityError, 'value 1 is out of bounds', evaluate,
+            SanityError, 'value 1 is out of bounds', sn.evaluate,
             sn.assert_bounded(1, -0.5, 0.5, 'value {0} is out of bounds'))
 
     def test_assert_reference(self):
@@ -357,48 +356,58 @@ class TestAsserts(unittest.TestCase):
         self.assertRaisesRegex(
             SanityError,
             r'0\.5 is beyond reference value 1 \(l=0\.8, u=1\.1\)',
-            evaluate, sn.assert_reference(0.5, 1, -0.2, 0.1)
+            sn.evaluate, sn.assert_reference(0.5, 1, -0.2, 0.1)
         )
         self.assertRaisesRegex(
             SanityError,
             r'0\.5 is beyond reference value 1 \(l=0\.8, u=inf\)',
-            evaluate, sn.assert_reference(0.5, 1, -0.2)
+            sn.evaluate, sn.assert_reference(0.5, 1, -0.2)
         )
         self.assertRaisesRegex(
             SanityError,
             r'1\.5 is beyond reference value 1 \(l=0\.8, u=1\.1\)',
-            evaluate, sn.assert_reference(1.5, 1, -0.2, 0.1)
+            sn.evaluate, sn.assert_reference(1.5, 1, -0.2, 0.1)
         )
         self.assertRaisesRegex(
             SanityError,
             r'1\.5 is beyond reference value 1 \(l=-inf, u=1\.1\)',
-            evaluate, sn.assert_reference(
+            sn.evaluate, sn.assert_reference(
                 1.5, 1, lower_thres=None, upper_thres=0.1)
         )
         self.assertRaisesRegex(
             SanityError,
             r'-0\.8 is beyond reference value -1 \(l=-1\.2, u=-0\.9\)',
-            evaluate, sn.assert_reference(-0.8, -1, -0.2, 0.1)
+            sn.evaluate, sn.assert_reference(-0.8, -1, -0.2, 0.1)
         )
 
         # Check invalid thresholds
-        self.assertRaisesRegex(SanityError,
-                               r'invalid high threshold value: -0\.1',
-                               evaluate, sn.assert_reference(0.9, 1, -0.2, -0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: 0\.2',
-                               evaluate, sn.assert_reference(0.9, 1, 0.2, 0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: 1\.2',
-                               evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1))
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid high threshold value: -0\.1',
+            sn.evaluate, sn.assert_reference(0.9, 1, -0.2, -0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: 0\.2',
+            sn.evaluate, sn.assert_reference(0.9, 1, 0.2, 0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: 1\.2',
+            sn.evaluate, sn.assert_reference(0.9, 1, 1.2, 0.1)
+        )
 
         # check invalid thresholds greater than 1
-        self.assertRaisesRegex(SanityError,
-                               r'invalid low threshold value: -2\.0',
-                               evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1))
-        self.assertRaisesRegex(SanityError,
-                               r'invalid high threshold value: 1\.5',
-                               evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5))
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid low threshold value: -2\.0',
+            sn.evaluate, sn.assert_reference(0.9, 1, -2.0, 0.1)
+        )
+        self.assertRaisesRegex(
+            SanityError,
+            r'invalid high threshold value: 1\.5',
+            sn.evaluate, sn.assert_reference(-1.5, -1, -0.5, 1.5)
+        )
 
     def _write_tempfile(self):
         ret = None
@@ -414,8 +423,8 @@ class TestAsserts(unittest.TestCase):
         tempfile = self._write_tempfile()
         self.assertTrue(sn.assert_found(r'Step: \d+', tempfile))
         self.assertTrue(sn.assert_found(
-            r'Step: \d+', make_deferrable(tempfile)))
-        self.assertRaises(SanityError, evaluate,
+            r'Step: \d+', sn.defer(tempfile)))
+        self.assertRaises(SanityError, sn.evaluate,
                           sn.assert_found(r'foo: \d+', tempfile))
         os.remove(tempfile)
 
@@ -428,9 +437,9 @@ class TestAsserts(unittest.TestCase):
         tempfile = self._write_tempfile()
         self.assertTrue(sn.assert_not_found(r'foo: \d+', tempfile))
         self.assertTrue(
-            sn.assert_not_found(r'foo: \d+', make_deferrable(tempfile))
+            sn.assert_not_found(r'foo: \d+', sn.defer(tempfile))
         )
-        self.assertRaises(SanityError, evaluate,
+        self.assertRaises(SanityError, sn.evaluate,
                           sn.assert_not_found(r'Step: \d+', tempfile))
         os.remove(tempfile)
 
@@ -448,20 +457,20 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertEqual(2, sn.getitem(l, 1))
         self.assertEqual(2, sn.getitem(d, 'b'))
         self.assertRaisesRegex(SanityError, 'index out of bounds: 10',
-                               evaluate, sn.getitem(l, 10))
+                               sn.evaluate, sn.getitem(l, 10))
         self.assertRaisesRegex(SanityError, 'key not found: k',
-                               evaluate, sn.getitem(d, 'k'))
+                               sn.evaluate, sn.getitem(d, 'k'))
 
     def test_getitem_with_deferrables(self):
-        l = make_deferrable([1, 2, 3])
-        d = make_deferrable({'a': 1, 'b': 2, 'c': 3})
+        l = sn.defer([1, 2, 3])
+        d = sn.defer({'a': 1, 'b': 2, 'c': 3})
 
         self.assertEqual(2, sn.getitem(l, 1))
         self.assertEqual(2, sn.getitem(d, 'b'))
         self.assertRaisesRegex(SanityError, 'index out of bounds: 10',
-                               evaluate, sn.getitem(l, 10))
+                               sn.evaluate, sn.getitem(l, 10))
         self.assertRaisesRegex(SanityError, 'key not found: k',
-                               evaluate, sn.getitem(d, 'k'))
+                               sn.evaluate, sn.getitem(d, 'k'))
 
     def test_count(self):
         # Use a custom generator for testing
@@ -505,22 +514,22 @@ class TestUtilityFunctions(unittest.TestCase):
 
         # Test deferred expressions
         d = [1, 2, 2, 1]
-        self.assertEqual(2, sn.count_uniq(make_deferrable(d)))
+        self.assertEqual(2, sn.count_uniq(sn.defer(d)))
 
     def test_glob(self):
         filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.glob(filepatt))
-        self.assertTrue(sn.glob(make_deferrable(filepatt)))
+        self.assertTrue(sn.glob(sn.defer(filepatt)))
 
     def test_iglob(self):
         filepatt = os.path.join(TEST_RESOURCES_CHECKS, '*.py')
         self.assertTrue(sn.count(sn.iglob(filepatt)))
-        self.assertTrue(sn.count(sn.iglob(make_deferrable(filepatt))))
+        self.assertTrue(sn.count(sn.iglob(sn.defer(filepatt))))
 
     def test_chain(self):
         list1 = ['A', 'B', 'C']
         list2 = ['D', 'E', 'F']
-        chain1 = evaluate(sn.chain(make_deferrable(list1), list2))
+        chain1 = sn.evaluate(sn.chain(sn.defer(list1), list2))
         chain2 = itertools.chain(list1, list2)
         self.assertTrue(all((a == b for a, b in zip(chain1, chain2))))
 
@@ -540,13 +549,13 @@ class TestPatternMatchingFunctions(unittest.TestCase):
         os.remove(self.tempfile)
 
     def test_findall(self):
-        res = evaluate(sn.findall(r'Step: \d+', self.tempfile))
+        res = sn.evaluate(sn.findall(r'Step: \d+', self.tempfile))
         self.assertEqual(3, len(res))
 
-        res = evaluate(sn.findall('Step:.*', self.tempfile))
+        res = sn.evaluate(sn.findall('Step:.*', self.tempfile))
         self.assertEqual(3, len(res))
 
-        res = evaluate(sn.findall('Step: [12]', self.tempfile))
+        res = sn.evaluate(sn.findall('Step: [12]', self.tempfile))
         self.assertEqual(2, len(res))
 
         # Check the matches
@@ -554,67 +563,69 @@ class TestPatternMatchingFunctions(unittest.TestCase):
             self.assertEqual(expected, match.group(0))
 
         # Check groups
-        res = evaluate(sn.findall(r'Step: (?P<no>\d+)', self.tempfile))
+        res = sn.evaluate(sn.findall(r'Step: (?P<no>\d+)', self.tempfile))
         for step, match in enumerate(res, start=1):
             self.assertEqual(step, int(match.group(1)))
             self.assertEqual(step, int(match.group('no')))
 
     def test_findall_encoding(self):
-        res = evaluate(
+        res = sn.evaluate(
             sn.findall('Odyssey', self.utf16_file, encoding='utf-16')
         )
         self.assertEqual(1, len(res))
 
     def test_findall_error(self):
-        self.assertRaises(SanityError, evaluate,
+        self.assertRaises(SanityError, sn.evaluate,
                           sn.findall(r'Step: \d+', 'foo.txt'))
 
     def test_extractall(self):
         # Check numeric groups
-        res = evaluate(sn.extractall(r'Step: (?P<no>\d+)', self.tempfile, 1))
+        res = sn.evaluate(sn.extractall(
+            r'Step: (?P<no>\d+)', self.tempfile, 1))
         for expected, v in enumerate(res, start=1):
             self.assertEqual(str(expected), v)
 
         # Check named groups
-        res = evaluate(sn.extractall(r'Step: (?P<no>\d+)', self.tempfile, 'no'))
+        res = sn.evaluate(sn.extractall(
+            r'Step: (?P<no>\d+)', self.tempfile, 'no'))
         for expected, v in enumerate(res, start=1):
             self.assertEqual(str(expected), v)
 
         # Check convert function
-        res = evaluate(sn.extractall(r'Step: (?P<no>\d+)',
-                                     self.tempfile, 'no', int))
+        res = sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)',
+                                        self.tempfile, 'no', int))
         for expected, v in enumerate(res, start=1):
             self.assertEqual(expected, v)
 
     def test_extractall_encoding(self):
-        res = evaluate(
+        res = sn.evaluate(
             sn.extractall('Odyssey', self.utf16_file, encoding='utf-16')
         )
         self.assertEqual(1, len(res))
 
     def test_extractall_error(self):
-        self.assertRaises(SanityError, evaluate,
+        self.assertRaises(SanityError, sn.evaluate,
                           sn.extractall(r'Step: (\d+)', 'foo.txt', 1))
         self.assertRaises(
-            SanityError, evaluate,
+            SanityError, sn.evaluate,
             sn.extractall(r'Step: (?P<no>\d+)',
                           self.tempfile, conv=int)
         )
-        self.assertRaises(SanityError, evaluate,
+        self.assertRaises(SanityError, sn.evaluate,
                           sn.extractall(r'Step: (\d+)', self.tempfile, 2))
         self.assertRaises(
-            SanityError, evaluate,
+            SanityError, sn.evaluate,
             sn.extractall(r'Step: (?P<no>\d+)', self.tempfile, 'foo'))
 
     def test_extractall_custom_conv(self):
-        res = evaluate(sn.extractall(r'Step: (\d+)', self.tempfile, 1,
-                                     lambda x: int(x)))
+        res = sn.evaluate(sn.extractall(r'Step: (\d+)', self.tempfile, 1,
+                                        lambda x: int(x)))
         for expected, v in enumerate(res, start=1):
             self.assertEqual(expected, v)
 
         # Check error in custom function
         self.assertRaises(
-            SanityError, evaluate,
+            SanityError, sn.evaluate,
             sn.extractall(r'Step: (\d+)', self.tempfile,
                           conv=lambda x: int(x))
         )
@@ -625,7 +636,7 @@ class TestPatternMatchingFunctions(unittest.TestCase):
                 return int(x)
 
         self.assertRaises(
-            SanityError, evaluate,
+            SanityError, sn.evaluate,
             sn.extractall(r'Step: (\d+)', self.tempfile, conv=C())
         )
 
@@ -638,12 +649,12 @@ class TestPatternMatchingFunctions(unittest.TestCase):
 
         # Test out of bounds access
         self.assertRaises(
-            SanityError, evaluate,
+            SanityError, sn.evaluate,
             sn.extractsingle(r'Step: (\d+)', self.tempfile, 1, int, 100)
         )
 
     def test_extractsingle_encoding(self):
-        res = evaluate(
+        res = sn.evaluate(
             sn.extractsingle(r'Odyssey', self.utf16_file, encoding='utf-16')
         )
         self.assertNotEqual(-1, res.find('Odyssey'))
@@ -665,16 +676,16 @@ class TestPatternMatchingFunctions(unittest.TestCase):
 
 class TestNumericFunctions(unittest.TestCase):
     def test_avg(self):
-        res = evaluate(sn.avg([1, 2, 3, 4]))
+        res = sn.evaluate(sn.avg([1, 2, 3, 4]))
         self.assertEqual(2.5, res)
 
         # Check result when passing a generator
-        res = evaluate(sn.avg(range(1, 5)))
+        res = sn.evaluate(sn.avg(range(1, 5)))
         self.assertEqual(2.5, res)
 
         # Check with single element container
-        res = evaluate(sn.avg(range(1, 2)))
+        res = sn.evaluate(sn.avg(range(1, 2)))
         self.assertEqual(1, res)
 
         # Check with empty container
-        self.assertRaises(SanityError, evaluate, sn.avg([]))
+        self.assertRaises(SanityError, sn.evaluate, sn.avg([]))
