@@ -9,7 +9,7 @@ class SrunLauncher(JobLauncher):
 
 
 @register_launcher('ibrun')
-class SrunLauncher(JobLauncher):
+class IbrunLauncher(JobLauncher):
     '''TACC's custom parallel job launcher.'''
 
     def command(self, job):
