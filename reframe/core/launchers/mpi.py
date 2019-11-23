@@ -8,6 +8,14 @@ class SrunLauncher(JobLauncher):
         return ['srun']
 
 
+@register_launcher('ibrun')
+class SrunLauncher(JobLauncher):
+    '''TACC's custom parallel job launcher.'''
+
+    def command(self, job):
+        return ['ibrun']
+
+
 @register_launcher('alps')
 class AlpsLauncher(JobLauncher):
     def command(self, job):
