@@ -11,7 +11,17 @@ class SrunLauncher(JobLauncher):
 @register_launcher('alps')
 class AlpsLauncher(JobLauncher):
     def command(self, job):
-        return ['aprun', '-B']
+        cmd = ['aprun', '-n', str(job.num_tasks)]
+        if job.num_tasks_per_node:
+            cmd += ['-N', str(job.num_tasks_per_node)]
+
+        if job.num_cpus_per_task:
+            cmd += ['-d', str(job.num_cpus_per_task)]
+
+        if job.use_smt:
+            cmd += ['-j', '0']
+
+        return cmd
 
 
 @register_launcher('mpirun')
