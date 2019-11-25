@@ -104,17 +104,18 @@ The valid attributes of a system are the following:
 
 * ``descr``: A detailed description of the system (default is the system name).
 * ``hostnames``: This is a list of hostname patterns that will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
-* ``modules_system``: The modules system that should be used for loading environment modules on this system (default :class:`None`).
+* ``modules_system``: *[new in 2.8]* The modules system that should be used for loading environment modules on this system (default :class:`None`).
   Three types of modules systems are currently supported:
 
-  - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (versions older than 3.2 are not supported).
+  - ``tmod`` or ``tmod32``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.2).
+  - ``tmod31``: *[new in 2.21]* The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.1).
   - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions older than 4.1 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
 
-* ``modules``: Modules to be loaded always when running on this system.
+* ``modules``: *[new in 2.19]* Modules to be loaded always when running on this system.
   These modules modify the ReFrame environment.
   This is useful when for example a particular module is needed to submit jobs on a specific system.
-* ``variables``: Environment variables to be set always when running on this system.
+* ``variables``: *[new in 2.19]* Environment variables to be set always when running on this system.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
@@ -126,13 +127,7 @@ The valid attributes of a system are the following:
 For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` and ``perflogdir`` directories, please refer to the `"Configuring ReFrame Directories" <running.html#configuring-reframe-directories>`__ and `"Performance Logging" <running.html#performance-logging>`__ sections.
 
 .. note::
-  .. versionadded:: 2.8
-    The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
-
-.. note::
-  .. versionadded:: 2.19
-    The ``modules`` and ``variables`` configuration parameters were introduced at the system level.
-
+   A different backend is used for Tmod 3.1, due to its different Python bindings.
 
 .. warning::
    .. versionchanged:: 2.18
