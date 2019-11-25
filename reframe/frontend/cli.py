@@ -183,9 +183,9 @@ def main():
         help='Specify the maximum number of times a failed regression test '
              'may be retried (default: 0)')
     run_options.add_argument(
-        '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
-        help="Strategy for flexible task allocation (default: 'idle').")
+        '--flex-alloc-nodes', action='store',
+        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default='idle',
+        help="Strategy for flexible node allocation (default: 'idle').")
 
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
@@ -563,19 +563,19 @@ def main():
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.keep_stage_files = options.keep_stage_files
             try:
-                errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
-                sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
-                if sched_flex_alloc_tasks <= 0:
-                    raise ConfigError(errmsg.format(options.flex_alloc_tasks))
+                errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
+                sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
+                if sched_flex_alloc_nodes <= 0:
+                    raise ConfigError(errmsg.format(options.flex_alloc_nodes))
             except ValueError:
-                if not options.flex_alloc_tasks.lower() in {'idle', 'all'}:
+                if not options.flex_alloc_nodes.casefold() in {'idle', 'all'}:
                     raise ConfigError(
-                        errmsg.format(options.flex_alloc_tasks)) from None
+                        errmsg.format(options.flex_alloc_nodes)) from None
 
-                sched_flex_alloc_tasks = options.flex_alloc_tasks
+                sched_flex_alloc_nodes = options.flex_alloc_nodes
 
-            exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
-            exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
+            exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
+            exec_policy.flex_alloc_nodes = options.flex_alloc_nodes
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition
             exec_policy.sched_reservation = options.reservation

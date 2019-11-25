@@ -38,7 +38,7 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 raise TaskDependencyError('dependencies failed')
 
             task.setup(partition, environ,
-                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
+                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
@@ -243,7 +243,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 return
 
             task.setup(partition, environ,
-                       sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
+                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                        sched_account=self.sched_account,
                        sched_partition=self.sched_partition,
                        sched_reservation=self.sched_reservation,
@@ -303,7 +303,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             elif self.deps_succeeded(task):
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
-                           sched_flex_alloc_tasks=self.sched_flex_alloc_tasks,
+                           sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                            sched_account=self.sched_account,
                            sched_partition=self.sched_partition,
                            sched_reservation=self.sched_reservation,

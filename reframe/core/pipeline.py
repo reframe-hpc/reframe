@@ -342,7 +342,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: If the number of tasks is set to a number ``<=0``, ReFrame will try
     #: to flexibly allocate the number of tasks, based on the command line
-    #: option ``--flex-alloc-tasks``.
+    #: option ``--flex-alloc-nodes``.
     #: A negative number is used to indicate the minimum number of tasks
     #: required for the test.
     #: In this case the minimum number of tasks is the absolute value of
@@ -356,13 +356,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. note::
     #:     .. versionchanged:: 2.15
     #:        Added support for flexible allocation of the number of tasks
-    #:        according to the ``--flex-alloc-tasks`` command line option
+    #:        according to the ``--flex-alloc-`` command line option
     #:        (see `Flexible task allocation
-    #:        <running.html#flexible-task-allocation>`__)
+    #:        <running.html#flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
     #:        Negative ``num_tasks`` is allowed for specifying the minimum
     #:        number of required tasks by the test.
+    #:     .. versionchanged:: 2.21
+    #:        Flexible task allocation is now node based.
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -1174,7 +1176,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.logger.debug(msg)
 
         # Update num_tasks if test is flexible
-        if self.job.sched_flex_alloc_tasks:
+        if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
     def poll(self):

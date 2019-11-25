@@ -383,7 +383,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def test_guess_num_tasks(self):
         self.testjob.num_tasks = 0
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         # monkey patch `get_all_nodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
         self.testjob.get_all_nodes = lambda: set()
@@ -613,45 +613,39 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         # monkey patch `_get_default_partition` to simulate extraction
         # of the default partition
         self.testjob._get_default_partition = lambda: 'pdef'
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob.num_tasks_per_node = 4
         self.testjob.num_tasks = 0
 
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
-    def test_positive_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = 48
+    def test_positive_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = 12
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 48)
 
-    def test_zero_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = 0
+    def test_zero_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = 0
         self.testjob._sched_access = ['--constraint=f1']
         with self.assertRaises(JobError):
             self.prepare_job()
 
-    def test_non_mult_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = 7
-        self.testjob._sched_access = ['--constraint=f1']
-        with self.assertRaises(JobError):
-            self.prepare_job()
-
-    def test_negative_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = -4
+    def test_negative_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = -1
         self.testjob._sched_access = ['--constraint=f1']
         with self.assertRaises(JobError):
             self.prepare_job()
 
     def test_sched_access_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_sched_access_constraint_partition(self):
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
@@ -662,18 +656,18 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_default_partition_all(self):
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_constraint_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.options = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_partition_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_partition = 'p2'
         with self.assertRaises(JobError):
             self.prepare_job()
@@ -760,7 +754,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertEqual(self.testjob.num_tasks, 1)
 
     def test_not_enough_idle_nodes(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.num_tasks = -12
         with self.assertRaises(JobError):
             self.prepare_job()
