@@ -427,7 +427,6 @@ class TModImpl(ModulesSystemImpl):
             raise ConfigError(
                 'Python is not supported by this TMod installation')
 
-
     def name(self):
         return 'tmod'
 
@@ -563,7 +562,7 @@ class TMod31Impl(TModImpl):
         else:
             cmd = completed.stdout
             exec_match = re.search(r'^exec\s\'(\S+)\'', cmd,
-                                      re.MULTILINE)
+                                   re.MULTILINE)
             if exec_match is None:
                 raise ConfigError('could not use the python bindings')
             with open(exec_match.group(1), 'r') as content_file:
