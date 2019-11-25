@@ -12,7 +12,7 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
-        self.executable = 'hello_world'
+        self.executable = 'hello_world_distributed'
         self.sourcesdir = None
 
         self.use_multithreading = None

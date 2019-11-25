@@ -465,7 +465,7 @@ The following example shows a simple test that runs some basic commands inside a
 A container-based test in ReFrame requires that the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` is set:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 13
+  :lines: 12
 
 This attribute accepts a string that corresponds to the name of the platform and it instantiates the appropriate :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>` object behind the scenes.
 In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
@@ -475,7 +475,7 @@ For a complete list of supported container platforms, the user is referred to th
 As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 14-17
+  :lines: 13-16
 
 These two attributes are mandatory for container-based check.
 The :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>` attribute provides the list of commands to be run inside the container.
@@ -494,7 +494,7 @@ Once the commands are executed, the container is stopped and ReFrame goes on wit
 Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 18
+  :lines: 17
 
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 

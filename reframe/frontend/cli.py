@@ -12,6 +12,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
+import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
@@ -493,14 +494,15 @@ def main():
                             for p in rt.system.partitions
                             for e in p.environs if re.match(env_patt, e.name)}
 
-        # Generate the test cases
+        # Generate the test cases, validate dependencies and sort them
         checks_matched = list(checks_matched)
         testcases = generate_testcases(checks_matched,
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-
-        # Act on checks
+        testgraph = dependency.build_deps(testcases)
+        dependency.validate_deps(testgraph)
+        testcases = dependency.toposort(testgraph)
 
         # Unload regression's module and load user-specified modules
         if hasattr(settings, 'reframe_module'):
@@ -531,6 +533,8 @@ def main():
                 printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
+
+        # Act on checks
 
         success = True
         if options.list:
