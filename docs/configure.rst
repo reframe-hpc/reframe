@@ -300,6 +300,8 @@ ReFrame supports the following parallel job launchers:
 * ``alps``: Programs on the configured partition will be launched using the ``aprun`` command.
 * ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
 * ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
+* ``ibrun``: *[new in 2.21]* Programs on the configured partition will be launched using the ``ibrun`` command.
+  This is a custom parallel job launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
 * ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
 * ``ssh``: *[new in 2.20]* Programs on the configured partition will be launched using SSH.
   This option uses the partition's ``access`` parameter (see `above <#partition-configuration>`__) in order to determine the remote host and any additional options to be passed to the SSH client.

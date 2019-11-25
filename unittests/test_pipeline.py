@@ -72,10 +72,8 @@ class TestRegressionTest(unittest.TestCase):
         return os.path.join(new_prefix, basename)
 
     def keep_files_list(self, test, compile_only=False):
-        from reframe.core.deferrable import evaluate
-
-        ret = [self.replace_prefix(evaluate(test.stdout), test.outputdir),
-               self.replace_prefix(evaluate(test.stderr), test.outputdir)]
+        ret = [self.replace_prefix(sn.evaluate(test.stdout), test.outputdir),
+               self.replace_prefix(sn.evaluate(test.stderr), test.outputdir)]
 
         if not compile_only:
             ret.append(self.replace_prefix(test.job.script_filename,

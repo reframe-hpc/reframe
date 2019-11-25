@@ -41,7 +41,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
         }
         self.maintainers = ['JG']
-        self.tags = {'production', 'craype'}
+        self.tags = {'craype'}
         # gdb4hpc has its own way to launch a debugging job and needs an
         # additional jobscript. The reframe jobscript can be copied for that
         # purpose, by adding the cray_debug_ comments around the job launch
@@ -69,7 +69,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
 class Gdb4hpcCpuCheck(Gdb4hpcCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['dom:gpu', 'dom:mc']
+        self.valid_systems = ['dom:gpu', 'dom:mc', 'tiger:gpu']
         self.sanity_patterns = sn.all([
             sn.assert_reference(sn.extractsingle(
                 r'^tst\{0\}:\s+(?P<result>\d+.\d+[eE]-\d+)',

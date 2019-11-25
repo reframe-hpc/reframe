@@ -5,8 +5,7 @@ import reframe.utility.sanity as sn
 @rfm.required_version('>=2.20-dev2')
 @rfm.simple_test
 class Example10Test(rfm.RunOnlyRegressionTest):
-    def __init__(self, **kwargs):
-        super().__init__()
+    def __init__(self):
         self.descr = 'Run commands inside a container'
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
