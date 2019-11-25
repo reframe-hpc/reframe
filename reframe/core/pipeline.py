@@ -356,8 +356,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. note::
     #:     .. versionchanged:: 2.15
     #:        Added support for flexible allocation of the number of tasks
-    #:        according to the ``--flex-alloc-`` command line option
-    #:        (see `Flexible task allocation
+    #:        according to the ``--flex-alloc-nodes`` command line option
+    #:        (see `Flexible node allocation
     #:        <running.html#flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
