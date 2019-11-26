@@ -358,7 +358,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        Added support for flexible allocation of the number of tasks
     #:        according to the ``--flex-alloc-tasks`` command line option
     #:        (see `Flexible node allocation
-    #:        <running.html#flexible-node-allocation>`__)
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
     #:        Negative ``num_tasks`` is allowed for specifying the minimum
@@ -367,7 +367,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        Flexible node allocation is now controlled by the
     #:        ``--flex-alloc-nodes`` command line option
     #:        (see `Flexible node allocation
-    #:        <running.html#flexible-node-allocation>`__)
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
