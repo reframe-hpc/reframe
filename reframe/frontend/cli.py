@@ -183,6 +183,10 @@ def main():
         help='Specify the maximum number of times a failed regression test '
              'may be retried (default: 0)')
     run_options.add_argument(
+        '--flex-alloc-tasks', action='store',
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}',
+        help='Deprecated, please use --flex-alloc-nodes instead')
+    run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default='idle',
         help="Strategy for flexible node allocation (default: 'idle').")
@@ -562,6 +566,12 @@ def main():
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.keep_stage_files = options.keep_stage_files
+
+            if options.flex_alloc_tasks:
+                printer.warning('--flex-alloc-tasks is deprecated, you should '
+                                'use --flex-alloc-nodes instead: Exiting...')
+                sys.exit(1)
+
             try:
                 errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
                 sched_flex_alloc_nodes = int(options.flex_alloc_nodes)

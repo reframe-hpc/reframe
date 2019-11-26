@@ -509,7 +509,8 @@ They are summarized below:
   In this example, Slurm's policy is that later definitions of options override previous ones.
   So, in this case, way you would override the standard output for all the submitted jobs!
 
-* ``--flex-alloc-tasks {all|idle|NUM}``: Automatically determine the number of tasks allocated for each test.
+* ``--flex-alloc-tasks {all|idle|NUM}``: (Deprecated) Automatically determine the number of tasks allocated for each test.
+* ``--flex-alloc-nodes {all|idle|NUM}``: Automatically determine the number of nodes allocated for each test.
 * ``--force-local``: Force the local execution of the selected tests.
   No jobs will be submitted.
 * ``--skip-sanity-check``: Skip sanity checking phase.
@@ -1237,7 +1238,9 @@ Controlling the Flexible Node Allocation
 .. note::
    .. versionchanged:: 2.21
       Flexible task allocation is now based on number of nodes.
-      The corresponding command line option is now ``--flex-alloc-nodes`` instead of ``--flex-alloc-tasks``.
+
+.. warning::
+      The command line option ``--flex-alloc-tasks`` is now deprecated, you should use ``--flex-alloc-nodes`` instead.
 
 
 ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value ``<=0``.
