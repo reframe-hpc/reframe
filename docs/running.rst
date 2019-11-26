@@ -509,7 +509,7 @@ They are summarized below:
   In this example, Slurm's policy is that later definitions of options override previous ones.
   So, in this case, way you would override the standard output for all the submitted jobs!
 
-* ``--flex-alloc-tasks {all|idle|NUM}``: (Deprecated) Automatically determine the number of tasks allocated for each test.
+* ``--flex-alloc-tasks {all|idle|NUM}``: (Deprecated) Please use ``--flex-alloc-nodes`` instead.
 * ``--flex-alloc-nodes {all|idle|NUM}``: Automatically determine the number of nodes allocated for each test.
 * ``--force-local``: Force the local execution of the selected tests.
   No jobs will be submitted.

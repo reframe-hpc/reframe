@@ -184,11 +184,11 @@ def main():
              'may be retried (default: 0)')
     run_options.add_argument(
         '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}',
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
         help='Deprecated, please use --flex-alloc-nodes instead')
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
-        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default='idle',
+        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
         help="Strategy for flexible node allocation (default: 'idle').")
 
     env_options.add_argument(
@@ -538,6 +538,15 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
+        if options.flex_alloc_tasks:
+            printer.warning('--flex-alloc-tasks is deprecated, you should '
+                            'use --flex-alloc-nodes instead: Passing the '
+                            'given option to --flex-alloc-nodes')
+            options.flex_alloc_nodes = (options.flex_alloc_nodes or
+                                        options.flex_alloc_tasks)
+
+        options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+
         # Act on checks
 
         success = True
@@ -566,11 +575,6 @@ def main():
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.keep_stage_files = options.keep_stage_files
-
-            if options.flex_alloc_tasks:
-                printer.warning('--flex-alloc-tasks is deprecated, you should '
-                                'use --flex-alloc-nodes instead: Exiting...')
-                sys.exit(1)
 
             try:
                 errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
