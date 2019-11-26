@@ -10,6 +10,7 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['Horovod/0.18.1-CrayGNU-19.10-tf-2.0.0']
+        self.sourcesdir = None
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
         if variant == 'small':
