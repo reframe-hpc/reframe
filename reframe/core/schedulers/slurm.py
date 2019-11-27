@@ -217,7 +217,7 @@ class SlurmJob(sched.Job):
             reservation = reservation.strip()
             nodes &= self._get_reservation_nodes(reservation)
             getlogger().debug(
-                'flex_alloc_tasks: filtering nodes by reservation %s: '
+                'flex_alloc_nodes: filtering nodes by reservation %s: '
                 'available nodes now: %s' % (reservation, len(nodes)))
 
         if partitions:
@@ -225,33 +225,33 @@ class SlurmJob(sched.Job):
         else:
             default_partition = self._get_default_partition()
             partitions = {default_partition} if default_partition else set()
-            getlogger().debug('flex_alloc_tasks: default partition: %s' %
+            getlogger().debug('flex_alloc_nodes: default partition: %s' %
                               default_partition)
 
         nodes = {n for n in nodes if n.partitions >= partitions}
         getlogger().debug(
-            'flex_alloc_tasks: filtering nodes by partition(s) %s: '
+            'flex_alloc_nodes: filtering nodes by partition(s) %s: '
             'available nodes now: %s' % (partitions, len(nodes)))
 
         if constraints:
             constraints = set(constraints.strip().split(','))
             nodes = {n for n in nodes if n.active_features >= constraints}
             getlogger().debug(
-                'flex_alloc_tasks: filtering nodes by constraint(s) %s: '
+                'flex_alloc_nodes: filtering nodes by constraint(s) %s: '
                 'available nodes now: %s' % (constraints, len(nodes)))
 
         if nodelist:
             nodelist = nodelist.strip()
             nodes &= self._get_nodes_by_name(nodelist)
             getlogger().debug(
-                'flex_alloc_tasks: filtering nodes by nodelist: %s '
+                'flex_alloc_nodes: filtering nodes by nodelist: %s '
                 'available nodes now: %s' % (nodelist, len(nodes)))
 
         if exclude_nodes:
             exclude_nodes = exclude_nodes.strip()
             nodes -= self._get_nodes_by_name(exclude_nodes)
             getlogger().debug(
-                'flex_alloc_tasks: excluding node(s): %s '
+                'flex_alloc_nodes: excluding node(s): %s '
                 'available nodes now: %s' % (exclude_nodes, len(nodes)))
 
         return nodes
