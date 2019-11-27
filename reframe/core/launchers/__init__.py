@@ -26,8 +26,8 @@ class JobLauncher(abc.ABC):
     #: :default: ``[]``
     options = fields.TypedField('options', typ.List[str])
 
-    def __init__(self, options=[]):
-        self.options = list(options)
+    def __init__(self):
+        self.options = []
 
     @abc.abstractmethod
     def command(self, job):
@@ -79,9 +79,10 @@ class LauncherWrapper(JobLauncher):
     '''
 
     def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
-        super().__init__(target_launcher.options)
+        super().__init__()
+        self.options = target_launcher.options
         self._target_launcher = target_launcher
-        self._wrapper_command = [wrapper_command] + list(wrapper_options)
+        self._wrapper_command = [wrapper_command] + wrapper_options
 
     def command(self, job):
         return self._wrapper_command + self._target_launcher.command(job)
