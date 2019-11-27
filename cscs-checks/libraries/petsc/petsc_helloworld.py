@@ -10,7 +10,7 @@ class PetscPoisson2DCheck(rfm.RegressionTest):
         self.descr = ('Compile/run PETSc 2D Poisson example with cray-petsc '
                       '(%s linking)') % variant
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc']
+                              'dom:gpu', 'dom:mc', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
         self.sourcepath = 'poisson2d.c'
@@ -28,5 +28,5 @@ class PetscPoisson2DCheck(rfm.RegressionTest):
                                 self.stdout, 'norm', float, -1)
         self.sanity_patterns = sn.assert_lt(norm, 1.0e-5)
 
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.maintainers = ['WS', 'AJ', 'TM']

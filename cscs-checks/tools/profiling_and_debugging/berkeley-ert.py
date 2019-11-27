@@ -23,7 +23,7 @@ class ErtTestBase(rfm.RegressionTest):
                                        'roofline', 'ert')
         self.rpt = '%s.rpt' % self.executable
         self.maintainers = ['JG']
-        self.tags = {'scs'}
+        self.tags = {'scs', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)

@@ -30,7 +30,8 @@ class MpiInitTest(rfm.RegressionTest):
 
     def __init__(self, required_thread):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
@@ -61,17 +62,15 @@ class MpiInitTest(rfm.RegressionTest):
                          self.mpithread_version[required_thread])
         ])
         self.maintainers = ['JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
 
 @rfm.simple_test
 class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
-                              'leone:normal', 'monch:compute']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'kesch:pn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -88,7 +87,7 @@ class MpiHelloTest(rfm.RegressionTest):
             self.stdout, 'nprocs', int)
         self.sanity_patterns = sn.assert_eq(num_processes,
                                             self.num_tasks_assigned-1)
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'craype'}
 
     @property
     @sn.sanity_function

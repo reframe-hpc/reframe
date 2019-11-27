@@ -31,15 +31,15 @@ If you try to call ``foo()``, its code will not execute:
 Instead, a special object is returned that represents the function whose execution is deferred.
 Notice the more general *deferred expression* name of this object. We shall see later on why this name is used.
 
-In order to explicitly trigger the execution of ``foo()``, you have to call :func:`evaluate <reframe.core.deferrable.evaluate>` on it:
+In order to explicitly trigger the execution of ``foo()``, you have to call :func:`evaluate <reframe.utility.sanity.evaluate>` on it:
 
 .. code-block:: pycon
 
-  >>> from reframe.core.deferrable import evaluate
+  >>> from reframe.utility.sanity import evaluate
   >>> evaluate(foo())
   hello
 
-If the argument passed to :func:`evaluate <reframe.core.deferrable.evaluate>` is not a deferred expression, it will be simply returned as is.
+If the argument passed to :func:`evaluate <reframe.utility.sanity.evaluate>` is not a deferred expression, it will be simply returned as is.
 
 Deferrable functions may also be combined as we do with normal functions. Let's extend our example with ``foo()`` accepting an argument and printing it:
 
@@ -186,7 +186,7 @@ In summary deferrable functions have the following characteristics:
 
 * You can make any function deferrable by preceding it with the :func:`@sanity_function <reframe.utility.sanity.sanity_function>` or the :func:`@deferrable <reframe.core.deferrable.deferrable>` decorator.
 * When you call a deferrable function, its body is not executed but its arguments are *captured* and an object representing the deferred function is returned.
-* You can execute the body of a deferrable function at any later point by calling :func:`evaluate <reframe.core.deferrable.evaluate>` on the deferred expression object that it has been returned by the call to the deferred function.
+* You can execute the body of a deferrable function at any later point by calling :func:`evaluate <reframe.utility.sanity.evaluate>` on the deferred expression object that it has been returned by the call to the deferred function.
 * Deferred functions can accept other deferred expressions as arguments and may also return a deferred expression.
 * When you evaluate a deferrable function, any other deferrable function down the call tree will also be evaluated.
 * You can include a call to a deferrable function in any Python expression and the result will be another deferred expression.
@@ -195,7 +195,7 @@ How a Deferred Expression Is Evaluated?
 ---------------------------------------
 
 As discussed before, you can create a new deferred expression by calling a function whose definition is decorated by the ``@sanity_function`` or ``@deferrable`` decorator or by including an already deferred expression in any sort of arithmetic operation.
-When you call :func:`evaluate <reframe.core.deferrable.evaluate>` on a deferred expression, you trigger the evaluation of the whole subexpression tree.
+When you call :func:`evaluate <reframe.utility.sanity.evaluate>` on a deferred expression, you trigger the evaluation of the whole subexpression tree.
 Here is how the evaluation process evolves:
 
 A deferred expression object is merely a placeholder of the target function and its arguments at the moment you call it.
@@ -244,7 +244,7 @@ The following figure shows how the evaluation evolves for this particular exampl
 Implicit evaluation of a deferred expression
 --------------------------------------------
 
-Although you can trigger the evaluation of a deferred expression at any time by calling :func:`evaluate <reframe.core.deferrable.evaluate>`, there are some cases where the evaluation is triggered implicitly:
+Although you can trigger the evaluation of a deferred expression at any time by calling :func:`evaluate <reframe.utility.evaluate>`, there are some cases where the evaluation is triggered implicitly:
 
 * When you try to get the truthy value of a deferred expression by calling :func:`bool <python:bool>` on it.
   This happens for example when you include a deferred expression in an :keyword:`if` statement or as an argument to the :keyword:`and`, :keyword:`or`, :keyword:`not` and :keyword:`in` (:func:`__contains__ <python:object.__contains__>`) operators.
@@ -262,8 +262,8 @@ Although you can trigger the evaluation of a deferred expression at any time by 
 
   .. code-block:: pycon
 
-    >>> from reframe.core.deferrable import make_deferrable
-    >>> l = make_deferrable([1, 2, 3])
+    >>> from reframe.utility.sanity import defer
+    >>> l = defer([1, 2, 3])
     >>> l
     <reframe.core.deferrable._DeferredExpression object at 0x2b1288f54cf8>
     >>> evaluate(l)
@@ -273,7 +273,7 @@ Although you can trigger the evaluation of a deferred expression at any time by 
     >>> 3 in l
     True
 
-  The :func:`make_deferrable <reframe.core.deferrable.make_deferrable>` is simply a deferrable version of the identity function (a function that simply returns its argument).
+  The :func:`defer <reframe.utility.sanity.defer>` is simply a deferrable version of the identity function (a function that simply returns its argument).
   As expected, ``l`` is a deferred expression that evaluates to the ``[1, 2, 3]`` list. When we apply the :keyword:`in` operator, the deferred expression is immediately evaluated.
 
   .. note:: Python expands this expression into ``bool(l.__contains__(3))``.
@@ -328,7 +328,7 @@ You can call other deferrable functions from within a deferrable function.
 Thanks to the implicit evaluation rules as well as the fact that the return value of a deferrable function is also evaluated if it is a deferred expression, you can write a deferrable function without caring much about whether the functions you call are themselves deferrable or not.
 However, you should be aware of passing mutable objects to deferrable functions.
 If these objects happen to change between the actual call and the implicit evaluation of the deferrable function, you might run into surprises.
-In any case, if you want the immediate evaluation of a deferrable function or expression, you can always do that by calling :func:`evaluate <reframe.core.deferrable.evaluate>` on it.
+In any case, if you want the immediate evaluation of a deferrable function or expression, you can always do that by calling :func:`evaluate <reframe.utility.sanity.evaluate>` on it.
 
 The following example demonstrates two different ways writing a deferrable function that checks the average of the elements of an iterable:
 
@@ -422,7 +422,7 @@ Notice that you cannot include generators in expressions, whereas you can genera
 
 * Generators are iterator objects, while deferred expressions are not.
   As a result, you can trigger the evaluation of a generator expression using the :func:`next <python:next>` builtin function.
-  For a deferred expression you should use :func:`evaluate <reframe.core.deferrable.evaluate>` instead.
+  For a deferred expression you should use :func:`evaluate <reframe.utility.sanity.evaluate>` instead.
 
 * A generator object is iterable, whereas a deferrable object will be iterable if and only if the result of its evaluation is iterable.
 

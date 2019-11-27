@@ -418,6 +418,45 @@ In the following example ``var`` will be set to ``2`` after the setup phase is e
     def inc(self):
         self.var += 1
 
+Another important feature of the hooks syntax, is that hooks are inherited by derived tests, unless you override the function and re-hook it explicitly.
+In the following example, the :func:`setflags()` will be executed before the compilation phase of the :class:`DerivedTest`:
+
+.. code:: python
+
+   class BaseTest(rfm.RegressionTest):
+       def __init__(self):
+           ...
+           self.build_system = 'Make'
+
+       @rfm.run_before('compile')
+       def setflags(self):
+           if self.current_environ.name == 'X':
+               self.build_system.cppflags = ['-Ifoo']
+
+
+    @rfm.simple_test
+    class DerivedTest(BaseTest):
+       def __init__(self):
+           super().__init__()
+           ...
+
+
+If you override a hooked function in a derived class, the base class' hook will not be executed, unless you explicitly call it with ``super()``.
+In the following example, we completely disable the :func:`setflags()` hook of the base class:
+
+
+.. code:: python
+
+    @rfm.simple_test
+    class DerivedTest(BaseTest):
+       @rfm.run_before('compile')
+       def setflags(self):
+           pass
+
+
+Notice that in order to redefine a hook, you need not only redefine the method in the derived class, but you should hook it at the same pipeline phase.
+Otherwise, the base class hook will be executed.
+
 
 .. note::
    You may still configure your test per programming environment and per system partition by overriding the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method, as in ReFrame versions prior to 2.20, but this is now discouraged since it is more error prone, as you have to memorize the signature of the pipeline methods that you override and also remember to call ``super()``.
@@ -664,7 +703,7 @@ Here is the final example code that combines all the tests discussed before:
 This test abstracts away the common functionality found in almost all of our tutorial tests (executable options, sanity checking, etc.) to a base class, from which all the concrete regression tests derive.
 Each test then redefines only the parts that are specific to it.
 Notice also that only the actual tests, i.e., the derived classes, are made visible to the framework through the ``@simple_test`` decorator.
-Decorating the base class has now meaning, because it does not correspond to an actual test.
+Decorating the base class has no meaning, because it does not correspond to an actual test.
 
 The total line count of this refactored example is less than half of that of the individual tutorial tests.
 Another interesting thing to note here is the base class accepting additional additional parameters to its constructor, so that the concrete subclasses can initialize it based on their needs.

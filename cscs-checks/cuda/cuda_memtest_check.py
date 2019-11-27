@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 class CudaMemtest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.descr = 'Flexible CUDA Memtest'
         self.maintainers = ['TM', 'VK']
@@ -37,7 +37,7 @@ class CudaMemtest(rfm.RegressionTest):
             *assert_finished_tests,
             sn.assert_not_found('(?i)ERROR', self.stdout),
             sn.assert_not_found('(?i)ERROR', self.stderr)])
-        self.tags = {'diagnostic', 'ops'}
+        self.tags = {'diagnostic', 'ops', 'craype'}
 
     @property
     @sn.sanity_function

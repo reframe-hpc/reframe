@@ -13,15 +13,17 @@ import itertools
 import os
 import shutil
 
+import reframe.core.environments as env
 import reframe.core.fields as fields
 import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
-from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
-from reframe.core.environments import Environment, EnvironmentSnapshot
+from reframe.core.containers import ContainerPlatform, ContainerPlatformField
+from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
@@ -50,7 +52,21 @@ def _run_hooks(name=None):
                 # Just any name that does not exist
                 hook_name = 'xxx'
 
-            return obj._rfm_pipeline_hooks.get(hook_name, [])
+            func_names = set()
+            ret = []
+            for cls in type(obj).mro():
+                try:
+                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
+                    if any(fn.__name__ in func_names for fn in funcs):
+                        # hook has been overriden
+                        continue
+
+                    func_names |= {fn.__name__ for fn in funcs}
+                    ret += funcs
+                except AttributeError:
+                    pass
+
+            return ret
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -221,6 +237,32 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
+    #: The container platform to be used for launching this test.
+    #:
+    #: If this field is set, the test will run inside a container using the
+    #: specified container runtime. Container-specific options must be defined
+    #: additionally after this field is set:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.container_platform = 'Singularity'
+    #:    self.container_platform.image = 'docker://ubuntu:18.04'
+    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:
+    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
+    #: attributes are ignored. The container platform's :attr:`commands` will
+    #: be used instead. For more information on the container platform support,
+    #: see the `tutorial <advanced.html#testing-containerized-applications>`__
+    #: and the `reference guide <reference.html#container-platforms>`__.
+    #:
+    #: :type: :class:`str` or
+    #:     :class:`reframe.core.containers.ContainerPlatform`.
+    #: :default: :class:`None`.
+    #:
+    #: .. versionadded:: 2.20
+    container_platform = ContainerPlatformField('container_platform',
+                                                type(None))
+
     #: List of shell commands to execute before launching this job.
     #:
     #: These commands do not execute in the context of ReFrame.
@@ -301,7 +343,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: If the number of tasks is set to a number ``<=0``, ReFrame will try
     #: to flexibly allocate the number of tasks, based on the command line
-    #: option ``--flex-alloc-tasks``.
+    #: option ``--flex-alloc-nodes``.
     #: A negative number is used to indicate the minimum number of tasks
     #: required for the test.
     #: In this case the minimum number of tasks is the absolute value of
@@ -316,12 +358,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:     .. versionchanged:: 2.15
     #:        Added support for flexible allocation of the number of tasks
     #:        according to the ``--flex-alloc-tasks`` command line option
-    #:        (see `Flexible task allocation
-    #:        <running.html#flexible-task-allocation>`__)
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
     #:        Negative ``num_tasks`` is allowed for specifying the minimum
     #:        number of required tasks by the test.
+    #:     .. versionchanged:: 2.21
+    #:        Flexible node allocation is now controlled by the
+    #:        ``--flex-alloc-nodes`` command line option
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -567,11 +614,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     _current_partition = fields.TypedField('_current_partition',
                                            SystemPartition, type(None))
     _current_environ = fields.TypedField('_current_environ',
-                                         Environment, type(None))
-    _user_environ = fields.TypedField('_user_environ', Environment, type(None))
+                                         env.Environment, type(None))
+    _cdt_environ = fields.TypedField('_cdt_environ', env.Environment)
     _job = fields.TypedField('_job', Job, type(None))
     _build_job = fields.TypedField('_build_job', Job, type(None))
-    _cdt_environ = fields.TypedField('_cdt_environ', Environment)
 
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
@@ -610,6 +656,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.tags = set()
         self.maintainers = []
         self._perfvalues = {}
+        self.container_platform = None
 
         # Strict performance check, if applicable
         self.strict_check = True
@@ -650,7 +697,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Runtime information of the test
         self._current_partition = None
         self._current_environ = None
-        self._user_environ = None
 
         # Associated job
         self._job = None
@@ -677,7 +723,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._case = None
 
         if rt.runtime().non_default_craype:
-            self._cdt_environ = Environment(
+            self._cdt_environ = env.Environment(
                 name='__rfm_cdt_environ',
                 variables={
                     'LD_LIBRARY_PATH': '$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH'
@@ -685,7 +731,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             )
         else:
             # Just an empty environment
-            self._cdt_environ = Environment('__rfm_cdt_environ')
+            self._cdt_environ = env.Environment('__rfm_cdt_environ')
 
     # Export read-only views to interesting fields
     @property
@@ -772,7 +818,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._outputdir
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -786,7 +832,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -800,12 +846,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stderr(self):
         return self._build_job.stderr
 
@@ -870,30 +916,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return self.local or self._current_partition.scheduler.is_local
 
-    def _setup_environ(self, environ):
-        '''Setup the current environment and load it.'''
-
-        self._current_environ = environ
-
-        # Set up user environment
-        self._user_environ = Environment(type(self).__name__, self.modules,
-                                         self.variables.items())
-
-        # Temporarily load the test's environment to record the actual module
-        # load/unload sequence
-        environ_save = EnvironmentSnapshot()
-        # First load the local environment of the partition
-        self.logger.debug('loading environment for the current partition')
-        self._current_partition.local_env.load()
-
-        self.logger.debug("loading current programming environment")
-        self._current_environ.load()
-
-        self.logger.debug("loading user's environment")
-        self._user_environ.load()
-        self._cdt_environ.load()
-        environ_save.load()
-
     def _setup_paths(self):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('setting up paths')
@@ -935,13 +957,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             name='rfm_%s_job' % self.name,
             launcher=launcher_type(),
             workdir=self._stagedir,
-            num_tasks=self.num_tasks,
-            num_tasks_per_node=self.num_tasks_per_node,
-            num_tasks_per_core=self.num_tasks_per_core,
-            num_tasks_per_socket=self.num_tasks_per_socket,
-            num_cpus_per_task=self.num_cpus_per_task,
-            use_smt=self.use_multithreading,
-            time_limit=self.time_limit,
             sched_access=self._current_partition.access,
             sched_exclusive_access=self.exclusive_access,
             **job_opts)
@@ -972,7 +987,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         :raises reframe.core.exceptions.ReframeError: In case of errors.
         '''
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
         self._setup_job(**job_opts)
         if self.perf_patterns is not None:
@@ -1062,8 +1077,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
             *self.build_system.emit_build_commands(self._current_environ),
             *self.postbuild_cmd
         ]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
         environs = [self._current_partition.local_env, self._current_environ,
-                    self._user_environ, self._cdt_environ]
+                    user_environ, self._cdt_environ]
 
         self._build_job = getscheduler('local')(
             name='rfm_%s_build' % self.name,
@@ -1073,7 +1090,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1102,15 +1119,57 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
 
+        if self.container_platform:
+            try:
+                cp_name = type(self.container_platform).__name__
+                cp_env = self._current_partition.container_environs[cp_name]
+            except KeyError as e:
+                raise PipelineError(
+                    'container platform not configured '
+                    'on the current partition: %s' % e) from None
+
+            self.container_platform.validate()
+            self.container_platform.mount_points += [
+                (self._stagedir, self.container_platform.workdir)
+            ]
+
+            # We replace executable and executable_opts in case of containers
+            self.executable = self.container_platform.launch_command()
+            self.executable_opts = []
+            prepare_container = self.container_platform.emit_prepare_commands()
+            if prepare_container:
+                self.pre_run += prepare_container
+
+        self.job.num_tasks = self.num_tasks
+        self.job.num_tasks_per_node = self.num_tasks_per_node
+        self.job.num_tasks_per_core = self.num_tasks_per_core
+        self.job.num_cpus_per_task = self.num_cpus_per_task
+        self.job.use_smt = self.use_multithreading
+        self.job.time_limit = self.time_limit
+
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
         commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
-        environs = [self._current_partition.local_env, self._current_environ,
-                    self._user_environ, self._cdt_environ]
+        user_environ = env.Environment(type(self).__name__,
+                                       self.modules, self.variables.items())
+        environs = [
+            self._current_partition.local_env,
+            self._current_environ,
+            user_environ,
+            self._cdt_environ
+        ]
+        if self.container_platform and cp_env:
+            environs = [
+                self._current_partition.local_env,
+                self._current_environ,
+                cp_env,
+                user_environ,
+                self._cdt_environ
+            ]
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
@@ -1119,6 +1178,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         msg = ('spawned job (%s=%s)' %
                ('pid' if self.is_local() else 'jobid', self._job.jobid))
         self.logger.debug(msg)
+
+        # Update num_tasks if test is flexible
+        if self.job.sched_flex_alloc_nodes:
+            self.num_tasks = self.job.num_tasks
 
     def poll(self):
         '''Poll the test's state.
@@ -1165,7 +1228,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
-            success = evaluate(self.sanity_patterns)
+            success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
 
@@ -1216,7 +1279,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
             for tag, expr in self.perf_patterns.items():
-                value = evaluate(expr)
+                value = sn.evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 if key not in self.reference:
                     raise SanityError(
@@ -1231,7 +1294,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 val, ref, low_thres, high_thres, *_ = values
                 tag = key.split(':')[-1]
                 try:
-                    evaluate(
+                    sn.evaluate(
                         assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
@@ -1269,13 +1332,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     @_run_hooks()
-    def cleanup(self, remove_files=False, unload_env=True):
+    def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
 
         :arg remove_files: If :class:`True`, the stage directory associated
             with this test will be removed.
-        :arg unload_env: If :class:`True`, the environment that was used to run
-            this test will be unloaded.
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
@@ -1288,14 +1349,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.logger.debug('removing stage directory')
             os_ext.rmtree(self._stagedir)
 
-        if unload_env:
-            self.logger.debug("unloading test's environment")
-            self._cdt_environ.unload()
-            self._user_environ.unload()
-            self._current_environ.unload()
-            self._current_partition.local_env.unload()
-
     # Dependency API
+
     def user_deps(self):
         return util.SequenceView(self._userdeps)
 
@@ -1397,16 +1452,16 @@ class CompileOnlyRegressionTest(RegressionTest):
         '''
         # No need to setup the job for compile-only checks
         self._current_partition = partition
-        self._setup_environ(environ)
+        self._current_environ = environ
         self._setup_paths()
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         return self._build_job.stderr
 

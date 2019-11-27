@@ -34,7 +34,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         ])
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if self.current_system.name == 'kesch':

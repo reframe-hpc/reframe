@@ -60,6 +60,11 @@ class TaskExit(ReframeError):
     '''Raised when a regression task must exit the pipeline prematurely.'''
 
 
+class TaskDependencyError(ReframeError):
+    '''Raised inside a regression task when one of its dependencies has
+    failed.'''
+
+
 class AbortTaskError(ReframeError):
     '''Raised into a regression task to denote that it has been aborted due to
     an external reason (e.g., keyboard interrupt, fatal error in other places

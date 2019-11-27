@@ -43,6 +43,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=gpu'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Hybrid nodes (Haswell/P100)',
                        'max_jobs': 100
                    },
@@ -53,6 +58,11 @@ The following example shows a minimal configuration for the `Piz Daint <https://
                        'access':  ['--constraint=mc'],
                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi'],
+                       'container_platforms': {
+                            'Singularity': {
+                                'modules': ['Singularity']
+                            }
+                        },
                        'descr': 'Multicore nodes (Broadwell)',
                        'max_jobs': 100
                    }
@@ -94,17 +104,18 @@ The valid attributes of a system are the following:
 
 * ``descr``: A detailed description of the system (default is the system name).
 * ``hostnames``: This is a list of hostname patterns that will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
-* ``modules_system``: The modules system that should be used for loading environment modules on this system (default :class:`None`).
+* ``modules_system``: *[new in 2.8]* The modules system that should be used for loading environment modules on this system (default :class:`None`).
   Three types of modules systems are currently supported:
 
-  - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (versions older than 3.2 are not supported).
+  - ``tmod`` or ``tmod32``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.2).
+  - ``tmod31``: *[new in 2.21]* The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.1).
   - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions older than 4.1 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
 
-* ``modules``: Modules to be loaded always when running on this system.
+* ``modules``: *[new in 2.19]* Modules to be loaded always when running on this system.
   These modules modify the ReFrame environment.
   This is useful when for example a particular module is needed to submit jobs on a specific system.
-* ``variables``: Environment variables to be set always when running on this system.
+* ``variables``: *[new in 2.19]* Environment variables to be set always when running on this system.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
@@ -116,13 +127,7 @@ The valid attributes of a system are the following:
 For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` and ``perflogdir`` directories, please refer to the `"Configuring ReFrame Directories" <running.html#configuring-reframe-directories>`__ and `"Performance Logging" <running.html#performance-logging>`__ sections.
 
 .. note::
-  .. versionadded:: 2.8
-    The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
-
-.. note::
-  .. versionadded:: 2.19
-    The ``modules`` and ``variables`` configuration parameters were introduced at the system level.
-
+   A different backend is used for Tmod 3.1, due to its different Python bindings.
 
 .. warning::
    .. versionchanged:: 2.18
@@ -149,6 +154,33 @@ The available partition attributes are the following:
 
 * ``environs``: A list of environments, with which ReFrame will try to run any regression tests written for this partition (default ``[]``).
   The environment names must be resolved inside the ``environments`` section of the ``site_configuration`` dictionary (see `Environments Configuration <#environments-configuration>`__ for more information).
+
+* ``container_platforms``: *[new in 2.20]* A set of key/value pairs specifying the supported container platforms for this partition and how their environment is set up.
+  Supported platform names are the following (names are case sensitive):
+
+    - ``Docker``: The `Docker <https://www.docker.com/>`__ container runtime.
+    - ``Singularity``: The `Singularity <https://sylabs.io/>`__ container runtime.
+    - ``Sarus``: The `Sarus <https://sarus.readthedocs.io>`__ container runtime.
+
+  Each configured container runtime is associated optionally with an environment (modules and environment variables) that is providing it.
+  This environment is specified as a dictionary in the following format:
+
+   .. code:: python
+
+      {
+          'modules': ['mod1', 'mod2', ...]
+          'variables': {'ENV1': 'VAL1', 'ENV2': 'VAL2', ...}
+      }
+
+
+   If no special environment arrangement is needed for a configured container platform, you can simply specify an empty dictionary as an environment configuration, as it is shown in the following example:
+
+   .. code:: python
+
+      'container_platforms': {
+          'Docker': {}
+      }
+
 
 * ``modules``: A list of modules to be loaded before running a regression test on that partition (default ``[]``).
 
@@ -268,6 +300,8 @@ ReFrame supports the following parallel job launchers:
 * ``alps``: Programs on the configured partition will be launched using the ``aprun`` command.
 * ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
 * ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
+* ``ibrun``: *[new in 2.21]* Programs on the configured partition will be launched using the ``ibrun`` command.
+  This is a custom parallel job launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
 * ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
 * ``ssh``: *[new in 2.20]* Programs on the configured partition will be launched using SSH.
   This option uses the partition's ``access`` parameter (see `above <#partition-configuration>`__) in order to determine the remote host and any additional options to be passed to the SSH client.

@@ -68,6 +68,11 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            }
+                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -94,6 +99,14 @@ class ReframeSettings:
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            },
+                            'Singularity': {
+                                'modules': ['singularity']
+                            }
+                        },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -107,6 +120,14 @@ class ReframeSettings:
 
                     'mc': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'ShifterNG': {
+                                'modules': ['shifter-ng']
+                            },
+                            'Singularity': {
+                                'modules': ['singularity']
+                            }
+                        },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -116,6 +137,22 @@ class ReframeSettings:
                         'resources': {
                             'switches': ['--switches={num_switches}']
                         }
+                    },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
                     }
                 }
             },
@@ -140,6 +177,11 @@ class ReframeSettings:
 
                     'gpu': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['singularity']
+                            },
+                        },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
@@ -154,6 +196,11 @@ class ReframeSettings:
 
                     'mc': {
                         'scheduler': 'nativeslurm',
+                        'container_platforms': {
+                            'Singularity': {
+                                'modules': ['singularity']
+                            },
+                        },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
@@ -165,6 +212,22 @@ class ReframeSettings:
                             'switches': ['--switches={num_switches}']
                         }
                     },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
+                    }
                 }
             },
 
@@ -293,7 +356,7 @@ class ReframeSettings:
                         'modules': [],
                         'access': [],
                         'environs': ['builtin-gcc'],
-                        'descr': 'Login nodes'
+                        'descr': 'Login nodes',
                     }
                 }
             }
@@ -444,7 +507,7 @@ class ReframeSettings:
 
                 'PrgEnv-cray_classic': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray', 'cce/9.0.0-classic'],
+                    'modules': ['PrgEnv-cray', 'cce/9.0.2-classic'],
                 },
 
                 'PrgEnv-gnu': {
@@ -557,6 +620,7 @@ class ReframeSettings:
                 'format': (
                     '%(asctime)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
+                    'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '

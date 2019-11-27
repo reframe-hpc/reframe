@@ -11,13 +11,21 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sourcepath = 'alloc_speed.cpp'
         self.build_system = 'SingleSource'
         self.build_system.cxxflags = ['-O3', '-std=c++11']
-        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
             self.valid_systems += ['kesch:cn', 'kesch:pn']
         else:
-            if self.current_system.name in {'dom', 'daint'}:
+            if self.current_system.name in {'dom', 'daint', 'tiger'}:
                 self.modules = ['craype-hugepages%s' % hugepages]
+
+        if self.current_system.name in {'tiger'}:
+            self.extra_resources = {
+                'mem-per-cpu': {
+                    'mem_per_cpu': 0
+                }
+            }
 
         self.sanity_patterns = sn.assert_found('4096 MB', self.stdout)
         self.perf_patterns = {
@@ -27,16 +35,16 @@ class AllocSpeedTest(rfm.RegressionTest):
         self.sys_reference = {
             'no': {
                 'dom:gpu': {
-                    'time': (1.00, None, 0.10, 's')
+                    'time': (1.22, None, 0.05, 's')
                 },
                 'dom:mc': {
-                    'time': (1.20, None, 0.10, 's')
+                    'time': (1.41, None, 0.05, 's')
                 },
                 'daint:gpu': {
-                    'time': (1.80, None, 0.10, 's')
+                    'time': (1.22, None, 0.05, 's')
                 },
                 'daint:mc': {
-                    'time': (2.00, None, 0.10, 's')
+                    'time': (1.41, None, 0.05, 's')
                 },
                 'kesch:cn': {
                     'time': (1.25, None, 0.10, 's')
@@ -67,6 +75,5 @@ class AllocSpeedTest(rfm.RegressionTest):
             },
         }
         self.reference = self.sys_reference[hugepages]
-
         self.maintainers = ['AK', 'VH']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
