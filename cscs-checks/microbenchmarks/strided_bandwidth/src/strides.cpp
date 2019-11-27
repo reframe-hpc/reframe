@@ -48,9 +48,9 @@ double timed_run(Callable const& func)
 class Buffer
 {
 public:
-    Buffer() : data_size(0) {}
+    Buffer() : data_size(0), data_(nullptr, free) {}
 
-    explicit Buffer(size_t sz_) : data_size(sz_)
+    explicit Buffer(size_t sz_) : data_size(sz_), data_(nullptr, free)
     {
         data_size = (sz_/sizeof(size_t)) * (sizeof(size_t));
 
@@ -58,7 +58,8 @@ public:
         if (posix_memalign(&buf, 32, data_size)) {
             std::cout << "alloc failed\n"; exit(1);
         } 
-        data_.reset((size_t*)buf);
+        // provide "free" as custom deleter
+        data_ = std::unique_ptr<size_t[], decltype(free)*>((size_t*)buf, free);
 
         init();
     }
@@ -78,10 +79,10 @@ private:
     void init()
     {
         for (size_t i = 0; i < data_size/sizeof(size_t); i++)
-            ((size_t*)data_.get())[i] = 1;
+            data_[i] = 1;
     }
 
-    std::unique_ptr<size_t> data_;
+    std::unique_ptr<size_t[], decltype(free)*> data_;
     size_t data_size;
 };
 
@@ -144,7 +145,7 @@ int main(int argc, char ** argv)
         t.join();
     }
 
-    std::function<void(size_t)> func = std::bind(&update_stride, buf[0].get(), s, std::placeholders::_1, stride);
+    auto func = [buf = buf[0].get(), s, stride](int loops) { update_stride(buf, s, loops, stride); };
     size_t loops = determine_loops(func, time_per_run);
 
     std::vector<std::function<void()>> tasks(nthreads);

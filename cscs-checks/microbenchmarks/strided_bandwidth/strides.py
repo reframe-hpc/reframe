@@ -9,7 +9,7 @@ class StridedBase(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'daint:mc', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.num_tasks = 0
+        self.num_tasks = 1
         self.num_tasks_per_node = 1
 
         self.sanity_patterns = sn.assert_eq(
@@ -22,6 +22,12 @@ class StridedBase(rfm.RegressionTest):
                 self.stdout, 'bw', float)
         }
 
+        self.system_num_cpus = {
+            'daint:mc':  72,
+            'daint:gpu': 24,
+            'dom:mc':  72,
+            'dom:gpu': 24,
+        }
 
         self.maintainers = ['SK']
         self.tags = {'benchmark', 'diagnostic'}
@@ -34,30 +40,69 @@ class StridedBase(rfm.RegressionTest):
 
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
-class StridedBandwidthTest64(StridedBase):
+class StridedBandwidthTest(StridedBase):
     def __init__(self):
         super().__init__()
 
-        # 64-byte stride, using 1/8 of the cachline
-        self.executable_opts = ['100000000', '8', '1']
-
         self.reference = {
             'dom:gpu': {
-                'bandwidth': (2.22, -0.05, 12, 'GB/s')
+                'bandwidth': (50, -0.1, 0.1, 'GB/s')
             },
             'dom:mc': {
-                'bandwidth': (2.02, -0.05, 12, 'GB/s')
+                'bandwidth': (100, -0.1, 0.1, 'GB/s')
             },
             'daint:gpu': {
-                'bandwidth': (2.22, -0.05, 12, 'GB/s')
+                'bandwidth': (50, -0.1, 0.1, 'GB/s')
             },
             'daint:mc': {
-                'bandwidth': (2.02, -0.05, 12, 'GB/s')
+                'bandwidth': (100, -0.1, 0.1, 'GB/s')
             },
             '*': {
                 'bandwidth': (0, None, None, 'GB/s')
             }
         }
+
+    def setup(self, partition, environ, **job_opts):
+        self.num_cpus = self.system_num_cpus[partition.fullname]
+
+        # 8-byte stride, using the full cacheline
+        self.executable_opts = ['100000000', '1', '%s' % self.num_cpus]
+
+        super().setup(partition, environ, **job_opts)
+
+
+
+@rfm.required_version('>=2.16-dev0')
+@rfm.simple_test
+class StridedBandwidthTest64(StridedBase):
+    def __init__(self):
+        super().__init__()
+
+        self.reference = {
+            'dom:gpu': {
+                'bandwidth': (6, -0.1, 0.2, 'GB/s')
+            },
+            'dom:mc': {
+                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
+            },
+            'daint:gpu': {
+                'bandwidth': (6, -0.05, 0.2, 'GB/s')
+            },
+            'daint:mc': {
+                'bandwidth': (12.5, -0.1, 0.2, 'GB/s')
+            },
+            '*': {
+                'bandwidth': (0, None, None, 'GB/s')
+            }
+        }
+
+    def setup(self, partition, environ, **job_opts):
+        self.num_cpus = self.system_num_cpus[partition.fullname]
+
+        # 64-byte stride, using 1/8 of the cacheline
+        self.executable_opts = ['100000000', '8', '%s' % self.num_cpus]
+
+        super().setup(partition, environ, **job_opts)
 
 
 @rfm.required_version('>=2.16-dev0')
@@ -66,23 +111,28 @@ class StridedBandwidthTest128(StridedBase):
     def __init__(self):
         super().__init__()
 
-        # 128-byte stride, using 1/8 of every 2nd cachline
-        self.executable_opts = ['100000000', '16', '1']
-
         self.reference = {
             'dom:gpu': {
-                'bandwidth': (1.6, -0.05, 12, 'GB/s')
+                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
             },
             'dom:mc': {
-                'bandwidth': (1.33, -0.05, 12, 'GB/s')
+                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
             },
             'daint:gpu': {
-                'bandwidth': (1.6, -0.05, 12, 'GB/s')
+                'bandwidth': (4.5, -0.1, 0.2, 'GB/s')
             },
             'daint:mc': {
-                'bandwidth': (1.33, -0.05, 12, 'GB/s')
+                'bandwidth': (9.1, -0.1, 0.2, 'GB/s')
             },
             '*': {
                 'bandwidth': (0, None, None, 'GB/s')
             }
         }
+
+    def setup(self, partition, environ, **job_opts):
+        self.num_cpus = self.system_num_cpus[partition.fullname]
+
+        # 128-byte stride, using 1/8 of every 2nd cacheline
+        self.executable_opts = ['100000000', '16', '%s' % self.num_cpus]
+
+        super().setup(partition, environ, **job_opts)
