@@ -15,7 +15,7 @@ from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.schedulers.slurm import SlurmNode
+from reframe.core.schedulers.slurm import SlurmNode, create_nodes
 
 
 class _TestJob(abc.ABC):
@@ -534,6 +534,8 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'ExtSensorsTemp=n/s Reason=Foo/ '
                              'failed [reframe_user@01 Jan 2018]',
 
+                             'Node invalid_node1 not found',
+
                              'NodeName=nid00003 Arch=x86_64 CoresPerSocket=12 '
                              'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
                              'AvailableFeatures=f1,f3 ActiveFeatures=f1,f3 '
@@ -585,16 +587,17 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
                              'LowestJoules=100000000 ConsumedJoules=0 '
                              'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
                              'ExtSensorsTemp=n/s Reason=Foo/ '
-                             'failed [reframe_user@01 Jan 2018]']
+                             'failed [reframe_user@01 Jan 2018]',
 
-        return {SlurmNode(desc) for desc in node_descriptions}
+                             'Node invalid_node2 not found']
+
+        return create_nodes(node_descriptions)
 
     def create_reservation_nodes(obj, res):
-        return {n for n in obj.create_dummy_nodes() if n.name != 'nid00001'}
+        return {n for n in obj.testjob.get_all_nodes() if n.name != 'nid00001'}
 
-    def get_nodes_by_name(obj, node_names):
-        nodes = obj.create_dummy_nodes()
-        return {n for n in nodes if n.name in node_names}
+    def create_dummy_nodes_by_name(obj, name):
+        return {n for n in obj.testjob.get_all_nodes() if n.name == name}
 
     def setUp(self):
         self.workdir = tempfile.mkdtemp(dir='unittests')
@@ -736,14 +739,16 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
     def test_exclude_nodes_cmd(self):
         self.testjob._sched_access = ['--constraint=f1']
         self.testjob._sched_exclude_nodelist = 'nid00001'
-        self.testjob._get_nodes_by_name = self.get_nodes_by_name
+        # monkey patch `_get_nodes_by_name` to simulate extraction of
+        # slurm nodes by name through the use of `scontrol show`
+        self.testjob._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_exclude_nodes_opt(self):
         self.testjob._sched_access = ['--constraint=f1']
         self.testjob.options = ['-x nid00001']
-        self.testjob._get_nodes_by_name = self.get_nodes_by_name
+        self.testjob._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 

@@ -258,15 +258,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._poll_tasks()
 
             if self._running_tasks_counts[partname] < partition.max_jobs:
-                # Test's environment is already loaded; no need to be reloaded
                 # Task was put in _ready_tasks during setup
                 self._ready_tasks[partname].pop()
-                self._reschedule(task, load_env=False)
+                self._reschedule(task)
             else:
                 self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
             if not task.failed:
-                self._reschedule(task, load_env=False)
+                self._reschedule(task)
             return
         except ABORT_REASONS as e:
             if not task.failed:
@@ -356,12 +355,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                     self._completed_tasks):
             task.abort(cause)
 
-    def _reschedule(self, task, load_env=True):
+    def _reschedule(self, task):
         getlogger().debug('scheduling test case for running')
-
-        # Restore the test case's environment and run it
-        if load_env:
-            task.resume()
 
         task.compile()
         task.compile_wait()

@@ -1,7 +1,6 @@
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.deferrable import make_deferrable
 
 #
 # The following tests implement the dependency graph below:
@@ -37,7 +36,7 @@ class BaseTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = None
         self.executable = 'echo'
         self._count = int(type(self).__name__[1:])
-        self.sanity_patterns = make_deferrable(True)
+        self.sanity_patterns = sn.defer(True)
         self.keep_files = ['out.txt']
 
     @property
