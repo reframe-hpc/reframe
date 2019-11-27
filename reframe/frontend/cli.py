@@ -185,7 +185,7 @@ def main():
     run_options.add_argument(
         '--flex-alloc-tasks', action='store',
         dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
-        help='Deprecated, please use --flex-alloc-nodes instead')
+        help='*deprecated*, please use --flex-alloc-nodes instead')
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
@@ -539,16 +539,15 @@ def main():
                 printer.debug(str(e))
 
         if options.flex_alloc_tasks:
-            printer.warning('--flex-alloc-tasks is deprecated, you should '
-                            'use --flex-alloc-nodes instead: Passing the '
-                            'given option to --flex-alloc-nodes')
+            printer.warning("`--flex-alloc-tasks' is deprecated and "
+                            "will be removed in the future; "
+                            "you should use --flex-alloc-nodes instead")
             options.flex_alloc_nodes = (options.flex_alloc_nodes or
                                         options.flex_alloc_tasks)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
 
         # Act on checks
-
         success = True
         if options.list:
             # List matched checks
