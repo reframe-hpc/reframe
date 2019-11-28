@@ -63,7 +63,7 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
         self.executable = 'python'
-        self.executable_opts = ['np_test.py']
+        self.executable_opts = ['np_ops.py']
         self.num_tasks_per_node = 1
         self.use_multithreading = False
         self.tags = {'production'}
