@@ -103,18 +103,9 @@ class Job:
     def __init__(self,
                  name,
                  workdir='.',
-                 num_tasks=1,
-                 num_tasks_per_node=None,
-                 num_tasks_per_core=None,
-                 num_tasks_per_socket=None,
-                 num_cpus_per_task=None,
-                 use_smt=None,
-                 time_limit=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
-                 pre_run=[],
-                 post_run=[],
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
                  sched_account=None,
@@ -123,17 +114,17 @@ class Job:
                  sched_nodelist=None,
                  sched_exclude_nodelist=None,
                  sched_exclusive_access=None,
-                 sched_options=[]):
+                 sched_options=None):
 
         # Mutable fields
-        self.num_tasks = num_tasks
-        self.num_tasks_per_node = num_tasks_per_node
-        self.num_tasks_per_core = num_tasks_per_core
-        self.num_tasks_per_socket = num_tasks_per_socket
-        self.num_cpus_per_task = num_cpus_per_task
-        self.use_smt = use_smt
-        self.time_limit = time_limit
-        self.options = sched_options
+        self.num_tasks = 1
+        self.num_tasks_per_node = None
+        self.num_tasks_per_core = None
+        self.num_tasks_per_socket = None
+        self.num_cpus_per_task = None
+        self.use_smt = None
+        self.time_limit = None
+        self.options = sched_options or []
 
         # Live job information; to be filled during job's lifetime by the
         # scheduler
@@ -233,7 +224,7 @@ class Job:
             if guessed_num_tasks < min_num_tasks:
                 raise JobError(
                     'could not satisfy the minimum task requirement: '
-                    'required %s, requested %s' %
+                    'required %s, found %s' %
                     (min_num_tasks, guessed_num_tasks))
 
             self.num_tasks = guessed_num_tasks
@@ -262,7 +253,6 @@ class Job:
 
         # Try to guess the number of tasks now
         available_nodes = self.scheduler.filternodes(self, available_nodes)
-        print(available_nodes)
         if self.sched_flex_alloc_nodes == 'idle':
             available_nodes = {n for n in available_nodes
                                if n.is_available()}

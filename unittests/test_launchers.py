@@ -36,13 +36,6 @@ class _TestLauncher(abc.ABC):
         self.job = Job.create(FakeJobScheduler(),
                               self.launcher,
                               name='fake_job',
-                              num_tasks=4,
-                              num_tasks_per_node=2,
-                              num_tasks_per_core=1,
-                              num_tasks_per_socket=1,
-                              num_cpus_per_task=2,
-                              use_smt=True,
-                              time_limit=(0, 10, 0),
                               script_filename='fake_script',
                               stdout='fake_stdout',
                               stderr='fake_stderr',
@@ -53,13 +46,19 @@ class _TestLauncher(abc.ABC):
                               sched_exclude_nodelist='fake_exclude_nodelist',
                               sched_exclusive_access='fake_exclude_access',
                               sched_options=['--fake'])
+        self.job.num_tasks = 4
+        self.job.num_tasks_per_node = 2
+        self.job.num_tasks_per_core = 1
+        self.job.num_tasks_per_socket = 1
+        self.job.num_cpus_per_task = 2
+        self.job.use_smt = True
+        self.job.time_limit = (0, 10, 0)
         self.job.options += ['--gres=gpu:4', '#DW jobdw anything']
         self.job.launcher.options = ['--foo']
         self.minimal_job = Job.create(FakeJobScheduler(),
                                       self.launcher,
                                       name='fake_job')
         self.minimal_job.launcher.options = ['--foo']
-        print(self.job.launcher)
 
     @property
     @abc.abstractmethod
@@ -91,9 +90,7 @@ class _TestLauncher(abc.ABC):
 class TestSrunLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        ret = getlauncher('srun')()
-        print('ret =', ret)
-        return ret
+        return getlauncher('srun')()
 
     @property
     def expected_command(self):

@@ -27,7 +27,8 @@ class _TestJob(abc.ABC):
             name='testjob',
             workdir=self.workdir,
             script_filename=os_ext.mkstemp_path(
-                dir=self.workdir, suffix='.sh'),
+                dir=self.workdir, suffix='.sh'
+            ),
             stdout=os_ext.mkstemp_path(dir=self.workdir, suffix='.out'),
             stderr=os_ext.mkstemp_path(dir=self.workdir, suffix='.err'),
         )
@@ -82,7 +83,7 @@ class _TestJob(abc.ABC):
             msg = msg or "scheduler '%s' not configured" % self.sched_name
             self.skipTest(msg)
 
-        self.testjob.options += partition.access
+        self.testjob._sched_access = partition.access
 
     def assertScriptSanity(self, script_file):
         '''Assert the sanity of the produced script file.'''

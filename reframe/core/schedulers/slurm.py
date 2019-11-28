@@ -292,7 +292,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (datetime.now().strftime('%F'), self._jobid)
+            (datetime.now().strftime('%F'), job.jobid)
         )
         self._update_state_count += 1
 
@@ -312,7 +312,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # Join the states with ',' in case of job arrays
         job.state = ','.join(s.group('state') for s in state_match)
-        if not self._update_state_count % SlurmJob.SACCT_SQUEUE_RATIO:
+        if not self._update_state_count % SlurmJobScheduler.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked(job)
 
         if slurm_state_completed(job.state):
@@ -452,12 +452,12 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # finished already, squeue might return an error about an invalid
         # job id.
         completed = os_ext.run_command('squeue -h -j %s -o "%%T|%%N|%%r"' %
-                                       job._jobid)
+                                       job.jobid)
         state_match = list(re.finditer(r'^(?P<state>\S+)\|(?P<nodespec>\S*)\|'
                                        r'(?P<reason>.+)', completed.stdout))
         if not state_match:
             # Assume that job has finished
-            job._state = 'CANCELLED' if self._cancelled else 'COMPLETED'
+            job.state = 'CANCELLED' if self._cancelled else 'COMPLETED'
 
             # Set exit code manually, if not set already by the polling
             if job.exitcode is None:

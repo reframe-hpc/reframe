@@ -96,14 +96,14 @@ class PbsJobScheduler(sched.JobScheduler):
         # Slurm wrappers.
         cmd = 'qsub -o %s -e %s %s' % (job.stdout, job.stderr,
                                        job.script_filename)
-        completed = _run_strict(cmd, settings().job_submit_timeout)
+        completed = _run_strict(cmd, timeout=settings().job_submit_timeout)
         jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
         if not jobid_match:
             raise JobError('could not retrieve the job id '
                            'of the submitted job')
 
         jobid, *info = jobid_match.group('jobid').split('.', maxsplit=2)
-        self._jobid = int(jobid)
+        job.jobid = int(jobid)
         if info:
             self._pbs_server = info[0]
 
@@ -119,7 +119,7 @@ class PbsJobScheduler(sched.JobScheduler):
             jobid += '.' + self._pbs_server
 
         getlogger().debug('cancelling job (id=%s)' % jobid)
-        _run_strict('qdel %s' % jobid, settings().job_submit_timeout)
+        _run_strict('qdel %s' % jobid, timeout=settings().job_submit_timeout)
 
     def finished(self, job):
         with os_ext.change_dir(job.workdir):
