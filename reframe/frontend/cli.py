@@ -617,7 +617,8 @@ def main():
                     printer.info(runner.stats.performance_report())
 
         else:
-            printer.info('No action specified. Exiting...')
+            printer.info("No action specified. Please specify '-l' for "
+                         "listing or '-r' for running.")
             printer.info("Try `%s -h' for a list of available actions." %
                          argparser.prog)
             sys.exit(1)
