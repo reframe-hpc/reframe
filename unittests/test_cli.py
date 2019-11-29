@@ -421,13 +421,14 @@ class TestFrontend(unittest.TestCase):
         if ms.name == 'nomod':
             pytest.skip('no modules system found')
 
-        ms.searchpath_add('unittests/modules')
-        ms.load_module('testmod_foo')
-        self.more_options = ['-u testmod_foo']
-        self.action = 'list'
-        returncode, stdout, stderr = self._run_reframe()
+        with rt.module_use('unittests/modules'):
+            ms.load_module('testmod_foo')
+            self.more_options = ['-u testmod_foo']
+            self.action = 'list'
+            returncode, stdout, stderr = self._run_reframe()
+            ms.unload_module('testmod_foo')
+
         assert stdout != ''
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert returncode == 0
-        ms.unload_module('testmod_foo')

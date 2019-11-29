@@ -38,6 +38,10 @@ class _TestJob(abc.ABC):
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
+    def prepare(self):
+        with rt.module_use('unittests/modules'):
+            self.testjob.prepare(self.commands, self.environs)
+
     @property
     def commands(self):
         runcmd = self.launcher.run_command(self.testjob)
@@ -99,13 +103,13 @@ class _TestJob(abc.ABC):
         self.testjob._sched_exclusive_access = True
 
     def test_prepare(self):
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertScriptSanity(self.testjob.script_filename)
 
     @fixtures.switch_to_user_runtime
     def test_submit(self):
         self.setup_user()
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertIsNone(self.testjob.nodelist)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
@@ -116,7 +120,7 @@ class _TestJob(abc.ABC):
         self.setup_user()
         self.parallel_cmd = 'sleep 10'
         self.testjob.time_limit = (0, 0, 2)
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
@@ -133,7 +137,7 @@ class _TestJob(abc.ABC):
     def test_cancel(self):
         self.setup_user()
         self.parallel_cmd = 'sleep 30'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
         self.testjob.cancel()
@@ -144,26 +148,26 @@ class _TestJob(abc.ABC):
 
     def test_cancel_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.cancel)
 
     def test_wait_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.wait)
 
     @fixtures.switch_to_user_runtime
     def test_poll(self):
         self.setup_user()
         self.parallel_cmd = 'sleep 2'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.testjob.submit()
         self.assertFalse(self.testjob.finished())
         self.testjob.wait()
 
     def test_poll_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
     def test_no_empty_lines_in_preamble(self):
@@ -227,7 +231,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.testjob.time_limit = (0, 1, 0)
         self.testjob.cancel_grace_period = 2
 
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
@@ -267,7 +271,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.parallel_cmd = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                          'src', 'sleep_deeply.sh')
         self.testjob.cancel_grace_period = 2
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
