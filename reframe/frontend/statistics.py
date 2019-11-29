@@ -84,7 +84,7 @@ class TestStats:
             report.append('  * System partition: %s' % partname)
             report.append('  * Environment: %s' % environ_name)
             report.append('  * Stage directory: %s' % check.stagedir)
-
+            report.append('  * Nodes: %s' % check.job._nodelist)
             job_type = 'local' if check.is_local() else 'batch job'
             jobid = check.job.jobid if check.job else -1
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
