@@ -44,7 +44,19 @@ class JobScheduler(abc.ABC):
 
 
 class Job:
-    '''A job descriptor.'''
+    '''A job descriptor.
+
+    A job descriptor is created by the framework after the "setup" phase and
+    is associated with the test. It can be retrieved through the
+    :attr:`reframe.core.pipeline.RegressionTest.job` attribute and stores
+    information about the job submitted during the "run" phase.
+
+    .. note::
+
+       Users cannot create a job descriptor directly and associate it with a
+       test.
+
+    '''
 
     num_tasks = fields.TypedField('num_tasks', int)
     num_tasks_per_node = fields.TypedField('num_tasks_per_node',
@@ -64,15 +76,55 @@ class Job:
     #: :default: ``[]``
     options = fields.TypedField('options', typ.List[str])
 
-    #: The parallel program launcher that will be used to launch the parallel
-    #: executable of this job.
+    #: The (parallel) program launcher that will be used to launch the
+    #: (parallel) executable of this job.
+    #:
+    #: Users are allowed to explicitly set the current job launcher, but this
+    #: is only relevant in rare situations, such as when you want to wrap the
+    #: current launcher command. For this specific scenario, you may have a
+    #: look at the :class:`reframe.core.launchers.LauncherWrapper` class.
+    #:
+    #: The following example shows how you can replace the current partition's
+    #: launcher for this test with the "local" launcher:
+    #:
+    #: .. code:: python
+    #:
+    #:    from reframe.core.launchers.registry import getlauncher
+    #:
+    #:    @rfm.run_after('setup')
+    #:    def set_launcher(self):
+    #:        self.job.launcher = getlauncher('local')()
     #:
     #: :type: :class:`reframe.core.launchers.JobLauncher`
     launcher = fields.TypedField('launcher', JobLauncher)
     scheduler = fields.TypedField('scheduler', JobScheduler)
 
+    #: The ID of the current job.
+    #:
+    #: :type: :class:`int` or ``None``.
+    #:
+    #: .. versionadded:: 2.21
+    #:
     jobid = fields.TypedField('jobid', int, type(None))
+
+    #: The exit code of the job.
+    #:
+    #: This may or may not be set depending on the scheduler backend.
+    #:
+    #: :type: :class:`int` or ``None``.
+    #:
+    #: .. versionadded:: 2.21
+    #:
     exitcode = fields.TypedField('exitcode', int, type(None))
+
+    #: The state of the job.
+    #:
+    #: The value of this field is scheduler-specific.
+    #:
+    #: :type: :class:`str` or ``None``.
+    #:
+    #: .. versionadded:: 2.21
+    #:
     state = fields.TypedField('state', str, type(None))
 
     #: The list of node names assigned to this job.
@@ -88,7 +140,6 @@ class Job:
     #:
     #: This attribute might be useful in a flexible regression test for
     #: determining the actual nodes that were assigned to the test.
-    #:
     #: For more information on flexible node allocation, please refer to the
     #: corresponding `section <advanced.html#flexible-regression-tests>`__ of
     #: the tutorial.

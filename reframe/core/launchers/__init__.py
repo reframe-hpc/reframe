@@ -11,13 +11,16 @@ class JobLauncher(abc.ABC):
     program to multiple nodes, e.g., ``mpirun``, ``srun`` etc.
 
     .. note::
-       This is an abstract class.
-       Regression tests may not instantiate this class directly.
+
+       Users cannot create job launchers directly. You may retrieve a
+       registered launcher backend through the
+       :func:`reframe.core.launchers.registry.getlauncher` function.
 
     .. note::
        .. versionchanged:: 2.8
           Job launchers do not get a reference to a job during their
           initialization.
+
     '''
 
     #: List of options to be passed to the job launcher invocation.
@@ -31,15 +34,8 @@ class JobLauncher(abc.ABC):
 
     @abc.abstractmethod
     def command(self, job):
-        '''The launcher command.
-
-        :arg job: A :class:`reframe.core.schedulers.Job` that will be used by
-            this launcher to properly emit its options.
-            Subclasses may override this method and emit options according the
-            number of tasks associated to the job etc.
-        :returns: a list of command line arguments (including the launcher
-            executable).
-        '''
+        # The launcher command to be emitted for ``job``
+        pass
 
     def run_command(self, job):
         return ' '.join(self.command(job) + self.options)
@@ -48,15 +44,15 @@ class JobLauncher(abc.ABC):
 class LauncherWrapper(JobLauncher):
     '''Wrap a launcher object so as to modify its invocation.
 
-    This is useful for parallel debuggers.
-    For example, to launch a regression test using the `DDT
-    <https://www.allinea.com/products/ddt/>`_ debugger, you can do the
-    following:
+    This is useful for parallel debuggers. For example, to launch a regression
+    test using the `ARM DDT
+    <https://www.arm.com/products/development-tools/server-and-hpc/forge>`__
+    debugger, you can do the following:
 
-    ::
+    .. code:: python
 
-        def setup(self, partition, environ, **job_opts):
-            super().setup(partition, environ, **job_opts)
+        @rfm.run_after('setup')
+        def set_launcher(self):
             self.job.launcher = LauncherWrapper(self.job.launcher, 'ddt',
                                                 ['--offline'])
 
@@ -76,6 +72,7 @@ class LauncherWrapper(JobLauncher):
     :arg target_launcher: The launcher to wrap.
     :arg wrapper_command: The wrapper command.
     :arg wrapper_options: List of options to pass to the wrapper command.
+
     '''
 
     def __init__(self, target_launcher, wrapper_command, wrapper_options=[]):
