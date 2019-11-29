@@ -12,28 +12,28 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
                 'dot': (0.4, None, 0.05, 'seconds'),
                 'svd': (0.37, None, 0.05, 'seconds'),
                 'cholesky': (0.12, None, 0.05, 'seconds'),
-                'eigendec': (0.12, None, 0.05, 'seconds'),
+                'eigendec': (3.5, None, 0.05, 'seconds'),
                 'inv': (0.21, None, 0.05, 'seconds'),
             },
             'daint:mc': {
                 'dot': (0.3, None, 0.05, 'seconds'),
                 'svd': (0.35, None, 0.05, 'seconds'),
                 'cholesky': (0.1, None, 0.05, 'seconds'),
-                'eigendec': (0.1, None, 0.05, 'seconds'),
+                'eigendec': (4.14, None, 0.05, 'seconds'),
                 'inv': (0.16, None, 0.05, 'seconds'),
             },
             'dom:gpu': {
                 'dot': (0.4, None, 0.05, 'seconds'),
                 'svd': (0.37, None, 0.05, 'seconds'),
                 'cholesky': (0.12, None, 0.05, 'seconds'),
-                'eigendec': (0.12, None, 0.05, 'seconds'),
+                'eigendec': (3.5, None, 0.05, 'seconds'),
                 'inv': (0.21, None, 0.05, 'seconds'),
             },
             'dom:mc': {
                 'dot': (0.3, None, 0.05, 'seconds'),
                 'svd': (0.35, None, 0.05, 'seconds'),
                 'cholesky': (0.1, None, 0.05, 'seconds'),
-                'eigendec': (0.1, None, 0.05, 'seconds'),
+                'eigendec': (4.14, None, 0.05, 'seconds'),
                 'inv': (0.16, None, 0.05, 'seconds'),
             },
         }
@@ -49,7 +49,7 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
                 r'\s+(?P<cholesky>\S+)\s+s',
                 self.stdout, 'cholesky', float),
             'eigendec': sn.extractsingle(
-                r'^Cholesky decomposition of a 2048x2048 matrix in'
+                r'^Eigendecomposition of a 2048x2048 matrix in'
                 r'\s+(?P<eigendec>\S+)\s+s',
                 self.stdout, 'eigendec', float),
             'inv': sn.extractsingle(
