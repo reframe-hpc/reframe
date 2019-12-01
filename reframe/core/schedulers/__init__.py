@@ -67,7 +67,7 @@ class Job(abc.ABC):
                  stderr=None,
                  pre_run=[],
                  post_run=[],
-                 sched_flex_alloc_tasks=None,
+                 sched_flex_alloc_nodes=None,
                  sched_access=[],
                  sched_account=None,
                  sched_partition=None,
@@ -96,7 +96,7 @@ class Job(abc.ABC):
         self._nodelist = None
 
         # Backend scheduler related information
-        self._sched_flex_alloc_tasks = sched_flex_alloc_tasks
+        self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
         self._sched_access = sched_access
         self._sched_nodelist = sched_nodelist
         self._sched_exclude_nodelist = sched_exclude_nodelist
@@ -148,8 +148,8 @@ class Job(abc.ABC):
         return self._stderr
 
     @property
-    def sched_flex_alloc_tasks(self):
-        return self._sched_flex_alloc_tasks
+    def sched_flex_alloc_nodes(self):
+        return self._sched_flex_alloc_nodes
 
     @property
     def sched_access(self):
@@ -189,18 +189,17 @@ class Job(abc.ABC):
             try:
                 guessed_num_tasks = self.guess_num_tasks()
             except NotImplementedError as e:
-                raise JobError('flexible task allocation is not supported by '
+                raise JobError('flexible node allocation is not supported by '
                                'this backend') from e
 
             if guessed_num_tasks < min_num_tasks:
-                nodes_required = min_num_tasks // num_tasks_per_node
-                nodes_found = guessed_num_tasks // num_tasks_per_node
-                raise JobError('could not find enough nodes: '
-                               'required %s, found %s' %
-                               (nodes_required, nodes_found))
+                raise JobError(
+                    'could not satisfy the minimum task requirement: '
+                    'required %s, requested %s' %
+                    (min_num_tasks, guessed_num_tasks))
 
             self.num_tasks = guessed_num_tasks
-            getlogger().debug('flex_alloc_tasks: setting num_tasks to %s' %
+            getlogger().debug('flex_alloc_nodes: setting num_tasks to %s' %
                               self.num_tasks)
 
         with shell.generate_script(self.script_filename,
@@ -215,31 +214,30 @@ class Job(abc.ABC):
         pass
 
     def guess_num_tasks(self):
-        if isinstance(self.sched_flex_alloc_tasks, int):
-            if self.sched_flex_alloc_tasks <= 0:
-                raise JobError('invalid number of flex_alloc_tasks: %s' %
-                               self.sched_flex_alloc_tasks)
+        num_tasks_per_node = self.num_tasks_per_node or 1
+        if isinstance(self.sched_flex_alloc_nodes, int):
+            if self.sched_flex_alloc_nodes <= 0:
+                raise JobError('invalid number of flex_alloc_nodes: %s' %
+                               self.sched_flex_alloc_nodes)
 
-            return self.sched_flex_alloc_tasks
+            return self.sched_flex_alloc_nodes * num_tasks_per_node
 
         available_nodes = self.get_all_nodes()
-        getlogger().debug('flex_alloc_tasks: total available nodes %s ' %
+        getlogger().debug('flex_alloc_nodes: total available nodes %s ' %
                           len(available_nodes))
 
         # Try to guess the number of tasks now
-        available_nodes = self.filter_nodes(available_nodes,
-                                            self.sched_access + self.options)
+        available_nodes = self.filter_nodes(
+            available_nodes, self.sched_access + self.options)
 
-        if self.sched_flex_alloc_tasks == 'idle':
+        if self.sched_flex_alloc_nodes == 'idle':
             available_nodes = {n for n in available_nodes
                                if n.is_available()}
             getlogger().debug(
-                'flex_alloc_tasks: selecting idle nodes: '
+                'flex_alloc_nodes: selecting idle nodes: '
                 'available nodes now: %s' % len(available_nodes))
 
-        num_tasks_per_node = self.num_tasks_per_node or 1
-        num_tasks = len(available_nodes) * num_tasks_per_node
-        return num_tasks
+        return len(available_nodes) * num_tasks_per_node
 
     @abc.abstractmethod
     def get_all_nodes(self):
@@ -286,7 +284,7 @@ class Job(abc.ABC):
         This attribute might be useful in a flexible regression test for
         determining the actual nodes that were assigned to the test.
 
-        For more information on flexible task allocation, please refer to the
+        For more information on flexible node allocation, please refer to the
         corresponding `section <advanced.html#flexible-regression-tests>`__ of
         the tutorial.
 

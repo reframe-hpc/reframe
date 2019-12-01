@@ -446,8 +446,8 @@ Here is how the new deferred attribute is defined:
   :dedent: 4
 
 
-The behavior of the flexible task allocation is controlled by the ``--flex-alloc-tasks`` command line option.
-See the corresponding `section <running.html#controlling-the-flexible-task-allocation>`__ for more information.
+The behavior of the flexible task allocation is controlled by the ``--flex-alloc-nodes`` command line option.
+See the corresponding `section <running.html#controlling-the-flexible-node-allocation>`__ for more information.
 
 
 Testing containerized applications

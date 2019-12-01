@@ -1,7 +1,7 @@
-'''Provides utilities for deferred execution of expressions.'''
-
 import builtins
 import functools
+
+from reframe.core.exceptions import user_deprecation_warning
 
 
 def deferrable(func):
@@ -335,13 +335,10 @@ class _DeferredExpression:
         return ~a
 
 
-# Utility functions
-
 def evaluate(expr):
-    '''Evaluate a deferred expression.
+    user_deprecation_warning('evaluate() is deprecated: '
+                             'please use reframe.utility.sanity.evaluate')
 
-    If `expr` is not a deferred expression, it will returned as is.
-    '''
     if isinstance(expr, _DeferredExpression):
         return expr.evaluate()
     else:
@@ -350,4 +347,6 @@ def evaluate(expr):
 
 @deferrable
 def make_deferrable(a):
+    user_deprecation_warning('make_deferrable() is deprecated: '
+                             'please use reframe.utility.sanity.defer')
     return a

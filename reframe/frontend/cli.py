@@ -12,6 +12,7 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
+import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
                                      ReframeFatalError, format_exception,
@@ -183,8 +184,12 @@ def main():
              'may be retried (default: 0)')
     run_options.add_argument(
         '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
-        help="Strategy for flexible task allocation (default: 'idle').")
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
+        help='*deprecated*, please use --flex-alloc-nodes instead')
+    run_options.add_argument(
+        '--flex-alloc-nodes', action='store',
+        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
+        help="Strategy for flexible node allocation (default: 'idle').")
 
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
@@ -493,14 +498,15 @@ def main():
                             for p in rt.system.partitions
                             for e in p.environs if re.match(env_patt, e.name)}
 
-        # Generate the test cases
+        # Generate the test cases, validate dependencies and sort them
         checks_matched = list(checks_matched)
         testcases = generate_testcases(checks_matched,
                                        options.skip_system_check,
                                        options.skip_prgenv_check,
                                        allowed_environs)
-
-        # Act on checks
+        testgraph = dependency.build_deps(testcases)
+        dependency.validate_deps(testgraph)
+        testcases = dependency.toposort(testgraph)
 
         # Unload regression's module and load user-specified modules
         if hasattr(settings, 'reframe_module'):
@@ -532,6 +538,16 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
+        if options.flex_alloc_tasks:
+            printer.warning("`--flex-alloc-tasks' is deprecated and "
+                            "will be removed in the future; "
+                            "you should use --flex-alloc-nodes instead")
+            options.flex_alloc_nodes = (options.flex_alloc_nodes or
+                                        options.flex_alloc_tasks)
+
+        options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+
+        # Act on checks
         success = True
         if options.list:
             # List matched checks
@@ -558,20 +574,21 @@ def main():
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.keep_stage_files = options.keep_stage_files
+
             try:
-                errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
-                sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
-                if sched_flex_alloc_tasks <= 0:
-                    raise ConfigError(errmsg.format(options.flex_alloc_tasks))
+                errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
+                sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
+                if sched_flex_alloc_nodes <= 0:
+                    raise ConfigError(errmsg.format(options.flex_alloc_nodes))
             except ValueError:
-                if not options.flex_alloc_tasks.lower() in {'idle', 'all'}:
+                if not options.flex_alloc_nodes.casefold() in {'idle', 'all'}:
                     raise ConfigError(
-                        errmsg.format(options.flex_alloc_tasks)) from None
+                        errmsg.format(options.flex_alloc_nodes)) from None
 
-                sched_flex_alloc_tasks = options.flex_alloc_tasks
+                sched_flex_alloc_nodes = options.flex_alloc_nodes
 
-            exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
-            exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
+            exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
+            exec_policy.flex_alloc_nodes = options.flex_alloc_nodes
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition
             exec_policy.sched_reservation = options.reservation

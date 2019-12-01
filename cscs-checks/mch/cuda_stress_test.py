@@ -7,7 +7,7 @@ class CudaStressTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'MCH CUDA stress test'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']

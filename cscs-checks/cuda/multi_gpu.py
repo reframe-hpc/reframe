@@ -2,7 +2,6 @@ import os
 
 import reframe.utility.sanity as sn
 import reframe as rfm
-from reframe.core.deferrable import evaluate
 
 
 @rfm.required_version('>=2.16-dev0')
@@ -10,7 +9,7 @@ from reframe.core.deferrable import evaluate
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu']
+        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name == 'kesch':
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -90,7 +89,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.stdout, 1
         ))
 
-        evaluate(sn.assert_eq(
+        sn.evaluate(sn.assert_eq(
             self.job.num_tasks, len(devices_found),
             msg='requested {0} node(s), got {1} (nodelist: %s)' %
             ','.join(sorted(devices_found))))
@@ -100,9 +99,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             self.stdout, 1
         ))
 
-        evaluate(sn.assert_eq(devices_found, good_nodes,
-                              msg='check failed on the following node(s): %s' %
-                              ','.join(sorted(devices_found - good_nodes))))
+        sn.evaluate(sn.assert_eq(
+            devices_found, good_nodes,
+            msg='check failed on the following node(s): %s' %
+            ','.join(sorted(devices_found - good_nodes)))
+        )
 
         # Sanity is fine, fill in the perf. patterns based on the exact node id
         for nodename in devices_found:

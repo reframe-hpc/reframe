@@ -13,7 +13,9 @@ import reframe.frontend.executors.policies as policies
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
-from reframe.core.exceptions import DependencyError, JobNotStartedError
+from reframe.core.exceptions import (
+    DependencyError, JobNotStartedError, TaskDependencyError
+)
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
 from unittests.resources.checks.hellocheck import HelloTest
@@ -47,8 +49,13 @@ class TestSerialExecutionPolicy(unittest.TestCase):
     def tearDown(self):
         os_ext.rmtree(rt.runtime().resources.prefix)
 
-    def runall(self, checks, *args, **kwargs):
+    def runall(self, checks, sort=False, *args, **kwargs):
         cases = executors.generate_testcases(checks, *args, **kwargs)
+        if sort:
+            depgraph = dependency.build_deps(cases)
+            dependency.validate_deps(depgraph)
+            cases = dependency.toposort(depgraph)
+
         self.runner.runall(cases)
 
     def _num_failures_stage(self, stage):
@@ -194,6 +201,37 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.assertEqual(0, len(self.runner.stats.failures()))
         os.remove(fp.name)
 
+    def test_dependencies(self):
+        self.loader = RegressionCheckLoader(
+            ['unittests/resources/checks_unlisted/deps_complex.py']
+        )
+
+        # Setup the runner
+        self.checks = self.loader.load_all()
+        self.runall(self.checks, sort=True)
+
+        stats = self.runner.stats
+        assert stats.num_cases(0) == 8
+        assert len(stats.failures()) == 2
+        for tf in stats.failures():
+            check = tf.testcase.check
+            exc_type, exc_value, _ = tf.exc_info
+            if check.name == 'T7':
+                assert isinstance(exc_value, TaskDependencyError)
+
+        # Check that cleanup is executed properly for successful tests as well
+        for t in stats.tasks():
+            check = t.testcase.check
+            if t.failed:
+                continue
+
+            if t.ref_count == 0:
+                assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+    def test_dependencies_with_retries(self):
+        self.runner._max_retries = 2
+        self.test_dependencies()
+
 
 class TaskEventMonitor(executors.TaskEventListener):
     '''Event listener for monitoring the execution of the asynchronous
@@ -232,6 +270,9 @@ class TaskEventMonitor(executors.TaskEventListener):
     def on_task_failure(self, task):
         pass
 
+    def on_task_setup(self, task):
+        pass
+
 
 class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def setUp(self):
@@ -248,7 +289,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
     def read_timestamps(self, tasks):
         '''Read the timestamps and sort them to permit simple
         concurrency tests.'''
-        from reframe.core.deferrable import evaluate
+        from reframe.utility.sanity import evaluate
 
         self.begin_stamps = []
         self.end_stamps = []
@@ -437,6 +478,11 @@ class TestDependencies(unittest.TestCase):
         return sum(len(deps) for c, deps in graph.items()
                    if c.check.name == cname)
 
+    def in_degree(graph, node):
+        for v in graph.keys():
+            if v == node:
+                return v.num_dependents
+
     def find_check(name, checks):
         for c in checks:
             if c.name == name:
@@ -451,7 +497,7 @@ class TestDependencies(unittest.TestCase):
 
     def setUp(self):
         self.loader = RegressionCheckLoader([
-            'unittests/resources/checks_unlisted/dependencies/normal.py'
+            'unittests/resources/checks_unlisted/deps_simple.py'
         ])
 
         # Set runtime prefix
@@ -479,6 +525,7 @@ class TestDependencies(unittest.TestCase):
         Node = TestDependencies.Node
         has_edge = TestDependencies.has_edge
         num_deps = TestDependencies.num_deps
+        in_degree = TestDependencies.in_degree
         find_check = TestDependencies.find_check
         find_case = TestDependencies.find_case
 
@@ -527,6 +574,22 @@ class TestDependencies(unittest.TestCase):
             assert has_edge(deps,
                             Node('Test1_exact', p, 'e1'),
                             Node('Test0', p, 'e1'))
+
+        # Check in-degree of Test0
+
+        # 2 from Test1_fully,
+        # 1 from Test1_by_env,
+        # 1 from Test1_exact,
+        # 1 from Test1_default
+        assert in_degree(deps, Node('Test0', 'sys0:p0', 'e0')) == 5
+        assert in_degree(deps, Node('Test0', 'sys0:p1', 'e0')) == 5
+
+        # 2 from Test1_fully,
+        # 1 from Test1_by_env,
+        # 2 from Test1_exact,
+        # 1 from Test1_default
+        assert in_degree(deps, Node('Test0', 'sys0:p0', 'e1')) == 6
+        assert in_degree(deps, Node('Test0', 'sys0:p1', 'e1')) == 6
 
         # Pick a check to test getdep()
         check_e0 = find_case('Test1_exact', 'e0', cases).check
@@ -716,6 +779,39 @@ class TestDependencies(unittest.TestCase):
     def test_validate_deps_empty(self):
         dependency.validate_deps({})
 
+    def assert_topological_order(self, cases, graph):
+        cases_order = []
+        visited_tests = set()
+        tests = util.OrderedSet()
+        for c in cases:
+            check, part, env = c
+            cases_order.append((check.name, part.fullname, env.name))
+            tests.add(check.name)
+            visited_tests.add(check.name)
+
+            # Assert that all dependencies of c have been visited before
+            for d in graph[c]:
+                if d not in cases:
+                    # dependency points outside the subgraph
+                    continue
+
+                assert d.check.name in visited_tests
+
+        # Check the order of systems and prog. environments
+        # We are checking against all possible orderings
+        valid_orderings = []
+        for partitions in itertools.permutations(['sys0:p0', 'sys0:p1']):
+            for environs in itertools.permutations(['e0', 'e1']):
+                ordering = []
+                for t in tests:
+                    for p in partitions:
+                        for e in environs:
+                            ordering.append((t, p, e))
+
+                valid_orderings.append(ordering)
+
+        assert cases_order in valid_orderings
+
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
     def test_toposort(self):
         #
@@ -752,30 +848,37 @@ class TestDependencies(unittest.TestCase):
                                           t5, t6, t7, t8])
         )
         cases = dependency.toposort(deps)
-        cases_order = []
-        tests = util.OrderedSet()
-        visited_tests = set()
-        for c in cases:
-            check, part, env = c
-            cases_order.append((check.name, part.fullname, env.name))
-            tests.add(check.name)
-            visited_tests.add(check.name)
+        self.assert_topological_order(cases, deps)
 
-            # Assert that all dependencies of c have been visited before
-            for d in deps[c]:
-                assert d.check.name in visited_tests
-
-        # Check the order of systems and prog. environments
-        # We are checking against all possible orderings
-        valid_orderings = []
-        for partitions in itertools.permutations(['sys0:p0', 'sys0:p1']):
-            for environs in itertools.permutations(['e0', 'e1']):
-                ordering = []
-                for t in tests:
-                    for p in partitions:
-                        for e in environs:
-                            ordering.append((t, p, e))
-
-                valid_orderings.append(ordering)
-
-        assert cases_order in valid_orderings
+    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'sys0')
+    def test_toposort_subgraph(self):
+        #
+        #       t0
+        #       ^
+        #       |
+        #   +-->t1<--+
+        #   |        |
+        #   t2<------t3
+        #   ^        ^
+        #   |        |
+        #   +---t4---+
+        #
+        t0 = self.create_test('t0')
+        t1 = self.create_test('t1')
+        t2 = self.create_test('t2')
+        t3 = self.create_test('t3')
+        t4 = self.create_test('t4')
+        t1.depends_on('t0')
+        t2.depends_on('t1')
+        t3.depends_on('t1')
+        t3.depends_on('t2')
+        t4.depends_on('t2')
+        t4.depends_on('t3')
+        full_deps = dependency.build_deps(
+            executors.generate_testcases([t0, t1, t2, t3, t4])
+        )
+        partial_deps = dependency.build_deps(
+            executors.generate_testcases([t3, t4]), full_deps
+        )
+        cases = dependency.toposort(partial_deps, is_subgraph=True)
+        self.assert_topological_order(cases, partial_deps)

@@ -19,10 +19,11 @@ import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform, ContainerPlatformField
-from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
+from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
@@ -342,7 +343,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: If the number of tasks is set to a number ``<=0``, ReFrame will try
     #: to flexibly allocate the number of tasks, based on the command line
-    #: option ``--flex-alloc-tasks``.
+    #: option ``--flex-alloc-nodes``.
     #: A negative number is used to indicate the minimum number of tasks
     #: required for the test.
     #: In this case the minimum number of tasks is the absolute value of
@@ -357,12 +358,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:     .. versionchanged:: 2.15
     #:        Added support for flexible allocation of the number of tasks
     #:        according to the ``--flex-alloc-tasks`` command line option
-    #:        (see `Flexible task allocation
-    #:        <running.html#flexible-task-allocation>`__)
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
     #:        Negative ``num_tasks`` is allowed for specifying the minimum
     #:        number of required tasks by the test.
+    #:     .. versionchanged:: 2.21
+    #:        Flexible node allocation is now controlled by the
+    #:        ``--flex-alloc-nodes`` command line option
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -812,7 +818,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._outputdir
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -826,7 +832,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -840,12 +846,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stderr(self):
         return self._build_job.stderr
 
@@ -1174,7 +1180,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.logger.debug(msg)
 
         # Update num_tasks if test is flexible
-        if self.job.sched_flex_alloc_tasks:
+        if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
     def poll(self):
@@ -1222,7 +1228,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
-            success = evaluate(self.sanity_patterns)
+            success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
 
@@ -1273,7 +1279,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
             for tag, expr in self.perf_patterns.items():
-                value = evaluate(expr)
+                value = sn.evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 if key not in self.reference:
                     raise SanityError(
@@ -1288,7 +1294,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 val, ref, low_thres, high_thres, *_ = values
                 tag = key.split(':')[-1]
                 try:
-                    evaluate(
+                    sn.evaluate(
                         assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
@@ -1450,12 +1456,12 @@ class CompileOnlyRegressionTest(RegressionTest):
         self._setup_paths()
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         return self._build_job.stderr
 
