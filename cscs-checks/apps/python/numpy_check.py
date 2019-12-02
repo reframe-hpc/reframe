@@ -56,9 +56,8 @@ class NumpyBaseTest(rfm.RunOnlyRegressionTest):
                 r'^Inversion of a 2048x2048 matrix in\s+(?P<inv>\S+)\s+s',
                 self.stdout, 'inv', float)
         }
-        np_version = sn.extractsingle(r'Numpy version:\s+(?P<ver>\S+)',
-                                      self.stdout, 'ver', str)
-        self.sanity_patterns = sn.assert_eq(np_version, '1.17.2')
+        self.sanity_patterns = sn.assert_found(r'Numpy version:\s+\S+',
+                                               self.stdout)
         self.variables = {
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',
         }
