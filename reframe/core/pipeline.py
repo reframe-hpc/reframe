@@ -953,13 +953,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
             scheduler_type = self._current_partition.scheduler
             launcher_type = self._current_partition.launcher
 
-        self._job = scheduler_type(
-            name='rfm_%s_job' % self.name,
-            launcher=launcher_type(),
-            workdir=self._stagedir,
-            sched_access=self._current_partition.access,
-            sched_exclusive_access=self.exclusive_access,
-            **job_opts)
+        self._job = Job.create(scheduler_type(),
+                               launcher_type(),
+                               name='rfm_%s_job' % self.name,
+                               workdir=self._stagedir,
+                               sched_access=self._current_partition.access,
+                               sched_exclusive_access=self.exclusive_access,
+                               **job_opts)
 
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
@@ -1082,11 +1082,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
-        self._build_job = getscheduler('local')(
-            name='rfm_%s_build' % self.name,
-            launcher=getlauncher('local')(),
-            workdir=self._stagedir)
-
+        self._build_job = Job.create(getscheduler('local')(),
+                                     launcher=getlauncher('local')(),
+                                     name='rfm_%s_build' % self.name,
+                                     workdir=self._stagedir)
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,

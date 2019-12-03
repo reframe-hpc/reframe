@@ -3,29 +3,29 @@ import unittest
 
 import reframe.core.launchers as launchers
 from reframe.core.launchers.registry import getlauncher
-from reframe.core.schedulers import Job
+from reframe.core.schedulers import Job, JobScheduler
 
 
-class FakeJob(Job):
-    def emit_preamble(self):
+class FakeJobScheduler(JobScheduler):
+    def emit_preamble(self, job):
         pass
 
-    def submit(self):
+    def submit(self, job):
         pass
 
-    def wait(self):
+    def wait(self, job):
         pass
 
-    def cancel(self):
+    def cancel(self, job):
         pass
 
-    def finished(self):
+    def finished(self, job):
         pass
 
-    def get_all_nodes(self):
+    def allnodes(self):
         pass
 
-    def filter_nodes(self, nodes):
+    def filternodes(self, job, nodes):
         pass
 
 
@@ -33,27 +33,32 @@ class _TestLauncher(abc.ABC):
     '''Base class for launcher tests.'''
 
     def setUp(self):
-        self.job = FakeJob(name='fake_job',
-                           launcher=self.launcher,
-                           num_tasks=4,
-                           num_tasks_per_node=2,
-                           num_tasks_per_core=1,
-                           num_tasks_per_socket=1,
-                           num_cpus_per_task=2,
-                           use_smt=True,
-                           time_limit=(0, 10, 0),
-                           script_filename='fake_script',
-                           stdout='fake_stdout',
-                           stderr='fake_stderr',
-                           sched_account='fake_account',
-                           sched_partition='fake_partition',
-                           sched_reservation='fake_reservation',
-                           sched_nodelist="mynode",
-                           sched_exclude_nodelist='fake_exclude_nodelist',
-                           sched_exclusive_access='fake_exclude_access',
-                           sched_options=['--fake'])
+        self.job = Job.create(FakeJobScheduler(),
+                              self.launcher,
+                              name='fake_job',
+                              script_filename='fake_script',
+                              stdout='fake_stdout',
+                              stderr='fake_stderr',
+                              sched_account='fake_account',
+                              sched_partition='fake_partition',
+                              sched_reservation='fake_reservation',
+                              sched_nodelist="mynode",
+                              sched_exclude_nodelist='fake_exclude_nodelist',
+                              sched_exclusive_access='fake_exclude_access',
+                              sched_options=['--fake'])
+        self.job.num_tasks = 4
+        self.job.num_tasks_per_node = 2
+        self.job.num_tasks_per_core = 1
+        self.job.num_tasks_per_socket = 1
+        self.job.num_cpus_per_task = 2
+        self.job.use_smt = True
+        self.job.time_limit = (0, 10, 0)
         self.job.options += ['--gres=gpu:4', '#DW jobdw anything']
-        self.minimal_job = FakeJob(name='fake_job', launcher=self.launcher)
+        self.job.launcher.options = ['--foo']
+        self.minimal_job = Job.create(FakeJobScheduler(),
+                                      self.launcher,
+                                      name='fake_job')
+        self.minimal_job.launcher.options = ['--foo']
 
     @property
     @abc.abstractmethod
@@ -70,19 +75,22 @@ class _TestLauncher(abc.ABC):
     def expected_minimal_command(self):
         '''The command expected to be emitted by the launcher.'''
 
+    def run_command(self, job):
+        return self.job.launcher.run_command(job)
+
     def test_run_command(self):
-        emitted_command = self.launcher.run_command(self.job)
+        emitted_command = self.run_command(self.job)
         self.assertEqual(self.expected_command, emitted_command)
 
     def test_run_minimal_command(self):
-        emitted_command = self.launcher.run_command(self.minimal_job)
+        emitted_command = self.run_command(self.minimal_job)
         self.assertEqual(self.expected_minimal_command, emitted_command)
 
 
 class TestSrunLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        return getlauncher('srun')(options=['--foo'])
+        return getlauncher('srun')()
 
     @property
     def expected_command(self):
@@ -97,7 +105,7 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def launcher(self):
-        return getlauncher('srunalloc')(options=['--foo'])
+        return getlauncher('srunalloc')()
 
     @property
     def expected_command(self):
@@ -135,7 +143,7 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
 class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        return getlauncher('alps')(options=['--foo'])
+        return getlauncher('alps')()
 
     @property
     def expected_command(self):
@@ -149,7 +157,7 @@ class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
 class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        return getlauncher('mpirun')(options=['--foo'])
+        return getlauncher('mpirun')()
 
     @property
     def expected_command(self):
@@ -163,7 +171,7 @@ class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
 class TestMpiexecLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        return getlauncher('mpiexec')(options=['--foo'])
+        return getlauncher('mpiexec')()
 
     @property
     def expected_command(self):
@@ -178,8 +186,7 @@ class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
         return launchers.LauncherWrapper(
-            getlauncher('alps')(options=['--foo']),
-            'ddt', ['--offline']
+            getlauncher('alps')(), 'ddt', ['--offline']
         )
 
     @property
@@ -194,7 +201,7 @@ class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
 class TestLocalLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):
-        return getlauncher('local')(['--foo'])
+        return getlauncher('local')()
 
     @property
     def expected_command(self):
@@ -213,7 +220,7 @@ class TestSSHLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def launcher(self):
-        return getlauncher('ssh')(['--foo'])
+        return getlauncher('ssh')()
 
     @property
     def expected_command(self):
