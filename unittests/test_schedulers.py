@@ -14,6 +14,7 @@ from reframe.core.environments import Environment
 from reframe.core.exceptions import JobError, JobNotStartedError
 from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
+from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.schedulers.slurm import SlurmNode, create_nodes
 
@@ -21,12 +22,13 @@ from reframe.core.schedulers.slurm import SlurmNode, create_nodes
 class _TestJob(abc.ABC):
     def setUp(self):
         self.workdir = tempfile.mkdtemp(dir='unittests')
-        self.testjob = self.job_type(
+        self.testjob = Job.create(
+            self.scheduler, self.launcher,
             name='testjob',
-            launcher=self.launcher,
             workdir=self.workdir,
             script_filename=os_ext.mkstemp_path(
-                dir=self.workdir, suffix='.sh'),
+                dir=self.workdir, suffix='.sh'
+            ),
             stdout=os_ext.mkstemp_path(dir=self.workdir, suffix='.out'),
             stderr=os_ext.mkstemp_path(dir=self.workdir, suffix='.err'),
         )
@@ -38,6 +40,10 @@ class _TestJob(abc.ABC):
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
+    def prepare(self):
+        with rt.module_use('unittests/modules'):
+            self.testjob.prepare(self.commands, self.environs)
+
     @property
     def commands(self):
         runcmd = self.launcher.run_command(self.testjob)
@@ -46,8 +52,8 @@ class _TestJob(abc.ABC):
                 *self.post_run]
 
     @property
-    def job_type(self):
-        return getscheduler(self.sched_name)
+    def scheduler(self):
+        return getscheduler(self.sched_name)()
 
     @property
     @abc.abstractmethod
@@ -55,9 +61,17 @@ class _TestJob(abc.ABC):
         '''Return the registered name of the scheduler.'''
 
     @property
-    @abc.abstractmethod
+    def sched_configured(self):
+        return True
+
+    @property
     def launcher(self):
-        '''Return a launcher to use for this test.'''
+        return getlauncher(self.launcher_name)()
+
+    @property
+    @abc.abstractmethod
+    def launcher_name(self):
+        '''Return the registered name of the launcher.'''
 
     @abc.abstractmethod
     def setup_user(self, msg=None):
@@ -69,7 +83,7 @@ class _TestJob(abc.ABC):
             msg = msg or "scheduler '%s' not configured" % self.sched_name
             self.skipTest(msg)
 
-        self.testjob.options += partition.access
+        self.testjob._sched_access = partition.access
 
     def assertScriptSanity(self, script_file):
         '''Assert the sanity of the produced script file.'''
@@ -99,13 +113,13 @@ class _TestJob(abc.ABC):
         self.testjob._sched_exclusive_access = True
 
     def test_prepare(self):
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertScriptSanity(self.testjob.script_filename)
 
     @fixtures.switch_to_user_runtime
     def test_submit(self):
         self.setup_user()
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertIsNone(self.testjob.nodelist)
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
@@ -116,7 +130,7 @@ class _TestJob(abc.ABC):
         self.setup_user()
         self.parallel_cmd = 'sleep 10'
         self.testjob.time_limit = (0, 0, 2)
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
         self.assertIsNotNone(self.testjob.jobid)
@@ -133,7 +147,7 @@ class _TestJob(abc.ABC):
     def test_cancel(self):
         self.setup_user()
         self.parallel_cmd = 'sleep 30'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
         self.testjob.cancel()
@@ -144,30 +158,30 @@ class _TestJob(abc.ABC):
 
     def test_cancel_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.cancel)
 
     def test_wait_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.wait)
 
     @fixtures.switch_to_user_runtime
     def test_poll(self):
         self.setup_user()
         self.parallel_cmd = 'sleep 2'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.testjob.submit()
         self.assertFalse(self.testjob.finished())
         self.testjob.wait()
 
     def test_poll_before_submit(self):
         self.parallel_cmd = 'sleep 3'
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.assertRaises(JobNotStartedError, self.testjob.finished)
 
     def test_no_empty_lines_in_preamble(self):
-        for l in self.testjob.emit_preamble():
+        for l in self.testjob.scheduler.emit_preamble(self.testjob):
             self.assertNotEqual(l, '')
 
     def test_guess_num_tasks(self):
@@ -189,12 +203,12 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         return 'local'
 
     @property
-    def sched_configured(self):
-        return True
+    def launcher_name(self):
+        return 'local'
 
     @property
-    def launcher(self):
-        return LocalLauncher()
+    def sched_configured(self):
+        return True
 
     def setup_user(self, msg=None):
         # Local scheduler is by definition available
@@ -225,9 +239,9 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.pre_run = ['trap -- "" TERM']
         self.post_run = ['echo $!', 'wait']
         self.testjob.time_limit = (0, 1, 0)
-        self.testjob.cancel_grace_period = 2
+        self.testjob.scheduler._cancel_grace_period = 2
 
-        self.testjob.prepare(self.commands, self.environs)
+        self.prepare()
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
@@ -266,8 +280,8 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.post_run = []
         self.parallel_cmd = os.path.join(fixtures.TEST_RESOURCES_CHECKS,
                                          'src', 'sleep_deeply.sh')
-        self.testjob.cancel_grace_period = 2
-        self.testjob.prepare(self.commands, self.environs)
+        self.testjob._cancel_grace_period = 2
+        self.prepare()
         self.testjob.submit()
 
         # Stall a bit here to let the the spawned process start and install its
@@ -289,6 +303,10 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
 
+    def test_guess_num_tasks(self):
+        self.testjob.num_tasks = 0
+        assert self.testjob.guess_num_tasks() == 1
+
 
 class TestSlurmJob(_TestJob, unittest.TestCase):
     @property
@@ -296,12 +314,12 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
         return 'slurm'
 
     @property
-    def sched_configured(self):
-        return fixtures.partition_with_scheduler('slurm') is not None
+    def launcher_name(self):
+        return 'local'
 
     @property
-    def launcher(self):
-        return LocalLauncher()
+    def sched_configured(self):
+        return fixtures.partition_with_scheduler('slurm') is not None
 
     def setup_user(self, msg=None):
         super().setup_user(msg='SLURM (with sacct) not configured')
@@ -383,14 +401,16 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def test_guess_num_tasks(self):
         self.testjob.num_tasks = 0
-        self.testjob._sched_flex_alloc_tasks = 'all'
-        # monkey patch `get_all_nodes()` to simulate extraction of
+        self.testjob._sched_flex_alloc_nodes = 'all'
+
+        # Monkey patch `allnodes()` to simulate extraction of
         # slurm nodes through the use of `scontrol show`
-        self.testjob.get_all_nodes = lambda: set()
+        self.testjob.scheduler.allnodes = lambda: set()
+
         # monkey patch `_get_default_partition()` to simulate extraction
         # of the default partition through the use of `scontrol show`
-        self.testjob._get_default_partition = lambda: 'pdef'
-        self.assertEqual(self.testjob.guess_num_tasks(), 0)
+        self.testjob.scheduler._get_default_partition = lambda: 'pdef'
+        assert self.testjob.guess_num_tasks() == 0
 
     def test_submit_job_array(self):
         self.testjob.options = ['--array=0-1']
@@ -427,12 +447,12 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         return 'pbs'
 
     @property
-    def sched_configured(self):
-        return fixtures.partition_with_scheduler('pbs') is not None
+    def launcher_name(self):
+        return 'local'
 
     @property
-    def launcher(self):
-        return LocalLauncher()
+    def sched_configured(self):
+        return fixtures.partition_with_scheduler('pbs') is not None
 
     def setup_user(self, msg=None):
         super().setup_user(msg='PBS not configured')
@@ -593,62 +613,61 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
 
         return create_nodes(node_descriptions)
 
-    def create_reservation_nodes(obj, res):
-        return {n for n in obj.testjob.get_all_nodes() if n.name != 'nid00001'}
+    def create_reservation_nodes(self, res):
+        return {n for n in self.testjob.scheduler.allnodes()
+                if n.name != 'nid00001'}
 
-    def create_dummy_nodes_by_name(obj, name):
-        return {n for n in obj.testjob.get_all_nodes() if n.name == name}
+    def create_dummy_nodes_by_name(self, name):
+        return {n for n in self.testjob.scheduler.allnodes() if n.name == name}
 
     def setUp(self):
+        # Monkey patch scheduler to simulate retrieval of nodes from Slurm
+        patched_sched = getscheduler('slurm')()
+        patched_sched.allnodes = self.create_dummy_nodes
+        patched_sched._get_default_partition = lambda: 'pdef'
+
         self.workdir = tempfile.mkdtemp(dir='unittests')
-        slurm_scheduler = getscheduler('slurm')
-        self.testjob = slurm_scheduler(
+        self.testjob = Job.create(
+            patched_sched, getlauncher('local')(),
             name='testjob',
-            launcher=getlauncher('local')(),
             workdir=self.workdir,
             script_filename=os.path.join(self.workdir, 'testjob.sh'),
             stdout=os.path.join(self.workdir, 'testjob.out'),
             stderr=os.path.join(self.workdir, 'testjob.err')
         )
-        # monkey patch `get_all_nodes` to simulate extraction of
-        # slurm nodes through the use of `scontrol show`
-        self.testjob.get_all_nodes = self.create_dummy_nodes
-        # monkey patch `_get_default_partition` to simulate extraction
-        # of the default partition
-        self.testjob._get_default_partition = lambda: 'pdef'
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob.num_tasks_per_node = 4
         self.testjob.num_tasks = 0
 
     def tearDown(self):
         os_ext.rmtree(self.workdir)
 
-    def test_positive_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = 48
+    def test_positive_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = 12
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 48)
 
-    def test_zero_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = 0
+    def test_zero_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = 0
         self.testjob._sched_access = ['--constraint=f1']
         with self.assertRaises(JobError):
             self.prepare_job()
 
-    def test_negative_flex_alloc_tasks(self):
-        self.testjob._sched_flex_alloc_tasks = -4
+    def test_negative_flex_alloc_nodes(self):
+        self.testjob._sched_flex_alloc_nodes = -1
         self.testjob._sched_access = ['--constraint=f1']
         with self.assertRaises(JobError):
             self.prepare_job()
 
     def test_sched_access_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_sched_access_constraint_partition(self):
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
@@ -659,18 +678,18 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_default_partition_all(self):
-        self.testjob._sched_flex_alloc_tasks = 'all'
+        self.testjob._sched_flex_alloc_nodes = 'all'
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 16)
 
     def test_constraint_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.options = ['--constraint=f1']
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_partition_idle(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_partition = 'p2'
         with self.assertRaises(JobError):
             self.prepare_job()
@@ -723,32 +742,38 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
     def test_valid_reservation_cmd(self):
         self.testjob._sched_access = ['--constraint=f2']
         self.testjob._sched_reservation = 'dummy'
-        # monkey patch `_get_reservation_nodes` to simulate extraction of
+
+        # Monkey patch `_get_reservation_nodes` to simulate extraction of
         # reservation slurm nodes through the use of `scontrol show`
-        self.testjob._get_reservation_nodes = self.create_reservation_nodes
+        sched = self.testjob.scheduler
+        sched._get_reservation_nodes = self.create_reservation_nodes
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
 
     def test_valid_reservation_option(self):
         self.testjob._sched_access = ['--constraint=f2']
         self.testjob.options = ['--reservation=dummy']
-        self.testjob._get_reservation_nodes = self.create_reservation_nodes
+        sched = self.testjob.scheduler
+        sched._get_reservation_nodes = self.create_reservation_nodes
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 4)
 
     def test_exclude_nodes_cmd(self):
         self.testjob._sched_access = ['--constraint=f1']
         self.testjob._sched_exclude_nodelist = 'nid00001'
-        # monkey patch `_get_nodes_by_name` to simulate extraction of
+
+        # Monkey patch `_get_nodes_by_name` to simulate extraction of
         # slurm nodes by name through the use of `scontrol show`
-        self.testjob._get_nodes_by_name = self.create_dummy_nodes_by_name
+        sched = self.testjob.scheduler
+        sched._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
     def test_exclude_nodes_opt(self):
         self.testjob._sched_access = ['--constraint=f1']
         self.testjob.options = ['-x nid00001']
-        self.testjob._get_nodes_by_name = self.create_dummy_nodes_by_name
+        sched = self.testjob.scheduler
+        sched._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
         self.assertEqual(self.testjob.num_tasks, 8)
 
@@ -759,7 +784,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.assertEqual(self.testjob.num_tasks, 1)
 
     def test_not_enough_idle_nodes(self):
-        self.testjob._sched_flex_alloc_tasks = 'idle'
+        self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.num_tasks = -12
         with self.assertRaises(JobError):
             self.prepare_job()

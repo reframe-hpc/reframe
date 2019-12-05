@@ -361,7 +361,7 @@ class ExecutionPolicy(abc.ABC):
         self.strict_check = False
 
         # Scheduler options
-        self.sched_flex_alloc_tasks = None
+        self.sched_flex_alloc_nodes = None
         self.sched_account = None
         self.sched_partition = None
         self.sched_reservation = None

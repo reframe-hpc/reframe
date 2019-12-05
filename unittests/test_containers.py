@@ -58,6 +58,7 @@ class _ContainerPlatformTest(abc.ABC):
         self.container_platform.commands = ['cmd']
         self.container_platform.mount_points = [('/path/one', '/one')]
         self.container_platform.workdir = '/stagedir'
+        self.container_platform.options = ['--foo', '--bar']
         assert (self.expected_cmd_with_run_opts ==
                 self.container_platform.launch_command())
 
@@ -77,7 +78,7 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
 
     @property
     def expected_cmd_with_run_opts(self):
-        return ('docker run --rm -v "/path/one":"/one" '
+        return ('docker run --rm -v "/path/one":"/one" --foo --bar '
                 "name:tag bash -c 'cd /stagedir; cmd'")
 
 
@@ -100,7 +101,7 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
     def expected_cmd_with_run_opts(self):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestShifterNGWithMPI(TestShifterNG):
@@ -120,7 +121,7 @@ class TestShifterNGWithMPI(TestShifterNG):
     def expected_cmd_with_run_opts(self):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi name:tag bash -c 'cd /stagedir; cmd'")
+                "--mpi --foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSarus(_ContainerPlatformTest, unittest.TestCase):
@@ -142,7 +143,7 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
     def expected_cmd_with_run_opts(self):
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSarusWithMPI(TestSarus):
@@ -163,7 +164,7 @@ class TestSarusWithMPI(TestSarus):
         self.container_platform.with_mpi = True
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi name:tag bash -c 'cd /stagedir; cmd'")
+                "--mpi --foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
@@ -182,7 +183,7 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_with_run_opts(self):
         return ('singularity exec -B"/path/one:/one" '
-                "name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSingularityWithCuda(TestSingularity):
@@ -204,4 +205,4 @@ class TestSingularityWithCuda(TestSingularity):
     def expected_cmd_with_run_opts(self):
         self.container_platform.with_cuda = True
         return ('singularity exec -B"/path/one:/one" '
-                "--nv name:tag bash -c 'cd /stagedir; cmd'")
+                "--nv --foo --bar name:tag bash -c 'cd /stagedir; cmd'")

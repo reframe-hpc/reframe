@@ -34,6 +34,12 @@ class ContainerPlatform(abc.ABC):
     mount_points = fields.TypedField('mount_points',
                                      typ.List[typ.Tuple[str, str]])
 
+    #: Additional options to be passed to the container runtime when executed.
+    #:
+    #: :type: :class:`list[str]`
+    #: :default: ``[]``
+    options = fields.TypedField('options', typ.List[str])
+
     #: The working directory of ReFrame inside the container.
     #:
     #: This is the directory where the test's stage directory is mounted inside
@@ -48,6 +54,7 @@ class ContainerPlatform(abc.ABC):
         self.image = None
         self.commands = []
         self.mount_points  = []
+        self.options = []
         self.workdir = '/rfm_workdir'
 
     @abc.abstractmethod
@@ -93,6 +100,7 @@ class Docker(ContainerPlatform):
     def launch_command(self):
         super().launch_command()
         run_opts = ['-v "%s":"%s"' % mp for mp in self.mount_points]
+        run_opts += self.options
         run_cmd = 'docker run --rm %s %s bash -c ' % (' '.join(run_opts),
                                                       self.image)
         return run_cmd + "'" + '; '.join(
@@ -124,6 +132,7 @@ class Sarus(ContainerPlatform):
         if self.with_mpi:
             run_opts.append('--mpi')
 
+        run_opts += self.options
         run_cmd = self._command + ' run %s %s bash -c ' % (' '.join(run_opts),
                                                            self.image)
         return run_cmd + "'" + '; '.join(
@@ -158,11 +167,12 @@ class Singularity(ContainerPlatform):
 
     def launch_command(self):
         super().launch_command()
-        exec_opts = ['-B"%s:%s"' % mp for mp in self.mount_points]
+        run_opts = ['-B"%s:%s"' % mp for mp in self.mount_points]
         if self.with_cuda:
-            exec_opts.append('--nv')
+            run_opts.append('--nv')
 
-        run_cmd = 'singularity exec %s %s bash -c ' % (' '.join(exec_opts),
+        run_opts += self.options
+        run_cmd = 'singularity exec %s %s bash -c ' % (' '.join(run_opts),
                                                        self.image)
         return run_cmd + "'" + '; '.join(
             ['cd ' + self.workdir] + self.commands) + "'"
