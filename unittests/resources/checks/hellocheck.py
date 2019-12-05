@@ -9,6 +9,7 @@ class HelloTest(rfm.RegressionTest):
         self.descr = 'C Hello World test'
 
         # All available systems are supported
+        self.num_tasks = 0
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
         self.sourcepath = 'hello.c'
