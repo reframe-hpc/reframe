@@ -137,6 +137,9 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
+        if self.current_system.name == 'kesch':
+            self.prgenv_flags['PrgEnv-cray'] = ['-homp']
+
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 4
@@ -193,6 +196,9 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
             'PrgEnv-intel': ['-qopenmp'],
             'PrgEnv-pgi': ['-mp']
         }
+        if self.current_system.name == 'kesch':
+            self.prgenv_flags['PrgEnv-cray'] = ['-homp']
+
         self.num_tasks = 6
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
