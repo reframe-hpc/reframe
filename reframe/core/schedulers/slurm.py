@@ -310,7 +310,8 @@ class SlurmJobScheduler(sched.JobScheduler):
         # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
             r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)\|(?P<end>\S+)',
+            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)\|'
+            r'(?P<end>\S+)',
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
