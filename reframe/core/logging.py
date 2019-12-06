@@ -374,6 +374,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_outputdir': None,
                 'check_stagedir': None,
                 'check_num_tasks': None,
+                'check_completion_time': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -426,6 +427,15 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
+
+        if self.check.job:
+            if self.check.job.completion_time:
+                # Format is the same for every handler
+                fmt = self.logger.handlers[0].formatter.datefmt
+                self.extra['check_completion_time'] = (
+                    self.check.job.completion_time.strftime(fmt))
+            else:
+                self.extra['check_completion_time'] = "NA"
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):

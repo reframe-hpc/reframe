@@ -3,6 +3,7 @@ import glob
 import itertools
 import re
 import time
+import os
 from argparse import ArgumentParser
 from contextlib import suppress
 from datetime import datetime
@@ -88,6 +89,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
+        self._completion_time = None
+        os.environ["SLURM_TIME_FORMAT"] = "standard"
+
+    @property
+    def completion_time(self):
+        return self._completion_time
 
     def _format_option(self, var, option):
         if var is not None:
@@ -291,7 +298,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         '''Check the status of the job.'''
 
         completed = _run_strict(
-            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
+            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %
             (datetime.now().strftime('%F'), job.jobid)
         )
         self._update_state_count += 1
@@ -303,7 +310,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
             r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
+            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)\|(?P<end>\S+)',
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
@@ -318,6 +325,10 @@ class SlurmJobScheduler(sched.JobScheduler):
         if slurm_state_completed(job.state):
             # Since Slurm exitcodes are positive take the maximum one
             job.exitcode = max(int(s.group('exitcode')) for s in state_match)
+            self._completion_time = max(
+                datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
+                for s in state_match
+            )
 
         # Use ',' to join nodes to be consistent with Slurm syntax
         self._set_nodelist(

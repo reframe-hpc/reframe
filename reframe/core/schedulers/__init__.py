@@ -3,6 +3,7 @@
 #
 
 import abc
+from datetime import datetime
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -189,6 +190,7 @@ class Job:
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
+        self._completion_time = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
@@ -259,6 +261,10 @@ class Job:
     def sched_exclusive_access(self):
         return self._sched_exclusive_access
 
+    @property
+    def completion_time(self):
+        return self.scheduler.completion_time or self._completion_time
+
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
@@ -321,7 +327,8 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        return self.scheduler.wait(self)
+        self.scheduler.wait(self)
+        self._completion_time = datetime.now()
 
     def cancel(self):
         if self.jobid is None:
