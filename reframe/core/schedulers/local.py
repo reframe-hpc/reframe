@@ -56,10 +56,10 @@ class LocalJobScheduler(sched.JobScheduler):
         return []
 
     def allnodes(self):
-        return [socket.gethostname()]
+        return [_LocalNode(socket.gethostname())]
 
     def filternodes(self, job, nodes):
-        return [socket.gethostname()]
+        return [_LocalNode(socket.gethostname())]
 
     def _kill_all(self, job):
         '''Send SIGKILL to all the processes of the spawned job.'''
@@ -168,4 +168,12 @@ class LocalJobScheduler(sched.JobScheduler):
         if self._proc.returncode is None:
             return False
 
+        return True
+
+
+class _LocalNode(sched.Node):
+    def __init__(self, name):
+        self._name = name
+
+    def is_available(self):
         return True
