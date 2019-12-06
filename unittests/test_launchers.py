@@ -147,11 +147,11 @@ class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'aprun -B --foo'
+        return 'aprun -n 4 -N 2 -d 2 -j 0 --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'aprun -B --foo'
+        return 'aprun -n 1 --foo'
 
 
 class TestMpirunLauncher(_TestLauncher, unittest.TestCase):
@@ -191,11 +191,11 @@ class TestLauncherWrapperAlps(_TestLauncher, unittest.TestCase):
 
     @property
     def expected_command(self):
-        return 'ddt --offline aprun -B --foo'
+        return 'ddt --offline aprun -n 4 -N 2 -d 2 -j 0 --foo'
 
     @property
     def expected_minimal_command(self):
-        return 'ddt --offline aprun -B --foo'
+        return 'ddt --offline aprun -n 1 --foo'
 
 
 class TestLocalLauncher(_TestLauncher, unittest.TestCase):
