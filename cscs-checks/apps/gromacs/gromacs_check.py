@@ -36,12 +36,11 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH']
         self.strict_check = False
         self.use_multithreading = False
-        if self.current_system.name == 'daint':
-            self.extra_resources = {
-                'switches': {
-                    'num_switches': 1
-                }
+        self.extra_resources = {
+            'switches': {
+                'num_switches': 1
             }
+        }
         self.tags = {'scs', 'external-resources'}
 
 
