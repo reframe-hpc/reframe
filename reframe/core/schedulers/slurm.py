@@ -166,7 +166,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             raise JobError('could not retrieve node information') from e
 
         node_descriptions = completed.stdout.splitlines()
-        return create_nodes(node_descriptions)
+        return _create_nodes(node_descriptions)
 
     def _get_default_partition(self):
         completed = _run_strict('scontrol -a show -o partitions')
@@ -272,13 +272,13 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         completed = _run_strict('scontrol -a show -o %s' % reservation_nodes)
         node_descriptions = completed.stdout.splitlines()
-        return create_nodes(node_descriptions)
+        return _create_nodes(node_descriptions)
 
     def _get_nodes_by_name(self, nodespec):
         completed = os_ext.run_command('scontrol -a show -o node %s' %
                                        nodespec)
         node_descriptions = completed.stdout.splitlines()
-        return create_nodes(node_descriptions)
+        return _create_nodes(node_descriptions)
 
     def _set_nodelist(self, job, nodespec):
         if job.nodelist is not None:
@@ -485,16 +485,16 @@ class SqueueJobScheduler(SlurmJobScheduler):
         self._cancelled = True
 
 
-def create_nodes(descriptions):
+def _create_nodes(descriptions):
     nodes = set()
     for descr in descriptions:
         with suppress(JobError):
-            nodes.add(SlurmNode(descr))
+            nodes.add(_SlurmNode(descr))
 
     return nodes
 
 
-class SlurmNode:
+class _SlurmNode(sched.Node):
     '''Class representing a Slurm node.'''
 
     def __init__(self, node_descr):

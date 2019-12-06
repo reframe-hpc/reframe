@@ -334,3 +334,9 @@ class Job:
             raise JobNotStartedError('cannot poll an unstarted job')
 
         return self.scheduler.finished(self)
+
+
+class Node(abc.ABC):
+    @abc.abstractmethod
+    def is_available(self):
+        '''Return ``True`` if this node is available, ``False`` otherwise.'''
