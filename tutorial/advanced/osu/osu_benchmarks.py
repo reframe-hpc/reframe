@@ -5,6 +5,8 @@ import reframe.utility.sanity as sn
 
 
 class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
+    '''Base class of OSU benchmarks runtime tests'''
+
     def __init__(self):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi', 'PrgEnv-intel']
