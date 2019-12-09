@@ -15,7 +15,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'VH']
 
     def setup(self, *args, **kwargs):
         if self.num_tasks == 1:
@@ -38,7 +38,7 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'VH']
 
     def setup(self, *args, **kwargs):
         if self.num_tasks == 1:

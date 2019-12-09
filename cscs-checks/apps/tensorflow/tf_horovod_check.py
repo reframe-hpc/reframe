@@ -58,4 +58,4 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
             '--log_dir ./logs',
             '--train_dir ./checkpoints']
         self.tags = {'production'}
-        self.maintainers = ['MS', 'RS']
+        self.maintainers = ['RS', 'TR']

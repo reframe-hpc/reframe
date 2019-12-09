@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 class OpenCLCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.maintainers = ['TM', 'VK']
+        self.maintainers = ['TM', 'SK']
         self.tags = {'production', 'craype'}
 
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']

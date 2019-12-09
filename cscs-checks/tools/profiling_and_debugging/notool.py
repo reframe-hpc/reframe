@@ -54,7 +54,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # if (self.lang == 'C++' and
         #    self.current_environ.name == 'PrgEnv-pgi'):
         #    self.omp_versions['PrgEnv-pgi'] = '200805'
-        self.maintainers = ['JG', 'MK']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:

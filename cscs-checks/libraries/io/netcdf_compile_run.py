@@ -39,7 +39,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_found(r'SUCCESS', self.stdout)
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):

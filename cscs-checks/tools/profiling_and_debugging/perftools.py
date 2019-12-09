@@ -91,7 +91,7 @@ class PerftoolsCheck(rfm.RegressionTest):
                 'Instr per Cycle': (0, None, None, ''),
             }
         }
-        self.maintainers = ['JG', 'MK']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production', 'craype'}
 
     def setup(self, environ, partition, **job_opts):
