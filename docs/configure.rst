@@ -103,7 +103,7 @@ Each system is a key/value pair, with the key being the name of the system and t
 The valid attributes of a system are the following:
 
 * ``descr``: A detailed description of the system (default is the system name).
-* ``hostnames``: This is a list of hostname patterns that will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
+* ``hostnames``: This is a list of hostname patterns according to the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__ , which will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
 * ``modules_system``: *[new in 2.8]* The modules system that should be used for loading environment modules on this system (default :class:`None`).
   Three types of modules systems are currently supported:
 
@@ -382,7 +382,7 @@ System Auto-Detection
 When ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
 
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found the hostname will be obtained from the standard ``hostname`` command. 
+If this cannot be found the hostname will be obtained from the standard ``hostname`` command.
 Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
 If the system cannot be auto-detected, ReFrame will issue a warning and fall back to a generic system configuration, which is equivalent to the following:
