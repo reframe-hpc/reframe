@@ -51,6 +51,7 @@ Publications
    The Regression Test Pipeline <pipeline>
    ReFrame Tutorial <tutorial>
    Customizing Further A Regression Test <advanced>
+   How Test Dependencies Work in ReFrame <dependencies>
    Understanding The Mechanism Of Sanity Functions <deferrables>
    Running ReFrame <running>
    Use cases <usecases>
