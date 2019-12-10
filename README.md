@@ -95,3 +95,9 @@ For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.c
 ### Slack
 
 You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).
+
+
+## Contributing back
+
+ReFrame is an open-source project and we welcome third-party contributions.
+Check out our Contribution Guide [here](https://github.com/eth-cscs/reframe/wiki/contributing-to-reframe).

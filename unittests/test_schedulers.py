@@ -16,7 +16,7 @@ from reframe.core.launchers.local import LocalLauncher
 from reframe.core.launchers.registry import getlauncher
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
-from reframe.core.schedulers.slurm import SlurmNode, create_nodes
+from reframe.core.schedulers.slurm import _SlurmNode, _create_nodes
 
 
 class _TestJob(abc.ABC):
@@ -304,8 +304,14 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.assertProcessDied(sleep_pid)
 
     def test_guess_num_tasks(self):
+        # We want to trigger bug #1087 (Github), that's we set allocation
+        # policy to idle.
         self.testjob.num_tasks = 0
-        assert self.testjob.guess_num_tasks() == 1
+        self.testjob._sched_flex_alloc_nodes = 'idle'
+        self.prepare()
+        self.testjob.submit()
+        self.testjob.wait()
+        assert self.testjob.num_tasks == 1
 
 
 class TestSlurmJob(_TestJob, unittest.TestCase):
@@ -611,7 +617,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
 
                              'Node invalid_node2 not found']
 
-        return create_nodes(node_descriptions)
+        return _create_nodes(node_descriptions)
 
     def create_reservation_nodes(self, res):
         return {n for n in self.testjob.scheduler.allnodes()
@@ -906,15 +912,15 @@ class TestSlurmNode(unittest.TestCase):
             'failed [reframe_user@01 Jan 2018]'
         )
 
-        self.allocated_node = SlurmNode(allocated_node_description)
-        self.allocated_node_copy = SlurmNode(allocated_node_description)
-        self.idle_node = SlurmNode(idle_node_description)
-        self.idle_drained = SlurmNode(idle_drained_node_description)
-        self.no_partition_node = SlurmNode(no_partition_node_description)
+        self.allocated_node = _SlurmNode(allocated_node_description)
+        self.allocated_node_copy = _SlurmNode(allocated_node_description)
+        self.idle_node = _SlurmNode(idle_node_description)
+        self.idle_drained = _SlurmNode(idle_drained_node_description)
+        self.no_partition_node = _SlurmNode(no_partition_node_description)
 
     def test_no_node_name(self):
         with self.assertRaises(JobError):
-            SlurmNode(self.no_name_node_description)
+            _SlurmNode(self.no_name_node_description)
 
     def test_states(self):
         self.assertEqual(self.allocated_node.states, {'ALLOCATED'})
