@@ -31,7 +31,7 @@ class JobScheduler(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def wait(self, job):
+    def wait(self, job, max_queuing_time):
         pass
 
     @abc.abstractmethod
@@ -154,6 +154,7 @@ class Job:
     def __init__(self,
                  name,
                  workdir='.',
+                 max_queuing_time = None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
@@ -186,6 +187,7 @@ class Job:
 
         self._name = name
         self._workdir = workdir
+        self._max_queuing_time = max_queuing_time
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
@@ -214,6 +216,10 @@ class Job:
     @property
     def workdir(self):
         return self._workdir
+
+    @property
+    def max_queuing_time(self):
+        return self._max_queuing_time
 
     @property
     def script_filename(self):
@@ -321,7 +327,7 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        return self.scheduler.wait(self)
+        return self.scheduler.wait(self, self.max_queuing_time)
 
     def cancel(self):
         if self.jobid is None:
