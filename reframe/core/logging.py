@@ -428,7 +428,8 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
-                # Use the logging handlers' date format to format completion_time
+                # Use the logging handlers' date format to format
+                # completion_time
                 # NOTE: All handlers use the same date format
                 fmt = self.logger.handlers[0].formatter.datefmt
                 ct = self.check.job.completion_time.strftime(fmt)

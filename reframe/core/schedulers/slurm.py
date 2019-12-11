@@ -296,8 +296,8 @@ class SlurmJobScheduler(sched.JobScheduler):
     def _update_state(self, job):
         '''Check the status of the job.'''
 
-        cmd = 'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %(
-              datetime.now().strftime('%F'), job.jobid)
+        cmd = 'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' % (
+            datetime.now().strftime('%F'), job.jobid)
         completed = _run_strict(cmd, env={'SLURM_TIME_FORMAT': 'standard'})
         self._update_state_count += 1
 
