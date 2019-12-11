@@ -427,15 +427,12 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
-
-        if self.check.job:
             if self.check.job.completion_time:
-                # Format is the same for every handler
+                # Use the logging handlers' date format to format completion_time
+                # NOTE: All handlers use the same date format
                 fmt = self.logger.handlers[0].formatter.datefmt
-                self.extra['check_completion_time'] = (
-                    self.check.job.completion_time.strftime(fmt))
-            else:
-                self.extra['check_completion_time'] = "NA"
+                ct = self.check.job.completion_time.strftime(fmt)
+                self.extra['check_completion_time'] = ct
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):

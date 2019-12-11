@@ -15,6 +15,11 @@ from reframe.core.logging import getlogger
 
 
 class JobScheduler(abc.ABC):
+    @property
+    @abc.abstractmethod
+    def completion_time(self):
+        pass
+
     @abc.abstractmethod
     def emit_preamble(self, job):
         pass
@@ -42,6 +47,7 @@ class JobScheduler(abc.ABC):
     @abc.abstractmethod
     def finished(self, job):
         pass
+
 
 
 class Job:
@@ -328,7 +334,7 @@ class Job:
             raise JobNotStartedError('cannot wait an unstarted job')
 
         self.scheduler.wait(self)
-        self._completion_time = datetime.now()
+        self._completion_time = self._completion_time or datetime.now()
 
     def cancel(self):
         if self.jobid is None:
@@ -340,7 +346,11 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
 
-        return self.scheduler.finished(self)
+        res = self.scheduler.finished(self)
+        if res:
+            self._completion_time = self._completion_time or datetime.now()
+
+        return res
 
 
 class Node(abc.ABC):

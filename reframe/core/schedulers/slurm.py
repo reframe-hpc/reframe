@@ -90,7 +90,6 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_job_array = None
         self._update_state_count = 0
         self._completion_time = None
-        os.environ["SLURM_TIME_FORMAT"] = "standard"
 
     @property
     def completion_time(self):
@@ -297,10 +296,9 @@ class SlurmJobScheduler(sched.JobScheduler):
     def _update_state(self, job):
         '''Check the status of the job.'''
 
-        completed = _run_strict(
-            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %
-            (datetime.now().strftime('%F'), job.jobid)
-        )
+        cmd = 'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %(
+              datetime.now().strftime('%F'), job.jobid)
+        completed = _run_strict(cmd, env={'SLURM_TIME_FORMAT': 'standard'})
         self._update_state_count += 1
 
         # This matches the format for both normal jobs as well as job arrays.
