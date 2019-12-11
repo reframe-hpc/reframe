@@ -36,8 +36,27 @@ from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: dependencies will be explicitly specified by the user.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_EXACT  = 1
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
+#: the current test will depend only on the corresponding test cases of the
+#: target test that use the same programming environment.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_BY_ENV = 2
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
+#: this test depends on all the test cases of the target test.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_FULLY  = 3
 
 
@@ -1355,6 +1374,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return util.SequenceView(self._userdeps)
 
     def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
+        '''Add a dependency to ``target`` in this test.
+
+        :arg target: The name of the target test.
+        :arg how: How the dependency should be mapped in the test cases space.
+            This argument can accept any of the three constants
+            :attr:`DEPEND_EXACT`, :attr:`DEPEND_BY_ENV` (default),
+            :attr:`DEPEND_FULLY`.
+
+        :arg subdeps: An adjacency list representation of how this test's test
+            cases depend on those of the target test. This is only relevant if
+            ``how == DEPEND_EXACT``. The value of this argument is a
+            dictionary having as keys the names of this test's supported
+            programming environments. The values are lists of the programming
+            environments names of the target test that this test's test cases
+            will depend on. In the following example, this test's ``E0``
+            programming environment case will depend on both ``E0`` and ``E1``
+            test cases of the target test ``T0``, but its ``E1`` case will
+            depend only on the ``E1`` test case of ``T0``:
+
+            .. code:: python
+
+               self.depends_on('T0', how=rfm.DEPEND_EXACT,
+                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+
+        For more details on how test dependencies work in ReFrame, please
+        refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
+
+        .. versionadded:: 2.21
+
+        '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
@@ -1369,6 +1418,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._userdeps.append((target, how, subdeps))
 
     def getdep(self, target, environ=None):
+        '''Retrieve the test case of a target dependency.
+
+        This is a low-level method. The :func:`@require_deps
+        <reframe.core.decorators.require_deps>` decorators should be
+        preferred.
+
+        :arg target: The name of the target dependency to be retrieved.
+        :arg environ: The name of the programming environment that will be
+            used to retrieve the test case of the target test. If ``None``,
+            :attr:`RegressionTest.current_environ` will be used.
+
+        .. versionadded:: 2.21
+
+        '''
         if self.current_environ is None:
             raise DependencyError(
                 'cannot resolve dependencies before the setup phase'
