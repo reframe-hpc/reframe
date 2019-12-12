@@ -346,11 +346,11 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
 
-        res = self.scheduler.finished(self)
-        if res:
+        done = self.scheduler.finished(self)
+        if done:
             self._completion_time = self._completion_time or datetime.now()
 
-        return res
+        return done
 
 
 class Node(abc.ABC):

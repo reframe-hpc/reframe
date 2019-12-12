@@ -297,8 +297,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         '''Check the status of the job.'''
 
         cmd = 'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' % (
-            datetime.now().strftime('%F'), job.jobid)
-        completed = _run_strict(cmd, env={'SLURM_TIME_FORMAT': 'standard'})
+            datetime.now().strftime('%F'), job.jobid
+        )
+        sacct_env = os.environ.copy()
+        sacct_env['SLURM_TIME_FORMAT'] = 'standard'
+        completed = _run_strict(cmd, env=sacct_env)
         self._update_state_count += 1
 
         # This matches the format for both normal jobs as well as job arrays.
