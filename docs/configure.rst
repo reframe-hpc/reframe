@@ -103,18 +103,19 @@ Each system is a key/value pair, with the key being the name of the system and t
 The valid attributes of a system are the following:
 
 * ``descr``: A detailed description of the system (default is the system name).
-* ``hostnames``: This is a list of hostname patterns that will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
-* ``modules_system``: The modules system that should be used for loading environment modules on this system (default :class:`None`).
+* ``hostnames``: This is a list of hostname patterns according to the `Python Regular Expression Syntax <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__ , which will be used by ReFrame when it tries to `auto-detect <#system-auto-detection>`__ the current system (default ``[]``).
+* ``modules_system``: *[new in 2.8]* The modules system that should be used for loading environment modules on this system (default :class:`None`).
   Three types of modules systems are currently supported:
 
-  - ``tmod``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (versions older than 3.2 are not supported).
+  - ``tmod`` or ``tmod32``: The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.2).
+  - ``tmod31``: *[new in 2.21]* The classic Tcl implementation of the `environment modules <https://sourceforge.net/projects/modules/files/Modules/modules-3.2.10/>`__ (version 3.1).
   - ``tmod4``: The version 4 of the Tcl implementation of the `environment modules <http://modules.sourceforge.net/>`__ (versions older than 4.1 are not supported).
   - ``lmod``: The Lua implementation of the `environment modules <https://lmod.readthedocs.io/en/latest/>`__.
 
-* ``modules``: Modules to be loaded always when running on this system.
+* ``modules``: *[new in 2.19]* Modules to be loaded always when running on this system.
   These modules modify the ReFrame environment.
   This is useful when for example a particular module is needed to submit jobs on a specific system.
-* ``variables``: Environment variables to be set always when running on this system.
+* ``variables``: *[new in 2.19]* Environment variables to be set always when running on this system.
 * ``prefix``: Default regression prefix for this system (default ``.``).
 * ``stagedir``: Default stage directory for this system (default :class:`None`).
 * ``outputdir``: Default output directory for this system (default :class:`None`).
@@ -126,13 +127,7 @@ The valid attributes of a system are the following:
 For a more detailed description of the ``prefix``, ``stagedir``, ``outputdir`` and ``perflogdir`` directories, please refer to the `"Configuring ReFrame Directories" <running.html#configuring-reframe-directories>`__ and `"Performance Logging" <running.html#performance-logging>`__ sections.
 
 .. note::
-  .. versionadded:: 2.8
-    The ``modules_system`` key was introduced for specifying custom modules systems for different systems.
-
-.. note::
-  .. versionadded:: 2.19
-    The ``modules`` and ``variables`` configuration parameters were introduced at the system level.
-
+   A different backend is used for Tmod 3.1, due to its different Python bindings.
 
 .. warning::
    .. versionchanged:: 2.18
@@ -305,6 +300,8 @@ ReFrame supports the following parallel job launchers:
 * ``alps``: Programs on the configured partition will be launched using the ``aprun`` command.
 * ``mpirun``: Programs on the configured partition will be launched using the ``mpirun`` command.
 * ``mpiexec``: Programs on the configured partition will be launched using the ``mpiexec`` command.
+* ``ibrun``: *[new in 2.21]* Programs on the configured partition will be launched using the ``ibrun`` command.
+  This is a custom parallel job launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
 * ``local``: Programs on the configured partition will be launched as-is without using any parallel program launcher.
 * ``ssh``: *[new in 2.20]* Programs on the configured partition will be launched using SSH.
   This option uses the partition's ``access`` parameter (see `above <#partition-configuration>`__) in order to determine the remote host and any additional options to be passed to the SSH client.
@@ -385,7 +382,7 @@ System Auto-Detection
 When ReFrame is launched, it tries to detect the current system and select the correct site configuration entry. The auto-detection process is as follows:
 
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found the hostname will be obtained from the standard ``hostname`` command. 
+If this cannot be found the hostname will be obtained from the standard ``hostname`` command.
 Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns in the ``hostnames`` attribute of `system configuration <#system-configuration>`__.
 The detection process stops at the first match found, and the system it belongs to is considered as the current system.
 If the system cannot be auto-detected, ReFrame will issue a warning and fall back to a generic system configuration, which is equivalent to the following:

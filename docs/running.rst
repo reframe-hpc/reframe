@@ -509,7 +509,8 @@ They are summarized below:
   In this example, Slurm's policy is that later definitions of options override previous ones.
   So, in this case, way you would override the standard output for all the submitted jobs!
 
-* ``--flex-alloc-tasks {all|idle|NUM}``: Automatically determine the number of tasks allocated for each test.
+* ``--flex-alloc-tasks {all|idle|NUM}``: (Deprecated) Please use ``--flex-alloc-nodes`` instead.
+* ``--flex-alloc-nodes {all|idle|NUM}``: Automatically determine the number of nodes allocated for each test.
 * ``--force-local``: Force the local execution of the selected tests.
   No jobs will be submitted.
 * ``--skip-sanity-check``: Skip sanity checking phase.
@@ -1229,33 +1230,41 @@ In the following example, ReFrame will load both ``module-1`` and ``module-2`` w
 
   --map-module 'module-1: module-1 module-2'
 
-Controlling the Flexible Task Allocation
+Controlling the Flexible Node Allocation
 ----------------------------------------
 
 .. versionadded:: 2.15
 
+.. note::
+   .. versionchanged:: 2.21
+      Flexible task allocation is now based on number of nodes.
+
+.. warning::
+      The command line option ``--flex-alloc-tasks`` is now deprecated, you should use ``--flex-alloc-nodes`` instead.
+
+
 ReFrame can automatically set the number of tasks of a particular test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value ``<=0``.
 By default, ReFrame will spawn such a test on all the idle nodes of the current system partition.
-This behavior can be adjusted using the ``--flex-alloc-tasks`` command line option.
+This behavior can be adjusted using the ``--flex-alloc-nodes`` command line option.
 This option accepts three values:
 
   1. ``idle``: (default) In this case, ReFrame will set the number of tasks to the number of idle nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
   2. ``all``: In this case, ReFrame will set the number of tasks to the number of all the nodes of the current logical partition multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
 
-  3. Any positive integer: In this case, ReFrame will set the number of tasks to the given value.
+  3. Any positive integer: In this case, ReFrame will set the number of tasks to the given value multiplied by the :attr:`num_tasks_per_node <reframe.core.pipeline.RegressionTest.num_tasks_per_node>` attribute of the particular test.
 
-The flexible allocation of number of tasks takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as ``--partition``, ``--reservation``, ``--nodelist``, ``--exclude-nodes`` and ``--job-option`` (if the scheduler option passed to the latter imposes a restriction).
+The flexible allocation of number of nodes takes into account any additional logical constraint imposed by the command line options affecting the job allocation, such as ``--partition``, ``--reservation``, ``--nodelist``, ``--exclude-nodes`` and ``--job-option`` (if the scheduler option passed to the latter imposes a restriction).
 Notice that ReFrame will issue an error if the resulting number of nodes is zero.
 
 For example, using the following options would run a flexible test on all the nodes of reservation ``foo`` except the nodes ``n0[1-5]``:
 
 .. code-block:: bash
 
-  --flex-alloc-tasks=all --reservation=foo --exclude-nodes=n0[1-5]
+  --flex-alloc-nodes=all --reservation=foo --exclude-nodes=n0[1-5]
 
 
 .. note::
-   Flexible task allocation is supported only for the Slurm scheduler backend.
+   Flexible node allocation is supported only for the Slurm scheduler backend.
 
 .. warning::
    Test cases resulting from flexible ReFrame tests may not be run using the asynchronous execution policy, because the nodes satisfying the required criteria will be allocated for the first test case, causing all subsequent ones to fail.

@@ -62,9 +62,10 @@ import builtins
 import glob as pyglob
 import itertools
 import re
+import sys
 
 import reframe.utility as util
-from reframe.core.deferrable import deferrable, evaluate
+from reframe.core.deferrable import deferrable, _DeferredExpression
 from reframe.core.exceptions import SanityError
 
 
@@ -180,6 +181,36 @@ def max(*args):
 def min(*args):
     '''Replacement for the built-in :func:`min() <python:min>` function.'''
     return builtins.min(*args)
+
+
+@deferrable
+def print(*objects, sep=' ', end='\n', file=None, flush=False):
+    '''Replacement for the built-in :func:`print() <python:print>` function.
+
+    The only difference is that this function returns the ``objects``, so that
+    you can use it transparently inside a complex sanity expression. For
+    example, you could write the following to print the matches returned from
+    the :func:`extractall()` function:
+
+    .. code:: python
+
+        self.sanity_patterns = sn.assert_eq(
+            sn.count(sn.print(sn.extract_all(...))), 10
+        )
+
+    If ``file`` is None, :func:`print` will print its arguments to the
+    standard output. Unlike the builtin :func:`print() <python:print>`
+    function, we don't bind the ``file`` argument to :attr:`sys.stdout` by
+    default. This would capture :attr:`sys.stdout` at the time this function
+    is defined and would prevent it from seeing changes to :attr:`sys.stdout`,
+    such as redirects, in the future.
+    '''
+
+    if file is None:
+        file = sys.stdout
+
+    builtins.print(*objects, sep=sep, end=end, file=file, flush=flush)
+    return objects
 
 
 @deferrable
@@ -674,6 +705,28 @@ def allx(iterable):
     .. versionadded:: 2.13
     '''
     return util.allx(iterable)
+
+
+@deferrable
+def defer(x):
+    '''Defer the evaluation of variable ``x``.
+
+    .. versionadded:: 2.21
+    '''
+    return x
+
+
+def evaluate(expr):
+    '''Evaluate a deferred expression.
+
+    If ``expr`` is not a deferred expression, it will be returned as is.
+
+    .. versionadded:: 2.21
+    '''
+    if isinstance(expr, _DeferredExpression):
+        return expr.evaluate()
+    else:
+        return expr
 
 
 @deferrable

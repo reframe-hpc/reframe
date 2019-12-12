@@ -47,10 +47,10 @@ class AllocSpeedTest(rfm.RegressionTest):
                     'time': (1.41, None, 0.05, 's')
                 },
                 'kesch:cn': {
-                    'time': (1.25, None, 0.10, 's')
+                    'time': (1.41, None, 0.10, 's')
                 },
                 'kesch:pn': {
-                    'time': (0.55, None, 0.10, 's')
+                    'time': (0.70, None, 0.10, 's')
                 },
                 '*': {
                     'time': (0, None, None, 's')
