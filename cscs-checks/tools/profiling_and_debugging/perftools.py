@@ -75,7 +75,7 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.post_run = ['grep INFO rfm_*_build.err']
         self.sanity_patterns = sn.all([
             sn.assert_found('SUCCESS', self.stdout),
-            sn.assert_found(r'^INFO: creating the CrayPat-instrumented exec',
+            sn.assert_found(r'^INFO: creating the (\w+)-instrumented exec',
                             self.stdout),
             sn.assert_found('Table 1:  Profile by Function', self.stdout),
         ])
