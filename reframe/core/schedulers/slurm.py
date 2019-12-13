@@ -3,11 +3,11 @@ import glob
 import itertools
 import re
 import time
-import os
 from argparse import ArgumentParser
 from contextlib import suppress
 from datetime import datetime
 
+import reframe.core.environments as env
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
@@ -296,12 +296,12 @@ class SlurmJobScheduler(sched.JobScheduler):
     def _update_state(self, job):
         '''Check the status of the job.'''
 
-        cmd = 'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' % (
-            datetime.now().strftime('%F'), job.jobid
-        )
-        sacct_env = os.environ.copy()
-        sacct_env['SLURM_TIME_FORMAT'] = 'standard'
-        completed = _run_strict(cmd, env=sacct_env)
+        with env.modify_env(variables={'SLURM_TIME_FORMAT': 'standard'}):
+            completed = _run_strict(
+                'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %
+                (datetime.now().strftime('%F'), job.jobid)
+            )
+
         self._update_state_count += 1
 
         # This matches the format for both normal jobs as well as job arrays.

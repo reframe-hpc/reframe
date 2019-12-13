@@ -144,6 +144,23 @@ def emit_load_commands(*environs):
     return commands
 
 
+class modify_env:
+    '''Context manager to temporarily change the environment.'''
+
+    def __init__(self, variables=None):
+        self._environ_save = snapshot()
+        self._new_vars = variables
+
+    def __enter__(self):
+        if self._new_vars:
+            os.environ.update(self._new_vars)
+
+        return snapshot()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._environ_save.restore()
+
+
 class ProgEnvironment(Environment):
     '''A class representing a programming environment.
 
