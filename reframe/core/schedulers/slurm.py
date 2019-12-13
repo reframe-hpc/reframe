@@ -387,6 +387,12 @@ class SlurmJobScheduler(sched.JobScheduler):
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state(job)
         start_pending = time.time()
+        if max_queuing_time is not None:
+            h, m, s = max_queuing_time
+            max_queuing_time = h * 3600 + m * 60 + s
+        else:
+            max_queuing_time = 0
+
         while not slurm_state_completed(job.state):
             if max_queuing_time:
                 if slurm_state_pending(job.state):
