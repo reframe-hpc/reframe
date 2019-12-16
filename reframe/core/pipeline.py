@@ -421,15 +421,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
-    #: Specify the maximum time the job can be in the queue before running
+    #: Specify the maximum time the job can be pending before starting running
     #:
-    #: The time is specified as a three-tuple in the form ``(hh, mm, ss)``,
-    #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
-    #: If set to :class:`None`, no maximum queuing time will be set.
+    #: The time is specified with the same format of `time_limit`.
     #:
-    #: :type: integral or :class:`None`
+    #: :type: :class:`tuple[int]`
     #: :default: :class:`None
-    max_queue_time = fields.TimerField('max_queue_time', type(None))
+    max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
@@ -680,7 +678,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.num_tasks_per_socket = None
         self.use_multithreading = None
         self.exclusive_access = False
-        self.max_queue_time = None
+        self.max_pending_time = None
 
         # True only if check is to be run locally
         self.local = False
@@ -968,7 +966,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                launcher_type(),
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
-                               max_queue_time = self.max_queue_time,
+                               max_pending_time=self.max_pending_time,
                                sched_access=self._current_partition.access,
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)

@@ -26,6 +26,7 @@ class _TestJob(abc.ABC):
             self.scheduler, self.launcher,
             name='testjob',
             workdir=self.workdir,
+            max_pending_time=None,
             script_filename=os_ext.mkstemp_path(
                 dir=self.workdir, suffix='.sh'
             ),

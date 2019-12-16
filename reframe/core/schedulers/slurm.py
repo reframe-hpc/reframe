@@ -376,7 +376,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
             raise JobBlockedError(reason_msg, jobid=job.jobid)
 
-    def wait(self, job, max_queuing_time):
+    def wait(self, job, max_pending_time):
         # Quickly return in case we have finished already
         if slurm_state_completed(job.state):
             if self.is_array(job):
@@ -387,18 +387,18 @@ class SlurmJobScheduler(sched.JobScheduler):
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state(job)
         start_pending = time.time()
-        if max_queuing_time is not None:
-            h, m, s = max_queuing_time
-            max_queuing_time = h * 3600 + m * 60 + s
+        if max_pending_time is not None:
+            h, m, s = max_pending_time
+            max_pending_time = h * 3600 + m * 60 + s
         else:
-            max_queuing_time = 0
+            max_pending_time = 0
 
         while not slurm_state_completed(job.state):
-            if max_queuing_time:
+            if max_pending_time:
                 if slurm_state_pending(job.state):
-                    if time.time() - start_pending > max_queuing_time:
+                    if time.time() - start_pending > max_pending_time:
                         self.cancel(job)
-                        raise JobError('maximum queuing time exceeded')
+                        raise JobError('maximum pending time exceeded')
 
             time.sleep(next(intervals))
             self._update_state(job)

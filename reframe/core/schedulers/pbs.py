@@ -107,9 +107,22 @@ class PbsJobScheduler(sched.JobScheduler):
         if info:
             self._pbs_server = info[0]
 
-    def wait(self, job):
+    def wait(self, job, max_pending_time):
         intervals = itertools.cycle(settings().job_poll_intervals)
+        start_pending = time.time()
+        if max_pending_time is not None:
+            h, m, s = max_pending_time
+            max_pending_time = h * 3600 + m * 60 + s
+        else:
+            max_pending_time = 0
+
         while not self.finished(job):
+            if max_pending_time:
+                if slurm_state_pending(job.state):
+                    if time.time() - start_pending > max_pending_time:
+                        self.cancel(job)
+                        raise JobError('maximum pending time exceeded')
+
             time.sleep(next(intervals))
 
     def cancel(self, job):
