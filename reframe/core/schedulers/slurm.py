@@ -91,8 +91,35 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._update_state_count = 0
         self._completion_time = None
 
-    @property
-    def completion_time(self):
+    def completion_time(self, job):
+        if (self._completion_time or
+            not slurm_state_completed(job.state)):
+            return self._completion_time
+
+        slurm_variable = [('SLURM_TIME_FORMAT', 'standard')]
+        with env.temp_environment(variables=slurm_variable):
+            completed = _run_strict(
+                'sacct -S %s -P -j %s -o jobid,end' %
+                (datetime.now().strftime('%F'), job.jobid),
+                log=False
+            )
+
+        # This matches the format for both normal jobs as well as job arrays.
+        # For job arrays the job_id has one of the following formats:
+        #   * <job_id>_<array_task_id>
+        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+        state_match = list(re.finditer(
+            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<end>\S+)',
+            completed.stdout, re.MULTILINE))
+        if not state_match:
+            return self._completion_time
+
+        self._completion_time = max(
+            datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
+            for s in state_match
+        )
+
         return self._completion_time
 
     def _format_option(self, var, option):
@@ -296,12 +323,10 @@ class SlurmJobScheduler(sched.JobScheduler):
     def _update_state(self, job):
         '''Check the status of the job.'''
 
-        with env.modify_env(variables={'SLURM_TIME_FORMAT': 'standard'}):
-            completed = _run_strict(
-                'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist,end' %
-                (datetime.now().strftime('%F'), job.jobid)
-            )
-
+        completed = _run_strict(
+            'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
+            (datetime.now().strftime('%F'), job.jobid)
+        )
         self._update_state_count += 1
 
         # This matches the format for both normal jobs as well as job arrays.
@@ -311,8 +336,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
             r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)\|'
-            r'(?P<end>\S+)',
+            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
@@ -327,10 +351,6 @@ class SlurmJobScheduler(sched.JobScheduler):
         if slurm_state_completed(job.state):
             # Since Slurm exitcodes are positive take the maximum one
             job.exitcode = max(int(s.group('exitcode')) for s in state_match)
-            self._completion_time = max(
-                datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
-                for s in state_match
-            )
 
         # Use ',' to join nodes to be consistent with Slurm syntax
         self._set_nodelist(
@@ -450,6 +470,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
         self._submit_time = None
         self._squeue_delay = 2
         self._cancelled = False
+
+    def completion_time(self, job):
+        return None
 
     def submit(self, job):
         super().submit(job)

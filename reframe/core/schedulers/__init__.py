@@ -15,9 +15,8 @@ from reframe.core.logging import getlogger
 
 
 class JobScheduler(abc.ABC):
-    @property
     @abc.abstractmethod
-    def completion_time(self):
+    def completion_time(self, job):
         pass
 
     @abc.abstractmethod
@@ -47,7 +46,6 @@ class JobScheduler(abc.ABC):
     @abc.abstractmethod
     def finished(self, job):
         pass
-
 
 
 class Job:
@@ -269,7 +267,7 @@ class Job:
 
     @property
     def completion_time(self):
-        return self.scheduler.completion_time or self._completion_time
+        return self.scheduler.completion_time(self) or self._completion_time
 
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []

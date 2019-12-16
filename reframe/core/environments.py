@@ -144,18 +144,18 @@ def emit_load_commands(*environs):
     return commands
 
 
-class modify_env:
+class temp_environment:
     '''Context manager to temporarily change the environment.'''
 
-    def __init__(self, variables=None):
-        self._environ_save = snapshot()
-        self._new_vars = variables
+    def __init__(self, modules=[], variables=[]):
+        self._modules = modules
+        self._variables = variables
 
     def __enter__(self):
-        if self._new_vars:
-            os.environ.update(self._new_vars)
-
-        return snapshot()
+        self._environ_save, _ = load(Environment(name='temp_env',
+                                                 modules=self._modules,
+                                                 variables=self._variables))
+        return self._environ_save
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._environ_save.restore()

@@ -31,14 +31,13 @@ _run_strict = functools.partial(os_ext.run_command, check=True)
 class PbsJobScheduler(sched.JobScheduler):
     def __init__(self):
         self._prefix = '#PBS'
-        self._completion_time = None
+        self._time_finished = None
 
         # Optional part of the job id refering to the PBS server
         self._pbs_server = None
 
-    @property
-    def completion_time(self):
-        return self._completion_time
+    def completion_time(self, job):
+        return None
 
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
@@ -131,7 +130,7 @@ class PbsJobScheduler(sched.JobScheduler):
 
         if done:
             t_now = datetime.now()
-            self._completion_time = self._completion_time or t_now
-            time_from_finish = (t_now - self._completion_time).total_seconds()
+            self._time_finished = self._time_finished or t_now
+            time_from_finish = (t_now - self._time_finished).total_seconds()
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT
