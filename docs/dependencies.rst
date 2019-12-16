@@ -12,7 +12,7 @@ The following figure explains in more detail the process:
   :alt: How ReFrame loads and schedules tests for execution.
 
 When ReFrame loads a test from the disk it unconditionally constructs it executing its :func:`__init__` method.
-The practical implication of this is that your test will be instantiated even if it will not be run on the current system.
+The practical implication of this is that your test will be instantiated even if it will not run on the current system.
 After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see `Filtering of Regression Tests <running.html#filtering-of-regression-tests>`__ for more details).
 After the tests are filtered, ReFrame creates the actual `test cases` to be run. A test case is essentially a tuple consisting of the test, the system partition and the programming environment to try.
 The test that goes into a test case is essentially a `clone` of the original test that was instantiated upon loading.
@@ -21,10 +21,10 @@ Finally, the generated test cases are passed to a `runner` that is responsible f
 
 Dependencies in ReFrame are defined at the test level using the :func:`depends_on` function, but are projected to the test cases space.
 We will see the rules of that projection in a while.
-The dependency graph construction and the subsequent dependency analysis happens also at the level of the test cases.
+The dependency graph construction and the subsequent dependency analysis happen also at the level of the test cases.
 
 Let's assume that test :class:`T1` depends in :class:`T0`.
-This can be expressed inside :class:`T1` using the :func:`depends_on` function:
+This can be expressed inside :class:`T1` using the :func:`depends_on` method:
 
 .. code:: python
 
@@ -44,7 +44,7 @@ Conceptually, this dependency can be viewed at the test level as follows:
 For most of the cases, this is sufficient to reason about test dependencies.
 In reality, as mentioned above, dependencies are handled at the level of test cases.
 Test cases on different partitions are always independent.
-If not specified differently, test cases with using programming environments are also independent.
+If not specified differently, test cases using programming environments are also independent.
 This is the default behavior of the :func:`depends_on` function.
 The following image shows the actual test case dependencies assuming that both tests support the ``E0`` and ``E1`` programming environments (for simplicity, we have omitted the partitions, since tests are always independent in that dimension):
 
@@ -77,7 +77,7 @@ You may also create arbitrary dependencies between the test cases of different t
   :align: center
   :alt: Arbitrary test cases dependencies
 
-These dependencies be achieved as follows:
+These dependencies can be achieved as follows:
 
 .. code:: python
 
@@ -102,7 +102,7 @@ For example, the following dependency set up is invalid:
   :align: center
   :alt: Any cyclic dependencies between tests are not allowed, even if the underlying test case dependencies are not forming a cycle.
 
-The test case dependencies here are clearly not forming a cycle, but the edge from ``(T0, E0)`` to ``(T1, E1)`` introduces a dependency from ``T0`` to ``T1`` forming a cycle at the test level.
+The test case dependencies here, clearly, do not form a cycle, but the edge from ``(T0, E0)`` to ``(T1, E1)`` introduces a dependency from ``T0`` to ``T1`` forming a cycle at the test level.
 The reason we impose this restriction is that we wanted to keep the original processing of tests by ReFrame, where all the test cases of a test are processed before moving to the next one.
 Supporting this type of dependencies would require to change substantially ReFrame's output.
 

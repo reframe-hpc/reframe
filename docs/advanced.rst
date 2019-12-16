@@ -516,7 +516,7 @@ A ReFrame test may define dependencies to other tests.
 An example scenario is to test different runtime configurations of a benchmark that you need to compile, or run a scaling analysis of a code.
 In such cases, you don't want to rebuild your test for each runtime configuration.
 You could have a build test, which all runtime tests would depend on.
-This is the approach the approach we take with the following example, that fetches, builds and runs several `OSU benchmarks <http://mvapich.cse.ohio-state.edu/benchmarks/>`__.
+This is the approach we take with the following example, that fetches, builds and runs several `OSU benchmarks <http://mvapich.cse.ohio-state.edu/benchmarks/>`__.
 We first a create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
@@ -547,7 +547,7 @@ You can create arbitrary test dependency graphs, but they need to be acyclic.
 If ReFrame detects cyclic dependencies, it will refuse to execute the set of tests and will issue an error pointing out the cycle.
 
 A ReFrame test with dependencies will execute, i.e., enter its `setup` stage, only after `all` of its dependencies have succeeded.
-If any of its dependencies have failed, the current test will be marked as failure as well.
+If any of its dependencies fails, the current test will be marked as failure as well.
 
 The next step for the :class:`OSULatencyTest` is to set its executable to point to the binary produced by the :class:`OSUBuildTest`.
 This is achieved with the following specially decorated function:
@@ -562,7 +562,7 @@ However, referring to a dependency only by the test's name is not enough, since 
 For this reason, a dependency argument is actually bound to a function that accepts as argument the name of a target programming environment.
 If no arguments are passed to that function, as in this example, the current programming environment is implied, such that ``OSUBuildTest()`` is equivalent to ``OSUBuildTest(self.current_environ.name)``.
 This call returns the actual test case of the dependency that has been executed.
-This allows you to access any attribute from the target test, as we do in this example by accessing the target test's stage directory, which we use to construct the path the executable.
+This allows you to access any attribute from the target test, as we do in this example by accessing the target test's stage directory, which we use to construct the path of the executable.
 This concludes the presentation of the :class:`OSULatencyTest` test. The :class:`OSUBandwidthTest` is completely analogous.
 
 The :class:`OSUAllreduceTest` shown below is similar to the other two, except that it is parameterized.
