@@ -84,6 +84,19 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
 
 
 @rfm.simple_test
+class ConstraintCheck(SlurmSimpleBaseCheck):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = ['daint:login', 'dom:login']
+        self.executable = 'srun'
+        self.executable_opts = ['hostname']
+        self.sanity_patterns = sn.assert_found(
+            r'error: You have to specify, at least, what sort of node you '
+            r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
+            r'nodes.', self.stderr)
+
+
+@rfm.simple_test
 class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
