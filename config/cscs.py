@@ -342,24 +342,21 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Tsa login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Tsa post-processing nodes',
                     },
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
                         'descr': 'Tsa compute nodes',
                         'resources': {
@@ -559,24 +556,16 @@ class ReframeSettings:
                     'cxx': 'mpicxx',
                     'ftn': 'mpifort',
                 },
-                'PrgEnv-cce': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/19.04','cuda10.0/toolkit/10.0.130'],
-                },
-                'PrgEnv-cce-nompi': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/19.04','cuda10.0/toolkit/10.0.130']
-                },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu/18.1'],
+                    'modules': ['PrgEnv-gnu/19.2'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu/18.1'],
+                    'modules': ['PrgEnv-gnu/19.2'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
