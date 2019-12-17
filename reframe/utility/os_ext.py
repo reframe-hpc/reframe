@@ -71,7 +71,6 @@ def run_command_async(cmd,
     # Import logger here to avoid unnecessary circular dependencies
     if log:
         from reframe.core.logging import getlogger
-
         getlogger().debug('executing OS command: ' + cmd)
 
     if not shell:

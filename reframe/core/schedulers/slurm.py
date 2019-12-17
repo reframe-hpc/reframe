@@ -70,6 +70,13 @@ class SlurmJobScheduler(sched.JobScheduler):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
+    # This matches the format for both normal jobs as well as job arrays.
+    # For job arrays the job_id has one of the following formats:
+    #   * <job_id>_<array_task_id>
+    #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+    # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+    _state_patt = r'\d+(?:_\d+|_\[\d+-\d+\])?'
+
     def __init__(self):
         self._prefix = '#SBATCH'
 
@@ -96,24 +103,19 @@ class SlurmJobScheduler(sched.JobScheduler):
             not slurm_state_completed(job.state)):
             return self._completion_time
 
-        slurm_variable = [('SLURM_TIME_FORMAT', 'standard')]
-        with env.temp_environment(variables=slurm_variable):
-            completed = _run_strict(
+        with env.temp_environment(
+            variables=[('SLURM_TIME_FORMAT', 'standard')]):
+            completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
                 (datetime.now().strftime('%F'), job.jobid),
                 log=False
             )
 
-        # This matches the format for both normal jobs as well as job arrays.
-        # For job arrays the job_id has one of the following formats:
-        #   * <job_id>_<array_task_id>
-        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
-            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<end>\S+)',
+            r'^(?P<jobid>%s)\|(?P<end>\S+)' % self._state_patt,
             completed.stdout, re.MULTILINE))
         if not state_match:
-            return self._completion_time
+            return None
 
         self._completion_time = max(
             datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
@@ -329,14 +331,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         )
         self._update_state_count += 1
 
-        # This matches the format for both normal jobs as well as job arrays.
-        # For job arrays the job_id has one of the following formats:
-        #   * <job_id>_<array_task_id>
-        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
-            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
+            r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
+            r'(?P<signal>\d+)\|(?P<nodespec>.*)' % self._state_patt,
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
@@ -345,7 +342,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # Join the states with ',' in case of job arrays
         job.state = ','.join(s.group('state') for s in state_match)
-        if not self._update_state_count % SlurmJobScheduler.SACCT_SQUEUE_RATIO:
+        if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked(job)
 
         if slurm_state_completed(job.state):
