@@ -90,12 +90,11 @@ class TestEnvironment(unittest.TestCase):
 
     @fixtures.switch_to_user_runtime
     def test_temp_environment_context_manager(self):
-        with env.temp_environment(variables=[('_var0', 'val2'),
-                                             ('_var3', 'val3')],
-                                  modules=['testmod_foo']):
-            assert os.environ['_var0'] == 'val2'
-            assert os.environ['_var3'] == 'val3'
-        assert self.environ_save == env.snapshot()
+        with env.temp_environment(['testmod_foo'],
+            [('_var0', 'val2'), ('_var3', 'val3')]) as environ:
+            assert environ.is_loaded
+
+        assert not environ.is_loaded
 
     @fixtures.switch_to_user_runtime
     def test_load_already_present(self):

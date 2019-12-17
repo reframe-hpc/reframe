@@ -152,10 +152,9 @@ class temp_environment:
         self._variables = variables
 
     def __enter__(self):
-        self._environ_save, _ = load(Environment(name='temp_env',
-                                                 modules=self._modules,
-                                                 variables=self._variables))
-        return self._environ_save
+        new_env = Environment('_rfm_temp_env', self._modules, self._variables)
+        self._environ_save, _ = load(new_env)
+        return new_env
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._environ_save.restore()
