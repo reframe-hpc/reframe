@@ -550,25 +550,25 @@ class ReframeSettings:
             'tsa': {
                 'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/19.5'],
+                    'modules': ['PrgEnv-pgi/19.9'],
                     'cc': 'pgcc',
                     'cxx': 'pgc++',
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-pgi/19.5'],
+                    'modules': ['PrgEnv-pgi/19.9'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpifort',
                 },
                 'PrgEnv-cce': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/19.04'],
+                    'modules': ['PrgEnv-cce/19.04','cuda10.0/toolkit/10.0.130'],
                 },
                 'PrgEnv-cce-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/19.04']
+                    'modules': ['PrgEnv-cce/19.04','cuda10.0/toolkit/10.0.130']
                 },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
