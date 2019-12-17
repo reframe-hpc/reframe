@@ -189,9 +189,6 @@ class ReframeSettings:
                                      'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
-                        'resources': {
-                            'switches': ['--switches={num_switches}']
-                        }
                     },
 
                     'mc': {

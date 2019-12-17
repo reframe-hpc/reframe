@@ -184,8 +184,12 @@ def main():
              'may be retried (default: 0)')
     run_options.add_argument(
         '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default='idle',
-        help="Strategy for flexible task allocation (default: 'idle').")
+        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
+        help='*deprecated*, please use --flex-alloc-nodes instead')
+    run_options.add_argument(
+        '--flex-alloc-nodes', action='store',
+        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
+        help="Strategy for flexible node allocation (default: 'idle').")
 
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
@@ -534,8 +538,16 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
-        # Act on checks
+        if options.flex_alloc_tasks:
+            printer.warning("`--flex-alloc-tasks' is deprecated and "
+                            "will be removed in the future; "
+                            "you should use --flex-alloc-nodes instead")
+            options.flex_alloc_nodes = (options.flex_alloc_nodes or
+                                        options.flex_alloc_tasks)
 
+        options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+
+        # Act on checks
         success = True
         if options.list:
             # List matched checks
@@ -562,20 +574,21 @@ def main():
             exec_policy.skip_sanity_check = options.skip_sanity_check
             exec_policy.skip_performance_check = options.skip_performance_check
             exec_policy.keep_stage_files = options.keep_stage_files
+
             try:
-                errmsg = "invalid option for --flex-alloc-tasks: '{0}'"
-                sched_flex_alloc_tasks = int(options.flex_alloc_tasks)
-                if sched_flex_alloc_tasks <= 0:
-                    raise ConfigError(errmsg.format(options.flex_alloc_tasks))
+                errmsg = "invalid option for --flex-alloc-nodes: '{0}'"
+                sched_flex_alloc_nodes = int(options.flex_alloc_nodes)
+                if sched_flex_alloc_nodes <= 0:
+                    raise ConfigError(errmsg.format(options.flex_alloc_nodes))
             except ValueError:
-                if not options.flex_alloc_tasks.lower() in {'idle', 'all'}:
+                if not options.flex_alloc_nodes.casefold() in {'idle', 'all'}:
                     raise ConfigError(
-                        errmsg.format(options.flex_alloc_tasks)) from None
+                        errmsg.format(options.flex_alloc_nodes)) from None
 
-                sched_flex_alloc_tasks = options.flex_alloc_tasks
+                sched_flex_alloc_nodes = options.flex_alloc_nodes
 
-            exec_policy.sched_flex_alloc_tasks = sched_flex_alloc_tasks
-            exec_policy.flex_alloc_tasks = options.flex_alloc_tasks
+            exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
+            exec_policy.flex_alloc_nodes = options.flex_alloc_nodes
             exec_policy.sched_account = options.account
             exec_policy.sched_partition = options.partition
             exec_policy.sched_reservation = options.reservation
@@ -604,9 +617,10 @@ def main():
                     printer.info(runner.stats.performance_report())
 
         else:
-            printer.info('No action specified. Exiting...')
-            printer.info("Try `%s -h' for a list of available actions." %
-                         argparser.prog)
+            printer.error("No action specified. Please specify `-l'/`-L' for "
+                          "listing or `-r' for running. "
+                          "Try `%s -h' for more options." %
+                          argparser.prog)
             sys.exit(1)
 
         if not success:
