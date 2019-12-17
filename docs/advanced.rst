@@ -517,7 +517,7 @@ An example scenario is to test different runtime configurations of a benchmark t
 In such cases, you don't want to rebuild your test for each runtime configuration.
 You could have a build test, which all runtime tests would depend on.
 This is the approach we take with the following example, that fetches, builds and runs several `OSU benchmarks <http://mvapich.cse.ohio-state.edu/benchmarks/>`__.
-We first a create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
+We first create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
    :lines: 87-101
