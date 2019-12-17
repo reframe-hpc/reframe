@@ -9,7 +9,7 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for CUDA'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 
-                              'arolla:cn', 'tiger:gpu']
+                              'tiger:gpu', 'tsa:cn']
         # FIXME: temporary workaround until the mvapich module is fixed
         #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -29,12 +29,10 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                 'G2G': '1',
             }
             self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_37']
-        elif self.current_system.name == 'arolla':
+        elif self.current_system.name == 'tsa':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['cuda92/toolkit/9.2.88']
             self.variables = {
-                'MV2_USE_CUDA': '1',
                 'G2G': '1',
             }
             self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_70']

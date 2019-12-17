@@ -7,19 +7,18 @@ class CudaStressTest(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'MCH CUDA stress test'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
-                               'arolla:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'tsa:cn']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cudatoolkit/8.0.61']
-        elif self.current_system.name == 'arolla':
+        elif self.current_system.name  == 'tsa':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
-            self.modules = ['cuda92/toolkit/9.2.88']
+            self.modules = ['cuda/10.1.243']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['craype-accel-nvidia60']
 
         self.sourcepath = 'cuda_stencil_test.cu'
         self.build_system = 'SingleSource'
@@ -38,6 +37,9 @@ class CudaStressTest(rfm.RegressionTest):
                 'time': (1.39758, None, 0.05)
             },
             'kesch:cn': {
+                'time': (2.25, None, 0.05)
+            },
+            'tsa:cn': {
                 'time': (2.25, None, 0.05)
             }
         }
