@@ -10,53 +10,6 @@ Internal data structures and APIs are covered only to the extent that might be h
 Regression test classes and related utilities
 ---------------------------------------------
 
-.. class:: reframe.RegressionTest(name=None, prefix=None)
-
-   This is an alias of :class:`reframe.core.pipeline.RegressionTest`.
-
-   .. versionadded:: 2.13
-
-
-.. class:: reframe.RunOnlyRegressionTest(*args, **kwargs)
-
-   This is an alias of :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
-
-   .. versionadded:: 2.13
-
-
-.. class:: reframe.CompileOnlyRegressionTest(*args, **kwargs)
-
-   This is an alias of :class:`reframe.core.pipeline.CompileOnlyRegressionTest`.
-
-   .. versionadded:: 2.13
-
-
-.. py:decorator:: reframe.run_after
-
-   This is an alias of :func:`reframe.core.decorators.run_after`.
-
-   .. versionadded:: 2.20
-
-.. py:decorator:: reframe.run_before
-
-   This is an alias of :func:`reframe.core.decorators.run_before`.
-
-   .. versionadded:: 2.20
-
-.. py:decorator:: reframe.simple_test
-
-   This is an alias of :func:`reframe.core.decorators.simple_test`.
-
-   .. versionadded:: 2.13
-
-
-.. py:decorator:: reframe.parameterized_test(inst=[])
-
-   This is an alias of :func:`reframe.core.decorators.parameterized_test`.
-
-   .. versionadded:: 2.13
-
-
 .. automodule:: reframe.core.decorators
    :members:
    :show-inheritance:
