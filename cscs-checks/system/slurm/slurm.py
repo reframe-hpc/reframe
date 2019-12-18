@@ -17,11 +17,10 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.maintainers = ['RS', 'VK']
 
-    def setup(self, *args, **kwargs):
+    @rfm.run_before('setup')
+    def setup_slurm(self):
         if self.num_tasks == 1:
             self.tags.add('single-node')
-
-        super().setup(*args, **kwargs)
 
 # Base class for Slurm tests that require compiling some code
 
@@ -40,11 +39,10 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
 
         self.maintainers = ['RS', 'VK']
 
-    def setup(self, *args, **kwargs):
+    @rfm.run_before('setup')
+    def setup_slurm(self):
         if self.num_tasks == 1:
             self.tags.add('single-node')
-
-        super().setup(*args, **kwargs)
 
 
 @rfm.simple_test
@@ -61,11 +59,11 @@ class HostnameCheck(SlurmSimpleBaseCheck):
             'dom:mc': r'nid\d{5}\b',
         }
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def setup_slurm(self):
         num_matches = sn.count(sn.findall(
-            self.hostname_string[partition.fullname], self.stdout))
+            self.hostname_string[self._current_partition.fullname], self.stdout))
         self.sanity_patterns = sn.assert_eq(self.num_tasks, num_matches)
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
@@ -84,7 +82,7 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
 
 
 @rfm.simple_test
-class ConstraintCheck(SlurmSimpleBaseCheck):
+class RequiredConstraintCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
@@ -107,10 +105,8 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
                                         self.stdout, 'mem', float)
         self.sanity_patterns = sn.assert_bounded(mem_obtained, 122.0, 128.0)
 
-    # we override setup function to pass additional
-    # options to Slurm
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_after('setup')
+    def setup_slurm(self):
         self.job.options += ['--mem=120000']
 
 
@@ -156,8 +152,8 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
 
     # we override setup function to pass additional
     # options to Slurm
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_after('setup')
+    def setup_slurm(self):
         self.job.options = ['--constraint=c0-0']
 
 
@@ -173,6 +169,6 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_after('setup')
+    def setup_slurm(self):
         self.job.options += ['--mem=2000']
