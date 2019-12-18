@@ -841,7 +841,7 @@ All handlers accept the following set of attributes (keys) in their configuratio
   ReFrame supports all the `format strings <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
 
   - ``check_completion_time``: A timestamp with the completion time of the regression test.
-    For the ``slurm`` scheduler, the timestamp relies on job accounting (``sacct`` command) and returns the termination time of the job.
+    The ``slurm`` scheduler relies on job accounting (``sacct`` command) and returns the actual termination time of the job.
     The rest of the schedulers report as completion time the moment the framework realizes the test has finished, as soon as the ``wait`` phase ends.
     The accuracy is dependent on the polling rate of the ``wait`` phase and can be lower for tests that take more time.
     If a job or process is not yet completed, ``None`` will be printed.
