@@ -62,7 +62,8 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     @rfm.run_after('setup')
     def setup_slurm(self):
         num_matches = sn.count(sn.findall(
-            self.hostname_string[self._current_partition.fullname], self.stdout))
+            self.hostname_string[self.current_partition.fullname],
+            self.stdout))
         self.sanity_patterns = sn.assert_eq(self.num_tasks, num_matches)
 
 
