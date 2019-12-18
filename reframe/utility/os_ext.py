@@ -11,6 +11,7 @@ import re
 import shlex
 import shutil
 import signal
+import sys
 import subprocess
 import tempfile
 from urllib.parse import urlparse
@@ -67,9 +68,15 @@ def run_command_async(cmd,
                       shell=False,
                       **popen_args):
     # Import logger here to avoid unnecessary circular dependencies
-    from reframe.core.logging import getlogger
+    # FIXME: Will be fixed when a version to execute commands without logging
+    #        becomes available.
+    modulename = 'logging'
+    if modulename not in sys.modules:
+        import reframe.core.logging as logging
+    else:
+        logging = sys.modules['logging']
 
-    getlogger().debug('executing OS command: ' + cmd)
+    logging.getLogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
 
@@ -289,6 +296,21 @@ def is_url(s):
     '''Check if string is a URL.'''
     parsed = urlparse(s)
     return parsed.scheme != '' and parsed.netloc != ''
+
+
+def git_branch_hash(branch='HEAD', short=True):
+    '''Gets the SHA1 hash of the given git branch.'''
+    try:
+        completed = run_command(
+            'git rev-parse %s %s' % ('--short' if short else '', branch),
+            check=True)
+    except SpawnedProcessError:
+        return 'N/A'
+
+    if completed.stdout:
+        return completed.stdout.strip()
+
+    return 'N/A'
 
 
 def git_clone(url, targetdir=None):

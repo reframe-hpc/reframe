@@ -174,6 +174,13 @@ class TestOSTools(unittest.TestCase):
         self.assertTrue(os_ext.is_url(repo_https))
         self.assertFalse(os_ext.is_url(repo_ssh))
 
+    def test_git_branch_hash(self):
+        # A git branch hash consists of 8(short) or 40 characters.
+        assert len(os_ext.git_branch_hash()) == 8
+        assert len(os_ext.git_branch_hash(short=False)) == 40
+        assert os_ext.git_branch_hash(branch='invalid') == 'N/A'
+        assert os_ext.git_branch_hash(branch='') == 'N/A'
+
     def test_git_repo_exists(self):
         self.assertTrue(os_ext.git_repo_exists(
             'https://github.com/eth-cscs/reframe.git', timeout=3))
