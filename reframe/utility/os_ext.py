@@ -19,9 +19,10 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
 
-def run_command(cmd, check=False, timeout=None, shell=False):
+def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True)
+        proc = run_command_async(cmd, shell=shell, start_new_session=True,
+                                 log=log)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -65,11 +66,13 @@ def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
                       shell=False,
+                      log=True,
                       **popen_args):
     # Import logger here to avoid unnecessary circular dependencies
-    from reframe.core.logging import getlogger
+    if log:
+        from reframe.core.logging import getlogger
+        getlogger().debug('executing OS command: ' + cmd)
 
-    getlogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
 
