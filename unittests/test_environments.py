@@ -88,6 +88,7 @@ class TestEnvironment(unittest.TestCase):
 
         assert not self.environ.is_loaded
 
+    @fixtures.switch_to_user_runtime
     def test_temp_environment_context_manager(self):
         with env.temp_environment(['testmod_foo'],
                                   [('_var0', 'val2'),
