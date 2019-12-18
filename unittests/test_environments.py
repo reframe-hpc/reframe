@@ -91,7 +91,8 @@ class TestEnvironment(unittest.TestCase):
     @fixtures.switch_to_user_runtime
     def test_temp_environment_context_manager(self):
         with env.temp_environment(['testmod_foo'],
-            [('_var0', 'val2'), ('_var3', 'val3')]) as environ:
+                                  [('_var0', 'val2'),
+                                   ('_var3', 'val3')]) as environ:
             assert environ.is_loaded
 
         assert not environ.is_loaded
