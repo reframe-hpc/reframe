@@ -840,6 +840,11 @@ All handlers accept the following set of attributes (keys) in their configuratio
 * ``format`` (default: ``'%(message)s'``): Format string for the printout of the log record.
   ReFrame supports all the `format strings <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
 
+  - ``check_completion_time``: A timestamp with the completion time of the regression test.
+    For the ``slurm`` scheduler, the timestamp relies on job accounting (``sacct`` command) and returns the termination time of the job.
+    The rest of the schedulers report as completion time the moment the framework realizes the test has finished, as soon as the ``wait`` phase ends.
+    The accuracy is dependent on the polling rate of the ``wait`` phase and can be lower for tests that take more time.
+    If a job or process is not yet completed, ``None`` will be printed.
   - ``check_environ``: The programming environment a test is currently executing for.
   - ``check_info``: Print live information of the currently executing check.
     By default this field has the form ``<check_name> on <current_partition> using <current_environment>``.
