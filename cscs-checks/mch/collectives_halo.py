@@ -108,9 +108,9 @@ class AlltoallvTest(CollectivesBaseTest):
         super().__init__(variant,
                          {
                              'kesch': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
+                                 'nocomm':  6.89819,
+                                 'nocomp':  6.98276,
+                                 'default': 6.85289
                              },
                              'daint': {
                                  'nocomm':  0.0171947,
@@ -130,8 +130,8 @@ class HaloExchangeTest(CollectivesBaseTest):
                          {
                              'kesch': {
                                  'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
+                                 'nocomp':  54.2012,
+                                 'default': 55.142
                              },
                              'daint': {
                                  'nocomm':  0.978306,
