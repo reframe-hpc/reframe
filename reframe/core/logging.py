@@ -367,6 +367,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             {
                 'check_name': 'reframe',
                 'check_jobid': '-1',
+                'check_job_completion_time': None,
                 'check_info': 'reframe',
                 'check_system': None,
                 'check_partition': None,
@@ -374,7 +375,6 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_outputdir': None,
                 'check_stagedir': None,
                 'check_num_tasks': None,
-                'check_completion_time': None,
                 'check_perf_var': None,
                 'check_perf_value': None,
                 'check_perf_ref': None,
@@ -433,7 +433,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # NOTE: All handlers use the same date format
                 fmt = self.logger.handlers[0].formatter.datefmt
                 ct = self.check.job.completion_time.strftime(fmt)
-                self.extra['check_completion_time'] = ct
+                self.extra['check_job_completion_time'] = ct
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
