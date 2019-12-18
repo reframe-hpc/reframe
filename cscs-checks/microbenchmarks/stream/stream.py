@@ -15,7 +15,8 @@ class StreamTest(rfm.RegressionTest):
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'leone:normal']
+                              'kesch:cn', 'kesch:pn', 'leone:normal',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
                                     'PrgEnv-cray_classic']
@@ -102,7 +103,7 @@ class StreamTest(rfm.RegressionTest):
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             }
         }
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.maintainers = ['RS', 'VK']
 
     def setup(self, partition, environ, **job_opts):

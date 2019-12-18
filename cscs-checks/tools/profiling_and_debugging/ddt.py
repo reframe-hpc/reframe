@@ -21,7 +21,11 @@ class DdtCheck(rfm.RegressionTest):
         self.executable = './jacobi'
         self.sourcesdir = os.path.join('src', lang)
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.modules = ['ddt']
+        if self.current_system.name in ['tiger']:
+            self.modules = ['forge']
+        else:
+            self.modules = ['ddt']
+
         self.prgenv_flags = {
             # 'PrgEnv-cray': ' -O2 -homp',
             'PrgEnv-gnu': ['-g', '-O2', '-fopenmp'],
@@ -47,7 +51,7 @@ class DdtCheck(rfm.RegressionTest):
             'Cuda': 94
         }
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
         self.post_run = ['ddt -V ; which ddt ;']
         self.keep_files = ['ddtreport.txt']
 
@@ -65,8 +69,8 @@ class DdtCheck(rfm.RegressionTest):
 class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
+                              'kesch:cn', 'tiger:gpu']
 
         if self.current_system.name == 'kesch' and self.lang == 'C':
             self.build_system.ldflags = ['-lm']
@@ -94,13 +98,14 @@ class DdtCpuCheck(DdtCheck):
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.system_modules = {
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
-            'kesch': ['cudatoolkit/8.0.61']
+            'kesch': ['cudatoolkit/8.0.61'],
+            'tiger': ['craype-accel-nvidia60'],
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])

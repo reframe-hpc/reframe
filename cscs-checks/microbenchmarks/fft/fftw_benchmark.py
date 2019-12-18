@@ -9,7 +9,7 @@ class FFTWTest(rfm.RegressionTest):
         super().__init__()
         self.sourcepath = 'fftw_benchmark.c'
         self.build_system = 'SingleSource'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.modules = ['cray-fftw']
         self.num_tasks_per_node = 12
         self.num_gpus_per_node = 0
@@ -20,7 +20,7 @@ class FFTWTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
             self.build_system.cflags += ['-I$FFTW_INC', '-L$FFTW_DIR',
                                          '-lfftw3']
-        elif self.current_system.name in {'daint', 'dom'}:
+        elif self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                         'PrgEnv-gnu']
 
@@ -66,4 +66,4 @@ class FFTWTest(rfm.RegressionTest):
             }
 
         self.maintainers = ['AJ']
-        self.tags = {'benchmark', 'scs'}
+        self.tags = {'benchmark', 'scs', 'craype'}

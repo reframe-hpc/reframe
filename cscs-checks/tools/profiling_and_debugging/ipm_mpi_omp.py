@@ -22,7 +22,7 @@ class Ipm(rfm.RegressionTest):
             'PrgEnv-pgi': ['-O2', '-g', '-mp']
         }
         ipm_ver = '2.0.6'
-        tc_ver = '19.09'
+        tc_ver = '19.10'
         self.ipm_modules = {
             'PrgEnv-gnu': ['IPM/%s-CrayGNU-%s' % (ipm_ver, tc_ver)],
             'PrgEnv-cray': ['IPM/%s-CrayCCE-%s' % (ipm_ver, tc_ver)],

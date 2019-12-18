@@ -48,8 +48,8 @@ Finally, you may access all previous versions of ReFrame [here](https://github.c
 
 You may find the official documentation of the latest release and the current master in the following links:
 
-- [Latest release](https://reframe-hpc.readthedocs.io)
-- [Current master](https://reframe-hpc.readthedocs.io/en/latest)
+- [Latest release](https://reframe-hpc.readthedocs.io/en/stable)
+- [Current master](https://reframe-hpc.readthedocs.io)
 
 
 ### Building the documentation locally
@@ -95,3 +95,9 @@ For unsubscribing, you may send an empty message to [reframe-unsubscribe@sympa.c
 ### Slack
 
 You may also reach the community through Slack [here](https://reframe-slack.herokuapp.com).
+
+
+## Contributing back
+
+ReFrame is an open-source project and we welcome third-party contributions.
+Check out our Contribution Guide [here](https://github.com/eth-cscs/reframe/wiki/contributing-to-reframe).

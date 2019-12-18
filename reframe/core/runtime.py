@@ -349,3 +349,17 @@ def switch_runtime(dict_config, sysname=None):
         return _fn
 
     return _runtime_deco
+
+
+class module_use:
+    '''Context manager for temporarily modifying the module path'''
+
+    def __init__(self, *paths):
+        self._paths = paths
+
+    def __enter__(self):
+        runtime().modules_system.searchpath_add(*self._paths)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        runtime().modules_system.searchpath_remove(*self._paths)

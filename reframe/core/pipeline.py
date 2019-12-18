@@ -19,10 +19,11 @@ import reframe.core.logging as logging
 import reframe.core.runtime as rt
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
+import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform, ContainerPlatformField
-from reframe.core.deferrable import deferrable, _DeferredExpression, evaluate
+from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
@@ -35,8 +36,27 @@ from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: dependencies will be explicitly specified by the user.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_EXACT  = 1
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
+#: the current test will depend only on the corresponding test cases of the
+#: target test that use the same programming environment.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_BY_ENV = 2
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
+#: this test depends on all the test cases of the target test.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_FULLY  = 3
 
 
@@ -51,7 +71,21 @@ def _run_hooks(name=None):
                 # Just any name that does not exist
                 hook_name = 'xxx'
 
-            return obj._rfm_pipeline_hooks.get(hook_name, [])
+            func_names = set()
+            ret = []
+            for cls in type(obj).mro():
+                try:
+                    funcs = cls._rfm_pipeline_hooks.get(hook_name, [])
+                    if any(fn.__name__ in func_names for fn in funcs):
+                        # hook has been overriden
+                        continue
+
+                    func_names |= {fn.__name__ for fn in funcs}
+                    ret += funcs
+                except AttributeError:
+                    pass
+
+            return ret
 
         '''Run the hooks before and after func.'''
         @functools.wraps(func)
@@ -222,18 +256,31 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
-    #: The container platform to be used for this test.
+    #: The container platform to be used for launching this test.
     #:
-    #: If the `self.container_platform` is defined on the test, both
-    #: `self.executable` and `self.executable_opts` are ignored.
+    #: If this field is set, the test will run inside a container using the
+    #: specified container runtime. Container-specific options must be defined
+    #: additionally after this field is set:
+    #:
+    #: .. code:: python
+    #:
+    #:    self.container_platform = 'Singularity'
+    #:    self.container_platform.image = 'docker://ubuntu:18.04'
+    #:    self.container_platform.commands = ['cat /etc/os-release']
+    #:
+    #: If this field is set, :attr:`executable` and :attr:`executable_opts`
+    #: attributes are ignored. The container platform's :attr:`commands` will
+    #: be used instead. For more information on the container platform support,
+    #: see the `tutorial <advanced.html#testing-containerized-applications>`__
+    #: and the `reference guide <reference.html#container-platforms>`__.
     #:
     #: :type: :class:`str` or
-    #: :class:`reframe.core.containers.ContainerPlatform`.
+    #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
     #:
-    #: .. versionadded:: 2.19
-    container_platform = ContainerPlatformField(
-        'container_platform', type(None))
+    #: .. versionadded:: 2.20
+    container_platform = ContainerPlatformField('container_platform',
+                                                type(None))
 
     #: List of shell commands to execute before launching this job.
     #:
@@ -315,7 +362,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: If the number of tasks is set to a number ``<=0``, ReFrame will try
     #: to flexibly allocate the number of tasks, based on the command line
-    #: option ``--flex-alloc-tasks``.
+    #: option ``--flex-alloc-nodes``.
     #: A negative number is used to indicate the minimum number of tasks
     #: required for the test.
     #: In this case the minimum number of tasks is the absolute value of
@@ -330,12 +377,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:     .. versionchanged:: 2.15
     #:        Added support for flexible allocation of the number of tasks
     #:        according to the ``--flex-alloc-tasks`` command line option
-    #:        (see `Flexible task allocation
-    #:        <running.html#flexible-task-allocation>`__)
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     #:        if the number of tasks is set to ``0``.
     #:     .. versionchanged:: 2.16
     #:        Negative ``num_tasks`` is allowed for specifying the minimum
     #:        number of required tasks by the test.
+    #:     .. versionchanged:: 2.21
+    #:        Flexible node allocation is now controlled by the
+    #:        ``--flex-alloc-nodes`` command line option
+    #:        (see `Flexible node allocation
+    #:        <running.html#controlling-the-flexible-node-allocation>`__)
     num_tasks = fields.TypedField('num_tasks', int)
 
     #: Number of tasks per node required by this test.
@@ -785,7 +837,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._outputdir
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         '''The name of the file containing the standard output of the test.
 
@@ -799,7 +851,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         '''The name of the file containing the standard error of the test.
 
@@ -813,12 +865,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.stderr
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def build_stderr(self):
         return self._build_job.stderr
 
@@ -920,13 +972,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
             scheduler_type = self._current_partition.scheduler
             launcher_type = self._current_partition.launcher
 
-        self._job = scheduler_type(
-            name='rfm_%s_job' % self.name,
-            launcher=launcher_type(),
-            workdir=self._stagedir,
-            sched_access=self._current_partition.access,
-            sched_exclusive_access=self.exclusive_access,
-            **job_opts)
+        self._job = Job.create(scheduler_type(),
+                               launcher_type(),
+                               name='rfm_%s_job' % self.name,
+                               workdir=self._stagedir,
+                               sched_access=self._current_partition.access,
+                               sched_exclusive_access=self.exclusive_access,
+                               **job_opts)
 
         # Get job options from managed resources and prepend them to
         # job_opts. We want any user supplied options to be able to
@@ -1049,15 +1101,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
         environs = [self._current_partition.local_env, self._current_environ,
                     user_environ, self._cdt_environ]
 
-        self._build_job = getscheduler('local')(
-            name='rfm_%s_build' % self.name,
-            launcher=getlauncher('local')(),
-            workdir=self._stagedir)
-
+        self._build_job = Job.create(getscheduler('local')(),
+                                     launcher=getlauncher('local')(),
+                                     name='rfm_%s_build' % self.name,
+                                     workdir=self._stagedir)
         with os_ext.change_dir(self._stagedir):
             try:
                 self._build_job.prepare(build_commands, environs,
-                                        login=True, trap_errors=True)
+                                        trap_errors=True)
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1136,7 +1187,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs, login=True)
+                self._job.prepare(commands, environs)
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 
@@ -1147,7 +1198,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.logger.debug(msg)
 
         # Update num_tasks if test is flexible
-        if self.job.sched_flex_alloc_tasks:
+        if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
     def poll(self):
@@ -1195,7 +1246,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise SanityError('sanity_patterns not set')
 
         with os_ext.change_dir(self._stagedir):
-            success = evaluate(self.sanity_patterns)
+            success = sn.evaluate(self.sanity_patterns)
             if not success:
                 raise SanityError()
 
@@ -1246,7 +1297,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             # check them against the reference. This way we always log them
             # even if the don't meet the reference.
             for tag, expr in self.perf_patterns.items():
-                value = evaluate(expr)
+                value = sn.evaluate(expr)
                 key = '%s:%s' % (self._current_partition.fullname, tag)
                 if key not in self.reference:
                     raise SanityError(
@@ -1261,7 +1312,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 val, ref, low_thres, high_thres, *_ = values
                 tag = key.split(':')[-1]
                 try:
-                    evaluate(
+                    sn.evaluate(
                         assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
@@ -1322,6 +1373,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return util.SequenceView(self._userdeps)
 
     def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
+        '''Add a dependency to ``target`` in this test.
+
+        :arg target: The name of the target test.
+        :arg how: How the dependency should be mapped in the test cases space.
+            This argument can accept any of the three constants
+            :attr:`DEPEND_EXACT`, :attr:`DEPEND_BY_ENV` (default),
+            :attr:`DEPEND_FULLY`.
+
+        :arg subdeps: An adjacency list representation of how this test's test
+            cases depend on those of the target test. This is only relevant if
+            ``how == DEPEND_EXACT``. The value of this argument is a
+            dictionary having as keys the names of this test's supported
+            programming environments. The values are lists of the programming
+            environments names of the target test that this test's test cases
+            will depend on. In the following example, this test's ``E0``
+            programming environment case will depend on both ``E0`` and ``E1``
+            test cases of the target test ``T0``, but its ``E1`` case will
+            depend only on the ``E1`` test case of ``T0``:
+
+            .. code:: python
+
+               self.depends_on('T0', how=rfm.DEPEND_EXACT,
+                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+
+        For more details on how test dependencies work in ReFrame, please
+        refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
+
+        .. versionadded:: 2.21
+
+        '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
@@ -1336,6 +1417,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._userdeps.append((target, how, subdeps))
 
     def getdep(self, target, environ=None):
+        '''Retrieve the test case of a target dependency.
+
+        This is a low-level method. The :func:`@require_deps
+        <reframe.core.decorators.require_deps>` decorators should be
+        preferred.
+
+        :arg target: The name of the target dependency to be retrieved.
+        :arg environ: The name of the programming environment that will be
+            used to retrieve the test case of the target test. If ``None``,
+            :attr:`RegressionTest.current_environ` will be used.
+
+        .. versionadded:: 2.21
+
+        '''
         if self.current_environ is None:
             raise DependencyError(
                 'cannot resolve dependencies before the setup phase'
@@ -1423,12 +1518,12 @@ class CompileOnlyRegressionTest(RegressionTest):
         self._setup_paths()
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stdout(self):
         return self._build_job.stdout
 
     @property
-    @deferrable
+    @sn.sanity_function
     def stderr(self):
         return self._build_job.stderr
 

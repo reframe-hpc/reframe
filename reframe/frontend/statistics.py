@@ -84,7 +84,9 @@ class TestStats:
             report.append('  * System partition: %s' % partname)
             report.append('  * Environment: %s' % environ_name)
             report.append('  * Stage directory: %s' % check.stagedir)
-
+            report.append('  * Node list: %s' %
+                          (','.join(check.job.nodelist)
+                           if check.job and check.job.nodelist else '<None>'))
             job_type = 'local' if check.is_local() else 'batch job'
             jobid = check.job.jobid if check.job else -1
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
@@ -126,6 +128,8 @@ class TestStats:
                     previous_part = t.check.current_partition.fullname
 
                 report.append('   - %s' % t.check.current_environ)
+
+            report.append('      * num_tasks: %s' % t.check.num_tasks)
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]

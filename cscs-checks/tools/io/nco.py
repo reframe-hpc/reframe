@@ -33,7 +33,7 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
             self.modules = ['NCO']
 
         self.maintainers = ['SO']
-        self.tags = {'production', 'mch'}
+        self.tags = {'production', 'mch', 'external-resources'}
 
 
 # Check that the netCDF loaded by the NCO module supports the nc4 filetype

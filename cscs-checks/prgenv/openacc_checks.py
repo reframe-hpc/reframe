@@ -11,7 +11,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.num_tasks = 2
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'
@@ -21,7 +21,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -39,13 +39,13 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
 
         self.maintainers = ['TM', 'VK']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
-            if self.current_system.name in ['daint', 'dom']:
+            if self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
             else:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']

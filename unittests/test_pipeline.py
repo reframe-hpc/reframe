@@ -72,10 +72,8 @@ class TestRegressionTest(unittest.TestCase):
         return os.path.join(new_prefix, basename)
 
     def keep_files_list(self, test, compile_only=False):
-        from reframe.core.deferrable import evaluate
-
-        ret = [self.replace_prefix(evaluate(test.stdout), test.outputdir),
-               self.replace_prefix(evaluate(test.stderr), test.outputdir)]
+        ret = [self.replace_prefix(sn.evaluate(test.stdout), test.outputdir),
+               self.replace_prefix(sn.evaluate(test.stderr), test.outputdir)]
 
         if not compile_only:
             ret.append(self.replace_prefix(test.job.script_filename,
@@ -492,6 +490,74 @@ class TestHooks(unittest.TestCase):
         test = MyTest()
         _run(test, self.partition, self.prgenv)
         assert test.var == 3
+
+    def test_inherited_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+        class C(rfm.RegressionTest):
+            @rfm.run_before('run')
+            def y(self):
+                self.foo = 1
+
+        class DerivedTest(BaseTest, C):
+            @rfm.run_after('setup')
+            def z(self):
+                self.var += 1
+
+        class MyTest(DerivedTest):
+            pass
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 2
+        assert test.foo == 1
+
+    def test_overriden_hooks(self):
+        import unittests.resources.checks.hellocheck as mod
+
+        class BaseTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.var = 0
+                self.foo = 0
+
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 1
+
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 1
+
+        class DerivedTest(BaseTest):
+            @rfm.run_after('setup')
+            def x(self):
+                self.var += 5
+
+        class MyTest(DerivedTest):
+            @rfm.run_before('setup')
+            def y(self):
+                self.foo += 10
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.var == 5
+        assert test.foo == 10
 
     def test_require_deps(self):
         import unittests.resources.checks.hellocheck as mod

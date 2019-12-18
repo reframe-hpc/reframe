@@ -8,7 +8,7 @@ class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'Checks the nvprof tool'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
@@ -42,4 +42,4 @@ class NvprofCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
 
         self.maintainers = ['MK', 'JG']
-        self.tags = {'production'}
+        self.tags = {'production', 'craype'}

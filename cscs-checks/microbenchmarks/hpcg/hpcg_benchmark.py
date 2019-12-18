@@ -10,7 +10,8 @@ class HPCGCheckRef(rfm.RegressionTest):
         super().__init__()
 
         self.descr = 'HPCG reference benchmark'
-        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc',
+                              'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name in {'daint', 'dom'}:
             self.modules = ['craype-hugepages8M']
@@ -52,7 +53,7 @@ class HPCGCheckRef(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'benchmark'}
+        self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
     @sn.sanity_function
@@ -129,7 +130,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         }
 
         self.maintainers = ['SK']
-        self.tags = {'diagnostic', 'benchmark'}
+        self.tags = {'diagnostic', 'benchmark', 'craype'}
 
     @property
     @sn.sanity_function

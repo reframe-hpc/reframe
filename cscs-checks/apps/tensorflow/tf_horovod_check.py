@@ -11,23 +11,23 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         tfshortver = '1.14'
         self.sourcesdir = 'https://github.com/tensorflow/benchmarks'
-        self.modules = ['Horovod/0.16.4-CrayGNU-19.09-tf-%s.0' % tfshortver]
+        self.modules = ['Horovod/0.16.4-CrayGNU-19.10-tf-%s.0' % tfshortver]
         if variant == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 8
             self.reference = {
                 'dom:gpu': {
-                    'throughput': (1133.6, None, 0.05, 'images/s'),
+                    'throughput': (1133.6, -0.05, None, 'images/s'),
                 },
                 'daint:gpu': {
-                    'throughput': (1134.8, None, 0.05, 'images/s')
+                    'throughput': (1134.8, -0.05, None, 'images/s')
                 },
             }
         else:
             self.num_tasks = 32
             self.reference = {
                 'daint:gpu': {
-                    'throughput': (4403.0, None, 0.05, 'images/s')
+                    'throughput': (4403.0, -0.05, None, 'images/s')
                 },
             }
 

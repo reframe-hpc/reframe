@@ -6,9 +6,9 @@ import reframe.utility.sanity as sn
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-        if self.current_system.name in ['daint', 'dom']:
+        if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -35,18 +35,18 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.arrays_reference = {
             'PrgEnv-cray': {
                 'daint:gpu': {'time': (5.7E-05, None, 0.15)},
-                'dom:gpu': {'time': (7.5E-05, None, 0.15)},
+                'dom:gpu': {'time': (5.7E-05, None, 0.15)},
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
             'PrgEnv-pgi': {
-                'daint:gpu': {'time': (6.4E-05, None, 0.15)},
+                'daint:gpu': {'time': (7.5E-05, None, 0.15)},
                 'dom:gpu': {'time': (7.5e-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
             }
         }
 
         self.maintainers = ['AJ', 'VK']
-        self.tags = {'production', 'mch'}
+        self.tags = {'production', 'mch', 'craype'}
 
     def setup(self, partition, environ, **job_opts):
         if environ.name.startswith('PrgEnv-cray'):
@@ -57,7 +57,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35']
-            elif self.current_system.name in ['daint', 'dom']:
+            elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:
             envname = environ.name

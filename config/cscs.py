@@ -137,6 +137,22 @@ class ReframeSettings:
                         'resources': {
                             'switches': ['--switches={num_switches}']
                         }
+                    },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
                     }
                 }
             },
@@ -173,9 +189,6 @@ class ReframeSettings:
                                      'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
-                        'resources': {
-                            'switches': ['--switches={num_switches}']
-                        }
                     },
 
                     'mc': {
@@ -196,6 +209,22 @@ class ReframeSettings:
                             'switches': ['--switches={num_switches}']
                         }
                     },
+
+                    'jupyter_gpu': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cgpu', '--reservation=jupyter_gpu'],
+                        'descr': 'JupyterHub GPU nodes',
+                        'max_jobs': 10,
+                    },
+
+                    'jupyter_mc': {
+                        'scheduler': 'nativeslurm',
+                        'environs': ['builtin'],
+                        'access': ['-Cmc', '--reservation=jupyter_mc'],
+                        'descr': 'JupyterHub multicore nodes',
+                        'max_jobs': 10,
+                    }
                 }
             },
 
@@ -475,7 +504,7 @@ class ReframeSettings:
 
                 'PrgEnv-cray_classic': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cray', 'cce/9.0.0-classic'],
+                    'modules': ['PrgEnv-cray', 'cce/9.0.2-classic'],
                 },
 
                 'PrgEnv-gnu': {
@@ -588,6 +617,7 @@ class ReframeSettings:
                 'format': (
                     '%(asctime)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
+                    'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
