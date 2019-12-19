@@ -52,7 +52,7 @@ class HPCGCheckRef(rfm.RegressionTest):
             }
         }
 
-        self.maintainers = ['SK']
+        self.maintainers = ['SK', 'EK']
         self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
@@ -177,7 +177,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
-        self.maintainers = ['SK', 'VK']
+        self.maintainers = ['SK', 'VH']
         self.descr = 'HPCG benchmark on GPUs'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'HPCG')

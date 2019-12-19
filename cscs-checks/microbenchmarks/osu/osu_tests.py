@@ -19,7 +19,7 @@ class AlltoallTest(rfm.RegressionTest):
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel']
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'AJ']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
@@ -68,7 +68,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_alltoall'
         self.executable = './osu_alltoall'
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'AJ']
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.sanity_patterns = sn.assert_found(r'^1048576', self.stdout)
@@ -93,7 +93,7 @@ class AllreduceTest(rfm.RegressionTest):
         # The -i option controls the number of iterations
         self.executable_opts = ['-m', '8', '-x', '1000', '-i', '20000']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'AJ']
         self.sanity_patterns = sn.assert_found(r'^8', self.stdout)
         self.perf_patterns = {
             'latency': sn.extractsingle(r'^8\s+(?P<latency>\S+)',
@@ -155,7 +155,7 @@ class P2PBaseTest(rfm.RegressionTest):
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'AJ']
         self.tags = {'production', 'benchmark', 'craype'}
         self.sanity_patterns = sn.assert_found(r'^4194304', self.stdout)
 

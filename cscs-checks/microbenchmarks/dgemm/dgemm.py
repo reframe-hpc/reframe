@@ -39,7 +39,7 @@ class DGEMMTest(rfm.RegressionTest):
             'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
 
-        self.maintainers = ['AJ', 'VH', 'VK']
+        self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

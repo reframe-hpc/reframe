@@ -38,7 +38,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                                   self.stdout, 'result', float)
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
 
-        self.maintainers = ['TM', 'VK']
+        self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

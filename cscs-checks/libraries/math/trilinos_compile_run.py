@@ -35,7 +35,7 @@ class TrilinosTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'After Amesos solution',
                                                self.stdout)
 
-        self.maintainers = ['WS', 'AJ']
+        self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

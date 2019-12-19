@@ -24,7 +24,7 @@ class MagmaCheck(rfm.RegressionTest):
                                      '-lmagma_sparse']
         self.executable = './testing_' + subtest
         self.modules = ['magma']
-        self.maintainers = ['AJ']
+        self.maintainers = ['AJ', 'SK']
         self.tags = {'scs', 'production', 'maintenance'}
         if subtest == 'cblas_z':
             self.perf_patterns = {
