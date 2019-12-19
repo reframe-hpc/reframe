@@ -30,6 +30,9 @@ class LocalJobScheduler(sched.JobScheduler):
         self._f_stdout = None
         self._f_stderr = None
 
+    def completion_time(self, job):
+        return None
+
     def submit(self, job):
         # `chmod +x' first, because we will execute the script locally
         os.chmod(job.script_filename,

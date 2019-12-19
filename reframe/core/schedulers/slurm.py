@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 from contextlib import suppress
 from datetime import datetime
 
+import reframe.core.environments as env
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
@@ -69,6 +70,13 @@ class SlurmJobScheduler(sched.JobScheduler):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
+    # This matches the format for both normal jobs as well as job arrays.
+    # For job arrays the job_id has one of the following formats:
+    #   * <job_id>_<array_task_id>
+    #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+    # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+    _state_patt = r'\d+(?:_\d+|_\[\d+-\d+\])?'
+
     def __init__(self):
         self._prefix = '#SBATCH'
 
@@ -88,6 +96,32 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
+        self._completion_time = None
+
+    def completion_time(self, job):
+        if (self._completion_time or
+            not slurm_state_completed(job.state)):
+            return self._completion_time
+
+        with env.temp_environment(variables={'SLURM_TIME_FORMAT': 'standard'}):
+            completed = os_ext.run_command(
+                'sacct -S %s -P -j %s -o jobid,end' %
+                (datetime.now().strftime('%F'), job.jobid),
+                log=False
+            )
+
+        state_match = list(re.finditer(
+            r'^(?P<jobid>%s)\|(?P<end>\S+)' % self._state_patt,
+            completed.stdout, re.MULTILINE))
+        if not state_match:
+            return None
+
+        self._completion_time = max(
+            datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
+            for s in state_match
+        )
+
+        return self._completion_time
 
     def _format_option(self, var, option):
         if var is not None:
@@ -296,14 +330,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         )
         self._update_state_count += 1
 
-        # This matches the format for both normal jobs as well as job arrays.
-        # For job arrays the job_id has one of the following formats:
-        #   * <job_id>_<array_task_id>
-        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
-            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
+            r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
+            r'(?P<signal>\d+)\|(?P<nodespec>.*)' % self._state_patt,
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
@@ -312,7 +341,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # Join the states with ',' in case of job arrays
         job.state = ','.join(s.group('state') for s in state_match)
-        if not self._update_state_count % SlurmJobScheduler.SACCT_SQUEUE_RATIO:
+        if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked(job)
 
         if slurm_state_completed(job.state):
@@ -437,6 +466,9 @@ class SqueueJobScheduler(SlurmJobScheduler):
         self._submit_time = None
         self._squeue_delay = 2
         self._cancelled = False
+
+    def completion_time(self, job):
+        return None
 
     def submit(self, job):
         super().submit(job)

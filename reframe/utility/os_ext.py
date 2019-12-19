@@ -20,9 +20,10 @@ from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
 
-def run_command(cmd, check=False, timeout=None, shell=False):
+def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True)
+        proc = run_command_async(cmd, shell=shell, start_new_session=True,
+                                 log=log)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -66,17 +67,12 @@ def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
                       shell=False,
+                      log=True,
                       **popen_args):
-    # Import logger here to avoid unnecessary circular dependencies
-    # FIXME: Will be fixed when a version to execute commands without logging
-    #        becomes available.
-    modulename = 'logging'
-    if modulename not in sys.modules:
-        import reframe.core.logging as logging
-    else:
-        logging = sys.modules['logging']
+    if log:
+        from reframe.core.logging import getlogger
+        getlogger().debug('executing OS command: ' + cmd)
 
-    logging.getLogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
 
@@ -299,18 +295,19 @@ def is_url(s):
 
 
 def git_branch_hash(branch='HEAD', short=True):
-    '''Gets the SHA1 hash of the given git branch.'''
+    '''Return the SHA1 hash of the given git branch.
+
+    Current working directory must be a git repository.
+    '''
     try:
         completed = run_command(
             'git rev-parse %s %s' % ('--short' if short else '', branch),
-            check=True)
+            check=True
+        )
     except SpawnedProcessError:
         return 'N/A'
 
-    if completed.stdout:
-        return completed.stdout.strip()
-
-    return 'N/A'
+    return completed.stdout.strip()
 
 
 def git_clone(url, targetdir=None):
