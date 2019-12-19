@@ -7,6 +7,10 @@ from reframe.core.schedulers import Job, JobScheduler
 
 
 class FakeJobScheduler(JobScheduler):
+    @property
+    def completion_time(self, job):
+        pass
+
     def emit_preamble(self, job):
         pass
 

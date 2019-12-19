@@ -846,6 +846,14 @@ All handlers accept the following set of attributes (keys) in their configuratio
     It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
   - ``check_jobid``: Prints the job or process id of the job or process associated with the currently executing regression test.
     If a job or process is not yet created, ``-1`` will be printed.
+  - ``check_job_completion_time``: *[new in 2.21]* The completion time of the job spawned by this regression test.
+    This timestamp will be formatted according to ``datefmt`` (see below).
+    The accuracy of the timestamp depends on the backend scheduler.
+    The ``slurm`` scheduler backend relies on job accounting and returns the actual termination time of the job.
+    The rest of the backends report as completion time the moment when the framework realizes that the spawned job has finished.
+    In this case, the accuracy depends on the execution policy used.
+    If tests are executed with the serial execution policy, this is close to the real completion time, but if the asynchronous execution policy is used, it can differ significantly.
+    If the job completion time cannot be retrieved, ``None`` will be printed.
   - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
     If ReFrame is not in the context of regression test, ``reframe`` will be printed.
   - ``check_num_tasks``: The number of tasks assigned to the regression test.

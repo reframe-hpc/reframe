@@ -89,6 +89,16 @@ class TestEnvironment(unittest.TestCase):
         assert not self.environ.is_loaded
 
     @fixtures.switch_to_user_runtime
+    def test_temp_environment(self):
+        self.setup_modules_system()
+        with env.temp_environment(
+                ['testmod_foo'], {'_var0': 'val2', '_var3': 'val3'}
+        ) as environ:
+            assert environ.is_loaded
+
+        assert not environ.is_loaded
+
+    @fixtures.switch_to_user_runtime
     def test_load_already_present(self):
         self.setup_modules_system()
         self.modules_system.load_module('testmod_boo')

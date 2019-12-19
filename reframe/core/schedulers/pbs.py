@@ -36,6 +36,9 @@ class PbsJobScheduler(sched.JobScheduler):
         # Optional part of the job id refering to the PBS server
         self._pbs_server = None
 
+    def completion_time(self, job):
+        return None
+
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
         num_cpus_per_task = job.num_cpus_per_task or 1

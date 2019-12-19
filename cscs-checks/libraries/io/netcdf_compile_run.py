@@ -63,7 +63,24 @@ class NetCDFTest(rfm.RegressionTest):
                     '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
                 ]
             elif environ.name == 'PrgEnv-pgi-nompi':
-                self.build_system.ldflags = ['-B' + self.linkage]
+                self.modules = ['netcdf/4.6.1-pgi-18.5-gcc-5.4.0-2.26',
+                                'netcdf-c++/4.3.0-pgi-18.5-gcc-5.4.0-2.26',
+                                'netcdf-fortran/4.4.4-pgi-18.5-gcc-5.4.0-2.26']
+                self.build_system.ldflags = [
+                    '-B' + self.linkage,
+                    '-L$EBROOTNETCDF/lib',
+                    '-L$EBROOTNETCDFMINCPLUSPLUS/lib',
+                    '-L$EBROOTNETCDFMINFORTRAN/lib',
+                    '-L$EBROOTNETCDF/lib64',
+                    '-L$EBROOTNETCDFMINCPLUSPLUS/lib64',
+                    '-L$EBROOTNETCDFMINFORTRAN/lib64',
+                    '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
+                ]
+                self.build_system.fflags = [
+                    '-I$EBROOTNETCDF/include',
+                    '-I$EBROOTNETCDFMINCPLUSPLUS/include',
+                    '-I$EBROOTNETCDFMINFORTRAN/include'
+                ]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
 
