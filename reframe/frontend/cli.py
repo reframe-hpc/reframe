@@ -246,7 +246,7 @@ def main():
              '(default format "%%FT%%T")'
     )
     misc_options.add_argument('-V', '--version', action='version',
-                              version=reframe.VERSION)
+                              version=os_ext.reframe_version())
     misc_options.add_argument('-v', '--verbose', action='count', default=0,
                               help='Increase verbosity level of output')
 
