@@ -29,4 +29,4 @@ class PetscPoisson2DCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_lt(norm, 1.0e-5)
 
         self.tags = {'production', 'craype'}
-        self.maintainers = ['WS', 'AJ', 'TM']
+        self.maintainers = ['AJ', 'CB']

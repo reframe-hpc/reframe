@@ -9,6 +9,7 @@ class IntelInspectorTest(rfm.RegressionTest):
     '''This test checks Intel Inspector:
     https://software.intel.com/en-us/inspector
     '''
+
     def __init__(self, lang):
         super().__init__()
         self.name = 'Intel_Inspector_%s' % lang.replace('+', 'p')
@@ -58,7 +59,7 @@ class IntelInspectorTest(rfm.RegressionTest):
             '%s -report=observations &> %s' %
             (self.executable, self.observations_rpt),
         ]
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
@@ -80,7 +81,7 @@ class IntelInspectorTest(rfm.RegressionTest):
             sn.assert_found('SUCCESS', self.stdout),
             # check the tool's version:
             sn.assert_eq(sn.extractsingle(regexversion, self.version_rpt,
-                         'toolsversion'), toolsversion),
+                                          'toolsversion'), toolsversion),
             # check the reports:
             sn.assert_found(r'1 Memory leak problem\(s\) detected',
                             self.summary_rpt),

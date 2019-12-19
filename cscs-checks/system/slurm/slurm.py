@@ -16,7 +16,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'VH']
 
 
 class SlurmCompiledBaseCheck(rfm.RegressionTest):
@@ -33,7 +33,7 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'VH']
 
 
 @rfm.simple_test

@@ -9,7 +9,7 @@ class CudaMemtest(rfm.RegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.descr = 'Flexible CUDA Memtest'
-        self.maintainers = ['TM', 'VK']
+        self.maintainers = ['TM', 'SK']
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         self.num_gpus_per_node = 1

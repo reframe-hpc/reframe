@@ -26,7 +26,7 @@ class CudaCheck(rfm.RegressionTest):
             self.exclusive_access = True
             self.nvidia_sm = '37'
 
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'SK']
         self.tags = {'production', 'craype', 'external-resources'}
 
 

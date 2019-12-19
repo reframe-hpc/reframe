@@ -33,7 +33,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
         self.compilation_time_seconds = None
 
-        self.maintainers = ['CB', 'VK']
+        self.maintainers = ['VH', 'EK']
         self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

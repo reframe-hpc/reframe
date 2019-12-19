@@ -51,7 +51,7 @@ class ScorepHybrid(rfm.RegressionTest):
                 'line')), 4 * self.num_iterations * cpu_count),
             sn.assert_not_found('warning|WARNING', self.stderr)
         ])
-        self.maintainers = ['MK', 'JG']
+        self.maintainers = ['MKr', 'JG']
         self.tags = {'production'}
         # additional program call in order to generate the tracing output for
         # the sanity check

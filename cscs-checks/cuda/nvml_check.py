@@ -40,5 +40,5 @@ class NvmlCheck(rfm.RegressionTest):
             regex = r"\s+Changing device.s compute mode from 'Default' to "
 
         self.sanity_patterns = sn.assert_found(regex, self.stdout)
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'SK']
         self.tags = {'production', 'craype', 'external-resources'}

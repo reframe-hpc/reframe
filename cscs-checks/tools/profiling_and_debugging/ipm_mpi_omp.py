@@ -59,7 +59,7 @@ class Ipm(rfm.RegressionTest):
                          'ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt,
                          'ipm_parse.pl -html *.ipm.xml',
                          'cp *ipm.xml_ipm*/index.html .']
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):
