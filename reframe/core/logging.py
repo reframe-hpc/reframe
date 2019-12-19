@@ -384,7 +384,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'osuser':  os_ext.osuser()  or '<unknown>',
                 'osgroup': os_ext.osgroup() or '<unknown>',
                 'check_tags': None,
-                'version': reframe.VERSION,
+                'version': os_ext.reframe_version(),
             }
         )
         self.check = check
