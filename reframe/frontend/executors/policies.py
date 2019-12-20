@@ -314,14 +314,14 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     task.fail((type(exc), exc, None))
                 elif self.deps_succeeded(task):
                     task.setup(task.testcase.partition,
-                            task.testcase.environ,
-                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                            sched_account=self.sched_account,
-                            sched_partition=self.sched_partition,
-                            sched_reservation=self.sched_reservation,
-                            sched_nodelist=self.sched_nodelist,
-                            sched_exclude_nodelist=self.sched_exclude_nodelist,
-                            sched_options=self.sched_options)
+                               task.testcase.environ,
+                               sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                               sched_account=self.sched_account,
+                               sched_partition=self.sched_partition,
+                               sched_reservation=self.sched_reservation,
+                               sched_nodelist=self.sched_nodelist,
+                               sched_exclude_nodelist=self.sched_exclude_nodelist,
+                               sched_options=self.sched_options)
                 else:
                     still_waiting.append(task)
             except TaskExit:
