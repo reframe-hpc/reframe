@@ -37,7 +37,7 @@ echo "Working directory: $tmpdir ..."
 cd $tmpdir
 git clone https://github.com/eth-cscs/reframe.git
 cd reframe
-found_version=$(./reframe.py -V)
+found_version=$(./reframe.py -V | sed -e 's/ (.*)//g')
 if [ $found_version != $version ]; then
     echo "$0: version mismatch: found $found_version, but required $version" >&2
     exit 1
