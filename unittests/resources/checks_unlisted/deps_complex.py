@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 #       |
 #   +-->t4<--+
 #   |        |
-#   t5<------t1
+#   t5<------t1<--t8<--t9
 #   ^        ^
 #   |        |
 #   +---t6---+
@@ -149,4 +149,37 @@ class T7(BaseTest):
     @rfm.require_deps
     def prepend_output(self, T2):
         with open(os.path.join(T2().stagedir, 'out.txt')) as fp:
+            self._count += int(fp.read())
+
+
+@rfm.simple_test
+class T8(BaseTest):
+    def __init__(self):
+        super().__init__()
+        self.depends_on('T1')
+        self.sanity_patterns = sn.assert_eq(self.count, 22)
+
+    @rfm.require_deps
+    def prepend_output(self, T1):
+        with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
+            self._count += int(fp.read())
+
+    # Make this test fail on purpose
+    @rfm.run_after('setup')
+    def fail(self):
+        raise Exception
+
+
+# This tests fails because of T8. It is added to make sure that
+# all tests are accounted for in the summary.
+@rfm.simple_test
+class T9(BaseTest):
+    def __init__(self):
+        super().__init__()
+        self.depends_on('T8')
+        self.sanity_patterns = sn.assert_eq(self.count, 31)
+
+    @rfm.require_deps
+    def prepend_output(self, T8):
+        with open(os.path.join(T8().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
