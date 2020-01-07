@@ -11,17 +11,20 @@ import re
 import shlex
 import shutil
 import signal
+import sys
 import subprocess
 import tempfile
 from urllib.parse import urlparse
 
+import reframe
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
 
 
-def run_command(cmd, check=False, timeout=None, shell=False):
+def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     try:
-        proc = run_command_async(cmd, shell=shell, start_new_session=True)
+        proc = run_command_async(cmd, shell=shell, start_new_session=True,
+                                 log=log)
         proc_stdout, proc_stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired as e:
         os.killpg(proc.pid, signal.SIGKILL)
@@ -65,11 +68,12 @@ def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,
                       shell=False,
+                      log=True,
                       **popen_args):
-    # Import logger here to avoid unnecessary circular dependencies
-    from reframe.core.logging import getlogger
+    if log:
+        from reframe.core.logging import getlogger
+        getlogger().debug('executing OS command: ' + cmd)
 
-    getlogger().debug('executing OS command: ' + cmd)
     if not shell:
         cmd = shlex.split(cmd)
 
@@ -310,6 +314,53 @@ def git_repo_exists(url, timeout=5):
         return False
     else:
         return True
+
+
+def git_repo_hash(branch='HEAD', short=True, wd=None):
+    '''Return the SHA1 hash of a git repository.
+
+    :arg branch: The branch to look at.
+    :arg short: Return a short hash. This always corresponds to the first 8
+        characters of the long hash. We don't rely on Git for the short hash,
+        since depending on the version it might return either 7 or 8
+        characters.
+    :arg wd: Change to this directory before retrieving the hash. If ``None``,
+        ReFrame's install prefix will be used.
+    :returns: The repository has or ``None`` if the hash could not be
+        retrieved.
+
+    '''
+    try:
+        wd = wd or reframe.INSTALL_PREFIX
+        with change_dir(wd):
+            # Do not log this command, since we need to call this function
+            # from the logger
+            completed = run_command('git rev-parse %s' % branch,
+                                    check=True, log=False)
+
+    except SpawnedProcessError:
+        return None
+
+    hash = completed.stdout.strip()
+    if hash:
+        return hash[:8] if short else hash
+    else:
+        return None
+
+
+def reframe_version():
+    '''Return ReFrame version.
+
+    If ReFrame's installation contains the repository metadata, the
+    repository's hash will be appended to the actual version.
+
+    '''
+    version = reframe.VERSION
+    repo_hash = git_repo_hash()
+    if repo_hash:
+        return '%s (rev: %s)' % (version, repo_hash)
+    else:
+        return version
 
 
 def expandvars(path):

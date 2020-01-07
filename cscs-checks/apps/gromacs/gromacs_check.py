@@ -33,7 +33,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
         self.modules = ['GROMACS']
-        self.maintainers = ['VH']
+        self.maintainers = ['VH', 'SO']
         self.strict_check = False
         self.use_multithreading = False
         self.extra_resources = {

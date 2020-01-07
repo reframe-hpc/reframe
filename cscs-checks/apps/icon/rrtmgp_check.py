@@ -38,4 +38,4 @@ class RRTMGPTest(rfm.RegressionTest):
                 [sn.assert_gt(sn.count(values), 0, msg='regex not matched')],
                 sn.map(lambda x: sn.assert_lt(x, 1e-5), values))
         )
-        self.maintainers = ['WS', 'VK']
+        self.maintainers = ['WS', 'RS']

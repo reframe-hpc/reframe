@@ -50,7 +50,7 @@ class DdtCheck(rfm.RegressionTest):
             'C++': 94,
             'Cuda': 94
         }
-        self.maintainers = ['MK', 'JG']
+        self.maintainers = ['MKr', 'JG']
         self.tags = {'production', 'craype'}
         self.post_run = ['ddt -V ; which ddt ;']
         self.keep_files = ['ddtreport.txt']

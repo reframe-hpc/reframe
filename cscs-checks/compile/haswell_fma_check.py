@@ -33,7 +33,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
             sn.assert_not_found('warning|WARNING', self.stderr)
         ])
 
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

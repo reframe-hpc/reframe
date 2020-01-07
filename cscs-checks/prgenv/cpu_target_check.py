@@ -15,5 +15,5 @@ class CrayCPUTargetTest(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'CRAY_CPU_TARGET=\S+',
                                                self.stdout)
 
-        self.maintainers = ['TM']
+        self.maintainers = ['TM', 'LM']
         self.tags = {'production', 'maintenance', 'craype'}

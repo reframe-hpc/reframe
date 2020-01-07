@@ -53,7 +53,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             sn.assert_found(r'Result :\s+OK', self.stdout)
         ])
         self.launch_options = []
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

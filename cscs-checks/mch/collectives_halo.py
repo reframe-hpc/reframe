@@ -113,7 +113,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             }
         }
 
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
     def setup(self, *args, **kwargs):

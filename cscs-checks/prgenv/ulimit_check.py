@@ -17,5 +17,5 @@ class UlimitCheck(rfm.RegressionTest):
             sn.assert_found(r'The hard limit is unlimited', self.stdout),
         ])
 
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'CB']
         self.tags = {'production', 'scs', 'craype'}

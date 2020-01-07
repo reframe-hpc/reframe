@@ -44,4 +44,4 @@ class CudaStressTest(rfm.RegressionTest):
             }
         }
         self.tags = {'production', 'mch', 'craype'}
-        self.maintainers = ['VK', 'AJ']
+        self.maintainers = ['MKr', 'AJ']

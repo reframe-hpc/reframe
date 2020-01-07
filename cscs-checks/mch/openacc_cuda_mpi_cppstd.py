@@ -47,8 +47,8 @@ class OpenaccCudaCpp(rfm.RegressionTest):
             }
 
         self.executable = 'openacc_cuda_mpi_cppstd'
-        self.sanity_patterns = sn.assert_found(r'Result\s:\s+OK', self.stdout)
-        self.maintainers = ['AJ', 'VK']
+        self.sanity_patterns = sn.assert_found(r'Result:\s+OK', self.stdout)
+        self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

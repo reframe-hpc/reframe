@@ -65,7 +65,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'SK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
         '''generates search pattern for performance analysis'''
