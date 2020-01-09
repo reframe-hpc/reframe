@@ -66,6 +66,12 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
         assert (resources_spec == ['#DW jobdw capacity=100GB',
                                    '#DW stage_in source=/foo'])
 
+    def test_load_envconfig_with_unknown_args(self):
+        self.dict_config['environments']['*']['builtin-gcc'] = {
+            'foo': 'bar',
+        }
+        self.site_config.load_from_dict(self.dict_config)
+
     def test_load_failure_empty_dict(self):
         dict_config = {}
         with pytest.raises(ValueError):
@@ -112,28 +118,17 @@ class TestSiteConfigurationFromDict(unittest.TestCase):
         self.dict_config['environments'] = {
             '*': {
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 }
             }
         }
-        with pytest.raises(ConfigError):
+        with pytest.raises(ConfigError,
+                           match='could not find a definition for'):
             self.site_config.load_from_dict(self.dict_config)
 
     def test_load_failure_envconfig_nodict(self):
         self.dict_config['environments']['*']['PrgEnv-gnu'] = 'foo'
         with pytest.raises(TypeError):
-            self.site_config.load_from_dict(self.dict_config)
-
-    def test_load_failure_envconfig_notype(self):
-        self.dict_config['environments'] = {
-            '*': {
-                'PrgEnv-gnu': {
-                    'modules': ['PrgEnv-gnu'],
-                }
-            }
-        }
-        with pytest.raises(ConfigError):
             self.site_config.load_from_dict(self.dict_config)
 
 

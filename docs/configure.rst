@@ -73,22 +73,18 @@ The following example shows a minimal configuration for the `Piz Daint <https://
        'environments': {
            '*': {
                'PrgEnv-cray': {
-                   'type': 'ProgEnvironment',
                    'modules': ['PrgEnv-cray'],
                },
 
                'PrgEnv-gnu': {
-                   'type': 'ProgEnvironment',
                    'modules': ['PrgEnv-gnu'],
                },
 
                'PrgEnv-intel': {
-                   'type': 'ProgEnvironment',
                    'modules': ['PrgEnv-intel'],
                },
 
                'PrgEnv-pgi': {
-                   'type': 'ProgEnvironment',
                    'modules': ['PrgEnv-pgi'],
                }
            }
@@ -343,7 +339,6 @@ In the following example, we redefine ``PrgEnv-gnu`` for a system named ``foo``,
 
   'foo': {
       'PrgEnv-gnu': {
-          'type': 'ProgEnvironment',
           'modules': ['PrgEnv-gnu', 'openmpi'],
           'cc':  'mpicc',
           'cxx': 'mpicxx',
@@ -354,26 +349,26 @@ In the following example, we redefine ``PrgEnv-gnu`` for a system named ``foo``,
 An environment is also defined as a set of key/value pairs with the key being its name and the value being a dictionary of its attributes.
 The possible attributes of an environment are the following:
 
-* ``type``: The type of the environment to create. There are two available environment types (note that names are case sensitive):
-
-  * ``'Environment'``: A simple environment.
-  * ``'ProgEnvironment'``: A programming environment.
-
 * ``modules``: A list of modules to be loaded when this environment is used (default ``[]``, valid for all environment types)
 * ``variables``: A set of variables to be set when this environment is used (default ``{}``, valid for all environment types)
-* ``cc``: The C compiler (default ``'cc'``, valid for ``'ProgEnvironment'`` only).
-* ``cxx``: The C++ compiler (default ``'CC'``, valid for ``'ProgEnvironment'`` only).
-* ``ftn``: The Fortran compiler (default ``'ftn'``, valid for ``'ProgEnvironment'`` only).
-* ``cppflags``: The default preprocessor flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
-* ``cflags``: The default C compiler flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
-* ``cxxflags``: The default C++ compiler flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
-* ``fflags``: The default Fortran compiler flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
-* ``ldflags``: The default linker flags (default :class:`None`, valid for ``'ProgEnvironment'`` only).
+* ``cc``: The C compiler (default: ``'cc'``)
+* ``cxx``: The C++ compiler (default: ``'CC'``)
+* ``ftn``: The Fortran compiler (default: ``'ftn'``)
+* ``cppflags``: The default preprocessor flags (default: :class:`None`)
+* ``cflags``: The default C compiler flags (default: :class:`None`)
+* ``cxxflags``: The default C++ compiler flags (default: :class:`None`)
+* ``fflags``: The default Fortran compiler flags (default: :class:`None`)
+* ``ldflags``: The default linker flags (default: :class:`None`)
 
 .. note::
    All flags for programming environments are now defined as list of strings instead of simple strings.
 
    .. versionchanged:: 2.17
+
+.. note::
+  The ``type`` key is no more required for the environment configuration.
+
+  .. versionchanged:: 2.22
 
 
 System Auto-Detection
@@ -406,7 +401,6 @@ If the system cannot be auto-detected, ReFrame will issue a warning and fall bac
        'environments': {
            '*': {
                'builtin-gcc': {
-                   'type': 'ProgEnvironment',
                    'cc':  'gcc',
                    'cxx': 'g++',
                    'ftn': 'gfortran',
