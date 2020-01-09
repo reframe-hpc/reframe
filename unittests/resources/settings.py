@@ -78,7 +78,6 @@ class ReframeSettings:
         'environments': {
             'testsys:login': {
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
@@ -87,31 +86,25 @@ class ReframeSettings:
             },
             '*': {
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
                 'e0': {
-                    'type': 'ProgEnvironment',
                     'modules': ['m0'],
                 },
                 'e1': {
-                    'type': 'ProgEnvironment',
                     'modules': ['m1'],
                 },
             }
