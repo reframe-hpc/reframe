@@ -164,16 +164,19 @@ class T8(BaseTest):
         with open(os.path.join(T1().stagedir, 'out.txt')) as fp:
             self._count += int(fp.read())
 
-    # Make this test fail on purpose
     @rfm.run_after('setup')
     def fail(self):
+        '''Make this test fail on purpose'''
+
         raise Exception
 
 
-# This tests fails because of T8. It is added to make sure that
-# all tests are accounted for in the summary.
 @rfm.simple_test
 class T9(BaseTest):
+    '''This tests fails because of T8. It is added to make sure that
+    all tests are accounted for in the summary.
+    '''
+
     def __init__(self):
         super().__init__()
         self.depends_on('T8')

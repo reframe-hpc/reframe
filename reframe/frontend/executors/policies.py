@@ -168,7 +168,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.task_listeners.append(self)
 
     def _remove_from_running(self, task):
-        getlogger().debug('removing task from running: %s' % task.check.info())
+        getlogger().debug(
+            'removing task from running list: %s' % task.check.info()
+        )
         try:
             self._running_tasks.remove(task)
         except ValueError:
@@ -179,7 +181,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._running_tasks_counts[partname] -= 1
 
     def _remove_from_waiting(self, task):
-        getlogger().debug('removing task from waiting: %s' % task.check.info())
+        getlogger().debug(
+            'removing task from waiting list: %s' % task.check.info()
+        )
         try:
             self._waiting_tasks.remove(task)
         except ValueError:

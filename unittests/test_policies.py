@@ -225,9 +225,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.checks = self.loader.load_all()
         self.runall(self.checks, sort=True)
 
+        self.assertRunall()
         stats = self.runner.stats
         assert stats.num_cases(0) == 10
-        self.assertRunall()
         assert len(stats.failures()) == 4
         for tf in stats.failures():
             check = tf.testcase.check
