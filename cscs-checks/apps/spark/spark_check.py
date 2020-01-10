@@ -6,7 +6,7 @@ from reframe.core.launchers.registry import getlauncher
 
 
 @rfm.simple_test
-class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
+class SparkCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         super().__init__()
         self.descr = 'Simple calculation of pi with Spark'
