@@ -14,17 +14,7 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['Spark']
         self.sourcesdir = None
-        # `SPARK_CONF` needs to be defined after running `start-all.sh`.
-        self.pre_run = [
-            'start-all.sh',
-            ('SPARK_CONF="--conf spark.default.parallelism=10 '
-             '--conf spark.executor.cores=8 '
-             '--conf spark.executor.memory=15g"')
-        ]
-        self.executable = (
-            'spark-submit ${SPARK_CONF} --master $SPARKURL '
-            '--class org.apache.spark.examples.SparkPi '
-            '$EBROOTSPARK/examples/jars/spark-examples_2.11-2.3.1.jar 10000;')
+        self.pre_run = ['start-all.sh']
         self.post_run = ['stop-all.sh']
         self.num_tasks = 2
         self.num_tasks_per_node = 1
@@ -34,17 +24,25 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TM', 'TR']
         self.tags = {'production'}
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        if partition.name == 'gpu':
+    @rfm.run_before('run')
+    def prepare_run(self):
+        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             num_workers = 12
+            exec_cores = 3
         else:
             num_workers = 36
+            exec_cores = 9
 
         self.variables = {
             'SPARK_WORKER_CORES': '%s' % num_workers,
             'SPARK_LOCAL_DIRS': '"/tmp"',
         }
+        self.executable = (
+            'spark-submit --conf spark.default.parallelism=%s '
+            '--conf spark.executor.cores=%s --conf spark.executor.memory=15g '
+            '--master $SPARKURL --class org.apache.spark.examples.SparkPi '
+            '$EBROOTSPARK/examples/jars/spark-examples_2.11-2.3.1.jar 10000;'
+            % (num_workers, exec_cores))
         # The job launcher has to be changed since the `spark-submit`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
