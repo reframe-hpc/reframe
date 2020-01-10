@@ -12,13 +12,9 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.descr = 'Simple calculation of pi with Spark'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-cray']
+        self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['Spark']
         self.sourcesdir = None
-        self.variables = {
-            'SPARK_WORKER_CORES': '36',
-            'SPARK_LOCAL_DIRS': '"/tmp"',
-        }
         # `SPARK_CONF` needs to be defined after running `start-all.sh`.
         self.pre_run = [
             'start-all.sh',
@@ -41,6 +37,15 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
+        if partition.name == 'gpu':
+            num_workers = 12
+        else:
+            num_workers = 36
+
+        self.variables = {
+            'SPARK_WORKER_CORES': '%s' % num_workers,
+            'SPARK_LOCAL_DIRS': '"/tmp"',
+        }
         # The job launcher has to be changed since the `start_analytics`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
