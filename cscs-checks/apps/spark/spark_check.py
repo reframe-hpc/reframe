@@ -46,6 +46,6 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
             'SPARK_WORKER_CORES': '%s' % num_workers,
             'SPARK_LOCAL_DIRS': '"/tmp"',
         }
-        # The job launcher has to be changed since the `start_analytics`
+        # The job launcher has to be changed since the `spark-submit`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()
