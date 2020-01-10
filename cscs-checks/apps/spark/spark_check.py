@@ -8,7 +8,6 @@ from reframe.core.launchers.registry import getlauncher
 @rfm.simple_test
 class SparkCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Simple calculation of pi with Spark'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
