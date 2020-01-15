@@ -166,16 +166,14 @@ class T8(BaseTest):
 
     @rfm.run_after('setup')
     def fail(self):
-        '''Make this test fail on purpose'''
-
+        # Make this test fail on purpose
         raise Exception
 
 
 @rfm.simple_test
 class T9(BaseTest):
-    '''This tests fails because of T8. It is added to make sure that
-    all tests are accounted for in the summary.
-    '''
+    # This tests fails because of T8. It is added to make sure that
+    # all tests are accounted for in the summary.
 
     def __init__(self):
         super().__init__()

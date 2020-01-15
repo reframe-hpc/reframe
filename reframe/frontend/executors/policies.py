@@ -180,16 +180,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             partname = task.check.current_partition.fullname
             self._running_tasks_counts[partname] -= 1
 
-    def _remove_from_waiting(self, task):
-        getlogger().debug(
-            'removing task from waiting list: %s' % task.check.info()
-        )
-        try:
-            self._waiting_tasks.remove(task)
-        except ValueError:
-            getlogger().debug('not in waiting tasks')
-            pass
-
     def deps_failed(self, task):
         return any(self._task_index[c].failed for c in task.testcase.deps)
 
@@ -207,7 +197,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_failure(self, task):
         self._remove_from_running(task)
-        self._remove_from_waiting(task)
         self.printer.status('FAIL', task.check.info(), just='right')
 
     def on_task_success(self, task):
@@ -224,14 +213,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._completed_tasks.append(task)
 
     def _setup_task(self, task):
-        try:
-            if self.deps_failed(task):
-                exc = TaskDependencyError('dependencies failed')
-                task.fail((type(exc), exc, None))
-                return False
-            elif not self.deps_succeeded(task):
-                return False
-            else:
+        if self.deps_succeeded(task):
+            try:
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
@@ -241,11 +224,17 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                            sched_nodelist=self.sched_nodelist,
                            sched_exclude_nodelist=self.sched_exclude_nodelist,
                            sched_options=self.sched_options)
-
-        except TaskExit:
+            except TaskExit:
+                return False
+            else:
+                return True
+        elif self.deps_failed(task):
+            exc = TaskDependencyError('dependencies failed')
+            task.fail((type(exc), exc, None))
             return False
-
-        return True
+        else:
+            # Not all dependencies have finished yet
+            return False
 
     def runcase(self, case):
         super().runcase(case)
@@ -265,7 +254,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = partition.fullname
-            if (not self._setup_task(task)):
+            if not self._setup_task(task):
                 if not task.failed:
                     self.printer.status(
                         'DEP', '%s on %s using %s' %
@@ -320,11 +309,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _setup_all(self):
         still_waiting = []
-        # It needs to loop over a copy of _waiting_tasks because a testcase
-        # could fail on setup and be removed from the list _waiting_tasks.
-        # This would not be not safe and could have unxpected consequences.
-        for task in self._waiting_tasks[:]:
-            if not task.failed and not self._setup_task(task):
+        for task in self._waiting_tasks:
+            if not self._setup_task(task) and not task.failed:
                 still_waiting.append(task)
 
         self._waiting_tasks[:] = still_waiting
