@@ -168,7 +168,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self.task_listeners.append(self)
 
     def _remove_from_running(self, task):
-        getlogger().debug('removing task: %s' % task.check.info())
+        getlogger().debug(
+            'removing task from running list: %s' % task.check.info()
+        )
         try:
             self._running_tasks.remove(task)
         except ValueError:
@@ -210,6 +212,30 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._remove_from_running(task)
         self._completed_tasks.append(task)
 
+    def _setup_task(self, task):
+        if self.deps_succeeded(task):
+            try:
+                task.setup(task.testcase.partition,
+                           task.testcase.environ,
+                           sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                           sched_account=self.sched_account,
+                           sched_partition=self.sched_partition,
+                           sched_reservation=self.sched_reservation,
+                           sched_nodelist=self.sched_nodelist,
+                           sched_exclude_nodelist=self.sched_exclude_nodelist,
+                           sched_options=self.sched_options)
+            except TaskExit:
+                return False
+            else:
+                return True
+        elif self.deps_failed(task):
+            exc = TaskDependencyError('dependencies failed')
+            task.fail((type(exc), exc, None))
+            return False
+        else:
+            # Not all dependencies have finished yet
+            return False
+
     def runcase(self, case):
         super().runcase(case)
         check, partition, environ = case
@@ -228,28 +254,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         )
         try:
             partname = partition.fullname
-            if self.deps_failed(task):
-                exc = TaskDependencyError('dependencies failed')
-                task.fail((type(exc), exc, None))
-                return
+            if not self._setup_task(task):
+                if not task.failed:
+                    self.printer.status(
+                        'DEP', '%s on %s using %s' %
+                        (check.name, partname, environ.name),
+                        just='right'
+                    )
+                    self._waiting_tasks.append(task)
 
-            if not self.deps_succeeded(task):
-                self.printer.status(
-                    'DEP', '%s on %s using %s' %
-                    (check.name, partname, environ.name),
-                    just='right'
-                )
-                self._waiting_tasks.append(task)
                 return
-
-            task.setup(partition, environ,
-                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                       sched_account=self.sched_account,
-                       sched_partition=self.sched_partition,
-                       sched_reservation=self.sched_reservation,
-                       sched_nodelist=self.sched_nodelist,
-                       sched_exclude_nodelist=self.sched_exclude_nodelist,
-                       sched_options=self.sched_options)
 
             if self._running_tasks_counts[partname] >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
@@ -296,20 +310,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_all(self):
         still_waiting = []
         for task in self._waiting_tasks:
-            if self.deps_failed(task):
-                exc = TaskDependencyError('dependencies failed')
-                task.fail((type(exc), exc, None))
-            elif self.deps_succeeded(task):
-                task.setup(task.testcase.partition,
-                           task.testcase.environ,
-                           sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                           sched_account=self.sched_account,
-                           sched_partition=self.sched_partition,
-                           sched_reservation=self.sched_reservation,
-                           sched_nodelist=self.sched_nodelist,
-                           sched_exclude_nodelist=self.sched_exclude_nodelist,
-                           sched_options=self.sched_options)
-            else:
+            if not self._setup_task(task) and not task.failed:
                 still_waiting.append(task)
 
         self._waiting_tasks[:] = still_waiting
