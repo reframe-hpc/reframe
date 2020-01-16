@@ -112,8 +112,10 @@ class TestStats:
 
     def performance_report(self):
         line_width = 78
-        report = [line_width * '=']
-        report.append('PERFORMANCE REPORT')
+        report_start = line_width * '='
+        report_title = 'PERFORMANCE REPORT'
+        report_end = line_width * '_'
+        report = []
         previous_name = ''
         previous_part = ''
         for t in self.tasks():
@@ -128,8 +130,7 @@ class TestStats:
                     previous_part = t.check.current_partition.fullname
 
                 report.append('   - %s' % t.check.current_environ)
-
-            report.append('      * num_tasks: %s' % t.check.num_tasks)
+                report.append('      * num_tasks: %s' % t.check.num_tasks)
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
@@ -141,5 +142,7 @@ class TestStats:
 
                 report.append('      * %s: %s %s' % (var, val, unit))
 
-        report.append(line_width * '-')
-        return '\n'.join(report)
+        if report:
+            return '\n'.join([report_start, report_title, *report, report_end])
+
+        return ''
