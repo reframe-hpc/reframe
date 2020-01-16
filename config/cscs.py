@@ -307,24 +307,21 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Arolla login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
                                      'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
                         'descr': 'Arolla post-processing nodes',
                     },
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-cce', 'PrgEnv-cce-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
                         'descr': 'Arolla compute nodes',
                         'resources': {
@@ -430,7 +427,6 @@ class ReframeSettings:
 
             'ault': {
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
                     'modules': ['gcc', 'cuda/10.1', 'openmpi'],
                     'cc':  'mpicc',
@@ -438,13 +434,11 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -453,7 +447,6 @@ class ReframeSettings:
 
             'kesch': {
                 'PrgEnv-pgi-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-pgi/18.5'],
                     'cc': 'pgcc',
@@ -461,7 +454,6 @@ class ReframeSettings:
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': [
                         'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
                         'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
@@ -471,17 +463,14 @@ class ReframeSettings:
                     'ftn': 'mpifort',
                 },
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-CrayCCE/17.06'],
                 },
                 'PrgEnv-cray-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
@@ -492,7 +481,6 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-gnu'],
                     'cc': 'gcc',
@@ -516,14 +504,6 @@ class ReframeSettings:
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
                     'ftn': 'mpifort',
-                },
-                'PrgEnv-cce': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/18.12'],
-                },
-                'PrgEnv-cce-nompi': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-cce/18.12']
                 },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
@@ -559,9 +539,6 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu/19.2'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
@@ -572,61 +549,34 @@ class ReframeSettings:
                 },
             },
 
-            'leone': {
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu/leone-foss-2016b'],
-                    'cc':  'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-            },
-
-            'monch': {
-                'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                    'cc':  'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                }
-            },
-
             '*': {
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
 
                 'PrgEnv-cray_classic': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray', 'cce/9.0.2-classic'],
                 },
 
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
                 },
 
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
 
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
