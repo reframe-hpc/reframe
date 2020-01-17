@@ -143,7 +143,7 @@ class TestStats:
 
                 report_body.append('      * %s: %s %s' % (var, val, unit))
 
-        if report:
+        if report_body:
             return '\n'.join([report_start, report_title, *report_body,
                               report_end])
 
