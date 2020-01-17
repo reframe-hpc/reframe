@@ -115,22 +115,23 @@ class TestStats:
         report_start = line_width * '='
         report_title = 'PERFORMANCE REPORT'
         report_end = line_width * '_'
-        report = []
+        report_body = []
         previous_name = ''
         previous_part = ''
         for t in self.tasks():
             if t.check.perfvalues.keys():
                 if t.check.name != previous_name:
-                    report.append(line_width * '-')
-                    report.append('%s' % t.check.name)
+                    report_body.append(line_width * '-')
+                    report_body.append('%s' % t.check.name)
                     previous_name = t.check.name
 
                 if t.check.current_partition.fullname != previous_part:
-                    report.append('- %s' % t.check.current_partition.fullname)
+                    report_body.append(
+                        '- %s' % t.check.current_partition.fullname)
                     previous_part = t.check.current_partition.fullname
 
-                report.append('   - %s' % t.check.current_environ)
-                report.append('      * num_tasks: %s' % t.check.num_tasks)
+                report_body.append('   - %s' % t.check.current_environ)
+                report_body.append('      * num_tasks: %s' % t.check.num_tasks)
 
             for key, ref in t.check.perfvalues.items():
                 var = key.split(':')[-1]
@@ -140,9 +141,10 @@ class TestStats:
                 except IndexError:
                     unit = '(no unit specified)'
 
-                report.append('      * %s: %s %s' % (var, val, unit))
+                report_body.append('      * %s: %s %s' % (var, val, unit))
 
         if report:
-            return '\n'.join([report_start, report_title, *report, report_end])
+            return '\n'.join([report_start, report_title, *report_body,
+                              report_end])
 
         return ''
