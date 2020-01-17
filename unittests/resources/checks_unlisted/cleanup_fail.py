@@ -17,6 +17,7 @@ class CleanupFailTest(rfm.RunOnlyRegressionTest):
         # Make this test fail on purpose
         raise Exception
 
+
 @rfm.simple_test
 class SleepTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
@@ -25,4 +26,3 @@ class SleepTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = None
         self.executable = 'echo foo && sleep 1'
         self.sanity_patterns = sn.assert_found(r'foo', self.stdout)
-
