@@ -94,7 +94,7 @@ def main():
     # Check discovery options
     locate_options.add_argument(
         '-c', '--checkpath', action='append', metavar='DIR|FILE',
-        help='Search for checks in DIR or FILE')
+        help="Search for checks in DIR or FILE, using `:' for multiple paths")
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively')
@@ -410,7 +410,11 @@ def main():
     # Setup the check loader
     if options.checkpath:
         load_path = []
-        for d in options.checkpath:
+        if len(options.checkpath) > 1:
+            printer.warning("using command line option `--checkpath' "
+                            "multiple times is deprecated, please use "
+                            "`:' for multiple paths")
+        for d in options.checkpath[-1].split(':'):
             d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
