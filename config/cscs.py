@@ -539,6 +539,9 @@ class ReframeSettings:
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpifort',
                 },
                 'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
