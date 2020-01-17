@@ -73,7 +73,10 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _cleanup_all(self):
         for task in self._retired_tasks:
             if task.ref_count == 0:
-                task.cleanup(not self.keep_stage_files)
+                try:
+                    task.cleanup(not self.keep_stage_files)
+                except TaskExit:
+                    pass
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [
@@ -293,7 +296,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _cleanup_all(self):
         for task in self._retired_tasks:
             if task.ref_count == 0:
-                task.cleanup(not self.keep_stage_files)
+                try:
+                    task.cleanup(not self.keep_stage_files)
+                except TaskExit:
+                    pass
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [

@@ -248,6 +248,29 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runner._max_retries = 2
         self.test_dependencies()
 
+    def test_fail_on_cleanup(self):
+        self.loader = RegressionCheckLoader(
+            ['unittests/resources/checks_unlisted/cleanup_fail.py']
+        )
+
+        # Setup the runner
+        self.checks = self.loader.load_all()
+        self.runall(self.checks, sort=True)
+
+        self.assertRunall()
+        stats = self.runner.stats
+        assert stats.num_cases(0) == 2
+        assert len(stats.failures()) == 1
+
+        # Check that cleanup is executed properly for successful tests as well
+        for t in stats.tasks():
+            check = t.testcase.check
+            if t.failed:
+                continue
+
+            if t.ref_count == 0:
+                assert not os.path.exists(check.stagedir)
+
 
 class TaskEventMonitor(executors.TaskEventListener):
     '''Event listener for monitoring the execution of the asynchronous
