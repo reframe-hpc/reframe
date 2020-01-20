@@ -1,0 +1,367 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/schemas/config.json",
+    "title": "Validation schema for ReFrame's configuration file",
+    "defs": {
+        "alphanum_string": {
+            "type": "string",
+            "pattern": "([a-zA-Z0-9_]|-)+"
+        },
+        "system_ref": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "envvar_list": {
+            "type": "array",
+            "items": {
+                "type": "array",
+                "items": [
+                    {
+                        "type": "string",
+                        "pattern": "([a-zA-Z_][a-zA-Z0-9_]*)"
+                    },
+                    {"type": "string"}
+                ],
+                "additionalProperties": false
+            }
+        },
+        "modules_list": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "loglevel": {
+            "type": "string",
+            "enum": ["critical", "error", "warning",
+                     "info", "verbose", "debug"]
+        },
+        "handler_common": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string"},
+                "level": {"$ref": "#/defs/loglevel"},
+                "format": {"type": "string"},
+                "datefmt": {"type": "string"}
+            },
+            "required": ["type"]
+        },
+        "file_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "name": {"type": "string"},
+                        "append": {"type": "boolean"},
+                        "timestamp": {
+                            "anyOf": [
+                                {"type": "boolean"},
+                                {"type": "string"}
+                            ]
+                        }
+                    },
+                    "required": ["name"]
+                }
+            ]
+        },
+        "filelog_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "prefix": {"type": "string"}
+                    }
+                }
+            ]
+        },
+        "graylog_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "address": {"type": "string"},
+                        "extras": {"type": "object"}
+                    },
+                    "required": ["address"]
+                }
+            ]
+        },
+        "stream_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "enum": ["stdout", "stderr"]
+                        }
+                    }
+                }
+            ]
+        },
+        "syslog_handler": {
+            "allOf": [
+                {"$ref": "#/defs/handler_common"},
+                {
+                    "properties": {
+                        "socktype": {
+                            "type": "string",
+                            "enum": ["tcp", "udp"]
+                        },
+                        "facility": {"type": "string"},
+                        "address": {"type": "string"}
+                    },
+                    "required": ["address"]
+                }
+            ]
+        }
+    },
+    "type": "object",
+    "properties": {
+        "systems": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"$ref": "#/defs/alphanum_string"},
+                    "descr": {"type": "string"},
+                    "hostnames": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "modules_system": {
+                        "type": "string",
+                        "enum": ["tmod", "tmod31", "tmod32", "tmod4", "lmod"]
+                    },
+                    "modules": {"$ref": "#/defs/modules_list"},
+                    "variables": {"$ref": "#/defs/envvar_list"},
+                    "prefix": {"type": "string"},
+                    "stagedir": {"type": "string"},
+                    "outputdir": {"type": "string"},
+                    "perflogdir": {"type": "string"},
+                    "resourcesdir": {"type": "string"},
+                    "partitions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"$ref": "#/defs/alphanum_string"},
+                                "descr": {"type": "string"},
+                                "scheduler": {
+                                    "type": "string",
+                                    "enum": ["local", "pbs", "slurm", "squeue"]
+                                },
+                                "launcher": {
+                                    "type": "string",
+                                    "enum": [
+                                        "alps",  "ibrun", "local", "mpirun",
+                                        "mpiexec", "srun", "srunalloc", "ssh"
+                                    ]
+                                },
+                                "access": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "environs": {
+                                    "type": "array",
+                                    "items": {"type": "string"}
+                                },
+                                "container_platforms": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "enum": ["Docker", "Sarus",
+                                                         "Singularity"]
+                                            },
+                                            "modules": {
+                                                "$ref": "#/defs/modules_list"
+                                            },
+                                            "variables": {
+                                                "$ref": "#/defs/envvar_list"
+                                            }
+                                        },
+                                        "required": ["name"]
+                                    }
+                                },
+                                "modules": {"$ref": "#/defs/modules_list"},
+                                "variables": {"$ref": "#/defs/envvar_list"},
+                                "max_jobs": {"type": "number"},
+                                "resources": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "options": {
+                                                "type": "array",
+                                                "items": {"type": "string"}
+                                            },
+                                            "additionalProperties": false
+                                        }
+                                    }
+                                }
+                            },
+                            "required": ["name", "scheduler", "launcher"],
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                "required": ["name"],
+                "additionalProperties": false
+            }
+        },
+        "environments": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "modules": {"$ref": "#/defs/modules_list"},
+                    "variables": {"$ref": "#/defs/envvar_list"},
+                    "cc": {"type": "string"},
+                    "cxx": {"type": "string"},
+                    "ftn": {"type": "string"},
+                    "cppflags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "cflags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "cxxflags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "fflags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "ldflags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "required": ["name"],
+                "additionalProperties": false
+            }
+        },
+        "schedulers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "job_submit_timeout": {"type": "number"},
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "required": ["name"],
+                "additionalProperties": false
+            }
+        },
+        "logging": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "level": {"$ref": "#/defs/loglevel"},
+                    "handlers": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/defs/file_handler"},
+                                {"$ref": "#/defs/filelog_handler"},
+                                {"$ref": "#/defs/graylog_handler"},
+                                {"$ref": "#/defs/stream_handler"},
+                                {"$ref": "#/defs/syslog_handler"}
+                            ]
+                        }
+                    },
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "additionalProperties": false
+            }
+        },
+        "perf_logging": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "level": {"$ref": "#/defs/loglevel"},
+                    "handlers": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"$ref": "#/defs/file_handler"},
+                                {"$ref": "#/defs/filelog_handler"},
+                                {"$ref": "#/defs/graylog_handler"},
+                                {"$ref": "#/defs/stream_handler"},
+                                {"$ref": "#/defs/syslog_handler"}
+                            ]
+                        }
+                    },
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "additionalProperties": false
+            }
+        },
+        "modes": {
+            "type": "array",
+            "items": {
+            "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "required": ["name"],
+                "additionalProperties": false
+            }
+        },
+        "general": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "check_search_path": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "check_search_recursive": {"type": "boolean"},
+                    "target_systems": {"$ref": "#/defs/system_ref"}
+                },
+                "additionalProperties": false
+            }
+        }
+    },
+    "required": ["systems", "environments", "logging", "perf_logging"],
+    "additionalProperties": false,
+    "defaults": {
+        "environments/cc": "cc",
+        "environments/cxx": "CC",
+        "environments/ftn": "ftn",
+        "environments/target_systems": ["*"],
+        "general/check_search_path": ["checks/"],
+        "general/check_search_recursive": "true",
+        "general/target_systems": ["*"],
+        "perf_logging/target_systems": ["*"],
+        "logging/handlers/level": "DEBUG",
+        "logging/handlers/file/append": false,
+        "logging/handlers/file/timestamp": false,
+        "logging/handlers/stream/name": "stdout",
+        "logging/handlers/syslog/socktype": "udp",
+        "logging/handlers/syslog/facility": "user",
+        "logging/level": "INFO",
+        "logging/target_systems": ["*"],
+        "modes/target_systems": ["*"],
+        "schedulers/job_submit_timeout": 60,
+        "schedulers/target_systems": ["*"],
+        "systems/prefix": ".",
+        "systems/resourcesdir": "."
+    }
+}
