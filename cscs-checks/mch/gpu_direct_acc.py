@@ -10,7 +10,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         super().__init__()
         self.descr = 'tests gpu-direct for Fortran OpenACC'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'arollai:cn', 'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
