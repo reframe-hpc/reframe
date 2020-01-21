@@ -8,12 +8,12 @@ class CudaStressTest(rfm.RegressionTest):
         super().__init__()
         self.descr = 'MCH CUDA stress test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cudatoolkit/8.0.61']
-        elif self.current_system.name  == 'tsa':
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cuda/10.1.243']
@@ -30,6 +30,9 @@ class CudaStressTest(rfm.RegressionTest):
             'time': sn.extractsingle(r'Timing: (\S+)', self.stdout, 1, float)
         }
         self.reference = {
+            'arolla:cn': {
+                'time': (2.25, None, 0.05)
+            },
             'daint:gpu': {
                 'time': (1.41184, None, 0.05)
             },

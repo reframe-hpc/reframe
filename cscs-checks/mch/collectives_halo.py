@@ -5,7 +5,7 @@ import reframe.utility.sanity as sn
 class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
         self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'tiger:gpu',
-                              'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
@@ -30,7 +30,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
             ]
             self.build_system.max_concurrency = 1
-        elif self.current_system.name == 'tsa':
+        elif self.current_system.name in ['arolla','tsa']:
             self.exclusive_access = True
             self.num_tasks = 32
             self.num_gpus_per_node = 8
@@ -68,6 +68,11 @@ class CollectivesBaseTest(rfm.RegressionTest):
                                              self.stdout, 1, float, -1)
         }
         ref_values = {
+            'arolla': {
+                'nocomm':  5.7878,
+                'nocomp':  5.62155,
+                'default': 5.53777
+            },
             'kesch': {
                 'nocomm':  5.7878,
                 'nocomp':  5.62155,
@@ -96,6 +101,9 @@ class CollectivesBaseTest(rfm.RegressionTest):
             ref = 0.0
 
         self.reference = {
+            'arolla:cn': {
+                'elapsed_time': (ref, None, 0.15)
+            },
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
@@ -118,7 +126,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.job.launcher.options = ['--distribution=block:block',
                                          '--cpu_bind=q']
 
@@ -128,6 +136,11 @@ class AlltoallvTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
+                             'arolla': {
+                                 'nocomm':  5.7878,
+                                 'nocomp':  5.62155,
+                                 'default': 5.53777
+                             },
                              'kesch': {
                                  'nocomm':  6.89819,
                                  'nocomp':  6.98276,
@@ -154,6 +167,11 @@ class HaloExchangeTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
+                             'arolla': {
+                                 'nocomm':  5.7878,
+                                 'nocomp':  5.62155,
+                                 'default': 5.53777
+                             },
                              'kesch': {
                                  'nocomm':  5.7878,
                                  'nocomp':  54.2012,

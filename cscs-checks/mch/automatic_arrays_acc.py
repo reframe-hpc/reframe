@@ -7,7 +7,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                              'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
@@ -20,7 +20,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1'
             }
-        elif self.current_system.name == 'tsa':
+        elif self.current_system.name in ['arolla','tsa']:
             self.exclusive_access = True
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
@@ -42,6 +42,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
             'PrgEnv-pgi': {
+                'arolla:cn': {'time': (1.4E-04, None, 0.15)},
                 'daint:gpu': {'time': (7.5E-05, None, 0.15)},
                 'dom:gpu': {'time': (7.5e-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
@@ -64,7 +65,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35']
-            elif self.current_system.name == 'tsa':
+            elif self.current_system.name in ['arolla','tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70']
             elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']

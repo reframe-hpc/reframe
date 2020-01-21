@@ -8,7 +8,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         super().__init__()
         self.descr = 'test for OpenACC, CUDA, MPI, and C++'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu',
-                              'kesch:cn', 'tsa:cn']
+                              'arolla:cn', 'kesch:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-cray',
                                     'PrgEnv-pgi']
         self.build_system = 'Make'
@@ -35,7 +35,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 'MV2_USE_CUDA': '1',
                 'G2G': '1'
             }
-        elif self.current_system.name == 'tsa':
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
             self.num_tasks = 8
@@ -68,7 +68,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
                     '-lcublas', '-lcudart'
                 ]
-            elif self.current_system.name == 'tsa':
+            elif self.current_system.name in ['arolla','tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.1']
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc70,cuda10.1', '-lstdc++',
@@ -81,7 +81,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags += [
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64'
                 ]
-            elif self.current_system.name == 'tsa':
+            elif self.current_system.name in ['arolla','tsa']:
                 self.build_system.ldflags += [
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart']
 

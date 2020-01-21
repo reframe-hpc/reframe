@@ -12,7 +12,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             self.num_tasks = 2
 
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                               'tsa:cn']
+                               'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'
@@ -33,7 +33,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                 'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1'
             }
-        elif self.current_system.name == 'tsa':
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.variables = {
                 'CRAY_ACCEL_TARGET': 'nvidia70',
@@ -59,7 +59,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
-            elif self.current_system.name == 'tsa':
+            elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
 
         super().setup(partition, environ, **job_opts)

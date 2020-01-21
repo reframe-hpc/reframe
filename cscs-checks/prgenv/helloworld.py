@@ -18,16 +18,16 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'tsa:cn', 'tiger:gpu']
+                              'kesch:cn', 'arolla:cn', 'tsa:cn', 'tiger:gpu']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
 
-        if self.current_system.name in ['kesch', 'tsa']:
+        if self.current_system.name in ['kesch', 'arolla', 'tsa']:
             self.exclusive_access = True
 
         # Removing static compilation from kesch and tsa
-        if (self.current_system.name in ['kesch', 'tsa'] and
+        if (self.current_system.name in ['kesch', 'arolla', 'tsa'] and
             linkage == 'static'):
             self.valid_prog_environs = []
 
@@ -101,7 +101,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage, **kwargs):
         super().__init__('serial', lang, linkage, **kwargs)
-        self.valid_systems += ['kesch:pn', 'tsa:pn']
+        self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
@@ -118,7 +118,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
-        elif self.current_system.name == 'tsa' and linkage == 'dynamic':
+        elif self.current_system.name in ['arolla', 'tsa'] and linkage == 'dynamic':
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
 
@@ -129,7 +129,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
 class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
-        self.valid_systems += ['kesch:pn', 'tsa:pn']
+        self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
         self.sourcepath += '_openmp.' + lang
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
@@ -149,7 +149,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
-        elif self.current_system.name == 'tsa' and linkage == 'dynamic':
+        elif self.current_system.name in ['arolla', 'tsa'] and linkage == 'dynamic':
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
 
