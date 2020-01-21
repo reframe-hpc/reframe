@@ -32,7 +32,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
             self.build_system.max_concurrency = 1
         elif self.current_system.name in ['arolla','tsa']:
             self.exclusive_access = True
-            self.num_tasks = 144
+            self.num_tasks = 32
             self.num_gpus_per_node = 8
             self.num_tasks_per_node = 16
             self.num_tasks_per_socket = 8
