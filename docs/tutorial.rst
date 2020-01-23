@@ -173,9 +173,9 @@ If everything is configured correctly for your system, you should get an output 
 .. code-block:: none
 
     Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
-    Reframe version: 2.22-dev0
+    Reframe version: 3.0-dev0
     Launched by user: XXX
-    Launched on host: daint106
+    Launched on host: daint103
     Reframe paths
     =============
         Check prefix      :
@@ -184,7 +184,7 @@ If everything is configured correctly for your system, you should get an output 
         Output dir prefix    : /current/working/dir/output/
         Perf. logging prefix : /current/working/dir/perflogs/
     [==========] Running 1 check(s)
-    [==========] Started on Tue Jan 21 13:21:01 2020
+    [==========] Started on Thu Jan 23 14:14:12 2020
 
     [----------] started processing Example1Test (Simple matrix-vector multiplication example)
     [ RUN      ] Example1Test on daint:login using PrgEnv-cray
@@ -206,18 +206,18 @@ If everything is configured correctly for your system, you should get an output 
     [       OK ] Example1Test on daint:login using PrgEnv-cray
     [       OK ] Example1Test on daint:login using PrgEnv-gnu
     [       OK ] Example1Test on daint:login using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-intel
-    [       OK ] Example1Test on daint:mc using PrgEnv-cray
+    [       OK ] Example1Test on daint:mc using PrgEnv-pgi
+    [       OK ] Example1Test on daint:mc using PrgEnv-gnu
     [       OK ] Example1Test on daint:gpu using PrgEnv-intel
     [       OK ] Example1Test on daint:gpu using PrgEnv-cray
-    [       OK ] Example1Test on daint:mc using PrgEnv-gnu
+    [       OK ] Example1Test on daint:mc using PrgEnv-cray
     [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
-    [       OK ] Example1Test on daint:mc using PrgEnv-pgi
     [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
+    [       OK ] Example1Test on daint:mc using PrgEnv-intel
     [----------] all spawned checks have finished
 
     [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-    [==========] Finished on Tue Jan 21 13:31:11 2020
+    [==========] Finished on Thu Jan 23 14:16:25 2020
 
 Notice how our regression test is run on every partition of the configured system and for every programming environment.
 
