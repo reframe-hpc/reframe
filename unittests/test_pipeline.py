@@ -2,7 +2,6 @@ import os
 import pytest
 import re
 import tempfile
-import types
 import unittest
 
 import reframe as rfm
@@ -343,33 +342,29 @@ class TestRegressionTest(unittest.TestCase):
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_extra_resources(self):
-        # Load test site configuration
-        test = rfm.RunOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        test.executable = 'echo'
-        test.executable_opts = ['Hello World!']
-        test.sanity_patterns = sn.assert_found(r'Hello World!', test.stdout)
-        test.local = True
+        import unittests.resources.checks.hellocheck as mod
+
+        class MyTest(mod.HelloTest):
+            def __init__(self):
+                super().__init__()
+                self._prefix = 'unittests/resources/checks'
+                self.name = type(self).__name__
+                self.executable = os.path.join('.', self.name)
+                self.local = True
+
+            @rfm.run_after('setup')
+            def set_resources(self):
+                test.extra_resources = {
+                    'gpu': {'num_gpus_per_node': 2},
+                    'datawarp': {'capacity': '100GB',
+                                 'stagein_src': test.stagedir}
+                }
+                test.job.options += ['--foo']
+
+        test = MyTest()
         partition = rt.runtime().system.partition('gpu')
         environ = partition.environment('builtin-gcc')
-        test.setup(partition, environ)
-
-        # set extra resources and job options here to make sure that they are
-        # put in the job script after setup
-        test.extra_resources = {
-            'gpu': {'num_gpus_per_node': 2},
-            'datawarp': {'capacity': '100GB', 'stagein_src': test.stagedir}
-        }
-        test.job.options += ['--foo']
-
-        test.run()
-        test.wait()
-        test.check_sanity()
-        test.check_performance()
-        test.cleanup(remove_files=True)
-
+        _run(test, partition, environ)
         expected_job_options = ['--gres=gpu:2',
                                 '#DW jobdw capacity=100GB',
                                 '#DW stage_in source=%s' % test.stagedir,

@@ -621,12 +621,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:    A new more powerful syntax was introduced
     #:    that allows also custom job script directive prefixes.
-    #:
-    #: .. note::
-    #:    .. versionchanged:: 2.22
-    #:
-    #:    The attr:`extra_resources` is now used during the generation of
-    #:    allowing its definition after the :func:`setup` phase.
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
@@ -1189,7 +1183,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._current_partition.get_resource(r, **v))
 
         self._job.options = resources_opts + self._job.options
-
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs)
