@@ -621,7 +621,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:    A new more powerful syntax was introduced
     #:    that allows also custom job script directive prefixes.
-    #:
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
@@ -959,12 +958,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             msg.format('local' if self.is_local else
                        self._current_partition.scheduler.registered_name))
 
-        # num_gpus_per_node is a managed resource
-        if self.num_gpus_per_node > 0:
-            self.extra_resources.setdefault(
-                '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
-            )
-
         if self.local:
             scheduler_type = getscheduler('local')
             launcher_type = getlauncher('local')
@@ -979,16 +972,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                sched_access=self._current_partition.access,
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)
-
-        # Get job options from managed resources and prepend them to
-        # job_opts. We want any user supplied options to be able to
-        # override those set by the framework.
-        resources_opts = []
-        for r, v in self.extra_resources.items():
-            resources_opts.extend(
-                self._current_partition.get_resource(r, **v))
-
-        self._job.options = resources_opts + self._job.options
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
@@ -1185,6 +1168,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._cdt_environ
             ]
 
+        # num_gpus_per_node is a managed resource
+        if self.num_gpus_per_node > 0:
+            self.extra_resources.setdefault(
+                '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
+            )
+
+        # Get job options from managed resources and prepend them to
+        # job_opts. We want any user supplied options to be able to
+        # override those set by the framework.
+        resources_opts = []
+        for r, v in self.extra_resources.items():
+            resources_opts.extend(
+                self._current_partition.get_resource(r, **v))
+
+        self._job.options = resources_opts + self._job.options
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs)
