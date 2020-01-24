@@ -306,7 +306,7 @@ ReFrame the does not search recursively into directories specified with the ``-c
 
 The ``-c`` option completely overrides the default path.
 Currently, there is no option to prepend or append to the default regression path.
-However, you can build your own check path by specifying multiple colon separate paths to the ``-c`` option.
+However, you can build your own check path by specifying a colon separated list of paths to the ``-c`` option.
 The ``-c``\ option accepts also regular files. This is very useful when you are implementing new regression tests, since it allows you to run only your test:
 
 .. code-block:: bash
@@ -321,16 +321,16 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
    .. versionadded:: 2.12
 
-.. note::
-   Using the command line ``-c`` or ``--checkpath`` multiple times is now deprecated and only the last option is going to be taken into account.
+.. warning::
+   Using the command line ``-c`` or ``--checkpath`` multiple times is not supported anymore and only the last option will be considered.
    Multiple paths should be passed as a colon separated string to the above option:
 
    .. code-block:: bash
 
-      ./bin/reframe -c /path/to/my/first/test.py:/path/to/my/second/test.py -r
+      ./bin/reframe -c /path/to/my/first/test.py:/path/to/my/second/ -r
 
 
-   .. versionchanged:: 2.22
+   .. versionchanged:: 3.0
 
 
 Filtering of Regression Tests
