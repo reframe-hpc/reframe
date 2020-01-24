@@ -41,7 +41,7 @@ class PrettyPrinter:
             status_stripped = status.strip().lower()
             if status_stripped == 'skip':
                 status = color.colorize(status, color.YELLOW)
-            elif status_stripped in ['fail', 'failed']:
+            elif status_stripped in ['fail', 'failed', 'error']:
                 status = color.colorize(status, color.RED)
             else:
                 status = color.colorize(status, color.GREEN)
