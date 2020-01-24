@@ -323,7 +323,7 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
 .. warning::
    Using the command line ``-c`` or ``--checkpath`` multiple times is not supported anymore and only the last option will be considered.
-   Multiple paths should be passed as a colon separated string to the above option:
+   Multiple paths should be passed instead as a colon separated list:
 
    .. code-block:: bash
 
