@@ -1059,7 +1059,7 @@ Asynchronous Execution of Regression Checks
 -------------------------------------------
 
 From version `2.4 <https://github.com/eth-cscs/reframe/releases/tag/v2.4>`__, ReFrame supports asynchronous execution of regression tests.
-Since version `3.0 <https://github.com/eth-cscs/reframe/releases/tag/v3.0>`__, the asynchronous execution policy is the default one.
+This execution policy is the default one.
 To enforce a sequential execution of the regression tests the ``serial`` execution policy can be enabled by passing the option ``--exec-policy=serial`` to the command line.
 The asynchronous execution policy parallelizes only the `running phase <pipeline.html#the-run-phase>`__ of the tests.
 The rest of the phases remain sequential.
