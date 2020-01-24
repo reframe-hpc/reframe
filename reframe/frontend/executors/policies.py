@@ -2,6 +2,7 @@ import itertools
 import math
 import sys
 import time
+
 from contextlib import suppress
 from datetime import datetime
 
