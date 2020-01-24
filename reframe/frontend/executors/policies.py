@@ -2,6 +2,7 @@ import itertools
 import math
 import sys
 import time
+from contextlib import suppress
 from datetime import datetime
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
@@ -73,10 +74,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _cleanup_all(self):
         for task in self._retired_tasks:
             if task.ref_count == 0:
-                try:
+                with suppress(TaskExit):
                     task.cleanup(not self.keep_stage_files)
-                except TaskExit:
-                    pass
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [
@@ -296,10 +295,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _cleanup_all(self):
         for task in self._retired_tasks:
             if task.ref_count == 0:
-                try:
+                with suppress(TaskExit):
                     task.cleanup(not self.keep_stage_files)
-                except TaskExit:
-                    pass
 
         # Remove cleaned up tests
         self._retired_tasks[:] = [
@@ -330,10 +327,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 break
 
             getlogger().debug('finalizing task: %s' % task.check.info())
-            try:
+            with suppress(TaskExit):
                 self._finalize_task(task)
-            except TaskExit:
-                pass
 
     def _finalize_task(self, task):
         if not self.skip_sanity_check:

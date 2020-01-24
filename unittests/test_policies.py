@@ -253,6 +253,9 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             ['unittests/resources/checks_unlisted/cleanup_fail.py']
         )
 
+        # Make keep_stage_files False for both serial and async execution
+        self.runner.policy.keep_stage_files = False
+
         # Setup the runner
         self.checks = self.loader.load_all()
         self.runall(self.checks, sort=True)
