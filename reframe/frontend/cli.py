@@ -173,9 +173,9 @@ def main():
         help='Skip prog. environment check')
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
-        choices=['serial', 'async'], default='serial',
+        choices=['async', 'serial'], default='async',
         help='Specify the execution policy for running the regression tests. '
-             'Available policies: "serial" (default), "async"')
+             'Available policies: "async" (default), "serial"')
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use')
     run_options.add_argument(
