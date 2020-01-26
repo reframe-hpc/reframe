@@ -43,6 +43,7 @@ class NetCDFTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
+        environ = self.current_environ
         if self.current_system.name == 'kesch':
             if environ.name == 'PrgEnv-cray-nompi':
                 self.modules = ['netcdf/4.4.1.1-gmvolf-17.02',
