@@ -160,10 +160,7 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
                        grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
-        tutorialchecks_path="-c "
-        for check in ${tutorialchecks[@]}; do
-            tutorialchecks_path="${tutorialchecks_path}:${check}"
-        done
+        tutorialchecks_path="-c $(IFS=: eval 'echo "${tutorialchecks[*]}"')"
 
         echo "========================"
         echo "Modified tutorial checks"
@@ -197,10 +194,7 @@ else
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
     if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path="-c "
-        for check in ${userchecks[@]}; do
-            userchecks_path="${userchecks_path}:${check}"
-        done
+        userchecks_path="-c $(IFS=: eval 'echo "${userchecks[*]}"')"
 
         echo "===================="
         echo "Modified user checks"
