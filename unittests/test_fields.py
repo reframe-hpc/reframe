@@ -1,3 +1,4 @@
+import datetime
 import os
 import unittest
 
@@ -82,30 +83,27 @@ class TestFields(unittest.TestCase):
                 'field_maybe_none', type(None))
 
         tester = FieldTester()
-        tester.field = (65, 22, 47)
+        tester.field = '1d65h22m87s'
         tester.field_maybe_none = None
 
         self.assertIsInstance(FieldTester.field, fields.TimerField)
-        self.assertEqual((65, 22, 47), tester.field)
-        self.assertRaises(TypeError, exec, 'tester.field = (2,)',
+        self.assertEqual(datetime.timedelta(days=1, hours=65, minutes=22,
+                                            seconds=87), tester.field)
+        self.assertRaises(ValueError, exec, 'tester.field = "1e"',
                           globals(), locals())
-        self.assertRaises(TypeError, exec, 'tester.field = (2, 2)',
+        self.assertRaises(ValueError, exec, 'tester.field = "-10m5s"',
                           globals(), locals())
-        self.assertRaises(TypeError, exec, 'tester.field = (2, 2, 3.4)',
+        self.assertRaises(ValueError, exec, 'tester.field = "m10s"',
                           globals(), locals())
-        self.assertRaises(TypeError, exec, "tester.field = ('foo', 2, 3)",
+        self.assertRaises(ValueError, exec, 'tester.field = "10m10"',
                           globals(), locals())
-        self.assertRaises(TypeError, exec, 'tester.field = 3',
+        self.assertRaises(ValueError, exec, 'tester.field = "10m10m1s"',
                           globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = (-2, 3, 5)',
+        self.assertRaises(ValueError, exec, 'tester.field = "10m5s3m"',
                           globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = (100, -3, 4)',
+        self.assertRaises(ValueError, exec, 'tester.field = "10ms"',
                           globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = (100, 3, -4)',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = (100, 65, 4)',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = (100, 3, 65)',
+        self.assertRaises(TypeError, exec, 'tester.field = 10',
                           globals(), locals())
 
     def test_proxy_field(self):

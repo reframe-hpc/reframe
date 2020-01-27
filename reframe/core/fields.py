@@ -111,15 +111,16 @@ class TimerField(TypedField):
         self._check_type(value)
         if value and type(value) is not datetime.timedelta:
             try:
-                time_dict = re.match(r'^((?P<days>\d+)d)*'
-                                     r'((?P<hours>\d+)h)*'
-                                     r'((?P<minutes>\d+)m)*'
-                                     r'((?P<seconds>\d+)s)*$',
+                time_dict = re.match(r'^((?P<days>\d+)d)?'
+                                     r'((?P<hours>\d+)h)?'
+                                     r'((?P<minutes>\d+)m)?'
+                                     r'((?P<seconds>\d+)s)?$',
                                      value).groupdict()
             except AttributeError:
-                raise Exception('invalid format')
+                raise ValueError('invalid format for timer field')
 
-            value = datetime.timedelta(**{k:int(v) for k, v in time_dict.items() if v})
+            value = datetime.timedelta(**{k: int(v)
+                                          for k, v in time_dict.items() if v})
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)
