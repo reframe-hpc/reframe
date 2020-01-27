@@ -1,9 +1,9 @@
+import contextlib
 import itertools
 import math
 import sys
 import time
 
-from contextlib import suppress
 from datetime import datetime
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
@@ -12,14 +12,14 @@ from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
 
 
-def cleanup_all(retired_tasks, keep_stage_files):
-    for task in retired_tasks:
+def _cleanup_all(tasks, *args, **kwargs):
+    for task in tasks:
         if task.ref_count == 0:
-            with suppress(TaskExit):
-                task.cleanup(not keep_stage_files)
+            with contextlib.suppress(TaskExit):
+                task.cleanup(*args, **kwargs)
 
     # Remove cleaned up tests
-    retired_tasks[:] = [t for t in retired_tasks if t.ref_count]
+    tasks[:] = [t for t in tasks if t.ref_count]
 
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -100,11 +100,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
 
-        cleanup_all(self._retired_tasks, self.keep_stage_files)
+        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
     def exit(self):
         # Clean up all remaining tasks
-        cleanup_all(self._retired_tasks, self.keep_stage_files)
+        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
 
 class PollRateFunction:
@@ -320,7 +320,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 break
 
             getlogger().debug('finalizing task: %s' % task.check.info())
-            with suppress(TaskExit):
+            with contextlib.suppress(TaskExit):
                 self._finalize_task(task)
 
     def _finalize_task(self, task):
@@ -389,7 +389,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._finalize_all()
                 self._setup_all()
                 self._reschedule_all()
-                cleanup_all(self._retired_tasks, self.keep_stage_files)
+                _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 t_elapsed = (datetime.now() - t_start).total_seconds()
                 real_rate = num_polls / t_elapsed
                 getlogger().debug(
