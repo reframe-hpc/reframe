@@ -52,7 +52,9 @@ class SrunAllocationLauncher(JobLauncher):
             ret += ['--job-name=%s' % job.name]
 
         if job.time_limit:
-            ret += ['--time=%d:%d:%d' % job.time_limit]
+            m, s = divmod(job.time_limit.total_seconds(), 60)
+            h, m = divmod(m, 60)
+            ret += ['--time=%d:%d:%d' % (h, m, s)]
 
         if job.stdout:
             ret += ['--output=%s' % job.stdout]

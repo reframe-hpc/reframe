@@ -74,8 +74,10 @@ class PbsJobScheduler(sched.JobScheduler):
         ]
 
         if job.time_limit is not None:
+            m, s = divmod(job.time_limit.total_seconds(), 60)
+            h, m = divmod(m, 60)
             preamble.append(
-                self._format_option('-l walltime=%d:%d:%d' % job.time_limit))
+                self._format_option('-l walltime=%d:%d:%d' % (h, m, s)))
 
         if job.sched_partition:
             preamble.append(

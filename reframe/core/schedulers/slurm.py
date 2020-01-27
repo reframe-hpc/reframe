@@ -154,8 +154,10 @@ class SlurmJobScheduler(sched.JobScheduler):
                      self._format_option(job.stderr, errfile_fmt)]
 
         if job.time_limit is not None:
+            m, s = divmod(job.time_limit.total_seconds(), 60)
+            h, m = divmod(m, 60)
             preamble.append(
-                self._format_option('%d:%d:%d' % job.time_limit, '--time={0}')
+                self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
         if job.sched_exclusive_access:

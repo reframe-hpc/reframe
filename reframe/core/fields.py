@@ -3,7 +3,9 @@
 #
 
 import copy
+import datetime
 import os
+import re
 
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import user_deprecation_warning
@@ -100,23 +102,24 @@ class ConstantField(Field):
 
 
 class TimerField(TypedField):
-    '''Stores a timer in the form of a tuple ``(hh, mm, ss)``'''
+    '''Stores a timer in the form of a string ``'%dd%dh%dm%ds'``'''
 
     def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, types.Tuple[int, int, int], *other_types)
+        super().__init__(fieldname, datetime.timedelta, str, *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
-        if value is not None:
-            # Check also the values for minutes and seconds
-            h, m, s = value
-            if h < 0 or m < 0 or s < 0:
-                raise ValueError('timer field must have '
-                                 'non-negative values')
+        if value and type(value) is not datetime.timedelta:
+            try:
+                time_dict = re.match(r'^((?P<days>\d+)d)*'
+                                     r'((?P<hours>\d+)h)*'
+                                     r'((?P<minutes>\d+)m)*'
+                                     r'((?P<seconds>\d+)s)*$',
+                                     value).groupdict()
+            except AttributeError:
+                raise Exception('invalid format')
 
-            if m > 59 or s > 59:
-                raise ValueError('minutes and seconds in a timer '
-                                 'field must not exceed 59')
+            value = datetime.timedelta(**{k:int(v) for k, v in time_dict.items() if v})
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)

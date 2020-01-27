@@ -540,14 +540,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: Time limit for this test.
     #:
-    #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
-    #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: Time limit is specified as a string in the form ``'%dd%dh%dm%ds'``,
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
-    #:
-    #: :type: :class:`tuple[int]`
-    #: :default: ``(0, 10, 0)``
+    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :default: ``'10m'``
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
@@ -710,7 +708,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.variables = {}
 
         # Time limit for the check
-        self.time_limit = (0, 10, 0)
+        self.time_limit = '10m'
 
         # Runtime information of the test
         self._current_partition = None
