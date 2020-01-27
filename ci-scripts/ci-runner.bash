@@ -41,7 +41,7 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe -C tutorial/config/settings.py --exec-policy=async \
+    cmd="./bin/reframe -C tutorial/config/settings.py \
 --save-log-files -r -t tutorial $@"
     echo "Running tutorial checks with \`$cmd'"
     checked_exec $cmd
@@ -49,7 +49,7 @@ run_tutorial_checks()
 
 run_user_checks()
 {
-    cmd="./bin/reframe -C config/cscs.py --exec-policy=async --save-log-files \
+    cmd="./bin/reframe -C config/cscs.py --save-log-files \
 -r --flex-alloc-nodes=2 -t production|benchmark $@"
     echo "Running user checks with \`$cmd'"
     checked_exec $cmd
@@ -160,9 +160,9 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
                        grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
-        tutorialchecks_path=""
+        tutorialchecks_path="-c "
         for check in ${tutorialchecks[@]}; do
-            tutorialchecks_path="${tutorialchecks_path} -c ${check}"
+            tutorialchecks_path="${tutorialchecks_path}:${check}"
         done
 
         echo "========================"
@@ -197,9 +197,9 @@ else
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
     if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path=""
+        userchecks_path="-c "
         for check in ${userchecks[@]}; do
-            userchecks_path="${userchecks_path} -c ${check}"
+            userchecks_path="${userchecks_path}:${check}"
         done
 
         echo "===================="
