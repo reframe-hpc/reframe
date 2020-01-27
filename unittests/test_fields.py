@@ -89,6 +89,9 @@ class TestFields(unittest.TestCase):
         self.assertIsInstance(FieldTester.field, fields.TimerField)
         self.assertEqual(datetime.timedelta(days=1, hours=65, minutes=22,
                                             seconds=87), tester.field)
+        tester.field = ''
+        self.assertEqual(datetime.timedelta(days=0, hours=0, minutes=0,
+                                            seconds=0), tester.field)
         self.assertRaises(ValueError, exec, 'tester.field = "1e"',
                           globals(), locals())
         self.assertRaises(ValueError, exec, 'tester.field = "-10m5s"',

@@ -109,7 +109,7 @@ class TimerField(TypedField):
 
     def __set__(self, obj, value):
         self._check_type(value)
-        if value and type(value) is not datetime.timedelta:
+        if value is not None and type(value) is not datetime.timedelta:
             try:
                 time_dict = re.match(r'^((?P<days>\d+)d)?'
                                      r'((?P<hours>\d+)h)?'
