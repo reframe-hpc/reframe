@@ -272,6 +272,15 @@ class TestFrontend(unittest.TestCase):
         returncode, *_ = self._run_reframe()
         self.assertEqual(0, returncode)
 
+    def test_checkpath_colon_separated(self):
+        self.action = 'list'
+        self.checkpath = ['unittests/resources/checks/hellocheck_make.py:'
+                          'unittests/resources/checks/hellocheck.py']
+        returncode, stdout, _ = self._run_reframe()
+        num_checks = re.search(
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
+        self.assertEqual(num_checks, '2')
+
     def test_checkpath_recursion(self):
         self.action = 'list'
         self.checkpath = []
