@@ -12,13 +12,15 @@ class TrilinosTest(rfm.RegressionTest):
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if linkage == 'static':
-            self.valid_prog_environs += ['PrgEnv-cray']
+            self.valid_prog_environs += ['PrgEnv-cray', 'PrgEnv-cray_classic']
 
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
+            'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',
+                            '-Weverything'],
+            'PrgEnv-cray_classic': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
             'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
             'PrgEnv-intel': ['-qopenmp', '-w', '-std=c++11'],
             'PrgEnv-pgi': ['-mp', '-w']
