@@ -103,7 +103,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             not slurm_state_completed(job.state)):
             return self._completion_time
 
-        with env.temp_environment(variables={'SLURM_TIME_FORMAT': 'standard'}):
+        with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
                 (datetime.now().strftime('%F'), job.jobid),
@@ -116,11 +116,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not state_match:
             return None
 
-        self._completion_time = max(
-            datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
-            for s in state_match
-        )
-
+        self._completion_time = max(float(s.group('end')) for s in state_match)
         return self._completion_time
 
     def _format_option(self, var, option):

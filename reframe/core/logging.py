@@ -8,6 +8,7 @@ import pprint
 import shutil
 import sys
 import socket
+import time
 from datetime import datetime
 
 import reframe
@@ -130,6 +131,37 @@ class MultiFileHandler(logging.FileHandler):
         for s in self._streams.values():
             self.stream = s
             super().close()
+
+
+def _format_time_rfc3339(timestamp, datefmt):
+    tz_suffix = time.strftime('%z', timestamp)
+    tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
+    return time.strftime(datefmt, timestamp).replace(':z', tz_rfc3339)
+
+
+class RFC3339Formatter(logging.Formatter):
+    def __init__(self, fmt=None, datefmt=None, style='%'):
+        super().__init__(fmt, datefmt, style)
+
+        # Formatter objects store fmt in `_fmt`, but we use our own variable
+        # here just to stay on the safe side if Formatter's implementation
+        # changes
+        self.__fmt = fmt
+
+    def formatTime(self, record, datefmt=None):
+        datefmt = datefmt or self.default_time_format
+        if '%:z' not in datefmt:
+            return super().formatTime(record, datefmt)
+        else:
+            timestamp = self.converter(record.created)
+            return _format_time_rfc3339(timestamp, datefmt)
+
+    def usesTime(self):
+        # Extend usesTime() so as to trigger time formatting for our own
+        # custom time formats
+        return (super().usesTime() or
+                '%(check_job_completion_time)' in self.__fmt or
+                '{check_job_completion_time}' in self.__fmt)
 
 
 def load_from_dict(logging_config):
@@ -305,7 +337,7 @@ def _extract_handlers(handlers_list):
         level = handler_config.get('level', 'debug').lower()
         fmt = handler_config.get('format', '%(message)s')
         datefmt = handler_config.get('datefmt', '%FT%T')
-        hdlr.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+        hdlr.setFormatter(RFC3339Formatter(fmt=fmt, datefmt=datefmt))
         hdlr.setLevel(_check_level(level))
         handlers.append(hdlr)
 
@@ -428,11 +460,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
-                # Use the logging handlers' date format to format
-                # completion_time
-                # NOTE: All handlers use the same date format
-                fmt = self.logger.handlers[0].formatter.datefmt
-                ct = self.check.job.completion_time.strftime(fmt)
+                ct = self.check.job.completion_time
                 self.extra['check_job_completion_time'] = ct
 
     def log_performance(self, level, tag, value, ref,

@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 import os
 import sys
+import re
 import tempfile
 import unittest
 from datetime import datetime
@@ -22,7 +23,7 @@ class TestLogger(unittest.TestCase):
 
         self.logger  = rlog.Logger('reframe')
         self.handler = logging.handlers.RotatingFileHandler(self.logfile)
-        self.formatter = logging.Formatter(
+        self.formatter = rlog.RFC3339Formatter(
             fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
             datefmt='%FT%T')
 
@@ -38,10 +39,10 @@ class TestLogger(unittest.TestCase):
     def tearDown(self):
         os.remove(self.logfile)
 
-    def found_in_logfile(self, string):
+    def found_in_logfile(self, pattern):
         found = False
-        with open(self.logfile, 'rt') as f:
-            found = string in f.read()
+        with open(self.logfile, 'rt') as fp:
+            found = re.search(pattern, fp.read()) is not None
 
         return found
 
@@ -96,6 +97,23 @@ class TestLogger(unittest.TestCase):
 
         self.assertFalse(self.found_in_logfile('bar'))
         self.assertTrue(self.found_in_logfile('foo'))
+
+    def test_rfc3339_timezone_extension(self):
+        self.formatter = rlog.RFC3339Formatter(
+            fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
+            datefmt='%FT%T%:z')
+        self.handler.setFormatter(self.formatter)
+        self.logger_without_check.info('foo')
+        assert not self.found_in_logfile(r'%%:z')
+        assert self.found_in_logfile(r'(\+|-)\d\d:\d\d')
+
+    def test_rfc3339_timezone_wrong_directive(self):
+        self.formatter = rlog.RFC3339Formatter(
+            fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
+            datefmt='%FT%T:z')
+        self.handler.setFormatter(self.formatter)
+        self.logger_without_check.info('foo')
+        assert self.found_in_logfile(':z')
 
 
 class TestLoggingConfiguration(unittest.TestCase):
