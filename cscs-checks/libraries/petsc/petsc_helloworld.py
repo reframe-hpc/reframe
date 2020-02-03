@@ -13,7 +13,7 @@ class PetscPoisson2DCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         if linkage == 'dynamic':
             # FIXME: static compilation yields a link error in case of
-            # PrgEnv-intel. Looks like Cray PE bug.
+            # PrgEnv-intel (Cray Bug #255701)
             self.valid_prog_environs += ['PrgEnv-intel']
 
         self.sourcepath = 'poisson2d.c'
