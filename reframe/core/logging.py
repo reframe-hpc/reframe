@@ -136,18 +136,10 @@ class MultiFileHandler(logging.FileHandler):
 def _format_time_rfc3339(timestamp, datefmt):
     tz_suffix = time.strftime('%z', timestamp)
     tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
-    return time.strftime(datefmt, timestamp).replace(':z', tz_rfc3339)
+    return time.strftime(datefmt, timestamp).replace('%:z', tz_rfc3339)
 
 
 class RFC3339Formatter(logging.Formatter):
-    def __init__(self, fmt=None, datefmt=None, style='%'):
-        super().__init__(fmt, datefmt, style)
-
-        # Formatter objects store fmt in `_fmt`, but we use our own variable
-        # here just to stay on the safe side if Formatter's implementation
-        # changes
-        self.__fmt = fmt
-
     def formatTime(self, record, datefmt=None):
         datefmt = datefmt or self.default_time_format
         if '%:z' not in datefmt:
@@ -156,12 +148,18 @@ class RFC3339Formatter(logging.Formatter):
             timestamp = self.converter(record.created)
             return _format_time_rfc3339(timestamp, datefmt)
 
-    def usesTime(self):
-        # Extend usesTime() so as to trigger time formatting for our own
-        # custom time formats
-        return (super().usesTime() or
-                '%(check_job_completion_time)' in self.__fmt or
-                '{check_job_completion_time}' in self.__fmt)
+    def format(self, record):
+        datefmt = self.datefmt or self.default_time_format
+        try:
+            if record.check_job_completion_time is not None:
+                ct = self.converter(record.check_job_completion_time)
+                record.check_job_completion_time = _format_time_rfc3339(
+                    ct, datefmt
+                )
+        except AttributeError:
+            pass
+
+        return super().format(record)
 
 
 def load_from_dict(logging_config):
