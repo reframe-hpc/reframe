@@ -7,11 +7,11 @@ import reframe.utility.sanity as sn
                           for linkage in ['static', 'dynamic']))
 class HDF5Test(rfm.RegressionTest):
     def __init__(self, lang, linkage):
-        super().__init__()
         lang_names = {
             'c': 'C',
             'f90': 'Fortran 90'
         }
+        self.linkage = linkage
         self.descr = lang_names[lang] + ' HDF5 ' + linkage.capitalize()
         self.sourcepath = 'h5ex_d_chunk.' + lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -74,3 +74,13 @@ class HDF5Test(rfm.RegressionTest):
 
         self.maintainers = ['SO', 'RS']
         self.tags = {'production', 'craype'}
+
+    @rfm.run_after('setup')
+    def set_linker_variables(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.linkage == 'static' and
+            self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray'):
+            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                              'LINKER_AARCH64': '=/usr/bin/ld'}

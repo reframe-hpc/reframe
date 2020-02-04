@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 
 class ScaLAPACKTest(rfm.RegressionTest):
     def __init__(self, linkage):
-        super().__init__()
+        self.linkage = linkage
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
@@ -29,6 +29,16 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.maintainers = ['CB', 'LM']
         self.tags = {'production', 'external-resources'}
 
+    @rfm.run_after('setup')
+    def set_linker_variables(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.linkage == 'static' and
+            self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray'):
+            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                              'LINKER_AARCH64': '=/usr/bin/ld'}
+
 
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(['static'], ['dynamic'])
@@ -36,6 +46,9 @@ class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
         self.sourcepath = 'scalapack_compile_run.f'
+        if linkage == 'static':
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+            self.variables['LINKER_AARCH64'] = '/usr/bin/ld'
 
         def fortran_float(value):
             return float(value.replace('D', 'E'))

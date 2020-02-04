@@ -9,7 +9,6 @@ import reframe.utility.sanity as sn
                           for linkage in ['dynamic', 'static']))
 class NetCDFTest(rfm.RegressionTest):
     def __init__(self, lang, linkage):
-        super().__init__()
         lang_names = {
             'c': 'C',
             'cpp': 'C++',
@@ -42,9 +41,18 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def set_flags(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.linkage == 'static' and
+            self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray'):
+            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                              'LINKER_AARCH64': '=/usr/bin/ld'}
+
         if self.current_system.name == 'kesch':
-            if environ.name == 'PrgEnv-cray-nompi':
+            if self.current_environ.name == 'PrgEnv-cray-nompi':
                 self.modules = ['netcdf/4.4.1.1-gmvolf-17.02',
                                 'netcdf-c++/4.3.0-gmvolf-17.02',
                                 'netcdf-fortran/4.4.4-gmvolf-17.02']
@@ -62,7 +70,7 @@ class NetCDFTest(rfm.RegressionTest):
                     '-L$EBROOTNETCDFMINFORTRAN/lib64',
                     '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
                 ]
-            elif environ.name == 'PrgEnv-pgi-nompi':
+            elif self.current_environ.name == 'PrgEnv-pgi-nompi':
                 self.modules = ['netcdf/4.6.1-pgi-18.5-gcc-5.4.0-2.26',
                                 'netcdf-c++/4.3.0-pgi-18.5-gcc-5.4.0-2.26',
                                 'netcdf-fortran/4.4.4-pgi-18.5-gcc-5.4.0-2.26']
@@ -83,5 +91,3 @@ class NetCDFTest(rfm.RegressionTest):
                 ]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
-
-        super().setup(partition, environ, **job_opts)

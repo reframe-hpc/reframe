@@ -6,7 +6,7 @@ import reframe.utility.sanity as sn
 
 class HelloWorldBaseTest(rfm.RegressionTest):
     def __init__(self, variant, lang, linkage):
-        super().__init__()
+        self.linkage = linkage
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
         self.prgenv_flags = {}
         self.lang_names = {
@@ -32,11 +32,25 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
-
         self.maintainers = ['VH', 'EK']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
+    def compile(self):
+        self.compilation_time_seconds = datetime.now()
+        super().compile()
+        self.compilation_time_seconds = (
+            datetime.now() - self.compilation_time_seconds).total_seconds()
+
+    @rfm.run_after('setup')
+    def set_flags(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.linkage == 'static' and
+            self.current_system.name == 'dom' and
+            self.current_environ.name.startswith('PrgEnv-cray')):
+            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                              'LINKER_AARCH64': '=/usr/bin/ld'}
+
         result = sn.findall(r'Hello World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
                             r'\s*(\d+)', self.stdout)
@@ -80,18 +94,11 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             }
         }
 
-        envname = environ.name.replace('-nompi', '')
+        envname = self.current_environ.name.replace('-nompi', '')
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
-        super().setup(partition, environ, **job_opts)
-
-    def compile(self):
-        self.compilation_time_seconds = datetime.now()
-        super().compile()
-        self.compilation_time_seconds = (
-            datetime.now() - self.compilation_time_seconds).total_seconds()
 
 
 @rfm.required_version('>=2.14')
@@ -150,9 +157,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        self.variables['OMP_NUM_THREADS']: str(self.num_cpus_per_task)
 
 
 @rfm.required_version('>=2.14')
@@ -205,6 +210,4 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables = {
-            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
-        }
+        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
