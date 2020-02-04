@@ -20,6 +20,7 @@ class HDF5Test(rfm.RegressionTest):
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.modules = ['cray-hdf5']
         self.keep_files = ['h5dump_out.txt']
+
         # C and Fortran write transposed matrix
         if lang == 'c':
             self.sanity_patterns = sn.all([

@@ -41,8 +41,8 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
-    @rfm.run_after('setup')
-    def set_flags(self):
+    @rfm.run_before('compile')
+    def setflags(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
         if (self.linkage == 'static' and

@@ -16,7 +16,6 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.num_tasks = 16
         self.num_tasks_per_node = 8
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
-
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray']
@@ -29,7 +28,7 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.maintainers = ['CB', 'LM']
         self.tags = {'production', 'external-resources'}
 
-    @rfm.run_after('setup')
+    @rfm.run_before('compile')
     def set_linker_variables(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)

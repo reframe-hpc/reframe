@@ -32,17 +32,58 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
+
+        result = sn.findall(r'Hello World from thread \s*(\d+) out '
+                            r'of \s*(\d+) from process \s*(\d+) out of '
+                            r'\s*(\d+)', self.stdout)
+
+        num_tasks = sn.getattr(self, 'num_tasks')
+        num_cpus_per_task = sn.getattr(self, 'num_cpus_per_task')
+
+        def tid(match):
+            return int(match.group(1))
+
+        def num_threads(match):
+            return int(match.group(2))
+
+        def rank(match):
+            return int(match.group(3))
+
+        def num_ranks(match):
+            return int(match.group(4))
+
+        self.sanity_patterns = sn.all(
+            sn.chain(
+                [sn.assert_eq(sn.count(result), num_tasks*num_cpus_per_task)],
+                sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x)), result),
+                sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x)), result),
+                sn.map(
+                    lambda x: sn.assert_lt(tid(x), num_cpus_per_task), result
+                ),
+                sn.map(
+                    lambda x: sn.assert_eq(num_threads(x), num_cpus_per_task),
+                    result
+                ),
+                sn.map(lambda x: sn.assert_lt(rank(x), num_tasks), result),
+                sn.map(
+                    lambda x: sn.assert_eq(num_ranks(x), num_tasks), result
+                ),
+            )
+        )
+        self.perf_patterns = {
+            'compilation_time': sn.getattr(self, 'compilation_time_seconds')
+        }
+        self.reference = {
+            '*': {
+                'compilation_time': (60, None, 0.1, 's')
+            }
+        }
+
         self.maintainers = ['VH', 'EK']
         self.tags = {'production', 'craype'}
 
-    def compile(self):
-        self.compilation_time_seconds = datetime.now()
-        super().compile()
-        self.compilation_time_seconds = (
-            datetime.now() - self.compilation_time_seconds).total_seconds()
-
-    @rfm.run_after('setup')
-    def set_flags(self):
+    @rfm.run_before('compile')
+    def setflags(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
         if (self.linkage == 'static' and
@@ -51,54 +92,20 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             self.variables = {'LINKER_X86_64': '/usr/bin/ld',
                               'LINKER_AARCH64': '=/usr/bin/ld'}
 
-        result = sn.findall(r'Hello World from thread \s*(\d+) out '
-                            r'of \s*(\d+) from process \s*(\d+) out of '
-                            r'\s*(\d+)', self.stdout)
-
-        self.sanity_patterns = sn.all(
-            sn.chain([sn.assert_eq(sn.count(result), self.num_tasks *
-                                   self.num_cpus_per_task)],
-                     sn.map(
-                         lambda x: sn.assert_lt(int(x.group(1)),
-                                                int(x.group(2))),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_lt(int(x.group(3)),
-                                                int(x.group(4))),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_lt(int(x.group(1)),
-                                                self.num_cpus_per_task),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(int(x.group(2)),
-                                                self.num_cpus_per_task),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_lt(int(x.group(3)),
-                                                self.num_tasks),
-                         result),
-                     sn.map(
-                         lambda x: sn.assert_eq(int(x.group(4)),
-                                                self.num_tasks),
-                         result),
-                     )
-        )
-
-        self.perf_patterns = {
-            'compilation_time': sn.getattr(self, 'compilation_time_seconds')
-        }
-        self.reference = {
-            '*': {
-                'compilation_time': (60, None, 0.1)
-            }
-        }
-
         envname = self.current_environ.name.replace('-nompi', '')
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
+
+    @rfm.run_before('compile')
+    def compile_timer_start(self):
+        self.compilation_time_seconds = datetime.now()
+
+    @rfm.run_after('compile')
+    def compile_timer_end(self):
+        elapsed = datetime.now() - self.compilation_time_seconds
+        self.compilation_time_seconds = elapsed.total_seconds()
 
 
 @rfm.required_version('>=2.14')
@@ -106,8 +113,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestSerial(HelloWorldBaseTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('serial', lang, linkage, **kwargs)
+    def __init__(self, lang, linkage):
+        super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
