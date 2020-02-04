@@ -169,7 +169,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
         self.variables = {
-            'OMP_NUM_THREADS':  str(self.num_cpus_per_task)
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
         }
 
 
