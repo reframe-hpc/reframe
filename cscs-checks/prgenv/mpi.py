@@ -61,7 +61,7 @@ class MpiInitTest(rfm.RegressionTest):
             sn.assert_eq(found_mpithread,
                          self.mpithread_version[required_thread])
         ])
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'AJ']
         self.tags = {'production', 'craype'}
 
 
@@ -79,7 +79,7 @@ class MpiHelloTest(rfm.RegressionTest):
 
         self.descr = 'MPI Hello World'
         self.sourcepath = 'mpi_helloworld.c'
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'AJ']
         self.num_tasks_per_node = 1
         self.num_tasks = 0
         num_processes = sn.extractsingle(

@@ -65,4 +65,4 @@ class TensorFlow2HorovodTest(rfm.RunOnlyRegressionTest):
             '--batch-size %s' % batch_size,
         ]
         self.tags = {'production'}
-        self.maintainers = ['VK', 'RS']
+        self.maintainers = ['RS', 'TR']

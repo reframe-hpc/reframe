@@ -104,7 +104,7 @@ class StreamTest(rfm.RegressionTest):
             }
         }
         self.tags = {'production', 'craype'}
-        self.maintainers = ['RS', 'VK']
+        self.maintainers = ['RS', 'SK']
 
     def setup(self, partition, environ, **job_opts):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(

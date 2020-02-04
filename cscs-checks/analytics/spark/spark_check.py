@@ -20,7 +20,7 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
         pi_value = sn.extractsingle(r'Pi is roughly\s+(?P<pi>\S+)',
                                     self.stdout, 'pi', float)
         self.sanity_patterns = sn.assert_lt(sn.abs(pi_value - math.pi), 0.01)
-        self.maintainers = ['TM']
+        self.maintainers = ['TM', 'TR']
         self.tags = {'production', 'craype'}
 
     def setup(self, partition, environ, **job_opts):

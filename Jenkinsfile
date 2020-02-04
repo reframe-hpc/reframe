@@ -92,15 +92,9 @@ stage('Unittest') {
                                  script: """${loginBash}
                                             echo \$SCRATCH""").trim()
                 def reframeDir = "${scratch}/${dirPrefix}-${machineName}-${uniqueID}"
-                def moduleDefinition = ''
-                if (machineName == 'leone') {
-                    moduleDefinition = '''module() { eval `/usr/bin/modulecmd bash $*`; }
-                                          export -f module'''
-                }
                 dir(reframeDir) {
                     checkout scm
                     sh("""${loginBash}
-                          ${moduleDefinition}
                           bash ${reframeDir}/${bashScript} -f ${reframeDir} -i ''""")
                 }
             }

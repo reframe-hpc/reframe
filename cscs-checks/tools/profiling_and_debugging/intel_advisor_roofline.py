@@ -32,6 +32,7 @@ class IntelRooflineAdvisorTest(rfm.RegressionTest):
         G3_SOA_SCALAR: gflops,  2.79 arithmetic_intensity', 0.166 351ms
         G3_SOA_VECTOR: gflops, 10.62 arithmetic_intensity', 0.166  57ms <- fast
     '''
+
     def __init__(self, repeat, toolversion, datalayout):
         self.descr = 'Roofline Analysis test with Intel Advisor'
         # for reference: advisor/2019 was failing on dom with:
@@ -237,7 +238,7 @@ class IntelRooflineAdvisorTest(rfm.RegressionTest):
             }
         }
 
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production', 'external-resources'}
 
     def setup(self, partition, environ, **job_opts):

@@ -18,7 +18,7 @@ class SbucheckCommandCheck(rfm.RunOnlyRegressionTest):
                      'maintenance', 'single-node', 'ops'}
         self.sanity_patterns = sn.assert_found(
             r'Per-project usage at CSCS since', self.stdout)
-        self.maintainers = ['VK']
+        self.maintainers = ['VH', 'TM']
 
 
 @rfm.simple_test
@@ -35,4 +35,4 @@ class MonthlyUsageCheck(rfm.RunOnlyRegressionTest):
                      'maintenance', 'single-node', 'ops'}
         self.sanity_patterns = sn.assert_found(
             r'Usage in Node hours for the Crays', self.stdout)
-        self.maintainers = ['VK']
+        self.maintainers = ['VH', 'TM']

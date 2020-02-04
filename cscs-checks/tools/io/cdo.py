@@ -39,7 +39,7 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['CDO']
 
-        self.maintainers = ['SO']
+        self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}
 
 

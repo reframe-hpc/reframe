@@ -16,5 +16,5 @@ class RubyNArray(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'NArray\.float\(4\):\s*'
                                                r'\[ 1.0, 2.0, 3.0, 4.0 \]',
                                                self.stdout)
-        self.maintainers = ['MKr']
+        self.maintainers = ['MKr', 'LM']
         self.tags = {'production', 'mch'}

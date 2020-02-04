@@ -21,7 +21,7 @@ class OpenFOAMBaseTest(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.num_cpus_per_task  = 1
 
-        self.maintainers = ['MKr']
+        self.maintainers = ['MKr', 'AJ']
         self.tags = {'scs', 'production', 'external-resources'}
 
         self.pre_run = ['source $FOAM_BASH']

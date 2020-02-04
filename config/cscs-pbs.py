@@ -65,34 +65,28 @@ class ReframeSettings:
         'environments': {
             '*': {
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
 
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
                 },
 
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
 
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',

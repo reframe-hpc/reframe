@@ -11,7 +11,7 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
         self.descr = 'Ensure PrgEnv-cray is loaded by default'
         self.valid_prog_environs = ['PrgEnv-cray']
         self.valid_systems = ['daint:login', 'dom:login']
-        self.maintainers = ['VK', 'CB']
+        self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
 
     # We need to override setup, because otherwise environ will be loaded and
@@ -49,7 +49,7 @@ class EnvironmentCheck(rfm.RunOnlyRegressionTest):
         self.executable_opts = ['list', '-t']
         self.sanity_patterns = sn.assert_found(self.env_module_patt,
                                                self.stderr)
-        self.maintainers = ['VK', 'CB']
+        self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
 
     @property

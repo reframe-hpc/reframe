@@ -46,5 +46,5 @@ class CudaGdbCheck(rfm.RegressionTest):
                 'result', float)), 1e-5)
         ])
 
-        self.maintainers = ['MK', 'JG']
+        self.maintainers = ['MKr', 'JG']
         self.tags = {'production', 'craype'}

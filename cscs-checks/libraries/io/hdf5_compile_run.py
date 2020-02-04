@@ -7,7 +7,6 @@ import reframe.utility.sanity as sn
                           for linkage in ['static', 'dynamic']))
 class HDF5Test(rfm.RegressionTest):
     def __init__(self, lang, linkage):
-        super().__init__()
         lang_names = {
             'c': 'C',
             'f90': 'Fortran 90'
@@ -20,6 +19,7 @@ class HDF5Test(rfm.RegressionTest):
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.modules = ['cray-hdf5']
         self.keep_files = ['h5dump_out.txt']
+
         # C and Fortran write transposed matrix
         if lang == 'c':
             self.sanity_patterns = sn.all([
@@ -72,5 +72,5 @@ class HDF5Test(rfm.RegressionTest):
         self.build_system.ldflags = ['-%s' % linkage]
         self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
-        self.maintainers = ['SO']
+        self.maintainers = ['SO', 'RS']
         self.tags = {'production', 'craype'}
