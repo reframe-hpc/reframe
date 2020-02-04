@@ -41,16 +41,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
-    @rfm.run_before('compile')
     def setflags(self):
-        # FIXME: static compilation yields a link error in case of
-        # PrgEnv-cray(Cray Bug #255707)
-        if (self.linkage == 'static' and
-            self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
-                              'LINKER_AARCH64': '=/usr/bin/ld'}
-
         if self.current_system.name == 'kesch':
             if self.current_environ.name == 'PrgEnv-cray-nompi':
                 self.modules = ['netcdf/4.4.1.1-gmvolf-17.02',
@@ -91,3 +82,15 @@ class NetCDFTest(rfm.RegressionTest):
                 ]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name == 'PrgEnv-cray'):
+            return
+
+        self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                          'LINKER_AARCH64': '/usr/bin/ld'}

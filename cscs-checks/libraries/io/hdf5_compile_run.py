@@ -76,12 +76,14 @@ class HDF5Test(rfm.RegressionTest):
         self.maintainers = ['SO', 'RS']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_after('setup')
-    def set_linker_variables(self):
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
-        if (self.linkage == 'static' and
-            self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
-                              'LINKER_AARCH64': '=/usr/bin/ld'}
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name == 'PrgEnv-cray'):
+            return
+
+        self.variables = {'LINKER_X86_64': '/usr/bin/ld',
+                          'LINKER_AARCH64': '/usr/bin/ld'}

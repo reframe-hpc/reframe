@@ -29,14 +29,16 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.tags = {'production', 'external-resources'}
 
     @rfm.run_before('compile')
-    def set_linker_variables(self):
+    def cray_linker_workaround(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
-        if (self.linkage == 'static' and
-            self.current_system.name == 'dom' and
-            self.current_environ.name == 'PrgEnv-cray'):
-            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
-                              'LINKER_AARCH64': '=/usr/bin/ld'}
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name == 'PrgEnv-cray'):
+            return
+
+        self.variables.update({'LINKER_X86_64': '/usr/bin/ld',
+                               'LINKER_AARCH64': '/usr/bin/ld'})
 
 
 @rfm.required_version('>=2.14')
@@ -45,9 +47,6 @@ class ScaLAPACKSanity(ScaLAPACKTest):
     def __init__(self, linkage):
         super().__init__(linkage)
         self.sourcepath = 'scalapack_compile_run.f'
-        if linkage == 'static':
-            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
-            self.variables['LINKER_AARCH64'] = '/usr/bin/ld'
 
         def fortran_float(value):
             return float(value.replace('D', 'E'))

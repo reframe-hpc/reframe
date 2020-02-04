@@ -84,14 +84,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        # FIXME: static compilation yields a link error in case of
-        # PrgEnv-cray(Cray Bug #255707)
-        if (self.linkage == 'static' and
-            self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
-            self.variables = {'LINKER_X86_64': '/usr/bin/ld',
-                              'LINKER_AARCH64': '=/usr/bin/ld'}
-
         envname = self.current_environ.name.replace('-nompi', '')
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
@@ -106,6 +98,18 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     def compile_timer_end(self):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name.startswith('PrgEnv-cray')):
+            return
+
+        self.variables.update({'LINKER_X86_64': '/usr/bin/ld',
+                               'LINKER_AARCH64': '/usr/bin/ld'})
 
 
 @rfm.required_version('>=2.14')
@@ -164,7 +168,9 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables['OMP_NUM_THREADS']: str(self.num_cpus_per_task)
+        self.variables = {
+            'OMP_NUM_THREADS':  str(self.num_cpus_per_task)
+        }
 
 
 @rfm.required_version('>=2.14')
@@ -217,4 +223,6 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
-        self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
+        self.variables = {
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
+        }
