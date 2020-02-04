@@ -9,7 +9,6 @@ import reframe.utility.sanity as sn
                           for linkage in ['dynamic', 'static']))
 class NetCDFTest(rfm.RegressionTest):
     def __init__(self, lang, linkage):
-        super().__init__()
         lang_names = {
             'c': 'C',
             'cpp': 'C++',
@@ -42,7 +41,9 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setflags(self):
+        environ = self.current_environ
         if self.current_system.name == 'kesch':
             if environ.name == 'PrgEnv-cray-nompi':
                 self.modules = ['netcdf/4.4.1.1-gmvolf-17.02',
@@ -83,5 +84,3 @@ class NetCDFTest(rfm.RegressionTest):
                 ]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
-
-        super().setup(partition, environ, **job_opts)
