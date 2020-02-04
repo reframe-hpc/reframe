@@ -4,16 +4,30 @@ import os
 import sys
 import re
 import tempfile
+import time
 import unittest
 from datetime import datetime
 
 import reframe as rfm
 import reframe.core.logging as rlog
 from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.launchers.registry import getlauncher
+from reframe.core.schedulers import Job
+from reframe.core.schedulers.registry import getscheduler
 
 
-class RandomCheck(rfm.RegressionTest):
+class _FakeCheck(rfm.RegressionTest):
     pass
+
+
+def _setup_fake_check():
+    # A bit hacky, but we don't want to run a full test every time
+    test = _FakeCheck()
+    test._job = Job.create(getscheduler('local')(),
+                           getlauncher('local')(),
+                           'fakejob')
+    test.job._completion_time = time.time()
+    return test
 
 
 class TestLogger(unittest.TestCase):
@@ -34,7 +48,8 @@ class TestLogger(unittest.TestCase):
         self.logger_without_check = rlog.LoggerAdapter(self.logger)
 
         # Logger adapter with an associated check
-        self.logger_with_check = rlog.LoggerAdapter(self.logger, RandomCheck())
+        self.logger_with_check = rlog.LoggerAdapter(self.logger,
+                                                    _setup_fake_check())
 
     def tearDown(self):
         os.remove(self.logfile)
@@ -66,7 +81,7 @@ class TestLogger(unittest.TestCase):
         self.assertTrue(os.path.exists(self.logfile))
         self.assertTrue(self.found_in_logfile('info'))
         self.assertTrue(self.found_in_logfile('verbose'))
-        self.assertTrue(self.found_in_logfile('RandomCheck'))
+        self.assertTrue(self.found_in_logfile('_FakeCheck'))
 
     def test_handler_types(self):
         self.assertTrue(issubclass(logging.Handler, rlog.Handler))
@@ -100,12 +115,15 @@ class TestLogger(unittest.TestCase):
 
     def test_rfc3339_timezone_extension(self):
         self.formatter = rlog.RFC3339Formatter(
-            fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
+            fmt=('[%(asctime)s] %(levelname)s: %(check_name)s: '
+                 'ct:%(check_job_completion_time)s: %(message)s'),
             datefmt='%FT%T%:z')
         self.handler.setFormatter(self.formatter)
+        self.logger_with_check.info('foo')
         self.logger_without_check.info('foo')
         assert not self.found_in_logfile(r'%%:z')
-        assert self.found_in_logfile(r'(\+|-)\d\d:\d\d')
+        assert self.found_in_logfile(r'\[.+(\+|-)\d\d:\d\d\]')
+        assert self.found_in_logfile(r'ct:.+(\+|-)\d\d:\d\d')
 
     def test_rfc3339_timezone_wrong_directive(self):
         self.formatter = rlog.RFC3339Formatter(
@@ -134,7 +152,7 @@ class TestLoggingConfiguration(unittest.TestCase):
                 }
             ]
         }
-        self.check = RandomCheck()
+        self.check = _FakeCheck()
 
     def tearDown(self):
         if os.path.exists(self.logfile):
@@ -421,7 +439,7 @@ class TestLoggingConfiguration(unittest.TestCase):
 
         rlog.getlogger().error('error outside context')
         self.assertTrue(self.found_in_logfile(
-            'RandomCheck: %s: error from context' % sys.argv[0]))
+            '_FakeCheck: %s: error from context' % sys.argv[0]))
         self.assertTrue(self.found_in_logfile(
             'reframe: %s: error outside context' % sys.argv[0]))
 

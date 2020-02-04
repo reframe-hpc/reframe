@@ -5,11 +5,11 @@ import logging.handlers
 import numbers
 import os
 import pprint
+import re
 import shutil
 import sys
 import socket
 import time
-from datetime import datetime
 
 import reframe
 import reframe.utility.color as color
@@ -136,7 +136,9 @@ class MultiFileHandler(logging.FileHandler):
 def _format_time_rfc3339(timestamp, datefmt):
     tz_suffix = time.strftime('%z', timestamp)
     tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
-    return time.strftime(datefmt, timestamp).replace('%:z', tz_rfc3339)
+
+    # Python < 3.7 truncates the `%`, whereas later versions don't
+    return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
 
 
 class RFC3339Formatter(logging.Formatter):
@@ -207,8 +209,7 @@ def _create_file_handler(handler_config):
     timestamp = handler_config.get('timestamp', None)
     if timestamp:
         basename, ext = os.path.splitext(filename)
-        filename = '%s_%s%s' % (basename,
-                                datetime.now().strftime(timestamp), ext)
+        filename = '%s_%s%s' % (basename, time.strftime(timestamp), ext)
 
     append = handler_config.get('append', False)
     return logging.handlers.RotatingFileHandler(filename,
