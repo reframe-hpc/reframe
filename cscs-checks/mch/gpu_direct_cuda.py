@@ -6,11 +6,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'tests gpu-direct for CUDA'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
-        # FIXME: temporary workaround until the mvapich module is fixed
-        #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'

@@ -130,6 +130,21 @@ class SystemExitCheck(BaseFrontendCheck):
         sys.exit(1)
 
 
+@rfm.simple_test
+class CleanupFailTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.sourcesdir = None
+        self.executable = 'echo foo'
+        self.sanity_patterns = sn.assert_found(r'foo', self.stdout)
+
+    @rfm.run_before('cleanup')
+    def fail(self):
+        # Make this test fail on purpose
+        raise Exception
+
+
 class SleepCheck(BaseFrontendCheck):
     _next_id = 0
 
