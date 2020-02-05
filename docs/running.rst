@@ -849,7 +849,7 @@ All handlers accept the following set of attributes (keys) in their configuratio
 
 * ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
 * ``format`` (default: ``'%(message)s'``): Format string for the printout of the log record.
-  ReFrame supports all the `format strings <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
+  ReFrame supports all the `log record attributes <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
 
   - ``check_environ``: The programming environment a test is currently executing for.
   - ``check_info``: Print live information of the currently executing check.
@@ -877,14 +877,19 @@ All handlers accept the following set of attributes (keys) in their configuratio
   - ``osgroup``: The group name of the OS user running ReFrame.
   - ``version``: The ReFrame version.
 
-* ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
-  Acceptable formats must conform to standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function.
+* ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` and the ``%(check_job_completion_time)s`` fields).
+  In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
 .. caution::
    The ``testcase_name`` logging attribute is replaced with the ``check_info``, which is now also configurable
 
    .. versionchanged:: 2.10
 
+
+.. note::
+   Support for fully RFC3339 compliant time zone formatting.
+
+   .. versionadded:: 3.0
 
 
 File log handlers
