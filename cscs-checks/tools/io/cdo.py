@@ -30,8 +30,8 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn']
-        if self.current_system.name == 'kesch':
+                              'kesch:pn', 'arolla:pn', 'tsa:pn']
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo']
@@ -87,7 +87,10 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
     def setup(self, partition, environ, **job_opts):
-        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+            nco_name = 'nco'
+        else:
+            nco_name = 'NCO'
         self.pre_run = ['module load %s' % nco_name]
         super().setup(partition, environ, **job_opts)
 
