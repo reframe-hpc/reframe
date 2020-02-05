@@ -17,12 +17,14 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
-            'kesch:cn', 'kesch:pn', 'tiger:gpu'
+            'kesch:cn', 'kesch:pn', 'tiger:gpu',
+            'arolla:cn', 'arolla:pn',
+            'tsa:cn', 'tsa:pn'
         ]
 
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
         self.num_tasks = 0
@@ -31,12 +33,16 @@ class DGEMMTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O3']
         self.sys_reference = {
+            'arolla:cn': (300.0, -0.15, None, 'Gflop/s'),
+            'arolla:pn': (300.0, -0.15, None, 'Gflop/s'),
             'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
             'kesch:cn': (300.0, -0.15, None, 'Gflop/s'),
             'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
+            'tsa:cn': (300.0, -0.15, None, 'Gflop/s'),
+            'tsa:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
 
         self.maintainers = ['AJ', 'VH']
@@ -62,7 +68,9 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 36
         elif partition.fullname in ['tiger:gpu']:
             self.num_cpus_per_task = 18
-        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
+        elif partition.fullname in ['arolla:cn', 'arolla:pn', 
+                                    'kesch:cn', 'kesch:pn',
+                                    'tsa:cn', 'tsa:pn']:
             self.num_cpus_per_task = 12
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
