@@ -281,21 +281,6 @@ class TestFrontend(unittest.TestCase):
             r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual(num_checks, '2')
 
-    def test_checkpath_duplicate(self):
-        self.action = 'list'
-        self.checkpath = ['unittests/resources/checks/hellocheck.py']
-        returncode, stdout, _ = self._run_reframe()
-        num_checks_in_file = re.search(
-            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
-
-        self.checkpath = ['unittests/resources/checks/hellocheck.py:'
-                          'unittests/resources/checks/hellocheck.py']
-        self.ignore_check_conflicts = False
-        returncode, stdout, _ = self._run_reframe()
-        num_checks = re.search(
-            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
-        self.assertEqual(num_checks, num_checks_in_file)
-
     def test_checkpath_symlink(self):
         self.action = 'list'
         self.checkpath = ['unittests/resources/checks']

@@ -22,7 +22,6 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
-from reframe.utility import OrderedSet
 
 
 def format_check(check, detailed):
@@ -411,7 +410,7 @@ def main():
 
     # Setup the check loader
     if options.checkpath:
-        load_path = OrderedSet()
+        load_path = []
         for d in options.checkpath.split(':'):
             d = os_ext.expandvars(d)
             if not os.path.exists(d):
@@ -419,20 +418,10 @@ def main():
                                 (argparser.prog, d))
                 continue
 
-            d = os.path.abspath(os.path.realpath(d))
-            if d not in load_path:
-                load_path.add(d)
+            load_path.append(os.path.realpath(d))
 
-        if options.recursive:
-            for d in list(load_path):
-                d_parent = os.path.dirname(d)
-                while d_parent not in {'', '/'}:
-                    if d_parent in load_path:
-                        load_path.remove(d)
-                        break
-
-                    d_parent = os.path.dirname(d_parent)
-
+        load_path = os_ext.unique_abs_paths(load_path,
+                                            discard_children=options.recursive)
         loader = RegressionCheckLoader(
             load_path, recurse=options.recursive,
             ignore_conflicts=options.ignore_check_conflicts)
