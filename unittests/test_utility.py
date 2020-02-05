@@ -1005,7 +1005,7 @@ class TestOrderedSet(unittest.TestCase):
                     out = cf.read()
                     assert out == 'Hello1\nHello2\n'
 
-    def test_unique_paths(self):
+    def test_unique_abs_paths(self):
         p1 = 'a/b/c'
         p1_copy = p1[:]
         p1_parent = 'a/b'
