@@ -85,5 +85,4 @@ class HDF5Test(rfm.RegressionTest):
                 self.current_environ.name == 'PrgEnv-cray'):
             return
 
-        self.variables = {'LINKER_X86_64': '/usr/bin/ld',
-                          'LINKER_AARCH64': '/usr/bin/ld'}
+        self.variables = {'ALT_LINKER': '/usr/bin/ld'}

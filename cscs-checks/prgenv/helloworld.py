@@ -108,8 +108,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                 self.current_environ.name.startswith('PrgEnv-cray')):
             return
 
-        self.variables.update({'LINKER_X86_64': '/usr/bin/ld',
-                               'LINKER_AARCH64': '/usr/bin/ld'})
+        self.variables['ALT_LINKER'] = '/usr/bin/ld'
 
 
 @rfm.required_version('>=2.14')
