@@ -30,7 +30,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
             ]
             self.build_system.max_concurrency = 1
-        elif self.current_system.name in ['arolla','tsa']:
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.num_tasks = 32
             self.num_gpus_per_node = 8

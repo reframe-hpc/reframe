@@ -20,7 +20,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1'
             }
-        elif self.current_system.name in ['arolla','tsa']:
+        elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
@@ -65,7 +65,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35']
-            elif self.current_system.name in ['arolla','tsa']:
+            elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70']
             elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']

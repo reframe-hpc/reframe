@@ -93,8 +93,9 @@ def main():
 
     # Check discovery options
     locate_options.add_argument(
-        '-c', '--checkpath', action='append', metavar='DIR|FILE',
-        help='Search for checks in DIR or FILE')
+        '-c', '--checkpath', action='store', metavar='DIR|FILE',
+        help="Search for checks in DIR or FILE; multiple paths can be "
+             "separated with `:'")
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively')
@@ -173,9 +174,9 @@ def main():
         help='Skip prog. environment check')
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
-        choices=['serial', 'async'], default='serial',
+        choices=['async', 'serial'], default='async',
         help='Specify the execution policy for running the regression tests. '
-             'Available policies: "serial" (default), "async"')
+             'Available policies: "async" (default), "serial"')
     run_options.add_argument(
         '--mode', action='store', help='Execution mode to use')
     run_options.add_argument(
@@ -410,7 +411,7 @@ def main():
     # Setup the check loader
     if options.checkpath:
         load_path = []
-        for d in options.checkpath:
+        for d in options.checkpath.split(':'):
             d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %

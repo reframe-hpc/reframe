@@ -68,7 +68,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
                     '-lcublas', '-lcudart'
                 ]
-            elif self.current_system.name in ['arolla','tsa']:
+            elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.1']
                 self.build_system.ldflags = [
                     '-acc', '-ta:tesla:cc70,cuda10.1', '-lstdc++',
@@ -81,7 +81,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags += [
                     '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64'
                 ]
-            elif self.current_system.name in ['arolla','tsa']:
+            elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.ldflags += [
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart']
 

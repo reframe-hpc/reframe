@@ -118,7 +118,8 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
-        elif self.current_system.name in ['arolla', 'tsa'] and linkage == 'dynamic':
+        elif (self.current_system.name in ['arolla', 'tsa'] and
+              linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
 
@@ -149,7 +150,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
             self.valid_prog_environs += ['PrgEnv-cray-nompi',
                                          'PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
-        elif self.current_system.name in ['arolla', 'tsa'] and linkage == 'dynamic':
+        elif (self.current_system.name in ['arolla', 'tsa'] and
+              linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
 

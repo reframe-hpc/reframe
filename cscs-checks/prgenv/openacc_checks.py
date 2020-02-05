@@ -12,7 +12,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             self.num_tasks = 2
 
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
-                               'arolla:cn', 'tsa:cn']
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'
@@ -21,7 +21,6 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                                             'PrgEnv-pgi-nompi']
             elif self.current_system.name == 'tsa':
                 self.valid_prog_environs = ['PrgEnv-pgi-nompi']
-           
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 

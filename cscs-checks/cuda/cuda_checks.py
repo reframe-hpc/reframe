@@ -1,5 +1,4 @@
 import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -91,7 +90,7 @@ class CudaSimpleMPICheck(CudaCheck):
         self.descr = 'Simple example demonstrating how to use MPI with CUDA'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'simplempi')
-        self.executable = 'simplempi'
+        self.executable = './simplempi'
         self.num_tasks = 2
         self.num_tasks_per_node = 2
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
