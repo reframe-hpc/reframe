@@ -41,6 +41,7 @@ class NetCDFTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'SO']
         self.tags = {'production', 'craype', 'external-resources'}
 
+    @rfm.run_before('compile')
     def setflags(self):
         if self.current_system.name == 'kesch':
             if self.current_environ.name == 'PrgEnv-cray-nompi':
