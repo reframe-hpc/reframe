@@ -10,7 +10,8 @@ class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
         super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.sourcesdir = 'src/Cuda'
@@ -21,21 +22,28 @@ class CudaGdbCheck(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
+            nvidia_sm = '37'
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.modules = ['cuda/10.1.243']
+            nvidia_sm = '70'
         else:
             self.modules = ['craype-accel-nvidia60']
+            nvidia_sm = '60'
 
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile_cuda_gdb'
         self.build_system.cflags = ['-g', '-D_CSCS_ITMAX=1', '-DUSE_MPI',
                                     '-fopenmp']
-        nvidia_sm = '37' if self.current_system.name == 'kesch' else '60'
         self.build_system.cxxflags = ['-g', '-G', '-arch=sm_%s' % nvidia_sm]
         self.build_system.ldflags = ['-g', '-fopenmp', '-lstdc++']
 
-        # FIXME: workaround until the kesch programming environment is fixed
         if self.current_system.name == 'kesch':
             self.build_system.ldflags = ['-g', '-fopenmp', '-lcublas',
                                          '-lcudart', '-lm']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.build_system.ldflags += ['-L$EBROOTCUDA/lib64', 
+                                          '-lcudart', '-lm']
 
         self.sanity_patterns = sn.all([
             sn.assert_found(r'^Breakpoint 1 at .*: file ', self.stdout),
