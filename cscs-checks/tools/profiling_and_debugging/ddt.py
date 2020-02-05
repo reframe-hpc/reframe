@@ -27,12 +27,9 @@ class DdtCheck(rfm.RegressionTest):
             self.modules = ['ddt']
 
         self.prgenv_flags = {
-            # 'PrgEnv-cray': ' -O2 -homp',
             'PrgEnv-gnu': ['-g', '-O2', '-fopenmp'],
-            # 'PrgEnv-intel': ' -O2 -qopenmp',
-            # 'PrgEnv-pgi': ' -O2 -mp'
         }
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
 
         self.num_tasks = 1
@@ -70,9 +67,9 @@ class DdtCpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'tiger:gpu']
+                              'kesch:cn', 'tiger:gpu', 'arolla:cn', 'tsa:cn']
 
-        if self.current_system.name == 'kesch' and self.lang == 'C':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa'] and self.lang == 'C':
             self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
@@ -98,14 +95,17 @@ class DdtCpuCheck(DdtCheck):
 class DdtGpuCheck(DdtCheck):
     def __init__(self, lang, extension):
         super().__init__(lang, extension)
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         self.system_modules = {
+            'arolla': ['cuda/10.1.243'],
             'daint': ['craype-accel-nvidia60'],
             'dom': ['craype-accel-nvidia60'],
             'kesch': ['cudatoolkit/8.0.61'],
             'tiger': ['craype-accel-nvidia60'],
+            'tsa': ['cuda/10.1.243']
         }
         sysname = self.current_system.name
         self.modules += self.system_modules.get(sysname, [])
@@ -113,6 +113,8 @@ class DdtGpuCheck(DdtCheck):
         # as long as cuda/9 will not be the default, we will need:
         if sysname in {'daint', 'kesch'}:
             self.variables = {'ALLINEA_FORCE_CUDA_VERSION': '8.0'}
+        elif sysname in {'arolla', 'tsa'}:
+            self.variables = {'ALLINEA_FORCE_CUDA_VERSION': '10.1'}
 
         self.ddt_options = [
             '--offline --output=ddtreport.txt ',
@@ -123,6 +125,11 @@ class DdtGpuCheck(DdtCheck):
         if self.current_system.name == 'kesch':
             arch = 'sm_37'
             self.build_system.ldflags = ['-lm', '-lcudart']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            arch = 'sm_70'
+            self.build_system.ldflags = ['-lstdc++', '-lm', 
+                                         '-L$EBROOTCUDA/lib64', 
+                                         '-lcudart']
         else:
             arch = 'sm_60'
             self.build_system.ldflags = ['-lstdc++']
