@@ -152,14 +152,11 @@ class RFC3339Formatter(logging.Formatter):
 
     def format(self, record):
         datefmt = self.datefmt or self.default_time_format
-        try:
-            if record.check_job_completion_time is not None:
-                ct = self.converter(record.check_job_completion_time)
-                record.check_job_completion_time = _format_time_rfc3339(
-                    ct, datefmt
-                )
-        except AttributeError:
-            pass
+        if record.check_job_completion_time is not None:
+            ct = self.converter(record.check_job_completion_time)
+            record.check_job_completion_time = _format_time_rfc3339(
+                ct, datefmt
+            )
 
         return super().format(record)
 
