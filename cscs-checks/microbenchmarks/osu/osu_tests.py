@@ -59,7 +59,7 @@ class FlexAlltoallTest(rfm.RegressionTest):
                               'dom:gpu', 'dom:mc', 'tiger:gpu',
                               'kesch:cn', 'kesch:pn',
                               'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn' ]
+                              'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
@@ -159,7 +159,7 @@ class P2PBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi'] 
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
@@ -364,7 +364,7 @@ class G2GLatencyTest(P2PBaseTest):
             self.variables = {'MV2_USE_CUDA': '1'}
         elif self.current_system.name in ['arolla', 'tsa']:
             self.modules = ['cuda/10.1.243']
-            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64', 
+            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
                                          '-lcudart', '-lcuda']
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']

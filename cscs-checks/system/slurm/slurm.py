@@ -118,7 +118,7 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 class DefaultRequestGPU(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'arolla:cn', 'kesch:cn',
                               'tsa:cn']
         self.executable = 'nvidia-smi'

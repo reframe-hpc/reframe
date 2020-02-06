@@ -69,7 +69,8 @@ class DdtCpuCheck(DdtCheck):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'tiger:gpu', 'arolla:cn', 'tsa:cn']
 
-        if self.current_system.name in ['arolla', 'kesch', 'tsa'] and self.lang == 'C':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa'] \
+                                    and self.lang == 'C':
             self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
@@ -127,8 +128,8 @@ class DdtGpuCheck(DdtCheck):
             self.build_system.ldflags = ['-lm', '-lcudart']
         elif self.current_system.name in ['arolla', 'tsa']:
             arch = 'sm_70'
-            self.build_system.ldflags = ['-lstdc++', '-lm', 
-                                         '-L$EBROOTCUDA/lib64', 
+            self.build_system.ldflags = ['-lstdc++', '-lm',
+                                         '-L$EBROOTCUDA/lib64',
                                          '-lcudart']
         else:
             arch = 'sm_60'

@@ -7,7 +7,7 @@ import reframe.utility.sanity as sn
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for CUDA'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn',
                               'tiger:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
@@ -42,3 +42,4 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_reference(result, 1., -1e-5, 1e-5)
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
+

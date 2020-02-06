@@ -42,7 +42,7 @@ class CudaGdbCheck(rfm.RegressionTest):
             self.build_system.ldflags = ['-g', '-fopenmp', '-lcublas',
                                          '-lcudart', '-lm']
         elif self.current_system.name in ['arolla', 'tsa']:
-            self.build_system.ldflags += ['-L$EBROOTCUDA/lib64', 
+            self.build_system.ldflags += ['-L$EBROOTCUDA/lib64',
                                           '-lcudart', '-lm']
 
         self.sanity_patterns = sn.all([

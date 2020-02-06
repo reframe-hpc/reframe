@@ -68,7 +68,7 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 36
         elif partition.fullname in ['tiger:gpu']:
             self.num_cpus_per_task = 18
-        elif partition.fullname in ['arolla:cn', 'arolla:pn', 
+        elif partition.fullname in ['arolla:cn', 'arolla:pn',
                                     'kesch:cn', 'kesch:pn',
                                     'tsa:cn', 'tsa:pn']:
             self.num_cpus_per_task = 12

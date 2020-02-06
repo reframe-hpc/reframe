@@ -15,7 +15,7 @@ class StreamTest(rfm.RegressionTest):
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'tiger:gpu', 
+                              'kesch:cn', 'kesch:pn', 'tiger:gpu',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi',
@@ -94,7 +94,7 @@ class StreamTest(rfm.RegressionTest):
                 'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
-#                'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
+#               'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
                 'tsa:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'tsa:pn': {'triad': (84400, -0.05, None, 'MB/s')},
                 '*': {'triad': (0.0, None, None, 'MB/s')},

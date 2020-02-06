@@ -15,7 +15,7 @@ class AllocSpeedTest(rfm.RegressionTest):
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
-            self.valid_systems += ['kesch:cn', 'kesch:pn', 
+            self.valid_systems += ['kesch:cn', 'kesch:pn',
                                    'arolla:cn', 'arolla:pn',
                                    'tsa:cn', 'tsa:pn']
         else:
