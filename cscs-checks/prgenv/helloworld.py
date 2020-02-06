@@ -6,6 +6,7 @@ import reframe.utility.sanity as sn
 
 class HelloWorldBaseTest(rfm.RegressionTest):
     def __init__(self, variant, lang, linkage):
+        self.linkage = linkage
         self.variables = {'CRAYPE_LINK_TYPE': linkage}
         self.prgenv_flags = {}
         self.lang_names = {
@@ -32,9 +33,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
-
-        self.maintainers = ['VH', 'EK']
-        self.tags = {'production', 'craype'}
 
         result = sn.findall(r'Hello World from thread \s*(\d+) out '
                             r'of \s*(\d+) from process \s*(\d+) out of '
@@ -82,6 +80,9 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             }
         }
 
+        self.maintainers = ['VH', 'EK']
+        self.tags = {'production', 'craype'}
+
     @rfm.run_before('compile')
     def setflags(self):
         envname = self.current_environ.name.replace('-nompi', '')
@@ -98,6 +99,17 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     def compile_timer_end(self):
         elapsed = datetime.now() - self.compilation_time_seconds
         self.compilation_time_seconds = elapsed.total_seconds()
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name.startswith('PrgEnv-cray')):
+            return
+
+        self.variables['ALT_LINKER'] = '/usr/bin/ld'
 
 
 @rfm.required_version('>=2.14')

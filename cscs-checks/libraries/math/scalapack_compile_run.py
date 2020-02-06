@@ -6,6 +6,7 @@ import reframe.utility.sanity as sn
 
 class ScaLAPACKTest(rfm.RegressionTest):
     def __init__(self, linkage):
+        self.linkage = linkage
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'scalapack')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:mc',
@@ -26,6 +27,17 @@ class ScaLAPACKTest(rfm.RegressionTest):
         self.build_system.fflags = ['-O3']
         self.maintainers = ['CB', 'LM']
         self.tags = {'production', 'external-resources'}
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name == 'PrgEnv-cray'):
+            return
+
+        self.variables['ALT_LINKER'] = '/usr/bin/ld'
 
 
 @rfm.required_version('>=2.14')

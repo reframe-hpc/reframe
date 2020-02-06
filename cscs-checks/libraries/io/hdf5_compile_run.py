@@ -11,6 +11,7 @@ class HDF5Test(rfm.RegressionTest):
             'c': 'C',
             'f90': 'Fortran 90'
         }
+        self.linkage = linkage
         self.descr = lang_names[lang] + ' HDF5 ' + linkage.capitalize()
         self.sourcepath = 'h5ex_d_chunk.' + lang
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -74,3 +75,14 @@ class HDF5Test(rfm.RegressionTest):
 
         self.maintainers = ['SO', 'RS']
         self.tags = {'production', 'craype'}
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if not (self.linkage == 'static' and
+                self.current_system.name == 'dom' and
+                self.current_environ.name == 'PrgEnv-cray'):
+            return
+
+        self.variables = {'ALT_LINKER': '/usr/bin/ld'}
