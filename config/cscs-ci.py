@@ -65,6 +65,24 @@ class ReframeSettings:
                     }
                 }
             },
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
