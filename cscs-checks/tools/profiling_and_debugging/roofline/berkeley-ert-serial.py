@@ -1,10 +1,9 @@
 import os
-
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-#{{{ base
+# {{{ base
 class ErtTestBase(rfm.RegressionTest):
     """
     The Empirical Roofline Tool, ERT, automatically generates roofline data.
@@ -29,14 +28,13 @@ class ErtTestBase(rfm.RegressionTest):
         super().setup(partition, environ, **job_opts)
         if self.num_tasks != 36:
             self.job.launcher.options = ['--cpu-bind=verbose,none']
-#}}}
+# }}}
 
-#{{{ test
-@rfm.parameterized_test(
-    *[[num_ranks, flop]
-      for num_ranks in [1]
-      for flop in [256, 512, 1024]])
-      #for flop in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]])
+
+# {{{ test
+@rfm.parameterized_test(*[[num_ranks, flop]
+                          for num_ranks in [1]
+                          for flop in [256, 512, 1024]])
 class ErtBroadwellTest(ErtTestBase):
     def __init__(self, num_ranks, flop):
         super().__init__()
@@ -115,7 +113,7 @@ class ErtBroadwellTest(ErtTestBase):
             # OPENMP_THREADS 1
             # FLOPS          8
             # MPI_PROCS      36
-            # 
+            #
             #   5647.33 L1 EMP
             #   *******
             #   3203.86 L2 EMP
@@ -138,11 +136,11 @@ class ErtBroadwellTest(ErtTestBase):
             gflops = sn.extractsingle(regex_gflops, self.roofline_rpt,
                                       'GFLOPs', float)
             L1bw = sn.extractsingle(regex_L1bw, self.roofline_rpt,
-                                      'L1bw', float)
+                                    'L1bw', float)
             L2bw = sn.extractsingle(regex_L2bw, self.roofline_rpt,
-                                      'L2bw', float)
+                                    'L2bw', float)
             L3bw = sn.extractsingle(regex_L3bw, self.roofline_rpt,
-                                      'L3bw', float)
+                                    'L3bw', float)
             DRAMbw = sn.extractsingle(regex_DRAMbw, self.roofline_rpt,
                                       'DRAMbw', float)
 
@@ -167,4 +165,4 @@ class ErtBroadwellTest(ErtTestBase):
 
         # else:
 
-#}}}
+# }}}
