@@ -239,7 +239,7 @@ class IntelRooflineAdvisorTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['JG', 'MKr']
-        self.tags = {'production', 'external-resources'}
+        self.tags = {'external-resources'}
 
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
