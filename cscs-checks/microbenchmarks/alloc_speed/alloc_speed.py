@@ -36,12 +36,6 @@ class AllocSpeedTest(rfm.RegressionTest):
         }
         self.sys_reference = {
             'no': {
-                'arolla:cn': {
-                    'time': (1.60, None, 0.10, 's')
-                },
-                'arolla:pn': {
-                    'time': (0.70, None, 0.10, 's')
-                },
                 'dom:gpu': {
                     'time': (1.22, None, 0.05, 's')
                 },
@@ -58,12 +52,6 @@ class AllocSpeedTest(rfm.RegressionTest):
                     'time': (1.41, None, 0.10, 's')
                 },
                 'kesch:pn': {
-                    'time': (0.70, None, 0.10, 's')
-                },
-                'tsa:cn': {
-                    'time': (1.60, None, 0.10, 's')
-                },
-                'tsa:pn': {
                     'time': (0.70, None, 0.10, 's')
                 },
             },
