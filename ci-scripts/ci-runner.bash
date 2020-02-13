@@ -134,7 +134,12 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-module load reframe
+if [[ $(hostname) =~ tsa ]]; then
+    # FIXME: Temporary workaround until we have a reframe module on Tsa
+    module load python
+else
+    module load reframe
+fi
 
 echo "=============="
 echo "Loaded Modules"
