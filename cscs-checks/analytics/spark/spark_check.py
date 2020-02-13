@@ -24,7 +24,7 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
 
     @rfm.run_before('setup')
     def set_num_tasks(self):
-                if partition.fullname == 'daint:gpu':
+        if partition.fullname == 'daint:gpu':
             self.num_tasks = 48
             self.num_tasks_per_node = 12
         else:
