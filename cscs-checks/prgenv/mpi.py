@@ -67,7 +67,6 @@ class MpiInitTest(rfm.RegressionTest):
 @rfm.simple_test
 class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'kesch:pn', 'tiger:gpu',
                               'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
