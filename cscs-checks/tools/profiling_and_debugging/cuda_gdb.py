@@ -8,7 +8,6 @@ from reframe.core.launchers import LauncherWrapper
 @rfm.simple_test
 class CudaGdbCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
