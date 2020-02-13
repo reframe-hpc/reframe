@@ -68,11 +68,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
                                              self.stdout, 1, float, -1)
         }
         ref_values = {
-            'arolla': {
-                'nocomm':  5.7878,
-                'nocomp':  5.62155,
-                'default': 5.53777
-            },
             'kesch': {
                 'nocomm':  5.7878,
                 'nocomp':  5.62155,
@@ -82,11 +77,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 'nocomm':  0.0171947,
                 'nocomp':  0.0137893,
                 'default': 0.0138493
-            },
-            'tsa': {
-                'nocomm':  5.7878,
-                'nocomp':  5.62155,
-                'default': 5.53777
             },
         }
 
@@ -101,9 +91,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
             ref = 0.0
 
         self.reference = {
-            'arolla:cn': {
-                'elapsed_time': (ref, None, 0.15)
-            },
             'kesch:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
@@ -111,9 +98,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 'elapsed_time': (ref, None, 0.15)
             },
             'dom': {
-                'elapsed_time': (ref, None, 0.15)
-            },
-            'tsa:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
         }
