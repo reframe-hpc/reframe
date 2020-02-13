@@ -92,7 +92,6 @@ class StreamTest(rfm.RegressionTest):
                 'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
-#               'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
             },
             'PrgEnv-intel': {
                 'daint:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
