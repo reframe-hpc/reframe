@@ -117,11 +117,6 @@ class AlltoallvTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
-                             'arolla': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
-                             },
                              'kesch': {
                                  'nocomm':  6.89819,
                                  'nocomp':  6.98276,
@@ -131,11 +126,6 @@ class AlltoallvTest(CollectivesBaseTest):
                                  'nocomm':  0.0171947,
                                  'nocomp':  0.0137893,
                                  'default': 0.0138493
-                             },
-                             'tsa': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
                              },
                          })
         self.strict_check = False
@@ -148,11 +138,6 @@ class HaloExchangeTest(CollectivesBaseTest):
     def __init__(self, variant):
         super().__init__(variant,
                          {
-                             'arolla': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
-                             },
                              'kesch': {
                                  'nocomm':  5.7878,
                                  'nocomp':  54.2012,
@@ -162,11 +147,6 @@ class HaloExchangeTest(CollectivesBaseTest):
                                  'nocomm':  0.978306,
                                  'nocomp':  1.36716,
                                  'default': 2.53509
-                             },
-                             'tsa': {
-                                 'nocomm':  5.7878,
-                                 'nocomp':  5.62155,
-                                 'default': 5.53777
                              },
                          })
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
