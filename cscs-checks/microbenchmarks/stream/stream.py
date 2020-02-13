@@ -45,8 +45,8 @@ class StreamTest(rfm.RegressionTest):
         self.num_tasks = 1
         self.num_tasks_per_node = 1
         self.stream_cpus_per_task = {
-            'arolla:cn': 12,
-            'arolla:pn': 12,
+            'arolla:cn': 16,
+            'arolla:pn': 16,
             'daint:gpu': 12,
             'daint:mc': 36,
             'dom:gpu': 12,
@@ -55,8 +55,8 @@ class StreamTest(rfm.RegressionTest):
             'kesch:pn': 24,
             'leone:normal': 16,
             'monch:compute': 20,
-            'tsa:cn': 12,
-            'tsa:pn': 12,
+            'tsa:cn': 16,
+            'tsa:pn': 16,
         }
         self.variables = {
             'OMP_PLACES': 'threads',
@@ -86,8 +86,6 @@ class StreamTest(rfm.RegressionTest):
                 '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
-                'arolla:cn': {'triad': (47000, -0.05, None, 'MB/s')},
-                'arolla:pn': {'triad': (84400, -0.05, None, 'MB/s')},
                 'daint:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
@@ -95,8 +93,6 @@ class StreamTest(rfm.RegressionTest):
                 'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
 #               'leone:normal': {'triad': (44767.0, -0.05, None, 'MB/s')},
-                'tsa:cn': {'triad': (47000, -0.05, None, 'MB/s')},
-                'tsa:pn': {'triad': (84400, -0.05, None, 'MB/s')},
             },
             'PrgEnv-intel': {
                 'daint:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
