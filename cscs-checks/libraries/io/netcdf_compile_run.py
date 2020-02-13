@@ -86,9 +86,7 @@ class NetCDFTest(rfm.RegressionTest):
                     '-I$EBROOTNETCDFMINFORTRAN/include'
                 ]
         elif self.current_system.name in ['arolla', 'tsa']:
-            self.modules = ['netcdf',
-                            'netcdf-c++',
-                            'netcdf-fortran']
+            self.modules = ['netcdf', 'netcdf-c++', 'netcdf-fortran']
             self.build_system.cppflags = [
                 '-I$EBROOTNETCDF/include',
                 '-I$EBROOTNETCDFMINCPLUSPLUS/include',
