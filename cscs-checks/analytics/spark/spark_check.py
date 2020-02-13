@@ -10,7 +10,6 @@ from reframe.core.launchers.registry import getlauncher
 @rfm.simple_test
 class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Simple calculation of pi with Spark'
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['PrgEnv-cray']
@@ -23,15 +22,17 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['TM', 'TR']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if partition.fullname == 'daint:gpu':
+    @rfm.run_before('setup')
+    def set_num_tasks(self):
+                if partition.fullname == 'daint:gpu':
             self.num_tasks = 48
             self.num_tasks_per_node = 12
         else:
             self.num_tasks = 72
             self.num_tasks_per_node = 18
 
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def change_launcher(self):
         # The job launcher has to be changed since the `start_analytics`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()

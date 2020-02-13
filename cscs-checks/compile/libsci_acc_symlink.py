@@ -10,7 +10,6 @@ import reframe.utility.sanity as sn
                         ['libsci_acc_cray_nv60_openacc'])
 class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
     def __init__(self, lib_name):
-        super().__init__()
         self.descr = 'LibSciAcc symlink check of %s' % lib_name
         self.valid_systems = ['daint:login', 'daint:gpu',
                               'dom:login', 'dom:gpu',
