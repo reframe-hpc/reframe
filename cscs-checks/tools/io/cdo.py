@@ -91,6 +91,7 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
             nco_name = 'nco'
         else:
             nco_name = 'NCO'
+
         self.pre_run = ['module load %s' % nco_name]
         super().setup(partition, environ, **job_opts)
 
