@@ -80,9 +80,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'tsa:cn': {
                     'latency': (12.0, None, 0.10, 'us')
                 },
-                '*': {
-                    'latency': (0.0, None, None, 'us')
-                }
             },
             'async': {
                 'arolla:cn': {
@@ -100,9 +97,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'tsa:cn': {
                     'latency': (5.7, None, 0.10, 'us')
                 },
-                '*': {
-                    'latency': (0.0, None, None, 'us')
-                }
             },
         }
 
