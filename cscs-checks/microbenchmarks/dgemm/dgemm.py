@@ -33,16 +33,12 @@ class DGEMMTest(rfm.RegressionTest):
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O3']
         self.sys_reference = {
-            'arolla:cn': (300.0, -0.15, None, 'Gflop/s'),
-            'arolla:pn': (300.0, -0.15, None, 'Gflop/s'),
             'daint:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'daint:mc': (860.0, -0.15, None, 'Gflop/s'),
             'dom:gpu': (300.0, -0.15, None, 'Gflop/s'),
             'dom:mc': (860.0, -0.15, None, 'Gflop/s'),
             'kesch:cn': (300.0, -0.15, None, 'Gflop/s'),
             'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
-            'tsa:cn': (300.0, -0.15, None, 'Gflop/s'),
-            'tsa:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
 
         self.maintainers = ['AJ', 'VH']
