@@ -82,6 +82,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 ]
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.ldflags += [
-                    '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart']
+                    '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
+                ]
 
         super().setup(partition, environ, **job_opts)
