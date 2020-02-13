@@ -29,9 +29,6 @@ class CudaStressTest(rfm.RegressionTest):
             'time': sn.extractsingle(r'Timing: (\S+)', self.stdout, 1, float)
         }
         self.reference = {
-            'arolla:cn': {
-                'time': (2.25, None, 0.05)
-            },
             'daint:gpu': {
                 'time': (1.41184, None, 0.05)
             },
@@ -41,9 +38,6 @@ class CudaStressTest(rfm.RegressionTest):
             'kesch:cn': {
                 'time': (2.25, None, 0.05)
             },
-            'tsa:cn': {
-                'time': (2.25, None, 0.05)
-            }
         }
         self.tags = {'production', 'mch', 'craype'}
         self.maintainers = ['MKr', 'AJ']
