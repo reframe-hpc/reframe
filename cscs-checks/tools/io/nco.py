@@ -88,6 +88,7 @@ class NCO_CDOModuleCompatibilityTest(NCOBaseTest):
             cdo_name = 'cdo'
         else:
             cdo_name = 'CDO'
+
         self.pre_run = ['module load %s' % cdo_name]
         super().setup(partition, environ, **job_opts)
 
