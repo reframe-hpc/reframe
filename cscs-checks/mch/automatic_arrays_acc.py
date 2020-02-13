@@ -21,6 +21,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             }
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
+
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
         self.num_gpus_per_node = 1
@@ -33,7 +34,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             'time': sn.extractsingle(r'Timing:\s+(?P<time>\S+)',
                                      self.stdout, 'time', float)
         }
-
         self.arrays_reference = {
             'PrgEnv-cray': {
                 'daint:gpu': {'time': (5.7E-05, None, 0.15)},
