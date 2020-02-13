@@ -363,52 +363,6 @@ class ReframeSettings:
                 }
             },
 
-            'leone': {
-                'descr': 'Leone',
-                'hostnames': ['leone'],
-                'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/UES/reframe/resources',
-                'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Leone login nodes',
-                        'max_jobs': 1
-                    },
-
-                    'normal': {
-                        'scheduler': 'nativeslurm',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': ('Leone compute nodes - '
-                                  'default partition'),
-                        'max_jobs': 10
-                    },
-                }
-            },
-
-            'monch': {
-                'descr': 'Monch PASC',
-                'hostnames': ['monch'],
-                'modules_system': 'tmod',
-                'resourcesdir': '/apps/common/UES/reframe/resources',
-                'partitions': {
-                    'login': {
-                        'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Monch login nodes',
-                        'max_jobs': 1
-                    },
-
-                    'compute': {
-                        'scheduler': 'slurm+mpirun',
-                        'access': ['--partition=compute'],
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Monch compute nodes',
-                        'max_jobs': 10
-                    }
-                }
-            },
-
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
