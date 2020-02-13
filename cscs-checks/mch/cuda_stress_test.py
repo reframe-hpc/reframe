@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CudaStressTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'MCH CUDA stress test'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
