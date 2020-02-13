@@ -28,8 +28,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
             self.exclusive_access = True
 
         # Removing static compilation from kesch
-        if (self.current_system.name in ['kesch'] and
-            linkage == 'static'):
+        if (self.current_system.name in ['kesch'] and linkage == 'static'):
             self.valid_prog_environs = []
 
         self.compilation_time_seconds = None
@@ -117,8 +116,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                           for lang in ['cpp', 'c', 'f90']
                           for linkage in ['dynamic', 'static']))
 class HelloWorldTestSerial(HelloWorldBaseTest):
-    def __init__(self, lang, linkage, **kwargs):
-        super().__init__('serial', lang, linkage, **kwargs)
+    def __init__(self, lang, linkage):
+        super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
