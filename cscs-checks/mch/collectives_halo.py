@@ -77,7 +77,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
                 'nocomm':  0.0171947,
                 'nocomp':  0.0137893,
                 'default': 0.0138493
-            },
+            }
         }
 
         if self.current_system.name == 'dom':
