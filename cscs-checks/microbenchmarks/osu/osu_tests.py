@@ -54,7 +54,6 @@ class AlltoallTest(rfm.RegressionTest):
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'tiger:gpu',
                               'kesch:cn', 'kesch:pn',
@@ -211,9 +210,6 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             'tsa:cn': {
                 'bw': (6311.48, -0.15, None, 'MB/s')
             },
-            '*': {
-                'bw': (0, None, None, 'MB/s')
-            }
         }
         self.perf_patterns = {
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
