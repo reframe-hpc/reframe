@@ -55,7 +55,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.perf_patterns = {}
         self.reference = {}
         self.__bwref = {
-# FIXME: reference values for Arolla and Tsa need to be updated (sanity check fails if they are not defined)
+        # FIXME: reference values for Arolla and Tsa need to be updated 
+        #    (sanity check fails if they are not defined)
             'arolla:cn:h2d':   (7583, -0.1, None, 'MB/s'),
             'arolla:cn:d2h':   (7584, -0.1, None, 'MB/s'),
             'arolla:cn:d2d': (137408, -0.1, None, 'MB/s'),
