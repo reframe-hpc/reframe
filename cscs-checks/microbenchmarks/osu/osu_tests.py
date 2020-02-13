@@ -185,9 +185,6 @@ class P2PCPUBandwidthTest(P2PBaseTest):
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.reference = {
-            'arolla:cn': {
-                'bw': (6311.48, -0.15, None, 'MB/s')
-            },
             'daint:gpu': {
                 'bw': (9798.29, -0.1, None, 'MB/s')
             },
@@ -205,9 +202,6 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             #     'bw': (6317.84, -0.15, None, 'MB/s')
             # },
             'kesch:cn': {
-                'bw': (6311.48, -0.15, None, 'MB/s')
-            },
-            'tsa:cn': {
                 'bw': (6311.48, -0.15, None, 'MB/s')
             },
         }
@@ -229,9 +223,6 @@ class P2PCPULatencyTest(P2PBaseTest):
 
         self.executable = './p2p_osu_latency'
         self.reference = {
-            'arolla:cn': {
-                'latency': (1.57, None, 0.1, 'us')
-            },
             'daint:gpu': {
                 'latency': (1.16, None, 1.0, 'us')
             },
@@ -250,9 +241,6 @@ class P2PCPULatencyTest(P2PBaseTest):
             # },
             'kesch:cn': {
                 'latency': (1.17, None, 0.1, 'us')
-            },
-            'tsa:cn': {
-                'latency': (1.57, None, 0.1, 'us')
             },
             '*': {
                 'latency': (0, None, None, 'us')
@@ -277,9 +265,6 @@ class G2GBandwidthTest(P2PBaseTest):
                                 'cuda', 'D', 'D']
 
         self.reference = {
-            'arolla:cn': {
-                'bw': (6288.98, -0.1, None, 'MB/s')
-            },
             'dom:gpu': {
                 'bw': (8897.86, -0.1, None, 'MB/s')
             },
@@ -287,9 +272,6 @@ class G2GBandwidthTest(P2PBaseTest):
                 'bw': (8765.65, -0.1, None, 'MB/s')
             },
             'kesch:cn': {
-                'bw': (6288.98, -0.1, None, 'MB/s')
-            },
-            'tsa:cn': {
                 'bw': (6288.98, -0.1, None, 'MB/s')
             },
             '*': {
@@ -328,9 +310,6 @@ class G2GLatencyTest(P2PBaseTest):
                                 'cuda', 'D', 'D']
 
         self.reference = {
-            'arolla:cn': {
-                'latency': (23.09, None, 0.1, 'us')
-            },
             'dom:gpu': {
                 'latency': (5.49, None, 0.1, 'us')
             },
@@ -338,9 +317,6 @@ class G2GLatencyTest(P2PBaseTest):
                 'latency': (5.73, None, 1.0, 'us')
             },
             'kesch:cn': {
-                'latency': (23.09, None, 0.1, 'us')
-            },
-            'tsa:cn': {
                 'latency': (23.09, None, 0.1, 'us')
             },
             '*': {
