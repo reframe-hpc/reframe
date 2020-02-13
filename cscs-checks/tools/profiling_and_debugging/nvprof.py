@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Checks the nvprof tool'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
                               'arolla:cn', 'tsa:cn']
