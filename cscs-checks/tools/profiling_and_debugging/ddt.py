@@ -68,9 +68,8 @@ class DdtCpuCheck(DdtCheck):
         super().__init__(lang, extension)
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'tiger:gpu', 'arolla:cn', 'tsa:cn']
-
-        if self.current_system.name in ['arolla', 'kesch', 'tsa'] \
-                                    and self.lang == 'C':
+        if (self.current_system.name in ['arolla', 'kesch', 'tsa']
+                and self.lang == 'C'):
             self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
