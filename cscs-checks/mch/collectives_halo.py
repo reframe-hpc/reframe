@@ -116,9 +116,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
             'tsa:cn': {
                 'elapsed_time': (ref, None, 0.15)
             },
-            '*': {
-                'elapsed_time': (ref, None, None)
-            }
         }
 
         self.maintainers = ['AJ', 'MKr']
