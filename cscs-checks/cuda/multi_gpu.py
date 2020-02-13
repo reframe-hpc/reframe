@@ -55,9 +55,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.perf_patterns = {}
         self.reference = {}
         self.__bwref = {
-            'arolla:cn:h2d':   (7583, -0.1, None, 'MB/s'),
-            'arolla:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'arolla:cn:d2d': (137408, -0.1, None, 'MB/s'),
             'daint:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'daint:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
             'daint:gpu:d2d': (499000, -0.1, None, 'MB/s'),
@@ -70,9 +67,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'tiger:gpu:h2d': (0, None, None, 'MB/s'),
             'tiger:gpu:d2h': (0, None, None, 'MB/s'),
             'tiger:gpu:d2d': (0, None, None, 'MB/s'),
-            'tsa:cn:h2d':   (7583, -0.1, None, 'MB/s'),
-            'tsa:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'tsa:cn:d2d': (137408, -0.1, None, 'MB/s'),
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
