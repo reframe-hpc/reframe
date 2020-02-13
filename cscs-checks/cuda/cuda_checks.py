@@ -23,7 +23,6 @@ class CudaCheck(rfm.RegressionTest):
             self.modules = ['cuda/10.1.243']
         else:
             self.modules = ['craype-accel-nvidia60']
-
         self.num_gpus_per_node = 1
         self.nvidia_sm = '60'
 
