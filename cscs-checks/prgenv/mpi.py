@@ -29,7 +29,6 @@ class MpiInitTest(rfm.RegressionTest):
     '''
 
     def __init__(self, required_thread):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
