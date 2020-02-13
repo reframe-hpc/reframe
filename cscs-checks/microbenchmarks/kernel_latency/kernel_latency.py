@@ -65,9 +65,6 @@ class KernelLatencyTest(rfm.RegressionTest):
         }
         self.sys_reference = {
             'sync': {
-                'arolla:cn': {
-                    'latency': (12.0, None, 0.10, 'us')
-                },
                 'dom:gpu': {
                     'latency': (6.6, None, 0.10, 'us')
                 },
@@ -75,16 +72,10 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (6.6, None, 0.10, 'us')
                 },
                 'kesch:cn': {
-                    'latency': (12.0, None, 0.10, 'us')
-                },
-                'tsa:cn': {
                     'latency': (12.0, None, 0.10, 'us')
                 },
             },
             'async': {
-                'arolla:cn': {
-                    'latency': (5.7, None, 0.10, 'us')
-                },
                 'dom:gpu': {
                     'latency': (2.2, None, 0.10, 'us')
                 },
@@ -92,9 +83,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (2.2, None, 0.10, 'us')
                 },
                 'kesch:cn': {
-                    'latency': (5.7, None, 0.10, 'us')
-                },
-                'tsa:cn': {
                     'latency': (5.7, None, 0.10, 'us')
                 },
             },
