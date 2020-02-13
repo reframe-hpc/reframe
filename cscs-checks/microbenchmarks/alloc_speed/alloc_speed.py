@@ -66,9 +66,6 @@ class AllocSpeedTest(rfm.RegressionTest):
                 'tsa:pn': {
                     'time': (0.70, None, 0.10, 's')
                 },
-                '*': {
-                    'time': (0, None, None, 's')
-                }
             },
             '2M': {
                 'dom:gpu': {
