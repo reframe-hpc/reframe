@@ -41,11 +41,9 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'kesch:cn': {'time': (2.9E-04, None, 0.15)},
             },
             'PrgEnv-pgi': {
-                'arolla:cn': {'time': (1.4E-04, None, 0.15)},
                 'daint:gpu': {'time': (7.5E-05, None, 0.15)},
                 'dom:gpu': {'time': (7.5e-05, None, 0.15)},
                 'kesch:cn': {'time': (1.4E-04, None, 0.15)},
-                'tsa:cn': {'time': (1.4E-04, None, 0.15)},
             }
         }
 
