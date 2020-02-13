@@ -7,7 +7,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GpuBurnTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu',
                               'kesch:cn', 'tiger:gpu'
                               'arolla:cn', 'tsa:cn']
@@ -56,6 +55,10 @@ class GpuBurnTest(rfm.RegressionTest):
         }
 
         self.reference = {
+            'arolla:cn': {
+                'perf': (950, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
             'dom:gpu': {
                 'perf': (4115, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
@@ -65,6 +68,10 @@ class GpuBurnTest(rfm.RegressionTest):
                 'max_temp': (0, None, None, 'Celsius')
             },
             'kesch:cn': {
+                'perf': (950, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
+            'tsa:cn': {
                 'perf': (950, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
