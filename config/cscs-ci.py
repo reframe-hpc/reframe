@@ -74,7 +74,7 @@ class ReframeSettings:
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin-gcc'],
                         'descr': 'Tsa compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
