@@ -15,6 +15,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility.timer import seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -154,8 +155,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                      self._format_option(job.stderr, errfile_fmt)]
 
         if job.time_limit is not None:
-            m, s = divmod(job.time_limit.total_seconds(), 60)
-            h, m = divmod(m, 60)
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
                 self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )

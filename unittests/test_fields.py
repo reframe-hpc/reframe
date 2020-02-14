@@ -2,6 +2,7 @@ import datetime
 import os
 import unittest
 
+import pytest
 import reframe.core.fields as fields
 from reframe.utility import ScopedDict
 
@@ -86,28 +87,22 @@ class TestFields(unittest.TestCase):
         tester.field = '1d65h22m87s'
         tester.field_maybe_none = None
 
-        self.assertIsInstance(FieldTester.field, fields.TimerField)
-        self.assertEqual(datetime.timedelta(days=1, hours=65, minutes=22,
-                                            seconds=87), tester.field)
+        assert isinstance(FieldTester.field, fields.TimerField)
+        assert (datetime.timedelta(days=1, hours=65, minutes=22,
+                                   seconds=87) == tester.field)
         tester.field = ''
-        self.assertEqual(datetime.timedelta(days=0, hours=0, minutes=0,
-                                            seconds=0), tester.field)
-        self.assertRaises(ValueError, exec, 'tester.field = "1e"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "-10m5s"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "m10s"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "10m10"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "10m10m1s"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "10m5s3m"',
-                          globals(), locals())
-        self.assertRaises(ValueError, exec, 'tester.field = "10ms"',
-                          globals(), locals())
-        self.assertRaises(TypeError, exec, 'tester.field = 10',
-                          globals(), locals())
+        assert (datetime.timedelta(days=0, hours=0, minutes=0,
+                                   seconds=0) == tester.field)
+        with pytest.raises(ValueError):
+            exec('tester.field = "1e"', globals(), locals())
+            exec('tester.field = "-10m5s"', globals(), locals())
+            exec('tester.field = "10m-5s"', globals(), locals())
+            exec('tester.field = "m10s"', globals(), locals())
+            exec('tester.field = "10m10"', globals(), locals())
+            exec('tester.field = "10m10m1s"', globals(), locals())
+            exec('tester.field = "10m5s3m"', globals(), locals())
+            exec('tester.field = "10ms"', globals(), locals())
+            exec('tester.field = 10', globals(), locals())
 
     def test_proxy_field(self):
         class Target:

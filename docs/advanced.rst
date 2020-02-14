@@ -227,7 +227,7 @@ The important bit here is the following line that sets the time limit for the te
   :lines: 12
   :dedent: 8
 
-The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a three-tuple in the form ``(HOURS, MINUTES, SECONDS)``.
+The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a string in the form ``<DAYS>d<HOURS>h<MINUTES>m<SECONDS>s)``.
 Time limits are implemented for all the scheduler backends.
 
 The sanity condition for this test verifies that associated job has been canceled due to the time limit (note that this message is SLURM-specific).
