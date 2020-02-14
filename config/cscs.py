@@ -68,11 +68,6 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
-                        'container_platforms': {
-                            'Sarus': {
-                                'modules': ['sarus']
-                            }
-                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -178,6 +173,9 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -194,6 +192,9 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
