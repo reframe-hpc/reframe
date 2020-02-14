@@ -13,7 +13,6 @@ class CudaCheck(rfm.RegressionTest):
                                          'PrgEnv-gnu-nompi']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs += ['PrgEnv-gnu-nompi']
-            
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
 
