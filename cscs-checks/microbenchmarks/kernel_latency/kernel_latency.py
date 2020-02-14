@@ -24,7 +24,7 @@ class KernelLatencyTest(rfm.RegressionTest):
         elif self.current_system.name == 'kesch':
             self.num_gpus_per_node = 16
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             gpu_arch = '37'
         elif self.current_system.name in ['arolla', 'tsa']:
             self.num_gpus_per_node = 8
@@ -72,7 +72,7 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (6.6, None, 0.10, 'us')
                 },
                 'kesch:cn': {
-                    'latency': (12.0, None, 0.10, 'us')
+                    'latency': (13.7, None, 0.10, 'us')
                 },
             },
             'async': {
