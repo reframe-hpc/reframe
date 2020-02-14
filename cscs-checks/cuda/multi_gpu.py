@@ -8,7 +8,6 @@ import reframe as rfm
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if self.current_system.name == 'kesch':
