@@ -35,10 +35,10 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    @rfm.run_before('setup')
+    @rfm.run_before('compile')
     def set_flags(self):
         if self.current_system.name == 'kesch':
-            if environ.name.startswith('PrgEnv-cray'):
+            if self.current_environ.name.startswith('PrgEnv-cray'):
                 # Ignore CPATH warning
                 self.build_system.cflags += ['-h nomessage=1254']
                 self.build_system.cxxflags += ['-h nomessage=1254']
@@ -47,7 +47,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
                 self.build_system.cxxflags += ['-march=native']
                 self.build_system.fflags += ['-march=native']
         else:
-            if environ.name == 'PrgEnv-cray':
+            if self.current_environ.name == 'PrgEnv-cray':
                 self.build_system.cflags = ['-Ofast', '-S']
                 self.build_system.cxxflags = ['-Ofast', '-S']
 

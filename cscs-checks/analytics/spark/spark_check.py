@@ -20,11 +20,11 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
                                     self.stdout, 'pi', float)
         self.sanity_patterns = sn.assert_lt(sn.abs(pi_value - math.pi), 0.01)
         self.maintainers = ['TM', 'TR']
-        self.tags = {'production', 'craype'}
+        self.tags = {'craype'}
 
-    @rfm.run_before('setup')
+    @rfm.run_after('setup')
     def set_num_tasks(self):
-        if partition.fullname == 'daint:gpu':
+        if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 48
             self.num_tasks_per_node = 12
         else:

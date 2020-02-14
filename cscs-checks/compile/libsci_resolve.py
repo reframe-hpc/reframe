@@ -46,7 +46,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         # self.build_system.fflags = ['-Wl,-ydgemm_']
         self.postbuild_cmd = ['readelf -d %s' % self.executable]
 
-    @rfm.run_after('setup')
+    @rfm.run_before('sanity')
     def set_sanity(self):
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
