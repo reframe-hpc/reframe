@@ -57,6 +57,15 @@ def grep_command_output(cmd, pattern, where='stdout'):
     else:
         outlist = [completed.stdout, completed.stderr]
 
+    if isinstance(pattern, (tuple, list)):
+        regexes = [re.compile(pat, re.MULTILINE) for pat in pattern]
+        matches = [False] * len(pattern)
+        for out in outlist:
+            for i, regex in enumerate(regexes):
+                if regex.search(out):
+                    matches[i] = True
+        return matches
+
     for out in outlist:
         if re.search(pattern, out, re.MULTILINE):
             return True
