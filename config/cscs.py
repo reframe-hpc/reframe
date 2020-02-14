@@ -69,8 +69,8 @@ class ReframeSettings:
                     'compute': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             }
                         },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -100,8 +100,8 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -121,8 +121,8 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
