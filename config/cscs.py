@@ -68,11 +68,6 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
-                        'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
-                            }
-                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -100,8 +95,8 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -121,8 +116,8 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -178,6 +173,9 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -194,6 +192,9 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
