@@ -5,10 +5,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX 1d_stencil_4 check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -47,25 +45,26 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def partition_setup(self):
         result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)',
                             self.stdout)
 
-        if partition.fullname == 'daint:gpu':
+        if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
+        elif self.current_partition.fullname == 'daint:mc':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
-        elif partition.fullname == 'dom:gpu':
+        elif self.current_partition.fullname == 'dom:gpu':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
+        elif self.current_partition.fullname == 'dom:mc':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
@@ -86,16 +85,12 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_num_parts,
                                                assert_num_steps))
 
-        super().setup(partition, environ, **job_opts)
-
 
 @rfm.simple_test
 class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX 1d_stencil_8 check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -134,27 +129,28 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def partition_setup(self):
         result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
                             r'\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),'
                             r'\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)', self.stdout)
 
-        if partition.fullname == 'daint:gpu':
+        if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
+        elif self.current_partition.fullname == 'daint:mc':
             self.num_tasks = 4
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 18
             self.num_tasks_per_socket = 1
-        elif partition.fullname == 'dom:gpu':
+        elif self.current_partition.fullname == 'dom:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
+        elif self.current_partition.fullname == 'dom:mc':
             self.num_tasks = 4
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 18
@@ -179,5 +175,3 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_num_points,
                                                assert_num_parts,
                                                assert_num_steps))
-
-        super().setup(partition, environ, **job_opts)

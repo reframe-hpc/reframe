@@ -5,10 +5,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX hello, world check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -20,23 +18,24 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def partition_setup(self):
         hellos = sn.findall(r'hello world from OS-thread \s*(?P<tid>\d+) on '
                             r'locality (?P<lid>\d+)', self.stdout)
 
-        if partition.fullname == 'daint:gpu':
+        if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
+        elif self.current_partition.fullname == 'daint:mc':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
-        elif partition.fullname == 'dom:gpu':
+        elif self.current_partition.fullname == 'dom:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
+        elif self.current_partition.fullname == 'dom:mc':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
@@ -56,4 +55,3 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_threads,
                                                assert_localities))
 
-        super().setup(partition, environ, **job_opts)
