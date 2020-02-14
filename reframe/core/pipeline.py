@@ -1504,6 +1504,7 @@ class CompileOnlyRegressionTest(RegressionTest):
         super()._rfm_init(*args, **kwargs)
         self.local = True
 
+    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
