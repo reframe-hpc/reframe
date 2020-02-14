@@ -13,6 +13,7 @@ class CudaCheck(rfm.RegressionTest):
                                          'PrgEnv-gnu-nompi']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.valid_prog_environs += ['PrgEnv-gnu-nompi']
+
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CUDA', 'essentials')
 
@@ -22,6 +23,7 @@ class CudaCheck(rfm.RegressionTest):
             self.modules = ['cuda/10.1.243']
         else:
             self.modules = ['craype-accel-nvidia60']
+
         self.num_gpus_per_node = 1
         self.nvidia_sm = '60'
         if self.current_system.name == 'kesch':
