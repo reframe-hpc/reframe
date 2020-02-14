@@ -29,7 +29,6 @@ class MpiInitTest(rfm.RegressionTest):
     '''
 
     def __init__(self, required_thread):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
@@ -68,14 +67,16 @@ class MpiInitTest(rfm.RegressionTest):
 @rfm.simple_test
 class MpiHelloTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn', 'tiger:gpu']
+                              'kesch:cn', 'kesch:pn', 'tiger:gpu',
+                              'arolla:cn', 'arolla:pn', 'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
-                                        'PrgEnv-intel']
+            self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.descr = 'MPI Hello World'
         self.sourcepath = 'mpi_helloworld.c'
