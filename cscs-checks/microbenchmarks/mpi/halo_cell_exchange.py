@@ -10,7 +10,8 @@ class HaloCellExchangeTest(rfm.RegressionTest):
         self.sourcepath = 'halo_cell_exchange.c'
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi',
                                     'PrgEnv-gnu']
         self.num_tasks = 6
@@ -95,17 +96,6 @@ class HaloCellExchangeTest(rfm.RegressionTest):
                 'time_6_10000': (1.448979e-05, None, 0.50, 's'),
                 'time_6_1000000': (8.432294e-04, None, 0.50, 's')
             },
-            '*': {
-                'time_2_10': (0, None, None, 's'),
-                'time_2_10000': (0, None, None, 's'),
-                'time_2_1000000': (0, None, None, 's'),
-                'time_4_10': (0, None, None, 's'),
-                'time_4_10000': (0, None, None, 's'),
-                'time_4_1000000': (0, None, None, 's'),
-                'time_6_10': (0, None, None, 's'),
-                'time_6_10000': (0, None, None, 's'),
-                'time_6_1000000': (0, None, None, 's')
-            }
         }
 
         self.maintainers = ['AJ']
