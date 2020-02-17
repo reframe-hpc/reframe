@@ -615,7 +615,8 @@ def main():
                 # Print a failure report if we had failures in the last run
                 if runner.stats.failures():
                     if options.rerun_failed:
-                        printer.info(runner.stats.failure_report(rerun_failed=1))
+                        rerun_failed = 1
+                        printer.info(runner.stats.failure_report(rerun_failed))
                     else:
                         printer.info(runner.stats.failure_report())
                     success = False
