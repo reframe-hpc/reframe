@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HaloCellExchangeTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcepath = 'halo_cell_exchange.c'
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']

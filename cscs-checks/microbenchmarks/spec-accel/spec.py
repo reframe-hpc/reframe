@@ -7,7 +7,6 @@ from reframe.core.launchers.registry import getlauncher
 
 class SpecAccelCheckBase(rfm.RegressionTest):
     def __init__(self, prg_envs):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = prg_envs
         self.modules = ['craype-accel-nvidia60']
@@ -60,22 +59,22 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.maintainers = ['SK']
         self.tags = {'diagnostic', 'external-resources'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setup_per_env(self):
         self.pre_run = ['source ./shrc', 'mv %s config' %
-                        self.configs[environ.name]]
-        self.executable_opts = ['--config=%s' % self.configs[environ.name],
+                        self.configs[self.current_environ.name]]
+        self.executable_opts = ['--config=%s' % self.configs[self.current_environ.name],
                                 '--platform NVIDIA',
                                 '--tune=base',
-                                '--device GPU'] + self.benchmarks[environ.name]
+                                '--device GPU'] + self.benchmarks[self.current_environ.name]
         self.reference = {
-            'dom:gpu':   self.refs[environ.name],
-            'daint:gpu': self.refs[environ.name]
+            'dom:gpu':   self.refs[self.current_environ.name],
+            'daint:gpu': self.refs[self.current_environ.name]
         }
 
-        self.sanity_patterns = self.sanity_patterns_[environ.name]
-        self.perf_patterns = self.perf_patterns_[environ.name]
+        self.sanity_patterns = self.sanity_patterns_[self.current_environ.name]
+        self.perf_patterns = self.perf_patterns_[self.current_environ.name]
 
-        super().setup(partition, environ, **job_opts)
         # The job launcher has to be changed since the `runspec`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()

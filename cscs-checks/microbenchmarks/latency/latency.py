@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CPULatencyTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcepath = 'latency.cpp'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',

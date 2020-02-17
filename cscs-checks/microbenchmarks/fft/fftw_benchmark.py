@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['nompi'], ['mpi'])
 class FFTWTest(rfm.RegressionTest):
     def __init__(self, exec_mode):
-        super().__init__()
         self.sourcepath = 'fftw_benchmark.c'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
@@ -42,9 +41,6 @@ class FFTWTest(rfm.RegressionTest):
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (0.61, None, 0.05, 's'),
-                },
-                '*': {
-                    'fftw_exec_time': (0, None, None, 's'),
                 }
             }
         else:
@@ -59,9 +55,6 @@ class FFTWTest(rfm.RegressionTest):
                 },
                 'kesch:cn': {
                     'fftw_exec_time': (1.58, None, 0.50, 's'),
-                },
-                '*': {
-                    'fftw_exec_time': (0, None, None, 's'),
                 }
             }
 

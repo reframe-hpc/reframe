@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
@@ -32,10 +31,7 @@ class AlltoallTest(rfm.RegressionTest):
             },
             'daint:gpu': {
                 'latency': (20.73, None, 2.0, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
-            },
+            }
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
@@ -83,7 +79,6 @@ class FlexAlltoallTest(rfm.RegressionTest):
 @rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
@@ -115,9 +110,6 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (8.79, None, 0.25, 'us')
-                },
-                '*': {
-                    'latency': (0, None, None, 'us')
                 }
             }
         else:
@@ -128,9 +120,6 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (10.85, None, 0.20, 'us')
-                },
-                '*': {
-                    'latency': (0, None, None, 'us')
                 }
             }
 
@@ -145,7 +134,6 @@ class AllreduceTest(rfm.RegressionTest):
 
 class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
@@ -241,9 +229,6 @@ class P2PCPULatencyTest(P2PBaseTest):
             # },
             'kesch:cn': {
                 'latency': (1.17, None, 0.1, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
             }
         }
         self.perf_patterns = {
@@ -318,9 +303,6 @@ class G2GLatencyTest(P2PBaseTest):
             },
             'kesch:cn': {
                 'latency': (23.09, None, 0.1, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
             }
         }
         self.perf_patterns = {

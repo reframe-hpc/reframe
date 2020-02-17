@@ -11,7 +11,6 @@ class StreamTest(rfm.RegressionTest):
     '''
 
     def __init__(self):
-        super().__init__()
         self.descr = 'STREAM Benchmark'
         self.exclusive_access = True
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -74,7 +73,6 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (117000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (117000, -0.05, None, 'MB/s')},
-                '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-cray': {
                 'daint:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
@@ -83,7 +81,6 @@ class StreamTest(rfm.RegressionTest):
                 'dom:mc': {'triad': (89000, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (85000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (113000, -0.05, None, 'MB/s')},
-                '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
                 'daint:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
@@ -98,24 +95,23 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (119000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (119000, -0.05, None, 'MB/s')},
-                '*': {'triad': (0.0, None, None, 'MB/s')},
             },
             'PrgEnv-pgi': {
                 'daint:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
-                '*': {'triad': (0.0, None, None, 'MB/s')},
             }
         }
         self.tags = {'production', 'craype'}
         self.maintainers = ['RS', 'SK']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setup_per_partition_and_env(self):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
-            partition.fullname, 1)
+            self.current_partition.fullname, 1)
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
-        envname = environ.name
+        envname = self.current_environ.name
 
         self.build_system.cflags = self.prgenv_flags.get(envname, ['-O3'])
         if envname == 'PrgEnv-pgi':
@@ -125,5 +121,3 @@ class StreamTest(rfm.RegressionTest):
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
             self.reference = {'*': {'triad': (0.0, None, None, 'MB/s')}}
-
-        super().setup(partition, environ, **job_opts)
