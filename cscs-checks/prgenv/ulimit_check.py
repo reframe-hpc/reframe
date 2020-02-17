@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class UlimitCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Checking the output of ulimit -s in node.'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu',   'dom:mc', 'tiger:gpu']

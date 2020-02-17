@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class SSHLoginEnvCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('Check the values of a set of environment variables '
                       'when accessing remotely over SSH')
         self.valid_systems = ['daint:login', 'dom:login']

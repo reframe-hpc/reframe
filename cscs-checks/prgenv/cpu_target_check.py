@@ -5,7 +5,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CrayCPUTargetTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Checks whether CRAY_CPU_TARGET is set'
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
