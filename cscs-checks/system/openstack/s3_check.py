@@ -5,7 +5,6 @@ import getpass
 
 class S3apiCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         endpoint = 'object.cscs.ch'
         self.descr = 'S3API check for (%s)' % endpoint
         self.tags = {'ops', 'object_store'}
