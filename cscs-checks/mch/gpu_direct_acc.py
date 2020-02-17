@@ -55,10 +55,11 @@ class GpuDirectAccCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-pgi'):
+        elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags = ['-acc']
             if self.current_system.name in ['daint', 'dom']:
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
@@ -67,4 +68,3 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
 
-        super().setup(partition, environ, **job_opts)

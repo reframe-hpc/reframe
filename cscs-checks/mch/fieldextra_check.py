@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 
 class FieldextraTestBase(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.maintainers = ['MKr']
         self.tags = {'mch', 'external-resources'}
 
