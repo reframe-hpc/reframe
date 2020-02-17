@@ -15,7 +15,7 @@ class GpuBurnTest(rfm.RegressionTest):
 
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             # NOTE: The first option indicates the precision (-d for double)
             #       while the seconds is the time (in secs) to run the test.
             #       For multi-gpu nodes, we run the gpu burn test for more
