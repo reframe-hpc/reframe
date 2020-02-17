@@ -65,11 +65,12 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def failure_report(self):
+    def failure_report(self, rerun_failed=-1):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
         current_run = rt.runtime().current_run
+        failures = {} 
         for tf in (t for t in self.tasks(current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
@@ -107,8 +108,50 @@ class TestStats:
                 # This shouldn't happen...
                 report.append('Unknown error.')
 
+            # Collect failures for summary table
+            if not tf.failed_stage in failures:
+                failures[tf.failed_stage] = []
+            failures[tf.failed_stage].append([check.name, environ_name, partname, reason])
+
         report.append(line_width * '-')
-        return '\n'.join(report)
+
+        # Generate summary table
+        row_format = "{:<11} {:<5} {:<60}"
+        hline = row_format.format(11*'-', 5*'-', 60*'-')
+        header = row_format.format('Phase', '#', 'Description')
+        stage_descr = {
+            'setup': "Failed to set up test's environment and path",
+            'compile': "Failed to compile the source code in the current environemnt", 
+            'run': "Failed to launch jobs",
+            'sanity': "Failed in sanity checking",
+            'performance': "Failed in performance checking",
+            'poll': "Failed in polling",
+            'cleanup': "Failed to clean up the resources of the test." 
+        }
+        total_num_tests = len(self.tasks(current_run))
+        total_num_failures = 0
+        for p in failures.keys():
+            total_num_failures += len(failures[p])
+        summary = ['']
+        summary.append('Total number of tests: %d' % int(total_num_tests))
+        summary.append('Total number of failures: %d' % int(total_num_failures))
+        summary.append('')
+        summary.append(header)
+        summary.append(hline)
+        for p in failures:
+            summary.append(row_format.format(p, len(failures[p]), stage_descr[p]))
+            if rerun_failed == 1:
+                for f in failures[p]:
+                    phase = p
+                    if "could not load module" in f[3]:
+                        phase = "load module"
+                    elif "could not show module" in f[3]:
+                        phase = "no module"
+                    summary.append(row_format.format(
+                        '', '', '%s: -n %s -p %s --system %s' % tuple([phase] + f[:3])))
+        summary.append('')
+
+        return '\n'.join(report + summary)
 
     def performance_report(self):
         line_width = 78

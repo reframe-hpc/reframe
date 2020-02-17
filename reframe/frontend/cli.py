@@ -232,6 +232,9 @@ def main():
         '--non-default-craype', action='store_true', default=False,
         help='Test a non-default Cray PE')
     misc_options.add_argument(
+        '--rerun-failed', action='store_true',
+        help='Print run options for all failed tests in summary table')
+    misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
     misc_options.add_argument(
@@ -611,7 +614,10 @@ def main():
 
                 # Print a failure report if we had failures in the last run
                 if runner.stats.failures():
-                    printer.info(runner.stats.failure_report())
+                    if options.rerun_failed:
+                        printer.info(runner.stats.failure_report(rerun_failed=1))
+                    else:
+                        printer.info(runner.stats.failure_report())
                     success = False
 
                 if options.performance_report:
