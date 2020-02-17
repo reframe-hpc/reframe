@@ -68,11 +68,6 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
-                        'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
-                            }
-                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -100,8 +95,8 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -121,8 +116,8 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -178,6 +173,9 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -194,6 +192,9 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -299,6 +300,70 @@ class ReframeSettings:
                 }
             },
 
+            'arolla': {
+                'descr': 'Arolla MCH',
+                'hostnames': [r'arolla-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Arolla login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Arolla post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Arolla compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
+
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'login': {
+                        'scheduler': 'local',
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
+                    },
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
+
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
@@ -377,41 +442,67 @@ class ReframeSettings:
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
-                'PrgEnv-cray-c2sm': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/base'],
+            },
+
+            'arolla': {
+                'PrgEnv-pgi-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.9'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
-                'PrgEnv-cray-c2sm-gpu': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/gpu'],
-                },
-                'PrgEnv-pgi-c2sm': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/base'],
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.9'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
-                'PrgEnv-pgi-c2sm-gpu': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/gpu'],
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/19.2'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
-                'PrgEnv-gnu-c2sm': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/base'],
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                },
+            },
+
+            'tsa': {
+                'PrgEnv-pgi-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.9'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
+                },
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.9'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
-                'PrgEnv-gnu-c2sm-gpu': {
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/gpu'],
+                'PrgEnv-gnu': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/19.2'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 },
             },
 

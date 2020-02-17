@@ -7,7 +7,8 @@ import reframe.utility.sanity as sn
 class GpuDirectCudaCheck(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'tests gpu-direct for CUDA'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn',
+                              'tiger:gpu', 'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'gpu_direct_cuda.cu'
         self.build_system = 'SingleSource'
@@ -25,6 +26,13 @@ class GpuDirectCudaCheck(rfm.RegressionTest):
                 'G2G': '1',
             }
             self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_37']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu']
+            self.variables = {
+                'G2G': '1',
+            }
+            self.build_system.cxxflags = ['-ccbin', 'mpicxx', '-arch=sm_70']
 
         self.num_tasks = 2
         self.num_gpus_per_node = 1
