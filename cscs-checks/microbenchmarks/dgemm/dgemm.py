@@ -67,10 +67,16 @@ class DGEMMTest(rfm.RegressionTest):
         elif partition.fullname in ['arolla:cn', 'arolla:pn',
                                     'kesch:cn', 'kesch:pn',
                                     'tsa:cn', 'tsa:pn']:
-            self.num_cpus_per_task = 12
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
+
+        if partition.fullname in ['arolla:cn', 'tsa:cn']:
+            self.num_cpus_per_task = 16
+        elif partition.fullname in ['arolla:pn', 'tsa:pn']:
+            self.num_cpus_per_task = 40
+        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
+            self.num_cpus_per_task = 12
 
         if self.num_cpus_per_task:
             self.variables = {
