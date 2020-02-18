@@ -7,14 +7,15 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GpuBurnTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
+                              'kesch:cn', 'tiger:gpu'
+                              'arolla:cn', 'tsa:cn']
         self.descr = 'GPU burn test'
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             # NOTE: The first option indicates the precision (-d for double)
             #       while the seconds is the time (in secs) to run the test.
             #       For multi-gpu nodes, we run the gpu burn test for more
@@ -22,6 +23,12 @@ class GpuBurnTest(rfm.RegressionTest):
             self.executable_opts = ['-d', '40']
             self.num_gpus_per_node = 16
             gpu_arch = '37'
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.modules = ['cuda/10.1.243']
+            self.executable_opts = ['-d', '40']
+            self.num_gpus_per_node = 8
+            gpu_arch = '70'
         elif self.current_system.name in {'daint', 'dom', 'tiger'}:
             self.modules = ['craype-accel-nvidia60']
             self.executable_opts = ['-d', '20']
@@ -60,10 +67,6 @@ class GpuBurnTest(rfm.RegressionTest):
                 'perf': (950, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
-            '*': {
-                'perf': (0, None, None, 'Gflop/s'),
-                'max_temp': (0, None, None, 'Celsius')
-            }
         }
 
         self.num_tasks = 0

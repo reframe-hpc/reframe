@@ -134,7 +134,15 @@ if [ "X${MODULEUSE}" != "X" ]; then
     module use ${MODULEUSE}
 fi
 
-module load reframe
+if [[ $(hostname) =~ tsa ]]; then
+    # FIXME: Temporary workaround until we have a reframe module on Tsa
+    module load python
+    python3 -m venv venv.unittests
+    source venv.unittests/bin/activate
+    pip install -r requirements.txt
+else
+    module load reframe
+fi
 
 echo "=============="
 echo "Loaded Modules"

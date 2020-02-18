@@ -3,7 +3,7 @@
 #
 
 import abc
-from datetime import datetime
+import time
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -17,6 +17,8 @@ from reframe.core.logging import getlogger
 class JobScheduler(abc.ABC):
     @abc.abstractmethod
     def completion_time(self, job):
+        '''The completion time of this job expressed in seconds from the Epoch.
+        '''
         pass
 
     @abc.abstractmethod
@@ -332,7 +334,7 @@ class Job:
             raise JobNotStartedError('cannot wait an unstarted job')
 
         self.scheduler.wait(self)
-        self._completion_time = self._completion_time or datetime.now()
+        self._completion_time = self._completion_time or time.time()
 
     def cancel(self):
         if self.jobid is None:
@@ -346,7 +348,7 @@ class Job:
 
         done = self.scheduler.finished(self)
         if done:
-            self._completion_time = self._completion_time or datetime.now()
+            self._completion_time = self._completion_time or time.time()
 
         return done
 

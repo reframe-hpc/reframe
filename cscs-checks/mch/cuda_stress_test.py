@@ -5,16 +5,19 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class CudaStressTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'MCH CUDA stress test'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cudatoolkit/8.0.61']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.modules = ['cuda/10.1.243']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']
-            self.modules = ['craype-accel-nvidia60']
 
         self.sourcepath = 'cuda_stencil_test.cu'
         self.build_system = 'SingleSource'
