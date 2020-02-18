@@ -1004,3 +1004,23 @@ class TestOrderedSet(unittest.TestCase):
                 with open(concat_file) as cf:
                     out = cf.read()
                     assert out == 'Hello1\nHello2\n'
+
+    def test_unique_abs_paths(self):
+        p1 = 'a/b/c'
+        p2 = p1[:]
+        p3 = 'a/b'
+        p4 = '/d/e//'
+        p5 = '/d/e/f'
+        expected_paths = [os.path.abspath('a/b'), '/d/e']
+        actual_paths = os_ext.unique_abs_paths(
+            [p1, p2, p3, p4, p5])
+        assert expected_paths == actual_paths
+
+        expected_paths = [os.path.abspath('a/b/c'),  os.path.abspath('a/b'),
+                          '/d/e', '/d/e/f']
+        actual_paths = os_ext.unique_abs_paths(
+            [p1, p2, p3, p4, p5], prune_children=False)
+        assert expected_paths == actual_paths
+
+        with pytest.raises(TypeError):
+            os_ext.unique_abs_paths(None)

@@ -281,6 +281,25 @@ class TestFrontend(unittest.TestCase):
             r'Found (\d+) check', stdout, re.MULTILINE).group(1)
         self.assertEqual(num_checks, '2')
 
+    def test_checkpath_symlink(self):
+        self.action = 'list'
+        self.checkpath = ['unittests/resources/checks']
+        self.more_options = ['-R']
+        returncode, stdout, _ = self._run_reframe()
+        num_checks_default = re.search(
+            r'Found (\d+) check', stdout, re.MULTILINE).group(1)
+
+        with tempfile.TemporaryDirectory(dir='unittests') as tmp:
+            checks_link = os.path.join(tmp, 'checks_symlink')
+            os.symlink(os.path.abspath('unittests/resources/checks'),
+                       os.path.abspath(checks_link))
+            self.checkpath = ['unittests/resources/checks', checks_link]
+            returncode, stdout, _ = self._run_reframe()
+            num_checks_in_checkdir = re.search(
+                r'Found (\d+) check', stdout, re.MULTILINE).group(1)
+
+        self.assertEqual(num_checks_in_checkdir, num_checks_default)
+
     def test_checkpath_recursion(self):
         self.action = 'list'
         self.checkpath = []
