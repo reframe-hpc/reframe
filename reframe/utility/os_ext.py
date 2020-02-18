@@ -411,34 +411,30 @@ def concat_files(dst, *files, sep='\n', overwrite=False):
                 fw.write(sep)
 
 
-def unique_abs_paths(paths, discard_children=True):
-    '''Get the unique absolute paths from a given iterable of ``paths``.
+def unique_abs_paths(paths, prune_children=True):
+    '''Get the unique absolute paths from a given list of ``paths``.
 
-       :arg paths: The list of paths.
-       :arg discard_children: Discard a path if it's a child of one of the
-           given ``paths``.
+       :arg paths: An iterable of paths.
+       :arg prune_children: Discard paths that are children of other paths
+           in the list.
        :raises TypeError: In case ``paths`` it not an iterable object.
     '''
     if not isinstance(paths, collections.abc.Iterable):
         raise TypeError("'%s' object is not iterable" %
-                        paths.__class__.__name__)
+                        type(paths).__name__)
 
-    unique_paths = OrderedSet()
-    for p in paths:
-        abs_path = os.path.abspath(p)
-        if p in unique_paths:
-            continue
-
-        unique_paths.add(abs_path)
-
-    if discard_children:
-        for p in list(unique_paths):
+    unique_paths = OrderedSet(os.path.abspath(p) for p in paths)
+    children = OrderedSet()
+    if prune_children:
+        for p in unique_paths:
             p_parent = os.path.dirname(p)
             while p_parent != '/':
                 if p_parent in unique_paths:
-                    unique_paths.remove(p)
+                    children.add(p)
                     break
 
                 p_parent = os.path.dirname(p_parent)
 
-    return list(unique_paths)
+    # FIXME: This should be performed using the minus operator of
+    # `OrderedSet` once #1165 is fixed.
+    return [p for p in unique_paths if p not in children]

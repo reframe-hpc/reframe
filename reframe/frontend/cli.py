@@ -421,7 +421,7 @@ def main():
             load_path.append(os.path.realpath(d))
 
         load_path = os_ext.unique_abs_paths(load_path,
-                                            discard_children=options.recursive)
+                                            prune_children=options.recursive)
         loader = RegressionCheckLoader(
             load_path, recurse=options.recursive,
             ignore_conflicts=options.ignore_check_conflicts)
