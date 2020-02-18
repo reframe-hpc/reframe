@@ -18,6 +18,7 @@ class CudaStressTest(rfm.RegressionTest):
             self.modules = ['cuda/10.1.243']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']
+            self.modules = ['craype-accel-nvidia60']
 
         self.sourcepath = 'cuda_stencil_test.cu'
         self.build_system = 'SingleSource'
