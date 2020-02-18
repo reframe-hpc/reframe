@@ -110,7 +110,7 @@ class CDO_InfoNCTest(CDOBaseTest):
         # TODO: Add here also Warning? then it fails currently...
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 5 variables over 1 timestep',
+            sn.assert_found(r'info: Processed( 688128 values from)? 5 variables over 1 timestep',
                             self.stderr)
         ])
 
@@ -126,7 +126,7 @@ class CDO_InfoNC4Test(CDOBaseTest):
         # TODO: fails currently with the file test_hgroups.nc4
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 3 variables over 8 timestep', 
+            sn.assert_found(r'info: Processed( 442368 values from)? 3 variables over 8 timestep', 
                             self.stderr)
         ])
 
@@ -141,7 +141,7 @@ class CDO_InfoNC4CTest(CDOBaseTest):
             'info', 'test_echam_spectral-deflated_wind10_wl_ws.nc4c']
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 3 variables over 8 timestep',
+            sn.assert_found(r'info: Processed( 442368 values from)? 3 variables over 8 timestep',
                             self.stderr)
         ])
 
@@ -161,7 +161,7 @@ class CDO_MergeNCTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 3 timesteps?',
+            sn.assert_found(r'merge: Processed( 98304 values from)? 3 variables',
                             self.stderr)
         ])
 
@@ -181,7 +181,7 @@ class CDO_MergeNC4Test(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 24 timesteps?',
+            sn.assert_found(r'merge: Processed( 442368 values from)? 3 variables',
                             self.stderr)
         ])
 
@@ -202,6 +202,6 @@ class CDO_MergeNC4CTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 24 timesteps?',
+            sn.assert_found(r'merge: Processed( 442368 values from)? 3 variables',
                             self.stderr)
         ])
