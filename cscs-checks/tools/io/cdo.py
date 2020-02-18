@@ -26,7 +26,6 @@ from reframe.core.pipeline import RunOnlyRegressionTest
 
 class CDOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -90,14 +89,12 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
         self.sanity_patterns = sn.assert_not_found(
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
-    def setup(self, partition, environ, **job_opts):
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             nco_name = 'nco'
         else:
             nco_name = 'NCO'
 
         self.pre_run = ['module load %s' % nco_name]
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
@@ -126,7 +123,7 @@ class CDO_InfoNC4Test(CDOBaseTest):
         # TODO: fails currently with the file test_hgroups.nc4
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 3 variables over 8 timestep', 
+            sn.assert_found(r'info: Processed 3 variables over 8 timestep',
                             self.stderr)
         ])
 
