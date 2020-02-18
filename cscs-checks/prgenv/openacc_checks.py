@@ -50,7 +50,6 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
-
     @rfm.run_before('compile')
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-cray'):

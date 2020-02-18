@@ -137,8 +137,12 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
 
     @rfm.run_before('compile')
     def setexecopts(self):
-        self.num_cpus_per_task = self.system_num_cpus[self.current_partition.fullname]
-        numa_domains = self.system_numa_domains[self.current_partition.fullname]
+        self.num_cpus_per_task = self.system_num_cpus[
+            self.current_partition.fullname
+        ]
+        numa_domains = self.system_numa_domains[
+            self.current_partition.fullname
+        ]
 
         num_cpu_domain = (self.num_cpus_per_task /
                           (len(numa_domains) * self.num_tasks_per_core))

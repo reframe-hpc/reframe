@@ -63,10 +63,12 @@ class SpecAccelCheckBase(rfm.RegressionTest):
     def setup_per_env(self):
         self.pre_run = ['source ./shrc', 'mv %s config' %
                         self.configs[self.current_environ.name]]
-        self.executable_opts = ['--config=%s' % self.configs[self.current_environ.name],
-                                '--platform NVIDIA',
-                                '--tune=base',
-                                '--device GPU'] + self.benchmarks[self.current_environ.name]
+        self.executable_opts = [
+            '--config=%s' %
+            self.configs[self.current_environ.name],
+            '--platform NVIDIA',
+            '--tune=base',
+            '--device GPU'] + self.benchmarks[self.current_environ.name]
         self.reference = {
             'dom:gpu':   self.refs[self.current_environ.name],
             'daint:gpu': self.refs[self.current_environ.name]

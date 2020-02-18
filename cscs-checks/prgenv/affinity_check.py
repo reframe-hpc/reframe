@@ -103,7 +103,8 @@ class AffinityOpenMPTest(AffinityTestBase):
     @rfm.run_before('compile')
     def set_task_per_core(self):
         self.num_cpus_per_task = (
-            self.cases[self.variant]['num_cpus_per_task:%s' % self.current_partition.name])
+            self.cases[self.variant]['num_cpus_per_task:%s' %
+                                     self.current_partition.name])
         if self.cases[self.variant]['ntasks_per_core']:
             self.num_tasks_per_core = (
                 self.cases[self.variant]['ntasks_per_core'])
