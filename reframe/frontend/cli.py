@@ -418,8 +418,10 @@ def main():
                                 (argparser.prog, d))
                 continue
 
-            load_path.append(d)
+            load_path.append(os.path.realpath(d))
 
+        load_path = os_ext.unique_abs_paths(load_path,
+                                            prune_children=options.recursive)
         loader = RegressionCheckLoader(
             load_path, recurse=options.recursive,
             ignore_conflicts=options.ignore_check_conflicts)
