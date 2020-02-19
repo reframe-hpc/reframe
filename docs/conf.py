@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+#
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
 # -*- coding: utf-8 -*-
 #
 # ReFrame documentation build configuration file, created by
@@ -17,6 +23,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import reframe
 import os
 import re
 import sys
@@ -24,7 +31,6 @@ import sys
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath('..'))
-import reframe
 
 # -- General configuration ------------------------------------------------
 
