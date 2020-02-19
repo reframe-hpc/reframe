@@ -6,7 +6,6 @@ import reframe.utility.sanity as sn
 
 class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['LAMMPS']
 

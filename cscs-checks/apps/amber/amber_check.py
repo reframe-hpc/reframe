@@ -6,11 +6,8 @@ import reframe.utility.sanity as sn
 
 class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, input_file, output_file):
-        super().__init__()
-
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Amber')
-
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['Amber']
         self.num_tasks = 1
