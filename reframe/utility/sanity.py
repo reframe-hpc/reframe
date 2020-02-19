@@ -547,6 +547,8 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
     except SanityError:
         error_msg = msg or '{0} is beyond reference value {1} (l={2}, u={3})'
         raise SanityError(_format(error_msg, val, ref, lower, upper))
+    except TypeError:
+        raise SanityError(_format('cannot compare {0} with reference value {1}', val, ref))
     else:
         return True
 
