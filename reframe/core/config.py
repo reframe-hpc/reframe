@@ -252,9 +252,10 @@ def create_json_object():
                     new_p['launcher'] = 'local'
                 else:
                     sched = p['scheduler'].split('+')[0]
-                    launch = p['scheduler'].split('+')[0]
+                    launch = p['scheduler'].split('+')[1]
                     new_p['scheduler'] = sched
                     new_p['launcher'] = launch
+
                 # Make resources dictionary into a list
                 if 'resources' in p:
                     new_p['resources'] = []
