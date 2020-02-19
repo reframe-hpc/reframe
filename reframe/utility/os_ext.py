@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 import reframe
 from reframe.core.exceptions import (ReframeError, SpawnedProcessError,
                                      SpawnedProcessTimeout)
+from . import OrderedSet
 
 
 def run_command(cmd, check=False, timeout=None, shell=False, log=True):
@@ -408,3 +409,32 @@ def concat_files(dst, *files, sep='\n', overwrite=False):
             with open(f, 'r') as fr:
                 fw.write(fr.read())
                 fw.write(sep)
+
+
+def unique_abs_paths(paths, prune_children=True):
+    '''Get the unique absolute paths from a given list of ``paths``.
+
+       :arg paths: An iterable of paths.
+       :arg prune_children: Discard paths that are children of other paths
+           in the list.
+       :raises TypeError: In case ``paths`` it not an iterable object.
+    '''
+    if not isinstance(paths, collections.abc.Iterable):
+        raise TypeError("'%s' object is not iterable" %
+                        type(paths).__name__)
+
+    unique_paths = OrderedSet(os.path.abspath(p) for p in paths)
+    children = OrderedSet()
+    if prune_children:
+        for p in unique_paths:
+            p_parent = os.path.dirname(p)
+            while p_parent != '/':
+                if p_parent in unique_paths:
+                    children.add(p)
+                    break
+
+                p_parent = os.path.dirname(p_parent)
+
+    # FIXME: This should be performed using the minus operator of
+    # `OrderedSet` once #1165 is fixed.
+    return [p for p in unique_paths if p not in children]
