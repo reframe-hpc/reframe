@@ -1,4 +1,5 @@
 import collections.abc
+import json
 import re
 
 import reframe.core.debug as debug
@@ -217,3 +218,105 @@ class SiteConfiguration:
                 system.add_partition(part)
 
             self._systems[sys_name] = system
+
+
+def create_json_object():
+    if _settings is None:
+        raise ReframeFatalError('ReFrame is not configured')
+
+    json_configuration = {
+        'systems': [],
+        'environments': [],
+        'logging': [],
+        'perf_logging': [],
+    }
+    for sys_name, sys_specs in _settings.site_configuration['systems'].items():
+        sys_dict = {'name': sys_name}
+        sys_dict.update(sys_specs)
+        # Make variables dictionary into a list of lists
+        if 'variables' in sys_specs:
+            sys_dict['variables'] = []
+            for vname, v in sys_specs['variables'].items():
+                sys_dict['variables'].append([vname, v])
+        # Make partitions dictionary into a list
+        if 'partitions' in sys_specs:
+            sys_dict['partitions'] = []
+            for pname, p in sys_specs['partitions'].items():
+                new_p = {'name': pname}
+                new_p.update(p)
+                if p['scheduler'] == 'nativeslurm':
+                    new_p['scheduler'] = 'slurm'
+                    new_p['launcher'] = 'srun'
+                elif p['scheduler'] == 'local':
+                    new_p['scheduler'] = 'local'
+                    new_p['launcher'] = 'local'
+                else:
+                    sched = p['scheduler'].split('+')[0]
+                    launch = p['scheduler'].split('+')[0]
+                    new_p['scheduler'] = sched
+                    new_p['launcher'] = launch
+                # Make resources dictionary into a list
+                if 'resources' in p:
+                    new_p['resources'] = []
+                    for rname, r in p['resources'].items():
+                        new_r = {'name': rname, 'options': r}
+                        new_p['resources'].append(new_r)
+
+                # Make variables dictionary into a list of lists
+                if 'variables' in p:
+                    new_p['variables'] = []
+                    for vname, v in p['variables'].items():
+                        new_p['variables'].append([vname, v])
+
+                sys_dict['partitions'].append(new_p)
+
+        json_configuration['systems'].append(sys_dict)
+
+    for env_target, env_entries in _settings.site_configuration['environments'].items():
+        for ename, e in env_entries.items():
+            new_env = {'name': ename}
+            if (env_target != '*'):
+                new_env['target_systems'] = [env_target]
+
+            new_env.update(e)
+            json_configuration['environments'].append(new_env)
+
+    if 'modes' in _settings.site_configuration:
+        json_configuration['modes'] = []
+        for target_mode, mode_entries in _settings.site_configuration['modes'].items():
+            for mname, m in mode_entries.items():
+                new_mode = {'name': mname, 'options': m}
+                if target_mode != '*':
+                    new_mode['target_systems'] = [target_mode]
+
+                json_configuration['modes'].append(new_mode)
+
+    def update_config(log_name, original_log):
+        new_handlers = []
+        for h in original_log['handlers']:
+            new_h = h
+            new_h['level'] = h['level'].lower()
+            new_handlers.append(new_h)
+
+        json_configuration[log_name].append(
+            {
+                'level': original_log['level'].lower(),
+                'handlers': new_handlers
+            }
+        )
+
+    update_config('logging', _settings.logging_config)
+    update_config('perf_logging', _settings.perf_logging_config)
+
+    if (hasattr(_settings, 'checks_path') or
+        hasattr(_settings, 'checks_path_recurse')):
+        json_configuration['general'] = [{}]
+        if hasattr(_settings, 'checks_path'):
+            json_configuration['general'][0][
+                'check_search_path'
+            ] = _settings.checks_path
+
+        if hasattr(_settings, 'checks_path_recurse'):
+            json_configuration['general'][0][
+                'check_search_recursive'
+            ] = _settings.checks_path_recurse

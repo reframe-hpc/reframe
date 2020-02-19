@@ -63,7 +63,7 @@ site_configuration = {
         },
         {
             'name': 'sys0',
-            'descr': 'System for testing check dependencies',
+            'descr': 'System for test dependencies unit tests',
             'hostnames': [r'sys\d+'],
             'partitions': [
                 {
@@ -141,7 +141,7 @@ site_configuration = {
                     'format': ('[%(asctime)s] %(levelname)s: '
                                '%(check_name)s: %(message)s'),
                     'datefmt': '%FT%T',
-                    'append': False,
+                    'append': false,
                 },
                 {
                     'type': 'stream',
@@ -169,9 +169,15 @@ site_configuration = {
                         'u=%(check_perf_upper_thres)s)|'
                         '%(check_perf_unit)s'
                     ),
-                    'append': True
+                    'append': true
                 }
             ]
         }
     ]
+    'general': [
+        {
+            'check_search_path': ['checks/'],
+            'check_search_recursive': true
+        }
+    ],
 }
