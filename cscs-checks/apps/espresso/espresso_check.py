@@ -8,7 +8,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['small'], ['large'])
 class QECheck(rfm.RunOnlyRegressionTest):
     def __init__(self, scale):
-        super().__init__()
         self.descr = 'Quantum Espresso CPU check'
         self.maintainers = ['LM', 'CB']
         self.tags = {'scs', 'production', 'external-resources'}
