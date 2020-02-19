@@ -56,10 +56,13 @@ class HPCGCheckRef(rfm.RegressionTest):
         return self.job.num_tasks
 
     @rfm.run_before('compile')
-    def setsanity(self):
+    def settasks(self):
         self.num_tasks_per_node = self.system_num_tasks.get(
             self.current_partition.fullname, 1
         )
+
+    @rfm.run_before('performance')
+    def setperformance(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
@@ -68,6 +71,8 @@ class HPCGCheckRef(rfm.RegressionTest):
                 self.output_file, 'perf',  float) / num_nodes
         }
 
+    @rfm.run_before('sanity')
+    def setsanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
@@ -138,7 +143,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         return sn.getitem(sn.glob(pattern), 0)
 
     @rfm.run_before('compile')
-    def setnumtasks(self):
+    def settasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 12
@@ -146,6 +151,8 @@ class HPCGCheckMKL(rfm.RegressionTest):
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
+    @rfm.run_before('performance')
+    def setperformance(self):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
@@ -157,6 +164,8 @@ class HPCGCheckMKL(rfm.RegressionTest):
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
 
+    @rfm.run_before('sanity')
+    def setsanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.outfile_lazy))),

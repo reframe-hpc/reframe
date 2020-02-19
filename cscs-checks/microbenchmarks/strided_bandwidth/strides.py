@@ -58,7 +58,7 @@ class StridedBandwidthTest(StridedBase):
             }
         }
 
-    @rfm.run_before('compile')
+    @rfm.run_before('run')
     def setexecopt(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -87,7 +87,7 @@ class StridedBandwidthTest64(StridedBase):
             }
         }
 
-    @rfm.run_before('compile')
+    @rfm.run_before('run')
     def setexecopt(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
@@ -116,7 +116,7 @@ class StridedBandwidthTest128(StridedBase):
             }
         }
 
-    @rfm.run_before('compile')
+    @rfm.run_before('run')
     def setexecopt(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 

@@ -36,7 +36,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.tags = {'production', 'craype'}
 
     @rfm.run_before('compile')
-    def set_flags(self):
+    def setflags(self):
         if self.current_system.name == 'kesch':
             if self.current_environ.name.startswith('PrgEnv-cray'):
                 # Ignore CPATH warning

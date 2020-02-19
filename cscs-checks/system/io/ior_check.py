@@ -109,7 +109,7 @@ class IorCheck(rfm.RegressionTest):
         if self.current_system.name in systems_to_test:
             self.tags |= {'production', 'external-resources'}
 
-    @rfm.run_before('compile')
+    @rfm.run_before('run')
     def set_exec_opts(self):
         self.test_file += '.' + self.current_partition.name
         self.executable_opts += ['-o', self.test_file]

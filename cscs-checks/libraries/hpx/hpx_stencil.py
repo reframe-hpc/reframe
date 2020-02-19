@@ -52,6 +52,8 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
                             r'\s*(?P<steps>\d+)',
                             self.stdout)
 
+    @rfm.run_after('setup')
+    def settasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
@@ -69,8 +71,16 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
 
+    @rfm.run_before('run')
+    def setexecopts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
+    @rfm.run_before('sanity')
+    def setsanity(self):
+        result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
+                            r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
+                            r'\s*(?P<steps>\d+)',
+                            self.stdout)
         assert_num_threads = sn.map(lambda x: sn.assert_eq(
             int(x.group('tid')), self.num_cpus_per_task), result)
         assert_num_points = sn.map(lambda x: sn.assert_eq(
@@ -130,13 +140,7 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     @rfm.run_after('setup')
-    def partition_setup(self):
-        result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
-                            r'\s*(?P<time>(\d+)?.?\d+),'
-                            r'\s*(?P<pts>\d+),'
-                            r'\s*(?P<parts>\d+),'
-                            r'\s*(?P<steps>\d+)', self.stdout)
-
+    def settasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
@@ -156,8 +160,17 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 18
             self.num_tasks_per_socket = 1
 
+    @rfm.run_before('run')
+    def setexecopts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
+    @rfm.run_before('sanity')
+    def setsanity(self):
+        result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
+                            r'\s*(?P<time>(\d+)?.?\d+),'
+                            r'\s*(?P<pts>\d+),'
+                            r'\s*(?P<parts>\d+),'
+                            r'\s*(?P<steps>\d+)', self.stdout)
         num_threads = self.num_tasks * self.num_cpus_per_task
         assert_num_tasks = sn.map(lambda x: sn.assert_eq(int(x.group('lid')),
                                                          self.num_tasks), result)

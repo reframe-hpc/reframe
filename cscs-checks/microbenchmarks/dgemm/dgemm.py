@@ -57,20 +57,22 @@ class DGEMMTest(rfm.RegressionTest):
                 '${MKLROOT}/lib/intel64/libmkl_core.a',
                 '-liomp5', '-lpthread', '-lm', '-ldl']
 
+        if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
+                                               'kesch:cn', 'kesch:pn',
+                                               'tsa:cn', 'tsa:pn']:
+            self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
+            self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
+                                         '-lpthread', '-lgfortran']
+
+    @rfm.run_before('compile')
+    def settasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
         elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
             self.num_cpus_per_task = 36
         elif self.current_partition.fullname in ['tiger:gpu']:
             self.num_cpus_per_task = 18
-        elif self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
-                                    'kesch:cn', 'kesch:pn',
-                                    'tsa:cn', 'tsa:pn']:
-            self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
-            self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
-                                         '-lpthread', '-lgfortran']
-
-        if self.current_partition.fullname in ['arolla:cn', 'tsa:cn']:
+        elif self.current_partition.fullname in ['arolla:cn', 'tsa:cn']:
             self.num_cpus_per_task = 16
         elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:
             self.num_cpus_per_task = 40
