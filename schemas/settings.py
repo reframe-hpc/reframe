@@ -141,7 +141,7 @@ site_configuration = {
                     'format': ('[%(asctime)s] %(levelname)s: '
                                '%(check_name)s: %(message)s'),
                     'datefmt': '%FT%T',
-                    'append': false,
+                    'append': False,
                 },
                 {
                     'type': 'stream',
@@ -169,7 +169,7 @@ site_configuration = {
                         'u=%(check_perf_upper_thres)s)|'
                         '%(check_perf_unit)s'
                     ),
-                    'append': true
+                    'append': True
                 }
             ]
         }
@@ -177,7 +177,7 @@ site_configuration = {
     'general': [
         {
             'check_search_path': ['checks/'],
-            'check_search_recursive': true
+            'check_search_recursive': True
         }
     ],
 }
