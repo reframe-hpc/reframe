@@ -1,4 +1,5 @@
 import os
+import pytest
 import stat
 import tempfile
 import time
@@ -43,7 +44,7 @@ echo foo
 unset v1
 '''
         with open(self.script_file.name) as fp:
-            self.assertEqual(expected_output, fp.read())
+            assert expected_output == fp.read()
 
     def test_generate_login(self):
         with shell.generate_script(self.script_file.name, login=True) as gen:
@@ -53,7 +54,7 @@ unset v1
 echo hello
 '''
         with open(self.script_file.name) as fp:
-            self.assertEqual(expected_output, fp.read())
+            assert expected_output == fp.read()
 
     def test_write_types(self):
         class C:
@@ -72,7 +73,7 @@ echo bar
 echo "C()"
 '''
         with open(self.script_file.name) as fp:
-            self.assertEqual(expected_output, fp.read())
+            assert expected_output == fp.read()
 
     def test_trap_error(self):
         with shell.generate_script(self.script_file.name,
@@ -80,14 +81,13 @@ echo "C()"
             gen.write('false')
             gen.write('echo hello')
 
-        with self.assertRaises(SpawnedProcessError) as cm:
+        with pytest.raises(SpawnedProcessError) as cm:
             os_ext.run_command(self.script_file.name, check=True)
 
-        exc = cm.exception
-        self.assertNotIn('hello', exc.stdout)
-        self.assertEqual(1, exc.exitcode)
-        self.assertIn("-reframe: command `false' failed (exit code: 1)",
-                      exc.stdout)
+        exc = cm.value
+        assert 'hello' not in exc.stdout
+        assert 1 == exc.exitcode
+        assert "-reframe: command `false' failed (exit code: 1)" in exc.stdout
 
     def test_trap_exit(self):
         with shell.generate_script(self.script_file.name,
@@ -95,10 +95,9 @@ echo "C()"
             gen.write('echo hello')
 
         completed = os_ext.run_command(self.script_file.name, check=True)
-        self.assertIn('hello', completed.stdout)
-        self.assertEqual(0, completed.returncode)
-        self.assertIn("-reframe: script exiting with exit code: 0",
-                      completed.stdout)
+        assert 'hello' in completed.stdout
+        assert 0 == completed.returncode
+        assert "-reframe: script exiting with exit code: 0" in completed.stdout
 
     def test_trap_signal(self):
         with shell.generate_script(self.script_file.name,
@@ -121,6 +120,6 @@ echo "C()"
         f_stdout.flush()
         f_stdout.seek(0)
         stdout = f_stdout.read()
-        self.assertNotIn('hello', stdout)
-        self.assertEqual(143, proc.returncode)
-        self.assertIn("-reframe: script caught signal: 15", stdout)
+        assert 'hello' not in stdout
+        assert 143 == proc.returncode
+        assert "-reframe: script caught signal: 15" in stdout

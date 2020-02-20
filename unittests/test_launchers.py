@@ -84,11 +84,11 @@ class _TestLauncher(abc.ABC):
 
     def test_run_command(self):
         emitted_command = self.run_command(self.job)
-        self.assertEqual(self.expected_command, emitted_command)
+        assert self.expected_command == emitted_command
 
     def test_run_minimal_command(self):
         emitted_command = self.run_command(self.minimal_job)
-        self.assertEqual(self.expected_minimal_command, emitted_command)
+        assert self.expected_minimal_command == emitted_command
 
 
 class TestSrunLauncher(_TestLauncher, unittest.TestCase):

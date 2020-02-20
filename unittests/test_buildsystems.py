@@ -50,8 +50,7 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
             'CFLAGS="-Wall -std=c99" CXXFLAGS="-Wall -std=c++11" '
             'FCFLAGS="-Wall" LDFLAGS="-dynamic" FOO=1'
         ]
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_from_buildsystem(self):
         super().setup_base_buildsystem()
@@ -65,13 +64,12 @@ class TestMake(_BuildSystemTest, unittest.TestCase):
             'CXXFLAGS="-Wall -std=c++11 -O3" FCFLAGS="-Wall -O3" '
             'LDFLAGS="-static" FOO=1'
         ]
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['make -j 1'],
-                         self.build_system.emit_build_commands(self.environ))
+        assert (['make -j 1'] ==
+                self.build_system.emit_build_commands(self.environ))
 
 
 class TestCMake(_BuildSystemTest, unittest.TestCase):
@@ -98,8 +96,7 @@ class TestCMake(_BuildSystemTest, unittest.TestCase):
             'make -j 32 install'
 
         ]
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_from_buildsystem(self):
         super().setup_base_buildsystem()
@@ -119,13 +116,12 @@ class TestCMake(_BuildSystemTest, unittest.TestCase):
 
         ]
         print(self.build_system.emit_build_commands(self.environ))
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['cmake .', 'make -j 1'],
-                         self.build_system.emit_build_commands(self.environ))
+        assert (['cmake .', 'make -j 1'] ==
+                self.build_system.emit_build_commands(self.environ))
 
 
 class TestAutotools(_BuildSystemTest, unittest.TestCase):
@@ -149,8 +145,7 @@ class TestAutotools(_BuildSystemTest, unittest.TestCase):
             'make -j 32 check'
 
         ]
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_from_buildsystem(self):
         super().setup_base_buildsystem()
@@ -168,13 +163,12 @@ class TestAutotools(_BuildSystemTest, unittest.TestCase):
 
         ]
         print(self.build_system.emit_build_commands(self.environ))
-        self.assertEqual(expected,
-                         self.build_system.emit_build_commands(self.environ))
+        assert expected == self.build_system.emit_build_commands(self.environ)
 
     def test_emit_no_env_defaults(self):
         self.build_system.flags_from_environ = False
-        self.assertEqual(['./configure', 'make -j 1'],
-                         self.build_system.emit_build_commands(self.environ))
+        assert (['./configure', 'make -j 1'] ==
+                self.build_system.emit_build_commands(self.environ))
 
 
 class TestSingleSource(_BuildSystemTest, unittest.TestCase):
@@ -219,8 +213,8 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
                 '-o foo.e %s' % (comp, flags,
                                  self.build_system.srcfile, ldflags)
             ]
-            self.assertEqual(expected,
-                             self.build_system.emit_build_commands(self.environ))
+            assert (expected ==
+                    self.build_system.emit_build_commands(self.environ))
 
     def test_emit_no_env(self):
         super().setup_base_buildsystem()
@@ -251,5 +245,5 @@ class TestSingleSource(_BuildSystemTest, unittest.TestCase):
                 '-o foo.e %s' % (comp, flags,
                                  self.build_system.srcfile, ldflags)
             ]
-            self.assertEqual(expected,
-                             self.build_system.emit_build_commands(self.environ))
+            assert (expected ==
+                    self.build_system.emit_build_commands(self.environ))

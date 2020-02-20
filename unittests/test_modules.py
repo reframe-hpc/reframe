@@ -1,5 +1,6 @@
 import abc
 import os
+import pytest
 import unittest
 from tempfile import NamedTemporaryFile
 
@@ -19,53 +20,54 @@ class _TestModulesSystem(abc.ABC):
         self.environ_save.restore()
 
     def test_searchpath(self):
-        self.assertIn(TEST_MODULES, self.modules_system.searchpath)
+        assert TEST_MODULES in self.modules_system.searchpath
 
         self.modules_system.searchpath_remove(TEST_MODULES)
-        self.assertNotIn(TEST_MODULES, self.modules_system.searchpath)
+        assert TEST_MODULES not in self.modules_system.searchpath
 
     def test_module_load(self):
-        self.assertRaises(EnvironError, self.modules_system.load_module, 'foo')
-        self.assertFalse(self.modules_system.is_module_loaded('foo'))
-        self.assertNotIn('foo', self.modules_system.loaded_modules())
+        with pytest.raises(EnvironError):
+            self.modules_system.load_module('foo')
+        assert not self.modules_system.is_module_loaded('foo')
+        assert 'foo' not in self.modules_system.loaded_modules()
 
         self.modules_system.load_module('testmod_foo')
-        self.assertTrue(self.modules_system.is_module_loaded('testmod_foo'))
-        self.assertIn('testmod_foo', self.modules_system.loaded_modules())
-        self.assertIn('TESTMOD_FOO', os.environ)
+        assert self.modules_system.is_module_loaded('testmod_foo')
+        assert 'testmod_foo' in self.modules_system.loaded_modules()
+        assert 'TESTMOD_FOO' in os.environ
 
         self.modules_system.unload_module('testmod_foo')
-        self.assertFalse(self.modules_system.is_module_loaded('testmod_foo'))
-        self.assertNotIn('testmod_foo', self.modules_system.loaded_modules())
-        self.assertNotIn('TESTMOD_FOO', os.environ)
+        assert not self.modules_system.is_module_loaded('testmod_foo')
+        assert 'testmod_foo' not in self.modules_system.loaded_modules()
+        assert 'TESTMOD_FOO' not in os.environ
 
     def test_module_load_force(self):
         self.modules_system.load_module('testmod_foo')
 
         unloaded = self.modules_system.load_module('testmod_foo', force=True)
-        self.assertEqual(0, len(unloaded))
-        self.assertTrue(self.modules_system.is_module_loaded('testmod_foo'))
+        assert 0 == len(unloaded)
+        assert self.modules_system.is_module_loaded('testmod_foo')
 
         unloaded = self.modules_system.load_module('testmod_bar', force=True)
-        self.assertTrue(self.modules_system.is_module_loaded('testmod_bar'))
-        self.assertFalse(self.modules_system.is_module_loaded('testmod_foo'))
-        self.assertIn('testmod_foo', unloaded)
-        self.assertIn('TESTMOD_BAR', os.environ)
+        assert self.modules_system.is_module_loaded('testmod_bar')
+        assert not self.modules_system.is_module_loaded('testmod_foo')
+        assert 'testmod_foo' in unloaded
+        assert 'TESTMOD_BAR' in os.environ
 
     def test_module_unload_all(self):
         self.modules_system.load_module('testmod_base')
         self.modules_system.unload_all()
-        self.assertEqual(0, len(self.modules_system.loaded_modules()))
+        assert 0 == len(self.modules_system.loaded_modules())
 
     def test_module_list(self):
         self.modules_system.load_module('testmod_foo')
-        self.assertIn('testmod_foo', self.modules_system.loaded_modules())
+        assert 'testmod_foo' in self.modules_system.loaded_modules()
         self.modules_system.unload_module('testmod_foo')
 
     def test_module_conflict_list(self):
         conflict_list = self.modules_system.conflicted_modules('testmod_bar')
-        self.assertIn('testmod_foo', conflict_list)
-        self.assertIn('testmod_boo', conflict_list)
+        assert 'testmod_foo' in conflict_list
+        assert 'testmod_boo' in conflict_list
 
     @abc.abstractmethod
     def expected_load_instr(self, module):
@@ -79,25 +81,25 @@ class _TestModulesSystem(abc.ABC):
         self.modules_system.module_map = {
             'm0': ['m1', 'm2']
         }
-        self.assertEqual([self.expected_load_instr('foo')],
-                         self.modules_system.emit_load_commands('foo'))
-        self.assertEqual([self.expected_load_instr('foo/1.2')],
-                         self.modules_system.emit_load_commands('foo/1.2'))
-        self.assertEqual([self.expected_load_instr('m1'),
-                          self.expected_load_instr('m2')],
-                         self.modules_system.emit_load_commands('m0'))
+        assert ([self.expected_load_instr('foo')] ==
+                self.modules_system.emit_load_commands('foo'))
+        assert ([self.expected_load_instr('foo/1.2')] ==
+                self.modules_system.emit_load_commands('foo/1.2'))
+        assert ([self.expected_load_instr('m1'),
+                 self.expected_load_instr('m2')] ==
+                self.modules_system.emit_load_commands('m0'))
 
     def test_emit_unload_commands(self):
         self.modules_system.module_map = {
             'm0': ['m1', 'm2']
         }
-        self.assertEqual([self.expected_unload_instr('foo')],
-                         self.modules_system.emit_unload_commands('foo'))
-        self.assertEqual([self.expected_unload_instr('foo/1.2')],
-                         self.modules_system.emit_unload_commands('foo/1.2'))
-        self.assertEqual([self.expected_unload_instr('m2'),
-                          self.expected_unload_instr('m1')],
-                         self.modules_system.emit_unload_commands('m0'))
+        assert ([self.expected_unload_instr('foo')] ==
+                self.modules_system.emit_unload_commands('foo'))
+        assert ([self.expected_unload_instr('foo/1.2')] ==
+                self.modules_system.emit_unload_commands('foo/1.2'))
+        assert ([self.expected_unload_instr('m2'),
+                 self.expected_unload_instr('m1')] ==
+                self.modules_system.emit_unload_commands('m0'))
 
 
 class TestTModModulesSystem(_TestModulesSystem, unittest.TestCase):
@@ -105,7 +107,7 @@ class TestTModModulesSystem(_TestModulesSystem, unittest.TestCase):
         try:
             self.modules_system = modules.ModulesSystem.create('tmod')
         except ConfigError:
-            self.skipTest('tmod not supported')
+            pytest.skip('tmod not supported')
         else:
             super().setUp()
 
@@ -121,7 +123,7 @@ class TestTMod4ModulesSystem(_TestModulesSystem, unittest.TestCase):
         try:
             self.modules_system = modules.ModulesSystem.create('tmod4')
         except ConfigError:
-            self.skipTest('tmod4 not supported')
+            pytest.skip('tmod4 not supported')
         else:
             super().setUp()
 
@@ -137,7 +139,7 @@ class TestLModModulesSystem(_TestModulesSystem, unittest.TestCase):
         try:
             self.modules_system = modules.ModulesSystem.create('lmod')
         except ConfigError:
-            self.skipTest('lmod not supported')
+            pytest.skip('lmod not supported')
         else:
             super().setUp()
 
@@ -153,7 +155,7 @@ class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
         try:
             self.modules_system = modules.ModulesSystem.create()
         except ConfigError:
-            self.skipTest('nomod not supported')
+            pytest.skip('nomod not supported')
         else:
             super().setUp()
 
@@ -178,10 +180,10 @@ class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
         self.modules_system.unload_all()
 
     def test_module_list(self):
-        self.assertEqual(0, len(self.modules_system.loaded_modules()))
+        assert 0 == len(self.modules_system.loaded_modules())
 
     def test_module_conflict_list(self):
-        self.assertEqual(0, len(self.modules_system.conflicted_modules('foo')))
+        assert 0 == len(self.modules_system.conflicted_modules('foo'))
 
 
 class TestModule(unittest.TestCase):
@@ -189,30 +191,30 @@ class TestModule(unittest.TestCase):
         self.module = modules.Module('foo/1.2')
 
     def test_invalid_initialization(self):
-        self.assertRaises(ValueError, modules.Module, '')
-        self.assertRaises(ValueError, modules.Module, ' ')
-        self.assertRaises(TypeError, modules.Module, None)
-        self.assertRaises(TypeError, modules.Module, 23)
+        with pytest.raises(ValueError):
+            modules.Module('')
+        with pytest.raises(ValueError):
+            modules.Module(' ')
+        with pytest.raises(TypeError):
+            modules.Module(None)
+        with pytest.raises(TypeError):
+            modules.Module(23)
 
     def test_name_version(self):
-        self.assertEqual(self.module.name, 'foo')
-        self.assertEqual(self.module.version, '1.2')
+        assert self.module.name == 'foo'
+        assert self.module.version == '1.2'
 
     def test_equal(self):
-        self.assertEqual(modules.Module('foo'), modules.Module('foo'))
-        self.assertEqual(modules.Module('foo/1.2'),
-                         modules.Module('foo/1.2'))
-        self.assertEqual(modules.Module('foo'), modules.Module('foo/1.2'))
-        self.assertEqual(hash(modules.Module('foo')),
-                         hash(modules.Module('foo')))
-        self.assertEqual(hash(modules.Module('foo/1.2')),
-                         hash(modules.Module('foo/1.2')))
-        self.assertEqual(hash(modules.Module('foo')),
-                         hash(modules.Module('foo/1.2')))
-        self.assertNotEqual(modules.Module('foo/1.2'),
-                            modules.Module('foo/1.3'))
-        self.assertNotEqual(modules.Module('foo'), modules.Module('bar'))
-        self.assertNotEqual(modules.Module('foo'), modules.Module('foobar'))
+        assert modules.Module('foo') == modules.Module('foo')
+        assert modules.Module('foo/1.2') == modules.Module('foo/1.2')
+        assert modules.Module('foo') == modules.Module('foo/1.2')
+        assert hash(modules.Module('foo')) == hash(modules.Module('foo'))
+        assert (hash(modules.Module('foo/1.2')) ==
+                hash(modules.Module('foo/1.2')))
+        assert hash(modules.Module('foo')) == hash(modules.Module('foo/1.2'))
+        assert modules.Module('foo/1.2') != modules.Module('foo/1.3')
+        assert modules.Module('foo') != modules.Module('bar')
+        assert modules.Module('foo') != modules.Module('foobar')
 
 
 class ModulesSystemEmulator(modules.ModulesSystemImpl):
@@ -286,14 +288,14 @@ class TestModuleMapping(unittest.TestCase):
         #
         self.modules_system.module_map = {'m0': ['m1']}
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertEqual(['m1'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert ['m1'] == self.modules_system.backend.load_seq
 
         # Unload module
         self.modules_system.unload_module('m1')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertFalse(self.modules_system.is_module_loaded('m1'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert not self.modules_system.is_module_loaded('m1')
 
     def test_mapping_chain(self):
         #
@@ -304,16 +306,16 @@ class TestModuleMapping(unittest.TestCase):
             'm1': ['m2']
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertEqual(['m2'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert ['m2'] == self.modules_system.backend.load_seq
 
         # Unload module
         self.modules_system.unload_module('m1')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertFalse(self.modules_system.is_module_loaded('m1'))
-        self.assertFalse(self.modules_system.is_module_loaded('m2'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert not self.modules_system.is_module_loaded('m1')
+        assert not self.modules_system.is_module_loaded('m2')
 
     def test_mapping_n_to_one(self):
         #
@@ -324,16 +326,16 @@ class TestModuleMapping(unittest.TestCase):
             'm1': ['m2']
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertEqual(['m2'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert ['m2'] == self.modules_system.backend.load_seq
 
         # Unload module
         self.modules_system.unload_module('m0')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertFalse(self.modules_system.is_module_loaded('m1'))
-        self.assertFalse(self.modules_system.is_module_loaded('m2'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert not self.modules_system.is_module_loaded('m1')
+        assert not self.modules_system.is_module_loaded('m2')
 
     def test_mapping_one_to_n(self):
         #
@@ -343,15 +345,15 @@ class TestModuleMapping(unittest.TestCase):
             'm0': ['m1', 'm2'],
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertEqual(['m1', 'm2'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert ['m1', 'm2'] == self.modules_system.backend.load_seq
 
         # m0 is loaded only if m1 and m2 are.
         self.modules_system.unload_module('m2')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
 
     def test_mapping_deep_dfs_order(self):
         #
@@ -366,21 +368,20 @@ class TestModuleMapping(unittest.TestCase):
             'm1': ['m3', 'm4']
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertTrue(self.modules_system.is_module_loaded('m3'))
-        self.assertTrue(self.modules_system.is_module_loaded('m4'))
-        self.assertEqual(['m3', 'm4', 'm2'],
-                         self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert self.modules_system.is_module_loaded('m3')
+        assert self.modules_system.is_module_loaded('m4')
+        assert ['m3', 'm4', 'm2'] == self.modules_system.backend.load_seq
 
         # Test unloading
         self.modules_system.unload_module('m2')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertFalse(self.modules_system.is_module_loaded('m2'))
-        self.assertTrue(self.modules_system.is_module_loaded('m3'))
-        self.assertTrue(self.modules_system.is_module_loaded('m4'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert not self.modules_system.is_module_loaded('m2')
+        assert self.modules_system.is_module_loaded('m3')
+        assert self.modules_system.is_module_loaded('m4')
 
     def test_mapping_deep_dfs_unload_order(self):
         #
@@ -396,8 +397,7 @@ class TestModuleMapping(unittest.TestCase):
         }
         self.modules_system.load_module('m0')
         self.modules_system.unload_module('m0')
-        self.assertEqual(['m2', 'm4', 'm3'],
-                         self.modules_system.backend.unload_seq)
+        assert ['m2', 'm4', 'm3'] == self.modules_system.backend.unload_seq
 
     def test_mapping_multiple_paths(self):
         #
@@ -412,16 +412,16 @@ class TestModuleMapping(unittest.TestCase):
             'm2': ['m1'],
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertEqual(['m1'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert ['m1'] == self.modules_system.backend.load_seq
 
         # Test unloading
         self.modules_system.unload_module('m2')
-        self.assertFalse(self.modules_system.is_module_loaded('m0'))
-        self.assertFalse(self.modules_system.is_module_loaded('m1'))
-        self.assertFalse(self.modules_system.is_module_loaded('m2'))
+        assert not self.modules_system.is_module_loaded('m0')
+        assert not self.modules_system.is_module_loaded('m1')
+        assert not self.modules_system.is_module_loaded('m2')
 
     def test_mapping_deep_multiple_paths(self):
         #
@@ -437,12 +437,12 @@ class TestModuleMapping(unittest.TestCase):
             'm2': ['m1']
         }
         self.modules_system.load_module('m0')
-        self.assertTrue(self.modules_system.is_module_loaded('m0'))
-        self.assertTrue(self.modules_system.is_module_loaded('m1'))
-        self.assertTrue(self.modules_system.is_module_loaded('m2'))
-        self.assertTrue(self.modules_system.is_module_loaded('m3'))
-        self.assertTrue(self.modules_system.is_module_loaded('m4'))
-        self.assertEqual(['m3', 'm4'], self.modules_system.backend.load_seq)
+        assert self.modules_system.is_module_loaded('m0')
+        assert self.modules_system.is_module_loaded('m1')
+        assert self.modules_system.is_module_loaded('m2')
+        assert self.modules_system.is_module_loaded('m3')
+        assert self.modules_system.is_module_loaded('m4')
+        assert ['m3', 'm4'] == self.modules_system.backend.load_seq
 
     def test_mapping_cycle_simple(self):
         #
@@ -452,8 +452,10 @@ class TestModuleMapping(unittest.TestCase):
             'm0': ['m1'],
             'm1': ['m0'],
         }
-        self.assertRaises(EnvironError, self.modules_system.load_module, 'm0')
-        self.assertRaises(EnvironError, self.modules_system.load_module, 'm1')
+        with pytest.raises(EnvironError):
+            self.modules_system.load_module('m0')
+        with pytest.raises(EnvironError):
+            self.modules_system.load_module('m1')
 
     def test_mapping_single_module_self_loop(self):
         #
@@ -481,8 +483,8 @@ class TestModuleMapping(unittest.TestCase):
             'm3': ['m4'],
             'm4': ['m2']
         }
-        self.assertRaisesRegex(EnvironError, 'm0->m1->m3->m4->m2->m1',
-                               self.modules_system.load_module, 'm0')
+        with pytest.raises(EnvironError, match='m0->m1->m3->m4->m2->m1'):
+            self.modules_system.load_module('m0')
 
     def test_mapping_from_file_simple(self):
         with self.mapping_file:
@@ -499,44 +501,39 @@ class TestModuleMapping(unittest.TestCase):
             'm9': ['m10']
         }
         self.modules_system.load_mapping_from_file(self.mapping_file.name)
-        self.assertEqual(reference_map, self.modules_system.module_map)
+        assert reference_map == self.modules_system.module_map
 
     def test_mapping_from_file_missing_key_separator(self):
         with self.mapping_file:
             self.mapping_file.write('m1 m2')
 
-        self.assertRaises(ConfigError,
-                          self.modules_system.load_mapping_from_file,
-                          self.mapping_file.name)
+        with pytest.raises(ConfigError):
+            self.modules_system.load_mapping_from_file(self.mapping_file.name)
 
     def test_mapping_from_file_empty_value(self):
         with self.mapping_file:
             self.mapping_file.write('m1: # m2')
 
-        self.assertRaises(ConfigError,
-                          self.modules_system.load_mapping_from_file,
-                          self.mapping_file.name)
+        with pytest.raises(ConfigError):
+            self.modules_system.load_mapping_from_file(self.mapping_file.name)
 
     def test_mapping_from_file_multiple_key_separators(self):
         with self.mapping_file:
             self.mapping_file.write('m1 : m2 : m3')
 
-        self.assertRaises(ConfigError,
-                          self.modules_system.load_mapping_from_file,
-                          self.mapping_file.name)
+        with pytest.raises(ConfigError):
+            self.modules_system.load_mapping_from_file(self.mapping_file.name)
 
     def test_mapping_from_file_empty_key(self):
         with self.mapping_file:
             self.mapping_file.write(' :  m2')
 
-        self.assertRaises(ConfigError,
-                          self.modules_system.load_mapping_from_file,
-                          self.mapping_file.name)
+        with pytest.raises(ConfigError):
+            self.modules_system.load_mapping_from_file(self.mapping_file.name)
 
     def test_mapping_from_file_missing_file(self):
-        self.assertRaises(OSError,
-                          self.modules_system.load_mapping_from_file,
-                          'foo')
+        with pytest.raises(OSError):
+            self.modules_system.load_mapping_from_file('foo')
 
     def test_mapping_with_self_loop(self):
         self.modules_system.module_map = {

@@ -20,7 +20,7 @@ class TestEnvironment(unittest.TestCase):
 
     def setup_modules_system(self):
         if not fixtures.has_sane_modules_system():
-            self.skipTest('no modules system configured')
+            pytest.skip('no modules system configured')
 
         self.modules_system = runtime().modules_system
         self.modules_system.searchpath_add(fixtures.TEST_MODULES)

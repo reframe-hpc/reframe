@@ -1,7 +1,7 @@
 import abc
+import pytest
 import unittest
 
-import pytest
 import reframe.core.containers as containers
 from reframe.core.exceptions import ContainerError
 

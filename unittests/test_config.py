@@ -1,10 +1,10 @@
 import copy
+import pytest
 import unittest
 
 import reframe.core.config as config
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import ConfigError
-import pytest
 
 
 class TestSiteConfigurationFromDict(unittest.TestCase):

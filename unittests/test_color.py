@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 import reframe.utility.color as color
@@ -6,22 +7,25 @@ import reframe.utility.color as color
 class TestColors(unittest.TestCase):
     def test_color_rgb(self):
         c = color.ColorRGB(128, 0, 34)
-        self.assertEqual(128, c.r)
-        self.assertEqual(0, c.g)
-        self.assertEqual(34, c.b)
+        assert 128 == c.r
+        assert 0 == c.g
+        assert 34 == c.b
 
-        self.assertRaises(ValueError, color.ColorRGB, -1, 0, 34)
-        self.assertRaises(ValueError, color.ColorRGB, 0, -1, 34)
-        self.assertRaises(ValueError, color.ColorRGB, 0, 28, -1)
+        with pytest.raises(ValueError):
+            color.ColorRGB(-1, 0, 34)
+        with pytest.raises(ValueError):
+            color.ColorRGB(0, -1, 34)
+        with pytest.raises(ValueError):
+            color.ColorRGB(0, 28, -1)
 
     def test_colorize(self):
         s = color.colorize('hello', color.RED, palette='ANSI')
-        self.assertIn('\033', s)
-        self.assertIn('[3', s)
-        self.assertIn('1m', s)
+        assert '\033' in s
+        assert '[3' in s
+        assert '1m' in s
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             color.colorize('hello', color.RED, palette='FOO')
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             color.colorize('hello', color.ColorRGB(128, 0, 34), palette='ANSI')

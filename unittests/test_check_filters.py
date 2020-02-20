@@ -1,3 +1,4 @@
+import pytest
 import unittest
 
 import reframe.core.runtime as rt
@@ -42,67 +43,56 @@ class TestCheckFilters(unittest.TestCase):
         return sn.count(filter(filter_fn, self.checks))
 
     def test_have_name(self):
-        self.assertEqual(1, self.count_checks(filters.have_name('check1')))
-        self.assertEqual(3, self.count_checks(filters.have_name('check')))
-        self.assertEqual(2, self.count_checks(filters.have_name(r'\S*1|\S*3')))
-        self.assertEqual(0, self.count_checks(filters.have_name('Check')))
-        self.assertEqual(3, self.count_checks(filters.have_name('(?i)Check')))
-        self.assertEqual(
-            2, self.count_checks(filters.have_name('(?i)check1|CHECK2'))
-        )
+        assert 1 == self.count_checks(filters.have_name('check1'))
+        assert 3 == self.count_checks(filters.have_name('check'))
+        assert 2 == self.count_checks(filters.have_name(r'\S*1|\S*3'))
+        assert 0 == self.count_checks(filters.have_name('Check'))
+        assert 3 == self.count_checks(filters.have_name('(?i)Check'))
+        assert 2 == self.count_checks(filters.have_name('(?i)check1|CHECK2'))
 
     def test_have_not_name(self):
-        self.assertEqual(2, self.count_checks(filters.have_not_name('check1')))
-        self.assertEqual(
-            1, self.count_checks(filters.have_not_name('check1|check3'))
-        )
-        self.assertEqual(
-            0, self.count_checks(filters.have_not_name('check1|check2|check3'))
-        )
-        self.assertEqual(3, self.count_checks(filters.have_not_name('Check1')))
-        self.assertEqual(
-            2, self.count_checks(filters.have_not_name('(?i)Check1'))
-        )
+        assert 2 == self.count_checks(filters.have_not_name('check1'))
+        assert 1 == self.count_checks(filters.have_not_name('check1|check3'))
+        assert 0 == self.count_checks(filters.have_not_name(
+            'check1|check2|check3'))
+        assert 3 == self.count_checks(filters.have_not_name('Check1'))
+        assert 2 == self.count_checks(filters.have_not_name('(?i)Check1'))
 
     def test_have_tags(self):
-        self.assertEqual(2, self.count_checks(filters.have_tag('a|c')))
-        self.assertEqual(0, self.count_checks(filters.have_tag('p|q')))
-        self.assertEqual(2, self.count_checks(filters.have_tag('z')))
+        assert 2 == self.count_checks(filters.have_tag('a|c'))
+        assert 0 == self.count_checks(filters.have_tag('p|q'))
+        assert 2 == self.count_checks(filters.have_tag('z'))
 
     def test_have_prgenv(self):
-        self.assertEqual(
-            1, self.count_checks(filters.have_prgenv('env1|env2'))
-        )
-        self.assertEqual(2, self.count_checks(filters.have_prgenv('env3')))
-        self.assertEqual(1, self.count_checks(filters.have_prgenv('env4')))
-        self.assertEqual(
-            3, self.count_checks(filters.have_prgenv('env1|env3'))
-        )
+        assert 1 == self.count_checks(filters.have_prgenv('env1|env2'))
+        assert 2 == self.count_checks(filters.have_prgenv('env3'))
+        assert 1 == self.count_checks(filters.have_prgenv('env4'))
+        assert 3 == self.count_checks(filters.have_prgenv('env1|env3'))
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_partition(self):
         p = rt.runtime().system.partition('gpu')
-        self.assertEqual(2, self.count_checks(filters.have_partition([p])))
+        assert 2 == self.count_checks(filters.have_partition([p]))
         p = rt.runtime().system.partition('login')
-        self.assertEqual(0, self.count_checks(filters.have_partition([p])))
+        assert 0 == self.count_checks(filters.have_partition([p]))
 
     def test_have_gpu_only(self):
-        self.assertEqual(2, self.count_checks(filters.have_gpu_only()))
+        assert 2 == self.count_checks(filters.have_gpu_only())
 
     def test_have_cpu_only(self):
-        self.assertEqual(1, self.count_checks(filters.have_cpu_only()))
+        assert 1 == self.count_checks(filters.have_cpu_only())
 
     def test_invalid_regex(self):
         # We need to explicitly call `evaluate` to make sure the exception
         # is triggered in all cases
-        with self.assertRaises(ReframeError):
+        with pytest.raises(ReframeError):
             self.count_checks(filters.have_name('*foo')).evaluate()
 
-        with self.assertRaises(ReframeError):
+        with pytest.raises(ReframeError):
             self.count_checks(filters.have_not_name('*foo')).evaluate()
 
-        with self.assertRaises(ReframeError):
+        with pytest.raises(ReframeError):
             self.count_checks(filters.have_tag('*foo')).evaluate()
 
-        with self.assertRaises(ReframeError):
+        with pytest.raises(ReframeError):
             self.count_checks(filters.have_prgenv('*foo')).evaluate()
