@@ -118,8 +118,7 @@ class GromacsCPUCheck(GromacsBaseCheck):
             'maint': {
                 'small': {
                     'dom:mc': {'perf': (0.0, None, None, 'ns/day')},
-                    # FIXME: numbers may need update
-                    'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')}
+                    'daint:mc': {'perf': (0.0, -0.10, None, 'ns/day')}
                 },
                 'large': {
                     'daint:mc': {'perf': (0.0, None, None, 'ns/day')}
