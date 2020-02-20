@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -5,9 +10,9 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class AutomaticArraysCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cce', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
         elif self.current_system.name == 'kesch':
@@ -19,6 +24,9 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1'
             }
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+
         # This tets requires an MPI compiler, although it uses a single task
         self.num_tasks = 1
         self.num_gpus_per_node = 1
@@ -31,7 +39,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             'time': sn.extractsingle(r'Timing:\s+(?P<time>\S+)',
                                      self.stdout, 'time', float)
         }
-
         self.arrays_reference = {
             'PrgEnv-cray': {
                 'daint:gpu': {'time': (5.7E-05, None, 0.15)},
@@ -52,11 +59,16 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         if environ.name.startswith('PrgEnv-cray'):
             envname = 'PrgEnv-cray'
             self.build_system.fflags += ['-hacc', '-hnoomp']
+        elif environ.name.startswith('PrgEnv-cce'):
+            envname = 'PrgEnv-cce'
+            self.build_system.fflags += ['-hacc', '-hnoomp']
         elif environ.name.startswith('PrgEnv-pgi'):
             envname = 'PrgEnv-pgi'
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35']
+            elif self.current_system.name in ['arolla', 'tsa']:
+                self.build_system.fflags += ['-ta=tesla,cc70']
             elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:

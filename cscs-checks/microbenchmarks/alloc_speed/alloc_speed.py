@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -15,7 +20,9 @@ class AllocSpeedTest(rfm.RegressionTest):
                               'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         if hugepages == 'no':
-            self.valid_systems += ['kesch:cn', 'kesch:pn']
+            self.valid_systems += ['kesch:cn', 'kesch:pn',
+                                   'arolla:cn', 'arolla:pn',
+                                   'tsa:cn', 'tsa:pn']
         else:
             if self.current_system.name in {'dom', 'daint', 'tiger'}:
                 self.modules = ['craype-hugepages%s' % hugepages]
@@ -52,9 +59,6 @@ class AllocSpeedTest(rfm.RegressionTest):
                 'kesch:pn': {
                     'time': (0.70, None, 0.10, 's')
                 },
-                '*': {
-                    'time': (0, None, None, 's')
-                }
             },
             '2M': {
                 'dom:gpu': {

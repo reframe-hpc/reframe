@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -24,7 +29,7 @@ class GridToolsCheck(rfm.RegressionTest):
         self.build_system.config_opts = [
             '-DBoost_NO_BOOST_CMAKE="true"',
             '-DCMAKE_BUILD_TYPE:STRING=Release',
-            '-DBUILD_SHARED_LIBS:BOOL=ON',
+            '-DBUILD_SHARED_LIBS:BOOL=OFF',
             '-DGT_GCL_ONLY:BOOL=OFF',
             '-DCMAKE_CXX_COMPILER=CC',
             '-DGT_USE_MPI:BOOL=OFF',

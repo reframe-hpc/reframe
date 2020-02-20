@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -17,12 +22,14 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
-            'kesch:cn', 'kesch:pn', 'tiger:gpu'
+            'kesch:cn', 'kesch:pn', 'tiger:gpu',
+            'arolla:cn', 'arolla:pn',
+            'tsa:cn', 'tsa:pn'
         ]
 
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
         self.num_tasks = 0
@@ -62,11 +69,19 @@ class DGEMMTest(rfm.RegressionTest):
             self.num_cpus_per_task = 36
         elif partition.fullname in ['tiger:gpu']:
             self.num_cpus_per_task = 18
-        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
-            self.num_cpus_per_task = 12
+        elif partition.fullname in ['arolla:cn', 'arolla:pn',
+                                    'kesch:cn', 'kesch:pn',
+                                    'tsa:cn', 'tsa:pn']:
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
+
+        if partition.fullname in ['arolla:cn', 'tsa:cn']:
+            self.num_cpus_per_task = 16
+        elif partition.fullname in ['arolla:pn', 'tsa:pn']:
+            self.num_cpus_per_task = 40
+        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
+            self.num_cpus_per_task = 12
 
         if self.num_cpus_per_task:
             self.variables = {
