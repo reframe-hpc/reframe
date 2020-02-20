@@ -43,7 +43,7 @@ The contents of this regression test are the following (``tutorial/advanced/adva
 The important bit here is how we set up the build system for this test:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example1.py
-  :lines: 13-14
+  :lines: 18-19
   :dedent: 4
 
 
@@ -210,7 +210,7 @@ This ensures that the environment of the test is also set correctly at runtime.
 Finally, as already mentioned `previously <#working-with-makefiles>`__, since the name of the makefile is not one of the standard ones, it must be set explicitly in the build system:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example4.py
-  :lines: 16
+  :lines: 21
   :dedent: 8
 
 Setting a Time Limit for Regression Tests
@@ -224,7 +224,7 @@ The following example (``tutorial/advanced/advanced_example5.py``) demonstrates 
 The important bit here is the following line that sets the time limit for the test to one minute:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 12
+  :lines: 17
   :dedent: 8
 
 The :attr:`time_limit <reframe.core.pipeline.RegressionTest.time_limit>` attribute is a three-tuple in the form ``(HOURS, MINUTES, SECONDS)``.
@@ -233,7 +233,7 @@ Time limits are implemented for all the scheduler backends.
 The sanity condition for this test verifies that associated job has been canceled due to the time limit (note that this message is SLURM-specific).
 
 .. literalinclude:: ../tutorial/advanced/advanced_example5.py
-  :lines: 15-16
+  :lines: 20-21
   :dedent: 8
 
 Applying a sanity function iteratively
@@ -259,7 +259,7 @@ The contents of the ReFrame regression test contained in ``advanced_example6.py`
 First the random numbers are extracted through the :func:`extractall <reframe.utility.sanity.extractall>` function as follows:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 13-14
+  :lines: 18-19
   :dedent: 8
 
 The ``numbers`` variable is a deferred iterable, which upon evaluation will return all the extracted numbers.
@@ -276,7 +276,7 @@ Note that the ``and`` operator is not deferrable and will trigger the evaluation
 The full syntax for the :attr:`sanity_patterns` is the following:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example6.py
-  :lines: 15-17
+  :lines: 20-22
   :dedent: 8
 
 Customizing the Generated Job Script
@@ -422,13 +422,13 @@ The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pi
 This is a requirement for flexible tests:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 12
+  :lines: 17
   :dedent: 8
 
 The sanity function of this test simply counts the host names and verifies that they are as many as expected:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 14-17
+  :lines: 19-22
   :dedent: 8
 
 Notice, however, that the sanity check does not use :attr:`num_tasks` for verification, but rather a different, custom attribute, the ``num_tasks_assigned``.
@@ -442,7 +442,7 @@ This happens for two reasons:
 Here is how the new deferred attribute is defined:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 21-24
+  :lines: 26-29
   :dedent: 4
 
 
@@ -465,7 +465,7 @@ The following example shows a simple test that runs some basic commands inside a
 A container-based test in ReFrame requires that the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` is set:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 12
+  :lines: 17
 
 This attribute accepts a string that corresponds to the name of the platform and it instantiates the appropriate :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>` object behind the scenes.
 In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
@@ -475,7 +475,7 @@ For a complete list of supported container platforms, the user is referred to th
 As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 13-16
+  :lines: 18-21
 
 These two attributes are mandatory for container-based check.
 The :attr:`image <reframe.core.pipeline.RegressionTest.container_platform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.pipeline.RegressionTest.container_platform.commands>` attribute provides the list of commands to be run inside the container.
@@ -494,7 +494,7 @@ Once the commands are executed, the container is stopped and ReFrame goes on wit
 Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 17
+  :lines: 22
 
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
@@ -520,7 +520,7 @@ This is the approach we take with the following example, that fetches, builds an
 We first create a basic compile-only test, that fetches the benchmarks and builds them for the different programming environments:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
-   :lines: 87-101
+   :lines: 92-106
 
 There is nothing particular to that test, except perhaps that you can set :attr:`sourcesdir` to ``None`` even for a test that needs to compile something.
 In such a case, you should at least provide the commands that fetch the code inside the :attr:`prebuild_cmd` attribute.
@@ -529,7 +529,7 @@ For the next test we need to use the OSU benchmark binaries that we just built, 
 Here is the relevant part:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
-   :lines: 7-39
+   :lines: 12-44
 
 First, since we will have multiple similar benchmarks, we move all the common functionality to the :class:`OSUBenchmarkTestBase` base class.
 Again nothing new here; we are going to use two nodes for the benchmark and we set :attr:`sourcesdir` to ``None``, since none of the benchmark tests will use any additional resources.
@@ -537,7 +537,7 @@ The new part comes in with the :class:`OSULatencyTest` test in the following lin
 
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
-   :lines: 27
+   :lines: 32
 
 Here we tell ReFrame that this test depends on a test named ``OSUBuildTest``.
 This test may or may not be defined in the same test file; all ReFrame needs is the test name.
@@ -553,7 +553,7 @@ The next step for the :class:`OSULatencyTest` is to set its executable to point 
 This is achieved with the following specially decorated function:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
-   :lines: 32-38
+   :lines: 37-43
 
 The ``@require_deps`` decorator will bind the arguments passed to the decorated function to the result of the dependency that each argument names.
 In this case, it binds the ``OSUBuildTest`` function argument to the result of a dependency named ``OSUBuildTest``.
@@ -569,7 +569,7 @@ The :class:`OSUAllreduceTest` shown below is similar to the other two, except th
 It is essentially a scalability test that is running the ``osu_allreduce`` executable created by the :class:`OSUBuildTest` for 2, 4, 8 and 16 nodes.
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
-   :lines: 64-84
+   :lines: 69-89
 
 The full set of OSU example tests is shown below:
 
