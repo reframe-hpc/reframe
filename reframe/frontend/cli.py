@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import inspect
 import os
 import re
@@ -446,6 +451,7 @@ def main():
     printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
+    printer.info('    Current working dir  : %s' % os.getcwd())
     printer.info('    Stage dir prefix     : %s' % rt.resources.stage_prefix)
     printer.info('    Output dir prefix    : %s' % rt.resources.output_prefix)
     printer.info(
