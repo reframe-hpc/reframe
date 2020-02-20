@@ -120,14 +120,15 @@ class Sarus(ContainerPlatform):
     def __init__(self):
         super().__init__()
         self.with_mpi = False
-        self.pull_image = True
         self._command = 'sarus'
 
+
     def emit_prepare_commands(self):
-        if self.pull_image:
-            return [self._command + ' pull %s' % self.image]
-        else:
+        repo_name, *_ = self.image.split('/')
+        if repo_name == 'load':
             return []
+
+        return [self._command + ' pull %s' % self.image]
 
     def launch_command(self):
         super().launch_command()

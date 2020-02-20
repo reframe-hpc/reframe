@@ -104,15 +104,15 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
                 "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
 
-class TestShifterNGWithoutPull(TestShifterNG):
-    def create_container_platform(self):
-        ret = containers.ShifterNG()
-        ret.pull_image = False
-        return ret
-
+class TestShifterNGLocalImage(TestShifterNG):
     @property
     def expected_cmd_prepare(self):
         return []
+
+    def test_prepare_command(self):
+        self.container_platform.image = 'load/library/name:tag'
+        assert (self.expected_cmd_prepare ==
+                self.container_platform.emit_prepare_commands())
 
 
 class TestShifterNGWithMPI(TestShifterNG):
@@ -156,17 +156,15 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
-
-class TestSarusWithoutPull(TestSarus):
-    def create_container_platform(self):
-        ret = containers.Sarus()
-        ret.pull_image = False
-        return ret
-
+class TestSarusLocalImage(TestSarus):
     @property
     def expected_cmd_prepare(self):
         return []
 
+    def test_prepare_command(self):
+        self.container_platform.image = 'load/library/name:tag'
+        assert (self.expected_cmd_prepare ==
+                self.container_platform.emit_prepare_commands())
 
 class TestSarusWithMPI(TestSarus):
     def create_container_platform(self):
