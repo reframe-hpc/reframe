@@ -122,7 +122,6 @@ class Sarus(ContainerPlatform):
         self.with_mpi = False
         self._command = 'sarus'
 
-
     def emit_prepare_commands(self):
         repo_name, *_ = self.image.split('/')
         if repo_name == 'load':

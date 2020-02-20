@@ -156,6 +156,7 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
 
+
 class TestSarusLocalImage(TestSarus):
     @property
     def expected_cmd_prepare(self):
@@ -165,6 +166,7 @@ class TestSarusLocalImage(TestSarus):
         self.container_platform.image = 'load/library/name:tag'
         assert (self.expected_cmd_prepare ==
                 self.container_platform.emit_prepare_commands())
+
 
 class TestSarusWithMPI(TestSarus):
     def create_container_platform(self):
