@@ -30,7 +30,7 @@ class _ContainerPlatformTest(abc.ABC):
         self.container_platform = self.create_container_platform()
 
     def test_mount_points(self):
-        self.container_platform.image = 'name:tag'
+        self.container_platform.image = 'image:tag'
         self.container_platform.mount_points = [('/path/one', '/one'),
                                                 ('/path/two', '/two')]
         self.container_platform.commands = ['cmd1', 'cmd2']
@@ -44,17 +44,17 @@ class _ContainerPlatformTest(abc.ABC):
             self.container_platform.validate()
 
     def test_missing_commands(self):
-        self.container_platform.image = 'name:tag'
+        self.container_platform.image = 'image:tag'
         with pytest.raises(ContainerError):
             self.container_platform.validate()
 
     def test_prepare_command(self):
-        self.container_platform.image = 'name:tag'
+        self.container_platform.image = 'image:tag'
         assert (self.expected_cmd_prepare ==
                 self.container_platform.emit_prepare_commands())
 
     def test_run_opts(self):
-        self.container_platform.image = 'name:tag'
+        self.container_platform.image = 'image:tag'
         self.container_platform.commands = ['cmd']
         self.container_platform.mount_points = [('/path/one', '/one')]
         self.container_platform.workdir = '/stagedir'
@@ -70,7 +70,7 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_mount_points(self):
         return ('docker run --rm -v "/path/one":"/one" -v "/path/two":"/two" '
-                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_prepare(self):
@@ -79,7 +79,7 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_with_run_opts(self):
         return ('docker run --rm -v "/path/one":"/one" --foo --bar '
-                "name:tag bash -c 'cd /stagedir; cmd'")
+                "image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
@@ -91,17 +91,17 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_prepare(self):
-        return ['shifter pull name:tag']
+        return ['shifter pull image:tag']
 
     @property
     def expected_cmd_with_run_opts(self):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestShifterNGLocalImage(TestShifterNG):
@@ -110,7 +110,7 @@ class TestShifterNGLocalImage(TestShifterNG):
         return []
 
     def test_prepare_command(self):
-        self.container_platform.image = 'load/library/name:tag'
+        self.container_platform.image = 'load/library/image:tag'
         assert (self.expected_cmd_prepare ==
                 self.container_platform.emit_prepare_commands())
 
@@ -126,13 +126,13 @@ class TestShifterNGWithMPI(TestShifterNG):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "--mpi name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_with_run_opts(self):
         return ('shifter run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi --foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSarus(_ContainerPlatformTest, unittest.TestCase):
@@ -144,17 +144,17 @@ class TestSarus(_ContainerPlatformTest, unittest.TestCase):
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_prepare(self):
-        return ['sarus pull name:tag']
+        return ['sarus pull image:tag']
 
     @property
     def expected_cmd_with_run_opts(self):
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSarusLocalImage(TestSarus):
@@ -163,7 +163,7 @@ class TestSarusLocalImage(TestSarus):
         return []
 
     def test_prepare_command(self):
-        self.container_platform.image = 'load/library/name:tag'
+        self.container_platform.image = 'load/library/image:tag'
         assert (self.expected_cmd_prepare ==
                 self.container_platform.emit_prepare_commands())
 
@@ -179,14 +179,14 @@ class TestSarusWithMPI(TestSarus):
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
                 '--mount=type=bind,source="/path/two",destination="/two" '
-                "--mpi name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "--mpi image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_with_run_opts(self):
         self.container_platform.with_mpi = True
         return ('sarus run '
                 '--mount=type=bind,source="/path/one",destination="/one" '
-                "--mpi --foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--mpi --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
@@ -196,7 +196,7 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_mount_points(self):
         return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
-                "name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_prepare(self):
@@ -205,7 +205,7 @@ class TestSingularity(_ContainerPlatformTest, unittest.TestCase):
     @property
     def expected_cmd_with_run_opts(self):
         return ('singularity exec -B"/path/one:/one" '
-                "--foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
 class TestSingularityWithCuda(TestSingularity):
@@ -217,7 +217,7 @@ class TestSingularityWithCuda(TestSingularity):
     @property
     def expected_cmd_mount_points(self):
         return ('singularity exec -B"/path/one:/one" -B"/path/two:/two" '
-                "--nv name:tag bash -c 'cd /stagedir; cmd1; cmd2'")
+                "--nv image:tag bash -c 'cd /stagedir; cmd1; cmd2'")
 
     @property
     def expected_cmd_prepare(self):
@@ -227,4 +227,4 @@ class TestSingularityWithCuda(TestSingularity):
     def expected_cmd_with_run_opts(self):
         self.container_platform.with_cuda = True
         return ('singularity exec -B"/path/one:/one" '
-                "--nv --foo --bar name:tag bash -c 'cd /stagedir; cmd'")
+                "--nv --foo --bar image:tag bash -c 'cd /stagedir; cmd'")
