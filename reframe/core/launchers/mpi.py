@@ -1,6 +1,6 @@
 from reframe.core.launchers import JobLauncher
 from reframe.core.launchers.registry import register_launcher
-from reframe.utility.timer import seconds_to_hms
+from reframe.utility import seconds_to_hms
 
 
 @register_launcher('srun')

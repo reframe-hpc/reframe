@@ -17,7 +17,7 @@ from reframe.core.config import settings
 from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
-from reframe.utility.timer import seconds_to_hms
+from reframe.utility import seconds_to_hms
 
 
 # Time to wait after a job is finished for its standard output/error to be

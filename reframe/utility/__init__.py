@@ -11,6 +11,14 @@ import types
 from collections import UserDict
 
 
+def seconds_to_hms(seconds):
+    '''Convert time in seconds to a tuple of ``(hour, minutes, seconds)``.'''
+
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m, s
+
+
 def _get_module_name(filename):
     barename, _ = os.path.splitext(filename)
     if os.path.basename(filename) == '__init__.py':

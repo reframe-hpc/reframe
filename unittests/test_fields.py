@@ -4,6 +4,7 @@ import unittest
 
 import pytest
 import reframe.core.fields as fields
+from reframe.core.exceptions import ReframeDeprecationWarning
 from reframe.utility import ScopedDict
 
 
@@ -88,21 +89,44 @@ class TestFields(unittest.TestCase):
         tester.field_maybe_none = None
 
         assert isinstance(FieldTester.field, fields.TimerField)
-        assert (datetime.timedelta(days=1, hours=65, minutes=22,
-                                   seconds=87) == tester.field)
+        assert (datetime.timedelta(days=1, hours=65,
+                                   minutes=22, seconds=87) == tester.field)
+        tester.field = datetime.timedelta(days=1, hours=65,
+                                          minutes=22, seconds=87)
+        assert (datetime.timedelta(days=1, hours=65,
+                                   minutes=22, seconds=87) == tester.field)
         tester.field = ''
-        assert (datetime.timedelta(days=0, hours=0, minutes=0,
-                                   seconds=0) == tester.field)
+        assert (datetime.timedelta(days=0, hours=0,
+                                   minutes=0, seconds=0) == tester.field)
+        with self.assertWarns(ReframeDeprecationWarning):
+            tester.field = (65, 22, 87)
+
         with pytest.raises(ValueError):
             exec('tester.field = "1e"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "-10m5s"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "10m-5s"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "m10s"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "10m10"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "10m10m1s"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "10m5s3m"', globals(), locals())
+
+        with pytest.raises(ValueError):
             exec('tester.field = "10ms"', globals(), locals())
-            exec('tester.field = 10', globals(), locals())
+
+        with pytest.raises(ValueError):
+            exec('tester.field = "10"', globals(), locals())
 
     def test_proxy_field(self):
         class Target:
@@ -127,8 +151,6 @@ class TestFields(unittest.TestCase):
         self.assertEqual(4, t.b)
 
     def test_deprecated_field(self):
-        from reframe.core.exceptions import ReframeDeprecationWarning
-
         class FieldTester:
             value = fields.DeprecatedField(fields.TypedField('value', int),
                                            'value field is deprecated')

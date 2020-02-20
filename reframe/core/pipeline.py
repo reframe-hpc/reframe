@@ -540,13 +540,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: Time limit for this test.
     #:
-    #: Time limit is specified as a string in the form ``'%dd%dh%dm%ds'``,
+    #: Time limit is specified as a string in the form ``'%dd%dh%dm%ds'``.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
     #: The value is internaly kept as a :class:`datetime.timedelta` object.
     #: For example '2h30m' is represented as
-    #: datetime.timedelta(hours=2, minutes=30)
+    #: `datetime.timedelta(hours=2, minutes=30)`
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: ``'10m'``

@@ -15,7 +15,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
-from reframe.utility.timer import seconds_to_hms
+from reframe.utility import seconds_to_hms
 
 
 def slurm_state_completed(state):
