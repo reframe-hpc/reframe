@@ -545,7 +545,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: Time limit for this test.
     #:
-    #: Time limit is specified as a string in the form ``'%dd%dh%dm%ds'``.
+    #: Time limit is specified as a string in the form
+    #: ``<days>d<hours>h<minutes>m<seconds>s``.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
@@ -561,11 +562,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:    This attribute may be set to :class:`None`.
     #:
-    #: .. note::
+    #: .. warning::
     #:    .. versionchanged:: 3.0
     #:
-    #:    The format to set this attribute has changed and the previous
-    #:    format has been deprecated.
+    #:    The old syntax using a ``(h, m, s)`` tuple is deprecated.
     #:
     time_limit = fields.TimerField('time_limit', type(None))
 
