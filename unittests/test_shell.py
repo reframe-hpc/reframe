@@ -102,7 +102,7 @@ echo "C()"
         completed = os_ext.run_command(self.script_file.name, check=True)
         assert 'hello' in completed.stdout
         assert 0 == completed.returncode
-        assert "-reframe: script exiting with exit code: 0" in completed.stdout
+        assert '-reframe: script exiting with exit code: 0' in completed.stdout
 
     def test_trap_signal(self):
         with shell.generate_script(self.script_file.name,
@@ -127,4 +127,4 @@ echo "C()"
         stdout = f_stdout.read()
         assert 'hello' not in stdout
         assert 143 == proc.returncode
-        assert "-reframe: script caught signal: 15" in stdout
+        assert '-reframe: script caught signal: 15' in stdout

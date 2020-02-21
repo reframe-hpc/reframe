@@ -5,6 +5,7 @@
 
 import pytest
 import unittest
+
 import reframe.utility.typecheck as types
 
 

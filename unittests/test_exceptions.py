@@ -63,6 +63,7 @@ class TestExceptions(unittest.TestCase):
                   r"=== STDERR ===\n"
                   r"error message"):
             raise_exc(e)
+
         assert exc_args == e.args
 
     def test_spawned_process_error_nostdout(self):
@@ -97,6 +98,7 @@ class TestExceptions(unittest.TestCase):
                                  r"=== STDERR ===\n"
                                  r"partial error"):
             raise_exc(e)
+
         assert exc_args == e.args
 
     def test_spawned_process_timeout_nostdout(self):
@@ -125,6 +127,7 @@ class TestExceptions(unittest.TestCase):
         assert 1234 == e.jobid
         with pytest.raises(exc.JobError, match=r'\[jobid=1234\] some error'):
             raise_exc(e)
+
         assert exc_args == e.args
 
     def test_reraise_job_error(self):

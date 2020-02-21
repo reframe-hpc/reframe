@@ -30,6 +30,7 @@ class TestArgumentParser(unittest.TestCase):
     def test_arguments(self):
         with pytest.raises(ValueError):
             self.foo_options.add_argument(action='store', default='FOO')
+
         self.foo_options.add_argument('--foo-bar', action='store_true')
         self.foo_options.add_argument('--alist', action='append', default=[])
         options = self.parser.parse_args(['--foobar', '--foo-bar'])
