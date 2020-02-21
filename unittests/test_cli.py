@@ -133,7 +133,7 @@ class TestFrontend(unittest.TestCase):
         try:
             import reframe.settings as settings
         except ImportError:
-            pytest.fail('default settings file find could not be found')
+            pytest.fail('default settings file could not be found')
 
     def test_check_success(self):
         self.more_options = ['--save-log-files']

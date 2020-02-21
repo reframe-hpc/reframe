@@ -18,7 +18,7 @@ class TestFields(unittest.TestCase):
 
         c = FieldTester()
         with pytest.raises(AttributeError):
-            exec("a = c.var", globals(), locals())
+            a = c.var
 
         with pytest.raises(AttributeError):
             getattr(c, 'var')
@@ -49,7 +49,7 @@ class TestFields(unittest.TestCase):
         assert FieldTester.ro == 'foo'
         assert tester.ro == 'foo'
         with pytest.raises(ValueError):
-            exec("tester.ro = 'bar'", globals(), locals())
+            tester.ro = 'bar'
 
     def test_typed_field(self):
         class ClassA:
@@ -97,34 +97,34 @@ class TestFields(unittest.TestCase):
         assert isinstance(FieldTester.field, fields.TimerField)
         assert (65, 22, 47) == tester.field
         with pytest.raises(TypeError):
-            exec('tester.field = (2,)', globals(), locals())
+            tester.field = (2,)
 
         with pytest.raises(TypeError):
-            exec('tester.field = (2, 2)', globals(), locals())
+            tester.field = (2, 2)
 
         with pytest.raises(TypeError):
-            exec('tester.field = (2, 2, 3.4)', globals(), locals())
+            tester.field = (2, 2, 3.4)
 
         with pytest.raises(TypeError):
-            exec("tester.field = ('foo', 2, 3)", globals(), locals())
+            tester.field = ('foo', 2, 3)
 
         with pytest.raises(TypeError):
-            exec('tester.field = 3', globals(), locals())
+            tester.field = 3
 
         with pytest.raises(ValueError):
-            exec('tester.field = (-2, 3, 5)', globals(), locals())
+            tester.field = (-2, 3, 5)
 
         with pytest.raises(ValueError):
-            exec('tester.field = (100, -3, 4)', globals(), locals())
+            tester.field = (100, -3, 4)
 
         with pytest.raises(ValueError):
-            exec('tester.field = (100, 3, -4)', globals(), locals())
+            tester.field = (100, 3, -4)
 
         with pytest.raises(ValueError):
-            exec('tester.field = (100, 65, 4)', globals(), locals())
+            tester.field = (100, 65, 4)
 
         with pytest.raises(ValueError):
-            exec('tester.field = (100, 3, 65)', globals(), locals())
+            tester.field = (100, 3, 65)
 
     def test_proxy_field(self):
         class Target:
@@ -237,14 +237,13 @@ class TestFields(unittest.TestCase):
 
         # Test invalid assignments
         with pytest.raises(TypeError):
-            exec('tester.field = {1: "a", 2: "b" }', globals(), locals())
+            tester.field = {1: "a", 2: "b"}
 
         with pytest.raises(TypeError):
-            exec("tester.field = [('a', 1), ('b', 2)]", globals(), locals())
+            tester.field = [('a', 1), ('b', 2)]
 
         with pytest.raises(TypeError):
-            exec("tester.field = {'a': {1: 'k1'}, 'b': {2: 'k2'}}", globals(),
-                 locals())
+            tester.field = {'a': {1: 'k1'}, 'b': {2: 'k2'}}
 
         # Test assigning a ScopedDict already
         tester.field = ScopedDict({})

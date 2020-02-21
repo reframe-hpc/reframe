@@ -28,7 +28,7 @@ class TestOSTools(unittest.TestCase):
 
     def test_command_error(self):
         with pytest.raises(SpawnedProcessError):
-            os_ext.run_command('false', 'check=True')
+            os_ext.run_command('false', check=True)
 
     def test_command_timeout(self):
         try:
@@ -643,43 +643,43 @@ class TestScopedDict(unittest.TestCase):
         # Test global scope
         assert 7 == scoped_dict['k1']
         with pytest.raises(KeyError):
-            exec("scoped_dict['k2']", globals(), locals())
+            scoped_dict['k2']
 
         assert 9 == scoped_dict['k3']
         assert 10 == scoped_dict['k4']
 
         assert 7 == scoped_dict[':k1']
         with pytest.raises(KeyError):
-            exec("scoped_dict[':k2']", globals(), locals())
+            scoped_dict[':k2']
 
         assert 9 == scoped_dict[':k3']
         assert 10 == scoped_dict[':k4']
 
         assert 7 == scoped_dict['*:k1']
         with pytest.raises(KeyError):
-            exec("scoped_dict['*:k2']", globals(), locals())
+            scoped_dict['*:k2']
 
         assert 9 == scoped_dict['*:k3']
         assert 10 == scoped_dict['*:k4']
 
         # Try to fool it, by requesting keys with scope names
         with pytest.raises(KeyError):
-            exec("scoped_dict['a']", globals(), locals())
+            scoped_dict['a']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['a:b']", globals(), locals())
+            scoped_dict['a:b']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['a:b:c']", globals(), locals())
+            scoped_dict['a:b:c']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['a:b:c:d']", globals(), locals())
+            scoped_dict['a:b:c:d']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['*']", globals(), locals())
+            scoped_dict['*']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['']", globals(), locals())
+            scoped_dict['']
 
     def test_setitem(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -717,19 +717,19 @@ class TestScopedDict(unittest.TestCase):
         assert 9 == scoped_dict['k3']
         assert 10 == scoped_dict['k4']
         with pytest.raises(KeyError):
-            exec("scoped_dict['k1']", globals(), locals())
+            scoped_dict['k1']
 
         # delete a whole scope
         del scoped_dict['*']
         with pytest.raises(KeyError):
-            exec("scoped_dict[':k4']", globals(), locals())
+            scoped_dict[':k4']
 
         with pytest.raises(KeyError):
-            exec("scoped_dict['a:k3']", globals(), locals())
+            scoped_dict['a:k3']
 
         # try to delete a non-existent key
         with pytest.raises(KeyError):
-            exec("del scoped_dict['a:k4']", globals(), locals())
+            del scoped_dict['a:k4']
 
         # test deletion of parent scope keeping a nested one
         scoped_dict = reframe.utility.ScopedDict()
@@ -752,7 +752,7 @@ class TestScopedDict(unittest.TestCase):
         del scoped_dict['s0:s1']
         assert 2 == scoped_dict['s0:s1:k0']
         with pytest.raises(KeyError):
-            exec("scoped_dict['s0:s1']", globals(), locals())
+            scoped_dict['s0:s1']
 
     def test_update(self):
         scoped_dict = util.ScopedDict({

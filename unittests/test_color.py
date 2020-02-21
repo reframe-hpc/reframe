@@ -15,7 +15,6 @@ class TestColors(unittest.TestCase):
         assert 128 == c.r
         assert 0 == c.g
         assert 34 == c.b
-
         with pytest.raises(ValueError):
             color.ColorRGB(-1, 0, 34)
 
@@ -30,7 +29,6 @@ class TestColors(unittest.TestCase):
         assert '\033' in s
         assert '[3' in s
         assert '1m' in s
-
         with pytest.raises(ValueError):
             color.colorize('hello', color.RED, palette='FOO')
 

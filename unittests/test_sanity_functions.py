@@ -415,7 +415,6 @@ class TestAsserts(unittest.TestCase):
         # Check upper threshold values greater than 1
         assert sn.assert_reference(20.0, 10.0, None, 3.0)
         assert sn.assert_reference(-50.0, -20.0, -2.0, 0.5)
-
         with pytest.raises(SanityError,
                            match=r'0\.5 is beyond reference value 1 '
                                  r'\(l=0\.8, u=1\.1\)'):
