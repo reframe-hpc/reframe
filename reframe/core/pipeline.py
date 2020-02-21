@@ -557,9 +557,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``'10m'``
     #:
     #: .. note::
-    #:    .. versionchanged:: 3.0
+    #:    .. versionchanged:: 2.15
     #:
     #:    This attribute may be set to :class:`None`.
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:
+    #:    The format to set this attribute has changed and the previous
+    #:    format has been deprecated.
     #:
     time_limit = fields.TimerField('time_limit', type(None))
 
