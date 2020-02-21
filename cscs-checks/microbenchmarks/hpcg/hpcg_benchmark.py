@@ -148,7 +148,7 @@ class HPCGCheckMKL(rfm.RegressionTest):
         return sn.getitem(sn.glob(pattern), 0)
 
     @rfm.run_before('compile')
-    def settasks(self):
+    def set_tasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 12
