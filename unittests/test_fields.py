@@ -112,7 +112,7 @@ class TestFields(unittest.TestCase):
             tester.field = '1e'
 
         with pytest.raises(ValueError):
-            tester.field = '10m5s'
+            tester.field = '-10m5s'
 
         with pytest.raises(ValueError):
             tester.field = '10m-5s'
