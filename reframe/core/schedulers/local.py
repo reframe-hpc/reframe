@@ -9,7 +9,7 @@ import socket
 import stat
 import subprocess
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
@@ -125,7 +125,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Set the time limit to the grace period and let wait() do the final
         # killing
-        job.time_limit = (0, 0, self._cancel_grace_period)
+        job.time_limit = timedelta(seconds=self._cancel_grace_period)
         self.wait(job)
 
     def wait(self, job):
@@ -143,8 +143,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Convert job's time_limit to seconds
         if job.time_limit is not None:
-            h, m, s = job.time_limit
-            timeout = h * 3600 + m * 60 + s
+            timeout = job.time_limit.total_seconds()
         else:
             timeout = 0
 

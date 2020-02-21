@@ -14,7 +14,7 @@ class TimeLimitTest(rfm.RunOnlyRegressionTest):
                       'of a user-defined time limit')
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['*']
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         self.executable = 'sleep'
         self.executable_opts = ['100']
         self.sanity_patterns = sn.assert_found(

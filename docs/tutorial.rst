@@ -527,7 +527,7 @@ For schedulers that do not provide the same functionality, some of the variables
 ================================================ ===========================================
       :class:`RegressionTest` attribute                    Corresponding SLURM option
 ================================================ ===========================================
-      ``time_limit = (0, 10, 30)``                         ``--time=00:10:30``
+      ``time_limit = '10m30s``                             ``--time=00:10:30``
       ``use_multithreading = True``                        ``--hint=multithread``
       ``use_multithreading = False``                       ``--hint=nomultithread``
       ``exclusive_access = True``                          ``--exclusive``
