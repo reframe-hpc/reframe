@@ -32,7 +32,7 @@ class SparkAnalyticsCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 18
 
     @rfm.run_before('run')
-    def setlauncher(self):
+    def set_launcher(self):
         # The job launcher has to be changed since the `start_analytics`
         # script is not used with srun.
         self.job.launcher = getlauncher('local')()

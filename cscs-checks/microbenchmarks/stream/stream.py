@@ -107,7 +107,7 @@ class StreamTest(rfm.RegressionTest):
         self.maintainers = ['RS', 'SK']
 
     @rfm.run_before('compile')
-    def setup_per_partition_and_env(self):
+    def prepare_compile(self):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
             self.current_partition.fullname, 1)
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
@@ -120,4 +120,4 @@ class StreamTest(rfm.RegressionTest):
         try:
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
-            self.reference = {'*': {'triad': (0.0, None, None, 'MB/s')}}
+            pass

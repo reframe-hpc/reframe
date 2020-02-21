@@ -19,7 +19,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'scs', 'production'}
 
     @rfm.run_before('sanity')
-    def setsanity(self):
+    def set_sanity(self):
         if self.current_partition.name == 'mc':
             self.sanity_patterns = sn.all([
                 sn.assert_found('Vendor:   VMware, Inc.', self.stdout),

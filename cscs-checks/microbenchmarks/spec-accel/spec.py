@@ -59,23 +59,24 @@ class SpecAccelCheckBase(rfm.RegressionTest):
         self.maintainers = ['SK']
         self.tags = {'diagnostic', 'external-resources'}
 
-    @rfm.run_before('compile')
+    @rfm.run_after('setup')
     def setup_per_env(self):
+        envname = self.current_environ.name
         self.pre_run = ['source ./shrc', 'mv %s config' %
-                        self.configs[self.current_environ.name]]
+                        self.configs[envname]]
         self.executable_opts = [
             '--config=%s' %
-            self.configs[self.current_environ.name],
+            self.configs[envname],
             '--platform NVIDIA',
             '--tune=base',
-            '--device GPU'] + self.benchmarks[self.current_environ.name]
+            '--device GPU'] + self.benchmarks[envname]
         self.reference = {
-            'dom:gpu':   self.refs[self.current_environ.name],
-            'daint:gpu': self.refs[self.current_environ.name]
+            'dom:gpu':   self.refs[envname],
+            'daint:gpu': self.refs[envname]
         }
 
-        self.sanity_patterns = self.sanity_patterns_[self.current_environ.name]
-        self.perf_patterns = self.perf_patterns_[self.current_environ.name]
+        self.sanity_patterns = self.sanity_patterns_[envname]
+        self.perf_patterns = self.perf_patterns_[envname]
 
         # The job launcher has to be changed since the `runspec`
         # script is not used with srun.

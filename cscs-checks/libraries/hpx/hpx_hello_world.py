@@ -19,7 +19,7 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     @rfm.run_after('setup')
-    def settasks(self):
+    def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
@@ -38,11 +38,11 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 36
 
     @rfm.run_before('run')
-    def setexecopts(self):
+    def set_exec_opts(self):
         self.executable_opts = ['--hpx:threads=%s' % self.num_cpus_per_task]
 
     @rfm.run_before('sanity')
-    def setsanity(self):
+    def set_sanity(self):
         hellos = sn.findall(r'hello world from OS-thread \s*(?P<tid>\d+) on '
                             r'locality (?P<lid>\d+)', self.stdout)
         # https://stellar-group.github.io/hpx/docs/sphinx/branches/master/html/terminology.html#term-locality

@@ -59,7 +59,7 @@ class StridedBandwidthTest(StridedBase):
         }
 
     @rfm.run_before('run')
-    def setexecopt(self):
+    def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
         # 8-byte stride, using the full cacheline
@@ -88,7 +88,7 @@ class StridedBandwidthTest64(StridedBase):
         }
 
     @rfm.run_before('run')
-    def setexecopt(self):
+    def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
         # 64-byte stride, using 1/8 of the cacheline
@@ -117,7 +117,7 @@ class StridedBandwidthTest128(StridedBase):
         }
 
     @rfm.run_before('run')
-    def setexecopt(self):
+    def set_exec_opts(self):
         self.num_cpus = self.system_num_cpus[self.current_partition.fullname]
 
         # 128-byte stride, using 1/8 of every 2nd cacheline

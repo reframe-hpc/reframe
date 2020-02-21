@@ -18,8 +18,8 @@ class AffinityTestBase(rfm.RegressionTest):
         self.maintainers = ['RS', 'SK']
         self.tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    @rfm.run_before('compile')
-    def setup_per_partition(self):
+    @rfm.run_after('setup')
+    def prepare_test(self):
 
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
@@ -100,11 +100,11 @@ class AffinityOpenMPTest(AffinityTestBase):
         }
         self.variant = variant
 
-    @rfm.run_before('compile')
-    def set_task_per_core(self):
+    @rfm.run_before('run')
+    def set_tasks_per_core(self):
+        partname = self.current_partition.name
         self.num_cpus_per_task = (
-            self.cases[self.variant]['num_cpus_per_task:%s' %
-                                     self.current_partition.name])
+            self.cases[self.variant]['num_cpus_per_task:%s' % partname])
         if self.cases[self.variant]['ntasks_per_core']:
             self.num_tasks_per_core = (
                 self.cases[self.variant]['ntasks_per_core'])
@@ -170,7 +170,7 @@ class SocketDistributionTest(AffinityTestBase):
         self.num_cpus_per_task = self.cases[variant]['num_cpus_per_task']
         self.num_tasks_per_socket = self.cases[variant]['num_tasks_per_socket']
 
-    @rfm.run_before('compile')
+    @rfm.run_before('run')
     def set_launcher(self):
         if self.cases[self.variant]['cpu-bind']:
             self.job.launcher.options = ['--cpu-bind=%s' %

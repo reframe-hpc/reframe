@@ -64,8 +64,8 @@ class DGEMMTest(rfm.RegressionTest):
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
 
-    @rfm.run_before('compile')
-    def settasks(self):
+    @rfm.run_before('run')
+    def set_tasks(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_cpus_per_task = 12
         elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:

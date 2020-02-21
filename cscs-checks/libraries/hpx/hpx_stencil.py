@@ -46,14 +46,7 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     @rfm.run_after('setup')
-    def partition_setup(self):
-        result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
-                            r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
-                            r'\s*(?P<steps>\d+)',
-                            self.stdout)
-
-    @rfm.run_after('setup')
-    def settasks(self):
+    def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 1
             self.num_tasks_per_node = 1
@@ -72,11 +65,11 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_cpus_per_task = 36
 
     @rfm.run_before('run')
-    def setexecopts(self):
+    def set_exec_opts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
     @rfm.run_before('sanity')
-    def setsanity(self):
+    def set_sanity(self):
         result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)',
@@ -140,7 +133,7 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['VH', 'JG']
 
     @rfm.run_after('setup')
-    def settasks(self):
+    def set_tasks(self):
         if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
@@ -161,11 +154,11 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_socket = 1
 
     @rfm.run_before('run')
-    def setexecopts(self):
+    def set_exec_opts(self):
         self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
 
     @rfm.run_before('sanity')
-    def setsanity(self):
+    def set_sanity(self):
         result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
                             r'\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),'

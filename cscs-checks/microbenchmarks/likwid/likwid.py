@@ -98,15 +98,11 @@ class CPUBandwidth(MemBandwidthTest):
         }
 
     @rfm.run_before('run')
-    def setexecopts(self):
-        pfn = self.current_partition.fullname
-        self.data_size = self.system_cache_sizes[pfn][self.mem_level]
-        self.num_cpus_per_task = self.system_num_cpus[
-            self.current_partition.fullname
-        ]
-        numa_domains = self.system_numa_domains[
-            self.current_partition.fullname
-        ]
+    def set_exec_opts(self):
+        partname = self.current_partition.fullname
+        self.data_size = self.system_cache_sizes[partname][self.mem_level]
+        self.num_cpus_per_task = self.system_num_cpus[partname]
+        numa_domains = self.system_numa_domains[partname]
         num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
                                                    self.num_tasks_per_core)
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
@@ -140,13 +136,10 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
         }
 
     @rfm.run_before('run')
-    def setexecopts(self):
-        self.num_cpus_per_task = self.system_num_cpus[
-            self.current_partition.fullname
-        ]
-        numa_domains = self.system_numa_domains[
-            self.current_partition.fullname
-        ]
+    def set_exec_opts(self):
+        partname = self.current_partition.fullname
+        self.num_cpus_per_task = self.system_num_cpus[partname]
+        numa_domains = self.system_numa_domains[partname]
 
         num_cpu_domain = (self.num_cpus_per_task /
                           (len(numa_domains) * self.num_tasks_per_core))
