@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -7,10 +12,9 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GpuDirectAccCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'tests gpu-direct for Fortran OpenACC'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
-
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
@@ -31,6 +35,14 @@ class GpuDirectAccCheck(rfm.RegressionTest):
             self.variables = {
                 'CRAY_ACCEL_TARGET': 'nvidia35',
                 'MV2_USE_CUDA': '1',
+                'G2G': '1'
+            }
+            self.num_tasks = 8
+            self.num_gpus_per_node = 8
+            self.num_tasks_per_node = 8
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.variables = {
                 'G2G': '1'
             }
             self.num_tasks = 8
@@ -57,5 +69,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla:cc60', '-Mnorpath']
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla:cc35']
+            elif self.current_system.name in ['arolla', 'tsa']:
+                self.build_system.fflags += ['-ta=tesla:cc70']
 
         super().setup(partition, environ, **job_opts)

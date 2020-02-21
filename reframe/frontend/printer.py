@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import datetime
 
 import reframe.core.logging as logging
@@ -41,22 +46,12 @@ class PrettyPrinter:
             status_stripped = status.strip().lower()
             if status_stripped == 'skip':
                 status = color.colorize(status, color.YELLOW)
-            elif status_stripped in ['fail', 'failed']:
+            elif status_stripped in ['fail', 'failed', 'error']:
                 status = color.colorize(status, color.RED)
             else:
                 status = color.colorize(status, color.GREEN)
 
         logging.getlogger().log(level, '[ %s ] %s' % (status, message))
-
-    def result(self, check, partition, environ, success):
-        if success:
-            result_str = 'OK'
-        else:
-            result_str = 'FAIL'
-
-        self.status(
-            result_str, '%s on %s using %s' %
-            (check.name, partition.fullname, environ.name), just='right')
 
     def timestamp(self, msg='', separator=None):
         msg = '%s %s' % (msg, datetime.datetime.today().strftime('%c %Z'))

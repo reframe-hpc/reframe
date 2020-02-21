@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # CSCS ReFrame CI settings
 #
@@ -59,6 +64,24 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray'],
                         'descr': 'Kesch compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['builtin-gcc'],
+                        'descr': 'Tsa compute nodes',
+                        'max_jobs': 10,
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
                         }

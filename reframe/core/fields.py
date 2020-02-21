@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Useful descriptors for advanced operations on fields
 #
@@ -112,8 +117,8 @@ class TimerField(TypedField):
         self._check_type(value)
         if isinstance(value, tuple):
             user_deprecation_warning(
-                'setting a timer field as tuple is deprecated: '
-                'please use a string <days>d<hours>h<minutes>m<seconds>s')
+                "setting a timer field from a tuple is deprecated: "
+                "please use a string <days>d<hours>h<minutes>m<seconds>s")
             h, m, s = value
             value = datetime.timedelta(hours=h, minutes=m, seconds=s)
 

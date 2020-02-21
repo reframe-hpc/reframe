@@ -31,6 +31,7 @@ You can always find the latest release `here <https://github.com/eth-cscs/refram
 Publications
 ============
 
+* Slides [`pdf <https://drive.google.com/open?id=1W7R5lfRkXvBpVDSZ7dVBadk_d3K4dFrS>`__] @ `5th EasyBuild User Meeting 2020 <https://github.com/easybuilders/easybuild/wiki/5th-EasyBuild-User-Meeting>`__.
 * Slides [`pdf <https://drive.google.com/open?id=1Z3faPh9OSSXvlLHL07co3MRRn443dYsY>`__] @ `HPC System Testing BoF <https://sc19.supercomputing.org/session/?sess=sess324>`__, SC'19.
 * Slides [`pdf <https://drive.google.com/open?id=1JOFqY3ejbR1X5kTn_IZyp1GlCd2ZZS58>`__] @ `HUST 2019 <https://sc19.supercomputing.org/session/?sess=sess116>`__, SC'19.
 * Slides [`pdf <https://drive.google.com/open?id=1iwg1I48LVaWhhZCZIYPJSi3hdFLRcuhi>`__] @ `HPC Knowledge Meeting '19 <https://hpckp.org/>`__.

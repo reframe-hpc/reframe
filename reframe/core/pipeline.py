@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Basic functionality for regression tests
 #
@@ -552,7 +557,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``'10m'``
     #:
     #: .. note::
-    #:    .. versionchanged:: 2.15
+    #:    .. versionchanged:: 3.0
     #:
     #:    This attribute may be set to :class:`None`.
     #:

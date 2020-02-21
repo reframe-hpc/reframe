@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -8,7 +13,8 @@ class KernelLatencyTest(rfm.RegressionTest):
     def __init__(self, kernel_version):
         # List known partitions here so as to avoid specifying them every time
         # with --system
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sourcepath = 'kernel_latency.cu'
@@ -23,8 +29,13 @@ class KernelLatencyTest(rfm.RegressionTest):
         elif self.current_system.name == 'kesch':
             self.num_gpus_per_node = 16
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
-            self.modules = ['craype-accel-nvidia35']
+            self.modules = ['cudatoolkit/8.0.61']
             gpu_arch = '37'
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.num_gpus_per_node = 8
+            self.valid_prog_environs = ['PrgEnv-pgi']
+            self.modules = ['cuda/10.1.243']
+            gpu_arch = '70'
         else:
             # Enable test when running on an unknown system
             self.num_gpus_per_node = 1
@@ -66,11 +77,8 @@ class KernelLatencyTest(rfm.RegressionTest):
                     'latency': (6.6, None, 0.10, 'us')
                 },
                 'kesch:cn': {
-                    'latency': (12.0, None, 0.10, 'us')
+                    'latency': (13.7, None, 0.10, 'us')
                 },
-                '*': {
-                    'latency': (0.0, None, None, 'us')
-                }
             },
             'async': {
                 'dom:gpu': {
@@ -82,9 +90,6 @@ class KernelLatencyTest(rfm.RegressionTest):
                 'kesch:cn': {
                     'latency': (5.7, None, 0.10, 'us')
                 },
-                '*': {
-                    'latency': (0.0, None, None, 'us')
-                }
             },
         }
 

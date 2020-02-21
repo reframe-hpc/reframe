@@ -1,13 +1,30 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+import contextlib
 import itertools
 import math
 import sys
 import time
+
 from datetime import datetime
 
 from reframe.core.exceptions import (TaskDependencyError, TaskExit)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
+
+
+def _cleanup_all(tasks, *args, **kwargs):
+    for task in tasks:
+        if task.ref_count == 0:
+            with contextlib.suppress(TaskExit):
+                task.cleanup(*args, **kwargs)
+
+    # Remove cleaned up tests
+    tasks[:] = [t for t in tasks if t.ref_count]
 
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
@@ -66,19 +83,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             raise
         except BaseException:
             task.fail(sys.exc_info())
-        finally:
-            self.printer.status('FAIL' if task.failed else 'OK',
-                                task.check.info(), just='right')
-
-    def _cleanup_all(self):
-        for task in self._retired_tasks:
-            if task.ref_count == 0:
-                task.cleanup(not self.keep_stage_files)
-
-        # Remove cleaned up tests
-        self._retired_tasks[:] = [
-            t for t in self._retired_tasks if t.ref_count
-        ]
 
     def on_task_setup(self, task):
         pass
@@ -90,18 +94,22 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
-        pass
+        if task.failed_stage == 'cleanup':
+            self.printer.status('ERROR', task.check.info(), just='right')
+        else:
+            self.printer.status('FAIL', task.check.info(), just='right')
 
     def on_task_success(self, task):
+        self.printer.status('OK', task.check.info(), just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
 
-        self._cleanup_all()
+        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
     def exit(self):
         # Clean up all remaining tasks
-        self._cleanup_all()
+        _cleanup_all(self._retired_tasks, not self.keep_stage_files)
 
 
 class PollRateFunction:
@@ -196,8 +204,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks.append(task)
 
     def on_task_failure(self, task):
-        self._remove_from_running(task)
-        self.printer.status('FAIL', task.check.info(), just='right')
+        if task.failed_stage == 'cleanup':
+            self.printer.status('ERROR', task.check.info(), just='right')
+        else:
+            self._remove_from_running(task)
+            self.printer.status('FAIL', task.check.info(), just='right')
 
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
@@ -290,16 +301,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._failall(e)
             raise
 
-    def _cleanup_all(self):
-        for task in self._retired_tasks:
-            if task.ref_count == 0:
-                task.cleanup(not self.keep_stage_files)
-
-        # Remove cleaned up tests
-        self._retired_tasks[:] = [
-            t for t in self._retired_tasks if t.ref_count
-        ]
-
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
         getlogger().debug('updating counts for running test cases')
@@ -324,10 +325,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 break
 
             getlogger().debug('finalizing task: %s' % task.check.info())
-            try:
+            with contextlib.suppress(TaskExit):
                 self._finalize_task(task)
-            except TaskExit:
-                pass
 
     def _finalize_task(self, task):
         if not self.skip_sanity_check:
@@ -395,7 +394,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self._finalize_all()
                 self._setup_all()
                 self._reschedule_all()
-                self._cleanup_all()
+                _cleanup_all(self._retired_tasks, not self.keep_stage_files)
                 t_elapsed = (datetime.now() - t_start).total_seconds()
                 real_rate = num_polls / t_elapsed
                 getlogger().debug(

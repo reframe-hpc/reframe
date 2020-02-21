@@ -1,10 +1,16 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 class CollectivesBaseTest(rfm.RegressionTest):
     def __init__(self, variant, bench_reference):
-        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['dom:gpu', 'daint:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.variables = {'G2G': '1'}
         self.executable = 'build/src/comm_overlap_benchmark'
@@ -27,6 +33,18 @@ class CollectivesBaseTest(rfm.RegressionTest):
             self.build_system.config_opts += [
                 '-DMPI_VENDOR=mvapich2',
                 '-DCUDA_COMPUTE_CAPABILITY="sm_37"'
+            ]
+            self.build_system.max_concurrency = 1
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.num_tasks = 32
+            self.num_gpus_per_node = 8
+            self.num_tasks_per_node = 16
+            self.num_tasks_per_socket = 8
+            self.modules = ['cmake']
+            self.build_system.config_opts += [
+                '-DMPI_VENDOR=openmpi',
+                '-DCUDA_COMPUTE_CAPABILITY="sm_70"'
             ]
             self.build_system.max_concurrency = 1
         elif self.current_system.name in {'daint', 'dom', 'tiger'}:
@@ -87,9 +105,6 @@ class CollectivesBaseTest(rfm.RegressionTest):
             'dom': {
                 'elapsed_time': (ref, None, 0.15)
             },
-            '*': {
-                'elapsed_time': (ref, None, None)
-            }
         }
 
         self.maintainers = ['AJ', 'MKr']
@@ -97,7 +112,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
 
     def setup(self, *args, **kwargs):
         super().setup(*args, **kwargs)
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.job.launcher.options = ['--distribution=block:block',
                                          '--cpu_bind=q']
 
@@ -116,7 +131,7 @@ class AlltoallvTest(CollectivesBaseTest):
                                  'nocomm':  0.0171947,
                                  'nocomp':  0.0137893,
                                  'default': 0.0138493
-                             }
+                             },
                          })
         self.strict_check = False
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
@@ -137,7 +152,7 @@ class HaloExchangeTest(CollectivesBaseTest):
                                  'nocomm':  0.978306,
                                  'nocomp':  1.36716,
                                  'default': 2.53509
-                             }
+                             },
                          })
         self.sourcesdir = 'https://github.com/eth-cscs/comm_overlap_bench.git'
         self.prebuild_cmd = ['git checkout barebones']

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import inspect
 import os
 import re
@@ -93,8 +98,9 @@ def main():
 
     # Check discovery options
     locate_options.add_argument(
-        '-c', '--checkpath', action='append', metavar='DIR|FILE',
-        help='Search for checks in DIR or FILE')
+        '-c', '--checkpath', action='store', metavar='DIR|FILE',
+        help="Search for checks in DIR or FILE; multiple paths can be "
+             "separated with `:'")
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively')
@@ -410,15 +416,17 @@ def main():
     # Setup the check loader
     if options.checkpath:
         load_path = []
-        for d in options.checkpath:
+        for d in options.checkpath.split(':'):
             d = os_ext.expandvars(d)
             if not os.path.exists(d):
                 printer.warning("%s: path `%s' does not exist. Skipping..." %
                                 (argparser.prog, d))
                 continue
 
-            load_path.append(d)
+            load_path.append(os.path.realpath(d))
 
+        load_path = os_ext.unique_abs_paths(load_path,
+                                            prune_children=options.recursive)
         loader = RegressionCheckLoader(
             load_path, recurse=options.recursive,
             ignore_conflicts=options.ignore_check_conflicts)
@@ -443,6 +451,7 @@ def main():
     printer.info('%03s Check search path : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
+    printer.info('    Current working dir  : %s' % os.getcwd())
     printer.info('    Stage dir prefix     : %s' % rt.resources.stage_prefix)
     printer.info('    Output dir prefix    : %s' % rt.resources.output_prefix)
     printer.info(

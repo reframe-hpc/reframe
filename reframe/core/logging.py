@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import abc
 import collections.abc
 import logging
@@ -5,10 +10,11 @@ import logging.handlers
 import numbers
 import os
 import pprint
+import re
 import shutil
 import sys
 import socket
-from datetime import datetime
+import time
 
 import reframe
 import reframe.utility.color as color
@@ -132,6 +138,34 @@ class MultiFileHandler(logging.FileHandler):
             super().close()
 
 
+def _format_time_rfc3339(timestamp, datefmt):
+    tz_suffix = time.strftime('%z', timestamp)
+    tz_rfc3339 = tz_suffix[:-2] + ':' + tz_suffix[-2:]
+
+    # Python < 3.7 truncates the `%`, whereas later versions don't
+    return re.sub(r'(%)?\:z', tz_rfc3339, time.strftime(datefmt, timestamp))
+
+
+class RFC3339Formatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        datefmt = datefmt or self.default_time_format
+        if '%:z' not in datefmt:
+            return super().formatTime(record, datefmt)
+        else:
+            timestamp = self.converter(record.created)
+            return _format_time_rfc3339(timestamp, datefmt)
+
+    def format(self, record):
+        datefmt = self.datefmt or self.default_time_format
+        if record.check_job_completion_time is not None:
+            ct = self.converter(record.check_job_completion_time)
+            record.check_job_completion_time = _format_time_rfc3339(
+                ct, datefmt
+            )
+
+        return super().format(record)
+
+
 def load_from_dict(logging_config):
     if not isinstance(logging_config, collections.abc.Mapping):
         raise TypeError('logging configuration is not a dict')
@@ -177,8 +211,7 @@ def _create_file_handler(handler_config):
     timestamp = handler_config.get('timestamp', None)
     if timestamp:
         basename, ext = os.path.splitext(filename)
-        filename = '%s_%s%s' % (basename,
-                                datetime.now().strftime(timestamp), ext)
+        filename = '%s_%s%s' % (basename, time.strftime(timestamp), ext)
 
     append = handler_config.get('append', False)
     return logging.handlers.RotatingFileHandler(filename,
@@ -305,7 +338,7 @@ def _extract_handlers(handlers_list):
         level = handler_config.get('level', 'debug').lower()
         fmt = handler_config.get('format', '%(message)s')
         datefmt = handler_config.get('datefmt', '%FT%T')
-        hdlr.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+        hdlr.setFormatter(RFC3339Formatter(fmt=fmt, datefmt=datefmt))
         hdlr.setLevel(_check_level(level))
         handlers.append(hdlr)
 
@@ -428,11 +461,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         if self.check.job:
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
-                # Use the logging handlers' date format to format
-                # completion_time
-                # NOTE: All handlers use the same date format
-                fmt = self.logger.handlers[0].formatter.datefmt
-                ct = self.check.job.completion_time.strftime(fmt)
+                ct = self.check.job.completion_time
                 self.extra['check_job_completion_time'] = ct
 
     def log_performance(self, level, tag, value, ref,

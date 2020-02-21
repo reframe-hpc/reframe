@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # The first of the following tests verify the installation. The remaining
 # tests operate on files. All netCDF files incl CDL metadata were
 # downloaded from:
@@ -30,11 +35,15 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:pn']
+                              'kesch:pn', 'arolla:pn', 'tsa:pn']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.modules = ['cdo', 'netcdf-fortran']
         else:
             self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['CDO']
@@ -87,7 +96,11 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
     def setup(self, partition, environ, **job_opts):
-        nco_name = 'nco' if self.current_system.name == 'kesch' else 'NCO'
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+            nco_name = 'nco'
+        else:
+            nco_name = 'NCO'
+
         self.pre_run = ['module load %s' % nco_name]
         super().setup(partition, environ, **job_opts)
 
@@ -102,8 +115,8 @@ class CDO_InfoNCTest(CDOBaseTest):
         # TODO: Add here also Warning? then it fails currently...
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo info: Processed 688128 values from 5 '
-                            r'variables over 1 timestep', self.stderr)
+            sn.assert_found(r'info: Processed( 688128 values from)? '
+                            r'5 variables over 1 timestep', self.stderr)
         ])
 
 
@@ -118,8 +131,8 @@ class CDO_InfoNC4Test(CDOBaseTest):
         # TODO: fails currently with the file test_hgroups.nc4
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo info: Processed 442368 values from 3 '
-                            r'variables over 8 timesteps', self.stderr)
+            sn.assert_found(r'info: Processed( 442368 values from)? '
+                            r'3 variables over 8 timestep', self.stderr)
         ])
 
 
@@ -133,8 +146,8 @@ class CDO_InfoNC4CTest(CDOBaseTest):
             'info', 'test_echam_spectral-deflated_wind10_wl_ws.nc4c']
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo info: Processed 442368 values from 3 '
-                            r'variables over 8 timesteps', self.stderr)
+            sn.assert_found(r'info: Processed( 442368 values from)? '
+                            r'3 variables over 8 timestep', self.stderr)
         ])
 
 
@@ -153,8 +166,8 @@ class CDO_MergeNCTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo merge: Processed 98304 values from 3 '
-                            r'variables over (1|3) timesteps?', self.stderr)
+            sn.assert_found(r'merge: Processed( 98304 values from)? '
+                            r'3 variables', self.stderr)
         ])
 
 
@@ -173,8 +186,8 @@ class CDO_MergeNC4Test(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo merge: Processed 442368 values from 3 '
-                            r'variables over (8|24) timesteps', self.stderr)
+            sn.assert_found(r'merge: Processed( 442368 values from)? '
+                            r'3 variables', self.stderr)
         ])
 
 
@@ -194,6 +207,6 @@ class CDO_MergeNC4CTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'cdo merge: Processed 442368 values from 3 '
-                            r'variables over (8|24) timesteps', self.stderr)
+            sn.assert_found(r'merge: Processed( 442368 values from)? '
+                            r'3 variables', self.stderr)
         ])

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -5,13 +10,9 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test([1], [2])
 class G2GMeteoswissTest(rfm.RegressionTest):
     def __init__(self, g2g):
-        super().__init__()
         self.descr = 'G2G Meteoswiss check with G2G=%s' % g2g
         self.strict_check = False
         self.valid_systems = ['kesch:cn']
-
-        # FIXME: temporary workaround until the mvapich module is fixed;
-        #        'PrgEnv-gnu-c2sm-gpu' will be added later
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.exclusive_access = True
         self.modules = ['cmake']

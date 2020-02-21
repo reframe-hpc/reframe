@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import unittest
 
@@ -32,11 +37,11 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_recursive(self):
         checks = self.loader.load_from_dir('unittests/resources/checks',
                                            recurse=True)
-        self.assertEqual(11, len(checks))
+        self.assertEqual(12, len(checks))
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all()
-        self.assertEqual(10, len(checks))
+        self.assertEqual(11, len(checks))
 
     def test_load_all_with_prefix(self):
         checks = self.loader_with_prefix.load_all()

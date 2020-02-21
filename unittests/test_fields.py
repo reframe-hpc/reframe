@@ -98,7 +98,7 @@ class TestFields(unittest.TestCase):
         tester.field = ''
         assert (datetime.timedelta(days=0, hours=0,
                                    minutes=0, seconds=0) == tester.field)
-        with self.assertWarns(ReframeDeprecationWarning):
+        with pytest.warns(ReframeDeprecationWarning):
             tester.field = (65, 22, 87)
 
         with pytest.raises(ValueError):
