@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import pytest
 import unittest
 
 from reframe.frontend.argparse import ArgumentParser
@@ -27,36 +28,37 @@ class TestArgumentParser(unittest.TestCase):
         self.foo_options.add_argument('--barfoo', action='store_true')
 
     def test_arguments(self):
-        self.assertRaises(ValueError, self.foo_options.add_argument,
-                          action='store', default='FOO')
+        with pytest.raises(ValueError):
+            self.foo_options.add_argument(action='store', default='FOO')
+
         self.foo_options.add_argument('--foo-bar', action='store_true')
         self.foo_options.add_argument('--alist', action='append', default=[])
         options = self.parser.parse_args(['--foobar', '--foo-bar'])
-        self.assertTrue(options.foobar)
-        self.assertTrue(options.foo_bar)
+        assert options.foobar
+        assert options.foo_bar
 
     def test_parsing(self):
         options = self.parser.parse_args(
             '--foo name --foolist gag --barfoo --unfoo'.split()
         )
-        self.assertEqual('name', options.foo)
-        self.assertEqual(['gag'], options.foolist)
-        self.assertTrue(options.barfoo)
-        self.assertFalse(options.unfoo)
+        assert 'name' == options.foo
+        assert ['gag'] == options.foolist
+        assert options.barfoo
+        assert not options.unfoo
 
         # Check the defaults now
-        self.assertFalse(options.foobar)
-        self.assertEqual('BAR', options.bar)
-        self.assertEqual([], options.barlist)
+        assert not options.foobar
+        assert 'BAR' == options.bar
+        assert [] == options.barlist
 
         # Reparse based on the already loaded options
         options = self.parser.parse_args(
             '--bar beer --foolist any'.split(), options
         )
-        self.assertEqual('name', options.foo)
-        self.assertEqual(['any'], options.foolist)
-        self.assertFalse(options.foobar)
-        self.assertFalse(options.unfoo)
-        self.assertEqual('beer', options.bar)
-        self.assertEqual([], options.barlist)
-        self.assertTrue(options.barfoo)
+        assert 'name' == options.foo
+        assert ['any'] == options.foolist
+        assert not options.foobar
+        assert not options.unfoo
+        assert 'beer' == options.bar
+        assert [] == options.barlist
+        assert options.barfoo
