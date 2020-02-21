@@ -25,6 +25,9 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.build_system.options = ['arch=MPI_GCC_OMP']
         self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
 
+        # FIXME: Remove this after the OpenMP pragma gets fixed in hpcg master
+        self.prebuild_cmd = ['git checkout 9484cd7f2c4744c783abbdcfd4f5cc34807b42b1']
+
         self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
         # use glob to catch the output file suffix dependent on execution time
