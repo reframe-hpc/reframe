@@ -18,15 +18,10 @@ class TestVersioning(unittest.TestCase):
         Version('1.2-dev5')
         Version('1.2.3-dev2')
         with pytest.raises(ValueError): Version(None)
-
         with pytest.raises(ValueError): Version('')
-
         with pytest.raises(ValueError): Version('1')
-
         with pytest.raises(ValueError): Version('1.2a')
-
         with pytest.raises(ValueError): Version('a.b.c')
-
         with pytest.raises(ValueError): Version('1.2.3-dev')
 
     def test_comparing_versions(self):
@@ -52,17 +47,10 @@ class TestVersioning(unittest.TestCase):
                     any(c.validate('3.0') for c in conditions),
                     not any(c.validate('3.1') for c in conditions)])
         with pytest.raises(ValueError): VersionValidator('2.0.0..')
-
         with pytest.raises(ValueError): VersionValidator('..2.0.0')
-
         with pytest.raises(ValueError): VersionValidator('1.0.0..2.0.0..3.0.0')
-
         with pytest.raises(ValueError): VersionValidator('=>2.0.0')
-
         with pytest.raises(ValueError): VersionValidator('2.0.0>')
-
         with pytest.raises(ValueError): VersionValidator('2.0.0>1.0.0')
-
         with pytest.raises(ValueError): VersionValidator('=>')
-
         with pytest.raises(ValueError): VersionValidator('>1')

@@ -119,22 +119,22 @@ class TestFields(unittest.TestCase):
 
         with pytest.raises(ValueError):
             tester.field = 'm10s'
-            
+
         with pytest.raises(ValueError):
             tester.field = '10m10'
 
         with pytest.raises(ValueError):
             tester.field = '10m10m1s'
-            
+
         with pytest.raises(ValueError):
             tester.field = '10m5s3m'
 
         with pytest.raises(ValueError):
             tester.field = '10ms'
-            
+
         with pytest.raises(ValueError):
             tester.field = '10'
-            
+
     def test_proxy_field(self):
         class Target:
             def __init__(self):
