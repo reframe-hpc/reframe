@@ -5,6 +5,7 @@
 
 from reframe.core.launchers import JobLauncher
 from reframe.core.launchers.registry import register_launcher
+from reframe.utility import seconds_to_hms
 
 
 @register_launcher('srun')
@@ -57,7 +58,8 @@ class SrunAllocationLauncher(JobLauncher):
             ret += ['--job-name=%s' % job.name]
 
         if job.time_limit:
-            ret += ['--time=%d:%d:%d' % job.time_limit]
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
+            ret += ['--time=%d:%d:%d' % (h, m, s)]
 
         if job.stdout:
             ret += ['--output=%s' % job.stdout]

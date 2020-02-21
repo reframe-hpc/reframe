@@ -128,6 +128,12 @@ class Sarus(ContainerPlatform):
         self._command = 'sarus'
 
     def emit_prepare_commands(self):
+        # The format that Sarus uses to call the images is
+        # <reposerver>/<user>/<image>:<tag>. If an image was loaded
+        # locally from a tar file, the <reposerver> is 'load'.
+        if self.image.startswith('load/'):
+            return []
+
         return [self._command + ' pull %s' % self.image]
 
     def launch_command(self):
