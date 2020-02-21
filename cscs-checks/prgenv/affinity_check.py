@@ -23,8 +23,8 @@ class AffinityTestBase(rfm.RegressionTest):
         self.maintainers = ['RS', 'SK']
         self.tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    @rfm.run_after('setup')
-    def prepare_test(self):
+    @rfm.run_before('sanity')
+    def set_sanity(self):
 
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
@@ -48,8 +48,6 @@ class AffinityTestBase(rfm.RegressionTest):
             re_aff_ranks, self.cases[self.variant][ref_key],
             'rank', int)
 
-        self.use_multithreading = self.cases[self.variant]['multithreading']
-
         # Ranks and threads can be extracted into lists in order to compare
         # them since the affinity programm prints them in ascending order.
         self.sanity_patterns = sn.all([
@@ -57,6 +55,10 @@ class AffinityTestBase(rfm.RegressionTest):
             sn.assert_eq(self.aff_ranks, self.ref_ranks),
             sn.assert_eq(sn.sorted(self.aff_cores), sn.sorted(self.ref_cores))
         ])
+
+    @rfm.run_before('run')
+    def set_multithreading(self):
+        self.use_multithreading = self.cases[self.variant]['multithreading']
 
 
 @rfm.parameterized_test(['omp_bind_threads'],

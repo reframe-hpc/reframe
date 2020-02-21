@@ -111,8 +111,8 @@ class StreamTest(rfm.RegressionTest):
         self.tags = {'production', 'craype'}
         self.maintainers = ['RS', 'SK']
 
-    @rfm.run_before('compile')
-    def prepare_compile(self):
+    @rfm.run_after('setup')
+    def prepare_test(self):
         self.num_cpus_per_task = self.stream_cpus_per_task.get(
             self.current_partition.fullname, 1)
         self.variables['OMP_NUM_THREADS'] = str(self.num_cpus_per_task)
