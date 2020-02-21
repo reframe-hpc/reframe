@@ -100,7 +100,7 @@ class _TestJob(abc.ABC):
 
     def setup_job(self):
         # Mock up a job submission
-        self.testjob.time_limit = (0, 5, 0)
+        self.testjob.time_limit = '5m'
         self.testjob.num_tasks = 16
         self.testjob.num_tasks_per_node = 2
         self.testjob.num_tasks_per_core = 1
@@ -134,7 +134,7 @@ class _TestJob(abc.ABC):
     def test_submit_timelimit(self, check_elapsed_time=True):
         self.setup_user()
         self.parallel_cmd = 'sleep 10'
-        self.testjob.time_limit = (0, 0, 2)
+        self.testjob.time_limit = '2s'
         self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
@@ -243,7 +243,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.parallel_cmd = 'sleep 5 &'
         self.pre_run = ['trap -- "" TERM']
         self.post_run = ['echo $!', 'wait']
-        self.testjob.time_limit = (0, 1, 0)
+        self.testjob.time_limit = '1m'
         self.testjob.scheduler._cancel_grace_period = 2
 
         self.prepare()
