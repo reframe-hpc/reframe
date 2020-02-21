@@ -18,8 +18,10 @@ class TestColors(unittest.TestCase):
 
         with pytest.raises(ValueError):
             color.ColorRGB(-1, 0, 34)
+
         with pytest.raises(ValueError):
             color.ColorRGB(0, -1, 34)
+
         with pytest.raises(ValueError):
             color.ColorRGB(0, 28, -1)
 

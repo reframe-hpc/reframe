@@ -220,12 +220,16 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_true(range(1))
         with pytest.raises(SanityError, match='False is not True'):
             sn.evaluate(sn.assert_true(False))
+
         with pytest.raises(SanityError, match='0 is not True'):
             sn.evaluate(sn.assert_true(0))
+
         with pytest.raises(SanityError, match=r'\[\] is not True'):
             sn.evaluate(sn.assert_true([]))
+
         with pytest.raises(SanityError, match=r'range\(.+\) is not True'):
             sn.evaluate(sn.assert_true(range(0)))
+
         with pytest.raises(SanityError, match='not true'):
             sn.evaluate(sn.assert_true(0, msg='not true'))
 
@@ -235,8 +239,10 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_true(sn.defer([1]))
         with pytest.raises(SanityError, match='False is not True'):
             sn.evaluate(sn.assert_true(sn.defer(False)))
+
         with pytest.raises(SanityError, match='0 is not True'):
             sn.evaluate(sn.assert_true(sn.defer(0)))
+
         with pytest.raises(SanityError, match=r'\[\] is not True'):
             sn.evaluate(sn.assert_true(sn.defer([])))
 
@@ -247,10 +253,13 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_false(range(0))
         with pytest.raises(SanityError, match='True is not False'):
             sn.evaluate(sn.assert_false(True))
+
         with pytest.raises(SanityError, match='1 is not False'):
             sn.evaluate(sn.assert_false(1))
+
         with pytest.raises(SanityError, match=r'\[1\] is not False'):
             sn.evaluate(sn.assert_false([1]))
+
         with pytest.raises(SanityError, match=r'range\(.+\) is not False'):
             sn.evaluate(sn.assert_false(range(1)))
 
@@ -260,8 +269,10 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_false(sn.defer([]))
         with pytest.raises(SanityError, match='True is not False'):
             sn.evaluate(sn.assert_false(sn.defer(True)))
+
         with pytest.raises(SanityError, match='1 is not False'):
             sn.evaluate(sn.assert_false(sn.defer(1)))
+
         with pytest.raises(SanityError, match=r'\[1\] is not False'):
             sn.evaluate(sn.assert_false(sn.defer([1])))
 
@@ -270,8 +281,10 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_eq(1, True)
         with pytest.raises(SanityError, match='1 != 2'):
             sn.evaluate(sn.assert_eq(1, 2))
+
         with pytest.raises(SanityError, match='1 != False'):
             sn.evaluate(sn.assert_eq(1, False))
+
         with pytest.raises(SanityError, match='1 is not equals to 2'):
             sn.evaluate(sn.assert_eq(1, 2, '{0} is not equals to {1}'))
 
@@ -280,6 +293,7 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_eq(sn.defer(1), True)
         with pytest.raises(SanityError, match='1 != 2'):
             sn.evaluate(sn.assert_eq(sn.defer(1), 2))
+
         with pytest.raises(SanityError, match='1 != False'):
             sn.evaluate(sn.assert_eq(sn.defer(1), False))
 
@@ -288,6 +302,7 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_ne(1, False)
         with pytest.raises(SanityError, match='1 == 1'):
             sn.evaluate(sn.assert_ne(1, 1))
+
         with pytest.raises(SanityError, match='1 == True'):
             sn.evaluate(sn.assert_ne(1, True))
 
@@ -296,6 +311,7 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_ne(sn.defer(1), False)
         with pytest.raises(SanityError, match='1 == 1'):
             sn.evaluate(sn.assert_ne(sn.defer(1), 1))
+
         with pytest.raises(SanityError, match='1 == True'):
             sn.evaluate(sn.assert_ne(sn.defer(1), True))
 
@@ -465,6 +481,7 @@ class TestAsserts(unittest.TestCase):
             r'Step: \d+', sn.defer(tempfile))
         with pytest.raises(SanityError):
             sn.evaluate(sn.assert_found(r'foo: \d+', tempfile))
+
         os.remove(tempfile)
 
     def test_assert_found_encoding(self):
@@ -476,6 +493,7 @@ class TestAsserts(unittest.TestCase):
         assert sn.assert_not_found(r'foo: \d+', sn.defer(tempfile))
         with pytest.raises(SanityError):
             sn.evaluate(sn.assert_not_found(r'Step: \d+', tempfile))
+
         os.remove(tempfile)
 
     def test_assert_not_found_encoding(self):
@@ -492,6 +510,7 @@ class TestUtilityFunctions(unittest.TestCase):
         assert 2 == sn.getitem(d, 'b')
         with pytest.raises(SanityError, match='index out of bounds: 10'):
             sn.evaluate(sn.getitem(l, 10))
+
         with pytest.raises(SanityError, match='key not found: k'):
             sn.evaluate(sn.getitem(d, 'k'))
 
@@ -503,6 +522,7 @@ class TestUtilityFunctions(unittest.TestCase):
         assert 2 == sn.getitem(d, 'b')
         with pytest.raises(SanityError, match='index out of bounds: 10'):
             sn.evaluate(sn.getitem(l, 10))
+
         with pytest.raises(SanityError, match='key not found: k'):
             sn.evaluate(sn.getitem(d, 'k'))
 
@@ -640,11 +660,14 @@ class TestPatternMatchingFunctions(unittest.TestCase):
     def test_extractall_error(self):
         with pytest.raises(SanityError):
             sn.evaluate(sn.extractall(r'Step: (\d+)', 'foo.txt', 1))
+
         with pytest.raises(SanityError):
             sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)',
                         self.tempfile, conv=int))
+
         with pytest.raises(SanityError):
             sn.evaluate(sn.extractall(r'Step: (\d+)', self.tempfile, 2))
+
         with pytest.raises(SanityError):
             sn.evaluate(sn.extractall(r'Step: (?P<no>\d+)', self.tempfile,
                                       'foo'))

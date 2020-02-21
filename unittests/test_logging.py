@@ -70,6 +70,7 @@ class TestLogger(unittest.TestCase):
     def test_invalid_loglevel(self):
         with pytest.raises(ValueError):
             self.logger.setLevel('level')
+
         with pytest.raises(ValueError):
             rlog.Logger('logger', 'level')
 

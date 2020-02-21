@@ -33,6 +33,7 @@ class _TestModulesSystem(abc.ABC):
     def test_module_load(self):
         with pytest.raises(EnvironError):
             self.modules_system.load_module('foo')
+
         assert not self.modules_system.is_module_loaded('foo')
         assert 'foo' not in self.modules_system.loaded_modules()
 
@@ -198,10 +199,13 @@ class TestModule(unittest.TestCase):
     def test_invalid_initialization(self):
         with pytest.raises(ValueError):
             modules.Module('')
+
         with pytest.raises(ValueError):
             modules.Module(' ')
+
         with pytest.raises(TypeError):
             modules.Module(None)
+
         with pytest.raises(TypeError):
             modules.Module(23)
 
@@ -459,6 +463,7 @@ class TestModuleMapping(unittest.TestCase):
         }
         with pytest.raises(EnvironError):
             self.modules_system.load_module('m0')
+
         with pytest.raises(EnvironError):
             self.modules_system.load_module('m1')
 

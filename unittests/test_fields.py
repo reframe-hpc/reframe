@@ -19,6 +19,7 @@ class TestFields(unittest.TestCase):
         c = FieldTester()
         with pytest.raises(AttributeError):
             exec("a = c.var", globals(), locals())
+
         with pytest.raises(AttributeError):
             getattr(c, 'var')
 

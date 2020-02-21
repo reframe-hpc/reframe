@@ -21,6 +21,7 @@ class TestExceptions(unittest.TestCase):
     def test_soft_error(self):
         with pytest.raises(exc.ReframeError, match=r'random error'):
             raise_exc(exc.ReframeError('random error'))
+
         self.assert_args(exc.ReframeError, 'error msg')
         self.assert_args(exc.ReframeError, 'error msg', 'another arg')
 

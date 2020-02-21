@@ -65,6 +65,7 @@ class TestOSTools(unittest.TestCase):
 
         with pytest.raises(OSError):
             shutil.copytree(dir_src, dir_dst)
+
         try:
             os_ext.copytree(dir_src, dir_dst)
         except Exception as e:
@@ -440,6 +441,7 @@ class TestChangeDirCtxManager(unittest.TestCase):
     def test_change_dir_working(self):
         with os_ext.change_dir(self.temp_dir):
             assert os.getcwd(), self.temp_dir
+
         assert os.getcwd() == self.wd_save
 
     def test_exception_propagation(self):
@@ -477,6 +479,7 @@ class TestMiscUtilities(unittest.TestCase):
         assert 'my_class' == util.decamelize('my_class')
         with pytest.raises(TypeError):
             util.decamelize(None)
+
         with pytest.raises(TypeError):
             util.decamelize(12)
 
@@ -488,6 +491,7 @@ class TestMiscUtilities(unittest.TestCase):
         assert 'ab__12_' == util.toalphanum('ab (12)')
         with pytest.raises(TypeError):
             util.toalphanum(None)
+
         with pytest.raises(TypeError):
             util.toalphanum(12)
 
@@ -511,10 +515,13 @@ class TestScopedDict(unittest.TestCase):
 
         with pytest.raises(TypeError):
             reframe.utility.ScopedDict(1)
+
         with pytest.raises(TypeError):
             reframe.utility.ScopedDict({'a': 1, 'b': 2})
+
         with pytest.raises(TypeError):
             reframe.utility.ScopedDict([('a', 1), ('b', 2)])
+
         with pytest.raises(TypeError):
             reframe.utility.ScopedDict({'a': {1: 'k1'}, 'b': {2: 'k2'}})
 
@@ -637,32 +644,40 @@ class TestScopedDict(unittest.TestCase):
         assert 7 == scoped_dict['k1']
         with pytest.raises(KeyError):
             exec("scoped_dict['k2']", globals(), locals())
+
         assert 9 == scoped_dict['k3']
         assert 10 == scoped_dict['k4']
 
         assert 7 == scoped_dict[':k1']
         with pytest.raises(KeyError):
             exec("scoped_dict[':k2']", globals(), locals())
+
         assert 9 == scoped_dict[':k3']
         assert 10 == scoped_dict[':k4']
 
         assert 7 == scoped_dict['*:k1']
         with pytest.raises(KeyError):
             exec("scoped_dict['*:k2']", globals(), locals())
+
         assert 9 == scoped_dict['*:k3']
         assert 10 == scoped_dict['*:k4']
 
         # Try to fool it, by requesting keys with scope names
         with pytest.raises(KeyError):
             exec("scoped_dict['a']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['a:b']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['a:b:c']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['a:b:c:d']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['*']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['']", globals(), locals())
 
@@ -708,6 +723,7 @@ class TestScopedDict(unittest.TestCase):
         del scoped_dict['*']
         with pytest.raises(KeyError):
             exec("scoped_dict[':k4']", globals(), locals())
+
         with pytest.raises(KeyError):
             exec("scoped_dict['a:k3']", globals(), locals())
 

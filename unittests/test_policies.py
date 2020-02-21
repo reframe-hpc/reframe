@@ -169,6 +169,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         check = KeyboardInterruptCheck()
         with pytest.raises(KeyboardInterrupt):
             self.runall([check])
+
         stats = self.runner.stats
         assert 1 == len(stats.failures())
         self.assert_all_dead()
