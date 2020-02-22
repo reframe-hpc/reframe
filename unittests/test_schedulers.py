@@ -5,6 +5,7 @@
 
 import abc
 import os
+import pytest
 import re
 import socket
 import tempfile
@@ -86,7 +87,7 @@ class _TestJob(abc.ABC):
         partition = fixtures.partition_with_scheduler(self.sched_name)
         if partition is None:
             msg = msg or "scheduler '%s' not configured" % self.sched_name
-            self.skipTest(msg)
+            pytest.skip(msg)
 
         self.testjob._sched_access = partition.access
 
@@ -95,12 +96,11 @@ class _TestJob(abc.ABC):
         with open(self.testjob.script_filename) as fp:
             matches = re.findall(r'echo prerun|echo postrun|hostname',
                                  fp.read())
-            self.assertEqual(['echo prerun', 'hostname', 'echo postrun'],
-                             matches)
+            assert ['echo prerun', 'hostname', 'echo postrun'] == matches
 
     def setup_job(self):
         # Mock up a job submission
-        self.testjob.time_limit = (0, 5, 0)
+        self.testjob.time_limit = '5m'
         self.testjob.num_tasks = 16
         self.testjob.num_tasks_per_node = 2
         self.testjob.num_tasks_per_core = 1
@@ -125,28 +125,28 @@ class _TestJob(abc.ABC):
     def test_submit(self):
         self.setup_user()
         self.prepare()
-        self.assertIsNone(self.testjob.nodelist)
+        assert self.testjob.nodelist is None
         self.testjob.submit()
-        self.assertIsNotNone(self.testjob.jobid)
+        assert self.testjob.jobid is not None
         self.testjob.wait()
 
     @fixtures.switch_to_user_runtime
     def test_submit_timelimit(self, check_elapsed_time=True):
         self.setup_user()
         self.parallel_cmd = 'sleep 10'
-        self.testjob.time_limit = (0, 0, 2)
+        self.testjob.time_limit = '2s'
         self.prepare()
         t_job = datetime.now()
         self.testjob.submit()
-        self.assertIsNotNone(self.testjob.jobid)
+        assert self.testjob.jobid is not None
         self.testjob.wait()
         t_job = datetime.now() - t_job
         if check_elapsed_time:
-            self.assertGreaterEqual(t_job.total_seconds(), 2)
-            self.assertLess(t_job.total_seconds(), 3)
+            assert t_job.total_seconds() >= 2
+            assert t_job.total_seconds() < 3
 
         with open(self.testjob.stdout) as fp:
-            self.assertIsNone(re.search('postrun', fp.read()))
+            assert re.search('postrun', fp.read()) is None
 
     @fixtures.switch_to_user_runtime
     def test_cancel(self):
@@ -158,18 +158,20 @@ class _TestJob(abc.ABC):
         self.testjob.cancel()
         self.testjob.wait()
         t_job = datetime.now() - t_job
-        self.assertTrue(self.testjob.finished())
-        self.assertLess(t_job.total_seconds(), 30)
+        assert self.testjob.finished()
+        assert t_job.total_seconds() < 30
 
     def test_cancel_before_submit(self):
         self.parallel_cmd = 'sleep 3'
         self.prepare()
-        self.assertRaises(JobNotStartedError, self.testjob.cancel)
+        with pytest.raises(JobNotStartedError):
+            self.testjob.cancel()
 
     def test_wait_before_submit(self):
         self.parallel_cmd = 'sleep 3'
         self.prepare()
-        self.assertRaises(JobNotStartedError, self.testjob.wait)
+        with pytest.raises(JobNotStartedError):
+            self.testjob.wait()
 
     @fixtures.switch_to_user_runtime
     def test_poll(self):
@@ -177,21 +179,22 @@ class _TestJob(abc.ABC):
         self.parallel_cmd = 'sleep 2'
         self.prepare()
         self.testjob.submit()
-        self.assertFalse(self.testjob.finished())
+        assert not self.testjob.finished()
         self.testjob.wait()
 
     def test_poll_before_submit(self):
         self.parallel_cmd = 'sleep 3'
         self.prepare()
-        self.assertRaises(JobNotStartedError, self.testjob.finished)
+        with pytest.raises(JobNotStartedError):
+            self.testjob.finished()
 
     def test_no_empty_lines_in_preamble(self):
         for l in self.testjob.scheduler.emit_preamble(self.testjob):
-            self.assertNotEqual(l, '')
+            assert l != ''
 
     def test_guess_num_tasks(self):
         self.testjob.num_tasks = 0
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
 
@@ -199,7 +202,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
         try:
             os.kill(pid, 0)
-            self.fail('process %s is still alive' % pid)
+            pytest.fail('process %s is still alive' % pid)
         except (ProcessLookupError, PermissionError):
             pass
 
@@ -221,12 +224,12 @@ class TestLocalJob(_TestJob, unittest.TestCase):
 
     def test_submit(self):
         super().test_submit()
-        self.assertEqual(0, self.testjob.exitcode)
-        self.assertEqual([socket.gethostname()], self.testjob.nodelist)
+        assert 0 == self.testjob.exitcode
+        assert [socket.gethostname()] == self.testjob.nodelist
 
     def test_submit_timelimit(self):
         super().test_submit_timelimit()
-        self.assertEqual(self.testjob.state, 'TIMEOUT')
+        assert self.testjob.state == 'TIMEOUT'
 
     def test_cancel_with_grace(self):
         # This test emulates a spawned process that ignores the SIGTERM signal
@@ -243,7 +246,7 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.parallel_cmd = 'sleep 5 &'
         self.pre_run = ['trap -- "" TERM']
         self.post_run = ['echo $!', 'wait']
-        self.testjob.time_limit = (0, 1, 0)
+        self.testjob.time_limit = '1m'
         self.testjob.scheduler._cancel_grace_period = 2
 
         self.prepare()
@@ -262,9 +265,9 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         with open(self.testjob.stdout) as f:
             sleep_pid = int(f.read())
 
-        self.assertGreaterEqual(t_grace.total_seconds(), 2)
-        self.assertLess(t_grace.total_seconds(), 5)
-        self.assertEqual(self.testjob.state, 'TIMEOUT')
+        assert t_grace.total_seconds() >= 2
+        assert t_grace.total_seconds() < 5
+        assert self.testjob.state == 'TIMEOUT'
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
@@ -302,8 +305,8 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         with open(self.testjob.stdout) as f:
             sleep_pid = int(f.read())
 
-        self.assertGreaterEqual(t_grace.total_seconds(), 2)
-        self.assertEqual(self.testjob.state, 'TIMEOUT')
+        assert t_grace.total_seconds() >= 2
+        assert self.testjob.state == 'TIMEOUT'
 
         # Verify that the spawned sleep is killed, too
         self.assertProcessDied(sleep_pid)
@@ -365,50 +368,50 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        self.assertEqual(expected_directives, found_directives)
+        assert expected_directives == found_directives
 
     def test_prepare_no_exclusive(self):
         self.setup_job()
         self.testjob._sched_exclusive_access = False
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
-            self.assertIsNone(re.search(r'--exclusive', fp.read()))
+            assert re.search(r'--exclusive', fp.read()) is None
 
     def test_prepare_no_smt(self):
         self.setup_job()
         self.testjob.use_smt = None
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
-            self.assertIsNone(re.search(r'--hint', fp.read()))
+            assert re.search(r'--hint', fp.read()) is None
 
     def test_prepare_with_smt(self):
         self.setup_job()
         self.testjob.use_smt = True
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
-            self.assertIsNotNone(re.search(r'--hint=multithread', fp.read()))
+            assert re.search(r'--hint=multithread', fp.read()) is not None
 
     def test_prepare_without_smt(self):
         self.setup_job()
         self.testjob.use_smt = False
         super().test_prepare()
         with open(self.testjob.script_filename) as fp:
-            self.assertIsNotNone(re.search(r'--hint=nomultithread', fp.read()))
+            assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
     def test_submit(self):
         super().test_submit()
-        self.assertEqual(0, self.testjob.exitcode)
+        assert 0 == self.testjob.exitcode
         num_tasks_per_node = self.testjob.num_tasks_per_node or 1
         num_nodes = self.testjob.num_tasks // num_tasks_per_node
-        self.assertEqual(num_nodes, len(self.testjob.nodelist))
+        assert num_nodes == len(self.testjob.nodelist)
 
     def test_submit_timelimit(self):
         # Skip this test for Slurm, since we the minimum time limit is 1min
-        self.skipTest("SLURM's minimum time limit is 60s")
+        pytest.skip("SLURM's minimum time limit is 60s")
 
     def test_cancel(self):
         super().test_cancel()
-        self.assertEqual(self.testjob.state, 'CANCELLED')
+        assert self.testjob.state == 'CANCELLED'
 
     def test_guess_num_tasks(self):
         self.testjob.num_tasks = 0
@@ -443,7 +446,7 @@ class TestSqueueJob(TestSlurmJob):
         partition = (fixtures.partition_with_scheduler(self.sched_name) or
                      fixtures.partition_with_scheduler('slurm'))
         if partition is None:
-            self.skipTest('SLURM not configured')
+            pytest.skip('SLURM not configured')
 
         self.testjob.options += partition.access
 
@@ -493,7 +496,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        self.assertEqual(expected_directives, found_directives)
+        assert expected_directives == found_directives
 
     def test_prepare_no_cpus(self):
         self.setup_job()
@@ -520,11 +523,11 @@ class TestPbsJob(_TestJob, unittest.TestCase):
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        self.assertEqual(expected_directives, found_directives)
+        assert expected_directives == found_directives
 
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
-        self.skipTest("PBS minimum time limit is 60s")
+        pytest.skip("PBS minimum time limit is 60s")
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
@@ -657,97 +660,97 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_flex_alloc_nodes = 12
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 48)
+        assert self.testjob.num_tasks == 48
 
     def test_zero_flex_alloc_nodes(self):
         self.testjob._sched_flex_alloc_nodes = 0
         self.testjob._sched_access = ['--constraint=f1']
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_negative_flex_alloc_nodes(self):
         self.testjob._sched_flex_alloc_nodes = -1
         self.testjob._sched_access = ['--constraint=f1']
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_sched_access_idle(self):
         self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_sched_access_constraint_partition(self):
         self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_sched_access_partition(self):
         self.testjob._sched_access = ['--partition=p1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 16)
+        assert self.testjob.num_tasks == 16
 
     def test_default_partition_all(self):
         self.testjob._sched_flex_alloc_nodes = 'all'
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 16)
+        assert self.testjob.num_tasks == 16
 
     def test_constraint_idle(self):
         self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.options = ['--constraint=f1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_partition_idle(self):
         self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob._sched_partition = 'p2'
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_valid_constraint_opt(self):
         self.testjob.options = ['-C f1']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 12)
+        assert self.testjob.num_tasks == 12
 
     def test_valid_multiple_constraints(self):
         self.testjob.options = ['-C f1,f3']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_valid_partition_cmd(self):
         self.testjob._sched_partition = 'p2'
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_valid_partition_opt(self):
         self.testjob.options = ['-p p2']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_valid_multiple_partitions(self):
         self.testjob.options = ['--partition=p1,p2']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_valid_constraint_partition(self):
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_not_valid_partition_cmd(self):
         self.testjob._sched_partition = 'invalid'
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_invalid_partition_opt(self):
         self.testjob.options = ['--partition=invalid']
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_invalid_constraint(self):
         self.testjob.options = ['--constraint=invalid']
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_valid_reservation_cmd(self):
@@ -759,7 +762,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         sched = self.testjob.scheduler
         sched._get_reservation_nodes = self.create_reservation_nodes
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_valid_reservation_option(self):
         self.testjob._sched_access = ['--constraint=f2']
@@ -767,7 +770,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         sched = self.testjob.scheduler
         sched._get_reservation_nodes = self.create_reservation_nodes
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def test_exclude_nodes_cmd(self):
         self.testjob._sched_access = ['--constraint=f1']
@@ -778,7 +781,7 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         sched = self.testjob.scheduler
         sched._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_exclude_nodes_opt(self):
         self.testjob._sched_access = ['--constraint=f1']
@@ -786,31 +789,31 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         sched = self.testjob.scheduler
         sched._get_nodes_by_name = self.create_dummy_nodes_by_name
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 8)
+        assert self.testjob.num_tasks == 8
 
     def test_no_num_tasks_per_node(self):
         self.testjob.num_tasks_per_node = None
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 1)
+        assert self.testjob.num_tasks == 1
 
     def test_not_enough_idle_nodes(self):
         self.testjob._sched_flex_alloc_nodes = 'idle'
         self.testjob.num_tasks = -12
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_not_enough_nodes_constraint_partition(self):
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
         self.testjob.num_tasks = -8
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             self.prepare_job()
 
     def test_enough_nodes_constraint_partition(self):
         self.testjob.options = ['-C f1,f2', '--partition=p1,p2']
         self.testjob.num_tasks = -4
         self.prepare_job()
-        self.assertEqual(self.testjob.num_tasks, 4)
+        assert self.testjob.num_tasks == 4
 
     def prepare_job(self):
         self.testjob.prepare(['hostname'])
@@ -924,40 +927,39 @@ class TestSlurmNode(unittest.TestCase):
         self.no_partition_node = _SlurmNode(no_partition_node_description)
 
     def test_no_node_name(self):
-        with self.assertRaises(JobError):
+        with pytest.raises(JobError):
             _SlurmNode(self.no_name_node_description)
 
     def test_states(self):
-        self.assertEqual(self.allocated_node.states, {'ALLOCATED'})
-        self.assertEqual(self.idle_node.states, {'IDLE'})
-        self.assertEqual(self.idle_drained.states, {'IDLE', 'DRAIN'})
+        assert self.allocated_node.states == {'ALLOCATED'}
+        assert self.idle_node.states == {'IDLE'}
+        assert self.idle_drained.states == {'IDLE', 'DRAIN'}
 
     def test_equals(self):
-        self.assertEqual(self.allocated_node, self.allocated_node_copy)
-        self.assertNotEqual(self.allocated_node, self.idle_node)
+        assert self.allocated_node == self.allocated_node_copy
+        assert self.allocated_node != self.idle_node
 
     def test_hash(self):
-        self.assertEqual(hash(self.allocated_node),
-                         hash(self.allocated_node_copy))
+        assert hash(self.allocated_node) == hash(self.allocated_node_copy)
 
     def test_attributes(self):
-        self.assertEqual(self.allocated_node.name, 'nid00001')
-        self.assertEqual(self.allocated_node.partitions, {'p1', 'p2'})
-        self.assertEqual(self.allocated_node.active_features, {'f1', 'f2'})
-        self.assertEqual(self.no_partition_node.name, 'nid00004')
-        self.assertEqual(self.no_partition_node.partitions, set())
-        self.assertEqual(self.no_partition_node.active_features, {'f1', 'f2'})
+        assert self.allocated_node.name == 'nid00001'
+        assert self.allocated_node.partitions == {'p1', 'p2'}
+        assert self.allocated_node.active_features == {'f1', 'f2'}
+        assert self.no_partition_node.name == 'nid00004'
+        assert self.no_partition_node.partitions == set()
+        assert self.no_partition_node.active_features == {'f1', 'f2'}
 
     def test_str(self):
-        self.assertEqual('nid00001', str(self.allocated_node))
+        assert 'nid00001' == str(self.allocated_node)
 
     def test_is_available(self):
-        self.assertFalse(self.allocated_node.is_available())
-        self.assertTrue(self.idle_node.is_available())
-        self.assertFalse(self.idle_drained.is_available())
-        self.assertFalse(self.no_partition_node.is_available())
+        assert not self.allocated_node.is_available()
+        assert self.idle_node.is_available()
+        assert not self.idle_drained.is_available()
+        assert not self.no_partition_node.is_available()
 
     def test_is_down(self):
-        self.assertFalse(self.allocated_node.is_down())
-        self.assertFalse(self.idle_node.is_down())
-        self.assertTrue(self.no_partition_node.is_down())
+        assert not self.allocated_node.is_down()
+        assert not self.idle_node.is_down()
+        assert self.no_partition_node.is_down()

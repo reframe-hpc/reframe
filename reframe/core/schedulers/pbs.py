@@ -22,6 +22,7 @@ from reframe.core.config import settings
 from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility import seconds_to_hms
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -79,8 +80,9 @@ class PbsJobScheduler(sched.JobScheduler):
         ]
 
         if job.time_limit is not None:
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
-                self._format_option('-l walltime=%d:%d:%d' % job.time_limit))
+                self._format_option('-l walltime=%d:%d:%d' % (h, m, s)))
 
         if job.sched_partition:
             preamble.append(

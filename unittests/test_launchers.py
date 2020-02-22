@@ -61,7 +61,7 @@ class _TestLauncher(abc.ABC):
         self.job.num_tasks_per_socket = 1
         self.job.num_cpus_per_task = 2
         self.job.use_smt = True
-        self.job.time_limit = (0, 10, 0)
+        self.job.time_limit = '10m'
         self.job.options += ['--gres=gpu:4', '#DW jobdw anything']
         self.job.launcher.options = ['--foo']
         self.minimal_job = Job.create(FakeJobScheduler(),
@@ -89,11 +89,11 @@ class _TestLauncher(abc.ABC):
 
     def test_run_command(self):
         emitted_command = self.run_command(self.job)
-        self.assertEqual(self.expected_command, emitted_command)
+        assert self.expected_command == emitted_command
 
     def test_run_minimal_command(self):
         emitted_command = self.run_command(self.minimal_job)
-        self.assertEqual(self.expected_minimal_command, emitted_command)
+        assert self.expected_minimal_command == emitted_command
 
 
 class TestSrunLauncher(_TestLauncher, unittest.TestCase):
