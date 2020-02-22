@@ -11,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class GPUShmemTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcepath = 'shmem.cu'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
@@ -39,9 +38,6 @@ class GPUShmemTest(rfm.RegressionTest):
             },
             'daint:gpu': {
                 'bandwidth': (8850, -0.01, 9520/8850. - 1, 'GB/s')
-            },
-            '*': {
-                'bandwidth': (0, None, None, 'GB/s')
             }
         }
 

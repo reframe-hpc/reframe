@@ -91,9 +91,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (3800, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             },
@@ -111,9 +108,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             },
@@ -131,9 +125,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             },
@@ -151,9 +142,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (3700, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             },
@@ -165,9 +153,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (12000, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             },
@@ -179,9 +164,6 @@ class GridToolsCheck(rfm.RegressionTest):
                     },
                     'dom:gpu': {
                         'wall_time': (19000, None, 0.1, 'ms')
-                    },
-                    '*': {
-                        'wall_time': (0, None, None, 'ms')
                     }
                 }
             }

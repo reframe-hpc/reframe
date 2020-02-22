@@ -10,7 +10,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class RubyNArray(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('Check NArray for Ruby version 2.2.2')
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']

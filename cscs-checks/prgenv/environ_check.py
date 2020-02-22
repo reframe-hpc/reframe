@@ -12,7 +12,6 @@ from reframe.core.runtime import runtime
 @rfm.simple_test
 class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Ensure PrgEnv-cray is loaded by default'
         self.valid_prog_environs = ['PrgEnv-cray']
         self.valid_systems = ['daint:login', 'dom:login']
@@ -44,7 +43,6 @@ class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class EnvironmentCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Ensure programming environment is loaded correctly'
         self.valid_systems = ['daint:login', 'dom:login']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',

@@ -10,7 +10,6 @@ import reframe.utility.sanity as sn
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']

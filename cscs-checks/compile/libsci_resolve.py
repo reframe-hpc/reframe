@@ -9,7 +9,6 @@ import reframe.utility.sanity as sn
 
 class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcesdir = 'src/libsci_resolve'
         self.sourcepath = 'libsci_resolve.f90'
         self.valid_systems = ['daint:login', 'daint:gpu',
@@ -52,9 +51,8 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         # self.build_system.fflags = ['-Wl,-ydgemm_']
         self.postbuild_cmd = ['readelf -d %s' % self.executable]
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
         regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'

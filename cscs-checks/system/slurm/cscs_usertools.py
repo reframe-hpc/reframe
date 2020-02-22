@@ -12,7 +12,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class SbucheckCommandCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
         self.descr = 'Slurm CSCS usertools sbucheck'
         self.executable = 'sbucheck'
@@ -29,7 +28,6 @@ class SbucheckCommandCheck(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class MonthlyUsageCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
         self.descr = 'Slurm CSCS usertools monthly_usage'
         self.executable = 'monthly_usage'
