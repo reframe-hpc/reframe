@@ -58,6 +58,7 @@ This module provides three categories of sanity functions:
    computing statistical information on series of data etc.
 
 '''
+
 import builtins
 import glob as pyglob
 import itertools
@@ -489,8 +490,13 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
     if upper is None:
         upper = builtins.float('inf')
 
-    if val >= lower and val <= upper:
-        return True
+    try:
+        if val >= lower and val <= upper:
+            return True
+    except TypeError as e:
+        raise SanityError(_format(
+            "cannot compare '{0}' with reference value '{1}'", val, ref
+        )) from e
 
     error_msg = msg or 'value {0} not within bounds {1}..{2}'
     raise SanityError(_format(error_msg, val, lower, upper))
@@ -546,9 +552,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:
         error_msg = msg or '{0} is beyond reference value {1} (l={2}, u={3})'
-        raise SanityError(_format(error_msg, val, ref, lower, upper))
-    except TypeError:
-        raise SanityError(_format('cannot compare {0} with reference value {1}', val, ref))
+        raise SanityError(_format(error_msg, val, ref, lower, upper)) from None
     else:
         return True
 
