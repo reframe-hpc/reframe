@@ -740,7 +740,6 @@ class TestSanityPatterns(unittest.TestCase):
             'value3': sn.extractsingle(r'performance3 = (\S+)',
                                        self.perf_file.name, 1, float)
         }
-
         self.test.sanity_patterns = sn.assert_found(r'result = success',
                                                     self.output_file.name)
 
@@ -895,6 +894,21 @@ class TestSanityPatterns(unittest.TestCase):
             }
         }
         self.test.check_performance()
+
+    def test_invalid_perf_value(self):
+        self.test.perf_patterns = {
+            'value1': sn.extractsingle(r'performance1 = (\S+)',
+                                       self.perf_file.name, 1, float),
+            'value2': sn.extractsingle(r'performance2 = (\S+)',
+                                       self.perf_file.name, 1, str),
+            'value3': sn.extractsingle(r'performance3 = (\S+)',
+                                       self.perf_file.name, 1, float)
+        }
+        self.write_performance_output(performance1=1.3,
+                                      performance2='foo',
+                                      performance3=3.3)
+        with pytest.raises(SanityError, match='not a number'):
+            self.test.check_performance()
 
     def test_perf_var_evaluation(self):
         # All performance values must be evaluated, despite the first one

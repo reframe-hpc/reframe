@@ -495,13 +495,8 @@ def assert_bounded(val, lower=None, upper=None, msg=None):
     if upper is None:
         upper = builtins.float('inf')
 
-    try:
-        if val >= lower and val <= upper:
-            return True
-    except TypeError as e:
-        raise SanityError(_format(
-            "cannot compare '{0}' with reference value '{1}'", val, ref
-        )) from e
+    if val >= lower and val <= upper:
+        return True
 
     error_msg = msg or 'value {0} not within bounds {1}..{2}'
     raise SanityError(_format(error_msg, val, lower, upper))
