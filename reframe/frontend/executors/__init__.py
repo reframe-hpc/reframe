@@ -5,6 +5,7 @@
 
 import abc
 import copy
+import signal
 import sys
 import weakref
 
@@ -267,6 +268,10 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
+        signal.signal(signal.SIGTERM, self._handle_sigterm)
+
+    def _handle_sigterm(self, signum, frame):
+        raise ReframeFatalError('Received SIGTERM')
 
     def __repr__(self):
         return debug.repr(self)
@@ -376,7 +381,6 @@ class ExecutionPolicy(abc.ABC):
 
         # Task event listeners
         self.task_listeners = []
-
         self.stats = None
 
     def __repr__(self):

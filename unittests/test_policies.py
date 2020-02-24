@@ -19,7 +19,8 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    DependencyError, JobNotStartedError, TaskDependencyError
+    DependencyError, JobNotStartedError, TaskDependencyError,
+    ReframeFatalError
 )
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -32,6 +33,7 @@ from unittests.resources.checks.frontend_checks import (
     SleepCheck,
     SleepCheckPollFail,
     SleepCheckPollFailLate,
+    SigtermCheck,
     SystemExitCheck,
 )
 
@@ -256,6 +258,13 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
             if t.ref_count == 0:
                 assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+    def test_sigterm(self):
+        pid = os.getpid()
+        check = SigtermCheck(pid)
+
+        with pytest.raises(ReframeFatalError, match='Received SIGTERM'):
+            self.runall([check])
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2
