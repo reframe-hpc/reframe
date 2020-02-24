@@ -331,6 +331,6 @@ def convert_old_config(filename):
             ] = old_config.checks_path_recurse
 
     with tempfile.NamedTemporaryFile(mode='w', delete = False) as fp:
-        fp.write(json.dumps(converted, indent=4))
+        json.dump(converted, fp, indent=4)
 
     return fp.name
