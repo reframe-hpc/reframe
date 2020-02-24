@@ -8,7 +8,8 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError, ReframeFatalError, ReframeError)
+from reframe.core.exceptions import (ConfigError, ReframeError,
+                                     ReframeFatalError)
 
 
 _settings = None
@@ -238,7 +239,8 @@ def convert_old_config(filename):
         'logging': [],
         'perf_logging': [],
     }
-    for sys_name, sys_specs in old_config.site_configuration['systems'].items():
+    old_systems = old_config.site_configuration['systems'].items()
+    for sys_name, sys_specs in old_systems:
         sys_dict = {'name': sys_name}
         sys_dict.update(sys_specs)
         # Make variables dictionary into a list of lists
@@ -281,7 +283,8 @@ def convert_old_config(filename):
 
         converted['systems'].append(sys_dict)
 
-    for env_target, env_entries in old_config.site_configuration['environments'].items():
+    old_environs = old_config.site_configuration['environments'].items()
+    for env_target, env_entries in old_environs:
         for ename, e in env_entries.items():
             new_env = {'name': ename}
             if (env_target != '*'):
@@ -292,7 +295,8 @@ def convert_old_config(filename):
 
     if 'modes' in old_config.site_configuration:
         converted['modes'] = []
-        for target_mode, mode_entries in old_config.site_configuration['modes'].items():
+        old_modes = old_config.site_configuration['modes'].items()
+        for target_mode, mode_entries in old_modes:
             for mname, m in mode_entries.items():
                 new_mode = {'name': mname, 'options': m}
                 if target_mode != '*':
@@ -330,7 +334,7 @@ def convert_old_config(filename):
                 'check_search_recursive'
             ] = old_config.checks_path_recurse
 
-    with tempfile.NamedTemporaryFile(mode='w', delete = False) as fp:
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
         json.dump(converted, fp, indent=4)
 
     return fp.name
