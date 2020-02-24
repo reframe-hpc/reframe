@@ -1,13 +1,14 @@
 import collections.abc
 import json
 import re
+import tempfile
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.exceptions import (ConfigError, ReframeFatalError, ReframeError)
 
 
 _settings = None
@@ -220,17 +221,24 @@ class SiteConfiguration:
             self._systems[sys_name] = system
 
 
-def create_json_object():
-    if _settings is None:
+def convert_old_config(filename):
+    try:
+        old_config = load_settings_from_file(filename)
+    except (OSError, ReframeError) as e:
+        sys.stderr.write(
+            '%s: could not load settings: %s\n' % (sys.argv[0], e))
+        sys.exit(1)
+
+    if old_config is None:
         raise ReframeFatalError('ReFrame is not configured')
 
-    json_configuration = {
+    converted = {
         'systems': [],
         'environments': [],
         'logging': [],
         'perf_logging': [],
     }
-    for sys_name, sys_specs in _settings.site_configuration['systems'].items():
+    for sys_name, sys_specs in old_config.site_configuration['systems'].items():
         sys_dict = {'name': sys_name}
         sys_dict.update(sys_specs)
         # Make variables dictionary into a list of lists
@@ -271,26 +279,26 @@ def create_json_object():
 
                 sys_dict['partitions'].append(new_p)
 
-        json_configuration['systems'].append(sys_dict)
+        converted['systems'].append(sys_dict)
 
-    for env_target, env_entries in _settings.site_configuration['environments'].items():
+    for env_target, env_entries in old_config.site_configuration['environments'].items():
         for ename, e in env_entries.items():
             new_env = {'name': ename}
             if (env_target != '*'):
                 new_env['target_systems'] = [env_target]
 
             new_env.update(e)
-            json_configuration['environments'].append(new_env)
+            converted['environments'].append(new_env)
 
-    if 'modes' in _settings.site_configuration:
-        json_configuration['modes'] = []
-        for target_mode, mode_entries in _settings.site_configuration['modes'].items():
+    if 'modes' in old_config.site_configuration:
+        converted['modes'] = []
+        for target_mode, mode_entries in old_config.site_configuration['modes'].items():
             for mname, m in mode_entries.items():
                 new_mode = {'name': mname, 'options': m}
                 if target_mode != '*':
                     new_mode['target_systems'] = [target_mode]
 
-                json_configuration['modes'].append(new_mode)
+                converted['modes'].append(new_mode)
 
     def update_config(log_name, original_log):
         new_handlers = []
@@ -299,25 +307,30 @@ def create_json_object():
             new_h['level'] = h['level'].lower()
             new_handlers.append(new_h)
 
-        json_configuration[log_name].append(
+        converted[log_name].append(
             {
                 'level': original_log['level'].lower(),
                 'handlers': new_handlers
             }
         )
 
-    update_config('logging', _settings.logging_config)
-    update_config('perf_logging', _settings.perf_logging_config)
+    update_config('logging', old_config.logging_config)
+    update_config('perf_logging', old_config.perf_logging_config)
 
-    if (hasattr(_settings, 'checks_path') or
-        hasattr(_settings, 'checks_path_recurse')):
-        json_configuration['general'] = [{}]
-        if hasattr(_settings, 'checks_path'):
-            json_configuration['general'][0][
+    if (hasattr(old_config, 'checks_path') or
+        hasattr(old_config, 'checks_path_recurse')):
+        converted['general'] = [{}]
+        if hasattr(old_config, 'checks_path'):
+            converted['general'][0][
                 'check_search_path'
-            ] = _settings.checks_path
+            ] = old_config.checks_path
 
-        if hasattr(_settings, 'checks_path_recurse'):
-            json_configuration['general'][0][
+        if hasattr(old_config, 'checks_path_recurse'):
+            converted['general'][0][
                 'check_search_recursive'
-            ] = _settings.checks_path_recurse
+            ] = old_config.checks_path_recurse
+
+    with tempfile.NamedTemporaryFile(mode='w', delete = False) as fp:
+        fp.write(json.dumps(converted, indent=4))
+
+    return fp.name
