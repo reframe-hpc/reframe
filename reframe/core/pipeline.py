@@ -15,6 +15,7 @@ __all__ = ['RegressionTest',
 import functools
 import inspect
 import itertools
+import numbers
 import os
 import shutil
 
@@ -37,7 +38,6 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
-from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
@@ -1321,10 +1321,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
+
+                # Verify that val is a number
+                if not isinstance(val, numbers.Number):
+                    raise SanityError(
+                        "the value extracted for performance variable '%s' "
+                        "is not a number: %s" % (key, val)
+                    )
+
                 tag = key.split(':')[-1]
                 try:
                     sn.evaluate(
-                        assert_reference(
+                        sn.assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
                                  'expected {1} (l={2}, u={3})' % tag))
