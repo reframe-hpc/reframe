@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -50,15 +55,14 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-pgi'):
+        elif self.current_environ.name.startswith('PrgEnv-pgi'):
             if self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
             elif self.current_system.name == 'kesch':
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
-
-        super().setup(partition, environ, **job_opts)

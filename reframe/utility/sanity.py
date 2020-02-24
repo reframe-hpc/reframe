@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 '''Sanity deferrable functions.
 
 This module provides functions to be used with the :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` and
@@ -58,6 +63,7 @@ This module provides three categories of sanity functions:
    computing statistical information on series of data etc.
 
 '''
+
 import builtins
 import glob as pyglob
 import itertools
@@ -546,7 +552,7 @@ def assert_reference(val, ref, lower_thres=None, upper_thres=None, msg=None):
         evaluate(assert_bounded(val, lower, upper))
     except SanityError:
         error_msg = msg or '{0} is beyond reference value {1} (l={2}, u={3})'
-        raise SanityError(_format(error_msg, val, ref, lower, upper))
+        raise SanityError(_format(error_msg, val, ref, lower, upper)) from None
     else:
         return True
 

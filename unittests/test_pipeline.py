@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import pytest
 import re
@@ -96,13 +101,13 @@ class TestRegressionTest(unittest.TestCase):
         test.setup(self.partition, self.prgenv)
 
         for k in test.variables.keys():
-            self.assertNotIn(k, os.environ)
+            assert k not in os.environ
 
     def _run_test(self, test, compile_only=False):
         _run(test, self.partition, self.prgenv)
-        self.assertFalse(os.path.exists(test.stagedir))
+        assert not os.path.exists(test.stagedir)
         for f in self.keep_files_list(test, compile_only):
-            self.assertTrue(os.path.exists(f))
+            assert os.path.exists(f)
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck(self):
@@ -210,7 +215,8 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         test.setup(self.partition, self.prgenv)
         test.compile()
-        self.assertRaises(BuildError, test.compile_wait)
+        with pytest.raises(BuildError):
+            test.compile_wait()
 
     def test_compile_only_warning(self):
         test = rfm.CompileOnlyRegressionTest()
@@ -229,43 +235,43 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         test.valid_systems = ['*']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys:gpu']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertFalse(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertFalse(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert not test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert not test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys:login']
-        self.assertFalse(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertFalse(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert not test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert not test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['foo']
-        self.assertFalse(test.supports_system('gpu'))
-        self.assertFalse(test.supports_system('login'))
-        self.assertFalse(test.supports_system('testsys:gpu'))
-        self.assertFalse(test.supports_system('testsys:login'))
+        assert not test.supports_system('gpu')
+        assert not test.supports_system('login')
+        assert not test.supports_system('testsys:gpu')
+        assert not test.supports_system('testsys:login')
 
     def test_supports_environ(self):
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]
 
         test.valid_prog_environs = ['*']
-        self.assertTrue(test.supports_environ('foo1'))
-        self.assertTrue(test.supports_environ('foo-env'))
-        self.assertTrue(test.supports_environ('*'))
+        assert test.supports_environ('foo1')
+        assert test.supports_environ('foo-env')
+        assert test.supports_environ('*')
 
     def test_sourcesdir_none(self):
         test = rfm.RegressionTest()
@@ -273,7 +279,8 @@ class TestRegressionTest(unittest.TestCase):
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        self.assertRaises(ReframeError, self._run_test, test)
+        with pytest.raises(ReframeError):
+            self._run_test(test)
 
     def test_sourcesdir_build_system(self):
         test = rfm.RegressionTest()
@@ -308,7 +315,8 @@ class TestRegressionTest(unittest.TestCase):
         test.sourcesdir = None
         test.valid_prog_environs = ['*']
         test.valid_systems = ['*']
-        self.assertRaises(BuildError, self._run_test, test)
+        with pytest.raises(BuildError):
+            self._run_test(test)
 
     def test_sourcesdir_none_run_only(self):
         test = rfm.RunOnlyRegressionTest()
@@ -329,7 +337,8 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         test.setup(self.partition, self.prgenv)
         test.sourcepath = '/usr/src'
-        self.assertRaises(PipelineError, test.compile)
+        with pytest.raises(PipelineError):
+            test.compile()
 
     def test_sourcepath_upref(self):
         test = rfm.CompileOnlyRegressionTest()
@@ -338,7 +347,8 @@ class TestRegressionTest(unittest.TestCase):
         test.valid_systems = ['*']
         test.setup(self.partition, self.prgenv)
         test.sourcepath = '../hellosrc'
-        self.assertRaises(PipelineError, test.compile)
+        with pytest.raises(PipelineError):
+            test.compile()
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_extra_resources(self):
@@ -621,10 +631,9 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_regression_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert ('TestSyntax.test_regression_test.<locals>.MyTest_1_2' ==
+                test.name)
 
     def test_regression_test_strange_names(self):
         class C:
@@ -640,9 +649,8 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest('(a*b+c)/12', C(33))
-        self.assertEqual(
-            'TestSyntax.test_regression_test_strange_names.'
-            '<locals>.MyTest__a_b_c__12_C_33_', test.name)
+        assert ('TestSyntax.test_regression_test_strange_names.'
+                '<locals>.MyTest__a_b_c__12_C_33_' == test.name)
 
     def test_user_inheritance(self):
         class MyBaseTest(rfm.RegressionTest):
@@ -655,8 +663,7 @@ class TestSyntax(unittest.TestCase):
                 super().__init__(1, 2)
 
         test = MyTest()
-        self.assertEqual('TestSyntax.test_user_inheritance.'
-                         '<locals>.MyTest', test.name)
+        assert 'TestSyntax.test_user_inheritance.<locals>.MyTest' == test.name
 
     def test_runonly_test(self):
         class MyTest(rfm.RunOnlyRegressionTest):
@@ -665,10 +672,8 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_runonly_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert 'TestSyntax.test_runonly_test.<locals>.MyTest_1_2' == test.name
 
     def test_compileonly_test(self):
         class MyTest(rfm.CompileOnlyRegressionTest):
@@ -677,29 +682,28 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_compileonly_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert ('TestSyntax.test_compileonly_test.<locals>.MyTest_1_2' ==
+                test.name)
 
     def test_registration(self):
         import sys
         import unittests.resources.checks_unlisted.good as mod
         checks = mod._rfm_gettests()
-        self.assertEqual(13, len(checks))
-        self.assertEqual([mod.MyBaseTest(0, 0),
-                          mod.MyBaseTest(0, 1),
-                          mod.MyBaseTest(1, 0),
-                          mod.MyBaseTest(1, 1),
-                          mod.MyBaseTest(2, 0),
-                          mod.MyBaseTest(2, 1),
-                          mod.AnotherBaseTest(0, 0),
-                          mod.AnotherBaseTest(0, 1),
-                          mod.AnotherBaseTest(1, 0),
-                          mod.AnotherBaseTest(1, 1),
-                          mod.AnotherBaseTest(2, 0),
-                          mod.AnotherBaseTest(2, 1),
-                          mod.MyBaseTest(10, 20)], checks)
+        assert 13 == len(checks)
+        assert [mod.MyBaseTest(0, 0),
+                mod.MyBaseTest(0, 1),
+                mod.MyBaseTest(1, 0),
+                mod.MyBaseTest(1, 1),
+                mod.MyBaseTest(2, 0),
+                mod.MyBaseTest(2, 1),
+                mod.AnotherBaseTest(0, 0),
+                mod.AnotherBaseTest(0, 1),
+                mod.AnotherBaseTest(1, 0),
+                mod.AnotherBaseTest(1, 1),
+                mod.AnotherBaseTest(2, 0),
+                mod.AnotherBaseTest(2, 1),
+                mod.MyBaseTest(10, 20)] == checks
 
 
 class TestSanityPatterns(unittest.TestCase):
@@ -736,7 +740,6 @@ class TestSanityPatterns(unittest.TestCase):
             'value3': sn.extractsingle(r'performance3 = (\S+)',
                                        self.perf_file.name, 1, float)
         }
-
         self.test.sanity_patterns = sn.assert_found(r'result = success',
                                                     self.output_file.name)
 
@@ -768,14 +771,16 @@ class TestSanityPatterns(unittest.TestCase):
     def test_sanity_failure(self):
         self.output_file.write('result = failure\n')
         self.output_file.close()
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_failure_noassert(self):
         self.test.sanity_patterns = sn.findall(r'result = success',
                                                self.output_file.name)
         self.output_file.write('result = failure\n')
         self.output_file.close()
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_multiple_patterns(self):
         self.output_file.write('result1 = success\n')
@@ -793,7 +798,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.test.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'result\d = success', self.output_file.name)),
             3)
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_multiple_files(self):
         files = [tempfile.NamedTemporaryFile(mode='wt', prefix='regtmp',
@@ -820,7 +826,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.output_file.write('result = success\n')
         self.output_file.close()
         self.test.check_sanity()
-        self.assertRaises(PerformanceError, self.test.check_performance)
+        with pytest.raises(PerformanceError):
+            self.test.check_performance()
 
     def test_unknown_tag(self):
         self.test.reference = {
@@ -834,7 +841,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.3,
                                       performance2=1.8,
                                       performance3=3.3)
-        self.assertRaises(SanityError, self.test.check_performance)
+        with pytest.raises(SanityError):
+            self.test.check_performance()
 
     def test_unknown_system(self):
         self.write_performance_output(performance1=1.3,
@@ -887,6 +895,21 @@ class TestSanityPatterns(unittest.TestCase):
         }
         self.test.check_performance()
 
+    def test_invalid_perf_value(self):
+        self.test.perf_patterns = {
+            'value1': sn.extractsingle(r'performance1 = (\S+)',
+                                       self.perf_file.name, 1, float),
+            'value2': sn.extractsingle(r'performance2 = (\S+)',
+                                       self.perf_file.name, 1, str),
+            'value3': sn.extractsingle(r'performance3 = (\S+)',
+                                       self.perf_file.name, 1, float)
+        }
+        self.write_performance_output(performance1=1.3,
+                                      performance2='foo',
+                                      performance3=3.3)
+        with pytest.raises(SanityError, match='not a number'):
+            self.test.check_performance()
+
     def test_perf_var_evaluation(self):
         # All performance values must be evaluated, despite the first one
         # failing To test this, we need an extract function that will have a
@@ -912,16 +935,16 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.0,
                                       performance2=1.8,
                                       performance3=3.3)
-        with self.assertRaises(PerformanceError) as cm:
+        with pytest.raises(PerformanceError) as cm:
             self.test.check_performance()
 
         logfile = os.path.join(self.test.stagedir, logfile)
         with open(logfile) as fp:
             log_output = fp.read()
 
-        self.assertIn('v1', log_output)
-        self.assertIn('v2', log_output)
-        self.assertIn('v3', log_output)
+        assert 'v1' in log_output
+        assert 'v2' in log_output
+        assert 'v3' in log_output
 
 
 class TestRegressionTestWithContainer(unittest.TestCase):

@@ -1,10 +1,15 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import copy
+import pytest
 import unittest
 
 import reframe.core.config as config
 import unittests.fixtures as fixtures
 from reframe.core.exceptions import ConfigError
-import pytest
 
 
 class TestSiteConfigurationFromDict(unittest.TestCase):
