@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -6,7 +11,6 @@ import reframe.utility.sanity as sn
 
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
-        super().__init__()
         self.descr = 'NAMD check (%s, %s)' % (arch, variant)
         self.valid_prog_environs = ['PrgEnv-intel']
         self.modules = ['NAMD']
@@ -38,8 +42,8 @@ class NamdBaseCheck(rfm.RunOnlyRegressionTest):
 
         self.perf_patterns = {
             'days_ns': sn.avg(sn.extractall(
-                'Info: Benchmark time: \S+ CPUs \S+ '
-                's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
+                r'Info: Benchmark time: \S+ CPUs \S+ '
+                r's/step (?P<days_ns>\S+) days/ns \S+ MB memory',
                 self.stdout, 'days_ns', float))
         }
 

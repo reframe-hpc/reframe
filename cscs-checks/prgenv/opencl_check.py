@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -7,7 +12,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class OpenCLCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.maintainers = ['TM', 'SK']
         self.tags = {'production', 'craype'}
 
@@ -20,7 +24,7 @@ class OpenCLCheck(rfm.RegressionTest):
 
         self.sanity_patterns = sn.assert_found('SUCCESS', self.stdout)
 
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
-        if environ.name == 'PrgEnv-pgi':
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']

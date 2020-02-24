@@ -1,10 +1,14 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 class AffinityTestBase(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -19,7 +23,8 @@ class AffinityTestBase(rfm.RegressionTest):
         self.maintainers = ['RS', 'SK']
         self.tags = {'production', 'scs', 'maintenance', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('sanity')
+    def set_sanity(self):
 
         def parse_cpus(x):
             return sorted([int(xi) for xi in x.split()])
@@ -27,7 +32,7 @@ class AffinityTestBase(rfm.RegressionTest):
         re_aff_cores = r'CPU affinity: \[\s+(?P<cpus>[\d+\s+]+)\]'
         self.aff_cores = sn.extractall(
             re_aff_cores, self.stdout, 'cpus', parse_cpus)
-        ref_key = 'ref_' + partition.fullname
+        ref_key = 'ref_' + self.current_partition.fullname
         self.ref_cores = sn.extractall(
             re_aff_cores, self.cases[self.variant][ref_key],
             'cpus', parse_cpus)
@@ -43,8 +48,6 @@ class AffinityTestBase(rfm.RegressionTest):
             re_aff_ranks, self.cases[self.variant][ref_key],
             'rank', int)
 
-        self.use_multithreading = self.cases[self.variant]['multithreading']
-
         # Ranks and threads can be extracted into lists in order to compare
         # them since the affinity programm prints them in ascending order.
         self.sanity_patterns = sn.all([
@@ -53,7 +56,9 @@ class AffinityTestBase(rfm.RegressionTest):
             sn.assert_eq(sn.sorted(self.aff_cores), sn.sorted(self.ref_cores))
         ])
 
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def set_multithreading(self):
+        self.use_multithreading = self.cases[self.variant]['multithreading']
 
 
 @rfm.parameterized_test(['omp_bind_threads'],
@@ -102,9 +107,11 @@ class AffinityOpenMPTest(AffinityTestBase):
         }
         self.variant = variant
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('run')
+    def set_tasks_per_core(self):
+        partname = self.current_partition.name
         self.num_cpus_per_task = (
-            self.cases[self.variant]['num_cpus_per_task:%s' % partition.name])
+            self.cases[self.variant]['num_cpus_per_task:%s' % partname])
         if self.cases[self.variant]['ntasks_per_core']:
             self.num_tasks_per_core = (
                 self.cases[self.variant]['ntasks_per_core'])
@@ -117,7 +124,6 @@ class AffinityOpenMPTest(AffinityTestBase):
             # Both OMP_PROC_BIND values CLOSE and SPREAD give the same
             # result as OMP_PROC_BIND=TRUE when all cores are requested.
         }
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.parameterized_test(['alternate_socket_filling'],
@@ -171,8 +177,8 @@ class SocketDistributionTest(AffinityTestBase):
         self.num_cpus_per_task = self.cases[variant]['num_cpus_per_task']
         self.num_tasks_per_socket = self.cases[variant]['num_tasks_per_socket']
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def set_launcher(self):
         if self.cases[self.variant]['cpu-bind']:
             self.job.launcher.options = ['--cpu-bind=%s' %
                                          self.cases[self.variant]['cpu-bind']]

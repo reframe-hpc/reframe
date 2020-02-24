@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -6,11 +11,8 @@ import reframe.utility.sanity as sn
 
 class AmberBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, input_file, output_file):
-        super().__init__()
-
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'Amber')
-
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['Amber']
         self.num_tasks = 1

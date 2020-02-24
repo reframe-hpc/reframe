@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -5,7 +10,6 @@ import reframe.utility.sanity as sn
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']

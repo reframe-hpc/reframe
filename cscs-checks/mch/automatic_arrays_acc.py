@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -50,14 +55,15 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
             envname = 'PrgEnv-cray'
             self.build_system.fflags += ['-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-cce'):
+        elif self.current_environ.name.startswith('PrgEnv-cce'):
             envname = 'PrgEnv-cce'
             self.build_system.fflags += ['-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-pgi'):
+        elif self.current_environ.name.startswith('PrgEnv-pgi'):
             envname = 'PrgEnv-pgi'
             self.build_system.fflags += ['-acc']
             if self.current_system.name == 'kesch':
@@ -67,7 +73,6 @@ class AutomaticArraysCheck(rfm.RegressionTest):
             elif self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta=tesla,cc60', '-Mnorpath']
         else:
-            envname = environ.name
+            envname = self.current_environ.name
 
         self.reference = self.arrays_reference[envname]
-        super().setup(partition, environ, **job_opts)

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -50,11 +55,12 @@ class OpenaccCudaCpp(rfm.RegressionTest):
         self.maintainers = ['AJ', 'MKr']
         self.tags = {'production', 'mch', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags += ['-hacc', '-hnoomp']
 
-        elif environ.name.startswith('PrgEnv-pgi'):
+        elif self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
             if self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags += ['-ta:tesla:cc60']
@@ -74,7 +80,7 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
 
-        elif environ.name.startswith('PrgEnv-gnu'):
+        elif self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.ldflags = ['-lstdc++']
             if self.current_system.name == 'kesch':
                 self.build_system.ldflags += [
@@ -84,5 +90,3 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags += [
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
-
-        super().setup(partition, environ, **job_opts)
