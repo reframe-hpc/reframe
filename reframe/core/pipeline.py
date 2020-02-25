@@ -1491,11 +1491,6 @@ class RunOnlyRegressionTest(RegressionTest):
     module.
     '''
 
-    def _rfm_init(self, *args, **kwargs):
-        super()._rfm_init(*args, **kwargs)
-        if not os.path.exists(os.path.join(self._prefix, 'src')):
-            self.sourcesdir = None
-
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
