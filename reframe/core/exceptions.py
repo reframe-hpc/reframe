@@ -112,6 +112,10 @@ class PipelineError(ReframeError):
     '''
 
 
+class ReframeForceExitError(ReframeError):
+    '''Raised when SIGTERM is sent to the running ReFrame process.'''
+
+
 class StatisticsError(ReframeError):
     '''Raised to denote an error in dealing with statistics.'''
 

@@ -7,8 +7,11 @@ import collections
 import itertools
 import os
 import pytest
+import signal
+import time
 import tempfile
 import unittest
+from multiprocessing import Pipe, Process
 
 import reframe as rfm
 import reframe.core.runtime as rt
@@ -19,8 +22,8 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    DependencyError, JobNotStartedError, TaskDependencyError,
-    ReframeFatalError
+    DependencyError, JobNotStartedError,
+    ReframeForceExitError, TaskDependencyError
 )
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -33,7 +36,6 @@ from unittests.resources.checks.frontend_checks import (
     SleepCheck,
     SleepCheckPollFail,
     SleepCheckPollFailLate,
-    SigtermCheck,
     SystemExitCheck,
 )
 
@@ -260,11 +262,28 @@ class TestSerialExecutionPolicy(unittest.TestCase):
                 assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
 
     def test_sigterm(self):
-        pid = os.getpid()
-        check = SigtermCheck(pid)
+        # Wrapper of self.runall which is used from a child process and
+        # passes the thrown exception to the parent process
+        def _runall(checks, conn):
+            ex = None
+            try:
+                self.runall(checks)
+            except ReframeForceExitError as e:
+                ex = e
 
-        with pytest.raises(ReframeFatalError, match='Received SIGTERM'):
-            self.runall([check])
+            conn.send(ex)
+            conn.close()
+
+        with pytest.raises(ReframeForceExitError, match='Received SIGTERM'):
+            parent_conn, child_conn = Pipe(False)
+            p = Process(target=_runall, args=([SleepCheck(3)], child_conn))
+            p.start()
+
+            # Allow some time so that the SleepCheck is submitted
+            time.sleep(0.5)
+            os.kill(p.pid, signal.SIGTERM)
+            p.join()
+            raise parent_conn.recv()
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2

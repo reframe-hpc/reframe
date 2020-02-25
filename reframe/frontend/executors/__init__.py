@@ -15,11 +15,11 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeFatalError, TaskExit)
+                                     ReframeForceExitError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
+ABORT_REASONS = (KeyboardInterrupt, ReframeForceExitError, AssertionError)
 
 
 class TestCase:
@@ -271,7 +271,7 @@ class Runner:
         signal.signal(signal.SIGTERM, self._handle_sigterm)
 
     def _handle_sigterm(self, signum, frame):
-        raise ReframeFatalError('Received SIGTERM')
+        raise ReframeForceExitError('Received SIGTERM')
 
     def __repr__(self):
         return debug.repr(self)

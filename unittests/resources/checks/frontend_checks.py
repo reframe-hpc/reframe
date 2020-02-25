@@ -124,19 +124,6 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
             super().wait()
 
 
-class SigtermCheck(BaseFrontendCheck):
-    '''Simulate a test that sends a SIGTERM to a given process'''
-
-    def __init__(self, pid):
-        super().__init__()
-        self.valid_systems = ['*']
-        self.valid_prog_environs = ['*']
-        self._pid = pid
-
-    def wait(self):
-        os.kill(self._pid, signal.SIGTERM)
-
-
 class SystemExitCheck(BaseFrontendCheck):
     '''Simulate system exit from within a check.'''
 
