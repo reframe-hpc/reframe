@@ -1,8 +1,14 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Scheduler implementations
 #
 
 import abc
+import time
 
 import reframe.core.environments as env
 import reframe.core.fields as fields
@@ -14,6 +20,12 @@ from reframe.core.logging import getlogger
 
 
 class JobScheduler(abc.ABC):
+    @abc.abstractmethod
+    def completion_time(self, job):
+        '''The completion time of this job expressed in seconds from the Epoch.
+        '''
+        pass
+
     @abc.abstractmethod
     def emit_preamble(self, job):
         pass
@@ -39,7 +51,7 @@ class JobScheduler(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def finished(self, job):
+    def finished(self, job, max_pending_time):
         pass
 
 
@@ -191,6 +203,7 @@ class Job:
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
+        self._completion_time = None
 
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
@@ -265,6 +278,10 @@ class Job:
     def sched_exclusive_access(self):
         return self._sched_exclusive_access
 
+    @property
+    def completion_time(self):
+        return self.scheduler.completion_time(self) or self._completion_time
+
     def prepare(self, commands, environs=None, **gen_opts):
         environs = environs or []
         if self.num_tasks <= 0:
@@ -327,6 +344,7 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
+        self._completion_time = self._completion_time or time.time()
         return self.scheduler.wait(self, self.max_pending_time)
 
     def cancel(self):
@@ -339,7 +357,11 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
 
-        return self.scheduler.finished(self)
+        done = self.scheduler.finished(self, self.max_pending_time)
+        if done:
+            self._completion_time = self._completion_time or time.time()
+
+        return done
 
 
 class Node(abc.ABC):

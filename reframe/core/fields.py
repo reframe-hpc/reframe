@@ -1,9 +1,16 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Useful descriptors for advanced operations on fields
 #
 
 import copy
+import datetime
 import os
+import re
 
 import reframe.utility.typecheck as types
 from reframe.core.exceptions import user_deprecation_warning
@@ -100,23 +107,32 @@ class ConstantField(Field):
 
 
 class TimerField(TypedField):
-    '''Stores a timer in the form of a tuple ``(hh, mm, ss)``'''
+    '''Stores a timer in the form of a :class:`datetime.timedelta` object'''
 
     def __init__(self, fieldname, *other_types):
-        super().__init__(fieldname, types.Tuple[int, int, int], *other_types)
+        super().__init__(fieldname, datetime.timedelta, str,
+                         types.Tuple[int, int, int], *other_types)
 
     def __set__(self, obj, value):
         self._check_type(value)
-        if value is not None:
-            # Check also the values for minutes and seconds
+        if isinstance(value, tuple):
+            user_deprecation_warning(
+                "setting a timer field from a tuple is deprecated: "
+                "please use a string '<days>d<hours>h<minutes>m<seconds>s'")
             h, m, s = value
-            if h < 0 or m < 0 or s < 0:
-                raise ValueError('timer field must have '
-                                 'non-negative values')
+            value = datetime.timedelta(hours=h, minutes=m, seconds=s)
 
-            if m > 59 or s > 59:
-                raise ValueError('minutes and seconds in a timer '
-                                 'field must not exceed 59')
+        if isinstance(value, str):
+            time_match = re.match(r'^((?P<days>\d+)d)?'
+                                  r'((?P<hours>\d+)h)?'
+                                  r'((?P<minutes>\d+)m)?'
+                                  r'((?P<seconds>\d+)s)?$',
+                                  value)
+            if not time_match:
+                raise ValueError('invalid format for timer field')
+
+            value = datetime.timedelta(
+                **{k: int(v) for k, v in time_match.groupdict().items() if v})
 
         # Call Field's __set__() method, type checking is already performed
         Field.__set__(self, obj, value)

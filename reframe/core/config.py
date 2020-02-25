@@ -1,4 +1,10 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import collections.abc
+import re
 
 import reframe.core.debug as debug
 import reframe.core.fields as fields
@@ -115,12 +121,7 @@ class SiteConfiguration:
             if not isinstance(config, collections.abc.Mapping):
                 raise TypeError("config for `%s' is not a dictionary" % name)
 
-            try:
-                envtype = m_env.__dict__[config['type']]
-                return envtype(name, **config)
-            except KeyError:
-                raise ConfigError("no type specified for environment `%s'" %
-                                  name) from None
+            return m_env.ProgEnvironment(name, **config)
 
         # Populate the systems directory
         for sys_name, config in sysconfig.items():

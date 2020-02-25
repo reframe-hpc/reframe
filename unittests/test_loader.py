@@ -1,4 +1,10 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
+import pytest
 import unittest
 
 from reframe.core.exceptions import (ConfigError, NameConflictError,
@@ -20,47 +26,48 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_file_relative(self):
         checks = self.loader.load_from_file(
             'unittests/resources/checks/emptycheck.py')
-        self.assertEqual(1, len(checks))
-        self.assertEqual(checks[0].name, 'EmptyTest')
+        assert 1 == len(checks)
+        assert checks[0].name == 'EmptyTest'
 
     def test_load_file_absolute(self):
         checks = self.loader.load_from_file(
             os.path.abspath('unittests/resources/checks/emptycheck.py'))
-        self.assertEqual(1, len(checks))
-        self.assertEqual(checks[0].name, 'EmptyTest')
+        assert 1 == len(checks)
+        assert checks[0].name == 'EmptyTest'
 
     def test_load_recursive(self):
         checks = self.loader.load_from_dir('unittests/resources/checks',
                                            recurse=True)
-        self.assertEqual(11, len(checks))
+        assert 12 == len(checks)
 
     def test_load_all(self):
         checks = self.loader_with_path.load_all()
-        self.assertEqual(10, len(checks))
+        assert 11 == len(checks)
 
     def test_load_all_with_prefix(self):
         checks = self.loader_with_prefix.load_all()
-        self.assertEqual(1, len(checks))
+        assert 1 == len(checks)
 
     def test_load_new_syntax(self):
         checks = self.loader.load_from_file(
             'unittests/resources/checks_unlisted/good.py')
-        self.assertEqual(13, len(checks))
+        assert 13 == len(checks)
 
     def test_conflicted_checks(self):
         self.loader_with_path._ignore_conflicts = False
-        self.assertRaises(NameConflictError, self.loader_with_path.load_all)
+        with pytest.raises(NameConflictError):
+            self.loader_with_path.load_all()
 
     def test_load_error(self):
-        self.assertRaises(OSError, self.loader.load_from_file,
-                          'unittests/resources/checks/foo.py')
+        with pytest.raises(OSError):
+            self.loader.load_from_file('unittests/resources/checks/foo.py')
 
     def test_load_bad_required_version(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             self.loader.load_from_file('unittests/resources/checks_unlisted/'
                                        'no_required_version.py')
 
     def test_load_bad_init(self):
         tests = self.loader.load_from_file(
             'unittests/resources/checks_unlisted/bad_init_check.py')
-        self.assertEqual(0, len(tests))
+        assert 0 == len(tests)

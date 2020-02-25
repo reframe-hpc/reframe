@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -27,7 +32,7 @@ class OpenfoamExtendBaseTest(rfm.RunOnlyRegressionTest):
             self.sanity_patterns = sn.assert_found(
                 r'Finalising parallel run', self.stdout)
 
-        self.maintainers = ['MKr']
+        self.maintainers = ['MKr', 'AJ']
         self.tags = {'scs', 'production', 'external-resources'}
         self.pre_run = ['source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
 

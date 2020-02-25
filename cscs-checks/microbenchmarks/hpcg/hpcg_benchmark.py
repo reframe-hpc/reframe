@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -7,8 +12,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HPCGCheckRef(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPCG reference benchmark'
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:gpu', 'dom:mc',
                               'tiger:gpu']
@@ -46,13 +49,10 @@ class HPCGCheckRef(rfm.RegressionTest):
             },
             'dom:mc': {
                 'gflops': (13.4, -0.1, None, 'Gflop/s')
-            },
-            '*': {
-                'gflops': (0, None, None, 'Gflop/s')
             }
         }
 
-        self.maintainers = ['SK']
+        self.maintainers = ['SK', 'EK']
         self.tags = {'diagnostic', 'benchmark', 'craype', 'external-resources'}
 
     @property
@@ -60,10 +60,14 @@ class HPCGCheckRef(rfm.RegressionTest):
     def num_tasks_assigned(self):
         return self.job.num_tasks
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def set_tasks(self):
         self.num_tasks_per_node = self.system_num_tasks.get(
-            partition.fullname, 1
+            self.current_partition.fullname, 1
         )
+
+    @rfm.run_before('performance')
+    def set_performance(self):
         num_nodes = self.num_tasks_assigned / self.num_tasks_per_node
         self.perf_patterns = {
             'gflops': sn.extractsingle(
@@ -72,21 +76,19 @@ class HPCGCheckRef(rfm.RegressionTest):
                 self.output_file, 'perf',  float) / num_nodes
         }
 
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.output_file))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
-        super().setup(partition, environ, **job_opts)
-
 
 @rfm.required_version('>=2.16-dev0')
 @rfm.simple_test
 class HPCGCheckMKL(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPCG benchmark Intel MKL implementation'
         self.valid_systems = ['daint:mc', 'dom:mc', 'daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-intel']
@@ -145,14 +147,17 @@ class HPCGCheckMKL(rfm.RegressionTest):
                                           self.num_cpus_per_task)
         return sn.getitem(sn.glob(pattern), 0)
 
-    def setup(self, partition, environ, **job_opts):
-        if partition.fullname in ['daint:gpu', 'dom:gpu']:
+    @rfm.run_before('compile')
+    def set_tasks(self):
+        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
             self.num_tasks_per_node = 2
             self.num_cpus_per_task = 12
         else:
             self.num_tasks_per_node = 4
             self.num_cpus_per_task = 18
 
+    @rfm.run_before('performance')
+    def set_performance(self):
         # since this is a flexible test, we divide the extracted
         # performance by the number of nodes and compare
         # against a single reference
@@ -164,20 +169,19 @@ class HPCGCheckMKL(rfm.RegressionTest):
                 self.outfile_lazy, 'perf',  float) / num_nodes
         }
 
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.outfile_lazy))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 
-        super().setup(partition, environ, **job_opts)
-
 
 @rfm.simple_test
 class HPCG_GPUCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-        self.maintainers = ['SK', 'VK']
+        self.maintainers = ['SK', 'VH']
         self.descr = 'HPCG benchmark on GPUs'
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'HPCG')

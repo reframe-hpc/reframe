@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import itertools
 import os
 
@@ -33,7 +38,7 @@ class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
         }
 
         self.modules = ['GROMACS']
-        self.maintainers = ['VH']
+        self.maintainers = ['VH', 'SO']
         self.strict_check = False
         self.use_multithreading = False
         self.extra_resources = {
@@ -113,8 +118,7 @@ class GromacsCPUCheck(GromacsBaseCheck):
             'maint': {
                 'small': {
                     'dom:mc': {'perf': (0.0, None, None, 'ns/day')},
-                    # FIXME: numbers may need update
-                    'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')}
+                    'daint:mc': {'perf': (0.0, -0.10, None, 'ns/day')}
                 },
                 'large': {
                     'daint:mc': {'perf': (0.0, None, None, 'ns/day')}

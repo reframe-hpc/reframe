@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -10,7 +15,6 @@ import reframe.utility.sanity as sn
                         ['libsci_acc_cray_nv60_openacc'])
 class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
     def __init__(self, lib_name):
-        super().__init__()
         self.descr = 'LibSciAcc symlink check of %s' % lib_name
         self.valid_systems = ['daint:login', 'daint:gpu',
                               'dom:login', 'dom:gpu',
@@ -22,5 +26,5 @@ class LibSciAccSymLinkTest(rfm.RunOnlyRegressionTest):
         self.executable_opts = ['-al', '/opt/cray/pe/lib64/libsci_a*']
         self.sanity_patterns = sn.assert_found(lib_name + '.so', self.stdout)
 
-        self.maintainers = ['AJ']
+        self.maintainers = ['AJ', 'LM']
         self.tags = {'production', 'craype'}

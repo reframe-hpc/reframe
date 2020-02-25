@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # CSCS ReFrame settings
 #
@@ -68,11 +73,6 @@ class ReframeSettings:
                     },
                     'compute': {
                         'scheduler': 'nativeslurm',
-                        'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
-                            }
-                        },
                         'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Intel Xeon Phi',
@@ -100,8 +100,8 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -121,8 +121,8 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
-                            'ShifterNG': {
-                                'modules': ['shifter-ng']
+                            'Sarus': {
+                                'modules': ['sarus']
                             },
                             'Singularity': {
                                 'modules': ['singularity']
@@ -178,6 +178,9 @@ class ReframeSettings:
                     'gpu': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -194,6 +197,9 @@ class ReframeSettings:
                     'mc': {
                         'scheduler': 'nativeslurm',
                         'container_platforms': {
+                            'Sarus': {
+                                'modules': ['sarus']
+                            },
                             'Singularity': {
                                 'modules': ['singularity']
                             },
@@ -299,48 +305,66 @@ class ReframeSettings:
                 }
             },
 
-            'leone': {
-                'descr': 'Leone',
-                'hostnames': ['leone'],
+            'arolla': {
+                'descr': 'Arolla MCH',
+                'hostnames': [r'arolla-\w+\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Leone login nodes',
-                        'max_jobs': 1
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Arolla login nodes',
                     },
-
-                    'normal': {
+                    'pn': {
                         'scheduler': 'nativeslurm',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': ('Leone compute nodes - '
-                                  'default partition'),
-                        'max_jobs': 10
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Arolla post-processing nodes',
                     },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Arolla compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
                 }
             },
 
-            'monch': {
-                'descr': 'Monch PASC',
-                'hostnames': ['monch'],
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
                 'modules_system': 'tmod',
                 'resourcesdir': '/apps/common/UES/reframe/resources',
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Monch login nodes',
-                        'max_jobs': 1
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa login nodes',
                     },
-
-                    'compute': {
-                        'scheduler': 'slurm+mpirun',
-                        'access': ['--partition=compute'],
-                        'environs': ['PrgEnv-gnu'],
-                        'descr': 'Monch compute nodes',
-                        'max_jobs': 10
+                    'pn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=pn-regression'],
+                        'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                        'descr': 'Tsa post-processing nodes',
+                    },
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                        'descr': 'Tsa compute nodes',
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
                     }
                 }
             },
@@ -363,7 +387,6 @@ class ReframeSettings:
 
             'ault': {
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     # defaults were gcc/8.3.0, cuda/10.1, openmpi/4.0.0
                     'modules': ['gcc', 'cuda/10.1', 'openmpi'],
                     'cc':  'mpicc',
@@ -371,13 +394,11 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -386,7 +407,6 @@ class ReframeSettings:
 
             'kesch': {
                 'PrgEnv-pgi-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-pgi/18.5'],
                     'cc': 'pgcc',
@@ -394,7 +414,6 @@ class ReframeSettings:
                     'ftn': 'pgf90',
                 },
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': [
                         'PE/17.06', 'pgi/18.5-gcc-5.4.0-2.26',
                         'openmpi/4.0.1-pgi-18.5-gcc-5.4.0-2.26-cuda-8.0'
@@ -404,17 +423,14 @@ class ReframeSettings:
                     'ftn': 'mpifort',
                 },
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-CrayCCE/17.06'],
                 },
                 'PrgEnv-cray-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'gmvapich2/17.02_cuda_8.0_gdr'],
                     'variables': {
@@ -425,112 +441,104 @@ class ReframeSettings:
                     'ftn': 'mpif90',
                 },
                 'PrgEnv-gnu-nompi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PE/17.06',
                                 'PrgEnv-gnu'],
                     'cc': 'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
                 },
-                'PrgEnv-cray-c2sm': {
+            },
+
+            'arolla': {
+                'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/base'],
+                    'modules': ['PrgEnv-pgi/19.9'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
-                'PrgEnv-cray-c2sm-gpu': {
+                'PrgEnv-pgi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/cray-env/gpu'],
-                },
-                'PrgEnv-pgi-c2sm': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/base'],
+                    'modules': ['PrgEnv-pgi/19.9'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
-                'PrgEnv-pgi-c2sm-gpu': {
+                'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/pgi-env/gpu'],
+                    'modules': ['PrgEnv-gnu/19.2'],
                     'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'ftn': 'mpifort',
                 },
-                'PrgEnv-gnu-c2sm': {
+                'PrgEnv-gnu-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/base'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                },
-                'PrgEnv-gnu-c2sm-gpu': {
-                    'type': 'ProgEnvironment',
-                    'modules': ['c2sm-rcm/1.00.00-kesch',
-                                'c2sm/gnu-env/gpu'],
-                    'cc': 'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
                 },
             },
 
-            'leone': {
-                'PrgEnv-gnu': {
+            'tsa': {
+                'PrgEnv-pgi-nompi': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu/leone-foss-2016b'],
-                    'cc':  'mpicc',
-                    'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
+                    'modules': ['PrgEnv-pgi/19.9'],
+                    'cc': 'pgcc',
+                    'cxx': 'pgc++',
+                    'ftn': 'pgf90',
                 },
-            },
-
-            'monch': {
+                'PrgEnv-pgi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-pgi/19.9'],
+                    'cc': 'mpicc',
+                    'cxx': 'mpicxx',
+                    'ftn': 'mpifort',
+                },
                 'PrgEnv-gnu': {
                     'type': 'ProgEnvironment',
-                    'modules': ['PrgEnv-gnu'],
-                    'cc':  'mpicc',
+                    'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'mpicc',
                     'cxx': 'mpicxx',
-                    'ftn': 'mpif90',
-                }
+                    'ftn': 'mpifort',
+                },
+                'PrgEnv-gnu-nompi': {
+                    'type': 'ProgEnvironment',
+                    'modules': ['PrgEnv-gnu/19.2'],
+                    'cc': 'gcc',
+                    'cxx': 'g++',
+                    'ftn': 'gfortran',
+                },
             },
 
             '*': {
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
 
                 'PrgEnv-cray_classic': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray', 'cce/9.0.2-classic'],
                 },
 
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
                 },
 
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
 
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -615,7 +623,7 @@ class ReframeSettings:
                 'prefix': '%(check_system)s/%(check_partition)s',
                 'level': 'INFO',
                 'format': (
-                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_job_completion_time)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
                     'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
@@ -624,6 +632,7 @@ class ReframeSettings:
                     'u=%(check_perf_upper_thres)s)|'
                     '%(check_perf_unit)s'
                 ),
+                'datefmt': '%FT%T%:z',
                 'append': True
             }
         ]

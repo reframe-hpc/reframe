@@ -306,7 +306,7 @@ ReFrame the does not search recursively into directories specified with the ``-c
 
 The ``-c`` option completely overrides the default path.
 Currently, there is no option to prepend or append to the default regression path.
-However, you can build your own check path by specifying multiple times the ``-c`` option.
+However, you can build your own check path by specifying a colon separated list of paths to the ``-c`` option.
 The ``-c``\ option accepts also regular files. This is very useful when you are implementing new regression tests, since it allows you to run only your test:
 
 .. code-block:: bash
@@ -320,6 +320,17 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
    In this case, any conflicting test will not be loaded and a warning will be issued.
 
    .. versionadded:: 2.12
+
+.. warning::
+   Using the command line ``-c`` or ``--checkpath`` multiple times is not supported anymore and only the last option will be considered.
+   Multiple paths should be passed instead as a colon separated list:
+
+   .. code-block:: bash
+
+      ./bin/reframe -c /path/to/my/first/test.py:/path/to/my/second/ -r
+
+
+   .. versionchanged:: 3.0
 
 
 Filtering of Regression Tests
@@ -838,7 +849,7 @@ All handlers accept the following set of attributes (keys) in their configuratio
 
 * ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
 * ``format`` (default: ``'%(message)s'``): Format string for the printout of the log record.
-  ReFrame supports all the `format strings <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
+  ReFrame supports all the `log record attributes <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
 
   - ``check_environ``: The programming environment a test is currently executing for.
   - ``check_info``: Print live information of the currently executing check.
@@ -846,6 +857,14 @@ All handlers accept the following set of attributes (keys) in their configuratio
     It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
   - ``check_jobid``: Prints the job or process id of the job or process associated with the currently executing regression test.
     If a job or process is not yet created, ``-1`` will be printed.
+  - ``check_job_completion_time``: *[new in 2.21]* The completion time of the job spawned by this regression test.
+    This timestamp will be formatted according to ``datefmt`` (see below).
+    The accuracy of the timestamp depends on the backend scheduler.
+    The ``slurm`` scheduler backend relies on job accounting and returns the actual termination time of the job.
+    The rest of the backends report as completion time the moment when the framework realizes that the spawned job has finished.
+    In this case, the accuracy depends on the execution policy used.
+    If tests are executed with the serial execution policy, this is close to the real completion time, but if the asynchronous execution policy is used, it can differ significantly.
+    If the job completion time cannot be retrieved, ``None`` will be printed.
   - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
     If ReFrame is not in the context of regression test, ``reframe`` will be printed.
   - ``check_num_tasks``: The number of tasks assigned to the regression test.
@@ -858,14 +877,19 @@ All handlers accept the following set of attributes (keys) in their configuratio
   - ``osgroup``: The group name of the OS user running ReFrame.
   - ``version``: The ReFrame version.
 
-* ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` field).
-  Acceptable formats must conform to standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function.
+* ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` and the ``%(check_job_completion_time)s`` fields).
+  In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
 
 .. caution::
    The ``testcase_name`` logging attribute is replaced with the ``check_info``, which is now also configurable
 
    .. versionchanged:: 2.10
 
+
+.. note::
+   Support for fully RFC3339 compliant time zone formatting.
+
+   .. versionadded:: 3.0
 
 
 File log handlers
@@ -1051,8 +1075,8 @@ Asynchronous Execution of Regression Checks
 -------------------------------------------
 
 From version `2.4 <https://github.com/eth-cscs/reframe/releases/tag/v2.4>`__, ReFrame supports asynchronous execution of regression tests.
-This execution policy can be enabled by passing the option ``--exec-policy=async`` to the command line.
-The default execution policy is ``serial`` which enforces a sequential execution of the selected regression tests.
+This execution policy is the default one.
+To enforce a sequential execution of the regression tests the ``serial`` execution policy can be enabled by passing the option ``--exec-policy=serial`` to the command line.
 The asynchronous execution policy parallelizes only the `running phase <pipeline.html#the-run-phase>`__ of the tests.
 The rest of the phases remain sequential.
 
@@ -1143,6 +1167,11 @@ Here is an example output of ReFrame using asynchronous execution policy:
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.
 For compile-only and normal tests that require a compilation, the execution time will be bound by the total compilation time of the test.
+
+.. note::
+   .. versionchanged:: 3.0
+
+      The asynchronous execution policy has become the default.
 
 
 Manipulating modules

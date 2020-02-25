@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Decorators used for the definition of tests
 #
@@ -207,6 +212,26 @@ def run_after(stage):
 
 
 def require_deps(func):
+    '''Denote that the decorated test method will use the test dependencies.
+
+    The arguments of the decorated function must be named after the
+    dependencies that the function intends to use. The decorator will bind the
+    arguments to a partial realization of the
+    :func:`reframe.core.pipeline.RegressionTest.getdep` function, such that
+    conceptually the new function arguments will be the following:
+
+    .. code:: python
+
+       new_arg = functools.partial(getdep, orig_arg_name)
+
+    The converted arguments are essentially functions accepting a single
+    argument, which is the target test's programming environment.
+
+    This decorator is also directly available under the :mod:`reframe` module.
+
+    .. versionadded:: 2.21
+
+    '''
     tests = inspect.getfullargspec(func).args[1:]
     func._rfm_resolve_deps = True
 

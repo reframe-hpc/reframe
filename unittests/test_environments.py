@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import pytest
 import unittest
@@ -20,7 +25,7 @@ class TestEnvironment(unittest.TestCase):
 
     def setup_modules_system(self):
         if not fixtures.has_sane_modules_system():
-            self.skipTest('no modules system configured')
+            pytest.skip('no modules system configured')
 
         self.modules_system = runtime().modules_system
         self.modules_system.searchpath_add(fixtures.TEST_MODULES)
@@ -87,6 +92,16 @@ class TestEnvironment(unittest.TestCase):
             assert not self.modules_system.is_module_loaded('testmod_foo')
 
         assert not self.environ.is_loaded
+
+    @fixtures.switch_to_user_runtime
+    def test_temp_environment(self):
+        self.setup_modules_system()
+        with env.temp_environment(
+                ['testmod_foo'], {'_var0': 'val2', '_var3': 'val3'}
+        ) as environ:
+            assert environ.is_loaded
+
+        assert not environ.is_loaded
 
     @fixtures.switch_to_user_runtime
     def test_load_already_present(self):

@@ -1,10 +1,15 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import signal
 import socket
 import stat
 import subprocess
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
@@ -29,6 +34,9 @@ class LocalJobScheduler(sched.JobScheduler):
         # Underlying process' stdout/stderr
         self._f_stdout = None
         self._f_stderr = None
+
+    def completion_time(self, job):
+        return None
 
     def submit(self, job):
         # `chmod +x' first, because we will execute the script locally
@@ -117,7 +125,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Set the time limit to the grace period and let wait() do the final
         # killing
-        job.time_limit = (0, 0, self._cancel_grace_period)
+        job.time_limit = timedelta(seconds=self._cancel_grace_period)
         self.wait(job, None)
 
     def wait(self, job, max_pending_time):
@@ -135,8 +143,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         # Convert job's time_limit to seconds
         if job.time_limit is not None:
-            h, m, s = job.time_limit
-            timeout = h * 3600 + m * 60 + s
+            timeout = job.time_limit.total_seconds()
         else:
             timeout = 0
 
@@ -157,7 +164,7 @@ class LocalJobScheduler(sched.JobScheduler):
             self._f_stdout.close()
             self._f_stderr.close()
 
-    def finished(self, job):
+    def finished(self, job, max_pending_time):
         '''Check if the spawned process has finished.
 
         This function does not wait the process. It just queries its state. If

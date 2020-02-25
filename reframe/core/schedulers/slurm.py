@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import functools
 import glob
 import itertools
@@ -7,6 +12,7 @@ from argparse import ArgumentParser
 from contextlib import suppress
 from datetime import datetime
 
+import reframe.core.environments as env
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
@@ -14,6 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility import seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -69,6 +76,13 @@ class SlurmJobScheduler(sched.JobScheduler):
     # standard job state polling using sacct.
     SACCT_SQUEUE_RATIO = 10
 
+    # This matches the format for both normal jobs as well as job arrays.
+    # For job arrays the job_id has one of the following formats:
+    #   * <job_id>_<array_task_id>
+    #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
+    # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
+    _state_patt = r'\d+(?:_\d+|_\[\d+-\d+\])?'
+
     def __init__(self):
         self._prefix = '#SBATCH'
 
@@ -88,6 +102,28 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
+        self._completion_time = None
+
+    def completion_time(self, job):
+        if (self._completion_time or
+            not slurm_state_completed(job.state)):
+            return self._completion_time
+
+        with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+            completed = os_ext.run_command(
+                'sacct -S %s -P -j %s -o jobid,end' %
+                (datetime.now().strftime('%F'), job.jobid),
+                log=False
+            )
+
+        state_match = list(re.finditer(
+            r'^(?P<jobid>%s)\|(?P<end>\S+)' % self._state_patt,
+            completed.stdout, re.MULTILINE))
+        if not state_match:
+            return None
+
+        self._completion_time = max(float(s.group('end')) for s in state_match)
+        return self._completion_time
 
     def _format_option(self, var, option):
         if var is not None:
@@ -120,8 +156,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                      self._format_option(job.stderr, errfile_fmt)]
 
         if job.time_limit is not None:
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
-                self._format_option('%d:%d:%d' % job.time_limit, '--time={0}')
+                self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
         if job.sched_exclusive_access:
@@ -158,6 +195,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 'could not retrieve the job id of the submitted job')
 
         job.jobid = int(jobid_match.group('jobid'))
+        self._submit_time = datetime.now()
 
     def allnodes(self):
         try:
@@ -296,14 +334,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         )
         self._update_state_count += 1
 
-        # This matches the format for both normal jobs as well as job arrays.
-        # For job arrays the job_id has one of the following formats:
-        #   * <job_id>_<array_task_id>
-        #   * <job_id>_[<array_task_id_start>-<array_task_id_end>]
-        # See (`Job Array Support<https://slurm.schedmd.com/job_array.html`__)
         state_match = list(re.finditer(
-            r'^(?P<jobid>\d+(?:_\d+|_\[\d+-\d+\])?)\|(?P<state>\S+)([^\|]*)\|'
-            r'(?P<exitcode>\d+)\:(?P<signal>\d+)\|(?P<nodespec>.*)',
+            r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
+            r'(?P<signal>\d+)\|(?P<nodespec>.*)' % self._state_patt,
             completed.stdout, re.MULTILINE))
         if not state_match:
             getlogger().debug('job state not matched (stdout follows)\n%s' %
@@ -312,7 +345,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         # Join the states with ',' in case of job arrays
         job.state = ','.join(s.group('state') for s in state_match)
-        if not self._update_state_count % SlurmJobScheduler.SACCT_SQUEUE_RATIO:
+        if not self._update_state_count % self.SACCT_SQUEUE_RATIO:
             self._cancel_if_blocked(job)
 
         if slurm_state_completed(job.state):
@@ -386,19 +419,14 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state(job)
-        start_pending = time.time()
-        if max_pending_time is not None:
-            h, m, s = max_pending_time
-            max_pending_time = h * 3600 + m * 60 + s
-        else:
-            max_pending_time = 0
 
         while not slurm_state_completed(job.state):
             if max_pending_time:
                 if slurm_state_pending(job.state):
-                    if time.time() - start_pending > max_pending_time:
+                    if datetime.now() - self._submit_time > max_pending_time:
                         self.cancel(job)
-                        raise JobError('maximum pending time exceeded')
+                        raise JobError('maximum pending time exceeded',
+                                       jobid=job.jobid)
 
             time.sleep(next(intervals))
             self._update_state(job)
@@ -412,7 +440,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                     timeout=settings().job_submit_timeout)
         self._is_cancelling = True
 
-    def finished(self, job):
+    def finished(self, job, max_pending_time):
         try:
             self._update_state(job)
         except JobBlockedError:
@@ -424,6 +452,13 @@ class SlurmJobScheduler(sched.JobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
+            if max_pending_time:
+                if slurm_state_pending(job.state):
+                    if datetime.now() - self._submit_time > max_pending_time:
+                        self.cancel(job)
+                        raise JobError('maximum pending time exceeded',
+                                       jobid=job.jobid)
+
             return slurm_state_completed(job.state)
 
     def is_array(self, job):
@@ -451,9 +486,11 @@ class SqueueJobScheduler(SlurmJobScheduler):
         self._squeue_delay = 2
         self._cancelled = False
 
+    def completion_time(self, job):
+        return None
+
     def submit(self, job):
         super().submit(job)
-        self._submit_time = datetime.now()
 
     def _update_state(self, job):
         time_from_submit = datetime.now() - self._submit_time

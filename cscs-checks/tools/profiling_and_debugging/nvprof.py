@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -6,9 +11,9 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class NvprofCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'Checks the nvprof tool'
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
@@ -32,14 +37,18 @@ class NvprofCheck(rfm.RegressionTest):
         self.build_system.cxxflags = ['-g', '-G']
         self.build_system.ldflags = ['-g', '-fopenmp', '-std=c99', '-lstdc++']
 
-        # FIXME temporary workaround
-        # the programming environment should be adapted / fixed
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
             self.build_system.ldflags += ['-lcudart', '-lm']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.modules = ['cuda/10.1.243']
+            self.build_system.ldflags = ['-lstdc++', '-lm',
+                                         '-L$EBROOTCUDA/lib64',
+                                         '-lcudart']
         else:
             self.modules = ['craype-accel-nvidia60']
 
-        self.maintainers = ['MK', 'JG']
+        self.maintainers = ['JG', 'SK']
         self.tags = {'production', 'craype'}

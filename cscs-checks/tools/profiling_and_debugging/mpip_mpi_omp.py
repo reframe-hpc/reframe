@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -10,6 +15,7 @@ class MpipCheck(rfm.RegressionTest):
     '''This test checks mpiP, the light-weight MPI profiler:
        http://llnl.github.io/mpiP
     '''
+
     def __init__(self, lang):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
@@ -54,7 +60,7 @@ class MpipCheck(rfm.RegressionTest):
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
         if lang == 'Cpp':
-                mpi_isendline = '140'
+            mpi_isendline = '140'
         elif lang == 'F90':
             mpi_isendline = '146'
 
@@ -67,7 +73,7 @@ class MpipCheck(rfm.RegressionTest):
                 r'^\s+\d\s+\d\s_jacobi.{4}\s+(?P<mpi_isendline>\d+)\s.*Isend',
                 self.rpt_file, 'mpi_isendline'), mpi_isendline),
         ])
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
 
     def setup(self, environ, partition, **job_opts):

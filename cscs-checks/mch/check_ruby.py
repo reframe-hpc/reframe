@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -5,7 +10,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class RubyNArray(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = ('Check NArray for Ruby version 2.2.2')
         self.valid_systems = ['kesch:cn']
         self.valid_prog_environs = ['PrgEnv-gnu-nompi']
@@ -16,5 +20,5 @@ class RubyNArray(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_found(r'NArray\.float\(4\):\s*'
                                                r'\[ 1.0, 2.0, 3.0, 4.0 \]',
                                                self.stdout)
-        self.maintainers = ['MKr']
+        self.maintainers = ['MKr', 'LM']
         self.tags = {'production', 'mch'}

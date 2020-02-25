@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -59,7 +64,7 @@ class Ipm(rfm.RegressionTest):
                          'ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt,
                          'ipm_parse.pl -html *.ipm.xml',
                          'cp *ipm.xml_ipm*/index.html .']
-        self.maintainers = ['JG']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
 
     def setup(self, partition, environ, **job_opts):

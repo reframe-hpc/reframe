@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -6,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['static'], ['dynamic'])
 class TrilinosTest(rfm.RegressionTest):
     def __init__(self, linkage):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'tiger:gpu']
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
@@ -35,10 +39,10 @@ class TrilinosTest(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'After Amesos solution',
                                                self.stdout)
 
-        self.maintainers = ['WS', 'AJ']
+        self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        prgenv_flags = self.prgenv_flags[environ.name]
-        self.build_system.cxxflags = prgenv_flags
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('compile')
+    def set_cxxflags(self):
+        flags = self.prgenv_flags[self.current_environ.name]
+        self.build_system.cxxflags = flags

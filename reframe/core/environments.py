@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import collections
 import os
 
@@ -142,6 +147,22 @@ def emit_load_commands(*environs):
     env_snapshot, commands = load(*environs)
     env_snapshot.restore()
     return commands
+
+
+class temp_environment:
+    '''Context manager to temporarily change the environment.'''
+
+    def __init__(self, modules=[], variables=[]):
+        self._modules = modules
+        self._variables = variables
+
+    def __enter__(self):
+        new_env = Environment('_rfm_temp_env', self._modules, self._variables)
+        self._environ_save, _ = load(new_env)
+        return new_env
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._environ_save.restore()
 
 
 class ProgEnvironment(Environment):

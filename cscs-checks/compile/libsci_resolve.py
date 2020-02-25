@@ -1,17 +1,21 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 class LibSciResolveBaseTest(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcesdir = 'src/libsci_resolve'
         self.sourcepath = 'libsci_resolve.f90'
         self.valid_systems = ['daint:login', 'daint:gpu',
                               'dom:login', 'dom:gpu',
                               'tiger:login', 'tiger:gpu']
         self.modules = ['craype-haswell']
-        self.maintainers = ['AJ']
+        self.maintainers = ['AJ', 'LM']
         self.tags = {'production', 'craype'}
 
 
@@ -47,9 +51,8 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         # self.build_system.fflags = ['-Wl,-ydgemm_']
         self.postbuild_cmd = ['readelf -d %s' % self.executable]
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         # here lib_name is in the format: libsci_acc_gnu_48_nv35.so or
         #                                 libsci_acc_cray_nv35.so
         regex = (r'.*\(NEEDED\).*libsci_acc_(?P<prgenv>[A-Za-z]+)_'
@@ -98,5 +101,5 @@ class MKLResolveTest(LibSciResolveBaseTest):
                 sn.extractsingle(regex, self.stdout, 'version'), 'lp64')
         ])
 
-        self.maintainers = ['AJ']
+        self.maintainers = ['AJ', 'LM']
         self.tags = {'production', 'craype'}

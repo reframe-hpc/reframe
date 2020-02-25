@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Minimal settings for ReFrame tutorial on Piz Daint
 #
@@ -61,21 +66,17 @@ class ReframeSettings:
         'environments': {
             '*': {
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
                 }
             }
@@ -119,13 +120,14 @@ class ReframeSettings:
                 'prefix': '%(check_system)s/%(check_partition)s',
                 'level': 'INFO',
                 'format': (
-                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_job_completion_time)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
                     '(l=%(check_perf_lower_thres)s, '
                     'u=%(check_perf_upper_thres)s)'
                 ),
+                'datefmt': '%FT%T%:z',
                 'append': True
             }
         ]

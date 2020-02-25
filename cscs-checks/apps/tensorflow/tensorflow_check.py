@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -9,7 +14,7 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcesdir = 'https://github.com/tensorflow/models.git'
-        self.maintainers = ['TM']
+        self.maintainers = ['TM', 'RS']
         self.tags = {'production'}
         self.num_tasks = 1
         self.num_gpus_per_node = 1

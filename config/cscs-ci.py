@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # CSCS ReFrame CI settings
 #
@@ -65,6 +70,24 @@ class ReframeSettings:
                     }
                 }
             },
+            'tsa': {
+                'descr': 'Tsa MCH',
+                'hostnames': [r'tsa-\w+\d+'],
+                'modules_system': 'tmod',
+                'resourcesdir': '/apps/common/UES/reframe/resources',
+                'partitions': {
+                    'cn': {
+                        'scheduler': 'nativeslurm',
+                        'access': ['--partition=cn-regression'],
+                        'environs': ['builtin-gcc'],
+                        'descr': 'Tsa compute nodes',
+                        'max_jobs': 10,
+                        'resources': {
+                            '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
+                        }
+                    }
+                }
+            },
             'generic': {
                 'descr': 'Generic example system',
                 'partitions': {
@@ -82,34 +105,28 @@ class ReframeSettings:
         'environments': {
             '*': {
                 'PrgEnv-cray': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-cray'],
                 },
 
                 'PrgEnv-gnu': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-gnu'],
                 },
 
                 'PrgEnv-intel': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-intel'],
                 },
 
                 'PrgEnv-pgi': {
-                    'type': 'ProgEnvironment',
                     'modules': ['PrgEnv-pgi'],
                 },
 
                 'builtin': {
-                    'type': 'ProgEnvironment',
                     'cc':  'cc',
                     'cxx': '',
                     'ftn': '',
                 },
 
                 'builtin-gcc': {
-                    'type': 'ProgEnvironment',
                     'cc':  'gcc',
                     'cxx': 'g++',
                     'ftn': 'gfortran',
@@ -155,7 +172,7 @@ class ReframeSettings:
                 'prefix': '%(check_system)s/%(check_partition)s',
                 'level': 'INFO',
                 'format': (
-                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_job_completion_time)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
                     'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
@@ -164,6 +181,7 @@ class ReframeSettings:
                     'u=%(check_perf_upper_thres)s)|'
                     '%(check_perf_unit)s'
                 ),
+                'datefmt': '%FT%T%:z',
                 'append': True
             }
         ]

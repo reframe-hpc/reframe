@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # PBS backend
 #
@@ -17,6 +22,7 @@ from reframe.core.config import settings
 from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility import seconds_to_hms
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -35,6 +41,9 @@ class PbsJobScheduler(sched.JobScheduler):
 
         # Optional part of the job id refering to the PBS server
         self._pbs_server = None
+
+    def completion_time(self, job):
+        return None
 
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
@@ -71,8 +80,9 @@ class PbsJobScheduler(sched.JobScheduler):
         ]
 
         if job.time_limit is not None:
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
-                self._format_option('-l walltime=%d:%d:%d' % job.time_limit))
+                self._format_option('-l walltime=%d:%d:%d' % (h, m, s)))
 
         if job.sched_partition:
             preamble.append(
@@ -107,22 +117,11 @@ class PbsJobScheduler(sched.JobScheduler):
         if info:
             self._pbs_server = info[0]
 
+        self._submit_time = datetime.now()
+
     def wait(self, job, max_pending_time):
         intervals = itertools.cycle(settings().job_poll_intervals)
-        start_pending = time.time()
-        if max_pending_time is not None:
-            h, m, s = max_pending_time
-            max_pending_time = h * 3600 + m * 60 + s
-        else:
-            max_pending_time = 0
-
-        while not self.finished(job):
-            if max_pending_time:
-                if slurm_state_pending(job.state):
-                    if time.time() - start_pending > max_pending_time:
-                        self.cancel(job)
-                        raise JobError('maximum pending time exceeded')
-
+        while not self.finished(job, max_pending_time):
             time.sleep(next(intervals))
 
     def cancel(self, job):
@@ -134,7 +133,7 @@ class PbsJobScheduler(sched.JobScheduler):
         getlogger().debug('cancelling job (id=%s)' % jobid)
         _run_strict('qdel %s' % jobid, timeout=settings().job_submit_timeout)
 
-    def finished(self, job):
+    def finished(self, job, max_pending_time):
         with os_ext.change_dir(job.workdir):
             done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
 
@@ -142,5 +141,12 @@ class PbsJobScheduler(sched.JobScheduler):
             t_now = datetime.now()
             self._time_finished = self._time_finished or t_now
             time_from_finish = (t_now - self._time_finished).total_seconds()
+
+        if max_pending_time:
+            if slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time > max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT

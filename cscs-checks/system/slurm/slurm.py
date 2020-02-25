@@ -1,50 +1,48 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-# Base class for Slurm simple binary tests
 class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
+    '''Base class for Slurm simple binary tests'''
+
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
-        self.tags = {'slurm', 'maintenance', 'ops', 'production'}
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.tags = {'slurm', 'maintenance', 'ops',
+                     'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
-
-    def setup(self, *args, **kwargs):
-        if self.num_tasks == 1:
-            self.tags.add('single-node')
-
-        super().setup(*args, **kwargs)
-
-# Base class for Slurm tests that require compiling some code
+        self.maintainers = ['RS', 'VH']
 
 
 class SlurmCompiledBaseCheck(rfm.RegressionTest):
+    '''Base class for Slurm tests that require compiling some code'''
+
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
-        self.tags = {'slurm', 'maintenance', 'ops', 'production'}
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.tags = {'slurm', 'maintenance', 'ops',
+                     'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
 
-        self.maintainers = ['RS', 'VK']
-
-    def setup(self, *args, **kwargs):
-        if self.num_tasks == 1:
-            self.tags.add('single-node')
-
-        super().setup(*args, **kwargs)
+        self.maintainers = ['RS', 'VH']
 
 
 @rfm.simple_test
@@ -52,20 +50,26 @@ class HostnameCheck(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
         self.executable = '/bin/hostname'
-        self.hostname_string = {
-            'kesch:cn': r'keschcn-\d{4}\b',
-            'kesch:pn': r'keschpn-\d{4}\b',
-            'daint:gpu': r'nid\d{5}\b',
-            'daint:mc': r'nid\d{5}\b',
-            'dom:gpu': r'nid\d{5}\b',
-            'dom:mc': r'nid\d{5}\b',
+        self.hostname_patt = {
+            'arolla:cn': r'^arolla-cn\d{3}$',
+            'arolla:pn': r'^arolla-pp\d{3}$',
+            'tsa:cn': r'^tsa-cn\d{3}$',
+            'tsa:pn': r'^tsa-pp\d{3}$',
+            'kesch:cn': r'^keschcn-\d{4}$',
+            'kesch:pn': r'^keschpn-\d{4}$',
+            'daint:gpu': r'^nid\d{5}$',
+            'daint:mc': r'^nid\d{5}$',
+            'dom:gpu': r'^nid\d{5}$',
+            'dom:mc': r'^nid\d{5}$',
         }
 
-    def setup(self, partition, environ, **job_opts):
-        num_matches = sn.count(sn.findall(
-            self.hostname_string[partition.fullname], self.stdout))
+    @rfm.run_before('sanity')
+    def set_sanity_patterns(self):
+        partname = self.current_partition.fullname
+        num_matches = sn.count(
+            sn.findall(self.hostname_patt[partname], self.stdout)
+        )
         self.sanity_patterns = sn.assert_eq(self.num_tasks, num_matches)
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
@@ -75,12 +79,28 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
         self.num_tasks = 2
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
+        self.tags.remove('single-node')
         num_matches = sn.count(sn.findall(r'TEST123456!', self.stdout))
         self.sanity_patterns = sn.assert_eq(self.num_tasks, num_matches)
+
+
+@rfm.simple_test
+class RequiredConstraintCheck(SlurmSimpleBaseCheck):
+    def __init__(self):
+        super().__init__()
+        self.valid_systems = ['daint:login', 'dom:login']
+        self.executable = 'srun'
+        self.executable_opts = ['hostname']
+        self.sanity_patterns = sn.assert_found(
+            r'error: You have to specify, at least, what sort of node you '
+            r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
+            r'nodes.', self.stderr)
 
 
 @rfm.simple_test
@@ -94,10 +114,8 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
                                         self.stdout, 'mem', float)
         self.sanity_patterns = sn.assert_bounded(mem_obtained, 122.0, 128.0)
 
-    # we override setup function to pass additional
-    # options to Slurm
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def set_memory_limit(self):
         self.job.options += ['--mem=120000']
 
 
@@ -105,7 +123,9 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 class DefaultRequestGPU(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
+                              'arolla:cn', 'kesch:cn',
+                              'tsa:cn']
         self.executable = 'nvidia-smi'
         self.sanity_patterns = sn.assert_found(
             r'NVIDIA-SMI.*Driver Version.*', self.stdout)
@@ -141,10 +161,8 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
         self.executable = 'cat /proc/cray_xt/cname'
         self.sanity_patterns = sn.assert_found(r'c0-0.*', self.stdout)
 
-    # we override setup function to pass additional
-    # options to Slurm
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def set_slurm_constraint(self):
         self.job.options = ['--constraint=c0-0']
 
 
@@ -160,6 +178,6 @@ class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
             r'(exceeded memory limit)|(Out Of Memory)', self.stderr
         )
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('run')
+    def set_memory_limit(self):
         self.job.options += ['--mem=2000']

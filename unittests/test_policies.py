@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import collections
 import itertools
 import os
@@ -58,6 +63,11 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         self.runner.runall(cases)
 
+    def assertRunall(self):
+        # Make sure that all cases finished or failed
+        for t in self.runner.stats.tasks():
+            assert t.succeeded or t.failed
+
     def _num_failures_stage(self, stage):
         stats = self.runner.stats
         return len([t for t in stats.failures() if t.failed_stage == stage])
@@ -70,83 +80,98 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             except JobNotStartedError:
                 finished = True
 
-            self.assertTrue(finished)
+            assert finished
 
     def test_runall(self):
         self.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(7, stats.num_cases())
-        self.assertEqual(4, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(1, self._num_failures_stage('performance'))
+        assert 8 == stats.num_cases()
+        self.assertRunall()
+        assert 5 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 1 == self._num_failures_stage('sanity')
+        assert 1 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_runall_skip_system_check(self):
         self.runall(self.checks, skip_system_check=True)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(1, self._num_failures_stage('performance'))
+        assert 9 == stats.num_cases()
+        self.assertRunall()
+        assert 5 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 1 == self._num_failures_stage('sanity')
+        assert 1 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_runall_skip_prgenv_check(self):
         self.runall(self.checks, skip_environ_check=True)
 
         stats = self.runner.stats
-        self.assertEqual(8, stats.num_cases())
-        self.assertEqual(4, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(1, self._num_failures_stage('performance'))
+        assert 9 == stats.num_cases()
+        self.assertRunall()
+        assert 5 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 1 == self._num_failures_stage('sanity')
+        assert 1 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_runall_skip_sanity_check(self):
         self.runner.policy.skip_sanity_check = True
         self.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(7, stats.num_cases())
-        self.assertEqual(3, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(0, self._num_failures_stage('sanity'))
-        self.assertEqual(1, self._num_failures_stage('performance'))
+        assert 8 == stats.num_cases()
+        self.assertRunall()
+        assert 4 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 0 == self._num_failures_stage('sanity')
+        assert 1 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_runall_skip_performance_check(self):
         self.runner.policy.skip_performance_check = True
         self.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(7, stats.num_cases())
-        self.assertEqual(3, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(0, self._num_failures_stage('performance'))
+        assert 8 == stats.num_cases()
+        self.assertRunall()
+        assert 4 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 1 == self._num_failures_stage('sanity')
+        assert 0 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_strict_performance_check(self):
         self.runner.policy.strict_check = True
         self.runall(self.checks)
 
         stats = self.runner.stats
-        self.assertEqual(7, stats.num_cases())
-        self.assertEqual(5, len(stats.failures()))
-        self.assertEqual(2, self._num_failures_stage('setup'))
-        self.assertEqual(1, self._num_failures_stage('sanity'))
-        self.assertEqual(2, self._num_failures_stage('performance'))
+        assert 8 == stats.num_cases()
+        self.assertRunall()
+        assert 6 == len(stats.failures())
+        assert 2 == self._num_failures_stage('setup')
+        assert 1 == self._num_failures_stage('sanity')
+        assert 2 == self._num_failures_stage('performance')
+        assert 1 == self._num_failures_stage('cleanup')
 
     def test_force_local_execution(self):
         self.runner.policy.force_local = True
         self.runall([HelloTest()])
+        self.assertRunall()
         stats = self.runner.stats
         for t in stats.tasks():
-            self.assertTrue(t.check.local)
+            assert t.check.local
 
     def test_kbd_interrupt_within_test(self):
         check = KeyboardInterruptCheck()
-        self.assertRaises(KeyboardInterrupt, self.runall, [check])
+        with pytest.raises(KeyboardInterrupt):
+            self.runall([check])
+
         stats = self.runner.stats
-        self.assertEqual(1, len(stats.failures()))
+        assert 1 == len(stats.failures())
         self.assert_all_dead()
 
     def test_system_exit_within_test(self):
@@ -155,7 +180,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         # This should not raise and should not exit
         self.runall([check])
         stats = self.runner.stats
-        self.assertEqual(1, len(stats.failures()))
+        assert 1 == len(stats.failures())
 
     def test_retries_bad_check(self):
         max_retries = 2
@@ -164,9 +189,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runall(checks)
 
         # Ensure that the test was retried #max_retries times and failed.
-        self.assertEqual(2, self.runner.stats.num_cases())
-        self.assertEqual(max_retries, rt.runtime().current_run)
-        self.assertEqual(2, len(self.runner.stats.failures()))
+        assert 2 == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert max_retries == rt.runtime().current_run
+        assert 2 == len(self.runner.stats.failures())
 
         # Ensure that the report does not raise any exception.
         self.runner.stats.retry_report()
@@ -178,9 +204,10 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runall(checks)
 
         # Ensure that the test passed without retries.
-        self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(0, rt.runtime().current_run)
-        self.assertEqual(0, len(self.runner.stats.failures()))
+        assert 1 == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 0 == rt.runtime().current_run
+        assert 0 == len(self.runner.stats.failures())
 
     def test_pass_in_retries(self):
         max_retries = 3
@@ -195,10 +222,11 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.runall(checks)
 
         # Ensure that the test passed after retries in run #run_to_pass.
-        self.assertEqual(1, self.runner.stats.num_cases())
-        self.assertEqual(1, len(self.runner.stats.failures(run=0)))
-        self.assertEqual(run_to_pass, rt.runtime().current_run)
-        self.assertEqual(0, len(self.runner.stats.failures()))
+        assert 1 == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 1 == len(self.runner.stats.failures(run=0))
+        assert run_to_pass == rt.runtime().current_run
+        assert 0 == len(self.runner.stats.failures())
         os.remove(fp.name)
 
     def test_dependencies(self):
@@ -210,13 +238,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         self.checks = self.loader.load_all()
         self.runall(self.checks, sort=True)
 
+        self.assertRunall()
         stats = self.runner.stats
-        assert stats.num_cases(0) == 8
-        assert len(stats.failures()) == 2
+        assert stats.num_cases(0) == 10
+        assert len(stats.failures()) == 4
         for tf in stats.failures():
             check = tf.testcase.check
-            exc_type, exc_value, _ = tf.exc_info
-            if check.name == 'T7':
+            _, exc_value, _ = tf.exc_info
+            if check.name == 'T7' or check.name == 'T9':
                 assert isinstance(exc_value, TaskDependencyError)
 
         # Check that cleanup is executed properly for successful tests as well
@@ -308,12 +337,13 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runall(checks)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(len(checks), self.runner.stats.num_cases())
-        self.assertEqual(0, len(self.runner.stats.failures()))
+        assert len(checks) == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 0 == len(self.runner.stats.failures())
 
         # Ensure that maximum concurrency was reached as fast as possible
-        self.assertEqual(len(checks), max(self.monitor.num_tasks))
-        self.assertEqual(len(checks), self.monitor.num_tasks[len(checks)])
+        assert len(checks) == max(self.monitor.num_tasks)
+        assert len(checks) == self.monitor.num_tasks[len(checks)]
 
         self.read_timestamps(self.monitor.tasks)
 
@@ -323,7 +353,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         #     self.assertTrue(self.begin_stamps[-1] <= self.end_stamps[0])
         #
         if self.begin_stamps[-1] > self.end_stamps[0]:
-            self.skipTest('the system seems too much loaded.')
+            pytest.skip('the system seems too much loaded.')
 
     def test_concurrency_limited(self):
         # The number of checks must be <= 2*max_jobs.
@@ -333,12 +363,13 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runall(checks)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(len(checks), self.runner.stats.num_cases())
-        self.assertEqual(0, len(self.runner.stats.failures()))
+        assert len(checks) == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 0 == len(self.runner.stats.failures())
 
         # Ensure that maximum concurrency was reached as fast as possible
-        self.assertEqual(max_jobs, max(self.monitor.num_tasks))
-        self.assertEqual(max_jobs, self.monitor.num_tasks[max_jobs])
+        assert max_jobs == max(self.monitor.num_tasks)
+        assert max_jobs == self.monitor.num_tasks[max_jobs]
 
         self.read_timestamps(self.monitor.tasks)
 
@@ -348,7 +379,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # Note: we may ensure this strictly as we may ensure serial behaviour.
         begin_after_end = (b > e for b, e in zip(self.begin_stamps[max_jobs:],
                                                  self.end_stamps[:-max_jobs]))
-        self.assertTrue(all(begin_after_end))
+        assert all(begin_after_end)
 
         # NOTE: to ensure that these remaining jobs were also run
         # in parallel one could do the command hereafter; however, it would
@@ -362,7 +393,7 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # corresponding strict check would be:
         # self.assertTrue(self.begin_stamps[max_jobs-1] <= self.end_stamps[0])
         if self.begin_stamps[max_jobs-1] > self.end_stamps[0]:
-            self.skipTest('the system seems too loaded.')
+            pytest.skip('the system seems too loaded.')
 
     def test_concurrency_none(self):
         checks = [SleepCheck(0.5) for i in range(3)]
@@ -371,11 +402,12 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.runall(checks)
 
         # Ensure that all tests were run and without failures.
-        self.assertEqual(len(checks), self.runner.stats.num_cases())
-        self.assertEqual(0, len(self.runner.stats.failures()))
+        assert len(checks) == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 0 == len(self.runner.stats.failures())
 
         # Ensure that a single task was running all the time
-        self.assertEqual(1, max(self.monitor.num_tasks))
+        assert 1 == max(self.monitor.num_tasks)
 
         # Read the timestamps sorted to permit simple concurrency tests.
         self.read_timestamps(self.monitor.tasks)
@@ -384,14 +416,16 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         # (e.g. begin[1] > end[0]).
         begin_after_end = (b > e for b, e in zip(self.begin_stamps[1:],
                                                  self.end_stamps[:-1]))
-        self.assertTrue(all(begin_after_end))
+        assert all(begin_after_end)
 
     def _run_checks(self, checks, max_jobs):
         self.set_max_jobs(max_jobs)
-        self.assertRaises(KeyboardInterrupt, self.runall, checks)
+        with pytest.raises(KeyboardInterrupt):
+            self.runall(checks)
 
-        self.assertEqual(4, self.runner.stats.num_cases())
-        self.assertEqual(4, len(self.runner.stats.failures()))
+        assert 4 == self.runner.stats.num_cases()
+        self.assertRunall()
+        assert 4 == len(self.runner.stats.failures())
         self.assert_all_dead()
 
     def test_kbd_interrupt_in_wait_with_concurrency(self):
@@ -426,8 +460,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.set_max_jobs(1)
         self.runall(checks)
         stats = self.runner.stats
-        self.assertEqual(num_tasks, stats.num_cases())
-        self.assertEqual(num_tasks, len(stats.failures()))
+        assert num_tasks == stats.num_cases()
+        self.assertRunall()
+        assert num_tasks == len(stats.failures())
 
     def test_poll_fails_busy_loop(self):
         num_tasks = 3
@@ -436,8 +471,9 @@ class TestAsynchronousExecutionPolicy(TestSerialExecutionPolicy):
         self.set_max_jobs(1)
         self.runall(checks)
         stats = self.runner.stats
-        self.assertEqual(num_tasks, stats.num_cases())
-        self.assertEqual(num_tasks, len(stats.failures()))
+        assert num_tasks == stats.num_cases()
+        self.assertRunall()
+        assert num_tasks == len(stats.failures())
 
 
 class TestDependencies(unittest.TestCase):

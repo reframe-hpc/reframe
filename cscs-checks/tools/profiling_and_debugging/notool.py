@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -54,7 +59,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         # if (self.lang == 'C++' and
         #    self.current_environ.name == 'PrgEnv-pgi'):
         #    self.omp_versions['PrgEnv-pgi'] = '200805'
-        self.maintainers = ['JG', 'MK']
+        self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:

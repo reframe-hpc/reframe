@@ -1,18 +1,39 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import logging
 import logging.handlers
 import os
+import pytest
 import sys
+import re
 import tempfile
+import time
 import unittest
 from datetime import datetime
 
 import reframe as rfm
 import reframe.core.logging as rlog
 from reframe.core.exceptions import ConfigError, ReframeError
+from reframe.core.launchers.registry import getlauncher
+from reframe.core.schedulers import Job
+from reframe.core.schedulers.registry import getscheduler
 
 
-class RandomCheck(rfm.RegressionTest):
+class _FakeCheck(rfm.RegressionTest):
     pass
+
+
+def _setup_fake_check():
+    # A bit hacky, but we don't want to run a full test every time
+    test = _FakeCheck()
+    test._job = Job.create(getscheduler('local')(),
+                           getlauncher('local')(),
+                           'fakejob')
+    test.job._completion_time = time.time()
+    return test
 
 
 class TestLogger(unittest.TestCase):
@@ -22,7 +43,7 @@ class TestLogger(unittest.TestCase):
 
         self.logger  = rlog.Logger('reframe')
         self.handler = logging.handlers.RotatingFileHandler(self.logfile)
-        self.formatter = logging.Formatter(
+        self.formatter = rlog.RFC3339Formatter(
             fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
             datefmt='%FT%T')
 
@@ -33,49 +54,53 @@ class TestLogger(unittest.TestCase):
         self.logger_without_check = rlog.LoggerAdapter(self.logger)
 
         # Logger adapter with an associated check
-        self.logger_with_check = rlog.LoggerAdapter(self.logger, RandomCheck())
+        self.logger_with_check = rlog.LoggerAdapter(self.logger,
+                                                    _setup_fake_check())
 
     def tearDown(self):
         os.remove(self.logfile)
 
-    def found_in_logfile(self, string):
+    def found_in_logfile(self, pattern):
         found = False
-        with open(self.logfile, 'rt') as f:
-            found = string in f.read()
+        with open(self.logfile, 'rt') as fp:
+            found = re.search(pattern, fp.read()) is not None
 
         return found
 
     def test_invalid_loglevel(self):
-        self.assertRaises(ValueError, self.logger.setLevel, 'level')
-        self.assertRaises(ValueError, rlog.Logger, 'logger', 'level')
+        with pytest.raises(ValueError):
+            self.logger.setLevel('level')
+
+        with pytest.raises(ValueError):
+            rlog.Logger('logger', 'level')
 
     def test_custom_loglevels(self):
         self.logger_without_check.info('foo')
         self.logger_without_check.verbose('bar')
 
-        self.assertTrue(os.path.exists(self.logfile))
-        self.assertTrue(self.found_in_logfile('info'))
-        self.assertTrue(self.found_in_logfile('verbose'))
-        self.assertTrue(self.found_in_logfile('reframe'))
+        assert os.path.exists(self.logfile)
+        assert self.found_in_logfile('info')
+        assert self.found_in_logfile('verbose')
+        assert self.found_in_logfile('reframe')
 
     def test_check_logger(self):
         self.logger_with_check.info('foo')
         self.logger_with_check.verbose('bar')
 
-        self.assertTrue(os.path.exists(self.logfile))
-        self.assertTrue(self.found_in_logfile('info'))
-        self.assertTrue(self.found_in_logfile('verbose'))
-        self.assertTrue(self.found_in_logfile('RandomCheck'))
+        assert os.path.exists(self.logfile)
+        assert self.found_in_logfile('info')
+        assert self.found_in_logfile('verbose')
+        assert self.found_in_logfile('_FakeCheck')
 
     def test_handler_types(self):
-        self.assertTrue(issubclass(logging.Handler, rlog.Handler))
-        self.assertTrue(issubclass(logging.StreamHandler, rlog.Handler))
-        self.assertTrue(issubclass(logging.FileHandler, rlog.Handler))
-        self.assertTrue(issubclass(logging.handlers.RotatingFileHandler,
-                                   rlog.Handler))
+        assert issubclass(logging.Handler, rlog.Handler)
+        assert issubclass(logging.StreamHandler, rlog.Handler)
+        assert issubclass(logging.FileHandler, rlog.Handler)
+        assert issubclass(logging.handlers.RotatingFileHandler, rlog.Handler)
 
         # Try to instantiate rlog.Handler
-        self.assertRaises(TypeError, rlog.Handler)
+        with pytest.raises(TypeError):
+            rlog.Handler()
 
     def test_custom_handler_levels(self):
         self.handler.setLevel('verbose')
@@ -84,8 +109,8 @@ class TestLogger(unittest.TestCase):
         self.logger_with_check.debug('foo')
         self.logger_with_check.verbose('bar')
 
-        self.assertFalse(self.found_in_logfile('foo'))
-        self.assertTrue(self.found_in_logfile('bar'))
+        assert not self.found_in_logfile('foo')
+        assert self.found_in_logfile('bar')
 
     def test_logger_levels(self):
         self.logger_with_check.setLevel('verbose')
@@ -94,8 +119,28 @@ class TestLogger(unittest.TestCase):
         self.logger_with_check.debug('bar')
         self.logger_with_check.verbose('foo')
 
-        self.assertFalse(self.found_in_logfile('bar'))
-        self.assertTrue(self.found_in_logfile('foo'))
+        assert not self.found_in_logfile('bar')
+        assert self.found_in_logfile('foo')
+
+    def test_rfc3339_timezone_extension(self):
+        self.formatter = rlog.RFC3339Formatter(
+            fmt=('[%(asctime)s] %(levelname)s: %(check_name)s: '
+                 'ct:%(check_job_completion_time)s: %(message)s'),
+            datefmt='%FT%T%:z')
+        self.handler.setFormatter(self.formatter)
+        self.logger_with_check.info('foo')
+        self.logger_without_check.info('foo')
+        assert not self.found_in_logfile(r'%%:z')
+        assert self.found_in_logfile(r'\[.+(\+|-)\d\d:\d\d\]')
+        assert self.found_in_logfile(r'ct:.+(\+|-)\d\d:\d\d')
+
+    def test_rfc3339_timezone_wrong_directive(self):
+        self.formatter = rlog.RFC3339Formatter(
+            fmt='[%(asctime)s] %(levelname)s: %(check_name)s: %(message)s',
+            datefmt='%FT%T:z')
+        self.handler.setFormatter(self.formatter)
+        self.logger_without_check.info('foo')
+        assert self.found_in_logfile(':z')
 
 
 class TestLoggingConfiguration(unittest.TestCase):
@@ -116,7 +161,7 @@ class TestLoggingConfiguration(unittest.TestCase):
                 }
             ]
         }
-        self.check = RandomCheck()
+        self.check = _FakeCheck()
 
     def tearDown(self):
         if os.path.exists(self.logfile):
@@ -143,25 +188,25 @@ class TestLoggingConfiguration(unittest.TestCase):
 
     def test_valid_level(self):
         rlog.configure_logging(self.logging_config)
-        self.assertEqual(rlog.INFO, rlog.getlogger().getEffectiveLevel())
+        assert rlog.INFO == rlog.getlogger().getEffectiveLevel()
 
     def test_no_handlers(self):
         del self.logging_config['handlers']
-        self.assertRaises(ValueError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ValueError):
+            rlog.configure_logging(self.logging_config)
 
     def test_empty_handlers(self):
         self.logging_config['handlers'] = []
-        self.assertRaises(ValueError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ValueError):
+            rlog.configure_logging(self.logging_config)
 
     def test_handler_level(self):
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().info('foo')
         rlog.getlogger().warning('bar')
 
-        self.assertFalse(self.found_in_logfile('foo'))
-        self.assertTrue(self.found_in_logfile('bar'))
+        assert not self.found_in_logfile('foo')
+        assert self.found_in_logfile('bar')
 
     def test_handler_append(self):
         rlog.configure_logging(self.logging_config)
@@ -172,8 +217,8 @@ class TestLoggingConfiguration(unittest.TestCase):
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().warning('bar')
 
-        self.assertTrue(self.found_in_logfile('foo'))
-        self.assertTrue(self.found_in_logfile('bar'))
+        assert self.found_in_logfile('foo')
+        assert self.found_in_logfile('bar')
 
     def test_handler_noappend(self):
         self.logging_config = {
@@ -198,13 +243,13 @@ class TestLoggingConfiguration(unittest.TestCase):
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().warning('bar')
 
-        self.assertFalse(self.found_in_logfile('foo'))
-        self.assertTrue(self.found_in_logfile('bar'))
+        assert not self.found_in_logfile('foo')
+        assert self.found_in_logfile('bar')
 
     def test_date_format(self):
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().warning('foo')
-        self.assertTrue(self.found_in_logfile(datetime.now().strftime('%F')))
+        assert self.found_in_logfile(datetime.now().strftime('%F'))
 
     def test_unknown_handler(self):
         self.logging_config = {
@@ -214,16 +259,16 @@ class TestLoggingConfiguration(unittest.TestCase):
                 {'type': 'foo'}
             ],
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_handler_syntax_no_type(self):
         self.logging_config = {
             'level': 'INFO',
             'handlers': [{'name': 'stderr'}]
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_handler_convert_syntax(self):
         old_syntax = {
@@ -274,11 +319,11 @@ class TestLoggingConfiguration(unittest.TestCase):
         }
         rlog.configure_logging(self.logging_config)
         raw_logger = rlog.getlogger().logger
-        self.assertEqual(len(raw_logger.handlers), 1)
+        assert len(raw_logger.handlers) == 1
         handler = raw_logger.handlers[0]
 
-        self.assertIsInstance(handler, logging.StreamHandler)
-        self.assertEqual(handler.stream, sys.stdout)
+        assert isinstance(handler, logging.StreamHandler)
+        assert handler.stream == sys.stdout
 
     def test_stream_handler_stderr(self):
         self.logging_config = {
@@ -288,11 +333,11 @@ class TestLoggingConfiguration(unittest.TestCase):
 
         rlog.configure_logging(self.logging_config)
         raw_logger = rlog.getlogger().logger
-        self.assertEqual(len(raw_logger.handlers), 1)
+        assert len(raw_logger.handlers) == 1
         handler = raw_logger.handlers[0]
 
-        self.assertIsInstance(handler, logging.StreamHandler)
-        self.assertEqual(handler.stream, sys.stderr)
+        assert isinstance(handler, logging.StreamHandler)
+        assert handler.stream == sys.stderr
 
     def test_multiple_handlers(self):
         self.logging_config = {
@@ -304,14 +349,14 @@ class TestLoggingConfiguration(unittest.TestCase):
             ],
         }
         rlog.configure_logging(self.logging_config)
-        self.assertEqual(len(rlog.getlogger().logger.handlers), 3)
+        assert len(rlog.getlogger().logger.handlers) == 3
 
     def test_file_handler_timestamp(self):
         self.logging_config['handlers'][0]['timestamp'] = '%F'
         rlog.configure_logging(self.logging_config)
         rlog.getlogger().warning('foo')
         logfile = '%s_%s' % (self.logfile, datetime.now().strftime('%F'))
-        self.assertTrue(os.path.exists(logfile))
+        assert os.path.exists(logfile)
         os.remove(logfile)
 
     def test_file_handler_syntax_no_name(self):
@@ -321,8 +366,8 @@ class TestLoggingConfiguration(unittest.TestCase):
                 {'type': 'file'}
             ],
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_stream_handler_unknown_stream(self):
         self.logging_config = {
@@ -331,8 +376,8 @@ class TestLoggingConfiguration(unittest.TestCase):
                 {'type': 'stream', 'name': 'foo'},
             ],
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_syslog_handler(self):
         import platform
@@ -342,7 +387,7 @@ class TestLoggingConfiguration(unittest.TestCase):
         elif platform.system() == 'Darwin':
             addr = '/dev/run/syslog'
         else:
-            self.skipTest()
+            pytest.skip()
 
         self.logging_config = {
             'level': 'INFO',
@@ -355,24 +400,24 @@ class TestLoggingConfiguration(unittest.TestCase):
             'level': 'INFO',
             'handlers': [{'type': 'syslog'}]
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_syslog_handler_unknown_facility(self):
         self.logging_config = {
             'level': 'INFO',
             'handlers': [{'type': 'syslog', 'facility': 'foo'}]
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_syslog_handler_unknown_socktype(self):
         self.logging_config = {
             'level': 'INFO',
             'handlers': [{'type': 'syslog', 'socktype': 'foo'}]
         }
-        self.assertRaises(ConfigError, rlog.configure_logging,
-                          self.logging_config)
+        with pytest.raises(ConfigError):
+            rlog.configure_logging(self.logging_config)
 
     def test_global_noconfig(self):
         # This is to test the case when no configuration is set, but since the
@@ -380,21 +425,21 @@ class TestLoggingConfiguration(unittest.TestCase):
         # 'no-config' state by passing `None` to `configure_logging()`
 
         rlog.configure_logging(None)
-        self.assertIs(rlog.getlogger(), rlog.null_logger)
+        assert rlog.getlogger() is rlog.null_logger
 
     def test_global_config(self):
         rlog.configure_logging(self.logging_config)
-        self.assertIsNot(rlog.getlogger(), rlog.null_logger)
+        assert rlog.getlogger() is not rlog.null_logger
 
     def test_logging_context(self):
         rlog.configure_logging(self.logging_config)
         with rlog.logging_context() as logger:
-            self.assertIs(logger, rlog.getlogger())
-            self.assertIsNot(logger, rlog.null_logger)
+            assert logger is rlog.getlogger()
+            assert logger is not rlog.null_logger
             rlog.getlogger().error('error from context')
 
-        self.assertTrue(self.found_in_logfile('reframe'))
-        self.assertTrue(self.found_in_logfile('error from context'))
+        assert self.found_in_logfile('reframe')
+        assert self.found_in_logfile('error from context')
 
     def test_logging_context_check(self):
         rlog.configure_logging(self.logging_config)
@@ -402,10 +447,10 @@ class TestLoggingConfiguration(unittest.TestCase):
             rlog.getlogger().error('error from context')
 
         rlog.getlogger().error('error outside context')
-        self.assertTrue(self.found_in_logfile(
-            'RandomCheck: %s: error from context' % sys.argv[0]))
-        self.assertTrue(self.found_in_logfile(
-            'reframe: %s: error outside context' % sys.argv[0]))
+        assert self.found_in_logfile(
+            '_FakeCheck: %s: error from context' % sys.argv[0])
+        assert self.found_in_logfile(
+            'reframe: %s: error outside context' % sys.argv[0])
 
     def test_logging_context_error(self):
         rlog.configure_logging(self.logging_config)
@@ -413,9 +458,9 @@ class TestLoggingConfiguration(unittest.TestCase):
             with rlog.logging_context(level=rlog.ERROR):
                 raise ReframeError('error from context')
 
-            self.fail('logging_context did not propagate the exception')
+            pytest.fail('logging_context did not propagate the exception')
         except ReframeError:
             pass
 
-        self.assertTrue(self.found_in_logfile('reframe'))
-        self.assertTrue(self.found_in_logfile('error from context'))
+        assert self.found_in_logfile('reframe')
+        assert self.found_in_logfile('error from context')

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe.utility.sanity as sn
@@ -8,10 +13,10 @@ import reframe as rfm
 @rfm.simple_test
 class GpuBandwidthCheck(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
-        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu']
+        self.valid_systems = ['kesch:cn', 'daint:gpu', 'dom:gpu', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.exclusive_access = True
 
@@ -24,6 +29,8 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         nvidia_sm = '60'
         if self.current_system.name == 'kesch':
             nvidia_sm = '37'
+        elif self.current_system.name in ['arolla', 'tsa']:
+            nvidia_sm = '70'
 
         self.build_system.cxxflags = ['-I.', '-m64', '-arch=sm_%s' % nvidia_sm]
         self.sourcepath = 'bandwidthtestflex.cu'
@@ -41,8 +48,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.modules = ['craype-accel-nvidia60']
             self.num_gpus_per_node = 1
-        else:
-            self.modules = ['craype-accel-nvidia35']
+        elif self.current_system.name == 'kesch':
+            self.modules = ['cudatoolkit/8.0.61']
+            self.num_gpus_per_node = 8
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.modules = ['cuda/10.1.243']
             self.num_gpus_per_node = 8
 
         # perf_patterns and reference will be set by the sanity check function
@@ -50,6 +60,11 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.perf_patterns = {}
         self.reference = {}
         self.__bwref = {
+            # FIXME: reference values for Arolla and Tsa need to be updated
+            #        (sanity check fails if they are not defined)
+            'arolla:cn:h2d':   (7583, -0.1, None, 'MB/s'),
+            'arolla:cn:d2h':   (7584, -0.1, None, 'MB/s'),
+            'arolla:cn:d2d': (137408, -0.1, None, 'MB/s'),
             'daint:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'daint:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
             'daint:gpu:d2d': (499000, -0.1, None, 'MB/s'),
@@ -62,10 +77,13 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'tiger:gpu:h2d': (0, None, None, 'MB/s'),
             'tiger:gpu:d2h': (0, None, None, 'MB/s'),
             'tiger:gpu:d2d': (0, None, None, 'MB/s'),
+            'tsa:cn:h2d':   (7583, -0.1, None, 'MB/s'),
+            'tsa:cn:d2h':   (7584, -0.1, None, 'MB/s'),
+            'tsa:cn:d2d': (137408, -0.1, None, 'MB/s'),
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
-        self.maintainers = ['AJ', 'VK']
+        self.maintainers = ['AJ', 'SK']
 
     def _xfer_pattern(self, xfer_kind, devno, nodename):
         '''generates search pattern for performance analysis'''

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # unittests/fixtures.py -- Fixtures used in multiple unit tests
 #
@@ -81,3 +86,16 @@ def partition_with_scheduler(name=None, skip_partitions=['kesch:pn']):
 def has_sane_modules_system():
     return not isinstance(rt.runtime().modules_system.backend,
                           modules.NoModImpl)
+
+
+def custom_prefix(prefix):
+    '''Assign a custom prefix to a test.
+
+    This is useful in unit tests when we want to create tests on-the-fly and
+    associate them with existing resources.'''
+
+    def _set_prefix(cls):
+        cls._rfm_custom_prefix = prefix
+        return cls
+
+    return _set_prefix

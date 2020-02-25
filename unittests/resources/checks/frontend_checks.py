@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Special checks for testing the front-end
 #
@@ -128,6 +133,21 @@ class SystemExitCheck(BaseFrontendCheck):
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
         sys.exit(1)
+
+
+@rfm.simple_test
+class CleanupFailTest(rfm.RunOnlyRegressionTest):
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.sourcesdir = None
+        self.executable = 'echo foo'
+        self.sanity_patterns = sn.assert_found(r'foo', self.stdout)
+
+    @rfm.run_before('cleanup')
+    def fail(self):
+        # Make this test fail on purpose
+        raise Exception
 
 
 class SleepCheck(BaseFrontendCheck):

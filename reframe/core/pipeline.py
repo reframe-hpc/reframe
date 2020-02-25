@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Basic functionality for regression tests
 #
@@ -10,6 +15,7 @@ __all__ = ['RegressionTest',
 import functools
 import inspect
 import itertools
+import numbers
 import os
 import shutil
 
@@ -32,12 +38,30 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
-from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that test case
+#: dependencies will be explicitly specified by the user.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_EXACT  = 1
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that the test cases of
+#: the current test will depend only on the corresponding test cases of the
+#: target test that use the same programming environment.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_BY_ENV = 2
+
+#: Constant to be passed as the ``how`` argument of the
+#: :func:`RegressionTest.depends_on` method. It denotes that each test case of
+#: this test depends on all the test cases of the target test.
+#:
+#:  This constant is directly available under the :mod:`reframe` module.
 DEPEND_FULLY  = 3
 
 
@@ -178,7 +202,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: taken.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``'src'``
+    #: :default: ``'src'`` if such a directory exists at the test level,
+    #:    otherwise ``None``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.9
@@ -187,6 +212,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
+    #:
+    #:     .. versionchanged:: 3.0
+    #:        Default value is now conditionally set to either ``'src'`` or
+    #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
@@ -400,7 +429,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core  = fields.TypedField('num_tasks_per_core',
+    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
                                             int, type(None))
 
     #: Number of tasks per socket required by this test.
@@ -425,8 +454,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: The time is specified with the same format of `time_limit`.
     #:
-    #: :type: :class:`tuple[int]`
+    #: :type: :class:`str` or :class:`datetime.timedelta``
     #: :default: :class:`None
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 2.15
+    #:
     max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
@@ -529,19 +562,27 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: Time limit for this test.
     #:
-    #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
-    #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: Time limit is specified as a string in the form
+    #: ``<days>d<hours>h<minutes>m<seconds>s``.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
+    #: The value is internaly kept as a :class:`datetime.timedelta` object.
+    #: For example '2h30m' is represented as
+    #: `datetime.timedelta(hours=2, minutes=30)`
     #:
-    #: :type: :class:`tuple[int]`
-    #: :default: ``(0, 10, 0)``
+    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :default: ``'10m'``
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
     #:
     #:    This attribute may be set to :class:`None`.
+    #:
+    #: .. warning::
+    #:    .. versionchanged:: 3.0
+    #:
+    #:    The old syntax using a ``(h, m, s)`` tuple is deprecated.
     #:
     time_limit = fields.TimerField('time_limit', type(None))
 
@@ -610,7 +651,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:    A new more powerful syntax was introduced
     #:    that allows also custom job script directive prefixes.
-    #:
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
@@ -638,8 +678,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj._rfm_init(name,
-                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
+        # Determine the prefix
+        try:
+            prefix = cls._rfm_custom_prefix
+        except AttributeError:
+            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        obj._rfm_init(name, prefix)
         return obj
 
     def __init__(self):
@@ -684,10 +729,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.local = False
 
         # Static directories of the regression check
-        if prefix is not None:
-            self._prefix = os.path.abspath(prefix)
-
-        self.sourcesdir = 'src'
+        self._prefix = os.path.abspath(prefix)
+        if os.path.isdir(os.path.join(self._prefix, 'src')):
+            self.sourcesdir = 'src'
+        else:
+            self.sourcesdir = None
 
         # Output patterns
         self.sanity_patterns = None
@@ -701,7 +747,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.variables = {}
 
         # Time limit for the check
-        self.time_limit = (0, 10, 0)
+        self.time_limit = '10m'
 
         # Runtime information of the test
         self._current_partition = None
@@ -949,12 +995,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             msg.format('local' if self.is_local else
                        self._current_partition.scheduler.registered_name))
 
-        # num_gpus_per_node is a managed resource
-        if self.num_gpus_per_node > 0:
-            self.extra_resources.setdefault(
-                '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
-            )
-
         if self.local:
             scheduler_type = getscheduler('local')
             launcher_type = getlauncher('local')
@@ -970,16 +1010,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                sched_access=self._current_partition.access,
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)
-
-        # Get job options from managed resources and prepend them to
-        # job_opts. We want any user supplied options to be able to
-        # override those set by the framework.
-        resources_opts = []
-        for r, v in self.extra_resources.items():
-            resources_opts.extend(
-                self._current_partition.get_resource(r, **v))
-
-        self._job.options = resources_opts + self._job.options
 
     def _setup_perf_logging(self):
         self.logger.debug('setting up performance logging')
@@ -1176,6 +1206,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 self._cdt_environ
             ]
 
+        # num_gpus_per_node is a managed resource
+        if self.num_gpus_per_node > 0:
+            self.extra_resources.setdefault(
+                '_rfm_gpu', {'num_gpus_per_node': self.num_gpus_per_node}
+            )
+
+        # Get job options from managed resources and prepend them to
+        # job_opts. We want any user supplied options to be able to
+        # override those set by the framework.
+        resources_opts = []
+        for r, v in self.extra_resources.items():
+            resources_opts.extend(
+                self._current_partition.get_resource(r, **v))
+
+        self._job.options = resources_opts + self._job.options
         with os_ext.change_dir(self._stagedir):
             try:
                 self._job.prepare(commands, environs)
@@ -1252,7 +1297,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
-            # store all the variables  tested in the performance check
+            # store all the variables tested in the performance check
             has_default = False
             variables = set()
             for key, ref in self.reference.items():
@@ -1301,10 +1346,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
+
+                # Verify that val is a number
+                if not isinstance(val, numbers.Number):
+                    raise SanityError(
+                        "the value extracted for performance variable '%s' "
+                        "is not a number: %s" % (key, val)
+                    )
+
                 tag = key.split(':')[-1]
                 try:
                     sn.evaluate(
-                        assert_reference(
+                        sn.assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
                                  'expected {1} (l={2}, u={3})' % tag))
@@ -1364,6 +1417,36 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return util.SequenceView(self._userdeps)
 
     def depends_on(self, target, how=DEPEND_BY_ENV, subdeps=None):
+        '''Add a dependency to ``target`` in this test.
+
+        :arg target: The name of the target test.
+        :arg how: How the dependency should be mapped in the test cases space.
+            This argument can accept any of the three constants
+            :attr:`DEPEND_EXACT`, :attr:`DEPEND_BY_ENV` (default),
+            :attr:`DEPEND_FULLY`.
+
+        :arg subdeps: An adjacency list representation of how this test's test
+            cases depend on those of the target test. This is only relevant if
+            ``how == DEPEND_EXACT``. The value of this argument is a
+            dictionary having as keys the names of this test's supported
+            programming environments. The values are lists of the programming
+            environments names of the target test that this test's test cases
+            will depend on. In the following example, this test's ``E0``
+            programming environment case will depend on both ``E0`` and ``E1``
+            test cases of the target test ``T0``, but its ``E1`` case will
+            depend only on the ``E1`` test case of ``T0``:
+
+            .. code:: python
+
+               self.depends_on('T0', how=rfm.DEPEND_EXACT,
+                               subdeps={'E0': ['E0', 'E1'], 'E1': ['E1']})
+
+        For more details on how test dependencies work in ReFrame, please
+        refer to `How Test Dependencies Work In ReFrame <dependencies.html>`__.
+
+        .. versionadded:: 2.21
+
+        '''
         if not isinstance(target, str):
             raise TypeError("target argument must be of type: `str'")
 
@@ -1378,6 +1461,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._userdeps.append((target, how, subdeps))
 
     def getdep(self, target, environ=None):
+        '''Retrieve the test case of a target dependency.
+
+        This is a low-level method. The :func:`@require_deps
+        <reframe.core.decorators.require_deps>` decorators should be
+        preferred.
+
+        :arg target: The name of the target dependency to be retrieved.
+        :arg environ: The name of the programming environment that will be
+            used to retrieve the test case of the target test. If ``None``,
+            :attr:`RegressionTest.current_environ` will be used.
+
+        .. versionadded:: 2.21
+
+        '''
         if self.current_environ is None:
             raise DependencyError(
                 'cannot resolve dependencies before the setup phase'
