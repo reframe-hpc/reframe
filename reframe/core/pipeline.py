@@ -202,7 +202,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: taken.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``'src'``
+    #: :default: ``'src'`` if such a directory exists at the test level,
+    #:    otherwise ``None``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.9
@@ -211,6 +212,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
+    #:
+    #:     .. versionchanged:: 3.0
+    #:        Default value is now conditionally set to either ``'src'`` or
+    #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
@@ -661,8 +666,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj._rfm_init(name,
-                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
+        # Determine the prefix
+        try:
+            prefix = cls._rfm_custom_prefix
+        except AttributeError:
+            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        obj._rfm_init(name, prefix)
         return obj
 
     def __init__(self):
@@ -706,10 +716,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.local = False
 
         # Static directories of the regression check
-        if prefix is not None:
-            self._prefix = os.path.abspath(prefix)
-
-        self.sourcesdir = 'src'
+        self._prefix = os.path.abspath(prefix)
+        if os.path.isdir(os.path.join(self._prefix, 'src')):
+            self.sourcesdir = 'src'
+        else:
+            self.sourcesdir = None
 
         # Output patterns
         self.sanity_patterns = None
