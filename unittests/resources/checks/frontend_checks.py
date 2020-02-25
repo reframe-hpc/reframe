@@ -6,8 +6,6 @@
 #
 # Special checks for testing the front-end
 #
-import os
-import signal
 
 import reframe as rfm
 import reframe.utility.sanity as sn
