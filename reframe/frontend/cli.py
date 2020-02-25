@@ -20,9 +20,10 @@ import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (
-    EnvironError, ConfigError, ReframeError, ReframeFatalError,
-    ReframeForceExitError, format_exception, SystemAutodetectionError
+    ConfigError, EnvironError, ReframeError, ReframeFatalError,
+    ReframeForceExitError, SystemAutodetectionError
 )
+from reframe.core.exceptions import format_exception
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)

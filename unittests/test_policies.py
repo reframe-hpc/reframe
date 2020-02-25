@@ -6,12 +6,11 @@
 import collections
 import itertools
 import os
+import multiprocessing
 import pytest
-import signal
 import time
 import tempfile
 import unittest
-from multiprocessing import Pipe, Process
 
 import reframe as rfm
 import reframe.core.runtime as rt
@@ -263,27 +262,35 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
     def test_sigterm(self):
         # Wrapper of self.runall which is used from a child process and
-        # passes the thrown exception to the parent process
+        # passes any exception to the parent process
         def _runall(checks, conn):
-            ex = None
+            exc = None
             try:
                 self.runall(checks)
-            except ReframeForceExitError as e:
-                ex = e
+            except BaseException as e:
+                exc = e
 
-            conn.send(ex)
+            conn.send(exc)
             conn.close()
 
-        with pytest.raises(ReframeForceExitError, match='Received SIGTERM'):
-            parent_conn, child_conn = Pipe(False)
-            p = Process(target=_runall, args=([SleepCheck(3)], child_conn))
+        with pytest.raises(ReframeForceExitError,
+                           match='received TERM signal'):
+            rd_endpoint, wr_endpoint = multiprocessing.Pipe(False)
+            p = multiprocessing.Process(target=_runall,
+                                        args=([SleepCheck(3)], wr_endpoint))
             p.start()
-            child_conn.close()
+
+            # The unused write endpoint has to be closed from the parent to
+            # ensure that the `recv` method of `rd_endpoint` returns
+            wr_endpoint.close()
+
             # Allow some time so that the SleepCheck is submitted
             time.sleep(0.5)
-            os.kill(p.pid, signal.SIGTERM)
-            p.join(5)
-            raise parent_conn.recv()
+            p.terminate()
+            p.join()
+            exc = rd_endpoint.recv()
+            if exc:
+                raise exc
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2

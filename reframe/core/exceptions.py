@@ -113,7 +113,9 @@ class PipelineError(ReframeError):
 
 
 class ReframeForceExitError(ReframeError):
-    '''Raised when SIGTERM is sent to the running ReFrame process.'''
+    '''Raised when ReFrame execution must be forcefully ended,
+    e.g., after a SIGTERM was received.
+    '''
 
 
 class StatisticsError(ReframeError):

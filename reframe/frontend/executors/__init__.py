@@ -257,6 +257,10 @@ class TaskEventListener(abc.ABC):
         '''Called when a regression test has succeeded.'''
 
 
+def _handle_sigterm(signum, frame):
+    raise ReframeForceExitError('received TERM signal')
+
+
 class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
@@ -268,10 +272,7 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
-        signal.signal(signal.SIGTERM, self._handle_sigterm)
-
-    def _handle_sigterm(self, signum, frame):
-        raise ReframeForceExitError('Received SIGTERM')
+        signal.signal(signal.SIGTERM, _handle_sigterm)
 
     def __repr__(self):
         return debug.repr(self)
