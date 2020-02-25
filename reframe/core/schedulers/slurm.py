@@ -489,9 +489,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
     def completion_time(self, job):
         return None
 
-    def submit(self, job):
-        super().submit(job)
-
     def _update_state(self, job):
         time_from_submit = datetime.now() - self._submit_time
         rem_wait = self._squeue_delay - time_from_submit.total_seconds()

@@ -344,8 +344,8 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
+        self.scheduler.wait(self, self.max_pending_time)
         self._completion_time = self._completion_time or time.time()
-        return self.scheduler.wait(self, self.max_pending_time)
 
     def cancel(self):
         if self.jobid is None:
