@@ -222,7 +222,7 @@ class TestRegressionTest(unittest.TestCase):
                 self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
 
         test = MyTest()
-        assert test.sourcesdir == None
+        assert test.sourcesdir is None
         self._run_test(MyTest())
 
     def test_compile_only_failure(self):
