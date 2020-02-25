@@ -278,11 +278,11 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             parent_conn, child_conn = Pipe(False)
             p = Process(target=_runall, args=([SleepCheck(3)], child_conn))
             p.start()
-
+            child_conn.close()
             # Allow some time so that the SleepCheck is submitted
             time.sleep(0.5)
             os.kill(p.pid, signal.SIGTERM)
-            p.join()
+            p.join(5)
             raise parent_conn.recv()
 
     def test_dependencies_with_retries(self):
