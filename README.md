@@ -24,7 +24,7 @@ The framework will load the test and will send it down a well-defined pipeline t
 The stages of this pipeline take care of all the system interaction details, such as programming environment switching, compilation, job submission, job status query, sanity checking and performance assessment.
 
 Writing system regression tests in a high-level modern programming language, like Python, poses a great advantage in organizing and maintaining the tests.
-Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.k
+Users can create their own test hierarchies, create test factories for generating multiple tests at the same time and also customize them in a simple and expressive way.
 
 
 ## Getting ReFrame
