@@ -63,7 +63,7 @@ site_configuration = {
         },
         {
             'name': 'sys0',
-            'descr': 'System for test dependencies unit tests',
+            'descr': 'System for checking test dependencies',
             'hostnames': [r'sys\d+'],
             'partitions': [
                 {
@@ -174,10 +174,4 @@ site_configuration = {
             ]
         }
     ]
-    'general': [
-        {
-            'check_search_path': ['checks/'],
-            'check_search_recursive': True
-        }
-    ],
 }

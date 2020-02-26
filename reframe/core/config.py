@@ -223,16 +223,7 @@ class SiteConfiguration:
 
 
 def convert_old_config(filename):
-    try:
-        old_config = load_settings_from_file(filename)
-    except (OSError, ReframeError) as e:
-        sys.stderr.write(
-            '%s: could not load settings: %s\n' % (sys.argv[0], e))
-        sys.exit(1)
-
-    if old_config is None:
-        raise ReframeFatalError('ReFrame is not configured')
-
+    old_config = load_settings_from_file(filename)
     converted = {
         'systems': [],
         'environments': [],
@@ -245,9 +236,10 @@ def convert_old_config(filename):
         sys_dict.update(sys_specs)
         # Make variables dictionary into a list of lists
         if 'variables' in sys_specs:
-            sys_dict['variables'] = []
-            for vname, v in sys_specs['variables'].items():
-                sys_dict['variables'].append([vname, v])
+            sys_dict['variables'] = [
+                [vname, v] for vname, v in sys_dict['variables'].items()
+            ]
+
         # Make partitions dictionary into a list
         if 'partitions' in sys_specs:
             sys_dict['partitions'] = []
@@ -261,23 +253,22 @@ def convert_old_config(filename):
                     new_p['scheduler'] = 'local'
                     new_p['launcher'] = 'local'
                 else:
-                    sched = p['scheduler'].split('+')[0]
-                    launch = p['scheduler'].split('+')[1]
+                    sched, launch, *_ = p['scheduler'].split('+')
                     new_p['scheduler'] = sched
                     new_p['launcher'] = launch
 
                 # Make resources dictionary into a list
                 if 'resources' in p:
-                    new_p['resources'] = []
-                    for rname, r in p['resources'].items():
-                        new_r = {'name': rname, 'options': r}
-                        new_p['resources'].append(new_r)
+                    new_p['resources'] = [
+                        {'name': rname, 'options': r}
+                        for rname, r in p['resources'].items()
+                    ]
 
                 # Make variables dictionary into a list of lists
                 if 'variables' in p:
-                    new_p['variables'] = []
-                    for vname, v in p['variables'].items():
-                        new_p['variables'].append([vname, v])
+                    new_p['variables'] = [
+                        [vname, v] for vname, v in p['variables'].items()
+                    ]
 
                 sys_dict['partitions'].append(new_p)
 
@@ -287,7 +278,7 @@ def convert_old_config(filename):
     for env_target, env_entries in old_environs:
         for ename, e in env_entries.items():
             new_env = {'name': ename}
-            if (env_target != '*'):
+            if env_target != '*':
                 new_env['target_systems'] = [env_target]
 
             new_env.update(e)
@@ -320,19 +311,19 @@ def convert_old_config(filename):
 
     update_config('logging', old_config.logging_config)
     update_config('perf_logging', old_config.perf_logging_config)
+    converted['general'] = [{}]
+    if hasattr(old_config, 'checks_path'):
+        converted['general'][0][
+            'check_search_path'
+        ] = old_config.checks_path
 
-    if (hasattr(old_config, 'checks_path') or
-        hasattr(old_config, 'checks_path_recurse')):
-        converted['general'] = [{}]
-        if hasattr(old_config, 'checks_path'):
-            converted['general'][0][
-                'check_search_path'
-            ] = old_config.checks_path
+    if hasattr(old_config, 'checks_path_recurse'):
+        converted['general'][0][
+            'check_search_recursive'
+        ] = old_config.checks_path_recurse
 
-        if hasattr(old_config, 'checks_path_recurse'):
-            converted['general'][0][
-                'check_search_recursive'
-            ] = old_config.checks_path_recurse
+    if converted['general'] == [{}]:
+        del converted['general']
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
         json.dump(converted, fp, indent=4)
