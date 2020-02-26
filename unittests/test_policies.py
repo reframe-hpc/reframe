@@ -275,13 +275,13 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
         with pytest.raises(ReframeForceExitError,
                            match='received TERM signal'):
-            rd_endpoint, wr_endpoint = multiprocessing.Pipe(False)
+            rd_endpoint, wr_endpoint = multiprocessing.Pipe(duplex=False)
             p = multiprocessing.Process(target=_runall,
                                         args=([SleepCheck(3)], wr_endpoint))
             p.start()
 
             # The unused write endpoint has to be closed from the parent to
-            # ensure that the `recv` method of `rd_endpoint` returns
+            # ensure that the `recv()` method of `rd_endpoint` returns
             wr_endpoint.close()
 
             # Allow some time so that the SleepCheck is submitted
