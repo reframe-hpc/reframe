@@ -154,7 +154,7 @@ class ReframeSettings:
                 'prefix': '%(check_system)s/%(check_partition)s',
                 'level': 'INFO',
                 'format': (
-                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_job_completion_time)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
                     'ref=%(check_perf_ref)s '
@@ -162,6 +162,7 @@ class ReframeSettings:
                     'u=%(check_perf_upper_thres)s)|'
                     '%(check_perf_unit)s'
                 ),
+                'datefmt': '%FT%T%:z',
                 'append': True
             }
         ]

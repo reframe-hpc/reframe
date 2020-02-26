@@ -15,6 +15,7 @@ __all__ = ['RegressionTest',
 import functools
 import inspect
 import itertools
+import numbers
 import os
 import shutil
 
@@ -37,7 +38,6 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
-from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
@@ -202,7 +202,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: taken.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``'src'``
+    #: :default: ``'src'`` if such a directory exists at the test level,
+    #:    otherwise ``None``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.9
@@ -211,6 +212,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
+    #:
+    #:     .. versionchanged:: 3.0
+    #:        Default value is now conditionally set to either ``'src'`` or
+    #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
@@ -661,8 +666,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj._rfm_init(name,
-                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
+        # Determine the prefix
+        try:
+            prefix = cls._rfm_custom_prefix
+        except AttributeError:
+            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        obj._rfm_init(name, prefix)
         return obj
 
     def __init__(self):
@@ -706,10 +716,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.local = False
 
         # Static directories of the regression check
-        if prefix is not None:
-            self._prefix = os.path.abspath(prefix)
-
-        self.sourcesdir = 'src'
+        self._prefix = os.path.abspath(prefix)
+        if os.path.isdir(os.path.join(self._prefix, 'src')):
+            self.sourcesdir = 'src'
+        else:
+            self.sourcesdir = None
 
         # Output patterns
         self.sanity_patterns = None
@@ -1321,10 +1332,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
+
+                # Verify that val is a number
+                if not isinstance(val, numbers.Number):
+                    raise SanityError(
+                        "the value extracted for performance variable '%s' "
+                        "is not a number: %s" % (key, val)
+                    )
+
                 tag = key.split(':')[-1]
                 try:
                     sn.evaluate(
-                        assert_reference(
+                        sn.assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
                                  'expected {1} (l={2}, u={3})' % tag))
