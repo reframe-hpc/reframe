@@ -163,7 +163,7 @@ class SocketDistributionTest(AffinityTestBase):
                 'multithreading': False,
                 'cpu-bind': None,
             },
-            'single_task_per_socket_omp_nomultithread': {
+            'single_task_per_socket_omp_multithread': {
                 'ref_daint:mc': 'single_task_per_socket_omp_multithread.txt',
                 'ref_dom:mc': 'single_task_per_socket_omp_multithread.txt',
                 'num_tasks': 2,
