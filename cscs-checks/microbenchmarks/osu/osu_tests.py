@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -6,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['production'])
 class AlltoallTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.descr = 'Alltoall OSU microbenchmark'
@@ -32,10 +36,7 @@ class AlltoallTest(rfm.RegressionTest):
             },
             'daint:gpu': {
                 'latency': (20.73, None, 2.0, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
-            },
+            }
         }
         self.num_tasks_per_node = 1
         self.num_gpus_per_node  = 1
@@ -54,15 +55,19 @@ class AlltoallTest(rfm.RegressionTest):
 @rfm.simple_test
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc', 'tiger:gpu',
-                              'kesch:cn', 'kesch:pn', 'leone:normal']
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
 
         self.descr = 'Flexible Alltoall OSU test'
         self.build_system = 'Make'
@@ -79,7 +84,6 @@ class FlexAlltoallTest(rfm.RegressionTest):
 @rfm.parameterized_test(['small'], ['large'])
 class AllreduceTest(rfm.RegressionTest):
     def __init__(self, variant):
-        super().__init__()
         self.strict_check = False
         self.valid_systems = ['daint:gpu', 'daint:mc']
         if variant == 'small':
@@ -111,9 +115,6 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (8.79, None, 0.25, 'us')
-                },
-                '*': {
-                    'latency': (0, None, None, 'us')
                 }
             }
         else:
@@ -124,9 +125,6 @@ class AllreduceTest(rfm.RegressionTest):
                 },
                 'daint:mc': {
                     'latency': (10.85, None, 0.20, 'us')
-                },
-                '*': {
-                    'latency': (0, None, None, 'us')
                 }
             }
 
@@ -141,7 +139,6 @@ class AllreduceTest(rfm.RegressionTest):
 
 class P2PBaseTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.exclusive_access = True
         self.strict_check = False
         self.num_tasks = 2
@@ -152,6 +149,9 @@ class P2PBaseTest(rfm.RegressionTest):
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
         else:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel']
@@ -172,7 +172,8 @@ class P2PCPUBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn',
+                              'arolla:cn', 'tsa:cn']
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000']
 
@@ -196,9 +197,6 @@ class P2PCPUBandwidthTest(P2PBaseTest):
             'kesch:cn': {
                 'bw': (6311.48, -0.15, None, 'MB/s')
             },
-            '*': {
-                'bw': (0, None, None, 'MB/s')
-            }
         }
         self.perf_patterns = {
             'bw': sn.extractsingle(r'^4194304\s+(?P<bw>\S+)',
@@ -212,7 +210,8 @@ class P2PCPULatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
         self.valid_systems = ['daint:gpu', 'daint:mc', 'tiger:gpu',
-                              'dom:gpu', 'dom:mc', 'kesch:cn']
+                              'dom:gpu', 'dom:mc', 'kesch:cn',
+                              'arolla:cn', 'tsa:cn']
         self.executable_opts = ['-x', '100', '-i', '1000']
 
         self.executable = './p2p_osu_latency'
@@ -235,9 +234,6 @@ class P2PCPULatencyTest(P2PBaseTest):
             # },
             'kesch:cn': {
                 'latency': (1.17, None, 0.1, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
             }
         }
         self.perf_patterns = {
@@ -251,7 +247,8 @@ class P2PCPULatencyTest(P2PBaseTest):
 class G2GBandwidthTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_bw'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -282,6 +279,10 @@ class G2GBandwidthTest(P2PBaseTest):
         elif self.current_system.name == 'kesch':
             self.modules = ['cudatoolkit/8.0.61']
             self.variables = {'MV2_USE_CUDA': '1'}
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.modules = ['cuda/10.1.243']
+            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
+                                         '-lcudart', '-lcuda']
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']
 
@@ -291,7 +292,8 @@ class G2GBandwidthTest(P2PBaseTest):
 class G2GLatencyTest(P2PBaseTest):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.num_gpus_per_node = 1
         self.executable = './p2p_osu_latency'
         self.executable_opts = ['-x', '100', '-i', '1000', '-d',
@@ -306,9 +308,6 @@ class G2GLatencyTest(P2PBaseTest):
             },
             'kesch:cn': {
                 'latency': (23.09, None, 0.1, 'us')
-            },
-            '*': {
-                'latency': (0, None, None, 'us')
             }
         }
         self.perf_patterns = {
@@ -322,5 +321,9 @@ class G2GLatencyTest(P2PBaseTest):
         elif self.current_system.name == 'kesch':
             self.modules = ['cudatoolkit/8.0.61']
             self.variables = {'MV2_USE_CUDA': '1'}
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.modules = ['cuda/10.1.243']
+            self.build_system.ldflags = ['-L$EBROOTCUDA/lib64',
+                                         '-lcudart', '-lcuda']
 
         self.build_system.cppflags = ['-D_ENABLE_CUDA_']

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import functools
 import glob
 import itertools
@@ -15,6 +20,7 @@ from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility import seconds_to_hms
 
 
 def slurm_state_completed(state):
@@ -103,7 +109,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             not slurm_state_completed(job.state)):
             return self._completion_time
 
-        with env.temp_environment(variables={'SLURM_TIME_FORMAT': 'standard'}):
+        with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
                 (datetime.now().strftime('%F'), job.jobid),
@@ -116,11 +122,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not state_match:
             return None
 
-        self._completion_time = max(
-            datetime.strptime(s.group('end'), '%Y-%m-%dT%H:%M:%S')
-            for s in state_match
-        )
-
+        self._completion_time = max(float(s.group('end')) for s in state_match)
         return self._completion_time
 
     def _format_option(self, var, option):
@@ -154,8 +156,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                      self._format_option(job.stderr, errfile_fmt)]
 
         if job.time_limit is not None:
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
-                self._format_option('%d:%d:%d' % job.time_limit, '--time={0}')
+                self._format_option('%d:%d:%d' % (h, m, s), '--time={0}')
             )
 
         if job.sched_exclusive_access:

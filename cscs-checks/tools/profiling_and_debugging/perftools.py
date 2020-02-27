@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -29,8 +34,8 @@ class PerftoolsCheck(rfm.RegressionTest):
             self.modules += ['craype-accel-nvidia60']
 
         self.build_system = 'Make'
-        # NOTE: Restrict concurrency to allow creation of Fortran modules
         if lang == 'F90':
+            # NOTE: Restrict concurrency to allow creation of Fortran modules
             self.build_system.max_concurrency = 1
 
         self.prgenv_flags = {
@@ -50,10 +55,6 @@ class PerftoolsCheck(rfm.RegressionTest):
                 'LIB=-lstdc++']
 
         self.executable = 'jacobi'
-        # NOTE: Reduce time limit because for PrgEnv-pgi even if the output
-        # is correct, the batch job uses all the time.
-        self.time_limit = (0, 5, 0)
-
         self.num_tasks = 3
         self.num_tasks_per_node = 3
         self.num_cpus_per_task = 4
@@ -94,8 +95,8 @@ class PerftoolsCheck(rfm.RegressionTest):
         self.maintainers = ['JG', 'MKr']
         self.tags = {'production', 'craype'}
 
-    def setup(self, environ, partition, **job_opts):
-        super().setup(environ, partition, **job_opts)
+    @rfm.run_before('compile')
+    def setflags(self):
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cflags = flags
         self.build_system.cxxflags = flags
