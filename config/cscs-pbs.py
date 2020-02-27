@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Minimal CSCS configuration for testing the PBS backend
 #
@@ -132,7 +137,7 @@ class ReframeSettings:
                 'prefix': '%(check_system)s/%(check_partition)s',
                 'level': 'INFO',
                 'format': (
-                    '%(asctime)s|reframe %(version)s|'
+                    '%(check_job_completion_time)s|reframe %(version)s|'
                     '%(check_info)s|jobid=%(check_jobid)s|'
                     'num_tasks=%(check_num_tasks)s|'
                     '%(check_perf_var)s=%(check_perf_value)s|'
@@ -140,6 +145,7 @@ class ReframeSettings:
                     '(l=%(check_perf_lower_thres)s, '
                     'u=%(check_perf_upper_thres)s)'
                 ),
+                'datefmt': '%FT%T%:z',
                 'append': True
             }
         ]

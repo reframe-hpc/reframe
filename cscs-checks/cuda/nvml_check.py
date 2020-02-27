@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -21,7 +26,6 @@ class NvmlCheck(rfm.RegressionTest):
     '''
 
     def __init__(self):
-        super().__init__()
         self.descr = 'check GPU compute mode'
         self.valid_systems = ['daint:gpu', 'dom:gpu', 'tiger:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
