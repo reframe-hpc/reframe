@@ -1,5 +1,5 @@
 import pytest
-import lmod_helper
+import reframe.utility.lmod_helper as lmod_helper
 
 # On Cheyenne, output of `module reset; module rm intel; module avail gnu`
 ml_av_out_easy = """
