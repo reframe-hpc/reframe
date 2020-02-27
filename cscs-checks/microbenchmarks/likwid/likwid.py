@@ -1,11 +1,14 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
 
 class MemBandwidthTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.modules = ['likwid']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcesdir = None
@@ -99,11 +102,12 @@ class CPUBandwidth(MemBandwidthTest):
             },
         }
 
-    def setup(self, partition, environ, **job_opts):
-        pfn = partition.fullname
-        self.data_size = self.system_cache_sizes[pfn][self.mem_level]
-        self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
-        numa_domains = self.system_numa_domains[partition.fullname]
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        partname = self.current_partition.fullname
+        self.data_size = self.system_cache_sizes[partname][self.mem_level]
+        self.num_cpus_per_task = self.system_num_cpus[partname]
+        numa_domains = self.system_numa_domains[partname]
         num_cpu_domain = self.num_cpus_per_task / (len(numa_domains) *
                                                    self.num_tasks_per_core)
         # result for daint:mc: '-w S0:100MB:18:1:2 -w S1:100MB:18:1:2'
@@ -114,8 +118,6 @@ class CPUBandwidth(MemBandwidthTest):
                       for dom in numa_domains]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
-
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.required_version('>=2.16-dev0')
@@ -138,10 +140,11 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
             },
         }
 
-    def setup(self, partition, environ, **job_opts):
-
-        self.num_cpus_per_task = self.system_num_cpus[partition.fullname]
-        numa_domains = self.system_numa_domains[partition.fullname]
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        partname = self.current_partition.fullname
+        self.num_cpus_per_task = self.system_num_cpus[partname]
+        numa_domains = self.system_numa_domains[partname]
 
         num_cpu_domain = (self.num_cpus_per_task /
                           (len(numa_domains) * self.num_tasks_per_core))
@@ -156,5 +159,3 @@ class CPUBandwidthCrossSocket(MemBandwidthTest):
                       zip(numa_domains[:2], reversed(numa_domains[:2]))]
 
         self.executable_opts = ['-t %s' % self.kernel_name] + workgroups
-
-        super().setup(partition, environ, **job_opts)

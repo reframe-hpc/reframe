@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -11,13 +16,16 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         else:
             self.num_tasks = 2
 
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu']
+        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         if self.num_tasks == 1:
             self.sourcepath = 'vecAdd_openacc.f90'
             if self.current_system.name == 'kesch':
                 self.valid_prog_environs = ['PrgEnv-cray-nompi',
                                             'PrgEnv-pgi-nompi']
+            elif self.current_system.name == 'tsa':
+                self.valid_prog_environs = ['PrgEnv-pgi-nompi']
         else:
             self.sourcepath = 'vecAdd_openacc_mpi.f90'
 
@@ -27,6 +35,12 @@ class OpenACCFortranCheck(rfm.RegressionTest):
             self.exclusive_access = True
             self.variables = {
                 'CRAY_ACCEL_TARGET': 'nvidia35',
+                'MV2_USE_CUDA': '1'
+            }
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.variables = {
+                'CRAY_ACCEL_TARGET': 'nvidia70',
                 'MV2_USE_CUDA': '1'
             }
 
@@ -41,13 +55,14 @@ class OpenACCFortranCheck(rfm.RegressionTest):
         self.maintainers = ['TM', 'AJ']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-        if environ.name.startswith('PrgEnv-cray'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
             self.build_system.fflags = ['-hacc', '-hnoomp']
-        elif environ.name.startswith('PrgEnv-pgi'):
+        elif self.current_environ.name.startswith('PrgEnv-pgi'):
             if self.current_system.name in ['daint', 'dom', 'tiger']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc60']
-            else:
+            elif self.current_system.name == 'kesch':
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
-
-        super().setup(partition, environ, **job_opts)
+            elif self.current_system.name in ['arolla', 'tsa']:
+                self.build_system.fflags = ['-acc', '-ta=tesla:cc70']

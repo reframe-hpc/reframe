@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import collections
 import functools
 import importlib
@@ -9,6 +14,14 @@ import sys
 import types
 
 from collections import UserDict
+
+
+def seconds_to_hms(seconds):
+    '''Convert time in seconds to a tuple of ``(hour, minutes, seconds)``.'''
+
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return h, m, s
 
 
 def _get_module_name(filename):

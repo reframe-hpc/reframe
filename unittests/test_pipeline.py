@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import pytest
 import re
@@ -13,6 +18,7 @@ from reframe.core.exceptions import (BuildError, PipelineError, ReframeError,
                                      ReframeSyntaxError, PerformanceError,
                                      SanityError)
 from reframe.frontend.loader import RegressionCheckLoader
+from unittests.resources.checks.hellocheck import HelloTest
 
 
 def _setup_local_execution():
@@ -96,13 +102,13 @@ class TestRegressionTest(unittest.TestCase):
         test.setup(self.partition, self.prgenv)
 
         for k in test.variables.keys():
-            self.assertNotIn(k, os.environ)
+            assert k not in os.environ
 
     def _run_test(self, test, compile_only=False):
         _run(test, self.partition, self.prgenv)
-        self.assertFalse(os.path.exists(test.stagedir))
+        assert not os.path.exists(test.stagedir)
         for f in self.keep_files_list(test, compile_only):
-            self.assertTrue(os.path.exists(f))
+            assert os.path.exists(f)
 
     @fixtures.switch_to_user_runtime
     def test_hellocheck(self):
@@ -192,36 +198,59 @@ class TestRegressionTest(unittest.TestCase):
         self._run_test(test)
 
     def test_run_only_sanity(self):
-        test = rfm.RunOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.executable = './hello.sh'
-        test.executable_opts = ['Hello, World!']
-        test.local = True
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
-        self._run_test(test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            def __init__(self):
+                self.executable = './hello.sh'
+                self.executable_opts = ['Hello, World!']
+                self.local = True
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.sanity_patterns = sn.assert_found(
+                    r'Hello, World\!', self.stdout)
+
+        self._run_test(MyTest())
+
+    def test_run_only_no_srcdir(self):
+        @fixtures.custom_prefix('foo/bar/')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            def __init__(self):
+                self.executable = 'echo'
+                self.executable_opts = ['hello']
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+
+        test = MyTest()
+        assert test.sourcesdir is None
+        self._run_test(MyTest())
 
     def test_compile_only_failure(self):
-        test = rfm.CompileOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.sourcepath = 'compiler_failure.c'
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.CompileOnlyRegressionTest):
+            def __init__(self):
+                self.sourcepath = 'compiler_failure.c'
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+
+        test = MyTest()
         test.setup(self.partition, self.prgenv)
         test.compile()
-        self.assertRaises(BuildError, test.compile_wait)
+        with pytest.raises(BuildError):
+            test.compile_wait()
 
     def test_compile_only_warning(self):
-        test = rfm.CompileOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.build_system = 'SingleSource'
-        test.build_system.srcfile = 'compiler_warning.c'
-        test.build_system.cflags = ['-Wall']
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        test.sanity_patterns = sn.assert_found(r'warning', test.stderr)
-        self._run_test(test, compile_only=True)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            def __init__(self):
+                self.build_system = 'SingleSource'
+                self.build_system.srcfile = 'compiler_warning.c'
+                self.build_system.cflags = ['-Wall']
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.sanity_patterns = sn.assert_found(r'warning', self.stderr)
+
+        self._run_test(MyTest(), compile_only=True)
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_supports_system(self):
@@ -229,125 +258,147 @@ class TestRegressionTest(unittest.TestCase):
             'unittests/resources/checks/hellocheck.py')[0]
 
         test.valid_systems = ['*']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys:gpu']
-        self.assertTrue(test.supports_system('gpu'))
-        self.assertFalse(test.supports_system('login'))
-        self.assertTrue(test.supports_system('testsys:gpu'))
-        self.assertFalse(test.supports_system('testsys:login'))
+        assert test.supports_system('gpu')
+        assert not test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert not test.supports_system('testsys:login')
 
         test.valid_systems = ['testsys:login']
-        self.assertFalse(test.supports_system('gpu'))
-        self.assertTrue(test.supports_system('login'))
-        self.assertFalse(test.supports_system('testsys:gpu'))
-        self.assertTrue(test.supports_system('testsys:login'))
+        assert not test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert not test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
 
         test.valid_systems = ['foo']
-        self.assertFalse(test.supports_system('gpu'))
-        self.assertFalse(test.supports_system('login'))
-        self.assertFalse(test.supports_system('testsys:gpu'))
-        self.assertFalse(test.supports_system('testsys:login'))
+        assert not test.supports_system('gpu')
+        assert not test.supports_system('login')
+        assert not test.supports_system('testsys:gpu')
+        assert not test.supports_system('testsys:login')
 
     def test_supports_environ(self):
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]
 
         test.valid_prog_environs = ['*']
-        self.assertTrue(test.supports_environ('foo1'))
-        self.assertTrue(test.supports_environ('foo-env'))
-        self.assertTrue(test.supports_environ('*'))
+        assert test.supports_environ('foo1')
+        assert test.supports_environ('foo-env')
+        assert test.supports_environ('*')
 
     def test_sourcesdir_none(self):
-        test = rfm.RegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.sourcesdir = None
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        self.assertRaises(ReframeError, self._run_test, test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RegressionTest):
+            def __init__(self):
+                self.sourcesdir = None
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+
+        with pytest.raises(ReframeError):
+            self._run_test(MyTest())
 
     def test_sourcesdir_build_system(self):
-        test = rfm.RegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.build_system = 'Make'
-        test.sourcepath = 'code'
-        test.executable = './code/hello'
-        test.local = True
-        test.valid_systems = ['*']
-        test.valid_prog_environs = ['*']
-        test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
-        self._run_test(test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RegressionTest):
+            def __init__(self):
+                self.build_system = 'Make'
+                self.sourcepath = 'code'
+                self.executable = './code/hello'
+                self.local = True
+                self.valid_systems = ['*']
+                self.valid_prog_environs = ['*']
+                self.sanity_patterns = sn.assert_found(r'Hello, World\!',
+                                                       self.stdout)
+
+        self._run_test(MyTest())
 
     def test_sourcesdir_none_generated_sources(self):
-        test = rfm.RegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.sourcesdir = None
-        test.prebuild_cmd = ["printf '#include <stdio.h>\\n int main(){ "
-                             "printf(\"Hello, World!\\\\n\"); return 0; }' "
-                             "> hello.c"]
-        test.executable = './hello'
-        test.sourcepath = 'hello.c'
-        test.local = True
-        test.valid_systems = ['*']
-        test.valid_prog_environs = ['*']
-        test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
-        self._run_test(test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RegressionTest):
+            def __init__(self):
+                self.sourcesdir = None
+                self.prebuild_cmd = [
+                    "printf '#include <stdio.h>\\n int main(){ "
+                    "printf(\"Hello, World!\\\\n\"); return 0; }' > hello.c"
+                ]
+                self.executable = './hello'
+                self.sourcepath = 'hello.c'
+                self.local = True
+                self.valid_systems = ['*']
+                self.valid_prog_environs = ['*']
+                self.sanity_patterns = sn.assert_found(r'Hello, World\!',
+                                                       self.stdout)
+
+        self._run_test(MyTest())
 
     def test_sourcesdir_none_compile_only(self):
-        test = rfm.CompileOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.sourcesdir = None
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        self.assertRaises(BuildError, self._run_test, test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.CompileOnlyRegressionTest):
+            def __init__(self):
+                self.sourcesdir = None
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+
+        with pytest.raises(BuildError):
+            self._run_test(MyTest())
 
     def test_sourcesdir_none_run_only(self):
-        test = rfm.RunOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.sourcesdir = None
-        test.executable = 'echo'
-        test.executable_opts = ["Hello, World!"]
-        test.local = True
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
-        test.sanity_patterns = sn.assert_found(r'Hello, World\!', test.stdout)
-        self._run_test(test)
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            def __init__(self):
+                self.sourcesdir = None
+                self.executable = 'echo'
+                self.executable_opts = ["Hello, World!"]
+                self.local = True
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.sanity_patterns = sn.assert_found(r'Hello, World\!',
+                                                       self.stdout)
+
+        self._run_test(MyTest())
 
     def test_sourcepath_abs(self):
-        test = rfm.CompileOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.valid_prog_environs = [self.prgenv.name]
-        test.valid_systems = ['*']
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.CompileOnlyRegressionTest):
+            def __init__(self):
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+
+        test = MyTest()
         test.setup(self.partition, self.prgenv)
         test.sourcepath = '/usr/src'
-        self.assertRaises(PipelineError, test.compile)
+        with pytest.raises(PipelineError):
+            test.compile()
 
     def test_sourcepath_upref(self):
-        test = rfm.CompileOnlyRegressionTest()
-        test._prefix = 'unittests/resources/checks'
-        test.valid_prog_environs = ['*']
-        test.valid_systems = ['*']
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.CompileOnlyRegressionTest):
+            def __init__(self):
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+
+        test = MyTest()
         test.setup(self.partition, self.prgenv)
         test.sourcepath = '../hellosrc'
-        self.assertRaises(PipelineError, test.compile)
+        with pytest.raises(PipelineError):
+            test.compile()
 
     @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
     def test_extra_resources(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.local = True
@@ -384,12 +435,10 @@ class TestHooks(unittest.TestCase):
         os_ext.rmtree(rt.runtime().resources.prefix)
 
     def test_setup_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
 
@@ -409,12 +458,10 @@ class TestHooks(unittest.TestCase):
         assert '_RFM_POST_SETUP' in os.environ
 
     def test_compile_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
 
@@ -430,12 +477,10 @@ class TestHooks(unittest.TestCase):
                 assert os.path.exists(exec_file)
 
     def test_run_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
 
@@ -454,12 +499,10 @@ class TestHooks(unittest.TestCase):
         _run(test, self.partition, self.prgenv)
 
     def test_multiple_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.var = 0
@@ -481,12 +524,10 @@ class TestHooks(unittest.TestCase):
         assert test.var == 3
 
     def test_stacked_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class MyTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.var = 0
@@ -502,12 +543,10 @@ class TestHooks(unittest.TestCase):
         assert test.var == 3
 
     def test_inherited_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class BaseTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class BaseTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.var = 0
@@ -535,12 +574,10 @@ class TestHooks(unittest.TestCase):
         assert test.foo == 1
 
     def test_overriden_hooks(self):
-        import unittests.resources.checks.hellocheck as mod
-
-        class BaseTest(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class BaseTest(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.var = 0
@@ -570,22 +607,21 @@ class TestHooks(unittest.TestCase):
         assert test.foo == 10
 
     def test_require_deps(self):
-        import unittests.resources.checks.hellocheck as mod
         import reframe.frontend.dependency as dependency
         import reframe.frontend.executors as executors
 
-        class T0(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class T0(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.x = 1
 
-        class T1(mod.HelloTest):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class T1(HelloTest):
             def __init__(self):
                 super().__init__()
-                self._prefix = 'unittests/resources/checks'
                 self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
                 self.depends_on('T0')
@@ -621,10 +657,9 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_regression_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert ('TestSyntax.test_regression_test.<locals>.MyTest_1_2' ==
+                test.name)
 
     def test_regression_test_strange_names(self):
         class C:
@@ -640,9 +675,8 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest('(a*b+c)/12', C(33))
-        self.assertEqual(
-            'TestSyntax.test_regression_test_strange_names.'
-            '<locals>.MyTest__a_b_c__12_C_33_', test.name)
+        assert ('TestSyntax.test_regression_test_strange_names.'
+                '<locals>.MyTest__a_b_c__12_C_33_' == test.name)
 
     def test_user_inheritance(self):
         class MyBaseTest(rfm.RegressionTest):
@@ -655,8 +689,7 @@ class TestSyntax(unittest.TestCase):
                 super().__init__(1, 2)
 
         test = MyTest()
-        self.assertEqual('TestSyntax.test_user_inheritance.'
-                         '<locals>.MyTest', test.name)
+        assert 'TestSyntax.test_user_inheritance.<locals>.MyTest' == test.name
 
     def test_runonly_test(self):
         class MyTest(rfm.RunOnlyRegressionTest):
@@ -665,10 +698,8 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_runonly_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert 'TestSyntax.test_runonly_test.<locals>.MyTest_1_2' == test.name
 
     def test_compileonly_test(self):
         class MyTest(rfm.CompileOnlyRegressionTest):
@@ -677,29 +708,28 @@ class TestSyntax(unittest.TestCase):
                 self.b = b
 
         test = MyTest(1, 2)
-        self.assertEqual(os.path.abspath(os.path.dirname(__file__)),
-                         test.prefix)
-        self.assertEqual('TestSyntax.test_compileonly_test.'
-                         '<locals>.MyTest_1_2', test.name)
+        assert os.path.abspath(os.path.dirname(__file__)) == test.prefix
+        assert ('TestSyntax.test_compileonly_test.<locals>.MyTest_1_2' ==
+                test.name)
 
     def test_registration(self):
         import sys
         import unittests.resources.checks_unlisted.good as mod
         checks = mod._rfm_gettests()
-        self.assertEqual(13, len(checks))
-        self.assertEqual([mod.MyBaseTest(0, 0),
-                          mod.MyBaseTest(0, 1),
-                          mod.MyBaseTest(1, 0),
-                          mod.MyBaseTest(1, 1),
-                          mod.MyBaseTest(2, 0),
-                          mod.MyBaseTest(2, 1),
-                          mod.AnotherBaseTest(0, 0),
-                          mod.AnotherBaseTest(0, 1),
-                          mod.AnotherBaseTest(1, 0),
-                          mod.AnotherBaseTest(1, 1),
-                          mod.AnotherBaseTest(2, 0),
-                          mod.AnotherBaseTest(2, 1),
-                          mod.MyBaseTest(10, 20)], checks)
+        assert 13 == len(checks)
+        assert [mod.MyBaseTest(0, 0),
+                mod.MyBaseTest(0, 1),
+                mod.MyBaseTest(1, 0),
+                mod.MyBaseTest(1, 1),
+                mod.MyBaseTest(2, 0),
+                mod.MyBaseTest(2, 1),
+                mod.AnotherBaseTest(0, 0),
+                mod.AnotherBaseTest(0, 1),
+                mod.AnotherBaseTest(1, 0),
+                mod.AnotherBaseTest(1, 1),
+                mod.AnotherBaseTest(2, 0),
+                mod.AnotherBaseTest(2, 1),
+                mod.MyBaseTest(10, 20)] == checks
 
 
 class TestSanityPatterns(unittest.TestCase):
@@ -709,12 +739,15 @@ class TestSanityPatterns(unittest.TestCase):
         self.resourcesdir = tempfile.mkdtemp(dir='unittests')
         rt.runtime().resources.prefix = self.resourcesdir
 
-        # Set up RegressionTest instance
-        self.test = rfm.RegressionTest()
-        self.test._prefix = 'unittests/resources/checks'
+        # Set up regression test
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RegressionTest):
+            pass
+
         self.partition = rt.runtime().system.partition('gpu')
         self.prgenv = self.partition.environment('builtin-gcc')
 
+        self.test = MyTest()
         self.test.setup(self.partition, self.prgenv)
         self.test.reference = {
             'testsys': {
@@ -736,7 +769,6 @@ class TestSanityPatterns(unittest.TestCase):
             'value3': sn.extractsingle(r'performance3 = (\S+)',
                                        self.perf_file.name, 1, float)
         }
-
         self.test.sanity_patterns = sn.assert_found(r'result = success',
                                                     self.output_file.name)
 
@@ -768,14 +800,16 @@ class TestSanityPatterns(unittest.TestCase):
     def test_sanity_failure(self):
         self.output_file.write('result = failure\n')
         self.output_file.close()
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_failure_noassert(self):
         self.test.sanity_patterns = sn.findall(r'result = success',
                                                self.output_file.name)
         self.output_file.write('result = failure\n')
         self.output_file.close()
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_multiple_patterns(self):
         self.output_file.write('result1 = success\n')
@@ -793,7 +827,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.test.sanity_patterns = sn.assert_eq(
             sn.count(sn.findall(r'result\d = success', self.output_file.name)),
             3)
-        self.assertRaises(SanityError, self.test.check_sanity)
+        with pytest.raises(SanityError):
+            self.test.check_sanity()
 
     def test_sanity_multiple_files(self):
         files = [tempfile.NamedTemporaryFile(mode='wt', prefix='regtmp',
@@ -820,7 +855,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.output_file.write('result = success\n')
         self.output_file.close()
         self.test.check_sanity()
-        self.assertRaises(PerformanceError, self.test.check_performance)
+        with pytest.raises(PerformanceError):
+            self.test.check_performance()
 
     def test_unknown_tag(self):
         self.test.reference = {
@@ -834,7 +870,8 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.3,
                                       performance2=1.8,
                                       performance3=3.3)
-        self.assertRaises(SanityError, self.test.check_performance)
+        with pytest.raises(SanityError):
+            self.test.check_performance()
 
     def test_unknown_system(self):
         self.write_performance_output(performance1=1.3,
@@ -887,6 +924,21 @@ class TestSanityPatterns(unittest.TestCase):
         }
         self.test.check_performance()
 
+    def test_invalid_perf_value(self):
+        self.test.perf_patterns = {
+            'value1': sn.extractsingle(r'performance1 = (\S+)',
+                                       self.perf_file.name, 1, float),
+            'value2': sn.extractsingle(r'performance2 = (\S+)',
+                                       self.perf_file.name, 1, str),
+            'value3': sn.extractsingle(r'performance3 = (\S+)',
+                                       self.perf_file.name, 1, float)
+        }
+        self.write_performance_output(performance1=1.3,
+                                      performance2='foo',
+                                      performance3=3.3)
+        with pytest.raises(SanityError, match='not a number'):
+            self.test.check_performance()
+
     def test_perf_var_evaluation(self):
         # All performance values must be evaluated, despite the first one
         # failing To test this, we need an extract function that will have a
@@ -912,16 +964,16 @@ class TestSanityPatterns(unittest.TestCase):
         self.write_performance_output(performance1=1.0,
                                       performance2=1.8,
                                       performance3=3.3)
-        with self.assertRaises(PerformanceError) as cm:
+        with pytest.raises(PerformanceError) as cm:
             self.test.check_performance()
 
         logfile = os.path.join(self.test.stagedir, logfile)
         with open(logfile) as fp:
             log_output = fp.read()
 
-        self.assertIn('v1', log_output)
-        self.assertIn('v2', log_output)
-        self.assertIn('v3', log_output)
+        assert 'v1' in log_output
+        assert 'v2' in log_output
+        assert 'v3' in log_output
 
 
 class TestRegressionTestWithContainer(unittest.TestCase):
@@ -930,9 +982,9 @@ class TestRegressionTestWithContainer(unittest.TestCase):
         rt.runtime().resources.prefix = tempfile.mkdtemp(dir='unittests')
 
     def create_test(self, platform, image):
+        @fixtures.custom_prefix('unittests/resources/checks')
         class ContainerTest(rfm.RunOnlyRegressionTest):
             def __init__(self, platform):
-                self._prefix = 'unittests/resources/checks'
                 self.valid_prog_environs = ['*']
                 self.valid_systems = ['*']
                 self.container_platform = platform

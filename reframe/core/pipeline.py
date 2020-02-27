@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Basic functionality for regression tests
 #
@@ -10,6 +15,7 @@ __all__ = ['RegressionTest',
 import functools
 import inspect
 import itertools
+import numbers
 import os
 import shutil
 
@@ -32,7 +38,6 @@ from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
 from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
-from reframe.utility.sanity import assert_reference
 
 
 # Dependency kinds
@@ -197,7 +202,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: taken.
     #:
     #: :type: :class:`str` or :class:`None`
-    #: :default: ``'src'``
+    #: :default: ``'src'`` if such a directory exists at the test level,
+    #:    otherwise ``None``
     #:
     #: .. note::
     #:     .. versionchanged:: 2.9
@@ -206,6 +212,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #:     .. versionchanged:: 2.10
     #:        Support for Git repositories was added.
+    #:
+    #:     .. versionchanged:: 3.0
+    #:        Default value is now conditionally set to either ``'src'`` or
+    #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
     #: The build system to be used for this test.
@@ -540,19 +550,27 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: Time limit for this test.
     #:
-    #: Time limit is specified as a three-tuple in the form ``(hh, mm, ss)``,
-    #: with ``hh >= 0``, ``0 <= mm <= 59`` and ``0 <= ss <= 59``.
+    #: Time limit is specified as a string in the form
+    #: ``<days>d<hours>h<minutes>m<seconds>s``.
     #: If set to :class:`None`, no time limit will be set.
     #: The default time limit of the system partition's scheduler will be used.
     #:
+    #: The value is internaly kept as a :class:`datetime.timedelta` object.
+    #: For example '2h30m' is represented as
+    #: `datetime.timedelta(hours=2, minutes=30)`
     #:
-    #: :type: :class:`tuple[int]`
-    #: :default: ``(0, 10, 0)``
+    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :default: ``'10m'``
     #:
     #: .. note::
     #:    .. versionchanged:: 2.15
     #:
     #:    This attribute may be set to :class:`None`.
+    #:
+    #: .. warning::
+    #:    .. versionchanged:: 3.0
+    #:
+    #:    The old syntax using a ``(h, m, s)`` tuple is deprecated.
     #:
     time_limit = fields.TimerField('time_limit', type(None))
 
@@ -648,8 +666,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
                             itertools.chain(args, kwargs.values()))
             name += '_' + '_'.join(arg_names)
 
-        obj._rfm_init(name,
-                      os.path.abspath(os.path.dirname(inspect.getfile(cls))))
+        # Determine the prefix
+        try:
+            prefix = cls._rfm_custom_prefix
+        except AttributeError:
+            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+
+        obj._rfm_init(name, prefix)
         return obj
 
     def __init__(self):
@@ -693,10 +716,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.local = False
 
         # Static directories of the regression check
-        if prefix is not None:
-            self._prefix = os.path.abspath(prefix)
-
-        self.sourcesdir = 'src'
+        self._prefix = os.path.abspath(prefix)
+        if os.path.isdir(os.path.join(self._prefix, 'src')):
+            self.sourcesdir = 'src'
+        else:
+            self.sourcesdir = None
 
         # Output patterns
         self.sanity_patterns = None
@@ -710,7 +734,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.variables = {}
 
         # Time limit for the check
-        self.time_limit = (0, 10, 0)
+        self.time_limit = '10m'
 
         # Runtime information of the test
         self._current_partition = None
@@ -1308,10 +1332,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
             for key, values in self._perfvalues.items():
                 val, ref, low_thres, high_thres, *_ = values
+
+                # Verify that val is a number
+                if not isinstance(val, numbers.Number):
+                    raise SanityError(
+                        "the value extracted for performance variable '%s' "
+                        "is not a number: %s" % (key, val)
+                    )
+
                 tag = key.split(':')[-1]
                 try:
                     sn.evaluate(
-                        assert_reference(
+                        sn.assert_reference(
                             val, ref, low_thres, high_thres,
                             msg=('failed to meet reference: %s={0}, '
                                  'expected {1} (l={2}, u={3})' % tag))
