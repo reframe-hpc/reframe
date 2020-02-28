@@ -270,28 +270,28 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             except BaseException as e:
                 exc = e
 
-            conn.send(exc)
+            conn.send((exc, len(self.runner.stats.failures())))
             conn.close()
 
-            rd_endpoint, wr_endpoint = multiprocessing.Pipe(duplex=False)
-            p = multiprocessing.Process(target=_runall,
-                                        args=([SleepCheck(3)], wr_endpoint))
-            p.start()
+        rd_endpoint, wr_endpoint = multiprocessing.Pipe(duplex=False)
+        p = multiprocessing.Process(target=_runall,
+                                    args=([SleepCheck(3)], wr_endpoint))
+        p.start()
 
-            # The unused write endpoint has to be closed from the parent to
-            # ensure that the `recv()` method of `rd_endpoint` returns
-            wr_endpoint.close()
+        # The unused write endpoint has to be closed from the parent to
+        # ensure that the `recv()` method of `rd_endpoint` returns
+        wr_endpoint.close()
 
-            # Allow some time so that the SleepCheck is submitted
-            time.sleep(1)
-            p.terminate()
-            p.join()
-            assert 1 == self._num_failures_stage('run')
-            with pytest.raises(ReframeForceExitError,
-                               match='received TERM signal'):
-                exc = rd_endpoint.recv()
-                if exc:
-                    raise exc
+        # Allow some time so that the SleepCheck is submitted
+        time.sleep(1)
+        p.terminate()
+        p.join()
+        exc, num_failures = rd_endpoint.recv()
+        assert 1 == num_failures
+        with pytest.raises(ReframeForceExitError,
+                           match='received TERM signal'):
+            if exc:
+                raise exc
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2
