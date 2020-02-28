@@ -23,7 +23,7 @@ class TrilinosTest(rfm.RegressionTest):
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         self.prgenv_flags = {
             'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',
-                            '-Weverything'],
+                            '-Wno-everything'],
             'PrgEnv-cray_classic': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
             'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
             'PrgEnv-intel': ['-qopenmp', '-w', '-std=c++11'],
