@@ -73,11 +73,11 @@ class NamdGPUCheck(NamdBaseCheck):
             self.valid_systems += ['dom:gpu']
             self.reference = {
                 'dom:gpu': {'days_ns': (0.18, None, 0.05, 'days/ns')},
-                'daint:gpu': {'days_ns': (0.18, None, 0.05, 'days/ns')}
+                'daint:gpu': {'days_ns': (0.15, None, 0.05, 'days/ns')}
             }
         else:
             self.reference = {
-                'daint:gpu': {'days_ns': (0.11, None, 0.05, 'days/ns')}
+                'daint:gpu': {'days_ns': (0.07, None, 0.05, 'days/ns')}
             }
 
 
@@ -95,11 +95,11 @@ class NamdCPUCheck(NamdBaseCheck):
             self.valid_systems += ['dom:mc']
             self.reference = {
                 'dom:mc': {'days_ns': (0.57, None, 0.05, 'days/ns')},
-                'daint:mc': {'days_ns': (0.56, None, 0.05, 'days/ns')}
+                'daint:mc': {'days_ns': (0.51, None, 0.05, 'days/ns')}
             }
         else:
             self.reference = {
-                'daint:mc': {'days_ns': (0.38, None, 0.05, 'days/ns')}
+                'daint:mc': {'days_ns': (0.28, None, 0.05, 'days/ns')}
             }
 
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
