@@ -1,11 +1,18 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Author: Samuel Moors, Vrije Universiteit Brussel (VUB)
+
 import re
 
+import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
 from reframe.core.exceptions import JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.pbs import PbsJobScheduler, _run_strict
 from reframe.core.schedulers.registry import register_scheduler
-import reframe.utility.os_ext as os_ext
 
 
 JOB_STATES = {
@@ -25,9 +32,11 @@ class TorqueJobScheduler(PbsJobScheduler):
     def _update_state(self, job):
         '''Check the status of the job.'''
 
-        completed = os_ext.run_command('qstat -f %s' % job.jobid, log=False)
+        completed = os_ext.run_command('qstat -f %s' % job.jobid)
 
-        # Needed for clusters that have the keep_completed parameter set to 0
+        # Depending on the configuration, completed jobs will remain on the job
+        # list for a limited time, or be removed upon completion.
+        # If qstat cannot find the jobid, it returns code 153.
         if completed.returncode == 153:
             getlogger().debug(
                 'jobid not known by scheduler, assuming job completed'
@@ -36,7 +45,7 @@ class TorqueJobScheduler(PbsJobScheduler):
             return
 
         if completed.returncode != 0:
-            raise JobError(completed.returncode, completed.stderr)
+            raise JobError('qstat failed: %s' % completed.stderr, job.jobid)
 
         state_match = re.search(
             r'^\s*job_state = (?P<state>[A-Z])', completed.stdout, re.MULTILINE
@@ -49,7 +58,6 @@ class TorqueJobScheduler(PbsJobScheduler):
 
         state = state_match.group('state')
         job.state = JOB_STATES[state]
-
         if job.state == 'COMPLETED':
             code_match = re.search(
                 r'^\s*exit_status = (?P<code>\d+)',
@@ -58,32 +66,11 @@ class TorqueJobScheduler(PbsJobScheduler):
             )
             if not code_match:
                 return
+
             job.exitcode = int(code_match.group('code'))
 
-    def _emit_lselect_option(self, job):
-        num_tasks_per_node = job.num_tasks_per_node or 1
-        num_cpus_per_task = job.num_cpus_per_task or 1
-        num_nodes = job.num_tasks // num_tasks_per_node
-        num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-
-        select_opt = '-l nodes=%s:ppn=%s' % (num_nodes, num_cpus_per_node)
-
-        # Options starting with `-` are emitted in separate lines
-        rem_opts = []
-        verb_opts = []
-        for opt in (*job.sched_access, *job.options):
-            if opt.startswith('-'):
-                rem_opts.append(opt)
-            elif opt.startswith('#'):
-                verb_opts.append(opt)
-            else:
-                select_opt += ':' + opt
-
-        return [
-            self._format_option(select_opt),
-            *(self._format_option(opt) for opt in rem_opts),
-            *verb_opts,
-        ]
+    def resource_str(self, num_nodes, _, num_cpus_per_node):
+        return '-l nodes=%s:ppn=%s' % (num_nodes, num_cpus_per_node)
 
     def finished(self, job):
         try:
@@ -95,23 +82,3 @@ class TorqueJobScheduler(PbsJobScheduler):
             return False
         else:
             return job.state == 'COMPLETED'
-
-    def submit(self, job):
-        # `-o` and `-e` options are only recognized in command line by the PBS
-        # Slurm wrappers.
-        cmd = 'qsub -o %s -e %s %s' % (
-            job.stdout,
-            job.stderr,
-            job.script_filename,
-        )
-        completed = _run_strict(cmd, timeout=settings().job_submit_timeout)
-        jobid_match = re.search(r'^(?P<jobid>\S+)', completed.stdout)
-        if not jobid_match:
-            raise JobError(
-                'could not retrieve the job id ' 'of the submitted job'
-            )
-
-        jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
-        job.jobid = int(jobid)
-        if info:
-            self._pbs_server = info[0]

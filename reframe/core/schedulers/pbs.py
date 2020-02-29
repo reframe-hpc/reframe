@@ -39,14 +39,21 @@ class PbsJobScheduler(sched.JobScheduler):
     def completion_time(self, job):
         return None
 
+    def resource_str(self, num_nodes, num_tasks_per_node, num_cpus_per_node):
+        return '-l select=%s:mpiprocs=%s:ncpus=%s' % (
+            num_nodes,
+            num_tasks_per_node,
+            num_cpus_per_node,
+        )
+
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
         num_cpus_per_task = job.num_cpus_per_task or 1
         num_nodes = job.num_tasks // num_tasks_per_node
         num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-        select_opt = '-l select=%s:mpiprocs=%s:ncpus=%s' % (num_nodes,
-                                                            num_tasks_per_node,
-                                                            num_cpus_per_node)
+        select_opt = self.resource_str(
+            num_nodes, num_tasks_per_node, num_cpus_per_node
+        )
 
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
@@ -105,7 +112,7 @@ class PbsJobScheduler(sched.JobScheduler):
             raise JobError('could not retrieve the job id '
                            'of the submitted job')
 
-        jobid, *info = jobid_match.group('jobid').split('.', maxsplit=2)
+        jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
         job.jobid = int(jobid)
         if info:
             self._pbs_server = info[0]
