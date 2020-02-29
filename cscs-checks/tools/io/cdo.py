@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # The first of the following tests verify the installation. The remaining
 # tests operate on files. All netCDF files incl CDL metadata were
 # downloaded from:
@@ -26,7 +31,6 @@ from reframe.core.pipeline import RunOnlyRegressionTest
 
 class CDOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -90,14 +94,12 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
         self.sanity_patterns = sn.assert_not_found(
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
-    def setup(self, partition, environ, **job_opts):
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             nco_name = 'nco'
         else:
             nco_name = 'NCO'
 
         self.pre_run = ['module load %s' % nco_name]
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test
@@ -110,8 +112,8 @@ class CDO_InfoNCTest(CDOBaseTest):
         # TODO: Add here also Warning? then it fails currently...
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 5 variables over 1 timestep',
-                            self.stderr)
+            sn.assert_found(r'info: Processed( 688128 values from)? '
+                            r'5 variables over 1 timestep', self.stderr)
         ])
 
 
@@ -126,8 +128,8 @@ class CDO_InfoNC4Test(CDOBaseTest):
         # TODO: fails currently with the file test_hgroups.nc4
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 3 variables over 8 timestep', 
-                            self.stderr)
+            sn.assert_found(r'info: Processed( 442368 values from)? '
+                            r'3 variables over 8 timestep', self.stderr)
         ])
 
 
@@ -141,8 +143,8 @@ class CDO_InfoNC4CTest(CDOBaseTest):
             'info', 'test_echam_spectral-deflated_wind10_wl_ws.nc4c']
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'info: Processed 3 variables over 8 timestep',
-                            self.stderr)
+            sn.assert_found(r'info: Processed( 442368 values from)? '
+                            r'3 variables over 8 timestep', self.stderr)
         ])
 
 
@@ -161,8 +163,8 @@ class CDO_MergeNCTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 3 timesteps?',
-                            self.stderr)
+            sn.assert_found(r'merge: Processed( 98304 values from)? '
+                            r'3 variables', self.stderr)
         ])
 
 
@@ -181,8 +183,8 @@ class CDO_MergeNC4Test(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 24 timesteps?',
-                            self.stderr)
+            sn.assert_found(r'merge: Processed( 442368 values from)? '
+                            r'3 variables', self.stderr)
         ])
 
 
@@ -202,6 +204,6 @@ class CDO_MergeNC4CTest(CDOBaseTest):
         ]
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'(?i)unsupported|error', self.stderr),
-            sn.assert_found(r'merge: Processed 3 variables over 24 timesteps?',
-                            self.stderr)
+            sn.assert_found(r'merge: Processed( 442368 values from)? '
+                            r'3 variables', self.stderr)
         ])

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import pytest
 import unittest
@@ -20,7 +25,7 @@ class TestEnvironment(unittest.TestCase):
 
     def setup_modules_system(self):
         if not fixtures.has_sane_modules_system():
-            self.skipTest('no modules system configured')
+            pytest.skip('no modules system configured')
 
         self.modules_system = runtime().modules_system
         self.modules_system.searchpath_add(fixtures.TEST_MODULES)

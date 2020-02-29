@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import getpass
 
@@ -7,7 +12,6 @@ import reframe.utility.sanity as sn
 
 class IorCheck(rfm.RegressionTest):
     def __init__(self, base_dir):
-        super().__init__()
         self.descr = 'IOR check (%s)' % base_dir
         self.tags = {'ops', base_dir}
         self.base_dir = base_dir
@@ -110,9 +114,9 @@ class IorCheck(rfm.RegressionTest):
         if self.current_system.name in systems_to_test:
             self.tags |= {'production', 'external-resources'}
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
-        self.test_file += '.' + partition.name
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.test_file += '.' + self.current_partition.name
         self.executable_opts += ['-o', self.test_file]
 
 
