@@ -3,7 +3,11 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Author: Samuel Moors, Vrije Universiteit Brussel (VUB)
+# Torque backend
+#
+# - Initial version submitted by Samuel Moors, Vrije Universiteit Brussel (VUB)
+#
+
 
 import re
 
