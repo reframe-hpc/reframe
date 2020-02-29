@@ -529,6 +529,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         # Skip this test for PBS, since we the minimum time limit is 1min
         pytest.skip("PBS minimum time limit is 60s")
 
+
 class TestTorqueJob(_TestJob, unittest.TestCase):
     @property
     def sched_name(self):
