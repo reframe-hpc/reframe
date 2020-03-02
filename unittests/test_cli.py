@@ -14,6 +14,7 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
+from reframe.core.exceptions import ReframeDeprecationWarning
 import reframe.core.config as config
 import reframe.core.environments as env
 import reframe.core.runtime as rt
@@ -433,6 +434,21 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stderr
         assert 1 == returncode
 
+    def test_suppress_deprecation(self):
+        self.action = 'list'
+        self.checkpath = [
+            'unittests/resources/checks_unlisted/deprecated_test.py'
+        ]
+        with pytest.warns(ReframeDeprecationWarning):
+            self._run_reframe()
+
+        self.more_options = ['--suppress-deprecation']
+        with pytest.warns(None) as record:
+            self._run_reframe()
+
+        assert not any(isinstance(r.message, ReframeDeprecationWarning) for
+                       r in record)
+
     def test_verbosity(self):
         self.more_options = ['-vvvvv']
         self.system = 'testsys'
@@ -442,6 +458,7 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert 0 == returncode
+
 
     @fixtures.switch_to_user_runtime
     def test_unload_module(self):
