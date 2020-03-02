@@ -19,9 +19,11 @@ import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
-                                     ReframeFatalError, format_exception,
-                                     SystemAutodetectionError)
+from reframe.core.exceptions import (
+    ConfigError, EnvironError, ReframeError, ReframeFatalError,
+    ReframeForceExitError, SystemAutodetectionError
+)
+from reframe.core.exceptions import format_exception
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
@@ -637,7 +639,7 @@ def main():
 
         sys.exit(0)
 
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ReframeForceExitError):
         sys.exit(1)
     except ReframeError as e:
         printer.error(str(e))

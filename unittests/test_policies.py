@@ -6,7 +6,9 @@
 import collections
 import itertools
 import os
+import multiprocessing
 import pytest
+import time
 import tempfile
 import unittest
 
@@ -19,7 +21,8 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    DependencyError, JobNotStartedError, TaskDependencyError
+    DependencyError, JobNotStartedError,
+    ReframeForceExitError, TaskDependencyError
 )
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -256,6 +259,39 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
             if t.ref_count == 0:
                 assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+    def test_sigterm(self):
+        # Wrapper of self.runall which is used from a child process and
+        # passes any exception to the parent process
+        def _runall(checks, conn):
+            exc = None
+            try:
+                self.runall(checks)
+            except BaseException as e:
+                exc = e
+
+            conn.send((exc, len(self.runner.stats.failures())))
+            conn.close()
+
+        rd_endpoint, wr_endpoint = multiprocessing.Pipe(duplex=False)
+        p = multiprocessing.Process(target=_runall,
+                                    args=([SleepCheck(3)], wr_endpoint))
+        p.start()
+
+        # The unused write endpoint has to be closed from the parent to
+        # ensure that the `recv()` method of `rd_endpoint` returns
+        wr_endpoint.close()
+
+        # Allow some time so that the SleepCheck is submitted
+        time.sleep(1)
+        p.terminate()
+        p.join()
+        exc, num_failures = rd_endpoint.recv()
+        assert 1 == num_failures
+        with pytest.raises(ReframeForceExitError,
+                           match='received TERM signal'):
+            if exc:
+                raise exc
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2
