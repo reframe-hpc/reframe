@@ -9,6 +9,7 @@ import re
 import socket
 import sys
 import traceback
+import warnings
 
 import reframe
 import reframe.core.config as config
@@ -20,8 +21,8 @@ import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (
-    ConfigError, EnvironError, ReframeError, ReframeFatalError,
-    ReframeForceExitError, SystemAutodetectionError
+    ConfigError, EnvironError, ReframeDeprecationWarning, ReframeError,
+    ReframeFatalError, ReframeForceExitError, SystemAutodetectionError
 )
 from reframe.core.exceptions import format_exception
 from reframe.frontend.executors import Runner, generate_testcases
@@ -151,6 +152,9 @@ def main():
     run_options.add_argument(
         '--reservation', action='store', metavar='RES',
         help='Use RES for submitting jobs')
+    run_options.add_argument(
+        '--suppress-deprecation', action='store_true',
+        help='Supress deprecation warnings in regression tests')
     run_options.add_argument(
         '--nodelist', action='store',
         help='Run checks on the selected list of nodes')
@@ -462,7 +466,11 @@ def main():
     try:
         # Locate and load checks
         try:
-            checks_found = loader.load_all()
+            with warnings.catch_warnings():
+                if options.suppress_deprecation:
+                    warnings.filterwarnings(
+                        'ignore', category=ReframeDeprecationWarning)
+                checks_found = loader.load_all()
         except OSError as e:
             raise ReframeError from e
 
