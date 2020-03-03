@@ -462,31 +462,28 @@ class TestHooks(unittest.TestCase):
         class MyTest(rfm.CompileOnlyRegressionTest):
             def __init__(self):
                 self.name = 'hellocheck_compile'
-                self.descr = 'C Hello World test'
-
-                # All available systems are supported
                 self.valid_systems = ['*']
                 self.valid_prog_environs = ['*']
                 self.sourcepath = 'hello.c'
-                self.tags = {'foo', 'bar'}
-                self.name = type(self).__name__
                 self.executable = os.path.join('.', self.name)
-                self.sanity_patterns = sn.any(sn.glob(self.executable))
+                self.sanity_patterns = sn.assert_found('.*', self.stdout)
+                self.var = 0
 
             @rfm.run_before('setup')
             def prefoo(self):
+                self.var += 1
                 assert self.current_environ is None
                 os.environ['_RFM_PRE_SETUP_COMPILE'] = 'foo'
 
             @rfm.run_after('setup')
             def postfoo(self):
+                self.var += 1
                 assert self.current_environ is not None
                 os.environ['_RFM_POST_SETUP_COMPILE'] = 'foo'
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
-        assert '_RFM_PRE_SETUP_COMPILE' in os.environ
-        assert '_RFM_POST_SETUP_COMPILE' in os.environ
+        assert test.var == 2
 
     def test_compile_hooks(self):
         @fixtures.custom_prefix('unittests/resources/checks')
@@ -533,24 +530,20 @@ class TestHooks(unittest.TestCase):
         @fixtures.custom_prefix('unittests/resources/checks')
         class MyTest(rfm.RunOnlyRegressionTest):
             def __init__(self):
-                self.executable = './hello.sh'
+                self.executable = 'echo'
                 self.executable_opts = ['Hello, World!']
                 self.local = True
                 self.valid_prog_environs = ['*']
                 self.valid_systems = ['*']
                 self.sanity_patterns = sn.assert_found(
                     r'Hello, World\!', self.stdout)
-
             @rfm.run_before('run')
-            def setflags(self):
-                self.post_run = ['echo hello > greetings.txt']
+            def set_post_run(self):
+                self.sourcesdir = None
 
             @rfm.run_after('run')
-            def check_executable(self):
-                outfile = os.path.join(self.stagedir, 'greetings.txt')
-
-                # Make sure that this hook is executed after wait()
-                assert os.path.exists(outfile)
+            def check_greetings(self):
+                assert len(os.listdir(self.stagedir)) == 3
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
