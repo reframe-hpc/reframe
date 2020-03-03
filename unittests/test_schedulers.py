@@ -476,14 +476,15 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         return self.testjob.options + ['mem=100GB', 'cpu_type=haswell']
 
     @property
-    def tasks_mem_opt(self):
+    def node_select_options(self):
         return [
             '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
             ':mem=100GB:cpu_type=haswell' % (
                 self.num_nodes,
                 self.testjob.num_tasks_per_node,
-                self.num_cpus_per_node,
-        )]
+                self.num_cpus_per_node
+            )
+        ]
 
     @property
     def expected_directives(self):
@@ -492,7 +493,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
             '#PBS -l walltime=0:5:0',
             '#PBS -o %s' % self.testjob.stdout,
             '#PBS -e %s' % self.testjob.stderr,
-            *self.tasks_mem_opt,
+            *self.node_select_options,
             '#PBS -q %s' % self.testjob.sched_partition,
             '#PBS --gres=gpu:4',
             '#DW jobdw capacity=100GB',
@@ -529,6 +530,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         # Skip this test for PBS, since we the minimum time limit is 1min
         pytest.skip("PBS minimum time limit is 60s")
 
+
 class TestTorqueJob(TestPbsJob):
     @property
     def sched_name(self):
@@ -546,11 +548,11 @@ class TestTorqueJob(TestPbsJob):
         return self.testjob.options + ['-l mem=100GB', 'haswell']
 
     @property
-    def tasks_mem_opt(self):
+    def node_select_options(self):
         return [
             '#PBS -l nodes=%s:ppn=%s:haswell' % (self.num_nodes,
                                                  self.num_cpus_per_node),
-            '#PBS -l mem=100GB',
+            '#PBS -l mem=100GB'
         ]
 
     def test_submit_timelimit(self):
