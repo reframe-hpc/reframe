@@ -471,73 +471,68 @@ class TestPbsJob(_TestJob, unittest.TestCase):
     def setup_user(self, msg=None):
         super().setup_user(msg='PBS not configured')
 
-    def test_prepare(self):
-        self.setup_job()
-        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
-        super().test_prepare()
-        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
-        num_cpus_per_node = (self.testjob.num_cpus_per_task *
-                             self.testjob.num_tasks_per_node)
-        expected_directives = set([
+    @property
+    def testjob_options(self):
+        return self.testjob.options + ['mem=100GB', 'cpu_type=haswell']
+
+    @property
+    def tasks_mem_opt(self):
+        return [
+            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
+            ':mem=100GB:cpu_type=haswell' % (
+                self.num_nodes,
+                self.testjob.num_tasks_per_node,
+                self.num_cpus_per_node,
+        )]
+
+    @property
+    def expected_directives(self):
+        return set([
             '#PBS -N "testjob"',
             '#PBS -l walltime=0:5:0',
             '#PBS -o %s' % self.testjob.stdout,
             '#PBS -e %s' % self.testjob.stderr,
-            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
-            ':mem=100GB:cpu_type=haswell' % (num_nodes,
-                                             self.testjob.num_tasks_per_node,
-                                             num_cpus_per_node),
+            *self.tasks_mem_opt,
             '#PBS -q %s' % self.testjob.sched_partition,
             '#PBS --gres=gpu:4',
             '#DW jobdw capacity=100GB',
             '#DW stage_in source=/foo'
         ])
+
+    def test_prepare(self):
+        self.setup_job()
+        self.testjob.options = self.testjob_options
+        super().test_prepare()
+        self.num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        self.num_cpus_per_node = (self.testjob.num_cpus_per_task *
+                             self.testjob.num_tasks_per_node)
         with open(self.testjob.script_filename) as fp:
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        assert expected_directives == found_directives
+        assert self.expected_directives == found_directives
 
     def test_prepare_no_cpus(self):
         self.setup_job()
         self.testjob.num_cpus_per_task = None
-        self.testjob.options += ['mem=100GB', 'cpu_type=haswell']
+        self.testjob.options = self.testjob_options
         super().test_prepare()
-        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
-        num_cpus_per_node = self.testjob.num_tasks_per_node
-        expected_directives = set([
-            '#PBS -N "testjob"',
-            '#PBS -l walltime=0:5:0',
-            '#PBS -o %s' % self.testjob.stdout,
-            '#PBS -e %s' % self.testjob.stderr,
-            '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
-            ':mem=100GB:cpu_type=haswell' % (num_nodes,
-                                             self.testjob.num_tasks_per_node,
-                                             num_cpus_per_node),
-            '#PBS -q %s' % self.testjob.sched_partition,
-            '#PBS --gres=gpu:4',
-            '#DW jobdw capacity=100GB',
-            '#DW stage_in source=/foo'
-        ])
+        self.num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        self.num_cpus_per_node = self.testjob.num_tasks_per_node
         with open(self.testjob.script_filename) as fp:
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        assert expected_directives == found_directives
+        assert self.expected_directives == found_directives
 
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
         pytest.skip("PBS minimum time limit is 60s")
 
-
-class TestTorqueJob(_TestJob, unittest.TestCase):
+class TestTorqueJob(TestPbsJob):
     @property
     def sched_name(self):
         return 'torque'
-
-    @property
-    def launcher_name(self):
-        return 'local'
 
     @property
     def sched_configured(self):
@@ -546,30 +541,17 @@ class TestTorqueJob(_TestJob, unittest.TestCase):
     def setup_user(self, msg=None):
         super().setup_user(msg='Torque not configured')
 
-    def test_prepare(self):
-        self.setup_job()
-        self.testjob.options += ['-l mem=100GB', 'haswell']
-        super().test_prepare()
-        num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
-        num_cpus_per_node = (self.testjob.num_cpus_per_task *
-                             self.testjob.num_tasks_per_node)
-        expected_directives = set([
-            '#PBS -N "testjob"',
-            '#PBS -l walltime=0:5:0',
-            '#PBS -o %s' % self.testjob.stdout,
-            '#PBS -e %s' % self.testjob.stderr,
-            '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
-            '#PBS -l mem=100GB',
-            '#PBS -q %s' % self.testjob.sched_partition,
-            '#PBS --gres=gpu:4',
-            '#DW jobdw capacity=100GB',
-            '#DW stage_in source=/foo'
-        ])
-        with open(self.testjob.script_filename) as fp:
-            found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
-                                              re.MULTILINE))
+    @property
+    def testjob_options(self):
+        return self.testjob.options + ['-l mem=100GB', 'haswell']
 
-        assert expected_directives == found_directives
+    @property
+    def tasks_mem_opt(self):
+        return [
+            '#PBS -l nodes=%s:ppn=%s:haswell' % (self.num_nodes,
+                                                 self.num_cpus_per_node),
+            '#PBS -l mem=100GB',
+        ]
 
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
