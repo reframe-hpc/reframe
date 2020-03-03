@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import os
 
 import reframe.utility.sanity as sn
@@ -60,11 +61,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
         self.perf_patterns = {}
         self.reference = {}
         self.__bwref = {
-            # FIXME: reference values for Arolla and Tsa need to be updated
-            #        (sanity check fails if they are not defined)
-            'arolla:cn:h2d':   (7583, -0.1, None, 'MB/s'),
-            'arolla:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'arolla:cn:d2d': (137408, -0.1, None, 'MB/s'),
             'daint:gpu:h2d':  (11881, -0.1, None, 'MB/s'),
             'daint:gpu:d2h':  (12571, -0.1, None, 'MB/s'),
             'daint:gpu:d2d': (499000, -0.1, None, 'MB/s'),
@@ -74,12 +70,6 @@ class GpuBandwidthCheck(rfm.RegressionTest):
             'kesch:cn:h2d':   (7583, -0.1, None, 'MB/s'),
             'kesch:cn:d2h':   (7584, -0.1, None, 'MB/s'),
             'kesch:cn:d2d': (137408, -0.1, None, 'MB/s'),
-            'tiger:gpu:h2d': (0, None, None, 'MB/s'),
-            'tiger:gpu:d2h': (0, None, None, 'MB/s'),
-            'tiger:gpu:d2d': (0, None, None, 'MB/s'),
-            'tsa:cn:h2d':   (7583, -0.1, None, 'MB/s'),
-            'tsa:cn:d2h':   (7584, -0.1, None, 'MB/s'),
-            'tsa:cn:d2d': (137408, -0.1, None, 'MB/s'),
         }
         self.tags = {'diagnostic', 'benchmark', 'mch',
                      'craype', 'external-resources'}
@@ -136,6 +126,7 @@ class GpuBandwidthCheck(rfm.RegressionTest):
                     partname = self.current_partition.fullname
                     refkey = '%s:%s' % (partname, perfvar)
                     bwkey = '%s:%s' % (partname, xfer_kind)
-                    self.reference[refkey] = self.__bwref[bwkey]
+                    with contextlib.suppress(KeyError):
+                        self.reference[refkey] = self.__bwref[bwkey]
 
         return True
