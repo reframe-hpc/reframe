@@ -97,7 +97,8 @@ class DGEMMTest(rfm.RegressionTest):
         num_tested_nodes = len(all_tested_nodes)
         failure_msg = ('Requested %s node(s), but found %s node(s)' %
                        (self.job.num_tasks, num_tested_nodes))
-        sn.assert_eq(num_tested_nodes, self.job.num_tasks, msg=failure_msg)
+        sn.evaluate(sn.assert_eq(num_tested_nodes, self.job.num_tasks,
+                                 msg=failure_msg))
 
         for hostname in all_tested_nodes:
             partition_name = self.current_partition.fullname
