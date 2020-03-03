@@ -14,12 +14,12 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 
-from reframe.core.exceptions import ReframeDeprecationWarning
 import reframe.core.config as config
 import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
+from reframe.core.exceptions import ReframeDeprecationWarning
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -458,7 +458,6 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert 0 == returncode
-
 
     @fixtures.switch_to_user_runtime
     def test_unload_module(self):
