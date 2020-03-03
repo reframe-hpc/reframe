@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -5,10 +10,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX hello, world check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -20,29 +23,33 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
-        hellos = sn.findall(r'hello world from OS-thread \s*(?P<tid>\d+) on '
-                            r'locality (?P<lid>\d+)', self.stdout)
-
-        if partition.fullname == 'daint:gpu':
+    @rfm.run_after('setup')
+    def set_tasks(self):
+        if self.current_partition.fullname == 'daint:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
+        elif self.current_partition.fullname == 'daint:mc':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
-        elif partition.fullname == 'dom:gpu':
+        elif self.current_partition.fullname == 'dom:gpu':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
+        elif self.current_partition.fullname == 'dom:mc':
             self.num_tasks = 2
             self.num_tasks_per_node = 1
             self.num_cpus_per_task = 36
 
+    @rfm.run_before('run')
+    def set_exec_opts(self):
         self.executable_opts = ['--hpx:threads=%s' % self.num_cpus_per_task]
 
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        hellos = sn.findall(r'hello world from OS-thread \s*(?P<tid>\d+) on '
+                            r'locality (?P<lid>\d+)', self.stdout)
         # https://stellar-group.github.io/hpx/docs/sphinx/branches/master/html/terminology.html#term-locality
         num_localities = self.num_tasks // self.num_tasks_per_node
         assert_num_tasks = sn.assert_eq(sn.count(hellos),
@@ -56,4 +63,3 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_threads,
                                                assert_localities))
 
-        super().setup(partition, environ, **job_opts)

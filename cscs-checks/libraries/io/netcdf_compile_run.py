@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -18,7 +23,8 @@ class NetCDFTest(rfm.RegressionTest):
         self.linkage = linkage
         self.descr = lang_names[lang] + ' NetCDF ' + linkage.capitalize()
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu']
+                              'dom:gpu', 'dom:mc', 'kesch:cn', 'tiger:gpu',
+                              'arolla:cn', 'tsa:cn']
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu',
                                         'PrgEnv-intel', 'PrgEnv-pgi']
@@ -30,6 +36,9 @@ class NetCDFTest(rfm.RegressionTest):
 
             if lang != 'f90':
                 self.valid_prog_environs += ['PrgEnv-cray-nompi']
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.exclusive_access = True
+            self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
 
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'netcdf')
@@ -81,6 +90,22 @@ class NetCDFTest(rfm.RegressionTest):
                     '-I$EBROOTNETCDFMINCPLUSPLUS/include',
                     '-I$EBROOTNETCDFMINFORTRAN/include'
                 ]
+        elif self.current_system.name in ['arolla', 'tsa']:
+            self.modules = ['netcdf', 'netcdf-c++', 'netcdf-fortran']
+            self.build_system.cppflags = [
+                '-I$EBROOTNETCDF/include',
+                '-I$EBROOTNETCDFMINCPLUSPLUS/include',
+                '-I$EBROOTNETCDFMINFORTRAN/include'
+            ]
+            self.build_system.ldflags = [
+                '-L$EBROOTNETCDF/lib',
+                '-L$EBROOTNETCDFMINCPLUSPLUS/lib',
+                '-L$EBROOTNETCDFMINFORTRAN/lib',
+                '-L$EBROOTNETCDF/lib64',
+                '-L$EBROOTNETCDFMINCPLUSPLUS/lib64',
+                '-L$EBROOTNETCDFMINFORTRAN/lib64',
+                '-lnetcdf', '-lnetcdf_c++4', '-lnetcdff'
+            ]
         else:
             self.build_system.ldflags = ['-%s' % self.linkage]
 

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -6,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class DGEMMTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'DGEMM performance test'
         self.sourcepath = 'dgemm.c'
 
@@ -17,12 +21,14 @@ class DGEMMTest(rfm.RegressionTest):
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
-            'kesch:cn', 'kesch:pn', 'tiger:gpu'
+            'kesch:cn', 'kesch:pn', 'tiger:gpu',
+            'arolla:cn', 'arolla:pn',
+            'tsa:cn', 'tsa:pn'
         ]
 
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
 
         self.num_tasks = 0
@@ -42,11 +48,11 @@ class DGEMMTest(rfm.RegressionTest):
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
-
-        if environ.name.startswith('PrgEnv-gnu'):
+    @rfm.run_before('compile')
+    def setflags(self):
+        if self.current_environ.name.startswith('PrgEnv-gnu'):
             self.build_system.cflags += ['-fopenmp']
-        elif environ.name.startswith('PrgEnv-intel'):
+        elif self.current_environ.name.startswith('PrgEnv-intel'):
             self.build_system.cppflags = [
                 '-DMKL_ILP64', '-I${MKLROOT}/include']
             self.build_system.cflags = ['-qopenmp']
@@ -56,24 +62,32 @@ class DGEMMTest(rfm.RegressionTest):
                 '${MKLROOT}/lib/intel64/libmkl_core.a',
                 '-liomp5', '-lpthread', '-lm', '-ldl']
 
-        if partition.fullname in ['daint:gpu', 'dom:gpu']:
-            self.num_cpus_per_task = 12
-        elif partition.fullname in ['daint:mc', 'dom:mc']:
-            self.num_cpus_per_task = 36
-        elif partition.fullname in ['tiger:gpu']:
-            self.num_cpus_per_task = 18
-        elif partition.fullname in ['kesch:cn', 'kesch:pn']:
-            self.num_cpus_per_task = 12
+        if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
+                                               'kesch:cn', 'kesch:pn',
+                                               'tsa:cn', 'tsa:pn']:
             self.build_system.cflags += ['-I$EBROOTOPENBLAS/include']
             self.build_system.ldflags = ['-L$EBROOTOPENBLAS/lib', '-lopenblas',
                                          '-lpthread', '-lgfortran']
+
+    @rfm.run_before('run')
+    def set_tasks(self):
+        if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
+            self.num_cpus_per_task = 12
+        elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
+            self.num_cpus_per_task = 36
+        elif self.current_partition.fullname in ['tiger:gpu']:
+            self.num_cpus_per_task = 18
+        elif self.current_partition.fullname in ['arolla:cn', 'tsa:cn']:
+            self.num_cpus_per_task = 16
+        elif self.current_partition.fullname in ['arolla:pn', 'tsa:pn']:
+            self.num_cpus_per_task = 40
+        elif self.current_partition.fullname in ['kesch:cn', 'kesch:pn']:
+            self.num_cpus_per_task = 12
 
         if self.num_cpus_per_task:
             self.variables = {
                 'OMP_NUM_THREADS': str(self.num_cpus_per_task)
             }
-
-        super().setup(partition, environ, **job_opts)
 
     @sn.sanity_function
     def eval_sanity(self):

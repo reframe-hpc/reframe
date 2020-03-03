@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import pytest
 import random
@@ -18,22 +23,22 @@ from reframe.core.exceptions import (SpawnedProcessError,
 class TestOSTools(unittest.TestCase):
     def test_command_success(self):
         completed = os_ext.run_command('echo foobar')
-        self.assertEqual(completed.returncode, 0)
-        self.assertEqual(completed.stdout, 'foobar\n')
+        assert completed.returncode == 0
+        assert completed.stdout == 'foobar\n'
 
     def test_command_error(self):
-        self.assertRaises(SpawnedProcessError, os_ext.run_command,
-                          'false', 'check=True')
+        with pytest.raises(SpawnedProcessError):
+            os_ext.run_command('false', check=True)
 
     def test_command_timeout(self):
         try:
             os_ext.run_command('sleep 3', timeout=2)
         except SpawnedProcessTimeout as e:
-            self.assertEqual(e.timeout, 2)
+            assert e.timeout == 2
             # Try to get the string repr. of the exception: see bug #658
             s = str(e)
         else:
-            self.fail('expected timeout')
+            pytest.fail('expected timeout')
 
     def test_command_async(self):
         from datetime import datetime
@@ -47,24 +52,24 @@ class TestOSTools(unittest.TestCase):
         t_sleep = datetime.now() - t_sleep
 
         # Now check the timings
-        self.assertLess(t_launch.seconds, 1)
-        self.assertGreaterEqual(t_sleep.seconds, 1)
+        assert t_launch.seconds < 1
+        assert t_sleep.seconds >= 1
 
     def test_grep(self):
-        self.assertTrue(os_ext.grep_command_output(cmd='echo hello',
-                                                   pattern='hello'))
-        self.assertFalse(os_ext.grep_command_output(cmd='echo hello',
-                                                    pattern='foo'))
+        assert os_ext.grep_command_output(cmd='echo hello', pattern='hello')
+        assert not os_ext.grep_command_output(cmd='echo hello', pattern='foo')
 
     def test_copytree(self):
         dir_src = tempfile.mkdtemp()
         dir_dst = tempfile.mkdtemp()
 
-        self.assertRaises(OSError, shutil.copytree, dir_src, dir_dst)
+        with pytest.raises(OSError):
+            shutil.copytree(dir_src, dir_dst)
+
         try:
             os_ext.copytree(dir_src, dir_dst)
         except Exception as e:
-            self.fail('custom copytree failed: %s' % e)
+            pytest.fail('custom copytree failed: %s' % e)
 
         shutil.rmtree(dir_src)
         shutil.rmtree(dir_dst)
@@ -73,8 +78,8 @@ class TestOSTools(unittest.TestCase):
         dst_path = tempfile.mkdtemp()
         src_path = os.path.abspath(os.path.join(dst_path, '..'))
 
-        self.assertRaises(ValueError, os_ext.copytree,
-                          src_path, dst_path)
+        with pytest.raises(ValueError):
+            os_ext.copytree(src_path, dst_path)
 
         shutil.rmtree(dst_path)
 
@@ -84,7 +89,7 @@ class TestOSTools(unittest.TestCase):
             fp.write('hello\n')
 
         os_ext.rmtree(testdir, *args, **kwargs)
-        self.assertFalse(os.path.exists(testdir))
+        assert not os.path.exists(testdir)
 
     def test_rmtree(self):
         self._test_rmtree()
@@ -96,11 +101,12 @@ class TestOSTools(unittest.TestCase):
         # Try to remove an inexistent directory
         testdir = tempfile.mkdtemp()
         os.rmdir(testdir)
-        self.assertRaises(OSError, os_ext.rmtree, testdir)
+        with pytest.raises(OSError):
+            os_ext.rmtree(testdir)
 
     def test_inpath(self):
-        self.assertTrue(os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin'))
-        self.assertFalse(os_ext.inpath('/foo/bin', '/bin:/usr/local/bin'))
+        assert os_ext.inpath('/foo/bin', '/bin:/foo/bin:/usr/bin')
+        assert not os_ext.inpath('/foo/bin', '/bin:/usr/local/bin')
 
     def _make_testdirs(self, prefix):
         # Create a temporary directory structure
@@ -132,10 +138,10 @@ class TestOSTools(unittest.TestCase):
                             os.path.join(prefix, 'loo', 'bar')}
 
         returned_subdirs = os_ext.subdirs(prefix)
-        self.assertEqual([prefix], returned_subdirs)
+        assert [prefix] == returned_subdirs
 
         returned_subdirs = os_ext.subdirs(prefix, recurse=True)
-        self.assertEqual(expected_subdirs, set(returned_subdirs))
+        assert expected_subdirs == set(returned_subdirs)
         shutil.rmtree(prefix)
 
     def test_samefile(self):
@@ -154,25 +160,24 @@ class TestOSTools(unittest.TestCase):
         os.symlink(os.path.join(prefix, 'broken'),
                    os.path.join(prefix, 'broken1'))
 
-        self.assertTrue(os_ext.samefile('/foo', '/foo'))
-        self.assertTrue(os_ext.samefile('/foo', '/foo/'))
-        self.assertTrue(os_ext.samefile('/foo/bar', '/foo//bar/'))
-        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'foo'),
-                                        os.path.join(prefix, 'foolnk')))
-        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'foo'),
-                                        os.path.join(prefix, 'foolnk1')))
-        self.assertFalse(os_ext.samefile('/foo', '/bar'))
-        self.assertTrue(os_ext.samefile(
-            '/foo', os.path.join(prefix, 'broken')))
-        self.assertTrue(os_ext.samefile(os.path.join(prefix, 'broken'),
-                                        os.path.join(prefix, 'broken1')))
+        assert os_ext.samefile('/foo', '/foo')
+        assert os_ext.samefile('/foo', '/foo/')
+        assert os_ext.samefile('/foo/bar', '/foo//bar/')
+        assert os_ext.samefile(os.path.join(prefix, 'foo'),
+                               os.path.join(prefix, 'foolnk'))
+        assert os_ext.samefile(os.path.join(prefix, 'foo'),
+                               os.path.join(prefix, 'foolnk1'))
+        assert not os_ext.samefile('/foo', '/bar')
+        assert os_ext.samefile('/foo', os.path.join(prefix, 'broken'))
+        assert os_ext.samefile(os.path.join(prefix, 'broken'),
+                               os.path.join(prefix, 'broken1'))
         shutil.rmtree(prefix)
 
     def test_is_url(self):
         repo_https = 'https://github.com/eth-cscs/reframe.git'
         repo_ssh = 'git@github.com:eth-cscs/reframe.git'
-        self.assertTrue(os_ext.is_url(repo_https))
-        self.assertFalse(os_ext.is_url(repo_ssh))
+        assert os_ext.is_url(repo_https)
+        assert not os_ext.is_url(repo_ssh)
 
     def test_git_repo_hash(self):
         # A git branch hash consists of 8(short) or 40 characters.
@@ -182,65 +187,65 @@ class TestOSTools(unittest.TestCase):
         assert os_ext.git_repo_hash(branch='') is None
 
     def test_git_repo_exists(self):
-        self.assertTrue(os_ext.git_repo_exists(
-            'https://github.com/eth-cscs/reframe.git', timeout=3))
-        self.assertFalse(os_ext.git_repo_exists('reframe.git', timeout=3))
-        self.assertFalse(os_ext.git_repo_exists(
-            'https://github.com/eth-cscs/xxx', timeout=3))
+        assert os_ext.git_repo_exists(
+            'https://github.com/eth-cscs/reframe.git', timeout=3)
+        assert not os_ext.git_repo_exists('reframe.git', timeout=3)
+        assert not os_ext.git_repo_exists(
+            'https://github.com/eth-cscs/xxx', timeout=3)
 
     def test_force_remove_file(self):
         with tempfile.NamedTemporaryFile(delete=False) as fp:
             pass
 
-        self.assertTrue(os.path.exists(fp.name))
+        assert os.path.exists(fp.name)
         os_ext.force_remove_file(fp.name)
-        self.assertFalse(os.path.exists(fp.name))
+        assert not os.path.exists(fp.name)
 
         # Try to remove a non-existent file
         os_ext.force_remove_file(fp.name)
 
     def test_expandvars_dollar(self):
         text = 'Hello, $(echo World)'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
         # Test nested expansion
         text = '$(echo Hello, $(echo World))'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
     def test_expandvars_backticks(self):
         text = 'Hello, `echo World`'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
         # Test nested expansion
         text = '`echo Hello, `echo World``'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
     def test_expandvars_mixed_syntax(self):
         text = '`echo Hello, $(echo World)`'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
         text = '$(echo Hello, `echo World`)'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
     def test_expandvars_error(self):
         text = 'Hello, $(foo)'
-        with self.assertRaises(SpawnedProcessError):
+        with pytest.raises(SpawnedProcessError):
             os_ext.expandvars(text)
 
     def test_strange_syntax(self):
         text = 'Hello, $(foo`'
-        self.assertEqual('Hello, $(foo`', os_ext.expandvars(text))
+        assert 'Hello, $(foo`' == os_ext.expandvars(text)
 
         text = 'Hello, `foo)'
-        self.assertEqual('Hello, `foo)', os_ext.expandvars(text))
+        assert 'Hello, `foo)' == os_ext.expandvars(text)
 
     def test_expandvars_nocmd(self):
         os.environ['FOO'] = 'World'
         text = 'Hello, $FOO'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
 
         text = 'Hello, ${FOO}'
-        self.assertEqual('Hello, World', os_ext.expandvars(text))
+        assert 'Hello, World' == os_ext.expandvars(text)
         del os.environ['FOO']
 
 
@@ -271,23 +276,19 @@ class TestCopyTree(unittest.TestCase):
 
     def verify_target_directory(self, file_links=[]):
         '''Verify the directory structure'''
-        self.assertTrue(
-            os.path.exists(os.path.join(self.target, 'bar', 'bar.txt')))
-        self.assertTrue(
-            os.path.exists(os.path.join(self.target, 'bar', 'foo.txt')))
-        self.assertTrue(
-            os.path.exists(os.path.join(self.target, 'bar', 'foobar.txt')))
-        self.assertTrue(
-            os.path.exists(os.path.join(self.target, 'foo', 'bar.txt')))
-        self.assertTrue(os.path.exists(os.path.join(self.target, 'bar.txt')))
-        self.assertTrue(os.path.exists(os.path.join(self.target, 'foo.txt')))
+        assert os.path.exists(os.path.join(self.target, 'bar', 'bar.txt'))
+        assert os.path.exists(os.path.join(self.target, 'bar', 'foo.txt'))
+        assert os.path.exists(os.path.join(self.target, 'bar', 'foobar.txt'))
+        assert os.path.exists(os.path.join(self.target, 'foo', 'bar.txt'))
+        assert os.path.exists(os.path.join(self.target, 'bar.txt'))
+        assert os.path.exists(os.path.join(self.target, 'foo.txt'))
 
         # Verify the symlinks
         for lf in file_links:
             target_name = os.path.abspath(os.path.join(self.prefix, lf))
             link_name = os.path.abspath(os.path.join(self.target, lf))
-            self.assertTrue(os.path.islink(link_name))
-            self.assertEqual(target_name, os.readlink(link_name))
+            assert os.path.islink(link_name)
+            assert target_name == os.readlink(link_name)
 
     def test_virtual_copy_nolinks(self):
         os_ext.copytree_virtual(self.prefix, self.target)
@@ -300,28 +301,28 @@ class TestCopyTree(unittest.TestCase):
 
     def test_virtual_copy_inexistent_links(self):
         file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ValueError, os_ext.copytree_virtual,
-                          self.prefix, self.target, file_links)
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target, file_links)
 
     def test_virtual_copy_absolute_paths(self):
         file_links = [os.path.join(self.prefix, 'bar'),
                       'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ValueError, os_ext.copytree_virtual,
-                          self.prefix, self.target, file_links)
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target, file_links)
 
     def test_virtual_copy_irrelevenant_paths(self):
         file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ValueError, os_ext.copytree_virtual,
-                          self.prefix, self.target, file_links)
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target, file_links)
 
         file_links = [os.path.dirname(self.prefix), 'foo/bar.txt', 'foo.txt']
-        self.assertRaises(ValueError, os_ext.copytree_virtual,
-                          self.prefix, self.target, file_links)
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target, file_links)
 
     def test_virtual_copy_linkself(self):
         file_links = ['.']
-        self.assertRaises(OSError, os_ext.copytree_virtual,
-                          self.prefix, self.target, file_links)
+        with pytest.raises(OSError):
+            os_ext.copytree_virtual(self.prefix, self.target, file_links)
 
     def tearDown(self):
         shutil.rmtree(self.prefix)
@@ -331,50 +332,50 @@ class TestCopyTree(unittest.TestCase):
 class TestImportFromFile(unittest.TestCase):
     def test_load_relpath(self):
         module = util.import_module_from_file('reframe/__init__.py')
-        self.assertEqual(reframe.VERSION, module.VERSION)
-        self.assertEqual('reframe', module.__name__)
-        self.assertIs(module, sys.modules.get('reframe'))
+        assert reframe.VERSION == module.VERSION
+        assert 'reframe' == module.__name__
+        assert module is sys.modules.get('reframe')
 
     def test_load_directory(self):
         module = util.import_module_from_file('reframe')
-        self.assertEqual(reframe.VERSION, module.VERSION)
-        self.assertEqual('reframe', module.__name__)
-        self.assertIs(module, sys.modules.get('reframe'))
+        assert reframe.VERSION == module.VERSION
+        assert 'reframe' == module.__name__
+        assert module is sys.modules.get('reframe')
 
     def test_load_abspath(self):
         filename = os.path.abspath('reframe/__init__.py')
         module = util.import_module_from_file(filename)
-        self.assertEqual(reframe.VERSION, module.VERSION)
-        self.assertEqual('reframe', module.__name__)
-        self.assertIs(module, sys.modules.get('reframe'))
+        assert reframe.VERSION == module.VERSION
+        assert 'reframe' == module.__name__
+        assert module is sys.modules.get('reframe')
 
     def test_load_unknown_path(self):
         try:
             util.import_module_from_file('/foo')
-            self.fail()
+            pytest.fail()
         except ImportError as e:
-            self.assertEqual('foo', e.name)
-            self.assertEqual('/foo', e.path)
+            assert 'foo' == e.name
+            assert '/foo' == e.path
 
     def test_load_directory_relative(self):
         with os_ext.change_dir('reframe'):
             module = util.import_module_from_file('../reframe')
-            self.assertEqual(reframe.VERSION, module.VERSION)
-            self.assertEqual('reframe', module.__name__)
-            self.assertIs(module, sys.modules.get('reframe'))
+            assert reframe.VERSION == module.VERSION
+            assert 'reframe' == module.__name__
+            assert module is sys.modules.get('reframe')
 
     def test_load_relative(self):
         with os_ext.change_dir('reframe'):
             # Load a module from a directory up
             module = util.import_module_from_file('../reframe/__init__.py')
-            self.assertEqual(reframe.VERSION, module.VERSION)
-            self.assertEqual('reframe', module.__name__)
-            self.assertIs(module, sys.modules.get('reframe'))
+            assert reframe.VERSION == module.VERSION
+            assert 'reframe' == module.__name__
+            assert module is sys.modules.get('reframe')
 
             # Load a module from the current directory
             module = util.import_module_from_file('utility/os_ext.py')
-            self.assertEqual('reframe.utility.os_ext', module.__name__)
-            self.assertIs(module, sys.modules.get('reframe.utility.os_ext'))
+            assert 'reframe.utility.os_ext' == module.__name__
+            assert module is sys.modules.get('reframe.utility.os_ext')
 
     def test_load_outside_pkg(self):
         module = util.import_module_from_file(os.path.__file__)
@@ -382,32 +383,31 @@ class TestImportFromFile(unittest.TestCase):
         # os imports the OS-specific path libraries under the name `path`. Our
         # importer will import the actual file, thus the module name should be
         # the real one.
-        self.assertTrue(module is sys.modules.get('posixpath') or
-                        module is sys.modules.get('ntpath') or
-                        module is sys.modules.get('macpath'))
+        assert (module is sys.modules.get('posixpath') or
+                module is sys.modules.get('ntpath') or
+                module is sys.modules.get('macpath'))
 
     def test_load_twice(self):
         filename = os.path.abspath('reframe')
         module1 = util.import_module_from_file(filename)
         module2 = util.import_module_from_file(filename)
-        self.assertIs(module1, module2)
+        assert module1 is module2
 
     def test_load_namespace_package(self):
         module = util.import_module_from_file('unittests/resources')
-        self.assertIn('unittests', sys.modules)
-        self.assertIn('unittests.resources', sys.modules)
+        assert 'unittests' in sys.modules
+        assert 'unittests.resources' in sys.modules
 
 
 class TestDebugRepr(unittest.TestCase):
     def test_builtin_types(self):
         # builtin types must use the default repr()
-        self.assertEqual(repr(1), debug.repr(1))
-        self.assertEqual(repr(1.2), debug.repr(1.2))
-        self.assertEqual(repr([1, 2, 3]), debug.repr([1, 2, 3]))
-        self.assertEqual(repr({1, 2, 3}), debug.repr({1, 2, 3}))
-        self.assertEqual(repr({1, 2, 3}), debug.repr({1, 2, 3}))
-        self.assertEqual(repr({'a': 1, 'b': {2, 3}}),
-                         debug.repr({'a': 1, 'b': {2, 3}}))
+        assert repr(1) == debug.repr(1)
+        assert repr(1.2) == debug.repr(1.2)
+        assert repr([1, 2, 3]) == debug.repr([1, 2, 3])
+        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
+        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
+        assert repr({'a': 1, 'b': {2, 3}}) == debug.repr({'a': 1, 'b': {2, 3}})
 
     def test_obj_repr(self):
         class C:
@@ -427,10 +427,10 @@ class TestDebugRepr(unittest.TestCase):
         c.d.b = 3
 
         rep = repr(c)
-        self.assertIn('unittests.test_utility', rep)
-        self.assertIn('_a=%r' % c._a, rep)
-        self.assertIn('b=%r' % c.b, rep)
-        self.assertIn('D(...)', rep)
+        assert 'unittests.test_utility' in rep
+        assert '_a=%r' % c._a in rep
+        assert 'b=%r' % c.b in rep
+        assert 'D(...)' in rep
 
 
 class TestChangeDirCtxManager(unittest.TestCase):
@@ -440,17 +440,18 @@ class TestChangeDirCtxManager(unittest.TestCase):
 
     def test_change_dir_working(self):
         with os_ext.change_dir(self.temp_dir):
-            self.assertTrue(os.getcwd(), self.temp_dir)
-        self.assertEqual(os.getcwd(), self.wd_save)
+            assert os.getcwd(), self.temp_dir
+
+        assert os.getcwd() == self.wd_save
 
     def test_exception_propagation(self):
         try:
             with os_ext.change_dir(self.temp_dir):
                 raise RuntimeError
         except RuntimeError:
-            self.assertEqual(os.getcwd(), self.wd_save)
+            assert os.getcwd() == self.wd_save
         else:
-            self.fail('exception not propagated by the ctx manager')
+            pytest.fail('exception not propagated by the ctx manager')
 
     def tearDown(self):
         os.rmdir(self.temp_dir)
@@ -460,33 +461,39 @@ class TestMiscUtilities(unittest.TestCase):
     def test_allx(self):
         l1 = [1, 1, 1]
         l2 = [True, False]
-        self.assertTrue(all(l1), util.allx(l1))
-        self.assertFalse(all(l2), util.allx(l2))
-        self.assertFalse(util.allx([]))
-        self.assertTrue(util.allx(i for i in [1, 1, 1]))
-        self.assertTrue(util.allx(i for i in range(1, 2)))
-        self.assertFalse(util.allx(i for i in range(1)))
-        self.assertFalse(util.allx(i for i in range(0)))
-        with self.assertRaises(TypeError):
+        assert all(l1), util.allx(l1)
+        assert not all(l2), util.allx(l2)
+        assert not util.allx([])
+        assert util.allx(i for i in [1, 1, 1])
+        assert util.allx(i for i in range(1, 2))
+        assert not util.allx(i for i in range(1))
+        assert not util.allx(i for i in range(0))
+        with pytest.raises(TypeError):
             util.allx(None)
 
     def test_decamelize(self):
-        self.assertEqual('', util.decamelize(''))
-        self.assertEqual('my_base_class', util.decamelize('MyBaseClass'))
-        self.assertEqual('my_base_class12', util.decamelize('MyBaseClass12'))
-        self.assertEqual('my_class_a', util.decamelize('MyClass_A'))
-        self.assertEqual('my_class', util.decamelize('my_class'))
-        self.assertRaises(TypeError, util.decamelize, None)
-        self.assertRaises(TypeError, util.decamelize, 12)
+        assert '' == util.decamelize('')
+        assert 'my_base_class' == util.decamelize('MyBaseClass')
+        assert 'my_base_class12' == util.decamelize('MyBaseClass12')
+        assert 'my_class_a' == util.decamelize('MyClass_A')
+        assert 'my_class' == util.decamelize('my_class')
+        with pytest.raises(TypeError):
+            util.decamelize(None)
+
+        with pytest.raises(TypeError):
+            util.decamelize(12)
 
     def test_sanitize(self):
-        self.assertEqual('', util.toalphanum(''))
-        self.assertEqual('ab12', util.toalphanum('ab12'))
-        self.assertEqual('ab1_2', util.toalphanum('ab1_2'))
-        self.assertEqual('ab1__2', util.toalphanum('ab1**2'))
-        self.assertEqual('ab__12_', util.toalphanum('ab (12)'))
-        self.assertRaises(TypeError, util.toalphanum, None)
-        self.assertRaises(TypeError, util.toalphanum, 12)
+        assert '' == util.toalphanum('')
+        assert 'ab12' == util.toalphanum('ab12')
+        assert 'ab1_2' == util.toalphanum('ab1_2')
+        assert 'ab1__2' == util.toalphanum('ab1**2')
+        assert 'ab__12_' == util.toalphanum('ab (12)')
+        with pytest.raises(TypeError):
+            util.toalphanum(None)
+
+        with pytest.raises(TypeError):
+            util.toalphanum(12)
 
 
 class TestScopedDict(unittest.TestCase):
@@ -501,18 +508,22 @@ class TestScopedDict(unittest.TestCase):
         # Change local dict and verify that the stored values are not affected
         d['a']['k1'] = 10
         d['b']['k3'] = 10
-        self.assertEqual(3, namespace_dict['a:k1'])
-        self.assertEqual(5, namespace_dict['b:k3'])
+        assert 3 == namespace_dict['a:k1']
+        assert 5 == namespace_dict['b:k3']
         del d['b']
-        self.assertIn('b:k3', namespace_dict)
+        assert 'b:k3' in namespace_dict
 
-        self.assertRaises(TypeError, reframe.utility.ScopedDict, 1)
-        self.assertRaises(TypeError, reframe.utility.ScopedDict,
-                          {'a': 1, 'b': 2})
-        self.assertRaises(TypeError, reframe.utility.ScopedDict,
-                          [('a', 1), ('b', 2)])
-        self.assertRaises(TypeError, reframe.utility.ScopedDict,
-                          {'a': {1: 'k1'}, 'b': {2: 'k2'}})
+        with pytest.raises(TypeError):
+            reframe.utility.ScopedDict(1)
+
+        with pytest.raises(TypeError):
+            reframe.utility.ScopedDict({'a': 1, 'b': 2})
+
+        with pytest.raises(TypeError):
+            reframe.utility.ScopedDict([('a', 1), ('b', 2)])
+
+        with pytest.raises(TypeError):
+            reframe.utility.ScopedDict({'a': {1: 'k1'}, 'b': {2: 'k2'}})
 
     def test_contains(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -523,44 +534,44 @@ class TestScopedDict(unittest.TestCase):
         })
 
         # Test simple lookup
-        self.assertIn('a:k1', scoped_dict)
-        self.assertIn('a:k2', scoped_dict)
-        self.assertIn('a:k3', scoped_dict)
-        self.assertIn('a:k4', scoped_dict)
+        assert 'a:k1' in scoped_dict
+        assert 'a:k2' in scoped_dict
+        assert 'a:k3' in scoped_dict
+        assert 'a:k4' in scoped_dict
 
-        self.assertIn('a:b:k1', scoped_dict)
-        self.assertIn('a:b:k2', scoped_dict)
-        self.assertIn('a:b:k3', scoped_dict)
-        self.assertIn('a:b:k4', scoped_dict)
+        assert 'a:b:k1' in scoped_dict
+        assert 'a:b:k2' in scoped_dict
+        assert 'a:b:k3' in scoped_dict
+        assert 'a:b:k4' in scoped_dict
 
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
-        self.assertIn('a:b:c:k1', scoped_dict)
+        assert 'a:b:c:k1' in scoped_dict
+        assert 'a:b:c:k2' in scoped_dict
+        assert 'a:b:c:k3' in scoped_dict
+        assert 'a:b:c:k4' in scoped_dict
 
         # Test global scope
-        self.assertIn('k1', scoped_dict)
-        self.assertNotIn('k2', scoped_dict)
-        self.assertIn('k3', scoped_dict)
-        self.assertIn('k4', scoped_dict)
+        assert 'k1' in scoped_dict
+        assert 'k2' not in scoped_dict
+        assert 'k3' in scoped_dict
+        assert 'k4' in scoped_dict
 
-        self.assertIn(':k1', scoped_dict)
-        self.assertNotIn(':k2', scoped_dict)
-        self.assertIn(':k3', scoped_dict)
-        self.assertIn(':k4', scoped_dict)
+        assert ':k1' in scoped_dict
+        assert ':k2' not in scoped_dict
+        assert ':k3' in scoped_dict
+        assert ':k4' in scoped_dict
 
-        self.assertIn('*:k1', scoped_dict)
-        self.assertNotIn('*:k2', scoped_dict)
-        self.assertIn('*:k3', scoped_dict)
-        self.assertIn('*:k4', scoped_dict)
+        assert '*:k1' in scoped_dict
+        assert '*:k2' not in scoped_dict
+        assert '*:k3' in scoped_dict
+        assert '*:k4' in scoped_dict
 
         # Try to get full scopes as keys
-        self.assertNotIn('a', scoped_dict)
-        self.assertNotIn('a:b', scoped_dict)
-        self.assertNotIn('a:b:c', scoped_dict)
-        self.assertNotIn('a:b:c:d', scoped_dict)
-        self.assertNotIn('*', scoped_dict)
-        self.assertNotIn('', scoped_dict)
+        assert 'a' not in scoped_dict
+        assert 'a:b' not in scoped_dict
+        assert 'a:b:c' not in scoped_dict
+        assert 'a:b:c:d' not in scoped_dict
+        assert '*' not in scoped_dict
+        assert '' not in scoped_dict
 
     def test_iter_keys(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -576,8 +587,7 @@ class TestScopedDict(unittest.TestCase):
             'a:b:c:k2', 'a:b:c:k3',
             '*:k1', '*:k3', '*:k4'
         ]
-        self.assertEqual(sorted(expected_keys),
-                         sorted(k for k in scoped_dict.keys()))
+        assert sorted(expected_keys) == sorted(k for k in scoped_dict.keys())
 
     def test_iter_items(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -593,8 +603,8 @@ class TestScopedDict(unittest.TestCase):
             ('a:b:c:k2', 5), ('a:b:c:k3', 6),
             ('*:k1', 7), ('*:k3', 9), ('*:k4', 10)
         ]
-        self.assertEqual(sorted(expected_items),
-                         sorted(item for item in scoped_dict.items()))
+        assert (sorted(expected_items) ==
+                sorted(item for item in scoped_dict.items()))
 
     def test_iter_values(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -605,8 +615,7 @@ class TestScopedDict(unittest.TestCase):
         })
 
         expected_values = [1, 2, 3, 4, 5, 6, 7, 9, 10]
-        self.assertEqual(expected_values,
-                         sorted(v for v in scoped_dict.values()))
+        assert expected_values == sorted(v for v in scoped_dict.values())
 
     def test_key_resolution(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -616,62 +625,61 @@ class TestScopedDict(unittest.TestCase):
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
 
-        self.assertEqual(1, scoped_dict['a:k1'])
-        self.assertEqual(2, scoped_dict['a:k2'])
-        self.assertEqual(9, scoped_dict['a:k3'])
-        self.assertEqual(10, scoped_dict['a:k4'])
+        assert 1 == scoped_dict['a:k1']
+        assert 2 == scoped_dict['a:k2']
+        assert 9 == scoped_dict['a:k3']
+        assert 10 == scoped_dict['a:k4']
 
-        self.assertEqual(3, scoped_dict['a:b:k1'])
-        self.assertEqual(2, scoped_dict['a:b:k2'])
-        self.assertEqual(4, scoped_dict['a:b:k3'])
-        self.assertEqual(10, scoped_dict['a:b:k4'])
+        assert 3 == scoped_dict['a:b:k1']
+        assert 2 == scoped_dict['a:b:k2']
+        assert 4 == scoped_dict['a:b:k3']
+        assert 10 == scoped_dict['a:b:k4']
 
-        self.assertEqual(3, scoped_dict['a:b:c:k1'])
-        self.assertEqual(5, scoped_dict['a:b:c:k2'])
-        self.assertEqual(6, scoped_dict['a:b:c:k3'])
-        self.assertEqual(10, scoped_dict['a:b:c:k4'])
+        assert 3 == scoped_dict['a:b:c:k1']
+        assert 5 == scoped_dict['a:b:c:k2']
+        assert 6 == scoped_dict['a:b:c:k3']
+        assert 10 == scoped_dict['a:b:c:k4']
 
         # Test global scope
-        self.assertEqual(7, scoped_dict['k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict['k3'])
-        self.assertEqual(10, scoped_dict['k4'])
+        assert 7 == scoped_dict['k1']
+        with pytest.raises(KeyError):
+            scoped_dict['k2']
 
-        self.assertEqual(7, scoped_dict[':k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict[':k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict[':k3'])
-        self.assertEqual(10, scoped_dict[':k4'])
+        assert 9 == scoped_dict['k3']
+        assert 10 == scoped_dict['k4']
 
-        self.assertEqual(7, scoped_dict['*:k1'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['*:k2']", globals(), locals()
-        )
-        self.assertEqual(9, scoped_dict['*:k3'])
-        self.assertEqual(10, scoped_dict['*:k4'])
+        assert 7 == scoped_dict[':k1']
+        with pytest.raises(KeyError):
+            scoped_dict[':k2']
+
+        assert 9 == scoped_dict[':k3']
+        assert 10 == scoped_dict[':k4']
+
+        assert 7 == scoped_dict['*:k1']
+        with pytest.raises(KeyError):
+            scoped_dict['*:k2']
+
+        assert 9 == scoped_dict['*:k3']
+        assert 10 == scoped_dict['*:k4']
 
         # Try to fool it, by requesting keys with scope names
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b:c']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:b:c:d']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['*']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['']", globals(), locals()
-        )
+        with pytest.raises(KeyError):
+            scoped_dict['a']
+
+        with pytest.raises(KeyError):
+            scoped_dict['a:b']
+
+        with pytest.raises(KeyError):
+            scoped_dict['a:b:c']
+
+        with pytest.raises(KeyError):
+            scoped_dict['a:b:c:d']
+
+        with pytest.raises(KeyError):
+            scoped_dict['*']
+
+        with pytest.raises(KeyError):
+            scoped_dict['']
 
     def test_setitem(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -686,11 +694,11 @@ class TestScopedDict(unittest.TestCase):
         scoped_dict[':k4'] = 40
         scoped_dict['*:k5'] = 50
         scoped_dict['k6'] = 60
-        self.assertEqual(20, scoped_dict['a:k2'])
-        self.assertEqual(30, scoped_dict['c:k2'])
-        self.assertEqual(40, scoped_dict[':k4'])
-        self.assertEqual(50, scoped_dict['k5'])
-        self.assertEqual(60, scoped_dict['k6'])
+        assert 20 == scoped_dict['a:k2']
+        assert 30 == scoped_dict['c:k2']
+        assert 40 == scoped_dict[':k4']
+        assert 50 == scoped_dict['k5']
+        assert 60 == scoped_dict['k6']
 
     def test_delitem(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -702,29 +710,26 @@ class TestScopedDict(unittest.TestCase):
 
         # delete key
         del scoped_dict['a:k1']
-        self.assertEqual(7, scoped_dict['a:k1'])
+        assert 7 == scoped_dict['a:k1']
 
         # delete key from global scope
         del scoped_dict['k1']
-        self.assertEqual(9, scoped_dict['k3'])
-        self.assertEqual(10, scoped_dict['k4'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['k1']", globals(), locals()
-        )
+        assert 9 == scoped_dict['k3']
+        assert 10 == scoped_dict['k4']
+        with pytest.raises(KeyError):
+            scoped_dict['k1']
 
         # delete a whole scope
         del scoped_dict['*']
-        self.assertRaises(
-            KeyError, exec, "scoped_dict[':k4']", globals(), locals()
-        )
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['a:k3']", globals(), locals()
-        )
+        with pytest.raises(KeyError):
+            scoped_dict[':k4']
+
+        with pytest.raises(KeyError):
+            scoped_dict['a:k3']
 
         # try to delete a non-existent key
-        self.assertRaises(
-            KeyError, exec, "del scoped_dict['a:k4']", globals(), locals()
-        )
+        with pytest.raises(KeyError):
+            del scoped_dict['a:k4']
 
         # test deletion of parent scope keeping a nested one
         scoped_dict = reframe.utility.ScopedDict()
@@ -732,8 +737,8 @@ class TestScopedDict(unittest.TestCase):
         scoped_dict['s0:s1:k0'] = 2
         scoped_dict['*:k0'] = 3
         del scoped_dict['s0']
-        self.assertEqual(3, scoped_dict['s0:k0'])
-        self.assertEqual(2, scoped_dict['s0:s1:k0'])
+        assert 3 == scoped_dict['s0:k0']
+        assert 2 == scoped_dict['s0:s1:k0']
 
     def test_scope_key_name_pseudoconflict(self):
         scoped_dict = reframe.utility.ScopedDict({
@@ -741,14 +746,13 @@ class TestScopedDict(unittest.TestCase):
             's0:s1': {'k0': 2}
         })
 
-        self.assertEqual(1, scoped_dict['s0:s1'])
-        self.assertEqual(2, scoped_dict['s0:s1:k0'])
+        assert 1 == scoped_dict['s0:s1']
+        assert 2 == scoped_dict['s0:s1:k0']
 
         del scoped_dict['s0:s1']
-        self.assertEqual(2, scoped_dict['s0:s1:k0'])
-        self.assertRaises(
-            KeyError, exec, "scoped_dict['s0:s1']", globals(), locals()
-        )
+        assert 2 == scoped_dict['s0:s1:k0']
+        with pytest.raises(KeyError):
+            scoped_dict['s0:s1']
 
     def test_update(self):
         scoped_dict = util.ScopedDict({
@@ -765,106 +769,106 @@ class TestScopedDict(unittest.TestCase):
             'a:b:c': {'k2': 5, 'k3': 6},
             '*': {'k1': 7, 'k3': 9, 'k4': 10}
         })
-        self.assertEqual(scoped_dict, scoped_dict_alt)
+        assert scoped_dict == scoped_dict_alt
 
 
 class TestReadOnlyViews(unittest.TestCase):
     def test_sequence(self):
         l = util.SequenceView([1, 2, 2])
-        self.assertEqual(1, l[0])
-        self.assertEqual(3, len(l))
-        self.assertIn(2, l)
-        self.assertEqual(l, [1, 2, 2])
-        self.assertEqual(l, util.SequenceView([1, 2, 2]))
-        self.assertEqual(list(reversed(l)), [2, 2, 1])
-        self.assertEqual(1, l.index(2))
-        self.assertEqual(2, l.count(2))
-        self.assertEqual(str(l), str([1, 2, 2]))
+        assert 1 == l[0]
+        assert 3 == len(l)
+        assert 2 in l
+        assert l == [1, 2, 2]
+        assert l == util.SequenceView([1, 2, 2])
+        assert list(reversed(l)) == [2, 2, 1]
+        assert 1 == l.index(2)
+        assert 2 == l.count(2)
+        assert str(l) == str([1, 2, 2])
 
         # Assert immutability
         m = l + [3, 4]
-        self.assertEqual([1, 2, 2, 3, 4], m)
-        self.assertIsInstance(m, util.SequenceView)
+        assert [1, 2, 2, 3, 4] == m
+        assert isinstance(m, util.SequenceView)
 
         m = l
         l += [3, 4]
-        self.assertIsNot(m, l)
-        self.assertEqual([1, 2, 2], m)
-        self.assertEqual([1, 2, 2, 3, 4], l)
-        self.assertIsInstance(l, util.SequenceView)
+        assert m is not l
+        assert [1, 2, 2] == m
+        assert [1, 2, 2, 3, 4] == l
+        assert isinstance(l, util.SequenceView)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             l[1] = 3
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             l[1:2] = [3]
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             l *= 3
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             del l[:1]
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.append(3)
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.clear()
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             s = l.copy()
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.extend([3, 4])
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.insert(1, 4)
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.pop()
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.remove(2)
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             l.reverse()
 
     def test_mapping(self):
         d = util.MappingView({'a': 1, 'b': 2})
-        self.assertEqual(1, d['a'])
-        self.assertEqual(2, len(d))
-        self.assertEqual({'a': 1, 'b': 2}, dict(d))
-        self.assertIn('b', d)
-        self.assertEqual({'a', 'b'}, set(d.keys()))
-        self.assertEqual({1, 2}, set(d.values()))
-        self.assertEqual({('a', 1), ('b', 2)}, set(d.items()))
-        self.assertEqual(2, d.get('b'))
-        self.assertEqual(3, d.get('c', 3))
-        self.assertEqual({'a': 1, 'b': 2}, d)
-        self.assertEqual(d, util.MappingView({'b': 2, 'a': 1}))
-        self.assertEqual(str(d), str({'a': 1, 'b': 2}))
-        self.assertNotEqual({'a': 1, 'b': 2, 'c': 3}, d)
+        assert 1 == d['a']
+        assert 2 == len(d)
+        assert {'a': 1, 'b': 2} == dict(d)
+        assert 'b' in d
+        assert {'a', 'b'} == set(d.keys())
+        assert {1, 2} == set(d.values())
+        assert {('a', 1), ('b', 2)} == set(d.items())
+        assert 2 == d.get('b')
+        assert 3 == d.get('c', 3)
+        assert {'a': 1, 'b': 2} == d
+        assert d == util.MappingView({'b': 2, 'a': 1})
+        assert str(d) == str({'a': 1, 'b': 2})
+        assert {'a': 1, 'b': 2, 'c': 3} != d
 
         # Assert immutability
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             d['c'] = 3
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             del d['b']
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             d.pop('a')
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             d.popitem()
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             d.clear()
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             d.update({'a': 4, 'b': 5})
 
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             d.setdefault('c', 3)
 
 
@@ -1004,3 +1008,23 @@ class TestOrderedSet(unittest.TestCase):
                 with open(concat_file) as cf:
                     out = cf.read()
                     assert out == 'Hello1\nHello2\n'
+
+    def test_unique_abs_paths(self):
+        p1 = 'a/b/c'
+        p2 = p1[:]
+        p3 = 'a/b'
+        p4 = '/d/e//'
+        p5 = '/d/e/f'
+        expected_paths = [os.path.abspath('a/b'), '/d/e']
+        actual_paths = os_ext.unique_abs_paths(
+            [p1, p2, p3, p4, p5])
+        assert expected_paths == actual_paths
+
+        expected_paths = [os.path.abspath('a/b/c'),  os.path.abspath('a/b'),
+                          '/d/e', '/d/e/f']
+        actual_paths = os_ext.unique_abs_paths(
+            [p1, p2, p3, p4, p5], prune_children=False)
+        assert expected_paths == actual_paths
+
+        with pytest.raises(TypeError):
+            os_ext.unique_abs_paths(None)

@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -8,12 +13,14 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
@@ -25,12 +32,14 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
-        self.valid_prog_environs = ['PrgEnv-cray']
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name == 'kesch':
+        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
@@ -42,6 +51,10 @@ class HostnameCheck(SlurmSimpleBaseCheck):
         super().__init__()
         self.executable = '/bin/hostname'
         self.hostname_patt = {
+            'arolla:cn': r'^arolla-cn\d{3}$',
+            'arolla:pn': r'^arolla-pp\d{3}$',
+            'tsa:cn': r'^tsa-cn\d{3}$',
+            'tsa:pn': r'^tsa-pp\d{3}$',
             'kesch:cn': r'^keschcn-\d{4}$',
             'kesch:pn': r'^keschpn-\d{4}$',
             'daint:gpu': r'^nid\d{5}$',
@@ -66,7 +79,9 @@ class EnvironmentVariableCheck(SlurmSimpleBaseCheck):
         self.num_tasks = 2
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn']
+                              'kesch:cn', 'kesch:pn',
+                              'arolla:cn', 'arolla:pn',
+                              'tsa:cn', 'tsa:pn']
         self.executable = '/bin/echo'
         self.executable_opts = ['$MY_VAR']
         self.variables = {'MY_VAR': 'TEST123456!'}
@@ -108,7 +123,9 @@ class RequestLargeMemoryNodeCheck(SlurmSimpleBaseCheck):
 class DefaultRequestGPU(SlurmSimpleBaseCheck):
     def __init__(self):
         super().__init__()
-        self.valid_systems = ['daint:gpu', 'dom:gpu', 'kesch:cn']
+        self.valid_systems = ['daint:gpu', 'dom:gpu',
+                              'arolla:cn', 'kesch:cn',
+                              'tsa:cn']
         self.executable = 'nvidia-smi'
         self.sanity_patterns = sn.assert_found(
             r'NVIDIA-SMI.*Driver Version.*', self.stdout)
