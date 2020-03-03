@@ -8,7 +8,6 @@
 # - Initial version submitted by Samuel Moors, Vrije Universiteit Brussel (VUB)
 #
 
-
 import re
 
 import reframe.utility.os_ext as os_ext
@@ -33,6 +32,8 @@ JOB_STATES = {
 
 @register_scheduler('torque')
 class TorqueJobScheduler(PbsJobScheduler):
+    TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
+
     def _update_state(self, job):
         '''Check the status of the job.'''
 
@@ -72,9 +73,6 @@ class TorqueJobScheduler(PbsJobScheduler):
                 return
 
             job.exitcode = int(code_match.group('code'))
-
-    def resource_str(self, num_nodes, _, num_cpus_per_node):
-        return '-l nodes=%s:ppn=%s' % (num_nodes, num_cpus_per_node)
 
     def finished(self, job):
         try:

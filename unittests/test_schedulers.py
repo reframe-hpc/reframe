@@ -569,11 +569,11 @@ class TestTorqueJob(_TestJob, unittest.TestCase):
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),
                                               re.MULTILINE))
 
-        self.assertEqual(expected_directives, found_directives)
+        assert expected_directives == found_directives
 
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
-        self.skipTest("Torque minimum time limit is 60s")
+        pytest.skip("Torque minimum time limit is 60s")
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
