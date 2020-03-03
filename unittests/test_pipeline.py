@@ -472,14 +472,10 @@ class TestHooks(unittest.TestCase):
             @rfm.run_before('setup')
             def prefoo(self):
                 self.var += 1
-                assert self.current_environ is None
-                os.environ['_RFM_PRE_SETUP_COMPILE'] = 'foo'
 
             @rfm.run_after('setup')
             def postfoo(self):
                 self.var += 1
-                assert self.current_environ is not None
-                os.environ['_RFM_POST_SETUP_COMPILE'] = 'foo'
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
@@ -537,12 +533,14 @@ class TestHooks(unittest.TestCase):
                 self.valid_systems = ['*']
                 self.sanity_patterns = sn.assert_found(
                     r'Hello, World\!', self.stdout)
+
             @rfm.run_before('run')
             def set_post_run(self):
                 self.sourcesdir = None
 
             @rfm.run_after('run')
             def check_greetings(self):
+                # Make sure nothing was copied to the stage directory
                 assert len(os.listdir(self.stagedir)) == 3
 
         test = MyTest()
