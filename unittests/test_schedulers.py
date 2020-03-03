@@ -504,7 +504,8 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         self.setup_job()
         self.testjob.options = self.testjob_options
         super().test_prepare()
-        self.num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        self.num_nodes = (self.testjob.num_tasks //
+                          self.testjob.num_tasks_per_node)
         self.num_cpus_per_node = (self.testjob.num_cpus_per_task *
                                   self.testjob.num_tasks_per_node)
         with open(self.testjob.script_filename) as fp:
@@ -518,7 +519,8 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         self.testjob.num_cpus_per_task = None
         self.testjob.options = self.testjob_options
         super().test_prepare()
-        self.num_nodes = self.testjob.num_tasks // self.testjob.num_tasks_per_node
+        self.num_nodes = (self.testjob.num_tasks //
+                          self.testjob.num_tasks_per_node)
         self.num_cpus_per_node = self.testjob.num_tasks_per_node
         with open(self.testjob.script_filename) as fp:
             found_directives = set(re.findall(r'^\#\w+ .*', fp.read(),

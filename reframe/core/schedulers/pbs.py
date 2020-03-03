@@ -54,9 +54,9 @@ class PbsJobScheduler(sched.JobScheduler):
         num_nodes = job.num_tasks // num_tasks_per_node
         num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
         select_opt = self.TASKS_OPT.format(
-             num_nodes=num_nodes,
-             num_tasks_per_node=num_tasks_per_node,
-             num_cpus_per_node=num_cpus_per_node
+            num_nodes=num_nodes,
+            num_tasks_per_node=num_tasks_per_node,
+            num_cpus_per_node=num_cpus_per_node
         )
 
         # Options starting with `-` are emitted in separate lines
