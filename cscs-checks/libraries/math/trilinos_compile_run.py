@@ -15,8 +15,9 @@ class TrilinosTest(rfm.RegressionTest):
                               'tiger:gpu']
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
+        # NOTE: PrgEnv-cray_classic does not support trilinos
         if linkage == 'static':
-            self.valid_prog_environs += ['PrgEnv-cray', 'PrgEnv-cray_classic']
+            self.valid_prog_environs += ['PrgEnv-cray']
 
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
