@@ -434,7 +434,7 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stderr
         assert 1 == returncode
 
-    def test_suppress_deprecation(self):
+    def test_no_deprecation_warnings(self):
         self.action = 'run'
         self.checkpath = [
             'unittests/resources/checks_unlisted/deprecated_test.py'
@@ -442,12 +442,15 @@ class TestFrontend(unittest.TestCase):
         with pytest.warns(ReframeDeprecationWarning):
             returncode, stdout, stderr = self._run_reframe()
 
-        self.more_options = ['--suppress-deprecation']
-        with pytest.warns(None) as record:
+        self.more_options = ['--no-deprecation-warnings']
+
+        # We get the list of captured `warnings.WarningMessage` objects
+        with pytest.warns(None) as warnings:
             self._run_reframe()
 
-        assert not any(isinstance(r.message, ReframeDeprecationWarning) for
-                       r in record)
+        # The `message` field contains the actual exception object
+        assert not any(isinstance(w.message, ReframeDeprecationWarning)
+                       for w in warnings)
 
     def test_verbosity(self):
         self.more_options = ['-vvvvv']

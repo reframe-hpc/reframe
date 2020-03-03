@@ -153,9 +153,6 @@ def main():
         '--reservation', action='store', metavar='RES',
         help='Use RES for submitting jobs')
     run_options.add_argument(
-        '--suppress-deprecation', action='store_true',
-        help='Supress deprecation warnings in regression tests')
-    run_options.add_argument(
         '--nodelist', action='store',
         help='Run checks on the selected list of nodes')
     run_options.add_argument(
@@ -236,6 +233,9 @@ def main():
         help='Disable coloring of output')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
+    misc_options.add_argument(
+        '--no-deprecation-warnings', action='store_true',
+        help='Suppress deprecation warnings from the framework')
 
     # FIXME: This should move to env_options as soon as
     # https://github.com/eth-cscs/reframe/pull/946 is merged
@@ -444,7 +444,7 @@ def main():
 
     printer.debug(argparse.format_options(options))
 
-    if options.suppress_deprecation:
+    if options.no_deprecation_warnings:
         warnings.filterwarnings('ignore', category=ReframeDeprecationWarning)
 
     # Print command line
