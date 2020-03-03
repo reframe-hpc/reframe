@@ -435,12 +435,12 @@ class TestFrontend(unittest.TestCase):
         assert 1 == returncode
 
     def test_suppress_deprecation(self):
-        self.action = 'list'
+        self.action = 'run'
         self.checkpath = [
             'unittests/resources/checks_unlisted/deprecated_test.py'
         ]
         with pytest.warns(ReframeDeprecationWarning):
-            self._run_reframe()
+            returncode, stdout, stderr = self._run_reframe()
 
         self.more_options = ['--suppress-deprecation']
         with pytest.warns(None) as record:

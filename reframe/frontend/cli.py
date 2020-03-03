@@ -444,6 +444,9 @@ def main():
 
     printer.debug(argparse.format_options(options))
 
+    if options.suppress_deprecation:
+        warnings.filterwarnings('ignore', category=ReframeDeprecationWarning)
+
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
     printer.info('Reframe version: '  + reframe.VERSION)
@@ -466,11 +469,7 @@ def main():
     try:
         # Locate and load checks
         try:
-            with warnings.catch_warnings():
-                if options.suppress_deprecation:
-                    warnings.filterwarnings(
-                        'ignore', category=ReframeDeprecationWarning)
-                checks_found = loader.load_all()
+            checks_found = loader.load_all()
         except OSError as e:
             raise ReframeError from e
 
