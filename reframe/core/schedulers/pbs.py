@@ -35,7 +35,7 @@ _run_strict = functools.partial(os_ext.run_command, check=True)
 
 @register_scheduler('pbs')
 class PbsJobScheduler(sched.JobScheduler):
-    TASKS_OPT = ('-l  select={num_nodes}:mpiprocs={num_tasks_per_node}'
+    TASKS_OPT = ('-l select={num_nodes}:mpiprocs={num_tasks_per_node}'
                  ':ncpus={num_cpus_per_node}')
 
     def __init__(self):
@@ -47,13 +47,6 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def completion_time(self, job):
         return None
-
-    def resource_str(self, num_nodes, num_tasks_per_node, num_cpus_per_node):
-        return '-l select=%s:mpiprocs=%s:ncpus=%s' % (
-            num_nodes,
-            num_tasks_per_node,
-            num_cpus_per_node,
-        )
 
     def _emit_lselect_option(self, job):
         num_tasks_per_node = job.num_tasks_per_node or 1
