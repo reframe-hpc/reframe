@@ -114,7 +114,8 @@ class ReframeSettings:
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
-                            'switches': ['--switches={num_switches}']
+                            'switches': ['--switches={num_switches}'],
+                            'gres': ['--gres={gres}']
                         }
                     },
 
@@ -135,7 +136,8 @@ class ReframeSettings:
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
-                            'switches': ['--switches={num_switches}']
+                            'switches': ['--switches={num_switches}'],
+                            'gres': ['--gres={gres}']
                         }
                     },
 
@@ -192,6 +194,9 @@ class ReframeSettings:
                                      'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
+                        'resources': {
+                            'gres': ['--gres={gres}']
+                        }
                     },
 
                     'mc': {
@@ -212,7 +217,7 @@ class ReframeSettings:
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
-                            'switches': ['--switches={num_switches}']
+                            'gres': ['--gres={gres}']
                         }
                     },
 
