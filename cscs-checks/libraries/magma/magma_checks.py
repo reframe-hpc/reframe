@@ -12,7 +12,6 @@ import reframe.utility.sanity as sn
                         ['zsymmetrize'], ['ztranspose'])
 class MagmaCheck(rfm.RegressionTest):
     def __init__(self, subtest):
-        super().__init__()
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.num_gpus_per_node = 1
         self.sanity_patterns = sn.assert_found(r'Result = PASS', self.stdout)
@@ -63,11 +62,7 @@ class MagmaCheck(rfm.RegressionTest):
                 'dom:gpu': {
                     'magma':  (3692.65, -0.05, None, 'Gflop/s'),
                     'cublas': (4269.31, -0.09, None, 'Gflop/s'),
-                },
-                '*': {
-                    'magma':  (0, None, None, 'Gflop/s'),
-                    'cublas': (0, None, None, 'Gflop/s'),
-                },
+                }
             }
         elif subtest == 'zsymmetrize':
             self.perf_patterns = {
@@ -80,10 +75,7 @@ class MagmaCheck(rfm.RegressionTest):
                 },
                 'dom:gpu': {
                     'gpu_perf': (158.3, -0.05, None, 'GB/s'),
-                },
-                '*': {
-                    'gpu_perf': (0, None, None, 'GB/s'),
-                },
+                }
             }
         elif subtest == 'ztranspose':
             self.perf_patterns = {
@@ -99,10 +91,7 @@ class MagmaCheck(rfm.RegressionTest):
                 },
                 'dom:gpu': {
                     'gpu_perf': (498.2, -0.05, None, 'GB/s'),
-                },
-                '*': {
-                    'gpu_perf': (0, None, None, 'GB/s'),
-                },
+                }
             }
         elif subtest == 'zunmbr':
             # This test fails to compile with Magma 2.4
@@ -119,8 +108,5 @@ class MagmaCheck(rfm.RegressionTest):
                 },
                 'dom:gpu': {
                     'gpu_perf': (254.7, -0.05, None, 'Gflop/s'),
-                },
-                '*': {
-                    'gpu_perf': (0, None, None, 'Gflop/s'),
-                },
+                }
             }

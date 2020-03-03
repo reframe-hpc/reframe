@@ -11,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.descr = 'check for avx2 instructions'
         self.valid_systems = ['dom:login', 'daint:login', 'kesch:login']
         if self.current_system.name == 'kesch':
@@ -41,9 +40,10 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
         self.maintainers = ['AJ', 'CB']
         self.tags = {'production', 'craype'}
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_before('compile')
+    def setflags(self):
         if self.current_system.name == 'kesch':
-            if environ.name.startswith('PrgEnv-cray'):
+            if self.current_environ.name.startswith('PrgEnv-cray'):
                 # Ignore CPATH warning
                 self.build_system.cflags += ['-h nomessage=1254']
                 self.build_system.cxxflags += ['-h nomessage=1254']
@@ -52,8 +52,7 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
                 self.build_system.cxxflags += ['-march=native']
                 self.build_system.fflags += ['-march=native']
         else:
-            if environ.name == 'PrgEnv-cray':
+            if self.current_environ.name == 'PrgEnv-cray':
                 self.build_system.cflags = ['-Ofast', '-S']
                 self.build_system.cxxflags = ['-Ofast', '-S']
 
-        super().setup(partition, environ, **job_opts)

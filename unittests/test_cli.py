@@ -124,23 +124,23 @@ class TestFrontend(unittest.TestCase):
 
     def assert_log_file_is_saved(self):
         outputdir = os.path.join(self.prefix, 'output')
-        self.assertTrue(os.path.exists(self.logfile))
-        self.assertTrue(os.path.exists(
-            os.path.join(outputdir, os.path.basename(self.logfile))))
+        assert os.path.exists(self.logfile)
+        assert os.path.exists(
+            os.path.join(outputdir, os.path.basename(self.logfile)))
 
     def test_default_settings(self):
         # Simply make sure that a default settings file exists
         try:
             import reframe.settings as settings
         except ImportError:
-            self.fail('default settings file find could not be found')
+            pytest.fail('default settings file could not be found')
 
     def test_check_success(self):
         self.more_options = ['--save-log-files']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('PASSED', stdout)
-        self.assertNotIn('FAILED', stdout)
-        self.assertEqual(0, returncode)
+        assert 'PASSED' in stdout
+        assert 'FAILED' not in stdout
+        assert 0 == returncode
         self.assert_log_file_is_saved()
 
     @fixtures.switch_to_user_runtime
@@ -148,7 +148,7 @@ class TestFrontend(unittest.TestCase):
         # This test will run on the auto-detected system
         partition = fixtures.partition_with_scheduler()
         if not partition:
-            self.skipTest('job submission not supported')
+            pytest.skip('job submission not supported')
 
         self.config_file = fixtures.USER_CONFIG_FILE
         self.local = False
@@ -159,20 +159,20 @@ class TestFrontend(unittest.TestCase):
         self.environs = ['^' + partition.environs[0].name + '$']
 
         returncode, stdout, _ = self._run_reframe()
-        self.assertNotIn('FAILED', stdout)
-        self.assertIn('PASSED', stdout)
+        assert 'FAILED' not in stdout
+        assert 'PASSED' in stdout
 
         # Assert that we have run only one test case
-        self.assertIn('Ran 1 test case(s)', stdout)
-        self.assertEqual(0, returncode)
+        assert 'Ran 1 test case(s)' in stdout
+        assert 0 == returncode
 
     def test_check_failure(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['-t', 'BadSetupCheck']
 
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('FAILED', stdout)
-        self.assertNotEqual(returncode, 0)
+        assert 'FAILED' in stdout
+        assert returncode != 0
 
     def test_check_setup_failure(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -180,10 +180,10 @@ class TestFrontend(unittest.TestCase):
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertIn('FAILED', stdout)
-        self.assertNotEqual(returncode, 0)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 'FAILED' in stdout
+        assert returncode != 0
 
     def test_check_kbd_interrupt(self):
         self.checkpath = [
@@ -193,39 +193,39 @@ class TestFrontend(unittest.TestCase):
         self.local = False
 
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertIn('FAILED', stdout)
-        self.assertNotEqual(returncode, 0)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 'FAILED' in stdout
+        assert returncode != 0
 
     def test_check_sanity_failure(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['-t', 'SanityFailureCheck']
 
         returncode, stdout, stderr = self._run_reframe()
-        self.assertIn('FAILED', stdout)
+        assert 'FAILED' in stdout
 
         # This is a normal failure, it should not raise any exception
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertNotEqual(returncode, 0)
-        self.assertTrue(self._stage_exists('SanityFailureCheck',
-                                           ['login'], self.environs))
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert returncode != 0
+        assert self._stage_exists('SanityFailureCheck', ['login'],
+                                  self.environs)
 
     def test_performance_check_failure(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['-t', 'PerformanceFailureCheck']
         returncode, stdout, stderr = self._run_reframe()
 
-        self.assertIn('FAILED', stdout)
+        assert 'FAILED' in stdout
 
         # This is a normal failure, it should not raise any exception
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertNotEqual(0, returncode)
-        self.assertTrue(self._stage_exists('PerformanceFailureCheck',
-                                           ['login'], self.environs))
-        self.assertTrue(self._perflog_exists('PerformanceFailureCheck'))
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 != returncode
+        assert self._stage_exists('PerformanceFailureCheck', ['login'],
+                                  self.environs)
+        assert self._perflog_exists('PerformanceFailureCheck')
 
     def test_performance_report(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -233,21 +233,21 @@ class TestFrontend(unittest.TestCase):
                              '--performance-report']
         returncode, stdout, stderr = self._run_reframe()
 
-        self.assertIn(r'PERFORMANCE REPORT', stdout)
-        self.assertIn(r'perf: 10 Gflop/s', stdout)
+        assert r'PERFORMANCE REPORT' in stdout
+        assert r'perf: 10 Gflop/s' in stdout
 
     def test_skip_system_check_option(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['--skip-system-check', '-t', 'NoSystemCheck']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('PASSED', stdout)
+        assert 'PASSED' in stdout
 
     def test_skip_prgenv_check_option(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['--skip-prgenv-check', '-t', 'NoPrgEnvCheck']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('PASSED', stdout)
-        self.assertEqual(0, returncode)
+        assert 'PASSED' in stdout
+        assert 0 == returncode
 
     def test_sanity_of_checks(self):
         # This test will effectively load all the tests in the checks path and
@@ -258,7 +258,7 @@ class TestFrontend(unittest.TestCase):
         self.checkpath = []
         returncode, *_ = self._run_reframe()
 
-        self.assertEqual(0, returncode)
+        assert 0 == returncode
         self.assert_log_file_is_saved()
 
     def test_unknown_system(self):
@@ -266,16 +266,16 @@ class TestFrontend(unittest.TestCase):
         self.system = 'foo'
         self.checkpath = []
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(1, returncode)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 1 == returncode
 
     def test_sanity_of_optconfig(self):
         # Test the sanity of the command line options configuration
         self.action = 'help'
         self.checkpath = []
         returncode, *_ = self._run_reframe()
-        self.assertEqual(0, returncode)
+        assert 0 == returncode
 
     def test_checkpath_colon_separated(self):
         self.action = 'list'
@@ -284,7 +284,7 @@ class TestFrontend(unittest.TestCase):
         returncode, stdout, _ = self._run_reframe()
         num_checks = re.search(
             r'Found (\d+) check', stdout, re.MULTILINE).group(1)
-        self.assertEqual(num_checks, '2')
+        assert num_checks == '2'
 
     def test_checkpath_symlink(self):
         self.action = 'list'
@@ -303,7 +303,7 @@ class TestFrontend(unittest.TestCase):
             num_checks_in_checkdir = re.search(
                 r'Found (\d+) check', stdout, re.MULTILINE).group(1)
 
-        self.assertEqual(num_checks_in_checkdir, num_checks_default)
+        assert num_checks_in_checkdir == num_checks_default
 
     def test_checkpath_recursion(self):
         self.action = 'list'
@@ -317,25 +317,25 @@ class TestFrontend(unittest.TestCase):
         returncode, stdout, _ = self._run_reframe()
         num_checks_in_checkdir = re.search(
             r'Found (\d+) check', stdout, re.MULTILINE).group(1)
-        self.assertEqual(num_checks_in_checkdir, num_checks_default)
+        assert num_checks_in_checkdir == num_checks_default
 
         self.more_options = []
         returncode, stdout, stderr = self._run_reframe()
         num_checks_in_checkdir = re.search(
             r'Found (\d+) check', stdout, re.MULTILINE).group(1)
-        self.assertEqual('0', num_checks_in_checkdir)
+        assert '0' == num_checks_in_checkdir
 
     def test_same_output_stage_dir(self):
         output_dir = os.path.join(self.prefix, 'foo')
         self.more_options = ['-o', output_dir, '-s', output_dir]
         returncode, *_ = self._run_reframe()
-        self.assertEqual(1, returncode)
+        assert 1 == returncode
 
         # retry with --keep-stage-files
         self.more_options.append('--keep-stage-files')
         returncode, *_ = self._run_reframe()
-        self.assertEqual(0, returncode)
-        self.assertTrue(os.path.exists(output_dir))
+        assert 0 == returncode
+        assert os.path.exists(output_dir)
 
     def test_execution_modes(self):
         self.checkpath = []
@@ -344,11 +344,11 @@ class TestFrontend(unittest.TestCase):
         self.mode = 'unittest'
 
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertNotIn('FAILED', stdout)
-        self.assertIn('PASSED', stdout)
-        self.assertIn('Ran 1 test case', stdout)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 'FAILED' not in stdout
+        assert 'PASSED' in stdout
+        assert 'Ran 1 test case' in stdout
 
     def test_no_ignore_check_conflicts(self):
         self.checkpath = ['unittests/resources/checks']
@@ -356,7 +356,7 @@ class TestFrontend(unittest.TestCase):
         self.ignore_check_conflicts = False
         self.action = 'list'
         returncode, *_ = self._run_reframe()
-        self.assertNotEqual(0, returncode)
+        assert 0 != returncode
 
     def test_timestamp_option(self):
         from datetime import datetime
@@ -368,8 +368,8 @@ class TestFrontend(unittest.TestCase):
         self.more_options = ['--timestamp=xxx_%F']
         timefmt = datetime.now().strftime('xxx_%F')
         returncode, stdout, _ = self._run_reframe()
-        self.assertNotEqual(0, returncode)
-        self.assertIn(timefmt, stdout)
+        assert 0 != returncode
+        assert timefmt in stdout
 
     def test_list_empty_prgenvs_check_and_options(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -377,8 +377,8 @@ class TestFrontend(unittest.TestCase):
         self.environs = []
         self.more_options = ['-n', 'NoPrgEnvCheck']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('Found 0 check(s)', stdout)
-        self.assertEqual(0, returncode)
+        assert 'Found 0 check(s)' in stdout
+        assert 0 == returncode
 
     def test_list_check_with_empty_prgenvs(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -386,8 +386,8 @@ class TestFrontend(unittest.TestCase):
         self.environs = ['foo']
         self.more_options = ['-n', 'NoPrgEnvCheck']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('Found 0 check(s)', stdout)
-        self.assertEqual(0, returncode)
+        assert 'Found 0 check(s)' in stdout
+        assert 0 == returncode
 
     def test_list_empty_prgenvs_in_check_and_options(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
@@ -395,53 +395,53 @@ class TestFrontend(unittest.TestCase):
         self.environs = []
         self.more_options = ['-n', 'NoPrgEnvCheck']
         returncode, stdout, _ = self._run_reframe()
-        self.assertIn('Found 0 check(s)', stdout)
-        self.assertEqual(0, returncode)
+        assert 'Found 0 check(s)' in stdout
+        assert 0 == returncode
 
     def test_list_with_details(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.action = 'list_detailed'
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(0, returncode)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 == returncode
 
     def test_show_config(self):
         # Just make sure that this option does not make the frontend crash
         self.more_options = ['--show-config']
         self.system = 'testsys'
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(0, returncode)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 == returncode
 
     def test_show_env_config(self):
         # Just make sure that this option does not make the frontend crash
         self.more_options = ['--show-config-env', 'PrgEnv-gnu']
         self.system = 'testsys'
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(0, returncode)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 == returncode
 
     def test_show_env_config_unknown_env(self):
         # Just make sure that this option does not make the frontend crash
         self.more_options = ['--show-config-env', 'foobar']
         self.system = 'testsys'
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(1, returncode)
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 1 == returncode
 
     def test_verbosity(self):
         self.more_options = ['-vvvvv']
         self.system = 'testsys'
         self.action = 'list'
         returncode, stdout, stderr = self._run_reframe()
-        self.assertNotEqual('', stdout)
-        self.assertNotIn('Traceback', stdout)
-        self.assertNotIn('Traceback', stderr)
-        self.assertEqual(0, returncode)
+        assert '' != stdout
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 == returncode
 
     @fixtures.switch_to_user_runtime
     def test_unload_module(self):

@@ -11,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['small'], ['large'])
 class CPMDCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, scale):
-        super().__init__()
         self.descr = 'CPMD check (C4H6 metadynamics)'
         self.maintainers = ['AJ', 'LM']
         self.tags = {'production'}

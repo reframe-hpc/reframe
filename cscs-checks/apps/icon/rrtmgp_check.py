@@ -14,7 +14,6 @@ class RRTMGPTest(rfm.RegressionTest):
     '''This is an outdated PoC test for ICON-RRTMGP.'''
 
     def __init__(self):
-        super().__init__()
         self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-pgi']
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
