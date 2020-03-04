@@ -227,6 +227,11 @@ def inpath(entry, pathvar):
     return entry in set(pathvar.split(':'))
 
 
+def is_interactive():
+    '''Returns whether the given Python session is interactive'''
+    return bool(getattr(sys, 'ps1', sys.flags.interactive))
+
+
 def subdirs(dirname, recurse=False):
     '''Returns a list of dirname + its subdirectories. If recurse is True,
     recursion is performed in pre-order.'''

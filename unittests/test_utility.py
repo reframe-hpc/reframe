@@ -173,6 +173,11 @@ class TestOSTools(unittest.TestCase):
                                os.path.join(prefix, 'broken1'))
         shutil.rmtree(prefix)
 
+    def test_is_interactive(self):
+        # Set `sys.ps1` to immitate an interactive session
+        sys.ps1 = 'rfm>>> '
+        assert os_ext.is_interactive()
+
     def test_is_url(self):
         repo_https = 'https://github.com/eth-cscs/reframe.git'
         repo_ssh = 'git@github.com:eth-cscs/reframe.git'
