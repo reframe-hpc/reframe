@@ -449,7 +449,7 @@ def main():
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))
-    printer.info('Reframe version: '  + reframe.VERSION)
+    printer.info('Reframe version: '  + os_ext.reframe_version())
     printer.info('Launched by user: ' + (os_ext.osuser() or '<unknown>'))
     printer.info('Launched on host: ' + socket.gethostname())
 
