@@ -228,6 +228,9 @@ def main():
     misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
+    misc_options.add_argument(
+        '--failure-stats', action='store_true',
+        help='Print failure statistics')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
 
@@ -236,9 +239,6 @@ def main():
     misc_options.add_argument(
         '--non-default-craype', action='store_true', default=False,
         help='Test a non-default Cray PE')
-    misc_options.add_argument(
-        '--rerun-failed', action='store_true',
-        help='Print run options for all failed tests in summary table')
     misc_options.add_argument(
         '--show-config', action='store_true',
         help='Print configuration of the current system and exit')
@@ -622,12 +622,10 @@ def main():
 
                 # Print a failure report if we had failures in the last run
                 if runner.stats.failures():
-                    if options.rerun_failed:
-                        rerun_failed = 1
-                        printer.info(runner.stats.failure_report(rerun_failed))
-                    else:
-                        printer.info(runner.stats.failure_report())
+                    printer.info(runner.stats.failure_report())
                     success = False
+                    if options.failure_stats:
+                        printer.info(runner.stats.failure_stats())
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
