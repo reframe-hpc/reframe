@@ -229,7 +229,7 @@ def inpath(entry, pathvar):
 
 def is_interactive():
     '''Returns whether the given Python session is interactive'''
-    return bool(getattr(sys, 'ps1', sys.flags.interactive))
+    return hasattr(sys, 'ps1') or sys.flags.interactive
 
 
 def subdirs(dirname, recurse=False):
