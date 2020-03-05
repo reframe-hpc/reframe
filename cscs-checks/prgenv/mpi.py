@@ -48,7 +48,7 @@ class MpiInitTest(rfm.RegressionTest):
         }
         self.build_system.cppflags = self.cppflags[required_thread]
         self.build_system.cppflags += ['-static']
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         found_mpithread = sn.extractsingle(
             r'^mpi_thread_required=\w+\s+mpi_thread_supported=\w+'
             r'\s+mpi_thread_queried=\w+\s+(?P<result>\d)$',
