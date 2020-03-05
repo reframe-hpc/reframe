@@ -450,15 +450,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
-    #: Specify the maximum time the job can be pending before starting running
+    #: The maximum time a job can be pending before starting running.
     #:
-    #: The time is specified with the same format of `time_limit`.
+    #: Time duration is specified as of the :attr:`time_limit` attribute.
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta``
     #: :default: :class:`None
     #:
     #: .. note::
-    #:    .. versionchanged:: 2.15
+    #:    .. versionchanged:: 3.0
     #:
     max_pending_time = fields.TimerField('max_pending_time', type(None))
 

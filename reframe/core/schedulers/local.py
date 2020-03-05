@@ -128,7 +128,7 @@ class LocalJobScheduler(sched.JobScheduler):
         job.time_limit = timedelta(seconds=self._cancel_grace_period)
         self.wait(job, None)
 
-    def wait(self, job, max_pending_time):
+    def wait(self, job):
         '''Wait for the spawned job to finish.
 
         As soon as the parent job process finishes, all of its spawned
@@ -164,7 +164,7 @@ class LocalJobScheduler(sched.JobScheduler):
             self._f_stdout.close()
             self._f_stderr.close()
 
-    def finished(self, job, max_pending_time):
+    def finished(self, job):
         '''Check if the spawned process has finished.
 
         This function does not wait the process. It just queries its state. If

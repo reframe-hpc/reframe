@@ -409,7 +409,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
             raise JobBlockedError(reason_msg, jobid=job.jobid)
 
-    def wait(self, job, max_pending_time):
+    def wait(self, job):
         # Quickly return in case we have finished already
         if slurm_state_completed(job.state):
             if self.is_array(job):
@@ -421,9 +421,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._update_state(job)
 
         while not slurm_state_completed(job.state):
-            if max_pending_time:
+            if job.max_pending_time:
                 if slurm_state_pending(job.state):
-                    if datetime.now() - self._submit_time > max_pending_time:
+                    if datetime.now() - self._submit_time >= job.max_pending_time:
                         self.cancel(job)
                         raise JobError('maximum pending time exceeded',
                                        jobid=job.jobid)
@@ -440,7 +440,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                     timeout=settings().job_submit_timeout)
         self._is_cancelling = True
 
-    def finished(self, job, max_pending_time):
+    def finished(self, job):
         try:
             self._update_state(job)
         except JobBlockedError:
@@ -452,9 +452,9 @@ class SlurmJobScheduler(sched.JobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
-            if max_pending_time:
+            if job.max_pending_time:
                 if slurm_state_pending(job.state):
-                    if datetime.now() - self._submit_time > max_pending_time:
+                    if datetime.now() - self._submit_time >= job.max_pending_time:
                         self.cancel(job)
                         raise JobError('maximum pending time exceeded',
                                        jobid=job.jobid)

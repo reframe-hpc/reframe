@@ -43,7 +43,7 @@ class JobScheduler(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def wait(self, job, max_pending_time):
+    def wait(self, job):
         pass
 
     @abc.abstractmethod
@@ -51,7 +51,7 @@ class JobScheduler(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def finished(self, job, max_pending_time):
+    def finished(self, job):
         pass
 
 
@@ -166,10 +166,10 @@ class Job:
     def __init__(self,
                  name,
                  workdir='.',
-                 max_pending_time=None,
                  script_filename=None,
                  stdout=None,
                  stderr=None,
+                 max_pending_time=None,
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
                  sched_account=None,
@@ -199,10 +199,10 @@ class Job:
 
         self._name = name
         self._workdir = workdir
-        self._max_pending_time = max_pending_time
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
+        self._max_pending_time = max_pending_time
         self._completion_time = None
 
         # Backend scheduler related information
@@ -344,7 +344,7 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot wait an unstarted job')
 
-        self.scheduler.wait(self, self.max_pending_time)
+        self.scheduler.wait(self)
         self._completion_time = self._completion_time or time.time()
 
     def cancel(self):
@@ -357,7 +357,7 @@ class Job:
         if self.jobid is None:
             raise JobNotStartedError('cannot poll an unstarted job')
 
-        done = self.scheduler.finished(self, self.max_pending_time)
+        done = self.scheduler.finished(self)
         if done:
             self._completion_time = self._completion_time or time.time()
 
