@@ -222,6 +222,37 @@ class SiteConfiguration:
             self._systems[sys_name] = system
 
 
+def str_configuration(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
+    nlch = lfchar + htchar * indent * (current_depth + 1)
+    if type(value) is dict:
+        if value == {}:
+            return '\{\}'
+        items = [
+            nlch + repr(key) + ': ' +
+            pretty(value[key], htchar, lfchar, indent, current_depth + 1)
+            for key in value
+        ]
+        return '{%s}' % (','.join(items) + lfchar + htchar * indent * current_depth)
+    elif type(value) is list:
+        if value == []:
+            return '[]'
+        items = [
+            nlch + pretty(item, htchar, lfchar, indent, current_depth + 1)
+            for item in value
+        ]
+        return '[%s]' % (','.join(items) + lfchar + htchar * indent * current_depth)
+    elif type(value) is tuple:
+        if value == ():
+            return '()'
+        items = [
+            nlch + pretty(item, htchar, lfchar, indent, current_depth + 1)
+            for item in value
+        ]
+        return '(%s)' % (','.join(items) + lfchar + htchar * indent * current_depth)
+    else:
+        return repr(value)
+
+
 def convert_old_config(filename):
     old_config = load_settings_from_file(filename)
     converted = {
@@ -326,6 +357,10 @@ def convert_old_config(filename):
         del converted['general']
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
-        json.dump(converted, fp, indent=4)
+        fp.write('#\n# This file was automatically generated '
+                 'by ReFrame based on `{}\'.\n#\n\n'.format(filename))
+        fp.write('site_configuration = ')
+        fp.write(pretty(converted))
+        fp.write('\n')
 
     return fp.name
