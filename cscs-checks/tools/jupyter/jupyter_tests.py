@@ -15,7 +15,7 @@ class JupyterHubSubmitTest(rfm.RunOnlyRegressionTest):
         self.valid_prog_environs = ['*']
         self.sourcesdir = None
         self.executable = 'hostname'
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         self.sanity_patterns = sn.assert_found(r'nid\d+', self.stdout)
         self.tags = {'production', 'maintenance'}
         self.maintainers = ['RS', 'TR']

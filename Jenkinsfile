@@ -120,44 +120,6 @@ stage('Unittest') {
     }
 }
 
-stage('Public Test') {
-    if (currentBuild.result != 'SUCCESS') {
-        println 'Not executing "Public Test" Stage'
-        return
-    }
-    else {
-        try {
-            if (!('dom' in machinesToRun)) {
-                return
-            }
-            node('dom') {
-                def scratch = sh(returnStdout: true,
-                             script: """${loginBash}
-                                        echo \$SCRATCH""").trim()
-                def reframeDir = "${scratch}/${dirPrefix}-dom-${uniqueID}"
-                dir(reframeDir) {
-                    sh("""${loginBash}
-                          bash ${reframeDir}/$bashScript -f ${reframeDir} -i '' -g""")
-                }
-            }
-            currentBuild.result = "SUCCESS"
-        } catch(err) {
-            if (err.toString().contains('exit code 143')) {
-                currentBuild.result = "ABORTED"
-                println "The Public Test was cancelled. Aborting....."
-            }
-            else if (err.toString().contains('Queue task was cancelled')) {
-                currentBuild.result = "ABORTED"
-                println "The Queue task was cancelled. Aborting....."
-            }
-            else {
-                currentBuild.result = "FAILURE"
-                println "The Public Test failed. Exiting....."
-            }
-        }
-    }
-}
-
 builds = [:]
 stage('Tutorial Check') {
     if (currentBuild.result != 'SUCCESS') {

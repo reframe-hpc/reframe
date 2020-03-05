@@ -16,7 +16,7 @@ class ParaViewCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']
 
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         self.executable = 'pvbatch'
         self.executable_opts = ['coloredSphere.py']
 
