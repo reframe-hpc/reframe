@@ -222,14 +222,14 @@ class SiteConfiguration:
             self._systems[sys_name] = system
 
 
-def str_configuration(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
+def ppretty(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
     nlch = lfchar + htchar * indent * (current_depth + 1)
     if type(value) is dict:
         if value == {}:
             return '\{\}'
         items = [
             nlch + repr(key) + ': ' +
-            pretty(value[key], htchar, lfchar, indent, current_depth + 1)
+            ppretty(value[key], htchar, lfchar, indent, current_depth + 1)
             for key in value
         ]
         return '{%s}' % (','.join(items) + lfchar + htchar * indent * current_depth)
@@ -237,7 +237,7 @@ def str_configuration(value, htchar=' ', lfchar='\n', indent=4, current_depth=0)
         if value == []:
             return '[]'
         items = [
-            nlch + pretty(item, htchar, lfchar, indent, current_depth + 1)
+            nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
             for item in value
         ]
         return '[%s]' % (','.join(items) + lfchar + htchar * indent * current_depth)
@@ -245,7 +245,7 @@ def str_configuration(value, htchar=' ', lfchar='\n', indent=4, current_depth=0)
         if value == ():
             return '()'
         items = [
-            nlch + pretty(item, htchar, lfchar, indent, current_depth + 1)
+            nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
             for item in value
         ]
         return '(%s)' % (','.join(items) + lfchar + htchar * indent * current_depth)
@@ -360,7 +360,7 @@ def convert_old_config(filename):
         fp.write('#\n# This file was automatically generated '
                  'by ReFrame based on `{}\'.\n#\n\n'.format(filename))
         fp.write('site_configuration = ')
-        fp.write(pretty(converted))
+        fp.write(ppretty(converted))
         fp.write('\n')
 
     return fp.name
