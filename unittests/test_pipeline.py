@@ -467,19 +467,19 @@ class TestHooks(unittest.TestCase):
                 self.sourcepath = 'hello.c'
                 self.executable = os.path.join('.', self.name)
                 self.sanity_patterns = sn.assert_found('.*', self.stdout)
-                self.var = 0
+                self.count = 0
 
             @rfm.run_before('setup')
-            def prefoo(self):
-                self.var += 1
+            def presetup(self):
+                self.count += 1
 
             @rfm.run_after('setup')
-            def postfoo(self):
-                self.var += 1
+            def postsetup(self):
+                self.count += 1
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
-        assert test.var == 2
+        assert test.count == 2
 
     def test_compile_hooks(self):
         @fixtures.custom_prefix('unittests/resources/checks')
@@ -535,13 +535,9 @@ class TestHooks(unittest.TestCase):
                     r'Hello, World\!', self.stdout)
 
             @rfm.run_before('run')
-            def set_post_run(self):
-                self.sourcesdir = None
-
-            @rfm.run_after('run')
-            def check_greetings(self):
-                # Make sure nothing was copied to the stage directory
-                assert len(os.listdir(self.stagedir)) == 3
+            def check_empty_stage(self):
+                # Make sure nothing has been copied to the stage directory yet
+                assert len(os.listdir(self.stagedir)) == 0
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
