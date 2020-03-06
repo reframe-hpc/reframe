@@ -9,6 +9,7 @@
 #
 
 import re
+from datetime import datetime
 
 import reframe.utility.os_ext as os_ext
 from reframe.core.config import settings
@@ -83,4 +84,11 @@ class TorqueJobScheduler(PbsJobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
+            if job.max_pending_time:
+                if job.state in ['QUEUED', 'HELD', 'WAITING']:
+                    if datetime.now() - self._submit_time >= job.max_pending_time:
+                        self.cancel(job)
+                        raise JobError('maximum pending time exceeded',
+                                       jobid=job.jobid)
+
             return job.state == 'COMPLETED'

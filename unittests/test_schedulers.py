@@ -445,6 +445,7 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     @fixtures.switch_to_user_runtime
     def test_submit_max_pending_time(self):
         self.setup_user()
+        self.parallel_cmd = 'sleep 30'
         self.prepare()
         self.testjob.scheduler._update_state = self._update_state
         self.testjob._max_pending_time = timedelta(seconds=5)
@@ -576,6 +577,23 @@ class TestTorqueJob(TestPbsJob):
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
         pytest.skip("Torque minimum time limit is 60s")
+
+    def _update_state(self, job):
+        job.state = 'QUEUED'
+
+    # Monkey patch `self._update_state` to simulate that the job is
+    # pending on the queue for enough time so it can be canceled due
+    # to exceeding the maximum pending time
+    @fixtures.switch_to_user_runtime
+    def test_submit_max_pending_time(self):
+        self.setup_user()
+        self.parallel_cmd = 'sleep 30'
+        self.prepare()
+        self.testjob.scheduler._update_state = self._update_state
+        self.testjob._max_pending_time = timedelta(seconds=5)
+        self.testjob.submit()
+        with pytest.raises(JobError):
+            self.testjob.wait()
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):

@@ -122,6 +122,8 @@ class PbsJobScheduler(sched.JobScheduler):
         if info:
             self._pbs_server = info[0]
 
+        self._submit_time = datetime.now()
+
     def wait(self, job):
         intervals = itertools.cycle(settings().job_poll_intervals)
         while not self.finished(job):
