@@ -226,13 +226,14 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
     nlch = lfchar + htchar * indent * (current_depth + 1)
     if type(value) is dict:
         if value == {}:
-            return '\{\}'
+            return '{}'
         items = [
             nlch + repr(key) + ': ' +
             ppretty(value[key], htchar, lfchar, indent, current_depth + 1)
             for key in value
         ]
-        return '{%s}' % (','.join(items) + lfchar + htchar * indent * current_depth)
+        return '{%s}' % (','.join(items) + lfchar +
+                         htchar * indent * current_depth)
     elif type(value) is list:
         if value == []:
             return '[]'
@@ -240,7 +241,8 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
             nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
             for item in value
         ]
-        return '[%s]' % (','.join(items) + lfchar + htchar * indent * current_depth)
+        return '[%s]' % (','.join(items) + lfchar +
+                         htchar * indent * current_depth)
     elif type(value) is tuple:
         if value == ():
             return '()'
@@ -248,7 +250,8 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
             nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
             for item in value
         ]
-        return '(%s)' % (','.join(items) + lfchar + htchar * indent * current_depth)
+        return '(%s)' % (','.join(items) + lfchar +
+                         htchar * indent * current_depth)
     else:
         return repr(value)
 
@@ -265,6 +268,7 @@ def convert_old_config(filename):
     for sys_name, sys_specs in old_systems:
         sys_dict = {'name': sys_name}
         sys_dict.update(sys_specs)
+
         # Make variables dictionary into a list of lists
         if 'variables' in sys_specs:
             sys_dict['variables'] = [
