@@ -126,7 +126,7 @@ class LocalJobScheduler(sched.JobScheduler):
         # Set the time limit to the grace period and let wait() do the final
         # killing
         job.time_limit = timedelta(seconds=self._cancel_grace_period)
-        self.wait(job, None)
+        self.wait(job)
 
     def wait(self, job):
         '''Wait for the spawned job to finish.

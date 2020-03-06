@@ -11,7 +11,7 @@ import socket
 import tempfile
 import time
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
@@ -32,7 +32,6 @@ class _TestJob(abc.ABC):
             self.scheduler, self.launcher,
             name='testjob',
             workdir=self.workdir,
-            max_pending_time=None,
             script_filename=os_ext.mkstemp_path(
                 dir=self.workdir, suffix='.sh'
             ),
@@ -339,6 +338,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
     def setup_user(self, msg=None):
         super().setup_user(msg='SLURM (with sacct) not configured')
 
+    def _update_state(self, job):
+        job.state = 'PENDING'
+
     def test_prepare(self):
         self.setup_job()
         super().test_prepare()
@@ -436,6 +438,19 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
             output = fp.read()
             assert all([re.search('Task id: 0', output),
                         re.search('Task id: 1', output)])
+
+    # Monkey patch `self._update_state` to simulate that the job is
+    # pending on the queue for enough time so it can be canceled due
+    # to exceeding the maximum pending time
+    @fixtures.switch_to_user_runtime
+    def test_submit_max_pending_time(self):
+        self.setup_user()
+        self.prepare()
+        self.testjob.scheduler._update_state = self._update_state
+        self.testjob._max_pending_time = timedelta(seconds=5)
+        self.testjob.submit()
+        with pytest.raises(JobError):
+            self.testjob.wait()
 
 
 class TestSqueueJob(TestSlurmJob):

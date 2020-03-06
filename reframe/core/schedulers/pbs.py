@@ -122,11 +122,9 @@ class PbsJobScheduler(sched.JobScheduler):
         if info:
             self._pbs_server = info[0]
 
-        self._submit_time = datetime.now()
-
-    def wait(self, job, max_pending_time):
+    def wait(self, job):
         intervals = itertools.cycle(settings().job_poll_intervals)
-        while not self.finished(job, max_pending_time):
+        while not self.finished(job):
             time.sleep(next(intervals))
 
     def cancel(self, job):
@@ -138,7 +136,7 @@ class PbsJobScheduler(sched.JobScheduler):
         getlogger().debug('cancelling job (id=%s)' % jobid)
         _run_strict('qdel %s' % jobid, timeout=settings().job_submit_timeout)
 
-    def finished(self, job, max_pending_time):
+    def finished(self, job):
         with os_ext.change_dir(job.workdir):
             done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
 
@@ -146,12 +144,5 @@ class PbsJobScheduler(sched.JobScheduler):
             t_now = datetime.now()
             self._time_finished = self._time_finished or t_now
             time_from_finish = (t_now - self._time_finished).total_seconds()
-
-        if max_pending_time:
-            if slurm_state_pending(job.state):
-                if datetime.now() - self._submit_time > max_pending_time:
-                    self.cancel(job)
-                    raise JobError('maximum pending time exceeded',
-                                   jobid=job.jobid)
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT
