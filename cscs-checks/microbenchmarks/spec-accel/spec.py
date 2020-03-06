@@ -42,7 +42,7 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
         self.num_tasks = 1
         self.num_tasks_per_node = 1
-        self.time_limit = (0, 30, 0)
+        self.time_limit = '30m'
 
         self.executable = 'runspec'
 
