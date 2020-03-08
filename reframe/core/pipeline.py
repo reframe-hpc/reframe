@@ -27,16 +27,15 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
+from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
-from reframe.core.launchers.registry import getlauncher
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.registry import getscheduler
 from reframe.core.systems import SystemPartition
 
 
@@ -786,7 +785,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Weak reference to the test case associated with this check
         self._case = None
 
-        if rt.runtime().non_default_craype:
+        if rt.runtime().get_option('general/0/non_default_craype'):
             self._cdt_environ = env.Environment(
                 name='__rfm_cdt_environ',
                 variables={
@@ -984,13 +983,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('setting up paths')
         try:
-            resources = rt.runtime().resources
-            self._stagedir = resources.make_stagedir(
+            runtime = rt.runtime()
+            self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
-            self._outputdir = resources.make_outputdir(
+                self._current_environ.name, self.name
+            )
+            self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
+                self._current_environ.name, self.name
+            )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 

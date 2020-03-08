@@ -129,7 +129,8 @@
                     },
                     "modules_system": {
                         "type": "string",
-                        "enum": ["tmod", "tmod31", "tmod32", "tmod4", "lmod"]
+                        "enum": ["tmod", "tmod31", "tmod32",
+                                 "tmod4", "lmod", "nomod"]
                     },
                     "modules": {"$ref": "#/defs/modules_list"},
                     "variables": {"$ref": "#/defs/envvar_list"},
@@ -171,8 +172,10 @@
                                         "properties": {
                                             "name": {
                                                 "type": "string",
-                                                "enum": ["Docker", "Sarus",
-                                                         "Singularity"]
+                                                "enum": [
+                                                    "Docker", "Sarus",
+                                                    "Shifter", "Singularity"
+                                                ]
                                             },
                                             "modules": {
                                                 "$ref": "#/defs/modules_list"
@@ -207,7 +210,7 @@
                         }
                     }
                 },
-                "required": ["name"],
+                "required": ["name", "hostnames"],
                 "additionalProperties": false
             }
         },
@@ -333,7 +336,28 @@
                         "items": {"type": "string"}
                     },
                     "check_search_recursive": {"type": "boolean"},
-                    "target_systems": {"$ref": "#/defs/system_ref"}
+                    "colorize": {"type": "boolean"},
+                    "ignore_check_conflicts": {"type": "boolean"},
+                    "keep_stage_files": {"type": "boolean"},
+                    "module_map_file": {"type": "string"},
+                    "module_mappings": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "non_default_craype": {"type": "boolean"},
+                    "purge_environment": {"type": "boolean"},
+                    "save_log_files": {"type": "boolean"},
+                    "timestamp": {"type": "string"},
+                    "target_systems": {"$ref": "#/defs/system_ref"},
+                    "unload_modules": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "user_modules": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "verbose": {"type": "number"}
                 },
                 "additionalProperties": false
             }
@@ -342,13 +366,32 @@
     "required": ["systems", "environments", "logging", "perf_logging"],
     "additionalProperties": false,
     "defaults": {
+        "environments/modules": [],
+        "environments/variables": [],
         "environments/cc": "cc",
         "environments/cxx": "CC",
         "environments/ftn": "ftn",
+        "environments/cppflags": [],
+        "environments/cflags": [],
+        "environments/cxxflags": [],
+        "environments/fflags": [],
+        "environments/ldflags": [],
         "environments/target_systems": ["*"],
-        "general/check_search_path": ["checks/"],
-        "general/check_search_recursive": "true",
+        "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
+        "general/check_search_recursive": true,
+        "general/colorize": true,
+        "general/ignore_check_conflicts": false,
+        "general/keep_stage_files": false,
+        "general/module_map_file": "",
+        "general/module_mappings": [],
+        "general/non_default_craype": false,
+        "general/purge_environment": false,
+        "general/save_log_files": false,
+        "general/timestamp": "",
         "general/target_systems": ["*"],
+        "general/unload_modules": [],
+        "general/user_modules": [],
+        "general/verbose": 0,
         "perf_logging/target_systems": ["*"],
         "logging/handlers/level": "debug",
         "logging/handlers/file/append": false,
@@ -361,7 +404,26 @@
         "modes/target_systems": ["*"],
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
+        "systems/descr": "",
+        "systems/modules_system": "nomod",
+        "systems/modules": [],
+        "systems/variables": [],
         "systems/prefix": ".",
-        "systems/resourcesdir": "."
+        "systems/perflogdir": "",
+        "systems/outputdir": "",
+        "systems/resourcesdir": ".",
+        "systems/stagedir": "",
+        "systems/partitions": {},
+        "systems/partitions/descr": "",
+        "systems/partitions/access": [],
+        "systems/partitions/environs": [],
+        "systems/partitions/container_platforms": [],
+        "systems/partitions/container_platforms/modules": [],
+        "systems/partitions/container_platforms/variables": [],
+        "systems/partitions/resources": [],
+        "systems/partitions/modules": [],
+        "systems/partitions/variables": [],
+        "systems/partitions/environs": [],
+        "systems/partitions/max_jobs": 1
     }
 }

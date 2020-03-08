@@ -33,7 +33,7 @@ EOF
 
 checked_exec()
 {
-    "$@"
+    echo "[RUN] $@" && "$@"
     if [ $? -ne 0 ]; then
         CI_EXITCODE=1
     fi
@@ -43,7 +43,7 @@ run_tutorial_checks()
 {
     cmd="./bin/reframe -C tutorial/config/settings.py \
 --save-log-files -r -t tutorial $@"
-    echo "Running tutorial checks with \`$cmd'"
+    echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
 
@@ -51,18 +51,9 @@ run_user_checks()
 {
     cmd="./bin/reframe -C config/cscs.py --save-log-files \
 -r --flex-alloc-nodes=2 -t production|benchmark $@"
-    echo "Running user checks with \`$cmd'"
+    echo "[INFO] Running user checks with \`$cmd'"
     checked_exec $cmd
 }
-
-run_serial_user_checks()
-{
-    cmd="./bin/reframe -C config/cscs.py --exec-policy=serial --save-log-files \
--r -t production-serial $@"
-    echo "Running user checks with \`$cmd'"
-    checked_exec $cmd
-}
-
 
 ### Main script ###
 
@@ -105,7 +96,7 @@ while [ $# -ne 0 ]; do
         --)
             ;;
         *)
-            echo "${scriptname}: Unrecognized argument \`$1'" >&2
+            echo "[ERROR] ${scriptname}: Unrecognized argument \`$1'" >&2
             usage
             exit 1 ;;
     esac
@@ -144,23 +135,20 @@ fi
 # Always install our requirements
 python3 -m venv venv.unittests
 source venv.unittests/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "=============="
-echo "Loaded Modules"
-echo "=============="
+echo "[INFO] Loaded Modules"
 module list
 
 
 cd ${CI_FOLDER}
-echo "Running regression on $(hostname) in ${CI_FOLDER}"
+echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
-    echo "========================================"
-    echo "Running unit tests with generic settings"
-    echo "========================================"
-    checked_exec ./test_reframe.py
+    echo "[INFO] Running unit tests with generic settings"
+    checked_exec ./test_reframe.py -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
@@ -170,46 +158,43 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
                        grep -e '^tutorial/(?!config/).*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
-        tutorialchecks_path="-c $(IFS=: eval 'echo "${tutorialchecks[*]}"')"
+        tutorialchecks_path=""
+        for check in ${tutorialchecks[@]}; do
+            tutorialchecks_path="${tutorialchecks_path} -c ${check}"
+        done
 
-        echo "========================"
-        echo "Modified tutorial checks"
-        echo "========================"
+        echo "[INFO] Modified tutorial checks"
         echo ${tutorialchecks_path}
-
         for i in ${!invocations[@]}; do
             run_tutorial_checks ${tutorialchecks_path} ${invocations[i]}
         done
     fi
 else
-    # Performing the unittests
-    echo "=================="
-    echo "Running unit tests"
-    echo "=================="
-
-    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py
-
+    # Run unit tests with the scheduler backends
+    PATH_save=$PATH
+    scheduler_backends="slurm"
+    tempdir=$(mktemp -d -p $SCRATCH)
     if [[ $(hostname) =~ dom ]]; then
-        PATH_save=$PATH
-        for backend in pbs torque; do
-            echo "=================================="
-            echo "Running unit tests with ${backend}"
-            echo "=================================="
-            export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-${backend}.py
-        done
-        export PATH=$PATH_save
+        scheduler_backends="slurm pbs torque"
+        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
     fi
+    for backend in $scheduler_backends; do
+        echo "[INFO] Running unit tests with ${backend}"
+        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                     --rfm-user-system=dom:$backend --basetemp=$tempdir -ra
+    done
+    export PATH=$PATH_save
 
     # Find modified or added user checks
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
     if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path="-c $(IFS=: eval 'echo "${userchecks[*]}"')"
+        userchecks_path=""
+        for check in ${userchecks[@]}; do
+            userchecks_path="${userchecks_path} -c ${check}"
+        done
 
-        echo "===================="
-        echo "Modified user checks"
-        echo "===================="
+        echo "[INFO] Modified user checks"
         echo ${userchecks_path}
 
         #
@@ -217,8 +202,8 @@ else
         #
         for i in ${!invocations[@]}; do
             run_user_checks ${userchecks_path} ${invocations[i]}
-            run_serial_user_checks ${userchecks_path} ${invocations[i]}
         done
     fi
 fi
+deactivate
 exit $CI_EXITCODE

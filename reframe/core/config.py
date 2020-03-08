@@ -3,235 +3,316 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import collections.abc
+import copy
+import itertools
 import json
 import jsonschema
 import os
 import re
 import tempfile
+import socket
 
 import reframe
 import reframe.core.debug as debug
 import reframe.core.fields as fields
+import reframe.core.settings as settings
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError, ReframeError,
+from reframe.core.exceptions import (ConfigError,
+                                     ReframeDeprecationWarning,
                                      ReframeFatalError)
+from reframe.core.logging import getlogger
+from reframe.utility import ScopedDict
 
 
-_settings = None
+class _SiteConfig:
+    def __init__(self, site_config, filename):
+        self._site_config = copy.deepcopy(site_config)
+        self._filename = filename
+        self._local_config = {}
+        self._local_system = None
+        self._sticky_options = {}
 
-
-def load_settings_from_file(filename):
-    global _settings
-    try:
-        _settings = util.import_module_from_file(filename).settings
-        return _settings
-    except Exception as e:
-        raise ConfigError(
-            "could not load configuration file `%s'" % filename) from e
-
-
-def settings():
-    if _settings is None:
-        raise ReframeFatalError('ReFrame is not configured')
-
-    return _settings
-
-
-class SiteConfiguration:
-    '''Holds the configuration of systems and environments'''
-    _modes = fields.ScopedDictField('_modes', types.List[str])
-
-    def __init__(self, dict_config=None):
-        self._systems = {}
-        self._modes = {}
-        if dict_config is not None:
-            self.load_from_dict(dict_config)
-
-    def __repr__(self):
-        return debug.repr(self)
-
-    @property
-    def systems(self):
-        return self._systems
-
-    @property
-    def modes(self):
-        return self._modes
-
-    def get_schedsystem_config(self, descr):
-        # Handle the special shortcuts first
-        from reframe.core.launchers.registry import getlauncher
-        from reframe.core.schedulers.registry import getscheduler
-
-        if descr == 'nativeslurm':
-            return getscheduler('slurm'), getlauncher('srun')
-
-        if descr == 'local':
-            return getscheduler('local'), getlauncher('local')
-
-        try:
-            sched_descr, launcher_descr = descr.split('+')
-        except ValueError:
-            raise ValueError('invalid syntax for the '
-                             'scheduling system: %s' % descr) from None
-
-        return getscheduler(sched_descr), getlauncher(launcher_descr)
-
-    def load_from_dict(self, site_config):
-        if not isinstance(site_config, collections.abc.Mapping):
-            raise TypeError('site configuration is not a dict')
-
-        # We do all the necessary imports here and not on the top, because we
-        # want to remove import time dependencies
-        import reframe.core.environments as m_env
-        from reframe.core.systems import System, SystemPartition
-
-        sysconfig = site_config.get('systems', None)
-        envconfig = site_config.get('environments', None)
-        modes = site_config.get('modes', {})
-
-        if not sysconfig:
-            raise ValueError('no entry for systems was found')
-
-        if not envconfig:
-            raise ValueError('no entry for environments was found')
-
-        # Convert envconfig to a ScopedDict
-        try:
-            envconfig = fields.ScopedDict(envconfig)
-        except TypeError:
-            raise TypeError('environments configuration '
-                            'is not a scoped dictionary') from None
-
-        # Convert modes to a `ScopedDict`; note that `modes` will implicitly
-        # converted to a scoped dict here, since `self._modes` is a
-        # `ScopedDictField`.
-        try:
-            self._modes = modes
-        except TypeError:
-            raise TypeError('modes configuration '
-                            'is not a scoped dictionary') from None
-
-        def create_env(system, partition, name):
-            # Create an environment instance
+        # Open and store the JSON schema for later validation
+        schema_filename = os.path.join(reframe.INSTALL_PREFIX,
+                                       'schemas', 'config.json')
+        with open(schema_filename) as fp:
             try:
-                config = envconfig['%s:%s:%s' % (system, partition, name)]
+                self._schema = json.loads(fp.read())
+            except json.JSONDecodeError as e:
+                raise ReframeFatalError(
+                    f"invalid configuration schema: '{schema_filename}'"
+                ) from e
+
+    def _pick_config(self):
+        return self._local_config if self._local_config else self._site_config
+
+    # Delegate everything to either the original config or to the reduced one
+    # if a system is selected
+    def __iter__(self):
+        return iter(self._pick_config())
+
+    def __getitem__(self, key):
+        return self._pick_config()[key]
+
+    def __getattr__(self, attr):
+        return getattr(self._pick_config(), attr)
+
+    def add_sticky_option(self, option, value):
+        self._sticky_options[option] = value
+
+    def remove_sticky_option(self, option):
+        self._sticky_options.pop(option, None)
+
+    def get(self, option, default=None):
+        '''Retrieve value of option.
+
+        If the option cannot be retrieved, ``default`` will be returned.
+        '''
+
+        # Convert any indices to integers
+        prepared_option = []
+        for opt in option.split('/'):
+            try:
+                opt = int(opt)
+            except ValueError:
+                pass
+
+            prepared_option.append(opt)
+
+        stripped_opt = '/'.join(x for x in prepared_option
+                                if not isinstance(x, int) and x[0] != '@')
+        try:
+            # If a sticky option exists, return that value
+            return self._sticky_options[stripped_opt]
+        except KeyError:
+            pass
+
+        value = self._pick_config()
+        for d in prepared_option:
+            if not isinstance(d, int) and d[0] == '@':
+                # We are in an element addressable by name
+                d = d[1:]
+                found = False
+                for obj in value:
+                    if obj['name'] == d:
+                        value, found = obj, True
+                        break
+
+                if not found:
+                    return default
+                else:
+                    continue
+
+            try:
+                value = value[d]
+            except (TypeError, IndexError):
+                return default
             except KeyError:
-                raise ConfigError(
-                    "could not find a definition for `%s'" % name
-                ) from None
+                try:
+                    return self._schema['defaults'][stripped_opt]
+                except KeyError:
+                    return default
 
-            if not isinstance(config, collections.abc.Mapping):
-                raise TypeError("config for `%s' is not a dictionary" % name)
+        return value
 
-            return m_env.ProgEnvironment(name, **config)
+    @property
+    def filename(self):
+        return self._filename
 
-        # Populate the systems directory
-        for sys_name, config in sysconfig.items():
-            if not isinstance(config, dict):
-                raise TypeError('system configuration is not a dictionary')
+    @classmethod
+    def create(cls, filename):
+        _, ext = os.path.splitext(filename)
+        if ext == '.py':
+            return cls._create_from_python(filename)
+        elif ext == '.json':
+            return cls._create_from_json(filename)
+        else:
+            raise ConfigError(f"unknown configuration file type: '{filename}'")
 
-            if not isinstance(config['partitions'], collections.abc.Mapping):
-                raise TypeError('partitions must be a dictionary')
+    @classmethod
+    def _create_from_python(cls, filename):
+        try:
+            mod = util.import_module_from_file(filename)
+        except ImportError as e:
+            # import_module_from_file() may raise an ImportError if the
+            # configuration file is under ReFrame's top-level directory
+            raise ConfigError(
+                f"could not load Python configuration file: '{filename}'"
+            ) from e
 
-            sys_descr = config.get('descr', sys_name)
-            sys_hostnames = config.get('hostnames', [])
-
-            # The System's constructor provides also reasonable defaults, but
-            # since we are going to set them anyway from the values provided by
-            # the configuration, we should set default values here. The stage,
-            # output and log directories default to None, since they are going
-            # to be set dynamically by the runtime.
-            sys_prefix = config.get('prefix', '.')
-            sys_stagedir = config.get('stagedir', None)
-            sys_outputdir = config.get('outputdir', None)
-            sys_perflogdir = config.get('perflogdir', None)
-            sys_resourcesdir = config.get('resourcesdir', '.')
-            sys_modules_system = config.get('modules_system', None)
-
-            # Expand variables
-            if sys_prefix:
-                sys_prefix = os_ext.expandvars(sys_prefix)
-
-            if sys_stagedir:
-                sys_stagedir = os_ext.expandvars(sys_stagedir)
-
-            if sys_outputdir:
-                sys_outputdir = os_ext.expandvars(sys_outputdir)
-
-            if sys_perflogdir:
-                sys_perflogdir = os_ext.expandvars(sys_perflogdir)
-
-            if sys_resourcesdir:
-                sys_resourcesdir = os_ext.expandvars(sys_resourcesdir)
-
-            # Create the preload environment for the system
-            sys_preload_env = m_env.Environment(
-                name='__rfm_env_%s' % sys_name,
-                modules=config.get('modules', []),
-                variables=config.get('variables', {})
+        if hasattr(mod, 'settings'):
+            # Looks like an old style config
+            raise ReframeDeprecationWarning(
+                f"the syntax of the configuration file '{filename}' "
+                f"is deprecated"
             )
 
-            system = System(name=sys_name,
-                            descr=sys_descr,
-                            hostnames=sys_hostnames,
-                            preload_env=sys_preload_env,
-                            prefix=sys_prefix,
-                            stagedir=sys_stagedir,
-                            outputdir=sys_outputdir,
-                            perflogdir=sys_perflogdir,
-                            resourcesdir=sys_resourcesdir,
-                            modules_system=sys_modules_system)
-            for part_name, partconfig in config.get('partitions', {}).items():
-                if not isinstance(partconfig, collections.abc.Mapping):
-                    raise TypeError("partition `%s' not configured "
-                                    "as a dictionary" % part_name)
+        mod = util.import_module_from_file(filename)
+        if not hasattr(mod, 'site_configuration'):
+            raise ConfigError(
+                f"not a valid Python configuration file: '{filename}'"
+            )
 
-                part_descr = partconfig.get('descr', part_name)
-                part_scheduler, part_launcher = self.get_schedsystem_config(
-                    partconfig.get('scheduler', 'local+local')
-                )
-                part_local_env = m_env.Environment(
-                    name='__rfm_env_%s' % part_name,
-                    modules=partconfig.get('modules', []),
-                    variables=partconfig.get('variables', {}).items()
-                )
-                part_environs = [
-                    create_env(sys_name, part_name, e)
-                    for e in partconfig.get('environs', [])
-                ]
-                part_access = partconfig.get('access', [])
-                part_resources = partconfig.get('resources', {})
-                part_max_jobs = partconfig.get('max_jobs', 1)
-                part = SystemPartition(name=part_name,
-                                       descr=part_descr,
-                                       scheduler=part_scheduler,
-                                       launcher=part_launcher,
-                                       access=part_access,
-                                       environs=part_environs,
-                                       resources=part_resources,
-                                       local_env=part_local_env,
-                                       max_jobs=part_max_jobs)
+        return _SiteConfig(mod.site_configuration, filename)
 
-                container_platforms = partconfig.get('container_platforms', {})
-                for cp, env_spec in container_platforms.items():
-                    cp_env = m_env.Environment(
-                        name='__rfm_env_%s' % cp,
-                        modules=env_spec.get('modules', []),
-                        variables=env_spec.get('variables', {})
+    @classmethod
+    def _create_from_json(cls, filename):
+        with open(filename) as fp:
+            try:
+                config = json.loads(fp.read())
+            except json.JSONDecodeError as e:
+                raise ConfigError(
+                    f"invalid JSON syntax in configuration file '{filename}'"
+                ) from e
+
+        return _SiteConfig(config, filename)
+
+    def _detect_system(self):
+        if os.path.exists('/etc/xthostname'):
+            # Get the cluster name on Cray systems
+            with open('/etc/xthostname') as fp:
+                hostname = fp.read()
+        else:
+            hostname = socket.gethostname()
+
+        for system in self._site_config['systems']:
+            for patt in system['hostnames']:
+                if re.match(patt, hostname):
+                    return system['name']
+
+        raise ConfigError(f"could not find a configuration entry "
+                          f"for the current system: '{hostname}'")
+
+    def validate(self):
+        site_config = self._pick_config()
+        try:
+            jsonschema.validate(site_config, self._schema)
+        except jsonschema.ValidationError as e:
+            raise ConfigError(f"could not validate configuration file: "
+                              f"'{self._filename}'") from e
+
+        # Make sure that system and partition names are unique
+        system_names = set()
+        for system in self._site_config['systems']:
+            sysname = system['name']
+            if sysname in system_names:
+                raise ConfigError(f"system '{sysname}' already defined")
+
+            system_names.add(sysname)
+            partition_names = set()
+            for part in system['partitions']:
+                partname = part['name']
+                if partname in partition_names:
+                    raise ConfigError(
+                        f"partition '{partname}' already defined "
+                        f"for system '{sysname}'"
                     )
-                    part.add_container_env(cp, cp_env)
 
-                system.add_partition(part)
+                partition_names.add(partname)
 
-            self._systems[sys_name] = system
+    def select_subconfig(self, system_fullname=None):
+        if (self._local_system is not None and
+            self._local_system == system_fullname):
+            return
+
+        system_fullname = system_fullname or self._detect_system()
+        try:
+            system_name, part_name = system_fullname.split(':', maxsplit=1)
+        except ValueError:
+            # system_name does not have a partition
+            system_name, part_name = system_fullname, None
+
+        # Start from a fresh copy of the site_config, because we will be
+        # modifying it
+        site_config = copy.deepcopy(self._site_config)
+        self._local_config = {}
+        systems = list(
+            filter(lambda x: x['name'] == system_name, site_config['systems'])
+        )
+        if not systems:
+            raise ConfigError(
+                f"could not find a configuration entry "
+                f"for the requested system: '{system_name}'"
+            )
+
+        if part_name is not None:
+            # Filter out also partitions
+            systems[0]['partitions'] = list(
+                filter(lambda x: x['name'] == part_name,
+                       systems[0]['partitions'])
+            )
+
+        if not systems[0]['partitions']:
+            raise ConfigError(
+                f"could not find a configuration entry "
+                f"for the requested system/partition combination: "
+                f"'{system_name}:{part_name}'"
+            )
+
+        # Create local configuration for the current or the requested system
+        self._local_config['systems'] = systems
+        for name, section in site_config.items():
+            if name == 'systems':
+                # The systems sections has already been treated
+                continue
+
+            # Convert section to a scoped dict that will handle correctly and
+            # transparently the system/partition resolution
+            scoped_section = ScopedDict()
+            for obj in section:
+                key = obj.get('name', name)
+                target_systems = obj.get(
+                    'target_systems',
+                    self._schema['defaults'][f'{name}/target_systems']
+                )
+                for t in target_systems:
+                    scoped_section[f'{t}:{key}'] = obj
+
+            unique_keys = set()
+            for obj in section:
+                key = obj.get('name', name)
+                if key in unique_keys:
+                    continue
+
+                unique_keys.add(key)
+                try:
+                    val = scoped_section[f"{system_fullname}:{key}"]
+                except KeyError:
+                    pass
+                else:
+                    self._local_config.setdefault(name, [])
+                    self._local_config[name].append(val)
+
+        required_sections = self._schema['required']
+        for name in required_sections:
+            if name not in self._local_config.keys():
+                raise ConfigError(f"section '{name}' not defined "
+                                  f"for system '{system_fullname}'")
+
+        # Verify that all environments defined by the system are defined for
+        # the current system
+        sys_environs = {
+            *itertools.chain(*(p['environs']
+                               for p in systems[0]['partitions']))
+        }
+        found_environs = {
+            e['name'] for e in self._local_config['environments']
+        }
+        undefined_environs = sys_environs - found_environs
+        if undefined_environs:
+            env_descr = ', '.join(f"'{e}'" for e in undefined_environs)
+            raise ConfigError(
+                f"environments {env_descr} "
+                f"are not defined for '{system_fullname}'"
+            )
+
+        self._local_system = system_fullname
 
 
 def convert_old_config(filename):
-    old_config = load_settings_from_file(filename)
+    old_config = util.import_module_from_file(filename).settings
     converted = {
         'systems': [],
         'environments': [],
@@ -239,20 +320,24 @@ def convert_old_config(filename):
         'perf_logging': [],
     }
     old_systems = old_config.site_configuration['systems'].items()
-    for sys_name, sys_specs in old_systems:
+    for sys_name, sys_spec in old_systems:
         sys_dict = {'name': sys_name}
-        sys_dict.update(sys_specs)
+        sys_dict.update(sys_spec)
+
+        # hostnames is now a required property
+        if 'hostnames' not in sys_spec:
+            sys_dict['hostnames'] = []
 
         # Make variables dictionary into a list of lists
-        if 'variables' in sys_specs:
+        if 'variables' in sys_spec:
             sys_dict['variables'] = [
                 [vname, v] for vname, v in sys_dict['variables'].items()
             ]
 
         # Make partitions dictionary into a list
-        if 'partitions' in sys_specs:
+        if 'partitions' in sys_spec:
             sys_dict['partitions'] = []
-            for pname, p in sys_specs['partitions'].items():
+            for pname, p in sys_spec['partitions'].items():
                 new_p = {'name': pname}
                 new_p.update(p)
                 if p['scheduler'] == 'nativeslurm':
@@ -357,18 +442,39 @@ def convert_old_config(filename):
     if converted['general'] == [{}]:
         del converted['general']
 
-    # Validate the converted file
-    schema_filename = os.path.join(reframe.INSTALL_PREFIX,
-                                   'schemas', 'config.json')
-
-    # We let the following statements raise, because if they do, that's a BUG
-    with open(schema_filename) as fp:
-        schema = json.loads(fp.read())
-
-    jsonschema.validate(converted, schema)
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
+                                     delete=False) as fp:
         fp.write(f"#\n# This file was automatically generated "
                  f"by ReFrame based on '{filename}'.\n#\n\n")
         fp.write(f'site_configuration = {util.ppretty(converted)}\n')
 
     return fp.name
+
+
+def _find_config_file():
+    # The order of elements is important, since it defines the priority
+    prefixes = [
+        os.path.join(os.getlogin(), '.reframe'),
+        reframe.INSTALL_PREFIX,
+        '/etc/reframe.d'
+    ]
+    valid_exts = ['py', 'json']
+    for d in prefixes:
+        for ext in valid_exts:
+            filename = os.path.join(d, f'settings.{ext}')
+            if os.path.exists(filename):
+                return filename
+
+    return None
+
+
+def load_config(filename=None):
+    if filename is None:
+        filename = _find_config_file()
+        if filename is None:
+            # Return the generic configuration
+            getlogger().debug('no configuration found; '
+                              'falling back to a generic one')
+            return _SiteConfig(settings.site_configuration, '<builtin>')
+
+    return _SiteConfig.create(filename)

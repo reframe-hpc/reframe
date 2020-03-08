@@ -111,11 +111,11 @@ class BuildSystem(abc.ABC):
         self.cxx = None
         self.ftn = None
         self.nvcc = None
-        self.cflags = None
-        self.cxxflags = None
-        self.cppflags = None
-        self.fflags  = None
-        self.ldflags = None
+        self.cflags = []
+        self.cxxflags = []
+        self.cppflags = []
+        self.fflags  = []
+        self.ldflags = []
         self.flags_from_environ = True
 
     @abc.abstractmethod
@@ -138,7 +138,7 @@ class BuildSystem(abc.ABC):
 
     def _resolve_flags(self, flags, environ):
         _flags = getattr(self, flags)
-        if _flags is not None:
+        if _flags:
             return _flags
 
         if self.flags_from_environ:
@@ -259,31 +259,31 @@ class Make(BuildSystem):
         cxxflags = self._cxxflags(environ)
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
-        if cc is not None:
+        if cc:
             cmd_parts += ['CC="%s"' % cc]
 
-        if cxx is not None:
+        if cxx:
             cmd_parts += ['CXX="%s"' % cxx]
 
-        if ftn is not None:
+        if ftn:
             cmd_parts += ['FC="%s"' % ftn]
 
-        if nvcc is not None:
+        if nvcc:
             cmd_parts += ['NVCC="%s"' % nvcc]
 
-        if cppflags is not None:
+        if cppflags:
             cmd_parts += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
 
-        if cflags is not None:
+        if cflags:
             cmd_parts += ['CFLAGS="%s"' % ' '.join(cflags)]
 
-        if cxxflags is not None:
+        if cxxflags:
             cmd_parts += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
 
-        if fflags is not None:
+        if fflags:
             cmd_parts += ['FCFLAGS="%s"' % ' '.join(fflags)]
 
-        if ldflags is not None:
+        if ldflags:
             cmd_parts += ['LDFLAGS="%s"' % ' '.join(ldflags)]
 
         if self.options:
@@ -398,28 +398,28 @@ class SingleSource(BuildSystem):
         lang = self.lang or self._guess_language(self.srcfile)
         cmd_parts = []
         if lang == 'C':
-            if cc is None:
+            if not cc:
                 raise BuildSystemError('I do not know how to compile a '
                                        'C program')
 
             cmd_parts += [cc, *cppflags, *cflags, self.srcfile,
                           '-o', executable, *ldflags]
         elif lang == 'C++':
-            if cxx is None:
+            if not cxx:
                 raise BuildSystemError('I do not know how to compile a '
                                        'C++ program')
 
             cmd_parts += [cxx, *cppflags, *cxxflags, self.srcfile,
                           '-o', executable, *ldflags]
         elif lang == 'Fortran':
-            if ftn is None:
+            if not ftn:
                 raise BuildSystemError('I do not know how to compile a '
                                        'Fortran program')
 
             cmd_parts += [ftn, *cppflags, *fflags, self.srcfile,
                           '-o', executable, *ldflags]
         elif lang == 'CUDA':
-            if nvcc is None:
+            if not nvcc:
                 raise BuildSystemError('I do not know how to compile a '
                                        'CUDA program')
 
@@ -506,7 +506,7 @@ class CMake(ConfigureBasedBuildSystem):
     '''
 
     def _combine_flags(self, cppflags, xflags):
-        if cppflags is None:
+        if not cppflags:
             return xflags
 
         ret = list(cppflags)
@@ -534,28 +534,28 @@ class CMake(ConfigureBasedBuildSystem):
         cxxflags = self._combine_flags(cppflags, self._cxxflags(environ))
         fflags   = self._combine_flags(cppflags, self._fflags(environ))
         ldflags  = self._ldflags(environ)
-        if cc is not None:
+        if cc:
             cmake_cmd += ['-DCMAKE_C_COMPILER="%s"' % cc]
 
-        if cxx is not None:
+        if cxx:
             cmake_cmd += ['-DCMAKE_CXX_COMPILER="%s"' % cxx]
 
-        if ftn is not None:
+        if ftn:
             cmake_cmd += ['-DCMAKE_Fortran_COMPILER="%s"' % ftn]
 
-        if nvcc is not None:
+        if nvcc:
             cmake_cmd += ['-DCMAKE_CUDA_COMPILER="%s"' % nvcc]
 
-        if cflags is not None:
+        if cflags:
             cmake_cmd += ['-DCMAKE_C_FLAGS="%s"' % ' '.join(cflags)]
 
-        if cxxflags is not None:
+        if cxxflags:
             cmake_cmd += ['-DCMAKE_CXX_FLAGS="%s"' % ' '.join(cxxflags)]
 
-        if fflags is not None:
+        if fflags:
             cmake_cmd += ['-DCMAKE_Fortran_FLAGS="%s"' % ' '.join(fflags)]
 
-        if ldflags is not None:
+        if ldflags:
             cmake_cmd += ['-DCMAKE_EXE_LINKER_FLAGS="%s"' % ' '.join(ldflags)]
 
         if self.config_opts:
@@ -611,28 +611,28 @@ class Autotools(ConfigureBasedBuildSystem):
         cxxflags = self._cxxflags(environ)
         fflags   = self._fflags(environ)
         ldflags  = self._ldflags(environ)
-        if cc is not None:
+        if cc:
             configure_cmd += ['CC="%s"' % cc]
 
-        if cxx is not None:
+        if cxx:
             configure_cmd += ['CXX="%s"' % cxx]
 
-        if ftn is not None:
+        if ftn:
             configure_cmd += ['FC="%s"' % ftn]
 
-        if cppflags is not None:
+        if cppflags:
             configure_cmd += ['CPPFLAGS="%s"' % ' '.join(cppflags)]
 
-        if cflags is not None:
+        if cflags:
             configure_cmd += ['CFLAGS="%s"' % ' '.join(cflags)]
 
-        if cxxflags is not None:
+        if cxxflags:
             configure_cmd += ['CXXFLAGS="%s"' % ' '.join(cxxflags)]
 
-        if fflags is not None:
+        if fflags:
             configure_cmd += ['FCFLAGS="%s"' % ' '.join(fflags)]
 
-        if ldflags is not None:
+        if ldflags:
             configure_cmd += ['LDFLAGS="%s"' % ' '.join(ldflags)]
 
         if self.config_opts:

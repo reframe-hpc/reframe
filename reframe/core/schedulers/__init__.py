@@ -10,8 +10,8 @@
 import abc
 import time
 
-import reframe.core.environments as env
 import reframe.core.fields as fields
+import reframe.core.runtime as runtime
 import reframe.core.shell as shell
 import reframe.utility.typecheck as typ
 from reframe.core.exceptions import JobError, JobNotStartedError
@@ -101,7 +101,7 @@ class Job:
     #:
     #: .. code:: python
     #:
-    #:    from reframe.core.launchers.registry import getlauncher
+    #:    from reframe.core.backends import getlauncher
     #:
     #:    @rfm.run_after('setup')
     #:    def set_launcher(self):
@@ -308,7 +308,7 @@ class Job:
         with shell.generate_script(self.script_filename,
                                    **gen_opts) as builder:
             builder.write_prolog(self.scheduler.emit_preamble(self))
-            builder.write(env.emit_load_commands(*environs))
+            builder.write(runtime.emit_loadenv_commands(*environs))
             for c in commands:
                 builder.write_body(c)
 

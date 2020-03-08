@@ -150,9 +150,10 @@ class Sarus(ContainerPlatform):
             ['cd ' + self.workdir] + self.commands) + "'"
 
 
-class ShifterNG(Sarus):
-    '''Container platform backend for running containers with `ShifterNG
-    <https://user.cscs.ch/tools/containers/>`__.'''
+class Shifter(Sarus):
+    '''Container platform backend for running containers with `Shifter
+    <https://www.nersc.gov/research-and-development/user-defined-images/>`__.
+    '''
 
     def __init__(self):
         super().__init__()

@@ -17,9 +17,8 @@ from datetime import datetime
 import reframe as rfm
 import reframe.core.logging as rlog
 from reframe.core.exceptions import ConfigError, ReframeError
-from reframe.core.launchers.registry import getlauncher
+from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.registry import getscheduler
 
 
 class _FakeCheck(rfm.RegressionTest):

@@ -12,11 +12,10 @@ import re
 from datetime import datetime
 
 import reframe.utility.os_ext as os_ext
-from reframe.core.config import settings
+from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.pbs import PbsJobScheduler, _run_strict
-from reframe.core.schedulers.registry import register_scheduler
 
 
 JOB_STATES = {

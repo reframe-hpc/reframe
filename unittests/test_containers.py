@@ -87,9 +87,9 @@ class TestDocker(_ContainerPlatformTest, unittest.TestCase):
                 "image:tag bash -c 'cd /stagedir; cmd'")
 
 
-class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
+class TestShifter(_ContainerPlatformTest, unittest.TestCase):
     def create_container_platform(self):
-        return containers.ShifterNG()
+        return containers.Shifter()
 
     @property
     def expected_cmd_mount_points(self):
@@ -109,7 +109,7 @@ class TestShifterNG(_ContainerPlatformTest, unittest.TestCase):
                 "--foo --bar image:tag bash -c 'cd /stagedir; cmd'")
 
 
-class TestShifterNGLocalImage(TestShifterNG):
+class TestShifterLocalImage(TestShifter):
     @property
     def expected_cmd_prepare(self):
         return []
@@ -120,9 +120,9 @@ class TestShifterNGLocalImage(TestShifterNG):
                 self.container_platform.emit_prepare_commands())
 
 
-class TestShifterNGWithMPI(TestShifterNG):
+class TestShifterWithMPI(TestShifter):
     def create_container_platform(self):
-        ret = containers.ShifterNG()
+        ret = containers.Shifter()
         ret.with_mpi = True
         return ret
 

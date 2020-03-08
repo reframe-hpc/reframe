@@ -89,7 +89,7 @@ class ModulesSystem:
 
     @classmethod
     def create(cls, modules_kind=None):
-        if modules_kind is None:
+        if modules_kind is None or modules_kind == 'nomod':
             return ModulesSystem(NoModImpl())
         elif modules_kind == 'tmod31':
             return ModulesSystem(TMod31Impl())
