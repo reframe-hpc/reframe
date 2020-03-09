@@ -84,11 +84,12 @@ class TorqueJobScheduler(PbsJobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
-            if job.max_pending_time:
-                if job.state in ['QUEUED', 'HELD', 'WAITING']:
-                    if datetime.now() - self._submit_time >= job.max_pending_time:
-                        self.cancel(job)
-                        raise JobError('maximum pending time exceeded',
-                                       jobid=job.jobid)
+            if job.max_pending_time and job.state in ['QUEUED',
+                                                      'HELD',
+                                                      'WAITING']:
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
 
             return job.state == 'COMPLETED'

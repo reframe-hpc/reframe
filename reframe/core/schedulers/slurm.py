@@ -421,12 +421,11 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._update_state(job)
 
         while not slurm_state_completed(job.state):
-            if job.max_pending_time:
-                if slurm_state_pending(job.state):
-                    if datetime.now() - self._submit_time >= job.max_pending_time:
-                        self.cancel(job)
-                        raise JobError('maximum pending time exceeded',
-                                       jobid=job.jobid)
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
 
             time.sleep(next(intervals))
             self._update_state(job)
@@ -452,12 +451,11 @@ class SlurmJobScheduler(sched.JobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
-            if job.max_pending_time:
-                if slurm_state_pending(job.state):
-                    if datetime.now() - self._submit_time >= job.max_pending_time:
-                        self.cancel(job)
-                        raise JobError('maximum pending time exceeded',
-                                       jobid=job.jobid)
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
 
             return slurm_state_completed(job.state)
 

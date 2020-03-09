@@ -430,7 +430,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
     num_tasks_per_core = fields.TypedField('num_tasks_per_core',
-                                            int, type(None))
+                                           int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
