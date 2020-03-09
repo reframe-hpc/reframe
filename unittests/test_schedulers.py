@@ -197,6 +197,20 @@ class _TestJob(abc.ABC):
         with pytest.raises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
+    # Monkey patch `self._update_state` to simulate that the job is
+    # pending on the queue for enough time so it can be canceled due
+    # to exceeding the maximum pending time
+    @fixtures.switch_to_user_runtime
+    def test_submit_max_pending_time(self):
+        self.setup_user()
+        self.parallel_cmd = 'sleep 30'
+        self.prepare()
+        self.testjob.scheduler._update_state = self._update_state
+        self.testjob._max_pending_time = timedelta(seconds=5)
+        self.testjob.submit()
+        with pytest.raises(JobError):
+            self.testjob.wait()
+
 
 class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
@@ -321,6 +335,10 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.testjob.wait()
         assert self.testjob.num_tasks == 1
 
+    def test_submit_max_pending_time(self):
+        pytest.skip('the maximum pending time has no effect on the '
+                    'local scheduler')
+
 
 class TestSlurmJob(_TestJob, unittest.TestCase):
     @property
@@ -439,20 +457,6 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
             assert all([re.search('Task id: 0', output),
                         re.search('Task id: 1', output)])
 
-    # Monkey patch `self._update_state` to simulate that the job is
-    # pending on the queue for enough time so it can be canceled due
-    # to exceeding the maximum pending time
-    @fixtures.switch_to_user_runtime
-    def test_submit_max_pending_time(self):
-        self.setup_user()
-        self.parallel_cmd = 'sleep 30'
-        self.prepare()
-        self.testjob.scheduler._update_state = self._update_state
-        self.testjob._max_pending_time = timedelta(seconds=5)
-        self.testjob.submit()
-        with pytest.raises(JobError):
-            self.testjob.wait()
-
 
 class TestSqueueJob(TestSlurmJob):
     @property
@@ -546,8 +550,11 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         assert self.expected_directives == found_directives
 
     def test_submit_timelimit(self):
-        # Skip this test for PBS, since we the minimum time limit is 1min
+        # Skip this test for PBS, since the minimum time limit is 1min
         pytest.skip("PBS minimum time limit is 60s")
+
+    def test_submit_max_pending_time(self):
+        pytest.skip('not implemented for the pbs scheduler')
 
 
 class TestTorqueJob(TestPbsJob):
@@ -580,20 +587,6 @@ class TestTorqueJob(TestPbsJob):
 
     def _update_state(self, job):
         job.state = 'QUEUED'
-
-    # Monkey patch `self._update_state` to simulate that the job is
-    # pending on the queue for enough time so it can be canceled due
-    # to exceeding the maximum pending time
-    @fixtures.switch_to_user_runtime
-    def test_submit_max_pending_time(self):
-        self.setup_user()
-        self.parallel_cmd = 'sleep 30'
-        self.prepare()
-        self.testjob.scheduler._update_state = self._update_state
-        self.testjob._max_pending_time = timedelta(seconds=5)
-        self.testjob.submit()
-        with pytest.raises(JobError):
-            self.testjob.wait()
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
