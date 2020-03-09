@@ -101,7 +101,7 @@ class IorCheck(rfm.RegressionTest):
         # Default umask is 0022, which generates file permissions -rw-r--r--
         # we want -rw-rw-r-- so we set umask to 0002
         os.umask(2)
-        self.time_limit = (0, 5, 0)
+        self.time_limit = '5m'
         # Our references are based on fs types but regression needs reference
         # per system.
         self.reference = {

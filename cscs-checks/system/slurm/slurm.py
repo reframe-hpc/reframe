@@ -170,7 +170,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
 class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']

@@ -15,7 +15,7 @@ class S3apiCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'ops', 'object_store'}
         self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.time_limit = (0, 5, 0)
+        self.time_limit = '5m'
         self.maintainers = ['VH', 'GLR']
         self.executable = 's3_test.sh'
         self.username = getpass.getuser()

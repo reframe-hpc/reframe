@@ -8,7 +8,7 @@ import setuptools
 from reframe import VERSION
 
 with open('README.md') as read_me:
-    long_description = ''.join(read_me.readlines()[11:])
+    long_description = ''.join(read_me.readlines()[15:])
 
 setuptools.setup(
     name='ReFrame-HPC',

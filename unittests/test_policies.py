@@ -270,7 +270,8 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             except BaseException as e:
                 exc = e
 
-            conn.send((exc, len(self.runner.stats.failures())))
+            stats = self.runner.stats
+            conn.send((exc, stats.num_cases(), len(stats.failures())))
             conn.close()
 
         rd_endpoint, wr_endpoint = multiprocessing.Pipe(duplex=False)
@@ -286,8 +287,11 @@ class TestSerialExecutionPolicy(unittest.TestCase):
         time.sleep(1)
         p.terminate()
         p.join()
-        exc, num_failures = rd_endpoint.recv()
-        assert 1 == num_failures
+        exc, num_cases, num_failures = rd_endpoint.recv()
+
+        # Either the test is submitted and it fails due to the termination
+        # or it is not yet submitted when the termination signal is sent
+        assert (num_cases, num_failures) in {(1, 1), (0, 0)}
         with pytest.raises(ReframeForceExitError,
                            match='received TERM signal'):
             if exc:

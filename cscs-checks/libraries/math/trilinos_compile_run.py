@@ -15,6 +15,7 @@ class TrilinosTest(rfm.RegressionTest):
                               'tiger:gpu']
         # NOTE: PrgEnv-cray in dynamic does not work because of CrayBug/809265
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
+        # NOTE: PrgEnv-cray_classic does not support trilinos
         if linkage == 'static':
             self.valid_prog_environs += ['PrgEnv-cray']
 
@@ -22,7 +23,9 @@ class TrilinosTest(rfm.RegressionTest):
         self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
         self.build_system.cppflags = ['-DHAVE_MPI', '-DEPETRA_MPI']
         self.prgenv_flags = {
-            'PrgEnv-cray': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
+            'PrgEnv-cray': ['-fopenmp', '-O2', '-ffast-math', '-std=c++11',
+                            '-Wno-everything'],
+            'PrgEnv-cray_classic': ['-homp', '-hstd=c++11', '-hmsglevel_4'],
             'PrgEnv-gnu': ['-fopenmp', '-std=c++11', '-w', '-fpermissive'],
             'PrgEnv-intel': ['-qopenmp', '-w', '-std=c++11'],
             'PrgEnv-pgi': ['-mp', '-w']
