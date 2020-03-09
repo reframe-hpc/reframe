@@ -84,6 +84,6 @@ class FieldextraPerformanceTest(FieldextraTestBase):
         }
         self.reference = {
             'kesch': {
-                'perf': (420., None, 0.10)
+                'perf': (420., None, 0.10, None)
             }
         }

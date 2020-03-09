@@ -46,6 +46,6 @@ class G2GMeteoswissTest(rfm.RegressionTest):
                                      self.stdout, 'time', float)
         }
         self.reference = {
-            'kesch:cn': {'time': (3.461, None, 0.2)}
+            'kesch:cn': {'time': (3.461, None, 0.2, None)}
         }
         self.variables = {'G2G': str(g2g)}

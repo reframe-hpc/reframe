@@ -467,9 +467,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: The reference values are specified as a scoped dictionary keyed on the
     #: performance variables defined in :attr:`perf_patterns` and scoped under
     #: the system/partition combinations.
-    #: The reference itself is a three- or four-tuple that contains the
-    #: reference value, the lower and upper thresholds and, optionally, the
-    #: measurement unit.
+    #: The reference itself is a four-tuple that contains the reference value,
+    #: the lower and upper thresholds and the measurement unit.
+    #:
     #: An example follows:
     #:
     #: .. code:: python
@@ -487,7 +487,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
-    reference = fields.ScopedDictField('reference', typ.Tuple[object])
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 3.0
+    #:        The measurement unit is required. The user should explicitly
+    #:        specify `None` if no unit is available.
+    reference = fields.ScopedDictField(
+        'reference', typ.Tuple[object, object, object, object])
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -1293,11 +1299,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 keyparts = key.split(self.reference.scope_separator)
                 system = keyparts[0]
                 varname = keyparts[-1]
-                try:
-                    unit = ref[3]
-                except IndexError:
-                    unit = None
-
+                unit = ref[3]
                 variables.add((varname, unit))
                 if system == '*':
                     has_default = True

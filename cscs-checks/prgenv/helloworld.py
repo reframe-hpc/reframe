@@ -145,6 +145,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
                                          'PrgEnv-gnu-nompi']
 
+
 @rfm.required_version('>=2.14')
 @rfm.parameterized_test(*([lang, linkage]
                           for lang in ['cpp', 'c', 'f90']

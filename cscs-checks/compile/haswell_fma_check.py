@@ -55,4 +55,3 @@ class HaswellFmaCheck(rfm.CompileOnlyRegressionTest):
             if self.current_environ.name == 'PrgEnv-cray':
                 self.build_system.cflags = ['-Ofast', '-S']
                 self.build_system.cxxflags = ['-Ofast', '-S']
-
