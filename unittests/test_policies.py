@@ -288,17 +288,14 @@ class TestSerialExecutionPolicy(unittest.TestCase):
             time.sleep(0.2)
             p.terminate()
             p.join()
-            exc = ns.exc
-            num_cases = ns.num_cases
-            num_failures = ns.num_failures
 
-        # Either the test is submitted and it fails due to the termination
-        # or it is not yet submitted when the termination signal is sent
-        assert (num_cases, num_failures) in {(1, 1), (0, 0)}
-        with pytest.raises(ReframeForceExitError,
-                           match='received TERM signal'):
-            if exc:
-                raise exc
+            # Either the test is submitted and it fails due to the termination
+            # or it is not yet submitted when the termination signal is sent
+            assert (ns.num_cases, ns.num_failures) in {(1, 1), (0, 0)}
+            with pytest.raises(ReframeForceExitError,
+                               match='received TERM signal'):
+                if ns.exc:
+                    raise ns.exc
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2
