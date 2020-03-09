@@ -16,7 +16,7 @@ class SparkCheck(rfm.RunOnlyRegressionTest):
         self.descr = 'Simple calculation of pi with Spark'
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['Spark']
         self.sourcesdir = None
         self.pre_run = ['start-all.sh']

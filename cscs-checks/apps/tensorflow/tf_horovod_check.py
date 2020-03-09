@@ -13,7 +13,7 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
     def __init__(self, variant):
         self.descr = 'Distributed training with TensorFlow and Horovod'
         self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         tfshortver = '1.14'
         self.sourcesdir = 'https://github.com/tensorflow/benchmarks'
         self.modules = ['Horovod/0.16.4-CrayGNU-19.10-tf-%s.0' % tfshortver]
