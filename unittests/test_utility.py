@@ -173,6 +173,17 @@ class TestOSTools(unittest.TestCase):
                                os.path.join(prefix, 'broken1'))
         shutil.rmtree(prefix)
 
+    # FIXME: This should be changed in order to use the `monkeypatch`
+    # fixture of `pytest` instead of creating an instance of `MonkeyPatch`
+    def test_is_interactive(self):
+        from _pytest.monkeypatch import MonkeyPatch  # noqa: F401, F403
+
+        monkey = MonkeyPatch()
+        with monkey.context() as c:
+            # Set `sys.ps1` to immitate an interactive session
+            c.setattr(sys, 'ps1', 'rfm>>> ', raising=False)
+            assert os_ext.is_interactive()
+
     def test_is_url(self):
         repo_https = 'https://github.com/eth-cscs/reframe.git'
         repo_ssh = 'git@github.com:eth-cscs/reframe.git'
