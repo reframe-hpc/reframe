@@ -457,6 +457,30 @@ class TestHooks(unittest.TestCase):
         assert '_RFM_PRE_SETUP' in os.environ
         assert '_RFM_POST_SETUP' in os.environ
 
+    def test_setup_hooks_in_compile_only_test(self):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.CompileOnlyRegressionTest):
+            def __init__(self):
+                self.name = 'hellocheck_compile'
+                self.valid_systems = ['*']
+                self.valid_prog_environs = ['*']
+                self.sourcepath = 'hello.c'
+                self.executable = os.path.join('.', self.name)
+                self.sanity_patterns = sn.assert_found('.*', self.stdout)
+                self.count = 0
+
+            @rfm.run_before('setup')
+            def presetup(self):
+                self.count += 1
+
+            @rfm.run_after('setup')
+            def postsetup(self):
+                self.count += 1
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+        assert test.count == 2
+
     def test_compile_hooks(self):
         @fixtures.custom_prefix('unittests/resources/checks')
         class MyTest(HelloTest):
@@ -494,6 +518,26 @@ class TestHooks(unittest.TestCase):
 
                 # Make sure that this hook is executed after wait()
                 assert os.path.exists(outfile)
+
+        test = MyTest()
+        _run(test, self.partition, self.prgenv)
+
+    def test_run_hooks_in_run_only_test(self):
+        @fixtures.custom_prefix('unittests/resources/checks')
+        class MyTest(rfm.RunOnlyRegressionTest):
+            def __init__(self):
+                self.executable = 'echo'
+                self.executable_opts = ['Hello, World!']
+                self.local = True
+                self.valid_prog_environs = ['*']
+                self.valid_systems = ['*']
+                self.sanity_patterns = sn.assert_found(
+                    r'Hello, World\!', self.stdout)
+
+            @rfm.run_before('run')
+            def check_empty_stage(self):
+                # Make sure nothing has been copied to the stage directory yet
+                assert len(os.listdir(self.stagedir)) == 0
 
         test = MyTest()
         _run(test, self.partition, self.prgenv)
