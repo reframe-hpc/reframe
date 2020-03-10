@@ -6,7 +6,9 @@
 import collections
 import itertools
 import os
+import multiprocessing
 import pytest
+import time
 import tempfile
 import unittest
 
@@ -19,7 +21,8 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    DependencyError, JobNotStartedError, TaskDependencyError
+    DependencyError, JobNotStartedError,
+    ReframeForceExitError, TaskDependencyError
 )
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -256,6 +259,43 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
             if t.ref_count == 0:
                 assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+    def test_sigterm(self):
+        # Wrapper of self.runall which is used from a child process and
+        # passes any exception, number of cases and failures to the parent
+        # process
+        def _runall(checks, ns):
+            exc = None
+            try:
+                self.runall(checks)
+            except BaseException as e:
+                exc = e
+            finally:
+                ns.exc = exc
+                ns.num_cases = self.runner.stats.num_cases()
+                ns.num_failures = len(self.runner.stats.failures())
+
+        with multiprocessing.Manager() as manager:
+            ns = manager.Namespace()
+            p = multiprocessing.Process(target=_runall,
+                                        args=([SleepCheck(20)], ns))
+
+            p.start()
+
+            # Allow some time so that the SleepCheck is submitted.
+            # The sleep time of the submitted test is much larger to
+            # ensure that it does not finish before the termination signal
+            time.sleep(0.2)
+            p.terminate()
+            p.join()
+
+            # Either the test is submitted and it fails due to the termination
+            # or it is not yet submitted when the termination signal is sent
+            assert (ns.num_cases, ns.num_failures) in {(1, 1), (0, 0)}
+            with pytest.raises(ReframeForceExitError,
+                               match='received TERM signal'):
+                if ns.exc:
+                    raise ns.exc
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2

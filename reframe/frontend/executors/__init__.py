@@ -5,6 +5,7 @@
 
 import abc
 import copy
+import signal
 import sys
 import weakref
 
@@ -14,11 +15,11 @@ import reframe.core.logging as logging
 import reframe.core.runtime as runtime
 import reframe.frontend.dependency as dependency
 from reframe.core.exceptions import (AbortTaskError, JobNotStartedError,
-                                     ReframeFatalError, TaskExit)
+                                     ReframeForceExitError, TaskExit)
 from reframe.frontend.printer import PrettyPrinter
 from reframe.frontend.statistics import TestStats
 
-ABORT_REASONS = (KeyboardInterrupt, ReframeFatalError, AssertionError)
+ABORT_REASONS = (KeyboardInterrupt, ReframeForceExitError, AssertionError)
 
 
 class TestCase:
@@ -256,6 +257,10 @@ class TaskEventListener(abc.ABC):
         '''Called when a regression test has succeeded.'''
 
 
+def _handle_sigterm(signum, frame):
+    raise ReframeForceExitError('received TERM signal')
+
+
 class Runner:
     '''Responsible for executing a set of regression tests based on an
     execution policy.'''
@@ -267,6 +272,7 @@ class Runner:
         self._stats = TestStats()
         self._policy.stats = self._stats
         self._policy.printer = self._printer
+        signal.signal(signal.SIGTERM, _handle_sigterm)
 
     def __repr__(self):
         return debug.repr(self)
@@ -376,7 +382,6 @@ class ExecutionPolicy(abc.ABC):
 
         # Task event listeners
         self.task_listeners = []
-
         self.stats = None
 
     def __repr__(self):

@@ -670,7 +670,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         try:
             prefix = cls._rfm_custom_prefix
         except AttributeError:
-            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+            if os_ext.is_interactive():
+                prefix = os.getcwd()
+            else:
+                prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
 
         obj._rfm_init(name, prefix)
         return obj
