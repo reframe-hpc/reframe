@@ -9,7 +9,7 @@ import sys
 
 VERSION = '3.0-dev2'
 INSTALL_PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-MIN_PYTHON_VERSION = (3, 5, 0)
+MIN_PYTHON_VERSION = (3, 6, 0)
 
 # Check python version
 if sys.version_info[:3] < MIN_PYTHON_VERSION:
