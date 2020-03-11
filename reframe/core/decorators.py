@@ -8,7 +8,7 @@
 #
 
 __all__ = [
-    'parameterized_test', 'simple_test', 'required_version',
+    'extend_test', 'parameterized_test', 'simple_test', 'required_version',
     'require_deps', 'run_before', 'run_after'
 ]
 
@@ -20,9 +20,11 @@ import sys
 import traceback
 
 import reframe
-from reframe.core.exceptions import ReframeSyntaxError, user_frame
+from reframe.core.exceptions import (ReframeSyntaxError,
+                                     user_deprecation_warning, user_frame)
 from reframe.core.logging import getlogger
-from reframe.core.pipeline import RegressionTest
+from reframe.core.pipeline import (CompileOnlyRegressionTest, RegressionTest,
+                                   RunOnlyRegressionTest)
 from reframe.utility.versioning import VersionValidator
 
 
@@ -71,6 +73,41 @@ def _validate_test(cls):
     if not issubclass(cls, RegressionTest):
         raise ReframeSyntaxError('the decorated class must be a '
                                  'subclass of RegressionTest')
+
+    if not hasattr(cls, '_extend_class') or not cls._extend_class:
+        funcs = [
+            i for i in dir(RegressionTest) if i not in ['__dict__' ,
+                                                        '__doc__',
+                                                        '__init__',
+                                                        '__init_subclass__',
+                                                        '__module__',
+                                                        '__subclasshook__']
+        ]
+        if issubclass(cls, CompileOnlyRegressionTest):
+            test_class = CompileOnlyRegressionTest
+        elif issubclass(cls, RunOnlyRegressionTest):
+            test_class = RunOnlyRegressionTest
+        else:
+            test_class = RegressionTest
+
+        for func in funcs:
+            if getattr(cls, func) != getattr(test_class, func):
+                msg = (f'Trying to override method {func}. The syntax '
+                       f'that overrides Regression test methods is '
+                       f'deprecated. Consider using the reframe hooks '
+                       f'instead or the decorator `extend_test`.')
+                user_deprecation_warning(msg)
+
+
+def extend_test(cls):
+    '''Class decorator for allowing method overriding.
+
+    .. versionadded:: 3.0
+
+    '''
+
+    cls._extend_class = True
+    return cls
 
 
 def simple_test(cls):
