@@ -13,7 +13,7 @@ Requirements
 
   .. note::
     .. versionchanged:: 3.0
-      Drop support for Python 3.5.
+      Support for Python 3.5 has been dropped.
 
 Optional
 ~~~~~~~~
