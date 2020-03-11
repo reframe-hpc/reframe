@@ -206,9 +206,10 @@ class _TestJob(abc.ABC):
         self.parallel_cmd = 'sleep 30'
         self.prepare()
         self.testjob.scheduler._update_state = self._update_state
-        self.testjob._max_pending_time = timedelta(seconds=5)
+        self.testjob._max_pending_time = timedelta(milliseconds=50)
         self.testjob.submit()
-        with pytest.raises(JobError):
+        with pytest.raises(JobError,
+                           match='maximum pending time exceeded'):
             self.testjob.wait()
 
 
@@ -587,6 +588,9 @@ class TestTorqueJob(TestPbsJob):
 
     def _update_state(self, job):
         job.state = 'QUEUED'
+
+    def test_submit_max_pending_time(self):
+        _TestJob.test_submit_max_pending_time(self)
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
