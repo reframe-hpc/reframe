@@ -76,7 +76,7 @@ def _validate_test(cls):
 
     if not hasattr(cls, '_extend_class') or not cls._extend_class:
         funcs = [
-            i for i in dir(RegressionTest) if i not in ['__dict__' ,
+            i for i in dir(RegressionTest) if i not in ['__dict__',
                                                         '__doc__',
                                                         '__init__',
                                                         '__init_subclass__',
