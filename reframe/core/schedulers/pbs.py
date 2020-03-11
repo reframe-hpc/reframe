@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # PBS backend
 #
@@ -17,6 +22,7 @@ from reframe.core.config import settings
 from reframe.core.exceptions import SpawnedProcessError, JobError
 from reframe.core.logging import getlogger
 from reframe.core.schedulers.registry import register_scheduler
+from reframe.utility import seconds_to_hms
 
 
 # Time to wait after a job is finished for its standard output/error to be
@@ -29,6 +35,9 @@ _run_strict = functools.partial(os_ext.run_command, check=True)
 
 @register_scheduler('pbs')
 class PbsJobScheduler(sched.JobScheduler):
+    TASKS_OPT = ('-l select={num_nodes}:mpiprocs={num_tasks_per_node}'
+                 ':ncpus={num_cpus_per_node}')
+
     def __init__(self):
         self._prefix = '#PBS'
         self._time_finished = None
@@ -44,9 +53,11 @@ class PbsJobScheduler(sched.JobScheduler):
         num_cpus_per_task = job.num_cpus_per_task or 1
         num_nodes = job.num_tasks // num_tasks_per_node
         num_cpus_per_node = num_tasks_per_node * num_cpus_per_task
-        select_opt = '-l select=%s:mpiprocs=%s:ncpus=%s' % (num_nodes,
-                                                            num_tasks_per_node,
-                                                            num_cpus_per_node)
+        select_opt = self.TASKS_OPT.format(
+            num_nodes=num_nodes,
+            num_tasks_per_node=num_tasks_per_node,
+            num_cpus_per_node=num_cpus_per_node
+        )
 
         # Options starting with `-` are emitted in separate lines
         rem_opts = []
@@ -74,8 +85,9 @@ class PbsJobScheduler(sched.JobScheduler):
         ]
 
         if job.time_limit is not None:
+            h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(
-                self._format_option('-l walltime=%d:%d:%d' % job.time_limit))
+                self._format_option('-l walltime=%d:%d:%d' % (h, m, s)))
 
         if job.sched_partition:
             preamble.append(
@@ -105,7 +117,7 @@ class PbsJobScheduler(sched.JobScheduler):
             raise JobError('could not retrieve the job id '
                            'of the submitted job')
 
-        jobid, *info = jobid_match.group('jobid').split('.', maxsplit=2)
+        jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
         job.jobid = int(jobid)
         if info:
             self._pbs_server = info[0]

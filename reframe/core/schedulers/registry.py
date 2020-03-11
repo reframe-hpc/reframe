@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe.core.fields as fields
 
 from reframe.core.exceptions import ConfigError
@@ -30,6 +35,7 @@ def getscheduler(name):
 
 
 # Import the schedulers modules to trigger their registration
-import reframe.core.schedulers.local  # noqa: F401, F403
-import reframe.core.schedulers.slurm  # noqa: F401, F403
-import reframe.core.schedulers.pbs    # noqa: F401, F403
+import reframe.core.schedulers.local   # noqa: F401, F403
+import reframe.core.schedulers.slurm   # noqa: F401, F403
+import reframe.core.schedulers.pbs     # noqa: F401, F403
+import reframe.core.schedulers.torque  # noqa: F401, F403

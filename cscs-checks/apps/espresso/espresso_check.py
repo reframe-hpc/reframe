@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
 
 import reframe as rfm
@@ -8,7 +13,6 @@ import reframe.utility.sanity as sn
 @rfm.parameterized_test(['small'], ['large'])
 class QECheck(rfm.RunOnlyRegressionTest):
     def __init__(self, scale):
-        super().__init__()
         self.descr = 'Quantum Espresso CPU check'
         self.maintainers = ['LM', 'CB']
         self.tags = {'scs', 'production', 'external-resources'}

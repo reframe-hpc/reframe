@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # Base regression exceptions
 #
@@ -104,6 +109,12 @@ class PipelineError(ReframeError):
     '''Raised when a condition prevents the regression test pipeline to
     continue and the error may not be described by another more specific
     exception.
+    '''
+
+
+class ReframeForceExitError(ReframeError):
+    '''Raised when ReFrame execution must be forcefully ended,
+    e.g., after a SIGTERM was received.
     '''
 
 

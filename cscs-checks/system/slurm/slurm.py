@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -165,7 +170,7 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
 class MemoryOverconsumptionCheck(SlurmCompiledBaseCheck):
     def __init__(self):
         super().__init__()
-        self.time_limit = (0, 1, 0)
+        self.time_limit = '1m'
         self.sourcepath = 'eatmemory.c'
         self.tags.add('mem')
         self.executable_opts = ['4000M']

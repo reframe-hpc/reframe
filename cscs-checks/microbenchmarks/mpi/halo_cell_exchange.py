@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -6,7 +11,6 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class HaloCellExchangeTest(rfm.RegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcepath = 'halo_cell_exchange.c'
         self.build_system = 'SingleSource'
         self.build_system.cflags = ['-O2']

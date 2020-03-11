@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 # The first of the following tests verify the installation. The remaining
 # tests operate on files. All netCDF files incl CDL metadata were
 # downloaded from:
@@ -19,7 +24,6 @@ import reframe.utility.sanity as sn
 
 class NCOBaseTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         self.sourcesdir = os.path.join(self.current_system.resourcesdir,
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
@@ -83,14 +87,12 @@ class NCO_CDOModuleCompatibilityTest(NCOBaseTest):
         self.sanity_patterns = sn.assert_not_found(
             r'(?i)error|conflict|unsupported|failure', self.stderr)
 
-    def setup(self, partition, environ, **job_opts):
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
             cdo_name = 'cdo'
         else:
             cdo_name = 'CDO'
 
         self.pre_run = ['module load %s' % cdo_name]
-        super().setup(partition, environ, **job_opts)
 
 
 @rfm.simple_test

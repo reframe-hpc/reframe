@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 #
 # OS and shell utility functions
 #
@@ -220,6 +225,11 @@ def inpath(entry, pathvar):
     '''Check if entry is in pathvar. pathvar is a string of the form
     `entry1:entry2:entry3`.'''
     return entry in set(pathvar.split(':'))
+
+
+def is_interactive():
+    '''Returns whether the given Python session is interactive'''
+    return hasattr(sys, 'ps1') or sys.flags.interactive
 
 
 def subdirs(dirname, recurse=False):

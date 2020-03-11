@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 import getpass
@@ -5,13 +10,12 @@ import getpass
 
 class S3apiCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
         endpoint = 'object.cscs.ch'
         self.descr = 'S3API check for (%s)' % endpoint
         self.tags = {'ops', 'object_store'}
         self.valid_systems = ['dom:gpu', 'daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
-        self.time_limit = (0, 5, 0)
+        self.time_limit = '5m'
         self.maintainers = ['VH', 'GLR']
         self.executable = 's3_test.sh'
         self.username = getpass.getuser()

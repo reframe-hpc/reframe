@@ -1,3 +1,8 @@
+# Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -5,10 +10,8 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX 1d_stencil_4 check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -47,31 +50,35 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def set_tasks(self):
+        if self.current_partition.fullname == 'daint:gpu':
+            self.num_tasks = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
+        elif self.current_partition.fullname == 'daint:mc':
+            self.num_tasks = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 36
+        elif self.current_partition.fullname == 'dom:gpu':
+            self.num_tasks = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
+        elif self.current_partition.fullname == 'dom:mc':
+            self.num_tasks = 1
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 36
+
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         result = sn.findall(r'(?P<tid>\d+),\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)',
                             self.stdout)
-
-        if partition.fullname == 'daint:gpu':
-            self.num_tasks = 1
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
-            self.num_tasks = 1
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 36
-        elif partition.fullname == 'dom:gpu':
-            self.num_tasks = 1
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
-            self.num_tasks = 1
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 36
-
-        self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
-
         assert_num_threads = sn.map(lambda x: sn.assert_eq(
             int(x.group('tid')), self.num_cpus_per_task), result)
         assert_num_points = sn.map(lambda x: sn.assert_eq(
@@ -86,16 +93,12 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_num_parts,
                                                assert_num_steps))
 
-        super().setup(partition, environ, **job_opts)
-
 
 @rfm.simple_test
 class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        super().__init__()
-
         self.descr = 'HPX 1d_stencil_8 check'
-        self.valid_systems = ['daint:gpu, daint:mc', 'dom:gpu', 'dom:mc']
+        self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
         self.valid_prog_environs = ['PrgEnv-gnu']
 
         self.modules = ['HPX']
@@ -134,34 +137,38 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
         self.tags = {'production'}
         self.maintainers = ['VH', 'JG']
 
-    def setup(self, partition, environ, **job_opts):
+    @rfm.run_after('setup')
+    def set_tasks(self):
+        if self.current_partition.fullname == 'daint:gpu':
+            self.num_tasks = 2
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
+        elif self.current_partition.fullname == 'daint:mc':
+            self.num_tasks = 4
+            self.num_tasks_per_node = 2
+            self.num_cpus_per_task = 18
+            self.num_tasks_per_socket = 1
+        elif self.current_partition.fullname == 'dom:gpu':
+            self.num_tasks = 2
+            self.num_tasks_per_node = 1
+            self.num_cpus_per_task = 12
+        elif self.current_partition.fullname == 'dom:mc':
+            self.num_tasks = 4
+            self.num_tasks_per_node = 2
+            self.num_cpus_per_task = 18
+            self.num_tasks_per_socket = 1
+
+    @rfm.run_before('run')
+    def set_exec_opts(self):
+        self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
         result = sn.findall(r'(?P<lid>\d+),\s*(?P<tid>\d+),'
                             r'\s*(?P<time>(\d+)?.?\d+),'
                             r'\s*(?P<pts>\d+),'
                             r'\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)', self.stdout)
-
-        if partition.fullname == 'daint:gpu':
-            self.num_tasks = 2
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 12
-        elif partition.fullname == 'daint:mc':
-            self.num_tasks = 4
-            self.num_tasks_per_node = 2
-            self.num_cpus_per_task = 18
-            self.num_tasks_per_socket = 1
-        elif partition.fullname == 'dom:gpu':
-            self.num_tasks = 2
-            self.num_tasks_per_node = 1
-            self.num_cpus_per_task = 12
-        elif partition.fullname == 'dom:mc':
-            self.num_tasks = 4
-            self.num_tasks_per_node = 2
-            self.num_cpus_per_task = 18
-            self.num_tasks_per_socket = 1
-
-        self.executable_opts += ['--hpx:threads=%s' % self.num_cpus_per_task]
-
         num_threads = self.num_tasks * self.num_cpus_per_task
         assert_num_tasks = sn.map(lambda x: sn.assert_eq(int(x.group('lid')),
                                                          self.num_tasks), result)
@@ -179,5 +186,3 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
                                                assert_num_points,
                                                assert_num_parts,
                                                assert_num_steps))
-
-        super().setup(partition, environ, **job_opts)
