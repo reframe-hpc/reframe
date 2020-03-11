@@ -222,40 +222,6 @@ class SiteConfiguration:
             self._systems[sys_name] = system
 
 
-def ppretty(value, htchar=' ', lfchar='\n', indent=4, current_depth=0):
-    nlch = lfchar + htchar * indent * (current_depth + 1)
-    if type(value) is dict:
-        if value == {}:
-            return '{}'
-        items = [
-            nlch + repr(key) + ': ' +
-            ppretty(value[key], htchar, lfchar, indent, current_depth + 1)
-            for key in value
-        ]
-        return '{%s}' % (','.join(items) + lfchar +
-                         htchar * indent * current_depth)
-    elif type(value) is list:
-        if value == []:
-            return '[]'
-        items = [
-            nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
-            for item in value
-        ]
-        return '[%s]' % (','.join(items) + lfchar +
-                         htchar * indent * current_depth)
-    elif type(value) is tuple:
-        if value == ():
-            return '()'
-        items = [
-            nlch + ppretty(item, htchar, lfchar, indent, current_depth + 1)
-            for item in value
-        ]
-        return '(%s)' % (','.join(items) + lfchar +
-                         htchar * indent * current_depth)
-    else:
-        return repr(value)
-
-
 def convert_old_config(filename):
     old_config = load_settings_from_file(filename)
     converted = {
@@ -330,7 +296,7 @@ def convert_old_config(filename):
 
                 converted['modes'].append(new_mode)
 
-    def update_config(log_name, original_log):
+    def update_logging_config(log_name, original_log):
         new_handlers = []
         for h in original_log['handlers']:
             new_h = h
@@ -344,8 +310,8 @@ def convert_old_config(filename):
             }
         )
 
-    update_config('logging', old_config.logging_config)
-    update_config('perf_logging', old_config.perf_logging_config)
+    update_logging_config('logging', old_config.logging_config)
+    update_logging_config('perf_logging', old_config.perf_logging_config)
     converted['general'] = [{}]
     if hasattr(old_config, 'checks_path'):
         converted['general'][0][
@@ -361,10 +327,8 @@ def convert_old_config(filename):
         del converted['general']
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
-        fp.write('#\n# This file was automatically generated '
-                 'by ReFrame based on `{}\'.\n#\n\n'.format(filename))
-        fp.write('site_configuration = ')
-        fp.write(ppretty(converted))
-        fp.write('\n')
+        fp.write(f"#\n# This file was automatically generated "
+                 f"by ReFrame based on `{filename}'.\n#\n\n")
+        fp.write(f'site_configuration = {util.ppretty(converted)}\n')
 
     return fp.name

@@ -113,6 +113,51 @@ def toalphanum(s):
     return re.sub(r'\W', '_', s)
 
 
+def ppretty(value, htchar=' ', lfchar='\n', ind=4, basic_offset=0):
+    '''Returns a formatted string of dictionaries, lists and tuples
+
+    Arguments:
+    value -- the value to be formatted
+    htchar -- horizontal-tab character
+    lfchar -- linefeed character
+    ind -- number of htchar characters for every indentation level
+    basic_offset -- basic offset for the representation'''
+    nlch = lfchar + htchar * ind * (basic_offset + 1)
+    if isinstance(value, tuple):
+        if value == ():
+            return '()'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, ind, basic_offset + 1)
+            for item in value
+        ]
+        return '(%r)' % (','.join(items) + lfchar +
+                         htchar * ind * basic_offset)
+    elif isinstance(value, collections.abc.Sequence):
+        if value == []:
+            return '[]'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, ind, basic_offset + 1)
+            for item in value
+        ]
+        return '[%r]' % (','.join(items) + lfchar +
+                         htchar * ind * basic_offset)
+    elif isinstance(value, collections.abc.Mapping):
+        if value == {}:
+            return '{}'
+
+        items = [
+            nlch + repr(key) + ': ' +
+            ppretty(value[key], htchar, lfchar, ind, basic_offset + 1)
+            for key in value
+        ]
+        return '{%r}' % (','.join(items) + lfchar +
+                         htchar * ind * basic_offset)
+    else:
+        return repr(value)
+
+
 class ScopedDict(UserDict):
     '''This is a special dict that imposes scopes on its keys.
 
