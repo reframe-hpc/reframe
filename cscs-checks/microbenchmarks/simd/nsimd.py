@@ -76,7 +76,7 @@ class NsimdTest(rfm.RegressionTest):
     '''
     def __init__(self):
         self.valid_systems = ['dom:mc', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.descr = 'sqrt.avx2.f64 example'
         self.build_system = 'SingleSource'
         self.testname = 'sqrt.avx2.f64'

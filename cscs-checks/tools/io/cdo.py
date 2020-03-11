@@ -35,16 +35,14 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
                                        'CDO-NCO')
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.valid_prog_environs = ['builtin']
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['cdo', 'netcdf-fortran']
         else:
-            self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['CDO']
 
         self.maintainers = ['SO', 'CB']

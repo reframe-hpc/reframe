@@ -15,7 +15,7 @@ class FieldextraTestBase(rfm.RunOnlyRegressionTest):
         self.tags = {'mch', 'external-resources'}
 
         self.valid_systems = ['kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'cookbook/run.bash'
 
         self.num_tasks = 1

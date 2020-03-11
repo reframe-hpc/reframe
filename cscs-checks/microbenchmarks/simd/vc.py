@@ -29,7 +29,7 @@ class VcSimdTest(rfm.RegressionTest):
     '''
     def __init__(self):
         self.valid_systems = ['*']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.descr = 'finitediff example'
         self.build_system = 'SingleSource'
         self.testname = 'finitediff'

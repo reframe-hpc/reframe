@@ -23,35 +23,35 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
                     'amdv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pamdv100'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'AMD Naples 32c + 2x NVIDIA V100',
                         'max_jobs': 100,
                     },
                     'amdvega': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pamdvega'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'AMD Naples 32c + 3x AMD GFX900',
                         'max_jobs': 100,
                     },
                     'intelv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintelv100'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
                         'max_jobs': 100,
                     },
                     'intel': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintel'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Intel Skylake 36c',
                         'max_jobs': 100,
                     }
@@ -66,7 +66,7 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
@@ -279,7 +279,8 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Kesch login nodes',
                     },
                     'pn': {
@@ -287,7 +288,8 @@ class ReframeSettings:
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Kesch post-processing nodes'
                     },
 
@@ -296,7 +298,8 @@ class ReframeSettings:
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-cray', 'PrgEnv-cray-nompi',
                                      'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Kesch compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -314,21 +317,24 @@ class ReframeSettings:
                     'login': {
                         'scheduler': 'local',
                         'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Arolla login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Arolla post-processing nodes',
                     },
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'builtin'],
                         'descr': 'Arolla compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],
@@ -346,21 +352,24 @@ class ReframeSettings:
                     'login': {
                         'scheduler': 'local',
                         'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Tsa login nodes',
                     },
                     'pn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=pn-regression'],
                         'environs': ['PrgEnv-pgi', 'PrgEnv-pgi-nompi',
-                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi'],
+                                     'PrgEnv-gnu', 'PrgEnv-gnu-nompi',
+                                     'builtin'],
                         'descr': 'Tsa post-processing nodes',
                     },
                     'cn': {
                         'scheduler': 'nativeslurm',
                         'access': ['--partition=cn-regression'],
                         'environs': ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi'],
+                                     'PrgEnv-pgi', 'PrgEnv-pgi-nompi',
+                                     'builtin'],
                         'descr': 'Tsa compute nodes',
                         'resources': {
                             '_rfm_gpu': ['--gres=gpu:{num_gpus_per_node}'],

@@ -32,10 +32,10 @@ class NetCDFTest(rfm.RegressionTest):
         elif self.current_system.name == 'kesch':
             self.exclusive_access = True
             if linkage == 'dynamic':
-                self.valid_prog_environs = ['PrgEnv-pgi-nompi']
+                self.valid_prog_environs = ['builtin']
 
             if lang != 'f90':
-                self.valid_prog_environs += ['PrgEnv-cray-nompi']
+                self.valid_prog_environs += ['builtin']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.valid_prog_environs = ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi']
