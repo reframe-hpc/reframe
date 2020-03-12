@@ -18,7 +18,7 @@ class GridToolsCheck(rfm.RegressionTest):
     def __init__(self, variant):
         # Check if this is a device check
         self.descr = 'GridTools test base'
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['CMake', 'Boost']
         is_cuda_test = 'cuda' in variant
         if is_cuda_test:

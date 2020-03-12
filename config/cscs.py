@@ -534,8 +534,8 @@ class ReframeSettings:
 
                 'builtin': {
                     'cc':  'cc',
-                    'cxx': '',
-                    'ftn': '',
+                    'cxx': 'CC',
+                    'ftn': 'ftn',
                 },
 
                 'builtin-gcc': {

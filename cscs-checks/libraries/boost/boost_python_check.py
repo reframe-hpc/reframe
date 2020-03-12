@@ -14,7 +14,7 @@ class BoostCrayGnuPythonTest(rfm.RegressionTest):
                       'support') % (boost_version, cray_gnu_version,
                                     python_version)
         self.valid_systems = ['daint:mc', 'daint:gpu', 'dom:mc', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         python_major, python_minor = python_version.split('.')
         self.modules = ['Boost/%s-CrayGNU-%s-python%s' % (
             boost_version, cray_gnu_version, python_major)]
