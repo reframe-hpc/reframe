@@ -195,6 +195,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 'could not retrieve the job id of the submitted job')
 
         job.jobid = int(jobid_match.group('jobid'))
+        self._submit_time = datetime.now()
 
     def allnodes(self):
         try:
@@ -418,7 +419,14 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state(job)
+
         while not slurm_state_completed(job.state):
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
+
             time.sleep(next(intervals))
             self._update_state(job)
 
@@ -443,6 +451,12 @@ class SlurmJobScheduler(sched.JobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
+
             return slurm_state_completed(job.state)
 
     def is_array(self, job):
@@ -472,10 +486,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
     def completion_time(self, job):
         return None
-
-    def submit(self, job):
-        super().submit(job)
-        self._submit_time = datetime.now()
 
     def _update_state(self, job):
         time_from_submit = datetime.now() - self._submit_time

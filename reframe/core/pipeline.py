@@ -429,8 +429,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core  = fields.TypedField('num_tasks_per_core',
-                                            int, type(None))
+    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
+                                           int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -449,6 +449,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: :class:`None`
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
+
+    #: The maximum time a job can be pending before starting running.
+    #:
+    #: Time duration is specified as of the :attr:`time_limit` attribute.
+    #:
+    #: :type: :class:`str` or :class:`datetime.timedelta``
+    #: :default: :class:`None
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:
+    max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
     #:
@@ -714,6 +726,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.num_tasks_per_socket = None
         self.use_multithreading = None
         self.exclusive_access = False
+        self.max_pending_time = None
 
         # True only if check is to be run locally
         self.local = False
@@ -996,6 +1009,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                launcher_type(),
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
+                               max_pending_time=self.max_pending_time,
                                sched_access=self._current_partition.access,
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)
@@ -1286,7 +1300,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
-            # store all the variables  tested in the performance check
+            # store all the variables tested in the performance check
             has_default = False
             variables = set()
             for key, ref in self.reference.items():
