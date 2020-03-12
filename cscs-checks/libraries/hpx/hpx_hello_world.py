@@ -12,7 +12,7 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'HPX hello, world check'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
 
         self.modules = ['HPX']
         self.executable = 'hello_world_distributed'

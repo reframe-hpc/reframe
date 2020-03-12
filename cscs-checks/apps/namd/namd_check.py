@@ -12,7 +12,7 @@ import reframe.utility.sanity as sn
 class NamdBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, arch, scale, variant):
         self.descr = 'NAMD check (%s, %s)' % (arch, variant)
-        self.valid_prog_environs = ['PrgEnv-intel']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['NAMD']
 
         # Reset sources dir relative to the SCS apps prefix
