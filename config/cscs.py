@@ -168,9 +168,10 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel',
-                                     'PrgEnv-pgi'],
+                        'environs': [
+                            'builtin', 'PrgEnv-cray', 'PrgEnv-cray_classic',
+                            'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi'
+                        ],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
