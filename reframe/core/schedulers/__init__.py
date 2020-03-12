@@ -169,6 +169,7 @@ class Job:
                  script_filename=None,
                  stdout=None,
                  stderr=None,
+                 max_pending_time=None,
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
                  sched_account=None,
@@ -201,6 +202,7 @@ class Job:
         self._script_filename = script_filename or '%s.sh' % name
         self._stdout = stdout or '%s.out' % name
         self._stderr = stderr or '%s.err' % name
+        self._max_pending_time = max_pending_time
         self._completion_time = None
 
         # Backend scheduler related information
@@ -227,6 +229,10 @@ class Job:
     @property
     def workdir(self):
         return self._workdir
+
+    @property
+    def max_pending_time(self):
+        return self._max_pending_time
 
     @property
     def script_filename(self):

@@ -5,11 +5,15 @@ Getting Started
 Requirements
 ------------
 
-* Python 3.5 or higher. Python 2 is not supported.
+* Python 3.6 or higher. Python 2 is not supported.
 
   .. note::
     .. versionchanged:: 2.8
       A functional TCL modules system is no more required. ReFrame can now operate without a modules system at all.
+
+  .. note::
+    .. versionchanged:: 3.0
+      Support for Python 3.5 has been dropped.
 
 Optional
 ~~~~~~~~
