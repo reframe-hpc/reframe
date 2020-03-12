@@ -8,6 +8,7 @@
 #
 import os
 import signal
+import time
 
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -24,6 +25,7 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest):
         self.tags = {type(self).__name__}
         self.maintainers = ['TM']
 
-    @rfm.run_after('run')
-    def kill(self):
+    def run(self):
+        super().run()
+        time.sleep(0.5)
         os.kill(os.getpid(), signal.SIGTERM)

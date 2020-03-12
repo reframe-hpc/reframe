@@ -6,7 +6,6 @@
 import collections
 import itertools
 import os
-import multiprocessing
 import pytest
 import time
 import tempfile
@@ -269,6 +268,7 @@ class TestSerialExecutionPolicy(unittest.TestCase):
                            match='received TERM signal'):
             self.runall(checks)
 
+        self.assert_all_dead()
         assert self.runner.stats.num_cases() == 1
         assert len(self.runner.stats.failures()) == 1
 
