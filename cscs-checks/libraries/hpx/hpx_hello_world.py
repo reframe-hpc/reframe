@@ -62,4 +62,3 @@ class HelloWorldHPXCheck(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.all(sn.chain([assert_num_tasks],
                                                assert_threads,
                                                assert_localities))
-

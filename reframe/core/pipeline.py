@@ -429,8 +429,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: integral or :class:`None`
     #: :default: :class:`None`
-    num_tasks_per_core  = fields.TypedField('num_tasks_per_core',
-                                            int, type(None))
+    num_tasks_per_core = fields.TypedField('num_tasks_per_core',
+                                           int, type(None))
 
     #: Number of tasks per socket required by this test.
     #:
@@ -450,6 +450,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
+    #: The maximum time a job can be pending before starting running.
+    #:
+    #: Time duration is specified as of the :attr:`time_limit` attribute.
+    #:
+    #: :type: :class:`str` or :class:`datetime.timedelta``
+    #: :default: :class:`None
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:
+    max_pending_time = fields.TimerField('max_pending_time', type(None))
+
     #: Specify whether this test needs exclusive access to nodes.
     #:
     #: :type: boolean
@@ -467,9 +479,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: The reference values are specified as a scoped dictionary keyed on the
     #: performance variables defined in :attr:`perf_patterns` and scoped under
     #: the system/partition combinations.
-    #: The reference itself is a three- or four-tuple that contains the
-    #: reference value, the lower and upper thresholds and, optionally, the
-    #: measurement unit.
+    #: The reference itself is a four-tuple that contains the reference value,
+    #: the lower and upper thresholds and the measurement unit.
+    #:
     #: An example follows:
     #:
     #: .. code:: python
@@ -487,7 +499,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: A scoped dictionary with system names as scopes or :class:`None`
     #: :default: ``{}``
-    reference = fields.ScopedDictField('reference', typ.Tuple[object])
+    #:
+    #: .. note::
+    #:     .. versionchanged:: 3.0
+    #:        The measurement unit is required. The user should explicitly
+    #:        specify `None` if no unit is available.
+    reference = fields.ScopedDictField(
+        'reference', typ.Tuple[object, object, object, object])
     # FIXME: There is not way currently to express tuples of `float`s or
     # `None`s, so we just use the very generic `object`
 
@@ -714,6 +732,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.num_tasks_per_socket = None
         self.use_multithreading = None
         self.exclusive_access = False
+        self.max_pending_time = None
 
         # True only if check is to be run locally
         self.local = False
@@ -996,6 +1015,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                launcher_type(),
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
+                               max_pending_time=self.max_pending_time,
                                sched_access=self._current_partition.access,
                                sched_exclusive_access=self.exclusive_access,
                                **job_opts)
@@ -1286,18 +1306,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         with os_ext.change_dir(self._stagedir):
             # Check if default reference perf values are provided and
-            # store all the variables  tested in the performance check
+            # store all the variables tested in the performance check
             has_default = False
             variables = set()
             for key, ref in self.reference.items():
                 keyparts = key.split(self.reference.scope_separator)
                 system = keyparts[0]
                 varname = keyparts[-1]
-                try:
-                    unit = ref[3]
-                except IndexError:
-                    unit = None
-
+                unit = ref[3]
                 variables.add((varname, unit))
                 if system == '*':
                     has_default = True
