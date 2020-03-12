@@ -682,7 +682,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         try:
             prefix = cls._rfm_custom_prefix
         except AttributeError:
-            prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
+            if os_ext.is_interactive():
+                prefix = os.getcwd()
+            else:
+                prefix = os.path.abspath(os.path.dirname(inspect.getfile(cls)))
 
         obj._rfm_init(name, prefix)
         return obj
@@ -1517,6 +1520,7 @@ class RunOnlyRegressionTest(RegressionTest):
         This is a no-op for this type of test.
         '''
 
+    @_run_hooks('pre_run')
     def run(self):
         '''The run phase of the regression test pipeline.
 
@@ -1530,7 +1534,7 @@ class RunOnlyRegressionTest(RegressionTest):
                 self._copy_to_stagedir(os.path.join(self._prefix,
                                                     self.sourcesdir))
 
-        super().run()
+        super().run.__wrapped__(self)
 
 
 class CompileOnlyRegressionTest(RegressionTest):
@@ -1550,6 +1554,7 @@ class CompileOnlyRegressionTest(RegressionTest):
         super()._rfm_init(*args, **kwargs)
         self.local = True
 
+    @_run_hooks()
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
