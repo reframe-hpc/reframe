@@ -97,7 +97,7 @@ class TestStats:
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
             report.append('  * Maintainers: %s' % check.maintainers)
             report.append('  * Failing phase: %s' % tf.failed_stage)
-            report.append('  * Rerun as: -n %s -p %s --system %s' %
+            report.append("  * Rerun with '-n %s -p %s --system %s'" %
                           (check.name, environ_name, partname))
             reason = '  * Reason: '
             if tf.exc_info is not None:
@@ -122,33 +122,40 @@ class TestStats:
         current_run = rt.runtime().current_run
         for tf in (t for t in self.tasks(current_run) if t.failed):
             check = tf.check
-            if tf.exc_info is not None:
-                from reframe.core.exceptions import format_exception
+            partition = check.current_partition
+            partname = partition.fullname if partition else 'None'
+            environ_name = (check.current_environ.name
+                            if check.current_environ else 'None')
+            f = "[%s, %s, %s]" % (check.name, environ_name, partname)
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
-            failures[tf.failed_stage].append(check.name)
+
+            failures[tf.failed_stage].append(f)
+
         line_width = 78
         stats_start = line_width * '='
         stats_title = 'FAILURE STATISTICS'
-        stats_end = line_width * '_'
+        stats_end = line_width * '-'
         stats_body = []
-        row_format = "{:<11} {:<5} {:<60}"
+        row_format = "{:<11} {:<5} {}"
         stats_hline = row_format.format(11*'-', 5*'-', 60*'-')
-        stats_header = row_format.format('Phase', '#', 'Failing tests')
-        total_num_tests = len(self.tasks(current_run))
-        total_num_failures = 0
-        for p in failures.keys():
-            total_num_failures += len(failures[p])
+        stats_header = row_format.format('Phase', '#', 'Failing test cases')
+        num_tests = len(self.tasks(current_run))
+        num_failures = 0
+        for l in failures.values():
+            num_failures += len(l)
+
         stats_body = ['']
-        stats_body.append('Total number of tests: %d' % int(total_num_tests))
-        stats_body.append('Total number of failures: %d' % 
-                           int(total_num_failures))
+        stats_body.append('Total number of test cases: %s' % num_tests)
+        stats_body.append('Total number of failures: %s' % num_failures)
         stats_body.append('')
         stats_body.append(stats_header)
         stats_body.append(stats_hline)
-        for p in failures.keys():
-            stats_body.append(row_format.format(p, len(failures[p]),
-                                                '|'.join(failures[p])))
+        for p, l in failures.items():
+            stats_body.append(row_format.format(p, len(l), l[0]))
+            for f in l[1:]:
+                stats_body.append(row_format.format('', '', str(f)))
+
         if stats_body:
             return '\n'.join([stats_start, stats_title, *stats_body,
                               stats_end])
