@@ -144,9 +144,9 @@ def ppretty(value, htchar=' ', lfchar='\n', ind=4, basic_offset=0):
             nlch + ppretty(item, htchar, lfchar, ind, basic_offset + 1)
             for item in value
         ]
-        return '(%r)' % (','.join(items) + lfchar +
+        return '(%s)' % (','.join(items) + lfchar +
                          htchar * ind * basic_offset)
-    elif isinstance(value, collections.abc.Sequence):
+    elif isinstance(value, list):
         if value == []:
             return '[]'
 
@@ -154,9 +154,9 @@ def ppretty(value, htchar=' ', lfchar='\n', ind=4, basic_offset=0):
             nlch + ppretty(item, htchar, lfchar, ind, basic_offset + 1)
             for item in value
         ]
-        return '[%r]' % (','.join(items) + lfchar +
+        return '[%s]' % (','.join(items) + lfchar +
                          htchar * ind * basic_offset)
-    elif isinstance(value, collections.abc.Mapping):
+    elif isinstance(value, dict):
         if value == {}:
             return '{}'
 
@@ -165,7 +165,7 @@ def ppretty(value, htchar=' ', lfchar='\n', ind=4, basic_offset=0):
             ppretty(value[key], htchar, lfchar, ind, basic_offset + 1)
             for key in value
         ]
-        return '{%r}' % (','.join(items) + lfchar +
+        return '{%s}' % (','.join(items) + lfchar +
                          htchar * ind * basic_offset)
     else:
         return repr(value)
