@@ -167,6 +167,16 @@ def ppretty(value, htchar=' ', lfchar='\n', ind=4, basic_offset=0):
         ]
         return '{%s}' % (','.join(items) + lfchar +
                          htchar * ind * basic_offset)
+    elif isinstance(value, set):
+        if value == set():
+            return 'set()'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, ind, basic_offset + 1)
+            for item in value
+        ]
+        return '{%s}' % (','.join(items) + lfchar +
+                         htchar * ind * basic_offset)
     else:
         return repr(value)
 

@@ -444,6 +444,54 @@ class TestDebugRepr(unittest.TestCase):
         assert 'D(...)' in rep
 
 
+class TestUtilPpretty(unittest.TestCase):
+    def test_simple_types(self):
+        assert util.ppretty(1) == debug.repr(1)
+        assert util.ppretty(1.2) == debug.repr(1.2)
+        assert util.ppretty([]) == '[]'
+        assert util.ppretty(()) == '()'
+        assert util.ppretty(set()) == 'set()'
+        assert util.ppretty({}) == '{}'
+        assert util.ppretty([1, 2, 3]) == '[\n    1,\n    2,\n    3\n]'
+        assert util.ppretty((1, 2, 3)) == '(\n    1,\n    2,\n    3\n)'
+        assert util.ppretty({1, 2, 3}) == '{\n    1,\n    2,\n    3\n}'
+        assert util.ppretty({'a': 1, 'b': 2}) == ("{\n"
+                                                  "    'a': 1,\n"
+                                                  "    'b': 2\n"
+                                                  "}")
+
+    def test_mixed_types(self):
+        assert util.ppretty({'a': 1, 'b': (2, 3)}) == ("{\n"
+                                                       "    'a': 1,\n"
+                                                       "    'b': (\n"
+                                                       "        2,\n"
+                                                       "        3\n"
+                                                       "    )\n"
+                                                       "}")
+        assert (
+            util.ppretty({'a': 2, 34: (2, 3),
+                          'b': [[], [1.2, 3.4], {1, 2}]}) ==
+            "{\n"
+            "    'a': 2,\n"
+            "    34: (\n"
+            "        2,\n"
+            "        3\n"
+            "    ),\n"
+            "    'b': [\n"
+            "        [],\n"
+            "        [\n"
+            "            1.2,\n"
+            "            3.4\n"
+            "        ],\n"
+            "        {\n"
+            "            1,\n"
+            "            2\n"
+            "        }\n"
+            "    ]\n"
+            "}"
+        )
+
+
 class TestChangeDirCtxManager(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
