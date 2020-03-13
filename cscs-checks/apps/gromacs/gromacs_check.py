@@ -73,20 +73,20 @@ class GromacsGPUCheck(GromacsBaseCheck):
         references = {
             'maint': {
                 'small': {
-                    'dom:gpu': {'perf': (29.3, -0.05, None, 'ns/day')},
-                    'daint:gpu': {'perf': (30.3, -0.10, None, 'ns/day')}
+                    'dom:gpu': {'perf': (0.0, -0.05, None, 'ns/day')},
+                    'daint:gpu': {'perf': (0.0, -0.10, None, 'ns/day')}
                 },
                 'large': {
-                    'daint:gpu': {'perf': (42.0, -0.10, None, 'ns/day')}
+                    'daint:gpu': {'perf': (0.0, -0.10, None, 'ns/day')}
                 }
             },
             'prod': {
                 'small': {
-                    'dom:gpu': {'perf': (29.3, -0.05, None, 'ns/day')},
-                    'daint:gpu': {'perf': (30.3, -0.10, None, 'ns/day')}
+                    'dom:gpu': {'perf': (37.0, -0.05, None, 'ns/day')},
+                    'daint:gpu': {'perf': (35.0, -0.10, None, 'ns/day')}
                 },
                 'large': {
-                    'daint:gpu': {'perf': (42.0, -0.20, None, 'ns/day')}
+                    'daint:gpu': {'perf': (63.0, -0.20, None, 'ns/day')}
                 }
             },
         }
@@ -126,11 +126,11 @@ class GromacsCPUCheck(GromacsBaseCheck):
             },
             'prod': {
                 'small': {
-                    'dom:mc': {'perf': (41.0, -0.05, None, 'ns/day')},
+                    'dom:mc': {'perf': (40.0, -0.05, None, 'ns/day')},
                     'daint:mc': {'perf': (38.8, -0.10, None, 'ns/day')}
                 },
                 'large': {
-                    'daint:mc': {'perf': (70.4, -0.20, None, 'ns/day')}
+                    'daint:mc': {'perf': (68.0, -0.20, None, 'ns/day')}
                 }
             },
         }
