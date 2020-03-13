@@ -5,9 +5,12 @@
 
 import collections.abc
 import json
+import jsonschema
+import os
 import re
 import tempfile
 
+import reframe
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
@@ -331,6 +334,15 @@ def convert_old_config(filename):
     if converted['general'] == [{}]:
         del converted['general']
 
+    # Validate the converted file
+    schema_filename = os.path.join(reframe.INSTALL_PREFIX,
+                                   'schemas', 'config.json')
+
+    # We let the following statements raise, because if they do, that's a BUG
+    with open(schema_filename) as fp:
+        schema = json.loads(fp.read())
+
+    jsonschema.validate(converted, schema)
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
         fp.write(f"#\n# This file was automatically generated "
                  f"by ReFrame based on `{filename}'.\n#\n\n")
