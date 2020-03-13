@@ -279,6 +279,18 @@ def convert_old_config(filename):
                         [vname, v] for vname, v in p['variables'].items()
                     ]
 
+                if 'container_platforms' in p:
+                    new_p['container_platforms'] = []
+                    for cname, c in p['container_platforms'].items():
+                        new_c = {'name': cname}
+                        new_c.update(c)
+                        if 'variables' in c:
+                            new_c['variables'] = [
+                                [vn, v] for vn, v in c['variables'].items()
+                            ]
+
+                        new_p['container_platforms'].append(new_c)
+
                 sys_dict['partitions'].append(new_p)
 
         converted['systems'].append(sys_dict)
@@ -291,6 +303,17 @@ def convert_old_config(filename):
                 new_env['target_systems'] = [env_target]
 
             new_env.update(e)
+
+            # Make variables dictionary into a list of lists
+            if 'variables' in e:
+                new_env['variables'] = [
+                    [vname, v] for vname, v in e['variables'].items()
+                ]
+
+            # Type attribute has been deprecated
+            if 'type' in new_env:
+                del new_env['type']
+
             converted['environments'].append(new_env)
 
     if 'modes' in old_config.site_configuration:

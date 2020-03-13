@@ -147,7 +147,7 @@
                                 "descr": {"type": "string"},
                                 "scheduler": {
                                     "type": "string",
-                                    "enum": ["local", "pbs", "slurm", "squeue"]
+                                    "enum": ["local", "pbs", "slurm", "squeue", "torque"]
                                 },
                                 "launcher": {
                                     "type": "string",
