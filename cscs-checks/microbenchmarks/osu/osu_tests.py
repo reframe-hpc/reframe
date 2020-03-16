@@ -223,10 +223,10 @@ class P2PCPULatencyTest(P2PBaseTest):
                 'latency': (1.15, None, 0.6, 'us')
             },
             'dom:gpu': {
-                'latency': (1.13, None, 0.1, 'us')
+                'latency': (1.16, None, 0.6, 'us')
             },
             'dom:mc': {
-                'latency': (1.27, None, 0.2, 'us')
+                'latency': (1.15, None, 0.6, 'us')
             },
             # keeping as reference:
             # 'monch:compute': {
