@@ -998,7 +998,7 @@ The attributes of this handler are the following:
   - ``check_perf_ref``: The reference performance value of a certain performance variable.
   - ``check_perf_value``: The performance value obtained by this test for a certain performance variable.
   - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
-  - ``check_perf_unit``: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
+  - ``check_perf_unit``: The unit of measurement for the measured performance variable specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
 
 .. note::
    .. versionchanged:: 2.20

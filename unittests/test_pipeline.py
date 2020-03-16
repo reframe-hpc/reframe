@@ -795,11 +795,11 @@ class TestSanityPatterns(unittest.TestCase):
         self.test.setup(self.partition, self.prgenv)
         self.test.reference = {
             'testsys': {
-                'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
             },
             'testsys:gpu': {
-                'value3': (3.1, -0.1, 0.1),
+                'value3': (3.1, -0.1, 0.1, None),
             }
         }
 
@@ -902,12 +902,20 @@ class TestSanityPatterns(unittest.TestCase):
         with pytest.raises(PerformanceError):
             self.test.check_performance()
 
+    def test_performance_no_units(self):
+        with pytest.raises(TypeError):
+            self.test.reference = {
+                'testsys': {
+                    'value1': (1.4, -0.1, 0.1),
+                }
+            }
+
     def test_unknown_tag(self):
         self.test.reference = {
             'testsys': {
-                'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
-                'foo': (3.1, -0.1, 0.1),
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+                'foo': (3.1, -0.1, 0.1, None),
             }
         }
 
@@ -923,11 +931,11 @@ class TestSanityPatterns(unittest.TestCase):
                                       performance3=3.3)
         self.test.reference = {
             'testsys:login': {
-                'value1': (1.4, -0.1, 0.1),
-                'value3': (3.1, -0.1, 0.1),
+                'value1': (1.4, -0.1, 0.1, None),
+                'value3': (3.1, -0.1, 0.1, None),
             },
             'testsys:login2': {
-                'value2': (1.7, -0.1, 0.1)
+                'value2': (1.7, -0.1, 0.1, None)
             }
         }
         self.test.check_performance()
@@ -945,9 +953,9 @@ class TestSanityPatterns(unittest.TestCase):
                                       performance3=3.3)
         self.test.reference = {
             '*': {
-                'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
-                'value3': (3.1, -0.1, 0.1),
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
+                'value3': (3.1, -0.1, 0.1, None),
             }
         }
 
@@ -959,11 +967,11 @@ class TestSanityPatterns(unittest.TestCase):
                                       performance3=3.3)
         self.test.reference = {
             'testsys': {
-                'value1': (1.4, -0.1, 0.1),
-                'value2': (1.7, -0.1, 0.1),
+                'value1': (1.4, -0.1, 0.1, None),
+                'value2': (1.7, -0.1, 0.1, None),
             },
             '*': {
-                'value3': (3.1, -0.1, 0.1),
+                'value3': (3.1, -0.1, 0.1, None),
             }
         }
         self.test.check_performance()
