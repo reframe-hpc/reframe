@@ -12,6 +12,7 @@ import reframe.utility.sanity as sn
 from reframe.core.exceptions import ReframeError, PerformanceError
 
 
+@rfm.extend_test
 class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.local = True
@@ -34,6 +35,7 @@ class BadSetupCheck(BaseFrontendCheck):
 
 
 @rfm.simple_test
+@rfm.extend_test
 class BadSetupCheckEarly(BaseFrontendCheck):
     def __init__(self):
         super().__init__()

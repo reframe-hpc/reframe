@@ -81,7 +81,8 @@ def _validate_test(cls):
                                                         '__init__',
                                                         '__init_subclass__',
                                                         '__module__',
-                                                        '__subclasshook__']
+                                                        '__subclasshook__',
+                                                        '_rfm_pipeline_hooks']
         ]
         if issubclass(cls, CompileOnlyRegressionTest):
             test_class = CompileOnlyRegressionTest

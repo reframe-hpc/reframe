@@ -14,6 +14,7 @@ import reframe as rfm
 
 
 @rfm.simple_test
+@rfm.extend_test
 class KeyboardInterruptCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.local = True
