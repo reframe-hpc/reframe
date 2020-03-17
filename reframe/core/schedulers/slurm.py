@@ -102,6 +102,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
+        self._submit_time = None
         self._completion_time = None
 
     def completion_time(self, job):
@@ -112,7 +113,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
-                (datetime.now().strftime('%F'), job.jobid),
+                (self._submit_time.strftime('%F'), job.jobid),
                 log=False
             )
 
@@ -330,7 +331,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (datetime.now().strftime('%F'), job.jobid)
+            (self._submit_time.strftime('%F'), job.jobid)
         )
         self._update_state_count += 1
 
@@ -480,7 +481,6 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
     def __init__(self):
         super().__init__()
-        self._submit_time = None
         self._squeue_delay = 2
         self._cancelled = False
 

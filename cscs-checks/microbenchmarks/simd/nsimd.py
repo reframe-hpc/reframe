@@ -31,6 +31,7 @@ class NsimdTest(rfm.RegressionTest):
         - dom:mc
            - PrgEnv-gnu
             * speedup: 3.827 x (ns)
+
     > reframe --system dom:gpu -p PrgEnv-gnu -r -c nsimd.py
         PERFORMANCE REPORT
         -----------------------------------------------------------------------
@@ -88,7 +89,7 @@ class NsimdTest(rfm.RegressionTest):
             'tar xf $EBROOTNSIMD/benches.tar %s' % self.sourcepath,
         ]
         self.executable = '%s.exe' % self.testname
-        self.modules = ['nsimd/579084-CrayGNU-19.06']
+        self.modules = ['nsimd/579084-CrayGNU-19.10']
         self.build_system.cxxflags = [
             '-std=c++14', '-O3', '-DNDEBUG', '-dynamic',
             '-mavx2', '-DAVX2', '-mfma', '-DFMA',
