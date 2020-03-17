@@ -248,7 +248,7 @@ The available partition attributes are the following:
     }
 
 .. note::
-   For the `PBS <#supported-scheduler-backends>`__ backend, options accepted in the ``access`` and ``resources`` attributes may either refer to actual ``qsub`` options or be just resources specifications to be passed to the ``-l select`` option.
+   For the `PBS <#supported-scheduler-backends>`__ and `Torque <#supported-scheduler-backends>`__ backends, options accepted in the ``access`` and ``resources`` attributes may either refer to actual ``qsub`` options or be just resources specifications to be passed to the ``-l`` option.
    The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 .. note::
@@ -280,7 +280,8 @@ ReFrame supports the following job schedulers:
   The job status is obtained using the ``squeue`` command.
   This scheduler is less reliable than the one based on the ``sacct`` command, but the framework does its best to query the job state as reliably as possible.
 
-* ``pbs``: *[new in 2.13]* Jobs on the configured partition will be launched using a `PBS-based <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+* ``pbs``: *[new in 2.13]* Jobs on the configured partition will be launched using the `PBS Pro <https://en.wikipedia.org/wiki/Portable_Batch_System>`__ scheduler.
+* ``torque``: *[new in 3.0]* Jobs on the configured partition will be launched using the `Torque <https://en.wikipedia.org/wiki/TORQUE>`__ scheduler.
 * ``local``: Jobs on the configured partition will be launched locally as OS processes.
 
 

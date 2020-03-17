@@ -21,10 +21,9 @@ class CPMDCheck(rfm.RunOnlyRegressionTest):
             self.valid_systems += ['dom:gpu']
         else:
             self.num_tasks = 16
-            self.time_limit = (0, 20, 0)
 
         self.num_tasks_per_node = 1
-        self.valid_prog_environs = ['PrgEnv-intel']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['CPMD']
         self.executable = 'cpmd.x'
         self.executable_opts = ['ana_c4h6.in > stdout.txt']

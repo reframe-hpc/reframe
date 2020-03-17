@@ -12,7 +12,7 @@ import reframe.utility.sanity as sn
 
 class GromacsBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self, output_file):
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'gmx_mpi'
 
         # Reset sources dir relative to the SCS apps prefix

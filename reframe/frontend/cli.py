@@ -9,6 +9,7 @@ import re
 import socket
 import sys
 import traceback
+import warnings
 
 import reframe
 import reframe.core.config as config
@@ -20,8 +21,8 @@ import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (
-    ConfigError, EnvironError, ReframeError, ReframeFatalError,
-    ReframeForceExitError, SystemAutodetectionError
+    ConfigError, EnvironError, ReframeDeprecationWarning, ReframeError,
+    ReframeFatalError, ReframeForceExitError, SystemAutodetectionError
 )
 from reframe.core.exceptions import format_exception
 from reframe.frontend.executors import Runner, generate_testcases
@@ -232,6 +233,9 @@ def main():
         help='Disable coloring of output')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
+    misc_options.add_argument(
+        '--no-deprecation-warnings', action='store_true',
+        help='Suppress deprecation warnings from the framework')
 
     # FIXME: This should move to env_options as soon as
     # https://github.com/eth-cscs/reframe/pull/946 is merged
@@ -439,6 +443,9 @@ def main():
             recurse=settings.checks_path_recurse)
 
     printer.debug(argparse.format_options(options))
+
+    if options.no_deprecation_warnings:
+        warnings.filterwarnings('ignore', category=ReframeDeprecationWarning)
 
     # Print command line
     printer.info('Command line: %s' % ' '.join(sys.argv))

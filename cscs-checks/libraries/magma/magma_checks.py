@@ -18,7 +18,7 @@ class MagmaCheck(rfm.RegressionTest):
 
         self.prebuild_cmd = ['patch < patch.txt']
         self.build_system = 'Make'
-        self.valid_prog_environs = ['PrgEnv-intel']
+        self.valid_prog_environs = ['builtin']
         self.build_system.makefile = 'Makefile_%s' % subtest
         # Compile with -O0 since with a higher level the compiler seems to
         # optimise something away

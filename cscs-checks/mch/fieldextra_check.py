@@ -79,11 +79,11 @@ class FieldextraPerformanceTest(FieldextraTestBase):
             r'%INFO fieldextra: Program successfully completed', self.stdout
         )
         self.perf_patterns = {
-            'perf': sn.extractsingle(r'WALL CLOCK\s*SPEEDUP\D*(?P<perf>\S+)',
-                                     'fieldextra.diagnostic', 'perf', float)
+            'time': sn.extractsingle(r'WALL CLOCK\s*SPEEDUP\D*(?P<time>\S+)',
+                                     'fieldextra.diagnostic', 'time', float)
         }
         self.reference = {
             'kesch': {
-                'perf': (420., None, 0.10)
+                'time': (420., None, 0.10, 's')
             }
         }

@@ -8,7 +8,7 @@ import setuptools
 from reframe import VERSION
 
 with open('README.md') as read_me:
-    long_description = ''.join(read_me.readlines()[11:])
+    long_description = ''.join(read_me.readlines()[15:])
 
 setuptools.setup(
     name='ReFrame-HPC',
@@ -25,7 +25,6 @@ setuptools.setup(
     scripts=['bin/reframe'],
     classifiers=(
         'Development Status :: 5 - Production/Stable',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
