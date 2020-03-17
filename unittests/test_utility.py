@@ -444,10 +444,11 @@ class TestDebugRepr(unittest.TestCase):
         assert 'D(...)' in rep
 
 
-class TestUtilPpretty(unittest.TestCase):
+class TestPpretty:
     def test_simple_types(self):
-        assert util.ppretty(1) == debug.repr(1)
-        assert util.ppretty(1.2) == debug.repr(1.2)
+        assert util.ppretty(1) == repr(1)
+        assert util.ppretty(1.2) == repr(1.2)
+        assert util.ppretty('a string') == repr('a string')
         assert util.ppretty([]) == '[]'
         assert util.ppretty(()) == '()'
         assert util.ppretty(set()) == 'set()'
@@ -461,6 +462,14 @@ class TestUtilPpretty(unittest.TestCase):
                                                   "}")
 
     def test_mixed_types(self):
+        assert (
+            util.ppretty(['a string', 2, 'another string']) ==
+            "[\n"
+            "    'a string',\n"
+            "    2,\n"
+            "    'another string'\n"
+            "]"
+        )
         assert util.ppretty({'a': 1, 'b': (2, 3)}) == ("{\n"
                                                        "    'a': 1,\n"
                                                        "    'b': (\n"
