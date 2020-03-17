@@ -304,13 +304,13 @@ def convert_old_config(filename):
 
             new_env.update(e)
 
-            # Make variables dictionary into a list of lists
+            # Convert variables dictionary to a list of lists
             if 'variables' in e:
                 new_env['variables'] = [
                     [vname, v] for vname, v in e['variables'].items()
                 ]
 
-            # Type attribute has been deprecated
+            # Type attribute is not used anymore
             if 'type' in new_env:
                 del new_env['type']
 
@@ -368,7 +368,7 @@ def convert_old_config(filename):
     jsonschema.validate(converted, schema)
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
         fp.write(f"#\n# This file was automatically generated "
-                 f"by ReFrame based on `{filename}'.\n#\n\n")
+                 f"by ReFrame based on '{filename}'.\n#\n\n")
         fp.write(f'site_configuration = {util.ppretty(converted)}\n')
 
     return fp.name
