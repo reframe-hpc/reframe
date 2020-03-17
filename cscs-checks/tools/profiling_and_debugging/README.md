@@ -21,7 +21,9 @@ http://github.com/eth-cscs/hpctools
     * scalasca_sampling_tracing.py
     * scalasca_sampling_profiling.py
 
-* extrae
-    * extrae.py
+* extrae.py
 
 * mpip.py
+
+* Cray
+    * perftools/patrun.py
