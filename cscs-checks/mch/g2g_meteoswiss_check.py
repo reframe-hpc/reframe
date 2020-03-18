@@ -29,7 +29,7 @@ class G2GMeteoswissTest(rfm.RegressionTest):
                                          '-DCMAKE_BUILD_TYPE=Release',
                                          '-DENABLE_MPI_TIMER=ON']
         self.build_system.max_concurrency = 1
-        self.maintainers = ['TM', 'JG']
+        self.maintainers = ['AJ', 'LM']
         self.tags = {'production', 'mch'}
         self.num_tasks = 2
         self.num_gpus_per_node  = 2
@@ -46,6 +46,6 @@ class G2GMeteoswissTest(rfm.RegressionTest):
                                      self.stdout, 'time', float)
         }
         self.reference = {
-            'kesch:cn': {'time': (3.461, None, 0.2)}
+            'kesch:cn': {'time': (3.461, None, 0.2, 's')}
         }
         self.variables = {'G2G': str(g2g)}

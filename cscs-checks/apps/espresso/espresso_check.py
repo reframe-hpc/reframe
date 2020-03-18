@@ -20,7 +20,7 @@ class QECheck(rfm.RunOnlyRegressionTest):
                                        'Espresso')
 
         self.valid_systems = ['daint:mc']
-        self.valid_prog_environs = ['PrgEnv-intel']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['QuantumESPRESSO']
         self.executable = 'pw.x'
         self.executable_opts = ['-in', 'ausurf.in']

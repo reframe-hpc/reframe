@@ -17,3 +17,5 @@ http://github.com/eth-cscs/hpctools
 * scalasca/scalasca_sampling_profiling.py
 
 * extrae/extrae.py
+
+* perftools/patrun.py

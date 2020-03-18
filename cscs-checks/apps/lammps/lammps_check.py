@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 
 class LAMMPSBaseCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['LAMMPS']
 
         # Reset sources dir relative to the SCS apps prefix

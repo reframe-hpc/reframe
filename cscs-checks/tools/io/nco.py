@@ -33,8 +33,8 @@ class NCOBaseTest(rfm.RunOnlyRegressionTest):
             self.valid_prog_environs = ['PrgEnv-gnu-nompi']
             self.modules = ['nco']
         else:
-            self.valid_prog_environs = ['PrgEnv-gnu']
             self.modules = ['NCO']
+            self.valid_prog_environs = ['builtin']
 
         self.maintainers = ['SO', 'CB']
         self.tags = {'production', 'mch', 'external-resources'}

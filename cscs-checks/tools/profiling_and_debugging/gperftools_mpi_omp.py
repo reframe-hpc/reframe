@@ -86,7 +86,7 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             # check pdf report:
             sn.assert_found('PDF document', self.rpt_file_doc),
         ])
-        self.perf_patterns = { 'jacobi_elapsed%': self.report_flat_pctg, }
+        self.perf_patterns = {'jacobi_elapsed%': self.report_flat_pctg, }
         self.maintainers = ['JG']
         self.tags = {'performance-tools'}
 

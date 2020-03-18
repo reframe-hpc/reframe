@@ -19,7 +19,7 @@ class OpenfoamExtendBaseTest(rfm.RunOnlyRegressionTest):
 
         # OpenFOAM-Extend currently runs only on Leone
         self.valid_systems = ['leone:normal']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.modules = ['OpenFOAM-Extend/4.0-foss-2016b']
 
         self.num_tasks = 1

@@ -12,7 +12,7 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         self.name = 'tensorflow_%s_check' % model_name
         self.descr = 'Tensorflow official %s test' % model_name
         self.valid_systems = ['daint:gpu', 'dom:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.sourcesdir = 'https://github.com/tensorflow/models.git'
         self.maintainers = ['TM', 'RS']
         self.tags = {'production'}
