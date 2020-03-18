@@ -231,6 +231,9 @@ def main():
     misc_options.add_argument(
         '--nocolor', action='store_false', dest='colorize', default=True,
         help='Disable coloring of output')
+    misc_options.add_argument(
+        '--failure-stats', action='store_true',
+        help='Print failure statistics')
     misc_options.add_argument('--performance-report', action='store_true',
                               help='Print the performance report')
     misc_options.add_argument(
@@ -630,6 +633,8 @@ def main():
                 if runner.stats.failures():
                     printer.info(runner.stats.failure_report())
                     success = False
+                    if options.failure_stats:
+                        printer.info(runner.stats.failure_stats())
 
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
