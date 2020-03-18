@@ -8,6 +8,7 @@ import pytest
 import unittest
 
 from reframe.core.exceptions import (ConfigError, NameConflictError,
+                                     ReframeDeprecationWarning,
                                      RegressionTestLoadError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader
@@ -71,3 +72,10 @@ class TestRegressionCheckLoader(unittest.TestCase):
         tests = self.loader.load_from_file(
             'unittests/resources/checks_unlisted/bad_init_check.py')
         assert 0 == len(tests)
+
+    def test_extend_decorator(self):
+        with pytest.warns(ReframeDeprecationWarning) as record:
+            tests = self.loader.load_from_file(
+                'unittests/resources/checks_unlisted/extend_class.py')
+
+        assert len(record) == 3
