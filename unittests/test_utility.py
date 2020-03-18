@@ -523,8 +523,7 @@ class TestPpretty:
 
         c = C()
         d = D()
-
-        assert util.ppretty(c) == 'class C'
+        assert util.ppretty(c) == '<class C>'
         assert util.ppretty(['a', 'b', c, d]) == ("[\n"
                                                   "    'a',\n"
                                                   "    'b',\n"
