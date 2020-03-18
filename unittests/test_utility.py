@@ -478,6 +478,18 @@ class TestPpretty:
                                                        "    )\n"
                                                        "}")
         assert (
+            util.ppretty({'a': 1, 'b': {2: {3: 4, 5: {}}}, 'c': 6}) ==
+            "{\n"
+            "    'a': 1,\n"
+            "    'b': {\n"
+            "        2: {\n"
+            "            3: 4,\n"
+            "            5: {}\n"
+            "        }\n"
+            "    },\n"
+            "    'c': 6\n"
+            "}")
+        assert (
             util.ppretty({'a': 2, 34: (2, 3),
                           'b': [[], [1.2, 3.4], {1, 2}]}) ==
             "{\n"
@@ -499,6 +511,26 @@ class TestPpretty:
             "    ]\n"
             "}"
         )
+
+    def test_obj_print(self):
+        class C:
+            def __repr__(self):
+                return '<class C>'
+
+        class D:
+            def __repr__(self):
+                return '<class D>'
+
+        c = C()
+        d = D()
+
+        assert util.ppretty(c) == 'class C'
+        assert util.ppretty(['a', 'b', c, d]) == ("[\n"
+                                                  "    'a',\n"
+                                                  "    'b',\n"
+                                                  "    <class C>,\n"
+                                                  "    <class D>\n"
+                                                  "]")
 
 
 class TestChangeDirCtxManager(unittest.TestCase):
