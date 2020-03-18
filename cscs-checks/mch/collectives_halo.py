@@ -97,13 +97,13 @@ class CollectivesBaseTest(rfm.RegressionTest):
 
         self.reference = {
             'kesch:cn': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
             'daint': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
             'dom': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
         }
 

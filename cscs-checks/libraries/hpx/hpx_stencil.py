@@ -12,7 +12,7 @@ class Stencil4HPXCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'HPX 1d_stencil_4 check'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
 
         self.modules = ['HPX']
         self.executable = '1d_stencil_4'

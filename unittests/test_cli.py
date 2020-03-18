@@ -19,6 +19,7 @@ import reframe.core.environments as env
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
+from reframe.core.exceptions import ReframeDeprecationWarning
 
 
 def run_command_inline(argv, funct, *args, **kwargs):
@@ -443,6 +444,24 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert 1 == returncode
+
+    def test_no_deprecation_warnings(self):
+        self.action = 'run'
+        self.checkpath = [
+            'unittests/resources/checks_unlisted/deprecated_test.py'
+        ]
+        with pytest.warns(ReframeDeprecationWarning):
+            returncode, stdout, stderr = self._run_reframe()
+
+        self.more_options = ['--no-deprecation-warnings']
+
+        # We get the list of captured `warnings.WarningMessage` objects
+        with pytest.warns(None) as warnings:
+            self._run_reframe()
+
+        # The `message` field contains the actual exception object
+        assert not any(isinstance(w.message, ReframeDeprecationWarning)
+                       for w in warnings)
 
     def test_verbosity(self):
         self.more_options = ['-vvvvv']

@@ -7,6 +7,7 @@ import collections
 import itertools
 import os
 import pytest
+import time
 import tempfile
 import unittest
 
@@ -19,7 +20,8 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.environments import Environment
 from reframe.core.exceptions import (
-    DependencyError, JobNotStartedError, TaskDependencyError
+    DependencyError, JobNotStartedError,
+    ReframeForceExitError, TaskDependencyError
 )
 from reframe.frontend.loader import RegressionCheckLoader
 import unittests.fixtures as fixtures
@@ -256,6 +258,19 @@ class TestSerialExecutionPolicy(unittest.TestCase):
 
             if t.ref_count == 0:
                 assert os.path.exists(os.path.join(check.outputdir, 'out.txt'))
+
+    def test_sigterm(self):
+        self.loader = RegressionCheckLoader(
+            ['unittests/resources/checks_unlisted/selfkill.py']
+        )
+        checks = self.loader.load_all()
+        with pytest.raises(ReframeForceExitError,
+                           match='received TERM signal'):
+            self.runall(checks)
+
+        self.assert_all_dead()
+        assert self.runner.stats.num_cases() == 1
+        assert len(self.runner.stats.failures()) == 1
 
     def test_dependencies_with_retries(self):
         self.runner._max_retries = 2
