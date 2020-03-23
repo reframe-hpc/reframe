@@ -444,6 +444,94 @@ class TestDebugRepr(unittest.TestCase):
         assert 'D(...)' in rep
 
 
+class TestPpretty:
+    def test_simple_types(self):
+        assert util.ppretty(1) == repr(1)
+        assert util.ppretty(1.2) == repr(1.2)
+        assert util.ppretty('a string') == repr('a string')
+        assert util.ppretty([]) == '[]'
+        assert util.ppretty(()) == '()'
+        assert util.ppretty(set()) == 'set()'
+        assert util.ppretty({}) == '{}'
+        assert util.ppretty([1, 2, 3]) == '[\n    1,\n    2,\n    3\n]'
+        assert util.ppretty((1, 2, 3)) == '(\n    1,\n    2,\n    3\n)'
+        assert util.ppretty({1, 2, 3}) == '{\n    1,\n    2,\n    3\n}'
+        assert util.ppretty({'a': 1, 'b': 2}) == ("{\n"
+                                                  "    'a': 1,\n"
+                                                  "    'b': 2\n"
+                                                  "}")
+
+    def test_mixed_types(self):
+        assert (
+            util.ppretty(['a string', 2, 'another string']) ==
+            "[\n"
+            "    'a string',\n"
+            "    2,\n"
+            "    'another string'\n"
+            "]"
+        )
+        assert util.ppretty({'a': 1, 'b': (2, 3)}) == ("{\n"
+                                                       "    'a': 1,\n"
+                                                       "    'b': (\n"
+                                                       "        2,\n"
+                                                       "        3\n"
+                                                       "    )\n"
+                                                       "}")
+        assert (
+            util.ppretty({'a': 1, 'b': {2: {3: 4, 5: {}}}, 'c': 6}) ==
+            "{\n"
+            "    'a': 1,\n"
+            "    'b': {\n"
+            "        2: {\n"
+            "            3: 4,\n"
+            "            5: {}\n"
+            "        }\n"
+            "    },\n"
+            "    'c': 6\n"
+            "}")
+        assert (
+            util.ppretty({'a': 2, 34: (2, 3),
+                          'b': [[], [1.2, 3.4], {1, 2}]}) ==
+            "{\n"
+            "    'a': 2,\n"
+            "    34: (\n"
+            "        2,\n"
+            "        3\n"
+            "    ),\n"
+            "    'b': [\n"
+            "        [],\n"
+            "        [\n"
+            "            1.2,\n"
+            "            3.4\n"
+            "        ],\n"
+            "        {\n"
+            "            1,\n"
+            "            2\n"
+            "        }\n"
+            "    ]\n"
+            "}"
+        )
+
+    def test_obj_print(self):
+        class C:
+            def __repr__(self):
+                return '<class C>'
+
+        class D:
+            def __repr__(self):
+                return '<class D>'
+
+        c = C()
+        d = D()
+        assert util.ppretty(c) == '<class C>'
+        assert util.ppretty(['a', 'b', c, d]) == ("[\n"
+                                                  "    'a',\n"
+                                                  "    'b',\n"
+                                                  "    <class C>,\n"
+                                                  "    <class D>\n"
+                                                  "]")
+
+
 class TestChangeDirCtxManager(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
