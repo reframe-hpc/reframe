@@ -108,7 +108,7 @@ class CollectivesBaseTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'MKr']
-        self.tags = {'production', 'mch', 'craype'}
+        self.tags = {'mch'}
 
     @rfm.run_before('run')
     def set_launcher_options(self):
