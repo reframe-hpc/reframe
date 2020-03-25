@@ -315,11 +315,6 @@ def test_cancel(make_job, exec_ctx):
     prepare_job(minimal_job, 'sleep 30')
     t_job = datetime.now()
     minimal_job.submit()
-
-    # NOTE: Strangely PBS backend hangs without a sleep here.
-    if minimal_job.scheduler.registered_name == 'pbs':
-        time.sleep(2)
-
     minimal_job.cancel()
     minimal_job.wait()
     t_job = datetime.now() - t_job

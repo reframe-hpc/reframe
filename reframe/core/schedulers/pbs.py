@@ -31,6 +31,12 @@ from reframe.utility import seconds_to_hms
 PBS_OUTPUT_WRITEBACK_WAIT = 3
 
 
+# Minimum amount of time between its submission and its cancellation. If you
+# immediately cancel a PBS job after submission, its output files may never
+# appear in the output causing the wait() to hang.
+PBS_CANCEL_DELAY = 2
+
+
 _run_strict = functools.partial(os_ext.run_command, check=True)
 
 
@@ -138,6 +144,10 @@ class PbsJobScheduler(sched.JobScheduler):
         jobid = str(job.jobid)
         if self._pbs_server:
             jobid += '.' + self._pbs_server
+
+        time_from_submit = (datetime.now() - self._submit_time).total_seconds()
+        if time_from_submit < PBS_CANCEL_DELAY:
+            time.sleep(PBS_CANCEL_DELAY - time_from_submit)
 
         getlogger().debug('cancelling job (id=%s)' % jobid)
         _run_strict('qdel %s' % jobid, timeout=self._job_submit_timeout)
