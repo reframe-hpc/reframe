@@ -4,14 +4,20 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import collections.abc
+import json
+import jsonschema
+import os
 import re
+import tempfile
 
+import reframe
 import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as types
-from reframe.core.exceptions import (ConfigError, ReframeFatalError)
+from reframe.core.exceptions import (ConfigError, ReframeError,
+                                     ReframeFatalError)
 
 
 _settings = None
@@ -222,3 +228,147 @@ class SiteConfiguration:
                 system.add_partition(part)
 
             self._systems[sys_name] = system
+
+
+def convert_old_config(filename):
+    old_config = load_settings_from_file(filename)
+    converted = {
+        'systems': [],
+        'environments': [],
+        'logging': [],
+        'perf_logging': [],
+    }
+    old_systems = old_config.site_configuration['systems'].items()
+    for sys_name, sys_specs in old_systems:
+        sys_dict = {'name': sys_name}
+        sys_dict.update(sys_specs)
+
+        # Make variables dictionary into a list of lists
+        if 'variables' in sys_specs:
+            sys_dict['variables'] = [
+                [vname, v] for vname, v in sys_dict['variables'].items()
+            ]
+
+        # Make partitions dictionary into a list
+        if 'partitions' in sys_specs:
+            sys_dict['partitions'] = []
+            for pname, p in sys_specs['partitions'].items():
+                new_p = {'name': pname}
+                new_p.update(p)
+                if p['scheduler'] == 'nativeslurm':
+                    new_p['scheduler'] = 'slurm'
+                    new_p['launcher'] = 'srun'
+                elif p['scheduler'] == 'local':
+                    new_p['scheduler'] = 'local'
+                    new_p['launcher'] = 'local'
+                else:
+                    sched, launch, *_ = p['scheduler'].split('+')
+                    new_p['scheduler'] = sched
+                    new_p['launcher'] = launch
+
+                # Make resources dictionary into a list
+                if 'resources' in p:
+                    new_p['resources'] = [
+                        {'name': rname, 'options': r}
+                        for rname, r in p['resources'].items()
+                    ]
+
+                # Make variables dictionary into a list of lists
+                if 'variables' in p:
+                    new_p['variables'] = [
+                        [vname, v] for vname, v in p['variables'].items()
+                    ]
+
+                if 'container_platforms' in p:
+                    new_p['container_platforms'] = []
+                    for cname, c in p['container_platforms'].items():
+                        new_c = {'name': cname}
+                        new_c.update(c)
+                        if 'variables' in c:
+                            new_c['variables'] = [
+                                [vn, v] for vn, v in c['variables'].items()
+                            ]
+
+                        new_p['container_platforms'].append(new_c)
+
+                sys_dict['partitions'].append(new_p)
+
+        converted['systems'].append(sys_dict)
+
+    old_environs = old_config.site_configuration['environments'].items()
+    for env_target, env_entries in old_environs:
+        for ename, e in env_entries.items():
+            new_env = {'name': ename}
+            if env_target != '*':
+                new_env['target_systems'] = [env_target]
+
+            new_env.update(e)
+
+            # Convert variables dictionary to a list of lists
+            if 'variables' in e:
+                new_env['variables'] = [
+                    [vname, v] for vname, v in e['variables'].items()
+                ]
+
+            # Type attribute is not used anymore
+            if 'type' in new_env:
+                del new_env['type']
+
+            converted['environments'].append(new_env)
+
+    if 'modes' in old_config.site_configuration:
+        converted['modes'] = []
+        old_modes = old_config.site_configuration['modes'].items()
+        for target_mode, mode_entries in old_modes:
+            for mname, m in mode_entries.items():
+                new_mode = {'name': mname, 'options': m}
+                if target_mode != '*':
+                    new_mode['target_systems'] = [target_mode]
+
+                converted['modes'].append(new_mode)
+
+    def update_logging_config(log_name, original_log):
+        new_handlers = []
+        for h in original_log['handlers']:
+            new_h = h
+            new_h['level'] = h['level'].lower()
+            new_handlers.append(new_h)
+
+        converted[log_name].append(
+            {
+                'level': original_log['level'].lower(),
+                'handlers': new_handlers
+            }
+        )
+
+    update_logging_config('logging', old_config.logging_config)
+    update_logging_config('perf_logging', old_config.perf_logging_config)
+    converted['general'] = [{}]
+    if hasattr(old_config, 'checks_path'):
+        converted['general'][0][
+            'check_search_path'
+        ] = old_config.checks_path
+
+    if hasattr(old_config, 'checks_path_recurse'):
+        converted['general'][0][
+            'check_search_recursive'
+        ] = old_config.checks_path_recurse
+
+    if converted['general'] == [{}]:
+        del converted['general']
+
+    # Validate the converted file
+    schema_filename = os.path.join(reframe.INSTALL_PREFIX,
+                                   'schemas', 'config.json')
+
+    # We let the following statements raise, because if they do, that's a BUG
+    with open(schema_filename) as fp:
+        schema = json.loads(fp.read())
+
+    jsonschema.validate(converted, schema)
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as fp:
+        fp.write(f"#\n# This file was automatically generated "
+                 f"by ReFrame based on '{filename}'.\n#\n\n")
+        fp.write(f'site_configuration = {util.ppretty(converted)}\n')
+
+    return fp.name

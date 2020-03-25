@@ -137,12 +137,14 @@ fi
 if [[ $(hostname) =~ tsa ]]; then
     # FIXME: Temporary workaround until we have a reframe module on Tsa
     module load python
-    python3 -m venv venv.unittests
-    source venv.unittests/bin/activate
-    pip install -r requirements.txt
 else
     module load reframe
 fi
+
+# Always install our requirements
+python3 -m venv venv.unittests
+source venv.unittests/bin/activate
+pip install -r requirements.txt
 
 echo "=============="
 echo "Loaded Modules"
@@ -187,14 +189,15 @@ else
 
     checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py
 
-    echo "==================================="
-    echo "Running unit tests with PBS backend"
-    echo "==================================="
-
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
-        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-pbs.py
+        for backend in pbs torque; do
+            echo "=================================="
+            echo "Running unit tests with ${backend}"
+            echo "=================================="
+            export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-${backend}.py
+        done
         export PATH=$PATH_save
     fi
 

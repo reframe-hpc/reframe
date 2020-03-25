@@ -23,35 +23,35 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
                     'amdv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pamdv100'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'AMD Naples 32c + 2x NVIDIA V100',
                         'max_jobs': 100,
                     },
                     'amdvega': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pamdvega'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'AMD Naples 32c + 3x AMD GFX900',
                         'max_jobs': 100,
                     },
                     'intelv100': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintelv100'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Intel Skylake 36c + 4x NVIDIA V100',
                         'max_jobs': 100,
                     },
                     'intel': {
                         'scheduler': 'nativeslurm',
                         'access':  ['-pintel'],
-                        'environs': ['PrgEnv-gnu'],
+                        'environs': ['builtin', 'PrgEnv-gnu'],
                         'descr': 'Intel Skylake 36c',
                         'max_jobs': 100,
                     }
@@ -66,7 +66,7 @@ class ReframeSettings:
                 'partitions': {
                     'login': {
                         'scheduler': 'local',
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
@@ -91,7 +91,7 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Login nodes',
                         'max_jobs': 4
@@ -109,7 +109,7 @@ class ReframeSettings:
                         },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
@@ -131,7 +131,7 @@ class ReframeSettings:
                         },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu',
+                        'environs': ['builtin', 'PrgEnv-cray', 'PrgEnv-gnu',
                                      'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
@@ -170,9 +170,10 @@ class ReframeSettings:
                         'scheduler': 'local',
                         'modules': [],
                         'access':  [],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel',
-                                     'PrgEnv-pgi'],
+                        'environs': [
+                            'builtin', 'PrgEnv-cray', 'PrgEnv-cray_classic',
+                            'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi'
+                        ],
                         'descr': 'Login nodes',
                         'max_jobs': 4
                     },
@@ -189,9 +190,9 @@ class ReframeSettings:
                         },
                         'modules': ['daint-gpu'],
                         'access':  ['--constraint=gpu'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel',
-                                     'PrgEnv-pgi'],
+                        'environs': ['builtin', 'PrgEnv-cray',
+                                     'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Hybrid nodes (Haswell/P100)',
                         'max_jobs': 100,
                         'resources': {
@@ -211,9 +212,9 @@ class ReframeSettings:
                         },
                         'modules': ['daint-mc'],
                         'access':  ['--constraint=mc'],
-                        'environs': ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                     'PrgEnv-gnu', 'PrgEnv-intel',
-                                     'PrgEnv-pgi'],
+                        'environs': ['builtin', 'PrgEnv-cray',
+                                     'PrgEnv-cray_classic', 'PrgEnv-gnu',
+                                     'PrgEnv-intel', 'PrgEnv-pgi'],
                         'descr': 'Multicore nodes (Broadwell)',
                         'max_jobs': 100,
                         'resources': {
@@ -539,8 +540,8 @@ class ReframeSettings:
 
                 'builtin': {
                     'cc':  'cc',
-                    'cxx': '',
-                    'ftn': '',
+                    'cxx': 'CC',
+                    'ftn': 'ftn',
                 },
 
                 'builtin-gcc': {

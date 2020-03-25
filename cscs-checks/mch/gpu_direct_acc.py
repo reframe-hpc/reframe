@@ -72,4 +72,3 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
-

@@ -97,6 +97,8 @@ class TestStats:
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
             report.append('  * Maintainers: %s' % check.maintainers)
             report.append('  * Failing phase: %s' % tf.failed_stage)
+            report.append("  * Rerun with '-n %s -p %s --system %s'" %
+                          (check.name, environ_name, partname))
             reason = '  * Reason: '
             if tf.exc_info is not None:
                 from reframe.core.exceptions import format_exception
@@ -114,6 +116,50 @@ class TestStats:
 
         report.append(line_width * '-')
         return '\n'.join(report)
+
+    def failure_stats(self):
+        failures = {}
+        current_run = rt.runtime().current_run
+        for tf in (t for t in self.tasks(current_run) if t.failed):
+            check = tf.check
+            partition = check.current_partition
+            partname = partition.fullname if partition else 'None'
+            environ_name = (check.current_environ.name
+                            if check.current_environ else 'None')
+            f = f'[{check.name}, {environ_name}, {partname}]'
+            if tf.failed_stage not in failures:
+                failures[tf.failed_stage] = []
+
+            failures[tf.failed_stage].append(f)
+
+        line_width = 78
+        stats_start = line_width * '='
+        stats_title = 'FAILURE STATISTICS'
+        stats_end = line_width * '-'
+        stats_body = []
+        row_format = "{:<11} {:<5} {}"
+        stats_hline = row_format.format(11*'-', 5*'-', 60*'-')
+        stats_header = row_format.format('Phase', '#', 'Failing test cases')
+        num_tests = len(self.tasks(current_run))
+        num_failures = 0
+        for l in failures.values():
+            num_failures += len(l)
+
+        stats_body = ['']
+        stats_body.append('Total number of test cases: %s' % num_tests)
+        stats_body.append('Total number of failures: %s' % num_failures)
+        stats_body.append('')
+        stats_body.append(stats_header)
+        stats_body.append(stats_hline)
+        for p, l in failures.items():
+            stats_body.append(row_format.format(p, len(l), l[0]))
+            for f in l[1:]:
+                stats_body.append(row_format.format('', '', str(f)))
+
+        if stats_body:
+            return '\n'.join([stats_start, stats_title, *stats_body,
+                              stats_end])
+        return ''
 
     def performance_report(self):
         line_width = 78
