@@ -176,12 +176,15 @@ else
     tempdir=$(mktemp -d -p $SCRATCH)
     if [[ $(hostname) =~ dom ]]; then
         scheduler_backends="slurm pbs torque"
+        user_system_opt="--rfm-user-system=dom:${backend}"
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+    else
+        user_system_opt=""
     fi
     for backend in $scheduler_backends; do
         echo "[INFO] Running unit tests with ${backend}"
         checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                     --rfm-user-system=dom:$backend --basetemp=$tempdir -ra
+                     $user_system_opt --basetemp=$tempdir -ra
     done
     export PATH=$PATH_save
 

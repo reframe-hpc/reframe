@@ -271,11 +271,10 @@ def test_submit(make_job, exec_ctx):
 
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
+    assert 0 == minimal_job.exitcode
     if sched_name == 'local':
-        assert 0 == minimal_job.exitcode
         assert [socket.gethostname()] == minimal_job.nodelist
-    elif sched_name in ('slurm', 'squeue'):
-        assert 0 == minimal_job.exitcode
+    elif sched_name == ('slurm', 'squeue'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)

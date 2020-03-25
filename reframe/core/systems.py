@@ -145,9 +145,6 @@ class SystemPartition:
         ]
         return '\n'.join(lines)
 
-    def __repr__(self):
-        return debug.repr(self)
-
 
 class System:
     '''A representation of a system inside ReFrame.
