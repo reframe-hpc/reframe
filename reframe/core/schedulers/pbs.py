@@ -34,7 +34,7 @@ PBS_OUTPUT_WRITEBACK_WAIT = 3
 # Minimum amount of time between its submission and its cancellation. If you
 # immediately cancel a PBS job after submission, its output files may never
 # appear in the output causing the wait() to hang.
-PBS_CANCEL_DELAY = 2
+PBS_CANCEL_DELAY = 3
 
 
 _run_strict = functools.partial(os_ext.run_command, check=True)

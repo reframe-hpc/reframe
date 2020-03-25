@@ -172,21 +172,24 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
 else
     # Run unit tests with the scheduler backends
     PATH_save=$PATH
-    scheduler_backends="slurm"
     tempdir=$(mktemp -d -p $SCRATCH)
     if [[ $(hostname) =~ dom ]]; then
-        scheduler_backends="slurm pbs torque"
-        user_system_opt="--rfm-user-system=dom:${backend}"
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-    else
-        user_system_opt=""
+        # for backend in slurm pbs torque; do
+        #     echo "[INFO] Running unit tests with ${backend}"
+        #     checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+        #                  --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
+        # done
     fi
-    for backend in $scheduler_backends; do
-        echo "[INFO] Running unit tests with ${backend}"
-        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                     $user_system_opt --basetemp=$tempdir -ra
-    done
+
+    echo "[INFO] Running unit tests"
+    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                 --basetemp=$tempdir -ra
+
     export PATH=$PATH_save
+    if [ $CI_EXITCODE -eq 0 ]; then
+        /bin/rm -rf $tempdir
+    fi
 
     # Find modified or added user checks
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
