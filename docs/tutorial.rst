@@ -173,18 +173,19 @@ If everything is configured correctly for your system, you should get an output 
 .. code-block:: none
 
     Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
-    Reframe version: 3.0-dev0
-    Launched by user: XXX
-    Launched on host: daint103
+    Reframe version: 3.0-dev3 (rev: 984d7b77)
+    Launched by user: USER
+    Launched on host: daint105
     Reframe paths
     =============
         Check prefix      :
-        Check search path : 'tutorial/example1.py'
-        Stage dir prefix     : /current/working/dir/stage/
-        Output dir prefix    : /current/working/dir/output/
-        Perf. logging prefix : /current/working/dir/perflogs/
+        Check search path : '/path/to/reframe/tutorial/example1.py'
+        Current working dir  : /path/to/reframe
+        Stage dir prefix     : /path/to/reframe/stage/
+        Output dir prefix    : /path/to/reframe/output/
+        Perf. logging prefix : /path/to/reframe/perflogs
     [==========] Running 1 check(s)
-    [==========] Started on Thu Jan 23 14:14:12 2020
+    [==========] Started on Wed Mar 25 10:13:13 2020
 
     [----------] started processing Example1Test (Simple matrix-vector multiplication example)
     [ RUN      ] Example1Test on daint:login using PrgEnv-cray
@@ -202,22 +203,22 @@ If everything is configured correctly for your system, you should get an output 
     [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
     [----------] waiting for spawned checks to finish
-    [       OK ] Example1Test on daint:login using PrgEnv-intel
-    [       OK ] Example1Test on daint:login using PrgEnv-cray
-    [       OK ] Example1Test on daint:login using PrgEnv-gnu
-    [       OK ] Example1Test on daint:login using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-gnu
-    [       OK ] Example1Test on daint:gpu using PrgEnv-intel
-    [       OK ] Example1Test on daint:gpu using PrgEnv-cray
-    [       OK ] Example1Test on daint:mc using PrgEnv-cray
-    [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
-    [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-intel
+    [       OK ] (1/12) Example1Test on daint:login using PrgEnv-intel
+    [       OK ] (2/12) Example1Test on daint:login using PrgEnv-cray
+    [       OK ] (3/12) Example1Test on daint:login using PrgEnv-gnu
+    [       OK ] (4/12) Example1Test on daint:login using PrgEnv-pgi
+    [       OK ] (5/12) Example1Test on daint:mc using PrgEnv-gnu
+    [       OK ] (6/12) Example1Test on daint:mc using PrgEnv-pgi
+    [       OK ] (7/12) Example1Test on daint:mc using PrgEnv-cray
+    [       OK ] (8/12) Example1Test on daint:mc using PrgEnv-intel
+    [       OK ] (9/12) Example1Test on daint:gpu using PrgEnv-intel
+    [       OK ] (10/12) Example1Test on daint:gpu using PrgEnv-cray
+    [       OK ] (11/12) Example1Test on daint:gpu using PrgEnv-gnu
+    [       OK ] (12/12) Example1Test on daint:gpu using PrgEnv-pgi
     [----------] all spawned checks have finished
 
     [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-    [==========] Finished on Thu Jan 23 14:16:25 2020
+    [==========] Finished on Wed Mar 25 10:21:08 2020
 
 Notice how our regression test is run on every partition of the configured system and for every programming environment.
 
