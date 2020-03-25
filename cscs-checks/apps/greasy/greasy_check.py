@@ -6,16 +6,14 @@
 import itertools
 import os
 import fnmatch
-
 from datetime import datetime
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-
 from reframe.core.launchers.registry import getlauncher
 
 
-def toSeconds(str):
+def to_seconds(str):
     return (datetime.strptime(str, '%H:%M:%S') -
             datetime.strptime('00:00:00', '%H:%M:%S')).total_seconds()
 
@@ -29,11 +27,11 @@ def toSeconds(str):
     ['mpi',        'gpu', 24,  4, 3, 1],
     ['mpi',        'mc',  72, 12, 3, 1],
     ['mpi+openmp', 'gpu', 24,  3, 2, 2],
-    ['mpi+openmp', 'mc',  72,  6, 3, 2])
+    ['mpi+openmp', 'mc',  72,  6, 3, 2]
+)
 class GREASYCheck(rfm.RegressionTest):
     def __init__(self, variant, system, num_greasy_tasks, nworkes_per_node,
                  nranks_per_worker, ncpus_per_worker):
-
         self.valid_systems = ['daint:' + system, 'dom:' + system]
 
         self.valid_prog_environs = ['PrgEnv-gnu']
@@ -78,7 +76,7 @@ class GREASYCheck(rfm.RegressionTest):
         self.perf_patterns = {
             'time': sn.extractsingle(r'Total time: (?P<perf>\S+)',
                                      self.greasy_logfile,
-                                     'perf', toSeconds)
+                                     'perf', to_seconds)
         }
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
@@ -140,11 +138,10 @@ class GREASYCheck(rfm.RegressionTest):
                 output_files.append(file)
 
         num_greasy_tasks = len(output_files)
-        failure_msg = ('Requested %s task(s), but only executed %s tasks(s)' %
-                       (self.num_greasy_tasks, num_greasy_tasks))
+        failure_msg = ('Requested {0} task(s), but only executed {0} '
+                       'tasks(s)'.format(self.num_greasy_tasks))
         sn.evaluate(sn.assert_eq(num_greasy_tasks, self.num_greasy_tasks,
                                  msg=failure_msg))
-
         num_tasks = sn.getattr(self, 'nranks_per_worker')
         num_cpus_per_task = sn.getattr(self, 'num_cpus_per_task')
 
@@ -165,111 +162,74 @@ class GREASYCheck(rfm.RegressionTest):
                                 r'of \s*(\d+) from process \s*(\d+) out of '
                                 r'\s*(\d+)', output_file)
 
-            failure_msg = ('Found %s Hello, World... pattern(s), but expected '
-                           '%s pattern(s) inside the output file %s' % (
-                                              sn.count(result),
-                                              num_tasks * num_cpus_per_task,
-                                              output_file))
+            failure_msg = ('Found {0} Hello, World... pattern(s), but expected'
+                           ' {1} pattern(s) inside the output file {0}'.format(
+                               sn.count(result), num_tasks * num_cpus_per_task,
+                               output_file))
             sn.evaluate(sn.assert_eq(sn.count(result),
                                      num_tasks * num_cpus_per_task,
                                      msg=failure_msg))
 
-            sn.evaluate(sn.assert_true(sn.all(
+            sn.evaluate(sn.all(
                 sn.chain(
                     sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x),
-                        msg='Found %d threads rather than %d' %(tid(x), num_threads(x))),
-                            result),
+                                                  msg='Found {0} threads '
+                                                  'rather than {1}'.format(
+                                                      tid(x), num_threads(x))),
+                                                  result),
                     sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x),
-                                                  msg='Rank id %d is not lower '
-                                                      'than the number of ranks'
-                                                      ' %d in output file %s'
-                                                      % (rank(x),
-                                                         self.nranks_per_worker,
-                                                      output_file)),
-                            result),
-                    sn.map(
-                        lambda x: sn.assert_lt(tid(x),
-                                               self.num_cpus_per_task,
-                                               msg='Rank id %d is not lower '
-                                                   'than the number of cpus per'
-                                                   ' task %d in output file %s'
-                                                   % (tid(x),
+                                                  msg='Rank id {0} is not '
+                                                  'lower than the number of '
+                                                  'ranks {1} in output file '
+                                                  '{2}'.format(rank(x),
+                                                      self.nranks_per_worker,
+                                                  output_file)),
+                           result),
+                    sn.map(lambda x: sn.assert_lt(tid(x),
+                                                  self.num_cpus_per_task,
+                                                  msg='Rank id {0} is not '
+                                                  'lower than the number of '
+                                                  'cpus per task {1} in output'
+                                                  ' file {2}'.format(tid(x),
                                                       self.num_cpus_per_task,
-                                                      output_file)),
-                        result),
+                                                  output_file)),
+                           result),
                     sn.map(
                         lambda x: sn.assert_eq(num_threads(x),
                                                num_cpus_per_task,
-                                               msg='Found %d threads rather '
-                                                   'than %d in output file %s'
-                                                   % (num_threads(x),
-                                                      self.num_cpus_per_task,
-                                                      output_file)),
+                                               msg='Found {0} threads rather '
+                                                   'than {1} in output file '
+                                                   '{2}'.format(num_threads(x),
+                                                   self.num_cpus_per_task,
+                                                   output_file)),
                         result),
                     sn.map(lambda x: sn.assert_lt(rank(x), num_tasks,
-                                                  msg='Found %d threads rather '
-                                                      'than %d in output file %s'
-                                                      % (rank(x),
-                                                         self.num_cpus_per_task,
-                                                      output_file)),
-                            result),
+                                                  msg='Found {0} threads '
+                                                  'rather than {1} in output '
+                                                  'file {2}'.format(rank(x),
+                                                  self.num_cpus_per_task,
+                                                  output_file)),
+                           result),
                     sn.map(lambda x: sn.assert_eq(num_ranks(x), num_tasks,
-                                                  msg='Number of ranks %d is '
-                                                      'not equal to %d in '
-                                                      ' output file %s'
-                                                      % (num_ranks(x),
-                                                         self.nranks_per_worker,
+                                                  msg='Number of ranks {0} is '
+                                                      'not equal to {1} in '
+                                                      'output file '
+                                                      '{2}'.format(num_ranks(x),
+                                                      self.nranks_per_worker,
                                                       output_file)),
-                            result),
+                           result),
                 )
-            )))
+            ))
 
-        sn.evaluate(sn.assert_eq(sn.count(sn.findall(r'Finished greasing',
-                                          self.greasy_logfile)), 1))
+        sn.evaluate(sn.assert_found(r'Finished greasing', self.greasy_logfile))
 
-        result = sn.findall(r'INFO: Summary of (\d+) tasks: '
-                            r'(\d+) OK, '
-                            r'(\d+) FAILED, '
-                            r'(\d+) CANCELLED, '
-                            r'(\d+) INVALID\.', self.greasy_logfile)
-
-        sn.evaluate(sn.assert_true(sn.all(
-                    sn.chain(
-                        sn.map(lambda x: sn.assert_eq(int(x.group(1)),
-                                                      self.num_greasy_tasks,
-                                                      msg='Number of greasy '
-                                                      ' tasks is %d but found '
-                                                      '%s'
-                                                      % (self.num_greasy_tasks,
-                                                         x.group(1))),
-                               result),
-                        sn.map(lambda x: sn.assert_eq(int(x.group(2)),
-                                                      self.num_greasy_tasks,
-                                                      msg='Expected %d '
-                                                      'successful tasks but '
-                                                      'found %s'
-                                                      % (self.num_greasy_tasks,
-                                                         x.group(2))),
-                               result),
-                        sn.map(lambda x: sn.assert_eq(int(x.group(3)), 0,
-                                                      msg='Expected 0 '
-                                                      'failed tasks but '
-                                                      'found %s'
-                                                      % x.group(3)),
-                               result),
-                        sn.map(lambda x: sn.assert_eq(int(x.group(4)), 0,
-                                                      msg='Expected 0 '
-                                                      'cancelled tasks but '
-                                                      'found %s'
-                                                      % x.group(4)),
-                               result),
-                        sn.map(lambda x: sn.assert_eq(int(x.group(5)), 0,
-                                                      msg='Expected 0 '
-                                                      'invalid tasks but '
-                                                      'found %s'
-                                                      % x.group(5)),
-                               result),
+        sn.evaluate(sn.assert_found(r'INFO: Summary of {0} tasks: '
+                                    r'{0} OK, '
+                                    r'0 FAILED, '
+                                    r'0 CANCELLED, '
+                                    r'0 INVALID\.'.format(
+                                        self.num_greasy_tasks),
+                                    self.greasy_logfile)
                     )
-                )))
 
         return True
