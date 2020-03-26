@@ -44,7 +44,9 @@ class ReframeSettings:
                     'login': {
                         'scheduler': 'local',
                         'resources': {},
-                        'environs': ['PrgEnv-cray', 'PrgEnv-gnu', 'builtin-gcc'],
+                        'environs': ['PrgEnv-cray',
+                                     'PrgEnv-gnu',
+                                     'builtin-gcc'],
                         'descr': 'Login nodes'
                     },
                     'gpu': {

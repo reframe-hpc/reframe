@@ -137,7 +137,7 @@ def test_option_precedence(extended_parser):
         assert options.stagedir == '/foo'
         assert options.module == ['a', 'b', 'c']
         assert options.check_path == ['x', 'y', 'z']
-        assert options.colorize == False
+        assert not options.colorize
 
 
 def test_option_with_config(extended_parser):
@@ -152,11 +152,11 @@ def test_option_with_config(extended_parser):
             ['--timestamp=%FT%T', '--nocolor']
         )
         options.update_config(site_config)
-        assert site_config.get('general/check_search_recursive') == True
+        assert site_config.get('general/check_search_recursive')
         assert site_config.get('general/timestamp') == '%FT%T'
         assert site_config.get('general/0/non_default_craype') == 'yes'
         assert site_config.get('systems/0/prefix') == '.'
-        assert site_config.get('general/colorize') == False
+        assert not site_config.get('general/colorize')
 
         # Defaults specified in parser override those in configuration file
         assert site_config.get('systems/0/stagedir') == '/foo'

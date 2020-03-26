@@ -19,9 +19,11 @@ import reframe.frontend.argparse as argparse
 import reframe.frontend.check_filters as filters
 import reframe.frontend.dependency as dependency
 import reframe.utility.os_ext as os_ext
-from reframe.core.exceptions import (EnvironError, ConfigError, ReframeError,
-                                     ReframeDeprecationWarning, ReframeFatalError,
-                                     format_exception, SystemAutodetectionError)
+from reframe.core.exceptions import (
+    EnvironError, ConfigError, ReframeError,
+    ReframeDeprecationWarning, ReframeFatalError,
+    format_exception, SystemAutodetectionError
+)
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
@@ -117,12 +119,14 @@ def main():
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
         help='Load checks recursively',
-        envvar='RFM_CHECK_SEARCH_RECURSIVE', configvar='general/check_search_recursive'
+        envvar='RFM_CHECK_SEARCH_RECURSIVE',
+        configvar='general/check_search_recursive'
     )
     locate_options.add_argument(
         '--ignore-check-conflicts', action='store_true',
         help='Skip checks with conflicting names',
-        envvar='RFM_IGNORE_CHECK_CONFLICTS', configvar='general/ignore_check_conflicts'
+        envvar='RFM_IGNORE_CHECK_CONFLICTS',
+        configvar='general/ignore_check_conflicts'
     )
 
     # Select options

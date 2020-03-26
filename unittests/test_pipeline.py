@@ -59,7 +59,8 @@ def testsys_system(temp_runtime):
 @pytest.fixture
 def user_system(temp_runtime):
     if fixtures.USER_CONFIG_FILE:
-        yield from temp_runtime(fixtures.USER_CONFIG_FILE, fixtures.USER_SYSTEM)
+        yield from temp_runtime(fixtures.USER_CONFIG_FILE,
+                                fixtures.USER_SYSTEM)
     else:
         yield generic_system
 

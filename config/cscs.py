@@ -917,7 +917,7 @@ site_configuration = {
                     'type': 'file',
                     'name': 'reframe.log',
                     'level': 'debug',
-                    'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',
+                    'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
                     'append': False
                 },
                 {
@@ -944,21 +944,21 @@ site_configuration = {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',
                     'level': 'info',
-                    'format': '%(check_job_completion_time)s|reframe %(version)s|%(check_info)s|jobid=%(check_jobid)s|num_tasks=%(check_num_tasks)s|%(check_perf_var)s=%(check_perf_value)s|ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, u=%(check_perf_upper_thres)s)|%(check_perf_unit)s',
+                    'format': '%(check_job_completion_time)s|reframe %(version)s|%(check_info)s|jobid=%(check_jobid)s|num_tasks=%(check_num_tasks)s|%(check_perf_var)s=%(check_perf_value)s|ref=%(check_perf_ref)s (l=%(check_perf_lower_thres)s, u=%(check_perf_upper_thres)s)|%(check_perf_unit)s',   # noqa: E501
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
-                #@{
-                #@    'type': 'graylog',
-                #@    'host': 'your-server-here',
-                #@    'port': 12345,
-                #@    'level': 'INFO',
-                #@    'format': '%(message)s',
-                #@    'extras': {
-                #@        'facility': 'reframe',
-                #@        'data-version': '1.0',
-                #@    }
-                #@}
+                #@{                                 # noqa: E265
+                #@    'type': 'graylog',            # noqa: E265
+                #@    'host': 'your-server-here',   # noqa: E265
+                #@    'port': 12345,                # noqa: E265
+                #@    'level': 'INFO',              # noqa: E265
+                #@    'format': '%(message)s',      # noqa: E265
+                #@    'extras': {                   # noqa: E265
+                #@        'facility': 'reframe',    # noqa: E265
+                #@        'data-version': '1.0',    # noqa: E265
+                #@    }                             # noqa: E265
+                #@}                                 # noqa: E265
             ]
         }
     ],
