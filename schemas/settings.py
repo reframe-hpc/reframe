@@ -68,7 +68,7 @@ site_configuration = {
         },
         {
             'name': 'sys0',
-            'descr': 'System for testing check dependencies',
+            'descr': 'System for checking test dependencies',
             'hostnames': [r'sys\d+'],
             'partitions': [
                 {
