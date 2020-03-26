@@ -56,8 +56,8 @@ class AlltoallTest(rfm.RegressionTest):
 class FlexAlltoallTest(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
-                              'dom:gpu', 'dom:mc', 'tiger:gpu',
-                              'kesch:cn', 'kesch:pn',
+                              'dom:gpu', 'dom:mc',
+                              'tiger:gpu', 'kesch:cn',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn']
         self.valid_prog_environs = ['PrgEnv-cray']

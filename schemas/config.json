@@ -147,7 +147,7 @@
                                 "descr": {"type": "string"},
                                 "scheduler": {
                                     "type": "string",
-                                    "enum": ["local", "pbs", "slurm", "squeue"]
+                                    "enum": ["local", "pbs", "slurm", "squeue", "torque"]
                                 },
                                 "launcher": {
                                     "type": "string",
@@ -310,7 +310,7 @@
         "modes": {
             "type": "array",
             "items": {
-            "type": "object",
+                "type": "object",
                 "properties": {
                     "name": {"type": "string"},
                     "options": {
@@ -350,13 +350,13 @@
         "general/check_search_recursive": "true",
         "general/target_systems": ["*"],
         "perf_logging/target_systems": ["*"],
-        "logging/handlers/level": "DEBUG",
+        "logging/handlers/level": "debug",
         "logging/handlers/file/append": false,
         "logging/handlers/file/timestamp": false,
         "logging/handlers/stream/name": "stdout",
         "logging/handlers/syslog/socktype": "udp",
         "logging/handlers/syslog/facility": "user",
-        "logging/level": "INFO",
+        "logging/level": "info",
         "logging/target_systems": ["*"],
         "modes/target_systems": ["*"],
         "schedulers/job_submit_timeout": 60,
