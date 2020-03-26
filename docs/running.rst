@@ -232,7 +232,7 @@ The output of the regression run looks like the following:
 .. code-block:: none
 
   Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
-  Reframe version: 3.0-dev3 (rev: 984d7b77)
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
   Launched on host: daint105
   Reframe paths
@@ -1087,7 +1087,7 @@ Here is an example output of ReFrame using asynchronous execution policy:
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 3.0-dev3 (rev: 984d7b77)
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
   Launched on host: daint105
   Reframe paths
