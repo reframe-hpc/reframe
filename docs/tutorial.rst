@@ -203,15 +203,15 @@ If everything is configured correctly for your system, you should get an output 
     [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
     [----------] waiting for spawned checks to finish
-    [       OK ] (1/12) Example1Test on daint:login using PrgEnv-intel
-    [       OK ] (2/12) Example1Test on daint:login using PrgEnv-cray
-    [       OK ] (3/12) Example1Test on daint:login using PrgEnv-gnu
-    [       OK ] (4/12) Example1Test on daint:login using PrgEnv-pgi
-    [       OK ] (5/12) Example1Test on daint:mc using PrgEnv-gnu
-    [       OK ] (6/12) Example1Test on daint:mc using PrgEnv-pgi
-    [       OK ] (7/12) Example1Test on daint:mc using PrgEnv-cray
-    [       OK ] (8/12) Example1Test on daint:mc using PrgEnv-intel
-    [       OK ] (9/12) Example1Test on daint:gpu using PrgEnv-intel
+    [       OK ] ( 1/12) Example1Test on daint:login using PrgEnv-intel
+    [       OK ] ( 2/12) Example1Test on daint:login using PrgEnv-cray
+    [       OK ] ( 3/12) Example1Test on daint:login using PrgEnv-gnu
+    [       OK ] ( 4/12) Example1Test on daint:login using PrgEnv-pgi
+    [       OK ] ( 5/12) Example1Test on daint:mc using PrgEnv-gnu
+    [       OK ] ( 6/12) Example1Test on daint:mc using PrgEnv-pgi
+    [       OK ] ( 7/12) Example1Test on daint:mc using PrgEnv-cray
+    [       OK ] ( 8/12) Example1Test on daint:mc using PrgEnv-intel
+    [       OK ] ( 9/12) Example1Test on daint:gpu using PrgEnv-intel
     [       OK ] (10/12) Example1Test on daint:gpu using PrgEnv-cray
     [       OK ] (11/12) Example1Test on daint:gpu using PrgEnv-gnu
     [       OK ] (12/12) Example1Test on daint:gpu using PrgEnv-pgi

@@ -647,15 +647,15 @@ Here is the output when running the OSU tests with the asynchronous execution po
   [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
 
   [----------] waiting for spawned checks to finish
-  [       OK ] (1/21) OSUBuildTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (2/21) OSUBuildTest on daint:gpu using PrgEnv-gnu
-  [       OK ] (3/21) OSUBuildTest on daint:gpu using PrgEnv-intel
-  [       OK ] (4/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi
-  [       OK ] (5/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi
-  [       OK ] (6/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi
-  [       OK ] (7/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi
-  [       OK ] (8/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu
-  [       OK ] (9/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 1/21) OSUBuildTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 2/21) OSUBuildTest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 3/21) OSUBuildTest on daint:gpu using PrgEnv-intel
+  [       OK ] ( 4/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 5/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 6/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 7/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 8/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 9/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu
   [       OK ] (10/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu
   [       OK ] (11/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel
   [       OK ] (12/21) OSULatencyTest on daint:gpu using PrgEnv-pgi

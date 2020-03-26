@@ -262,15 +262,15 @@ The output of the regression run looks like the following:
   [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
   [----------] waiting for spawned checks to finish
-  [       OK ] (1/12) Example1Test on daint:login using PrgEnv-intel
-  [       OK ] (2/12) Example1Test on daint:login using PrgEnv-cray
-  [       OK ] (3/12) Example1Test on daint:login using PrgEnv-gnu
-  [       OK ] (4/12) Example1Test on daint:login using PrgEnv-pgi
-  [       OK ] (5/12) Example1Test on daint:mc using PrgEnv-gnu
-  [       OK ] (6/12) Example1Test on daint:mc using PrgEnv-pgi
-  [       OK ] (7/12) Example1Test on daint:mc using PrgEnv-cray
-  [       OK ] (8/12) Example1Test on daint:mc using PrgEnv-intel
-  [       OK ] (9/12) Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] ( 1/12) Example1Test on daint:login using PrgEnv-intel
+  [       OK ] ( 2/12) Example1Test on daint:login using PrgEnv-cray
+  [       OK ] ( 3/12) Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] ( 4/12) Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] ( 5/12) Example1Test on daint:mc using PrgEnv-gnu
+  [       OK ] ( 6/12) Example1Test on daint:mc using PrgEnv-pgi
+  [       OK ] ( 7/12) Example1Test on daint:mc using PrgEnv-cray
+  [       OK ] ( 8/12) Example1Test on daint:mc using PrgEnv-intel
+  [       OK ] ( 9/12) Example1Test on daint:gpu using PrgEnv-intel
   [       OK ] (10/12) Example1Test on daint:gpu using PrgEnv-cray
   [       OK ] (11/12) Example1Test on daint:gpu using PrgEnv-gnu
   [       OK ] (12/12) Example1Test on daint:gpu using PrgEnv-pgi
@@ -1132,29 +1132,29 @@ Here is an example output of ReFrame using asynchronous execution policy:
   [----------] finished processing Example2aTest (Matrix-vector multiplication example with OpenMP)
   <output omitted>
   [----------] waiting for spawned checks to finish
-  [       OK ] (1/101) Example1Test on daint:login using PrgEnv-pgi
-  [       OK ] (2/101) Example1Test on daint:login using PrgEnv-gnu
-  [       OK ] (3/101) OpenMPTest on daint:login using PrgEnv-pgi
-  [       OK ] (4/101) SerialTest on daint:mc using PrgEnv-gnu
-  [       OK ] (5/101) Example6Test on daint:mc using PrgEnv-gnu
-  [       OK ] (6/101) Example1Test on daint:login using PrgEnv-cray
+  [       OK ] (  1/101) Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] (  2/101) Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] (  3/101) OpenMPTest on daint:login using PrgEnv-pgi
+  [       OK ] (  4/101) SerialTest on daint:mc using PrgEnv-gnu
+  [       OK ] (  5/101) Example6Test on daint:mc using PrgEnv-gnu
+  [       OK ] (  6/101) Example1Test on daint:login using PrgEnv-cray
   <output omitted>
-  [       OK ] (84/101) SerialTest on daint:gpu using PrgEnv-cray
-  [       OK ] (85/101) MPITest on daint:gpu using PrgEnv-gnu
-  [       OK ] (86/101) OpenMPTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (87/101) OpenMPTest on daint:gpu using PrgEnv-gnu
-  [       OK ] (88/101) MPITest on daint:gpu using PrgEnv-cray
-  [       OK ] (89/101) OpenMPTest on daint:gpu using PrgEnv-cray
-  [       OK ] (90/101) OpenMPTest on daint:gpu using PrgEnv-intel
-  [       OK ] (91/101) MPITest on daint:gpu using PrgEnv-intel
-  [       OK ] (92/101) OpenACCTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (93/101) Example1Test on daint:gpu using PrgEnv-cray
-  [       OK ] (94/101) CudaTest on daint:gpu using PrgEnv-gnu
-  [       OK ] (95/101) MPITest on daint:gpu using PrgEnv-pgi
-  [       OK ] (96/101) CudaTest on daint:gpu using PrgEnv-pgi
-  [       OK ] (97/101) Example1Test on daint:gpu using PrgEnv-intel
-  [       OK ] (98/101) CudaTest on daint:gpu using PrgEnv-cray
-  [       OK ] (99/101) Example1Test on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 84/101) SerialTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 85/101) MPITest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 86/101) OpenMPTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 87/101) OpenMPTest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 88/101) MPITest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 89/101) OpenMPTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 90/101) OpenMPTest on daint:gpu using PrgEnv-intel
+  [       OK ] ( 91/101) MPITest on daint:gpu using PrgEnv-intel
+  [       OK ] ( 92/101) OpenACCTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 93/101) Example1Test on daint:gpu using PrgEnv-cray
+  [       OK ] ( 94/101) CudaTest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 95/101) MPITest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 96/101) CudaTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 97/101) Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] ( 98/101) CudaTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 99/101) Example1Test on daint:gpu using PrgEnv-pgi
   [       OK ] (100/101) OpenACCTest on daint:gpu using PrgEnv-cray
   [       OK ] (101/101) Example1Test on daint:gpu using PrgEnv-gnu
   [----------] all spawned checks have finished
