@@ -25,7 +25,6 @@ from reframe.core.exceptions import (
     ReframeFatalError, ReframeForceExitError, SystemAutodetectionError
 )
 from reframe.core.exceptions import format_exception
-from reframe.core.pipeline import (DEPEND_EXACT, DEPEND_BY_ENV, DEPEND_FULLY)
 from reframe.frontend.executors import Runner, generate_testcases
 from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
@@ -34,14 +33,6 @@ from reframe.frontend.printer import PrettyPrinter
 
 
 def format_check(check, detailed):
-    def dep_type(t):
-        if t == DEPEND_EXACT:
-            return 'DEPEND_EXACT'
-        elif t == DEPEND_BY_ENV:
-            return 'DEPEND_BY_ENV'
-        elif t == DEPEND_FULLY:
-            return 'DEPEND_FULLY'
-
     lines = ['  * %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
     flex = 'flexible' if check.num_tasks <= 0 else 'standard'
@@ -54,7 +45,7 @@ def format_check(check, detailed):
             f"      - modules: {', '.join(check.modules)}",
             f"      - task allocation: {flex}",
             f"      - dependencies: "
-            f"{[(n, dep_type(t), s) for (n, t, s) in check.user_deps()]}",
+            f"{', '.join([d[0] for d in check.user_deps()])}",
             f"      - tags: {', '.join(check.tags)}",
             f"      - maintainers: {', '.join(check.maintainers)}"
         ]
