@@ -595,7 +595,7 @@ The following command will run the CUDA matrix-vector multiplication example fro
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example7.py -r --performance-report
-  Reframe version: 3.0-dev3 (rev: 984d7b77)
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
   Launched on host: daint105
   Reframe paths

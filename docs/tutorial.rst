@@ -173,7 +173,7 @@ If everything is configured correctly for your system, you should get an output 
 .. code-block:: none
 
     Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
-    Reframe version: 3.0-dev3 (rev: 984d7b77)
+    Reframe version: 3.0-dev3 (rev: 0c62d00c)
     Launched by user: USER
     Launched on host: daint105
     Reframe paths
