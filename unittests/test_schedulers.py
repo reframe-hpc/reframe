@@ -272,13 +272,13 @@ def test_submit(make_job, exec_ctx):
     # Additional scheduler-specific checks
     sched_name = minimal_job.scheduler.registered_name
     if sched_name == 'local':
-        assert 0 == minimal_job.exitcode
         assert [socket.gethostname()] == minimal_job.nodelist
-    elif sched_name in ('slurm', 'squeue'):
         assert 0 == minimal_job.exitcode
+    elif sched_name == ('slurm', 'squeue'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)
+        assert 0 == minimal_job.exitcode
 
 
 def test_submit_timelimit(minimal_job, local_only):
@@ -315,11 +315,6 @@ def test_cancel(make_job, exec_ctx):
     prepare_job(minimal_job, 'sleep 30')
     t_job = datetime.now()
     minimal_job.submit()
-
-    # NOTE: Strangely PBS backend hangs without a sleep here.
-    if minimal_job.scheduler.registered_name == 'pbs':
-        time.sleep(2)
-
     minimal_job.cancel()
     minimal_job.wait()
     t_job = datetime.now() - t_job
