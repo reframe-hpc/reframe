@@ -144,12 +144,21 @@ class BuildError(ReframeError):
 class SpawnedProcessError(ReframeError):
     '''Raised when a spawned OS command has failed.'''
 
-    def __init__(self, command, stdout, stderr, exitcode):
+    def __init__(self, args, stdout, stderr, exitcode):
         super().__init__()
 
-        # Format message and put it in args
+        if isinstance(args, str):
+            self._command = args
+        else:
+            self._command = ' '.join(args)
+
+        self._stdout = stdout
+        self._stderr = stderr
+        self._exitcode = exitcode
+
+        # Format message
         lines = [
-            "command '%s' failed with exit code %s:" % (command, exitcode)
+            f"command '{self.command}' failed with exit code {self.exitcode}:"
         ]
         lines.append('=== STDOUT ===')
         if stdout:
@@ -160,10 +169,6 @@ class SpawnedProcessError(ReframeError):
             lines.append(stderr)
 
         self._message = '\n'.join(lines)
-        self._command = command
-        self._stdout = stdout
-        self._stderr = stderr
-        self._exitcode = exitcode
 
     @property
     def command(self):
@@ -185,10 +190,12 @@ class SpawnedProcessError(ReframeError):
 class SpawnedProcessTimeout(SpawnedProcessError):
     '''Raised when a spawned OS command has timed out.'''
 
-    def __init__(self, command, stdout, stderr, timeout):
-        super().__init__(command, stdout, stderr, None)
+    def __init__(self, args, stdout, stderr, timeout):
+        super().__init__(args, stdout, stderr, None)
+        self._timeout = timeout
 
-        lines = ["command '%s' timed out after %ss:" % (command, timeout)]
+        # Format message
+        lines = [f"command '{self.command}' timed out after {self.timeout}s:"]
         lines.append('=== STDOUT ===')
         if self._stdout:
             lines.append(self._stdout)
@@ -198,7 +205,6 @@ class SpawnedProcessTimeout(SpawnedProcessError):
             lines.append(self._stderr)
 
         self._message = '\n'.join(lines)
-        self._timeout = timeout
 
     @property
     def timeout(self):
