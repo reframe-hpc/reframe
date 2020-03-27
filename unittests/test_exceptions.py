@@ -57,12 +57,28 @@ class TestExceptions(unittest.TestCase):
         exc_args = ('foo bar', 'partial output', 'error message', 1)
         e = exc.SpawnedProcessError(*exc_args)
         with pytest.raises(
-            exc.ReframeError,
-            match=r"command 'foo bar' failed with exit code 1:\n"
-                  r"=== STDOUT ===\n"
-                  r'partial output\n'
-                  r"=== STDERR ===\n"
-                  r"error message"):
+                exc.ReframeError,
+                match=(r"command 'foo bar' failed with exit code 1:\n"
+                       r"=== STDOUT ===\n"
+                       r'partial output\n'
+                       r"=== STDERR ===\n"
+                       r"error message")
+        ):
+            raise_exc(e)
+
+        assert exc_args == e.args
+
+    def test_spawned_process_error_list_args(self):
+        exc_args = (['foo', 'bar'], 'partial output', 'error message', 1)
+        e = exc.SpawnedProcessError(*exc_args)
+        with pytest.raises(
+                exc.ReframeError,
+                match=(r"command 'foo bar' failed with exit code 1:\n"
+                       r"=== STDOUT ===\n"
+                       r'partial output\n'
+                       r"=== STDERR ===\n"
+                       r"error message")
+        ):
             raise_exc(e)
 
         assert exc_args == e.args
@@ -71,33 +87,35 @@ class TestExceptions(unittest.TestCase):
         exc_args = ('foo bar', '', 'error message', 1)
         e = exc.SpawnedProcessError(*exc_args)
         with pytest.raises(
-            exc.ReframeError,
-            match=r"command 'foo bar' failed with exit code 1:\n"
-                  r"=== STDOUT ===\n"
-                  r"=== STDERR ===\n"
-                  r"error message"):
+                exc.ReframeError,
+                match=(r"command 'foo bar' failed with exit code 1:\n"
+                       r"=== STDOUT ===\n"
+                       r"=== STDERR ===\n"
+                       r"error message")
+        ):
             raise_exc(e)
 
     def test_spawned_process_error_nostderr(self):
         exc_args = ('foo bar', 'partial output', '', 1)
         e = exc.SpawnedProcessError(*exc_args)
         with pytest.raises(
-            exc.ReframeError,
-            match=r"command 'foo bar' failed with exit code 1:\n"
-                  r"=== STDOUT ===\n"
-                  r'partial output\n'
-                  r"=== STDERR ==="):
+                exc.ReframeError,
+                match=(r"command 'foo bar' failed with exit code 1:\n"
+                       r"=== STDOUT ===\n"
+                       r'partial output\n'
+                       r"=== STDERR ===")
+        ):
             raise_exc(e)
 
     def test_spawned_process_timeout(self):
         exc_args = ('foo bar', 'partial output', 'partial error', 10)
         e = exc.SpawnedProcessTimeout(*exc_args)
         with pytest.raises(exc.ReframeError,
-                           match=r"command 'foo bar' timed out after 10s:\n"
-                                 r"=== STDOUT ===\n"
-                                 r'partial output\n'
-                                 r"=== STDERR ===\n"
-                                 r"partial error"):
+                           match=(r"command 'foo bar' timed out after 10s:\n"
+                                  r"=== STDOUT ===\n"
+                                  r'partial output\n'
+                                  r"=== STDERR ===\n"
+                                  r"partial error")):
             raise_exc(e)
 
         assert exc_args == e.args
@@ -106,20 +124,20 @@ class TestExceptions(unittest.TestCase):
         exc_args = ('foo bar', '', 'partial error', 10)
         e = exc.SpawnedProcessTimeout(*exc_args)
         with pytest.raises(exc.ReframeError,
-                           match=r"command 'foo bar' timed out after 10s:\n"
-                                 r"=== STDOUT ===\n"
-                                 r"=== STDERR ===\n"
-                                 r"partial error"):
+                           match=(r"command 'foo bar' timed out after 10s:\n"
+                                  r"=== STDOUT ===\n"
+                                  r"=== STDERR ===\n"
+                                  r"partial error")):
             raise_exc(e)
 
     def test_spawned_process_timeout_nostderr(self):
         exc_args = ('foo bar', 'partial output', '', 10)
         e = exc.SpawnedProcessTimeout(*exc_args)
         with pytest.raises(exc.ReframeError,
-                           match=r"command 'foo bar' timed out after 10s:\n"
-                                 r"=== STDOUT ===\n"
-                                 r'partial output\n'
-                                 r"=== STDERR ==="):
+                           match=(r"command 'foo bar' timed out after 10s:\n"
+                                  r"=== STDOUT ===\n"
+                                  r'partial output\n'
+                                  r"=== STDERR ===")):
             raise_exc(e)
 
     def test_job_error(self):
