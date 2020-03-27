@@ -454,8 +454,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: Time duration is specified as of the :attr:`time_limit` attribute.
     #:
-    #: :type: :class:`str` or :class:`datetime.timedelta``
-    #: :default: :class:`None
+    #: :type: :class:`str` or :class:`datetime.timedelta`
+    #: :default: :class:`None`
     #:
     #: .. note::
     #:    .. versionchanged:: 3.0

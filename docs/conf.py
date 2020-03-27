@@ -136,6 +136,12 @@ html_context = {
     # 'show_on_github_url' : 'https://github.com/sphinx-doc/sphinx/issues/2386'
 }
 
+html_theme_options = {
+    'logo_only': True
+}
+html_logo = "_static/img/reframe-logo-dark-bg.svg"
+
+
 #autodoc_default_flags=['members', 'undoc-members', 'private-members', 'special-members', 'inherited-members', 'show-inheritance']
 #autodoc_default_flags=['members', 'undoc-members', 'inherited-members', 'show-inheritance']
 autodoc_default_flags = ['members']
