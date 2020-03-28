@@ -48,8 +48,15 @@ class _SiteConfig:
     def _pick_config(self):
         return self._local_config if self._local_config else self._site_config
 
+    def __repr__(self):
+        return f'{type(self).__name__}(site_config={self._site_config!r}, filename={self._filename!r})'
+
+    def __str__(self):
+        return json.dumps(self._pick_config(), indent=2)
+
     # Delegate everything to either the original config or to the reduced one
     # if a system is selected
+
     def __iter__(self):
         return iter(self._pick_config())
 
@@ -120,6 +127,10 @@ class _SiteConfig:
     @property
     def filename(self):
         return self._filename
+
+    @property
+    def subconfig_system(self):
+        return self._local_system
 
     @classmethod
     def create(cls, filename):

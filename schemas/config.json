@@ -207,7 +207,8 @@
                             },
                             "required": ["name", "scheduler", "launcher"],
                             "additionalProperties": false
-                        }
+                        },
+                        "minItems": 1
                     }
                 },
                 "required": ["name", "hostnames"],

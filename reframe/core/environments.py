@@ -74,9 +74,10 @@ class Environment:
         return self.name
 
     def __repr__(self):
-        ret = "{0}(name='{1}', modules={2}, variables={3})"
-        return ret.format(type(self).__name__, self.name,
-                          self.modules, self.variables)
+        return (f'{type(self).__name__}('
+                f'name={self._name!r}, '
+                f'modules={self._modules!r}, '
+                f'variables={list(self._variables.items())!r})')
 
 
 class _EnvironmentSnapshot(Environment):

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import json
 import re
 
 import reframe.utility as utility
@@ -11,8 +12,7 @@ from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-# FIXME: Change to private if possible
-class SystemPartition:
+class _SystemPartition:
     def __init__(self, parent, name, scheduler, launcher,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs):
@@ -131,19 +131,37 @@ class SystemPartition:
                 self._resources == other._resources and
                 self._local_env == other._local_env)
 
+    def json(self):
+        return {
+            'name': self._name,
+            'descr': self._descr,
+            'scheduler': self._scheduler.registered_name,
+            'launcher': self._launcher.registered_name,
+            'access': self._access,
+            'container_platforms': [
+                {
+                    'name': name,
+                    'modules': [m.name for m in cpenv.modules],
+                    'variables': [[n, v] for n, v in cpenv.variables.items()]
+                }
+                for name, cpenv in self._container_environs.items()
+            ],
+            'modules': [m.name for m in self._local_env.modules],
+            'variables': [[n, v]
+                          for n, v in self._local_env.variables.items()],
+            'environs': [e.name for e in self._environs],
+            'max_jobs': self._max_jobs,
+            'resources': [
+                {
+                    'name': name,
+                    'options': options
+                }
+                for name, options in self._resources.items()
+            ]
+        }
+
     def __str__(self):
-        # FIXME: Reconsider output format
-        local_env = re.sub('(?m)^', 6*' ', ' - ' + self._local_env.details())
-        lines = [
-            '%s [%s]:' % (self._name, self._descr),
-            '    fullname: ' + self.fullname,
-            '    scheduler: ' + self._scheduler.registered_name,
-            '    launcher: '  + self._launcher.registered_name,
-            '    access: ' + ' '.join(self._access),
-            '    local_env:\n' + local_env,
-            '    environs: ' + ', '.join(str(e) for e in self._environs)
-        ]
-        return '\n'.join(lines)
+        return json.dumps(self.json(), indent=2)
 
 
 class System:
@@ -172,6 +190,7 @@ class System:
         # Create the whole system hierarchy from bottom up
         sysname = site_config.get('systems/0/name')
         partitions = []
+        config_save = site_config.subconfig_system
         for p in site_config.get('systems/0/partitions'):
             site_config.select_subconfig(f'{sysname}:{p["name"]}')
             partid = f"systems/0/partitions/@{p['name']}"
@@ -207,7 +226,7 @@ class System:
                 ) for e in site_config.get(f'{partid}/environs')
             ]
             partitions.append(
-                SystemPartition(
+                _SystemPartition(
                     parent=site_config.get('systems/0/name'),
                     name=part_name,
                     scheduler=part_sched,
@@ -226,6 +245,8 @@ class System:
                 )
             )
 
+        # Restore configuration
+        site_config.select_subconfig(config_save)
         return System(
             name=sysname,
             descr=site_config.get('systems/0/descr'),
@@ -319,7 +340,39 @@ class System:
                 self._hostnames  == other._hostnames and
                 self._partitions == other._partitions)
 
-    # FIXME: Convert to __str__
+    def json(self):
+        return {
+            'name': self._name,
+            'descr': self._descr,
+            'hostnames': self._hostnames,
+            'modules_system': self._modules_system.name,
+            'modules': [m.name for m in self._preload_env.modules],
+            'variables': [
+                [name, value]
+                for name, value in self._preload_env.variables.items()
+            ],
+            'prefix': self._prefix,
+            'outputdir': self._outputdir,
+            'stagedir': self._stagedir,
+            'perflogdir': self._perflogdir,
+            'resourcesdir': self._resourcesdir,
+            'partitions': [p.json() for p in self._partitions]
+        }
+
+    def __str__(self):
+        return json.dumps(self.json(), indent=2)
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}( '
+            f'name={self._name!r}, descr={self._descr!r}, '
+            f'hostnames={self._hostnames!r}, '
+            f'modules_system={self.modules_system.name!r}, '
+            f'preload_env={self._preload_env!r}, prefix={self._prefix!r}, '
+            f'perflogdir={self._perflogdir!r}, outputdir={self._outputdir!r}, '
+            f'resourcesdir={self._resourcesdir!r}, '
+            f'stagedir={self._stagedir!r}, partitions={self._partitions!r})'
+        )
 
     def tostr(self):
         partitions = '\n'.join(re.sub('(?m)^', 6*' ', '- ' + str(p))

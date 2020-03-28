@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import inspect
+import json
 import os
 import re
 import socket
@@ -277,12 +278,12 @@ def main():
         help='Print a report for performance tests run'
     )
     misc_options.add_argument(
-        '--show-config', action='store_true',
-        help='Print configuration of the current system and exit'
-    )
-    misc_options.add_argument(
-        '--show-config-env', action='store', metavar='ENV',
-        help='Print configuration of environment ENV and exit'
+        '--show-config-param', action='store', nargs='?', const='all',
+        metavar='PARAM',
+        help=(
+            'Print how parameter PARAM is configured '
+            'for the current system and exit'
+        )
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
@@ -386,22 +387,22 @@ def main():
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = rt.perflog_prefix
 
     # Show configuration after everything is set up
-    if options.show_config:
-        printer.info(rt.show_config())
-        sys.exit(0)
+    if options.show_config_param:
+        config_param = options.show_config_param
+        if config_param[-1] == '/':
+            config_param = config_param[:-1]
 
-    if options.show_config_env:
-        envname = options.show_config_env
-        for p in rt.system.partitions:
-            environ = p.environment(envname)
-            if environ:
-                break
+        if config_param == 'all':
+            printer.info(str(rt.site_config))
+        else:
+            value = rt.get_option(config_param)
+            if value is None:
+                printer.error(
+                    f'no such configuration parameter found: {config_param}'
+                )
+            else:
+                printer.info(json.dumps(value, indent=2))
 
-        if environ is None:
-            printer.error(f'no such environment: {envname}')
-            sys.exit(1)
-
-        printer.info(environ.details())
         sys.exit(0)
 
     if site_config.get('perf_logging'):

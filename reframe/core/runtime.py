@@ -153,10 +153,6 @@ class RuntimeContext:
     def get_option(self, option):
         return self._site_config.get(option)
 
-    def show_config(self):
-        '''Return a textual representation of the current runtime.'''
-        return str(self._system)
-
 
 # Global resources for the current host
 _runtime_context = None

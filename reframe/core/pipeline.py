@@ -36,7 +36,6 @@ from reframe.core.exceptions import (BuildError, DependencyError,
                                      PerformanceError)
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.systems import SystemPartition
 
 
 # Dependency kinds
@@ -659,19 +658,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
-    # Private properties
-    _prefix = fields.TypedField('_prefix', str)
-    _stagedir = fields.TypedField('_stagedir', str, type(None))
-    _stdout = fields.TypedField('_stdout', str, type(None))
-    _stderr = fields.TypedField('_stderr', str, type(None))
-    _current_partition = fields.TypedField('_current_partition',
-                                           SystemPartition, type(None))
-    _current_environ = fields.TypedField('_current_environ',
-                                         env.Environment, type(None))
-    _cdt_environ = fields.TypedField('_cdt_environ', env.Environment)
-    _job = fields.TypedField('_job', Job, type(None))
-    _build_job = fields.TypedField('_build_job', Job, type(None))
-
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
@@ -814,7 +800,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         This is set by the framework during the :func:`setup` phase.
 
-        :type: :class:`reframe.core.systems.SystemPartition`.
+        :type: :class:`reframe.core.systems._SystemPartition`.
         '''
         return self._current_partition
 
