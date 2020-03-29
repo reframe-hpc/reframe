@@ -389,9 +389,6 @@ def main():
     # Show configuration after everything is set up
     if options.show_config_param:
         config_param = options.show_config_param
-        if config_param[-1] == '/':
-            config_param = config_param[:-1]
-
         if config_param == 'all':
             printer.info(str(rt.site_config))
         else:

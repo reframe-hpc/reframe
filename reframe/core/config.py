@@ -78,17 +78,25 @@ class _SiteConfig:
         If the option cannot be retrieved, ``default`` will be returned.
         '''
 
+        # Options may not start with a slash
+        if not option or option[0] == '/':
+            return default
+
+        # Remove trailing /
+        if option[-1] == '/':
+            option = option[:-1]
+
         # Convert any indices to integers
-        prepared_option = []
+        prepared_options = []
         for opt in option.split('/'):
             try:
                 opt = int(opt)
             except ValueError:
                 pass
 
-            prepared_option.append(opt)
+            prepared_options.append(opt)
 
-        stripped_opt = '/'.join(x for x in prepared_option
+        stripped_opt = '/'.join(x for x in prepared_options
                                 if not isinstance(x, int) and x[0] != '@')
         try:
             # If a sticky option exists, return that value
@@ -97,7 +105,7 @@ class _SiteConfig:
             pass
 
         value = self._pick_config()
-        for d in prepared_option:
+        for d in prepared_options:
             if not isinstance(d, int) and d[0] == '@':
                 # We are in an element addressable by name
                 d = d[1:]

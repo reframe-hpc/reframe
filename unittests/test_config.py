@@ -265,6 +265,12 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/gpu/name') is None
     assert site_config.get('environments/0/foo') is None
 
+    # Test misplaced slashes or empty option
+    assert site_config.get('systems/0/partitions/@gpu/launcher/') == 'srun'
+    assert site_config.get('/systems/0/partitions') is None
+    assert site_config.get('', 'foo') == 'foo'
+    assert site_config.get(None, 'foo') == 'foo'
+
 
 def test_sticky_options():
     site_config = config.load_config('unittests/resources/settings.py')
