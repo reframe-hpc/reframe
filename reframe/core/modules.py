@@ -493,7 +493,8 @@ class TModImpl(ModulesSystemImpl):
         self._exec_module_command('purge')
 
     def searchpath(self):
-        return os.environ['MODULEPATH'].split(':')
+        path = os.getenv('MODULEPATH', '')
+        return path.split(':')
 
     def searchpath_add(self, *dirs):
         self._exec_module_command('use', *dirs)

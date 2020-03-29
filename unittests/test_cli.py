@@ -434,7 +434,7 @@ def test_list_with_details(run_reframe):
     assert returncode == 0
 
 
-def test_show_config(run_reframe):
+def test_show_config_all(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
         more_options=['--show-config'],
@@ -445,10 +445,10 @@ def test_show_config(run_reframe):
     assert returncode == 0
 
 
-def test_show_env_config(run_reframe):
+def test_show_config_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config-env', 'PrgEnv-gnu'],
+        more_options=['--show-config=systems'],
         system='testsys'
     )
     assert 'Traceback' not in stdout
@@ -456,15 +456,16 @@ def test_show_env_config(run_reframe):
     assert returncode == 0
 
 
-def test_show_env_config_unknown_env(run_reframe):
+def test_show_config_unknown_param(run_reframe):
     # Just make sure that this option does not make the frontend crash
     returncode, stdout, stderr = run_reframe(
-        more_options=['--show-config-env', 'foobar'],
+        more_options=['--show-config=foo'],
         system='testsys'
     )
+    assert 'no such configuration parameter found' in stdout
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
-    assert returncode == 1
+    assert returncode == 0
 
 
 def test_verbosity(run_reframe):
