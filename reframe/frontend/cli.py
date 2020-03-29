@@ -313,7 +313,9 @@ def main():
     # First configure logging with our generic configuration so as to be able
     # to print pretty messages; logging will be reconfigured by user's
     # configuration later
-    site_config = config.load_config('reframe/core/settings.py')
+    site_config = config.load_config(
+        os.path.join(reframe.INSTALL_PREFIX, 'reframe/core/settings.py')
+    )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
     logging.configure_logging(site_config.get('logging/0'))
@@ -386,6 +388,16 @@ def main():
     # perf. logging prefix correctly
     logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = rt.perflog_prefix
 
+    if site_config.get('perf_logging'):
+        try:
+            logging.configure_perflogging(site_config.get('perf_logging/0'))
+        except (OSError, ConfigError) as e:
+            printer.error('could not configure performance logging: %s\n' % e)
+            sys.exit(1)
+    else:
+        printer.warning('no performance logging is configured; '
+                        'please check documentation')
+
     # Show configuration after everything is set up
     if options.show_config_param:
         config_param = options.show_config_param
@@ -401,16 +413,6 @@ def main():
                 printer.info(json.dumps(value, indent=2))
 
         sys.exit(0)
-
-    if site_config.get('perf_logging'):
-        try:
-            logging.configure_perflogging(site_config.get('perf_logging/0'))
-        except (OSError, ConfigError) as e:
-            printer.error('could not configure performance logging: %s\n' % e)
-            sys.exit(1)
-    else:
-        printer.warning('no performance logging is configured; '
-                        'please check documentation')
 
     # Setup the check loader
     loader = RegressionCheckLoader(
@@ -429,8 +431,7 @@ def main():
     # Print important paths
     printer.info('Reframe paths')
     printer.info('=============')
-    printer.info('    Check prefix      : %s' % loader.prefix)
-    printer.info('%03s Check search path : %s' %
+    printer.info('%03s Check search path    : %s' %
                  ('(R)' if loader.recurse else '',
                   "'%s'" % ':'.join(loader.load_path)))
     printer.info('    Current working dir  : %s' % os.getcwd())

@@ -38,13 +38,10 @@ class RegressionCheckValidator(ast.NodeVisitor):
 
 
 class RegressionCheckLoader:
-    def __init__(self, load_path, prefix='',
-                 recurse=False, ignore_conflicts=False):
-        self._load_path = os_ext.unique_abs_paths(
-            [os.path.realpath(p) for p in load_path], recurse
-        )
-        # FIXME: prefix is no more needed
-        self._prefix = prefix or ''
+    def __init__(self, load_path, recurse=False, ignore_conflicts=False):
+        # Expand any environment variables and symlinks
+        load_path = [os.path.realpath(os_ext.expandvars(p)) for p in load_path]
+        self._load_path = os_ext.unique_abs_paths(load_path, recurse)
         self._recurse = recurse
         self._ignore_conflicts = ignore_conflicts
 
@@ -160,7 +157,6 @@ class RegressionCheckLoader:
         If a prefix exists, it will be prepended to each path.'''
         checks = []
         for d in self._load_path:
-            d = os.path.join(self._prefix, d)
             if not os.path.exists(d):
                 continue
             if os.path.isdir(d):

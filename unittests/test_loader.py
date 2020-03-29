@@ -19,9 +19,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
         self.loader_with_path = RegressionCheckLoader(
             ['unittests/resources/checks', 'unittests/foobar'],
             ignore_conflicts=True)
-        self.loader_with_prefix = RegressionCheckLoader(
-            load_path=['bad'],
-            prefix=os.path.abspath('unittests/resources/checks'))
 
     def test_load_file_relative(self):
         checks = self.loader.load_from_file(
@@ -43,12 +40,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
     def test_load_all(self):
         checks = self.loader_with_path.load_all()
         assert 11 == len(checks)
-
-    # FIXME: Remove this test
-    def _test_load_all_with_prefix(self):
-        print(self.loader_with_prefix._load_path)
-        checks = self.loader_with_prefix.load_all()
-        assert 1 == len(checks)
 
     def test_load_new_syntax(self):
         checks = self.loader.load_from_file(

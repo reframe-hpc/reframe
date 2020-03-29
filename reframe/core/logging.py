@@ -558,15 +558,15 @@ class logging_context:
         _context_logger = self._orig_logger
 
 
-def configure_logging(loggin_config):
+def configure_logging(logging_config):
     global _logger, _context_logger
 
-    if loggin_config is None:
+    if logging_config is None:
         _logger = None
         _context_logger = null_logger
         return
 
-    _logger = load_from_dict(loggin_config)
+    _logger = load_from_dict(logging_config)
     _context_logger = LoggerAdapter(_logger)
 
 
