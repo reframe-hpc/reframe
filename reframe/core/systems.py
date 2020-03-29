@@ -165,10 +165,7 @@ class _SystemPartition:
 
 
 class System:
-    '''A representation of a system inside ReFrame.
-
-    FIXME: Expand doc.
-    '''
+    '''A representation of a system inside ReFrame.'''
 
     def __init__(self, name, descr, hostnames, modules_system,
                  preload_env, prefix, perflogdir, outputdir,
@@ -373,15 +370,3 @@ class System:
             f'resourcesdir={self._resourcesdir!r}, '
             f'stagedir={self._stagedir!r}, partitions={self._partitions!r})'
         )
-
-    def tostr(self):
-        partitions = '\n'.join(re.sub('(?m)^', 6*' ', '- ' + str(p))
-                               for p in self.partitions)
-        lines = [
-            '%s [%s]:' % (self._name, self._descr),
-            '    hostnames: ' + ', '.join(self._hostnames),
-            '    modules_system: ' + str(self._modules_system),
-            '    resourcesdir: ' + self._resourcesdir,
-            '    partitions:\n' + partitions,
-        ]
-        return '\n'.join(lines)
