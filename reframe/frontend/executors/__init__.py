@@ -338,6 +338,7 @@ class Runner:
             )
 
         self._policy.enter()
+        self._printer.reset_progress(len(testcases))
         last_check = None
         for t in testcases:
             if last_check is None or last_check.name != t.check.name:

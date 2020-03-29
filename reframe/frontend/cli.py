@@ -39,13 +39,15 @@ def format_check(check, detailed):
 
     if detailed:
         lines += [
-            '      - description: %s' % check.descr,
-            '      - systems: %s' % ', '.join(check.valid_systems),
-            '      - environments: %s' % ', '.join(check.valid_prog_environs),
-            '      - modules: %s' % ', '.join(check.modules),
-            '      - task allocation: %s' % flex,
-            '      - tags: %s' % ', '.join(check.tags),
-            '      - maintainers: %s' % ', '.join(check.maintainers)
+            f"      - description: {check.descr}",
+            f"      - systems: {', '.join(check.valid_systems)}",
+            f"      - environments: {', '.join(check.valid_prog_environs)}",
+            f"      - modules: {', '.join(check.modules)}",
+            f"      - task allocation: {flex}",
+            f"      - dependencies: "
+            f"{', '.join([d[0] for d in check.user_deps()])}",
+            f"      - tags: {', '.join(check.tags)}",
+            f"      - maintainers: {', '.join(check.maintainers)}"
         ]
 
     return '\n'.join(lines)

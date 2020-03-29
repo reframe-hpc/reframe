@@ -51,25 +51,6 @@ def run_command(cmd, check=False, timeout=None, shell=False, log=True):
     return completed
 
 
-def grep_command_output(cmd, pattern, where='stdout'):
-    completed = subprocess.run(shlex.split(cmd),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               universal_newlines=True)
-    if where == 'stdout':
-        outlist = [completed.stdout]
-    elif where == 'stderr':
-        outlist = [completed.stderr]
-    else:
-        outlist = [completed.stdout, completed.stderr]
-
-    for out in outlist:
-        if re.search(pattern, out, re.MULTILINE):
-            return True
-
-    return False
-
-
 def run_command_async(cmd,
                       stdout=subprocess.PIPE,
                       stderr=subprocess.PIPE,

@@ -27,18 +27,21 @@ class TestOSTools(unittest.TestCase):
         assert completed.stdout == 'foobar\n'
 
     def test_command_error(self):
-        with pytest.raises(SpawnedProcessError):
+        with pytest.raises(SpawnedProcessError,
+                           match=r"command 'false' failed with exit code 1"):
             os_ext.run_command('false', check=True)
 
     def test_command_timeout(self):
-        try:
+        with pytest.raises(
+                SpawnedProcessTimeout,
+                match=r"command 'sleep 3' timed out after 2s"
+        ) as exc_info:
             os_ext.run_command('sleep 3', timeout=2)
-        except SpawnedProcessTimeout as e:
-            assert e.timeout == 2
-            # Try to get the string repr. of the exception: see bug #658
-            s = str(e)
-        else:
-            pytest.fail('expected timeout')
+
+        assert exc_info.value.timeout == 2
+
+        # Try to get the string repr. of the exception: see bug #658
+        s = str(exc_info.value)
 
     def test_command_async(self):
         from datetime import datetime
@@ -54,10 +57,6 @@ class TestOSTools(unittest.TestCase):
         # Now check the timings
         assert t_launch.seconds < 1
         assert t_sleep.seconds >= 1
-
-    def test_grep(self):
-        assert os_ext.grep_command_output(cmd='echo hello', pattern='hello')
-        assert not os_ext.grep_command_output(cmd='echo hello', pattern='foo')
 
     def test_copytree(self):
         dir_src = tempfile.mkdtemp()
