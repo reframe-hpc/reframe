@@ -33,33 +33,32 @@ from reframe.frontend.printer import PrettyPrinter
 
 
 def format_check(check, detailed):
-    lines = ['  * %s (found in %s)' % (check.name,
+    lines = ['  - %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
     flex = 'flexible' if check.num_tasks <= 0 else 'standard'
 
     if detailed:
         lines += [
-            f"      - description: {check.descr}",
-            f"      - systems: {', '.join(check.valid_systems)}",
-            f"      - environments: {', '.join(check.valid_prog_environs)}",
-            f"      - modules: {', '.join(check.modules)}",
-            f"      - task allocation: {flex}",
-            f"      - dependencies: "
+            f"      description: {check.descr}",
+            f"      systems: {', '.join(check.valid_systems)}",
+            f"      environments: {', '.join(check.valid_prog_environs)}",
+            f"      modules: {', '.join(check.modules)}",
+            f"      task allocation: {flex}",
+            f"      dependencies: "
             f"{', '.join([d[0] for d in check.user_deps()])}",
-            f"      - tags: {', '.join(check.tags)}",
-            f"      - maintainers: {', '.join(check.maintainers)}"
+            f"      tags: {', '.join(check.tags)}",
+            f"      maintainers: {', '.join(check.maintainers)}"
         ]
 
     return '\n'.join(lines)
 
 
 def list_checks(checks, printer, detailed=False):
-    printer.info('List of matched checks')
-    printer.info('======================')
+    printer.info('[List of matched checks]')
     for c in checks:
         printer.info(format_check(c, detailed))
 
-    printer.info('Found %d check(s).' % len(checks))
+    printer.info('\nFound %d check(s).' % len(checks))
 
 
 def main():
@@ -424,24 +423,25 @@ def main():
     )
     printer.debug(argparse.format_options(options))
 
-    # Print command line
-    printer.info('Command line: %s' % ' '.join(sys.argv))
-    printer.info('Reframe version: '  + reframe.VERSION)
-    printer.info('Launched by user: ' + (os_ext.osuser() or '<unknown>'))
-    printer.info('Launched on host: ' + socket.gethostname())
+    def print_infoline(param, value):
+        param = param + ':'
+        printer.info(f"  {param.ljust(18)} {value}")
 
-    # Print important paths
-    printer.info('Reframe paths')
-    printer.info('=============')
-    printer.info('%03s Check search path    : %s' %
-                 ('(R)' if loader.recurse else '',
-                  "'%s'" % ':'.join(loader.load_path)))
-    printer.info('    Current working dir  : %s' % os.getcwd())
-    printer.info('    Stage dir prefix     : %s' % rt.stage_prefix)
-    printer.info('    Output dir prefix    : %s' % rt.output_prefix)
-    printer.info(
-        '    Perf. logging prefix : %s' %
-        os.path.abspath(logging.LOG_CONFIG_OPTS['handlers.filelog.prefix']))
+    # Print command line
+    printer.info(f"[ReFrame Setup]")
+    print_infoline('version', os_ext.reframe_version())
+    print_infoline('command', repr(' '.join(sys.argv)))
+    print_infoline('launched by',
+                   f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
+    print_infoline('working directory', repr(os.getcwd()))
+    print_infoline('check search path',
+                   f"{'(R)' if loader.recurse else ''} "
+                   f"{':'.join(loader.load_path)!r}")
+    print_infoline('stage directory', repr(rt.stage_prefix))
+    print_infoline('output directory', repr(rt.output_prefix))
+    print_infoline('performance logs',
+                   repr(logging.LOG_CONFIG_OPTS['handlers.filelog.prefix']))
+    printer.info('')
     try:
         # Locate and load checks
         try:
