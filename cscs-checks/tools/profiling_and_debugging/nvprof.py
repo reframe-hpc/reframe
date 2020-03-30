@@ -20,15 +20,6 @@ class NvprofCheck(rfm.RegressionTest):
         self.sourcesdir = 'src/Cuda'
         self.executable = 'nvprof'
         self.target_executable = './jacobi'
-        self.executable_opts = [self.target_executable]
-        self.sanity_patterns = sn.all([
-            sn.assert_found('Profiling application: %s' %
-                            self.target_executable, self.stderr),
-            sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
-            sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
-            sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr)
-        ])
-
         self.build_system = 'Make'
         self.build_system.cflags = [
             '-g', '-D_CSCS_ITMAX=100', '-DOMP_MEMLOCALITY', '-DUSE_MPI',
@@ -36,7 +27,6 @@ class NvprofCheck(rfm.RegressionTest):
         ]
         self.build_system.cxxflags = ['-g', '-G']
         self.build_system.ldflags = ['-g', '-fopenmp', '-std=c99', '-lstdc++']
-
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
@@ -45,10 +35,20 @@ class NvprofCheck(rfm.RegressionTest):
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
             self.build_system.ldflags = ['-lstdc++', '-lm',
-                                         '-L$EBROOTCUDA/lib64',
-                                         '-lcudart']
+                                         '-L$EBROOTCUDA/lib64', '-lcudart']
         else:
             self.modules = ['craype-accel-nvidia60']
 
+        self.executable_opts = [self.target_executable]
+        self.post_run = ['cat /etc/modprobe.d/nvidia.conf']
+        self.sanity_patterns = sn.all([
+            sn.assert_found('Profiling application: %s' %
+                            self.target_executable, self.stderr),
+            sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
+            sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
+            sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr),
+            sn.assert_found(r'NVreg_RestrictProfilingToAdminUsers=0',
+                            self.stdout)
+        ])
         self.maintainers = ['JG', 'SK']
-        self.tags = {'production', 'craype'}
+        self.tags = {'production', 'craype', 'maintenance'}
