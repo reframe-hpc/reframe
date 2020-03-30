@@ -108,7 +108,10 @@ class CollectivesBaseTest(rfm.RegressionTest):
         }
 
         self.maintainers = ['AJ', 'MKr']
-        self.tags = {'production', 'mch', 'craype'}
+        if self.current_system.name == 'tsa':
+            self.tags = {'mch'}
+        else:
+            self.tags = {'production', 'mch', 'craype'}
 
     @rfm.run_before('run')
     def set_launcher_options(self):

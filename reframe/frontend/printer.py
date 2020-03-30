@@ -24,6 +24,10 @@ class PrettyPrinter:
         self.line_width = 78
         self.status_width = 10
 
+    def reset_progress(self, total_cases):
+        self._progress_count = 0
+        self._progress_total = total_cases
+
     def separator(self, linestyle, msg=''):
         if linestyle == 'short double line':
             line = self.status_width * '='
@@ -42,16 +46,24 @@ class PrettyPrinter:
         else:
             status = status.ljust(self.status_width - 2)
 
+        status_stripped = status.strip()
         if self.colorize:
-            status_stripped = status.strip().lower()
-            if status_stripped == 'skip':
+            if status_stripped == 'SKIP':
                 status = color.colorize(status, color.YELLOW)
-            elif status_stripped in ['fail', 'failed', 'error']:
+            elif status_stripped in ['FAIL', 'FAILED', 'ERROR']:
                 status = color.colorize(status, color.RED)
             else:
                 status = color.colorize(status, color.GREEN)
 
-        logging.getlogger().log(level, '[ %s ] %s' % (status, message))
+        final_msg = f'[ {status} ] '
+        if status_stripped in ['OK', 'SKIP', 'FAIL', 'ERROR']:
+            self._progress_count += 1
+            width = len(str(self._progress_total))
+            padded_progress = str(self._progress_count).rjust(width)
+            final_msg += f'({padded_progress}/{self._progress_total}) '
+
+        final_msg += message
+        logging.getlogger().log(level, final_msg)
 
     def timestamp(self, msg='', separator=None):
         msg = '%s %s' % (msg, datetime.datetime.today().strftime('%c %Z'))
