@@ -62,7 +62,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             'maint': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (141.0, None, 0.05, 's')}
@@ -71,7 +71,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (113.0, None, 0.05, 's')}
