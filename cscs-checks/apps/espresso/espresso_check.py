@@ -33,7 +33,7 @@ class QECheck(rfm.RunOnlyRegressionTest):
                     'time': (159.0, None, 0.05, 's'),
                 },
                 'daint:mc': {
-                    'time': (151.6, None, 0.05, 's')
+                    'time': (147.3, None, 0.41, 's')
                 },
             }
         else:
@@ -41,7 +41,7 @@ class QECheck(rfm.RunOnlyRegressionTest):
             self.num_tasks_per_node = 36
             self.reference = {
                 'daint:mc': {
-                    'time': (157.0, None, 0.40, 's')
+                    'time': (149.7, None, 0.52, 's')
                 },
             }
 
