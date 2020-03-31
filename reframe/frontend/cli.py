@@ -98,7 +98,8 @@ def main():
         help=('Set directory prefix for the performance logs '
               '(default: ${prefix}/perflogs, '
               'relevant only if the filelog backend is used)'),
-        envvar='RFM_PERFLOG_DIR', configvar='systems/perflogdir'
+        envvar='RFM_PERFLOG_DIR',
+        configvar='logging/handlers_perflog/filelog_basedir'
     )
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
@@ -319,7 +320,7 @@ def main():
     )
     site_config.select_subconfig('generic')
     options.update_config(site_config)
-    logging.configure_logging(site_config.get('logging/0'))
+    logging.configure_logging(site_config)
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
@@ -342,7 +343,7 @@ def main():
         site_config.validate()
         site_config.select_subconfig(options.system)
         options.update_config(site_config)
-        logging.configure_logging(site_config.get('logging/0'))
+        logging.configure_logging(site_config)
     except (OSError, ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
         sys.exit(1)
@@ -384,21 +385,6 @@ def main():
                       "'--keep-stage-files' option.")
         sys.exit(1)
 
-    # Configure performance logging
-    # NOTE: we need resources to be configured in order to set the global
-    # perf. logging prefix correctly
-    logging.LOG_CONFIG_OPTS['handlers.filelog.prefix'] = rt.perflog_prefix
-
-    if site_config.get('perf_logging'):
-        try:
-            logging.configure_perflogging(site_config.get('perf_logging/0'))
-        except (OSError, ConfigError) as e:
-            printer.error('could not configure performance logging: %s\n' % e)
-            sys.exit(1)
-    else:
-        printer.warning('no performance logging is configured; '
-                        'please check documentation')
-
     # Show configuration after everything is set up
     if options.show_config_param:
         config_param = options.show_config_param
@@ -439,8 +425,7 @@ def main():
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(rt.stage_prefix))
     print_infoline('output directory', repr(rt.output_prefix))
-    print_infoline('performance logs',
-                   repr(logging.LOG_CONFIG_OPTS['handlers.filelog.prefix']))
+    print_infoline('performance logs', repr(rt.perflogdir))
     printer.info('')
     try:
         # Locate and load checks

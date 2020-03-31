@@ -68,7 +68,7 @@ class _Namespace:
         namespace'''
         for option, spec in self.__option_map.items():
             _, confvar, action = spec
-            if action == 'version':
+            if action == 'version' or confvar is None:
                 continue
 
             value = getattr(self, option)

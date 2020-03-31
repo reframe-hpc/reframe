@@ -102,8 +102,14 @@ class RuntimeContext:
 
     @property
     def perflogdir(self):
+        # Find the first filelog handler
+        handlers = self.site_config.get('logging/0/handlers_perflog')
+        for i, h in enumerate(handlers):
+            if h['type'] == 'filelog':
+                break
+
         return os_ext.expandvars(
-            self.site_config.get('systems/0/perflogdir')
+            self.site_config.get(f'logging/0/handlers_perflog/{i}/basedir')
         )
 
     @property
@@ -126,13 +132,6 @@ class RuntimeContext:
             return os.path.join(self.stagedir, self.timestamp)
         else:
             return os.path.join(self.prefix, 'stage', self.timestamp)
-
-    @property
-    def perflog_prefix(self):
-        if self.perflogdir:
-            return self.perflogdir
-        else:
-            return os.path.join(self.prefix, 'perflogs')
 
     def make_stagedir(self, *dirs, wipeout=True):
         return self._makedir(self.stage_prefix,

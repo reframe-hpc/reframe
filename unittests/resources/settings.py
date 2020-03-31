@@ -159,13 +159,8 @@ site_configuration = {
                     'level': 'info',
                     'format': '%(message)s'
                 }
-            ]
-        }
-    ],
-    'perf_logging': [
-        {
-            'level': 'debug',
-            'handlers': [
+            ],
+            'handlers_perflog': [
                 {
                     'type': 'filelog',
                     'prefix': '%(check_system)s/%(check_partition)s',

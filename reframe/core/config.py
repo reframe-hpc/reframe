@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import copy
+import fnmatch
 import itertools
 import json
 import jsonschema
@@ -24,6 +25,20 @@ from reframe.core.exceptions import (ConfigError,
                                      ReframeFatalError)
 from reframe.core.logging import getlogger
 from reframe.utility import ScopedDict
+
+
+def _match_option(opt, opt_map):
+    if isinstance(opt, list):
+        opt = '/'.join(opt)
+
+    if opt in opt_map:
+        return opt_map[opt]
+
+    for k, v in opt_map.items():
+        if fnmatch.fnmatchcase(opt, k):
+            return v
+
+    raise KeyError(opt)
 
 
 class _SiteConfig:
@@ -49,7 +64,8 @@ class _SiteConfig:
         return self._local_config if self._local_config else self._site_config
 
     def __repr__(self):
-        return f'{type(self).__name__}(site_config={self._site_config!r}, filename={self._filename!r})'
+        return (f'{type(self).__name__}(site_config={self._site_config!r}, '
+                'filename={self._filename!r})')
 
     def __str__(self):
         return json.dumps(self._pick_config(), indent=2)
@@ -87,48 +103,74 @@ class _SiteConfig:
             option = option[:-1]
 
         # Convert any indices to integers
-        prepared_options = []
+        prepared_option = []
         for opt in option.split('/'):
             try:
                 opt = int(opt)
             except ValueError:
                 pass
 
-            prepared_options.append(opt)
+            prepared_option.append(opt)
 
-        stripped_opt = '/'.join(x for x in prepared_options
-                                if not isinstance(x, int) and x[0] != '@')
+        # Walk through the option path constructing a default key at the same
+        # time for looking it up in the defaults or the sticky options
+        default_key = []
+        value = self._pick_config()
+        option_path_invalid = False
+        for x in prepared_option:
+            if option_path_invalid:
+                # Just go through the rest of elements and construct the key trivially
+                if not isinstance(x, int) and x[0] != '@':
+                    default_key.append(x)
+
+                continue
+
+            if isinstance(x, int) or x[0] == '@':
+                # We are in an addressable element; move forward in the path,
+                # without adding the component to the default_key
+                if isinstance(x, int):
+                    # Element addressable by index number
+                    try:
+                        value = value[x]
+                    except IndexError:
+                        option_path_invalid = True
+                else:
+                    # Element addressable by name
+                    x, found = x[1:], False
+                    for obj in value:
+                        value, found = obj, True
+                        if obj['name'] == x:
+                            value, found = obj, True
+                            break
+
+                    if not found:
+                        option_path_invalid = True
+
+                continue
+
+            if 'type' in value:
+                default_key.append(value['type'] + '_' + x)
+            else:
+                default_key.append(x)
+
+            try:
+                value = value[x]
+            except (IndexError, KeyError, TypeError):
+                option_path_invalid = True
+
+        default_key = '/'.join(default_key)
         try:
             # If a sticky option exists, return that value
-            return self._sticky_options[stripped_opt]
+            return _match_option(default_key, self._sticky_options)
         except KeyError:
             pass
 
-        value = self._pick_config()
-        for d in prepared_options:
-            if not isinstance(d, int) and d[0] == '@':
-                # We are in an element addressable by name
-                d = d[1:]
-                found = False
-                for obj in value:
-                    if obj['name'] == d:
-                        value, found = obj, True
-                        break
-
-                if not found:
-                    return default
-                else:
-                    continue
-
+        if option_path_invalid:
+            # Try the default and return
             try:
-                value = value[d]
-            except (TypeError, IndexError):
-                return default
+                return _match_option(default_key, self._schema['defaults'])
             except KeyError:
-                try:
-                    return self._schema['defaults'][stripped_opt]
-                except KeyError:
-                    return default
+                return default
 
         return value
 
@@ -284,7 +326,8 @@ class _SiteConfig:
                 key = obj.get('name', name)
                 target_systems = obj.get(
                     'target_systems',
-                    self._schema['defaults'][f'{name}/target_systems']
+                    _match_option(f'{name}/target_systems',
+                                  self._schema['defaults'])
                 )
                 for t in target_systems:
                     scoped_section[f'{t}:{key}'] = obj
@@ -431,22 +474,32 @@ def convert_old_config(filename):
 
                 converted['modes'].append(new_mode)
 
-    def update_logging_config(log_name, original_log):
-        new_handlers = []
-        for h in original_log['handlers']:
+    def handler_list(handler_config):
+        ret = []
+        for h in handler_config:
             new_h = h
             new_h['level'] = h['level'].lower()
-            new_handlers.append(new_h)
+            if h['type'] == 'graylog':
+                # `host` and `port` attribute are converted to `address`
+                new_h['address'] = h['host']
+                if 'port' in h:
+                    new_h['address'] += ':' + h['port']
 
-        converted[log_name].append(
-            {
-                'level': original_log['level'].lower(),
-                'handlers': new_handlers
-            }
-        )
+            ret.append(new_h)
 
-    update_logging_config('logging', old_config.logging_config)
-    update_logging_config('perf_logging', old_config.perf_logging_config)
+        return ret
+
+    converted['logging'].append(
+        {
+            'level': old_config.logging_config['level'].lower(),
+            'handlers': handler_list(
+                old_config.logging_config['handlers']
+            ),
+            'handlers_perflog': handler_list(
+                old_config.perf_logging_config['handlers']
+            )
+        }
+    )
     converted['general'] = [{}]
     if hasattr(old_config, 'checks_path'):
         converted['general'][0][

@@ -170,14 +170,6 @@ def test_select_subconfig_no_logging():
         site_config.select_subconfig()
 
 
-def test_select_subconfig_no_perf_logging():
-    site_config = config.load_config('reframe/core/settings.py')
-    site_config['perf_logging'][0]['target_systems'] = ['foo']
-    with pytest.raises(ConfigError,
-                       match=r"section 'perf_logging' not defined"):
-        site_config.select_subconfig()
-
-
 def test_select_subconfig_no_environments():
     site_config = config.load_config('reframe/core/settings.py')
     site_config['environments'][0]['target_systems'] = ['foo']
@@ -218,6 +210,12 @@ def test_select_subconfig():
     assert site_config.get('systems/0/partitions/@gpu/max_jobs') == 10
     assert site_config.get('modes/0/name') == 'unittest'
     assert site_config.get('modes/@unittest/name') == 'unittest'
+    assert len(site_config.get('logging/0/handlers')) == 2
+    assert len(site_config.get('logging/0/handlers_perflog')) == 1
+    assert site_config.get('logging/0/handlers/0/timestamp') is False
+    assert site_config.get('logging/0/handlers/0/level') == 'debug'
+    assert site_config.get('logging/0/handlers/1/level') == 'info'
+    assert site_config.get('logging/0/handlers/2/level') is None
 
     site_config.select_subconfig('testsys:login')
     assert len(site_config.get('systems/0/partitions')) == 1
@@ -271,6 +269,13 @@ def test_select_subconfig():
     assert site_config.get('/systems/0/partitions') is None
     assert site_config.get('', 'foo') == 'foo'
     assert site_config.get(None, 'foo') == 'foo'
+
+
+def test_select_subconfig_optional_section_absent():
+    site_config = config.load_config('reframe/core/settings.py')
+    site_config.select_subconfig()
+    assert site_config.get('general/0/colorize') is True
+    assert site_config.get('general/verbose') == 0
 
 
 def test_sticky_options():

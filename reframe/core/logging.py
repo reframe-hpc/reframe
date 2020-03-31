@@ -166,74 +166,38 @@ class RFC3339Formatter(logging.Formatter):
         return super().format(record)
 
 
-def load_from_dict(logging_config):
-    if not isinstance(logging_config, collections.abc.Mapping):
-        raise TypeError('logging configuration is not a dict')
-
-    level = logging_config.get('level', 'info').lower()
-    handlers_descr = logging_config.get('handlers', None)
+def _create_logger(site_config, handlers_group):
+    level = site_config.get('logging/0/level')
     logger = Logger('reframe')
     logger.setLevel(_log_level_values[level])
-    for handler in _extract_handlers(handlers_descr):
+    for handler in _extract_handlers(site_config, handlers_group):
         logger.addHandler(handler)
 
     return logger
 
 
-def _convert_handler_syntax(handler_dict):
-    handler_list = []
-    for filename, handler_config in handler_dict.items():
-        descr = handler_config
-        new_keys = {}
-        if filename == '&1':
-            new_keys['type'] = 'stream'
-            new_keys['name'] = 'stdout'
-        elif filename == '&2':
-            new_keys['type'] = 'stream'
-            new_keys['name'] = 'stderr'
-        else:
-            new_keys['type'] = 'file'
-            new_keys['name'] = filename
-
-        descr.update(new_keys)
-        handler_list.append(descr)
-
-    return handler_list
-
-
-def _create_file_handler(handler_config):
-    try:
-        filename = handler_config['name']
-    except KeyError:
-        raise ConfigError('no file specified for file handler:\n%s' %
-                          pprint.pformat(handler_config)) from None
-
-    timestamp = handler_config.get('timestamp', None)
+def _create_file_handler(site_config, config_prefix):
+    filename = site_config.get(f'{config_prefix}/name')
+    timestamp = site_config.get(f'{config_prefix}/timestamp')
     if timestamp:
         basename, ext = os.path.splitext(filename)
         filename = '%s_%s%s' % (basename, time.strftime(timestamp), ext)
 
-    append = handler_config.get('append', False)
+    append = site_config.get(f'{config_prefix}/append')
     return logging.handlers.RotatingFileHandler(filename,
                                                 mode='a+' if append else 'w+')
 
 
-def _create_filelog_handler(handler_config):
-    logdir = os.path.abspath(LOG_CONFIG_OPTS['handlers.filelog.prefix'])
-    try:
-        filename_patt = os.path.join(logdir, handler_config['prefix'])
-    except KeyError:
-        raise ConfigError('no file specified for file handler:\n%s' %
-                          pprint.pformat(handler_config)) from None
-
-    append = handler_config.get('append', False)
+def _create_filelog_handler(site_config, config_prefix):
+    basedir = site_config.get(f'{config_prefix}/basedir')
+    prefix  = site_config.get(f'{config_prefix}/prefix')
+    filename_patt = os.path.join(basedir, prefix)
+    append = site_config.get(f'{config_prefix}/append')
     return MultiFileHandler(filename_patt, mode='a+' if append else 'w+')
 
 
-def _create_syslog_handler(handler_config):
-    address = handler_config.get('address', None)
-    if address is None:
-        raise ConfigError('syslog handler: no address specified')
+def _create_syslog_handler(site_config, config_prefix):
+    address = site_config.get(f'{config_prefix}/address')
 
     # Check if address is in `host:port` format
     try:
@@ -243,101 +207,88 @@ def _create_syslog_handler(handler_config):
     else:
         address = (host, port)
 
-    facility = handler_config.get('facility', 'user')
+    facility = site_config.get(f'{config_prefix}/facility')
     try:
         facility_type = logging.handlers.SysLogHandler.facility_names[facility]
     except KeyError:
-        raise ConfigError('syslog handler: '
-                          'unknown facility: %s' % facility) from None
+        # This should not happen
+        raise AssertionError(
+            f'syslog handler: unknown facility: {facility}') from None
 
-    socktype = handler_config.get('socktype', 'udp')
+    socktype = site_config.get(f'{config_prefix}/socktype')
     if socktype == 'udp':
         socket_type = socket.SOCK_DGRAM
     elif socktype == 'tcp':
         socket_type = socket.SOCK_STREAM
     else:
-        raise ConfigError('syslog handler: unknown socket type: %s' % socktype)
+        # This should not happen
+        raise AssertionError(
+            f'syslog handler: unknown socket type: {socktype}'
+        )
 
     return logging.handlers.SysLogHandler(address, facility_type, socket_type)
 
 
-def _create_stream_handler(handler_config):
-    stream = handler_config.get('name', 'stdout')
+def _create_stream_handler(site_config, config_prefix):
+    stream = site_config.get(f'{config_prefix}/name')
     if stream == 'stdout':
         return logging.StreamHandler(stream=sys.stdout)
     elif stream == 'stderr':
         return logging.StreamHandler(stream=sys.stderr)
     else:
-        raise ConfigError('unknown stream: %s' % stream)
+        # This should not happen
+        raise AssertionError(f'unknown stream: {stream}')
 
 
-def _create_graylog_handler(handler_config):
+def _create_graylog_handler(site_config, config_prefix):
     try:
         import pygelf
     except ImportError:
         return None
 
-    host = handler_config.get('host', None)
-    port = handler_config.get('port', None)
-    extras = handler_config.get('extras', None)
-    if host is None:
-        raise ConfigError('graylog handler: no host specified')
-
-    if port is None:
+    address = site_config.get(f'{config_prefix}/address')
+    host, *port = address.split(':', maxsplit=1)
+    if not port:
         raise ConfigError('graylog handler: no port specified')
 
-    if extras is not None and not isinstance(extras, collections.abc.Mapping):
-        raise ConfigError('graylog handler: extras must be a mapping type')
-
+    port = port[0]
+    extras = handler_config.get('extras', None)
     return pygelf.GelfHttpHandler(host=host, port=port, debug=True,
                                   static_fields=extras,
                                   include_extra_fields=True)
 
 
-def _extract_handlers(handlers_list):
-    # Check if we are using the old syntax
-    if isinstance(handlers_list, collections.abc.Mapping):
-        handlers_list = _convert_handler_syntax(handlers_list)
-        sys.stderr.write(
-            'WARNING: looks like you are using an old syntax for the '
-            'logging configuration; please update your syntax as follows:\n'
-            '\nhandlers: %s\n' % pprint.pformat(handlers_list, indent=1))
-
+def _extract_handlers(site_config, handlers_group):
+    handler_prefix = f'logging/0/{handlers_group}'
+    handlers_list = site_config.get(handler_prefix)
     handlers = []
-    if not handlers_list:
-        raise ValueError('no handlers are defined for logging')
-
     for i, handler_config in enumerate(handlers_list):
-        if not isinstance(handler_config, collections.abc.Mapping):
-            raise TypeError('handler config at position %s '
-                            'is not a dictionary' % i)
-
-        try:
-            handler_type = handler_config['type']
-        except KeyError:
-            raise ConfigError('no type specified for '
-                              'handler at position %s' % i) from None
-
+        handler_type = handler_config['type']
         if handler_type == 'file':
-            hdlr = _create_file_handler(handler_config)
+            hdlr = _create_file_handler(site_config, f'{handler_prefix}/{i}')
         elif handler_type == 'filelog':
-            hdlr = _create_filelog_handler(handler_config)
+            hdlr = _create_filelog_handler(
+                site_config, f'{handler_prefix}/{i}'
+            )
         elif handler_type == 'syslog':
-            hdlr = _create_syslog_handler(handler_config)
+            hdlr = _create_syslog_handler(site_config, f'{handler_prefix}/{i}')
         elif handler_type == 'stream':
-            hdlr = _create_stream_handler(handler_config)
+            hdlr = _create_stream_handler(site_config, f'{handler_prefix}/{i}')
         elif handler_type == 'graylog':
-            hdlr = _create_graylog_handler(handler_config)
+            hdlr = _create_graylog_handler(
+                site_config, f'{handler_prefix}/{i}'
+            )
             if hdlr is None:
-                sys.stderr.write('WARNING: could not initialize the '
-                                 'graylog handler; ignoring...\n')
+                getlogger.warning('could not initialize the '
+                                  'graylog handler; ignoring...\n')
                 continue
         else:
-            raise ConfigError('unknown handler type: %s' % handler_type)
+            # Should not enter here
+            raise AssertionError(f"unknown handler type: {handler_type}")
 
-        level = handler_config.get('level', 'debug').lower()
-        fmt = handler_config.get('format', '%(message)s')
-        datefmt = handler_config.get('datefmt', '%FT%T')
+        level = site_config.get(f'{handler_prefix}/{i}/level')
+        fmt = site_config.get(f'{handler_prefix}/{i}/format')
+        datefmt = site_config.get(f'{handler_prefix}/{i}/datefmt')
         hdlr.setFormatter(RFC3339Formatter(fmt=fmt, datefmt=datefmt))
         hdlr.setLevel(_check_level(level))
         handlers.append(hdlr)
@@ -558,22 +509,17 @@ class logging_context:
         _context_logger = self._orig_logger
 
 
-def configure_logging(logging_config):
-    global _logger, _context_logger
+def configure_logging(site_config):
+    global _logger, _context_logger, _perf_logger
 
-    if logging_config is None:
+    if site_config is None:
         _logger = None
         _context_logger = null_logger
         return
 
-    _logger = load_from_dict(logging_config)
+    _logger = _create_logger(site_config, 'handlers')
+    _perf_logger = _create_logger(site_config, 'handlers_perflog')
     _context_logger = LoggerAdapter(_logger)
-
-
-def configure_perflogging(perf_logging_config):
-    global _perf_logger
-
-    _perf_logger = load_from_dict(perf_logging_config)
 
 
 def save_log_files(dest):

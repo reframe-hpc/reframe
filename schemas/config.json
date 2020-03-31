@@ -67,8 +67,10 @@
                 {"$ref": "#/defs/handler_common"},
                 {
                     "properties": {
+                        "basedir": {"type": "string"},
                         "prefix": {"type": "string"}
-                    }
+                    },
+                    "required": ["prefix"]
                 }
             ]
         },
@@ -106,7 +108,17 @@
                             "type": "string",
                             "enum": ["tcp", "udp"]
                         },
-                        "facility": {"type": "string"},
+                        "facility": {"type": "string",
+                                     "enum": ["auth", "authpriv",
+                                              "cron", "daemon",
+                                              "ftp", "kern",
+                                              "lpr", "mail",
+                                              "news", "syslog",
+                                              "user", "uucp",
+                                              "local0", "local1",
+                                              "local2", "local3",
+                                              "local4", "local5",
+                                              "local6", "local7"]},
                         "address": {"type": "string"}
                     },
                     "required": ["address"]
@@ -281,20 +293,10 @@
                                 {"$ref": "#/defs/stream_handler"},
                                 {"$ref": "#/defs/syslog_handler"}
                             ]
-                        }
+                        },
+                        "minItems": 1
                     },
-                    "target_systems": {"$ref": "#/defs/system_ref"}
-                },
-                "additionalProperties": false
-            }
-        },
-        "perf_logging": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "level": {"$ref": "#/defs/loglevel"},
-                    "handlers": {
+                    "handlers_perflog": {
                         "type": "array",
                         "items": {
                             "anyOf": [
@@ -308,6 +310,7 @@
                     },
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
+                "required": ["handlers", "handlers_perflog"],
                 "additionalProperties": false
             }
         },
@@ -364,7 +367,7 @@
             }
         }
     },
-    "required": ["systems", "environments", "logging", "perf_logging"],
+    "required": ["systems", "environments", "logging"],
     "additionalProperties": false,
     "defaults": {
         "environments/modules": [],
@@ -393,15 +396,17 @@
         "general/unload_modules": [],
         "general/user_modules": [],
         "general/verbose": 0,
-        "perf_logging/target_systems": ["*"],
-        "logging/handlers/level": "debug",
-        "logging/handlers/file/append": false,
-        "logging/handlers/file/timestamp": false,
-        "logging/handlers/stream/name": "stdout",
-        "logging/handlers/syslog/socktype": "udp",
-        "logging/handlers/syslog/facility": "user",
         "logging/level": "info",
         "logging/target_systems": ["*"],
+        "logging/handlers*/*_level": "debug",
+        "logging/handlers*/*_format": "%(message)s",
+        "logging/handlers*/*_datefmt": "%FT%T",
+        "logging/handlers*/file_append": false,
+        "logging/handlers*/file_timestamp": false,
+        "logging/handlers*/filelog_basedir": "./perflogs",
+        "logging/handlers*/stream_name": "stdout",
+        "logging/handlers*/syslog_socktype": "udp",
+        "logging/handlers*/syslog_facility": "user",
         "modes/target_systems": ["*"],
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
