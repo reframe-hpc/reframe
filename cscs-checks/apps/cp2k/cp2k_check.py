@@ -105,19 +105,19 @@ class Cp2kGpuCheck(Cp2kCheck):
             'maint': {
                 'small': {
                     'dom:gpu': {'time': (251.8, None, 0.15, 's')},
-                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
+                    'daint:gpu': {'time': (241.3, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                    'daint:gpu': {'time': (199.6, None, 0.06, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:gpu': {'time': (240.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
+                    'daint:gpu': {'time': (241.3, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                    'daint:gpu': {'time': (199.6, None, 0.06, 's')}
                 }
             }
         }
