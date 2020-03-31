@@ -40,6 +40,8 @@ class NvprofCheck(rfm.RegressionTest):
             self.modules = ['craype-accel-nvidia60']
 
         self.executable_opts = [self.target_executable]
+        # Reminder: NVreg_RestrictProfilingToAdminUsers=0 (RFC-16) needed since
+        # cuda/10.1
         self.post_run = ['cat /etc/modprobe.d/nvidia.conf']
         self.sanity_patterns = sn.all([
             sn.assert_found('Profiling application: %s' %
@@ -47,8 +49,6 @@ class NvprofCheck(rfm.RegressionTest):
             sn.assert_found('[CUDA memcpy HtoD]', self.stderr),
             sn.assert_found('[CUDA memcpy DtoH]', self.stderr),
             sn.assert_found(r'\s+100(\s+\S+){3}\s+jacobi_kernel', self.stderr),
-            sn.assert_found(r'NVreg_RestrictProfilingToAdminUsers=0',
-                            self.stdout)
         ])
         self.maintainers = ['JG', 'SK']
         self.tags = {'production', 'craype', 'maintenance'}
