@@ -350,7 +350,12 @@ def main():
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
-    runtime.init_runtime(site_config)
+    try:
+        runtime.init_runtime(site_config)
+    except ConfigError as e:
+        printer.error(f'failed to initialize runtime: {e}')
+        sys.exit(1)
+
     rt = runtime.runtime()
     try:
         if site_config.get('general/0/module_map_file'):
