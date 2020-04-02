@@ -47,7 +47,16 @@ class _Namespace:
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
 
-        ret = getattr(self.__namespace, name)
+        try:
+            ret = getattr(self.__namespace, name)
+        except AttributeError:
+            if name not in self.__option_map:
+                # Option not defined at all
+                raise
+
+            # Option is not associated with a command-line argument
+            ret = None
+
         if name not in self.__option_map:
             return ret
 
@@ -121,14 +130,14 @@ class _ArgumentHolder:
                 # A positional argument
                 opt_name = flags[-1]
 
+        if opt_name is None:
+            raise ValueError('could not infer a dest name: no flags defined')
+
         self._option_map[opt_name] = (
             kwargs.get('envvar', None),
             kwargs.get('configvar', None),
             kwargs.get('action', 'store')
         )
-        if opt_name is None:
-            raise ValueError('could not infer a dest name: no flags defined')
-
         # Remove envvar and configvar keyword arguments and force dest
         # argument, even if we guessed it, in order to guard against changes
         # in ArgumentParser's implementation
@@ -151,6 +160,9 @@ class _ArgumentHolder:
             del kwargs['default']
         except KeyError:
             self._defaults.__dict__[opt_name] = None
+
+        if not flags:
+            return None
 
         return self._holder.add_argument(*flags, **kwargs)
 

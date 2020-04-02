@@ -94,6 +94,10 @@ def extended_parser():
         '--prefix', action='store', configvar='systems/prefix'
     )
     parser.add_argument('--version', action='version', version='1.0')
+    parser.add_argument(
+        dest='keep_stage_files',
+        envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
+    )
     foo_options.add_argument(
         '--timestamp', action='store',
         envvar='RFM_TIMESTAMP', configvar='general/timestamp'
@@ -144,20 +148,20 @@ def test_option_with_config(extended_parser):
     with rt.temp_environment(variables={
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
-            'RFM_MODULES_PRELOAD': 'a,b,c'
-
+            'RFM_MODULES_PRELOAD': 'a,b,c',
+            'RFM_KEEP_STAGE_FILES': 'yes'
     }):
         site_config = rt.runtime().site_config
         options = extended_parser.parse_args(
             ['--timestamp=%FT%T', '--nocolor']
         )
         options.update_config(site_config)
-        print('hello')
         assert site_config.get('general/0/check_search_recursive') is True
         assert site_config.get('general/0/timestamp') == '%FT%T'
         assert site_config.get('general/0/non_default_craype') == 'yes'
         assert site_config.get('systems/0/prefix') == '.'
         assert site_config.get('general/0/colorize') is False
+        assert site_config.get('general/0/keep_stage_files') == 'yes'
 
         # Defaults specified in parser override those in configuration file
         assert site_config.get('systems/0/stagedir') == '/foo'
