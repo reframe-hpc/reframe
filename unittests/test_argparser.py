@@ -95,7 +95,7 @@ def extended_parser():
     )
     parser.add_argument('--version', action='version', version='1.0')
     parser.add_argument(
-        dest='keep_stage_files',
+        dest='keep_stage_files', action='store_true',
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
     foo_options.add_argument(
@@ -135,7 +135,7 @@ def test_option_precedence(extended_parser):
         )
         assert options.recursive is None
         assert options.timestamp == '%FT%T'
-        assert options.non_default_craype == 'yes'
+        assert options.non_default_craype is True
         assert options.config_file is None
         assert options.prefix is None
         assert options.stagedir == '/foo'
@@ -149,7 +149,7 @@ def test_option_with_config(extended_parser):
             'RFM_TIMESTAMP': '%F',
             'RFM_NON_DEFAULT_CRAYPE': 'yes',
             'RFM_MODULES_PRELOAD': 'a,b,c',
-            'RFM_KEEP_STAGE_FILES': 'yes'
+            'RFM_KEEP_STAGE_FILES': 'no'
     }):
         site_config = rt.runtime().site_config
         options = extended_parser.parse_args(
@@ -158,10 +158,20 @@ def test_option_with_config(extended_parser):
         options.update_config(site_config)
         assert site_config.get('general/0/check_search_recursive') is True
         assert site_config.get('general/0/timestamp') == '%FT%T'
-        assert site_config.get('general/0/non_default_craype') == 'yes'
+        assert site_config.get('general/0/non_default_craype') is True
         assert site_config.get('systems/0/prefix') == '.'
         assert site_config.get('general/0/colorize') is False
-        assert site_config.get('general/0/keep_stage_files') == 'yes'
+        assert site_config.get('general/0/keep_stage_files') is False
 
         # Defaults specified in parser override those in configuration file
         assert site_config.get('systems/0/stagedir') == '/foo'
+
+
+def test_option_envvar_conversion_error(extended_parser):
+    with rt.temp_environment(variables={
+            'RFM_NON_DEFAULT_CRAYPE': 'foo',
+    }):
+        site_config = rt.runtime().site_config
+        options = extended_parser.parse_args(['--nocolor'])
+        errors = options.update_config(site_config)
+        assert len(errors) == 1

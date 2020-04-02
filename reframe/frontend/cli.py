@@ -342,7 +342,9 @@ def main():
 
         site_config.validate()
         site_config.select_subconfig(options.system)
-        options.update_config(site_config)
+        for err in options.update_config(site_config):
+            printer.warning(str(err))
+
         logging.configure_logging(site_config)
     except (OSError, ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')

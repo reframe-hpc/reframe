@@ -31,6 +31,16 @@ import os
 #
 
 
+def _convert_to_bool(s):
+    if s.lower() in ('true', 'yes', 'y'):
+        return True
+
+    if s.lower() in ('false', 'no', 'n'):
+        return False
+
+    raise ValueError
+
+
 class _Namespace:
     def __init__(self, namespace, option_map):
         self.__namespace = namespace
@@ -66,23 +76,39 @@ class _Namespace:
             envvar, *delim = envvar.split(maxsplit=2)
             delim = delim[0] if delim else ','
             ret = os.getenv(envvar)
-            if ret is not None and action.startswith('append'):
-                # The option should be interpreted as comma separated list
-                ret = ret.split(delim)
+            if ret is not None:
+                if action.startswith('append'):
+                    # The option should be interpreted as comma separated list
+                    ret = ret.split(delim)
+                elif action in ('store_true', 'store_false'):
+                    try:
+                        ret = _convert_to_bool(ret)
+                    except ValueError:
+                        raise ValueError(
+                            f'environment variable {envvar!r} not a boolean'
+                        ) from None
 
         return ret
 
     def update_config(self, site_config):
         '''Update the site configuration with the options represented by this
         namespace'''
+        errors = []
         for option, spec in self.__option_map.items():
             _, confvar, action = spec
             if action == 'version' or confvar is None:
                 continue
 
-            value = getattr(self, option)
+            try:
+                value = getattr(self, option)
+            except ValueError as e:
+                errors.append(e)
+                continue
+
             if value is not None:
                 site_config.add_sticky_option(confvar, value)
+
+        return errors
 
     def __repr__(self):
         return (f'{type(self).__name__}({self.__namespace!r}, '
