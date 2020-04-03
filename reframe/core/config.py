@@ -119,7 +119,8 @@ class _SiteConfig:
         option_path_invalid = False
         for x in prepared_option:
             if option_path_invalid:
-                # Just go through the rest of elements and construct the key trivially
+                # Just go through the rest of elements and construct the key
+                # trivially
                 if not isinstance(x, int) and x[0] != '@':
                     default_key.append(x)
 
