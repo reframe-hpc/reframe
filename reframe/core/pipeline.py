@@ -960,11 +960,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if partition_name.find(':') == -1:
             partition_name = '%s:%s' % (self.current_system.name,
                                         partition_name)
-            # Check if *:<partition_name> is found
-            generic_partition_name = '*:%s' % (partition_name)
 
-        return any(p in self.valid_systems for p in
-                   [partition_name, generic_partition_name])
+            if '*:%s' % (partition_name) in self.valid_systems:
+                return True
+
+        return partition_name in self.valid_systems
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
