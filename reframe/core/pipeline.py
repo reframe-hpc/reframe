@@ -963,7 +963,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
             # Check if *:<partition_name> is found
             generic_partition_name = '*:%s' % (partition_name)
 
-
         return any(p in self.valid_systems for p in
                    [partition_name, generic_partition_name])
 
