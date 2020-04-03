@@ -957,14 +957,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
             return True
 
         # Check if this is a relative name
-        if partition_name.find(':') == -1:
-            partition_name = '%s:%s' % (self.current_system.name,
-                                        partition_name)
+        if partition_name.find(':') != -1:
+            system_partition = partition_name.split(':')
+            system_name = system_partition[0]
+            partition_name = system_partition[1]
+        else:
+            system_name = self.current_system.name
+            partition_name = partition_name
 
-            if '*:%s' % (partition_name) in self.valid_systems:
-                return True
+        specific = '%s:%s' % (system_name, partition_name)
+        generic = '*:%s' % partition_name
 
-        return partition_name in self.valid_systems
+        return any(p in self.valid_systems for p in [specific, generic])
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
