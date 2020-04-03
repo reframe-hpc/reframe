@@ -283,8 +283,8 @@ def format_exception(exc_type, exc_value, tb):
     if isinstance(exc_value, KeyboardInterrupt):
         return 'cancelled by user'
 
-    if isinstance(exc_value, OSError):
-        return 'OS error: %s' % exc_value
+    # if isinstance(exc_value, OSError):
+    #     return 'OS error: %s' % exc_value
 
     frame = user_frame(tb)
     if isinstance(exc_value, TypeError) and frame is not None:

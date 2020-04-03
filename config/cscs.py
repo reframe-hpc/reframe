@@ -943,16 +943,16 @@ site_configuration = {
                     'datefmt': '%FT%T%:z',
                     'append': True
                 },
-                #@{                                         # noqa: E265
-                #@    'type': 'graylog',                    # noqa: E265
-                #@    'address': 'graylog-server:12345',    # noqa: E265
-                #@    'level': 'INFO',                      # noqa: E265
-                #@    'format': '%(message)s',              # noqa: E265
-                #@    'extras': {                           # noqa: E265
-                #@        'facility': 'reframe',            # noqa: E265
-                #@        'data-version': '1.0',            # noqa: E265
-                #@    }                                     # noqa: E265
-                #@}                                         # noqa: E265
+                {
+                    'type': 'graylog',
+                    'address': 'graylog-server:12345',
+                    'level': 'info',
+                    'format': '%(message)s',
+                    'extras': {
+                        'facility': 'reframe',
+                        'data-version': '1.0',
+                    }
+                }
             ]
         }
     ],

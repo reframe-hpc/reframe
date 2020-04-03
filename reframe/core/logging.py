@@ -252,7 +252,19 @@ def _create_graylog_handler(site_config, config_prefix):
         raise ConfigError('graylog handler: no port specified')
 
     port = port[0]
-    extras = handler_config.get('extras', None)
+
+    # Check if the remote server is up and accepts connections; if not we will
+    # skip the handler
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            pass
+    except OSError as e:
+        getlogger().warning(
+            f"could not connect to Graylog server at '{address}': {e}"
+        )
+        return None
+
+    extras = site_config.get(f'{config_prefix}/extras')
     return pygelf.GelfHttpHandler(host=host, port=port, debug=True,
                                   static_fields=extras,
                                   include_extra_fields=True)
@@ -279,8 +291,8 @@ def _extract_handlers(site_config, handlers_group):
                 site_config, f'{handler_prefix}/{i}'
             )
             if hdlr is None:
-                getlogger.warning('could not initialize the '
-                                  'graylog handler; ignoring...\n')
+                getlogger().warning('could not initialize the '
+                                    'graylog handler; ignoring ...')
                 continue
         else:
             # Should not enter here

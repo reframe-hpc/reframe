@@ -305,6 +305,14 @@ def main():
         envvar='RFM_VERBOSE', configvar='general/verbose'
     )
 
+    # Options not associated with command-line arguments
+    argparser.add_argument(
+        dest='graylog_server',
+        envvar='RFM_GRAYLOG_SERVER',
+        configvar='logging/handlers_perflog/graylog_address',
+        help='Graylog server address'
+    )
+
     if len(sys.argv) == 1:
         argparser.print_help()
         sys.exit(1)

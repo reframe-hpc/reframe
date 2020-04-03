@@ -404,6 +404,7 @@
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_timestamp": false,
         "logging/handlers*/filelog_basedir": "./perflogs",
+        "logging/handlers*/graylog_extras": {},
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
