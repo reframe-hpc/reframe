@@ -287,6 +287,12 @@ class TestRegressionTest(unittest.TestCase):
         assert not test.supports_system('testsys:gpu')
         assert not test.supports_system('testsys:login')
 
+        test.valid_systems = ['*:gpu']
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('foo:gpu')
+        assert not test.supports_system('testsys:cpu')
+        assert not test.supports_system('testsys:login')
+
     def test_supports_environ(self):
         test = self.loader.load_from_file(
             'unittests/resources/checks/hellocheck.py')[0]

@@ -158,7 +158,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                             typ.List[str])
 
     #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname]``.
+    #: The general syntax for systems is ``<sysname|*>[:<partname]``.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -960,8 +960,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if partition_name.find(':') == -1:
             partition_name = '%s:%s' % (self.current_system.name,
                                         partition_name)
+            # Check if *:<partition_name> is found
+            generic_partition_name = '*:%s' % (partition_name)
 
-        return partition_name in self.valid_systems
+
+        return any(p in self.valid_systems for p in
+                   [partition_name, generic_partition_name])
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
