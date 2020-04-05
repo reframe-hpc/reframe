@@ -3,15 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import copy
 import itertools
 import os
 import pathlib
 import pytest
 import re
 import sys
-import tempfile
-import unittest
 from contextlib import redirect_stdout, redirect_stderr, suppress
 from io import StringIO
 

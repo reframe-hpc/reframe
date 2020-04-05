@@ -6,7 +6,6 @@
 import json
 import os
 import pytest
-import unittest
 
 import reframe.core.config as config
 import reframe.utility.os_ext as os_ext

@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import collections
-import collections.abc
 import os
 
 import reframe.core.fields as fields

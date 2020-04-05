@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import pdb
 import copy
 import logging
 import logging.handlers

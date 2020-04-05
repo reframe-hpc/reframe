@@ -9,8 +9,6 @@
 
 import os
 import functools
-import re
-import socket
 from datetime import datetime
 
 import reframe.core.config as config
