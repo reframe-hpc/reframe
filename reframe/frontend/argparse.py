@@ -18,7 +18,7 @@ import os
 # For this reason, we base our design on composition by implementing wrappers
 # of both the argument group and the argument parser. These wrappers provide
 # the same public interface as their `argparse` counterparts (currently we only
-# implement the part of the interface that matters for Reframe), delegating the
+# implement the part of the interface that matters for ReFrame), delegating the
 # parsing work to them. For these "shadow" data structures for argument groups
 # and the parser, we follow a similar design as in the `argparse` module: both
 # the argument group and the parser inherit from a base class implementing the
@@ -26,9 +26,16 @@ import os
 #
 # A final trick we had to do in order to avoid repeating all the public fields
 # of the internal argument holders (`argparse`'s argument group or argument
-# parser) was to programmaticallly export them by creating special descriptor
-# fields that forward the set/get actions to the internal argument holder.
+# parser) was to programmaticallly export them by implementing the
+# `__getattr__()` method, such as to delegate any lookup of unknown public
+# attributes to the underlying `argparse.ArgumentParser`.
 #
+# Finally, the functionality of the ArgumentParser is extended to support
+# associations of command-line arguments with environment variables and/or
+# configuration parameters. Additionally, we allow to define pseudo-arguments
+# that essentially associate environment variables with configuration
+# arguments, without having to have to define a corresponding command line
+# option.
 
 
 def _convert_to_bool(s):
