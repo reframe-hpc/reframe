@@ -30,9 +30,9 @@ def to_seconds(str):
     ['mpi+openmp', 'mc',  72,  6, 3, 2]
 )
 class GREASYCheck(rfm.RegressionTest):
-    def __init__(self, variant, system, num_greasy_tasks, nworkes_per_node,
+    def __init__(self, variant, partition, num_greasy_tasks, nworkes_per_node,
                  nranks_per_worker, ncpus_per_worker):
-        self.valid_systems = ['daint:' + system, 'dom:' + system]
+        self.valid_systems = ['daint:' + partition, 'dom:' + partition]
 
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.sourcepath = 'tasks_mpi_openmp.c'
@@ -42,12 +42,11 @@ class GREASYCheck(rfm.RegressionTest):
         # or not
         self.sleep_time = 60
         self.build_system.cflags = ['-DSLEEP_TIME=%d' % self.sleep_time]
-
-        if variant in ['openmp']:
+        if variant == 'openmp':
             self.build_system.cflags += ['-fopenmp']
-        elif variant in ['mpi']:
+        elif variant == 'mpi':
             self.build_system.cflags += ['-D_MPI']
-        elif variant in ['mpi+openmp']:
+        elif variant == 'mpi+openmp':
             self.build_system.cflags += ['-fopenmp', '-D_MPI']
 
         self.executable = 'tasks_mpi_openmp.x'
@@ -55,18 +54,16 @@ class GREASYCheck(rfm.RegressionTest):
         self.executable_opts = [self.tasks_file]
         self.greasy_logfile = 'greasy.log'
         self.keep_files = [self.tasks_file, self.greasy_logfile]
-
-        self.sanity_patterns = self.eval_sanity()
-
         nnodes = 2
+        self.use_multithreading = False
         self.num_greasy_tasks = num_greasy_tasks
         self.nworkes_per_node = nworkes_per_node
         self.nranks_per_worker = nranks_per_worker
         self.num_tasks_per_node = nranks_per_worker * nworkes_per_node
         self.num_tasks = self.num_tasks_per_node * nnodes
         self.num_cpus_per_task = ncpus_per_worker
-
-        # Reference value is system agnostic and depnes
+        self.sanity_patterns = self.eval_sanity()
+        # Reference value is system agnostic
         refperf = self.sleep_time * num_greasy_tasks / nworkes_per_node / nnodes
         self.reference = {
             '*': {
@@ -78,7 +75,6 @@ class GREASYCheck(rfm.RegressionTest):
                                      self.greasy_logfile,
                                      'perf', to_seconds)
         }
-
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
         self.variables = {
@@ -86,26 +82,22 @@ class GREASYCheck(rfm.RegressionTest):
             'GREASY_NWORKERS_PER_NODE': str(nworkes_per_node),
             'GREASY_LOGFILE': self.greasy_logfile
         }
-
         self.modules = ['GREASY']
         self.maintainers = ['VH', 'SK']
-        self.use_multithreading = False
-
         self.tags = {'production'}
 
     @rfm.run_before('run')
     def generate_tasks_file(self):
-        with open(os.path.join(self.stagedir, self.tasks_file), 'w') as outfile:
+        with open(os.path.join(self.stagedir, self.tasks_file), 'w') as fp:
             for i in range(self.num_greasy_tasks):
-                outfile.write("./%s output-%d\n" % (self.executable, i))
+                fp.write('./%s output-%d\n' % (self.executable, i))
 
     @rfm.run_before('run')
     def daint_dom_gpu_specific_workaround(self):
         if self.current_partition.fullname in ['daint:gpu', 'dom:gpu']:
-            self.variables['CRAY_CUDA_MPS'] = "1"
-            self.variables['CUDA_VISIBLE_DEVICES'] = "0"
-            self.variables['GPU_DEVICE_ORDINAL'] = "0"
-
+            self.variables['CRAY_CUDA_MPS'] = '1'
+            self.variables['CUDA_VISIBLE_DEVICES'] = '0'
+            self.variables['GPU_DEVICE_ORDINAL'] = '0'
             self.extra_resources = {
                 'gres': {
                     'gres': 'gpu:0,craynetwork:4'
@@ -133,13 +125,11 @@ class GREASYCheck(rfm.RegressionTest):
     @sn.sanity_function
     def eval_sanity(self):
         output_files = []
-        for file in os.listdir(self.stagedir):
-            if file.startswith("output-"):
-                output_files.append(file)
-
+        output_files = [file for file in os.listdir(self.stagedir)
+                                      if file.startswith('output-')]
         num_greasy_tasks = len(output_files)
-        failure_msg = ('Requested {0} task(s), but only executed {0} '
-                       'tasks(s)'.format(self.num_greasy_tasks))
+        failure_msg = (f'Requested {self.num_greasy_tasks} task(s), but '
+                       f'executed only {num_greasy_tasks} tasks(s)')
         sn.evaluate(sn.assert_eq(num_greasy_tasks, self.num_greasy_tasks,
                                  msg=failure_msg))
         num_tasks = sn.getattr(self, 'nranks_per_worker')
@@ -162,10 +152,10 @@ class GREASYCheck(rfm.RegressionTest):
                                 r'of \s*(\d+) from process \s*(\d+) out of '
                                 r'\s*(\d+)', output_file)
 
-            failure_msg = ('Found {0} Hello, World... pattern(s), but expected'
-                           ' {1} pattern(s) inside the output file {0}'.format(
-                               sn.count(result), num_tasks * num_cpus_per_task,
-                               output_file))
+            failure_msg = (f'Found {sn.count(result)} Hello, World... '
+                           f'pattern(s) but expected '
+                           f'{num_tasks * num_cpus_per_task} pattern(s) inside '
+                           f'the output file {output_file}')
             sn.evaluate(sn.assert_eq(sn.count(result),
                                      num_tasks * num_cpus_per_task,
                                      msg=failure_msg))
@@ -173,62 +163,55 @@ class GREASYCheck(rfm.RegressionTest):
             sn.evaluate(sn.all(
                 sn.chain(
                     sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x),
-                                                  msg='Found {0} threads '
-                                                  'rather than {1}'.format(
-                                                      tid(x), num_threads(x))),
-                                                  result),
+                                                  msg=f'Found {tid(x)} threads '
+                                                  'rather than '
+                                                  f'{num_threads(x)}'), result),
                     sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x),
-                                                  msg='Rank id {0} is not '
-                                                  'lower than the number of '
-                                                  'ranks {1} in output file '
-                                                  '{2}'.format(rank(x),
-                                                      self.nranks_per_worker,
-                                                  output_file)),
-                           result),
+                                                  msg=f'Rank id {rank(x)} is '
+                                                  'not lower than the number'
+                                                  'of ranks '
+                                                  f'{self.nranks_per_worker} in'
+                                                  ' output file '), result),
                     sn.map(lambda x: sn.assert_lt(tid(x),
                                                   self.num_cpus_per_task,
-                                                  msg='Rank id {0} is not '
-                                                  'lower than the number of '
-                                                  'cpus per task {1} in output'
-                                                  ' file {2}'.format(tid(x),
-                                                      self.num_cpus_per_task,
-                                                  output_file)),
+                                                  msg=f'Rank id {tid(x)} is not'
+                                                  ' lower than the number of '
+                                                  'cpus per task '
+                                                  f'{self.num_cpus_per_task} in'
+                                                  f' output file {output_file}'),
                            result),
-                    sn.map(
-                        lambda x: sn.assert_eq(num_threads(x),
-                                               num_cpus_per_task,
-                                               msg='Found {0} threads rather '
-                                                   'than {1} in output file '
-                                                   '{2}'.format(num_threads(x),
-                                                   self.num_cpus_per_task,
-                                                   output_file)),
-                        result),
+                    sn.map(lambda x: sn.assert_eq(num_threads(x),
+                                                  num_cpus_per_task,
+                                                  msg=f'Found {num_threads(x)} '
+                                                      'threads rather '
+                                                      'than '
+                                                      f'{self.num_cpus_per_task}'
+                                                      ' in output file '
+                                                      f'{output_file}'), result),
                     sn.map(lambda x: sn.assert_lt(rank(x), num_tasks,
-                                                  msg='Found {0} threads '
-                                                  'rather than {1} in output '
-                                                  'file {2}'.format(rank(x),
-                                                  self.num_cpus_per_task,
-                                                  output_file)),
+                                                  msg=f'Found {rank(x)} threads'
+                                                  ' rather than '
+                                                  f'{self.num_cpus_per_task} in'
+                                                  f' output file {output_file}'),
                            result),
                     sn.map(lambda x: sn.assert_eq(num_ranks(x), num_tasks,
-                                                  msg='Number of ranks {0} is '
-                                                      'not equal to {1} in '
-                                                      'output file '
-                                                      '{2}'.format(num_ranks(x),
-                                                      self.nranks_per_worker,
-                                                      output_file)),
-                           result),
+                                                  msg=f'Number of ranks '
+                                                      f'{num_ranks(x)} is not '
+                                                      'equal to '
+                                                      f'{self.nranks_per_worker}'
+                                                      ' in output file '
+                                                      f'{output_file}'), result),
                 )
             ))
 
         sn.evaluate(sn.assert_found(r'Finished greasing', self.greasy_logfile))
 
-        sn.evaluate(sn.assert_found(r'INFO: Summary of {0} tasks: '
-                                    r'{0} OK, '
-                                    r'0 FAILED, '
-                                    r'0 CANCELLED, '
-                                    r'0 INVALID\.'.format(
-                                        self.num_greasy_tasks),
+        sn.evaluate(sn.assert_found(f'INFO: Summary of {self.num_greasy_tasks} '
+                                    f'tasks: '
+                                    f'{self.num_greasy_tasks} OK, '
+                                    f'0 FAILED, '
+                                    f'0 CANCELLED, '
+                                    f'0 INVALID\.',
                                     self.greasy_logfile)
                     )
 
