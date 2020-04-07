@@ -301,6 +301,7 @@ class TestRegressionTest(unittest.TestCase):
 
         test.valid_systems = ['testsys:*']
         assert test.supports_system('testsys:login')
+        assert test.supports_system('gpu')
         assert not test.supports_system('foo:gpu')
 
     def test_supports_environ(self):

@@ -951,21 +951,17 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return ret
 
     def supports_system(self, name):
-
-        if self.current_system.name in self.valid_systems:
-            return True
-
-        names_to_test = ['*', '*:*']
-        names_to_test.append(self.current_system.name)
-        names_to_test.append('%s:*' % self.current_system.name)
-
         # Check if this is a relative name
         if name.find(':') != -1:
             system_name, partition_name = name.split(':')
-            names_to_test.append('%s:%s' % (system_name, partition_name))
         else:
-            names_to_test.append('*:%s' % name)
-            names_to_test.append('%s:%s' % (self.current_system.name, name))
+            system_name, partition_name = self.current_system.name, name
+
+        names_to_test = ['*', '*:*']
+        names_to_test.append(system_name)
+        names_to_test.append('%s:*' % system_name)
+        names_to_test.append('*:%s' % partition_name)
+        names_to_test.append('%s:%s' % (system_name, partition_name))
 
         return any(n in self.valid_systems for n in names_to_test)
 
