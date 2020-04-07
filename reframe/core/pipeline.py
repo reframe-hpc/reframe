@@ -955,7 +955,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.current_system.name in self.valid_systems:
             return True
 
-        names_to_test = ['*']
+        names_to_test = ['*', '*:*']
         names_to_test.append(self.current_system.name)
         names_to_test.append('%s:*' % self.current_system.name)
 
