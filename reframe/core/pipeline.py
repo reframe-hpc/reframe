@@ -158,7 +158,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                             typ.List[str])
 
     #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname|*>[:<partname]``.
+    #: The general syntax for systems is ``<sysname>[:<partname>]``.
+    #: Other supported options are: ``*``, ``*:*``, ``*:<partname>``, ``<sysname>:*``
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -949,24 +950,26 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return ret
 
-    def supports_system(self, partition_name):
-        if '*' in self.valid_systems:
-            return True
+    def supports_system(self, name):
 
         if self.current_system.name in self.valid_systems:
             return True
 
+        names_to_test = ['*']
+        names_to_test.append(self.current_system.name)
+        names_to_test.append('%s:*' % self.current_system.name)
+
         # Check if this is a relative name
-        if partition_name.find(':') != -1:
-            system_partition, partition_name = partition_name.split(':')
+        if name.find(':') != -1:
+            system_name, partition_name = name.split(':')
+            names_to_test.append('%s:*' % system_name)
+            names_to_test.append('*:%s' % partition_name)
+            names_to_test.append('%s:%s' % (system_name, partition_name))
         else:
-            system_name = self.current_system.name
-            partition_name = partition_name
+            names_to_test.append('*:%s' % name)
+            names_to_test.append('%s:%s' % (self.current_system.name, name)
 
-        specific = '%s:%s' % (system_name, partition_name)
-        generic = '*:%s' % partition_name
-
-        return specific in self.valid_systems or generic in self.valid_systems
+        return any(n in self.valid_systems for n in names_to_test)
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
