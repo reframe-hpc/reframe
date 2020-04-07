@@ -967,7 +967,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             names_to_test.append('%s:%s' % (system_name, partition_name))
         else:
             names_to_test.append('*:%s' % name)
-            names_to_test.append('%s:%s' % (self.current_system.name, name)
+            names_to_test.append('%s:%s' % (self.current_system.name, name))
 
         return any(n in self.valid_systems for n in names_to_test)
 
