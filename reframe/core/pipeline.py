@@ -962,8 +962,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Check if this is a relative name
         if name.find(':') != -1:
             system_name, partition_name = name.split(':')
-            names_to_test.append('%s:*' % system_name)
-            names_to_test.append('*:%s' % partition_name)
             names_to_test.append('%s:%s' % (system_name, partition_name))
         else:
             names_to_test.append('*:%s' % name)
