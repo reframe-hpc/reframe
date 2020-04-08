@@ -76,8 +76,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
     def test_extend_decorator(self):
         with pytest.warns(ReframeDeprecationWarning) as record:
-            # tests = self.loader.load_from_file(
-            #     'unittests/resources/checks_unlisted/extend_class.py')
             @rfm.simple_test
             class TestSimple(rfm.RegressionTest):
                 # The test should not raise a deprecation warning even though
@@ -85,13 +83,11 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 def __init__(self):
                     pass
 
-
             @rfm.simple_test
             class TestDeprecated(rfm.RegressionTest):
                 # Should raise a warning
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
-
 
             @rfm.simple_test
             class TestDeprecatedRunOnly(rfm.RunOnlyRegressionTest):
@@ -99,20 +95,17 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
 
-
             @rfm.simple_test
             class TestDeprecatedCompileOnly(rfm.CompileOnlyRegressionTest):
                 # Should raise a warning
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
 
-
             @rfm.simple_test
             class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
                 # Should not raise a warning because the setup of the parent was not set as final
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
-
 
             @rfm.simple_test
             class TestExtended(rfm.RegressionTest, extended_test=True):
@@ -122,7 +115,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 # Should not raise a warning
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
-
 
             @rfm.simple_test
             class TestExtendedDerived(TestExtended):
@@ -137,7 +129,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 def run(self):
                     super().run()
 
-
             @rfm.simple_test
             class TestExtendedRunOnly(rfm.RunOnlyRegressionTest, extended_test=True):
                 def __init__(self):
@@ -150,7 +141,6 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 # Should not raise a warning
                 def run(self):
                     super().run()
-
 
             @rfm.simple_test
             class TestExtendedCompileOnly(rfm.CompileOnlyRegressionTest, extended_test=True):
