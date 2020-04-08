@@ -74,7 +74,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources/checks_unlisted/bad_init_check.py')
         assert 0 == len(tests)
 
-    def test_extend_decorator(self):
+    def test_extended_test(self):
         with pytest.warns(ReframeDeprecationWarning) as record:
             @rfm.simple_test
             class TestSimple(rfm.RegressionTest):
