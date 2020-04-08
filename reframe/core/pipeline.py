@@ -107,6 +107,16 @@ def _run_hooks(name=None):
     return _deco
 
 
+def final(fn):
+    fn._final = True
+
+    @functools.wraps(fn)
+    def _wrapped(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return _wrapped
+
+
 class RegressionTest(metaclass=RegressionTestMeta):
     '''Base class for regression tests.
 
@@ -681,6 +691,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def __init__(self):
         pass
 
+    @classmethod
+    def __init_subclass__(cls, *, extended_test=False, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._extended_test = extended_test
+
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
@@ -1005,6 +1020,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._perf_logger = logging.getperflogger(self)
 
     @_run_hooks()
+    @final
     def setup(self, partition, environ, **job_opts):
         '''The setup phase of the regression test pipeline.
 
@@ -1037,6 +1053,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
     @_run_hooks('pre_compile')
+    @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
@@ -1125,6 +1142,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self._build_job.submit()
 
     @_run_hooks('post_compile')
+    @final
     def compile_wait(self):
         '''Wait for compilation phase to finish.
 
@@ -1138,6 +1156,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     @_run_hooks('pre_run')
+    @final
     def run(self):
         '''The run phase of the regression test pipeline.
 
@@ -1226,6 +1245,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
+    @final
     def poll(self):
         '''Poll the test's state.
 
@@ -1242,6 +1262,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.finished()
 
     @_run_hooks('post_run')
+    @final
     def wait(self):
         '''Wait for this test to finish.
 
@@ -1251,10 +1272,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.logger.debug('spawned job finished')
 
     @_run_hooks()
+    @final
     def sanity(self):
         self.check_sanity()
 
     @_run_hooks()
+    @final
     def performance(self):
         try:
             self.check_performance()
@@ -1383,6 +1406,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     @_run_hooks()
+    @final
     def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
 
@@ -1487,19 +1511,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                                self.name, self.prefix)
 
 
-class RunOnlyRegressionTest(RegressionTest):
+class RunOnlyRegressionTest(RegressionTest, extended_test=True):
     '''Base class for run-only regression tests.
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
     '''
 
+    @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.
         '''
 
+    @final
     def compile_wait(self):
         '''Wait for compilation phase to finish.
 
@@ -1507,6 +1533,7 @@ class RunOnlyRegressionTest(RegressionTest):
         '''
 
     @_run_hooks('pre_run')
+    @final
     def run(self):
         '''The run phase of the regression test pipeline.
 
@@ -1523,7 +1550,7 @@ class RunOnlyRegressionTest(RegressionTest):
         super().run.__wrapped__(self)
 
 
-class CompileOnlyRegressionTest(RegressionTest):
+class CompileOnlyRegressionTest(RegressionTest, extended_test=True):
     '''Base class for compile-only regression tests.
 
     These tests are by default local and will skip the run phase of the
@@ -1541,6 +1568,7 @@ class CompileOnlyRegressionTest(RegressionTest):
         self.local = True
 
     @_run_hooks()
+    @final
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -1562,12 +1590,14 @@ class CompileOnlyRegressionTest(RegressionTest):
     def stderr(self):
         return self._build_job.stderr
 
+    @final
     def run(self):
         '''The run stage of the regression test pipeline.
 
         Implemented as no-op.
         '''
 
+    @final
     def wait(self):
         '''Wait for this test to finish.
 

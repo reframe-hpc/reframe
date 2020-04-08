@@ -14,7 +14,6 @@ from reframe.core.pipeline import RegressionTest
 
 
 @rfm.parameterized_test(*((x, y) for x in range(3) for y in range(2)))
-@rfm.extend_test
 class MyBaseTest(RegressionTest):
     def __init__(self, a, b):
         self.a = a
@@ -32,7 +31,6 @@ class MyBaseTest(RegressionTest):
 
 
 @rfm.parameterized_test(*({'a': x, 'b': y} for x in range(3) for y in range(2)))
-@rfm.extend_test
 class AnotherBaseTest(RegressionTest):
     def __init__(self, a, b):
         self.a = a

@@ -12,7 +12,6 @@ import reframe.utility.sanity as sn
 from reframe.core.exceptions import ReframeError, PerformanceError
 
 
-@rfm.extend_test
 class BaseFrontendCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.local = True
@@ -29,13 +28,11 @@ class BadSetupCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
+    @rfm.run_after('setup')
+    def raise_error(self):
         raise ReframeError('Setup failure')
 
-
 @rfm.simple_test
-@rfm.extend_test
 class BadSetupCheckEarly(BaseFrontendCheck):
     def __init__(self):
         super().__init__()
@@ -43,7 +40,8 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         self.valid_prog_environs = ['*']
         self.local = False
 
-    def setup(self, system, environ, **job_opts):
+    @rfm.run_before('setup')
+    def raise_error_early(self):
         raise ReframeError('Setup failure')
 
 
@@ -100,7 +98,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         raise PerformanceError('performance failure')
 
 
-class KeyboardInterruptCheck(BaseFrontendCheck):
+class KeyboardInterruptCheck(BaseFrontendCheck, extended_test=True):
     '''Simulate keyboard interrupt during test's execution.'''
 
     def __init__(self, phase='wait'):
@@ -110,11 +108,10 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
         self.valid_prog_environs = ['*']
         self.phase = phase
 
-    def setup(self, system, environ, **job_opts):
+    @rfm.run_before('setup')
+    def raise_before_setup(self):
         if self.phase == 'setup':
             raise KeyboardInterrupt
-
-        super().setup(system, environ, **job_opts)
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -124,7 +121,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
             super().wait()
 
 
-class SystemExitCheck(BaseFrontendCheck):
+class SystemExitCheck(BaseFrontendCheck, extended_test=True):
     '''Simulate system exit from within a check.'''
 
     def __init__(self):
@@ -175,14 +172,14 @@ class SleepCheck(BaseFrontendCheck):
         SleepCheck._next_id += 1
 
 
-class SleepCheckPollFail(SleepCheck):
+class SleepCheckPollFail(SleepCheck, extended_test=True):
     '''Emulate a test failing in the polling phase.'''
 
     def poll(self):
         raise ValueError
 
 
-class SleepCheckPollFailLate(SleepCheck):
+class SleepCheckPollFailLate(SleepCheck, extended_test=True):
     '''Emulate a test failing in the polling phase
     after the test has finished.'''
 

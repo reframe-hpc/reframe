@@ -7,6 +7,8 @@
 # Met-class for creating regression tests.
 #
 
+from reframe.core.exceptions import user_deprecation_warning
+
 
 class RegressionTestMeta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
@@ -33,3 +35,27 @@ class RegressionTestMeta(type):
 
         hooks['post_setup'] = fn_with_deps + hooks.get('post_setup', [])
         cls._rfm_pipeline_hooks = hooks
+
+        cls._final_methods = {v.__name__ for v in namespace.values()
+                              if hasattr(v, '_final')}
+
+        # Add the final functions from its parents
+        cls._final_methods.update(*[b._final_methods for b in bases
+                                    if hasattr(b, '_final_methods')])
+
+        # Filter the methods that are defined in this class but are not final
+        for v in namespace.values():
+            if callable(v) and not hasattr(v, '_final'):
+                cls._final_methods.discard(v.__name__)
+
+        if hasattr(cls, '_extended_test') and cls._extended_test:
+            return
+
+        for v in namespace.values():
+            for b in bases:
+                if callable(v) and v.__name__ in b._final_methods:
+                    msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
+                           f"override final method "
+                           f"'{b.__qualname__}.{v.__name__}'. "
+                           f"Consider using the reframe hooks instead.")
+                    user_deprecation_warning(msg)
