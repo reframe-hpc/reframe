@@ -2,7 +2,7 @@
 Use Cases
 =========
 
-ReFrame has been publicly released on May 2017, but it been used in production at the Swiss National Supercomputing Centre since December 2016.
+ReFrame has been publicly released on May 2017, but it has been used in production at the Swiss National Supercomputing Centre since December 2016.
 Since then it has gained visibility across computing centers, some of which have already integrated in their production testing workflows and others are considering to fully adopt it.
 To our knowledge, private companies in the HPC sector are using it as well.
 Here we will briefly present the use cases of ReFrame at the Swiss National Supercomputing Centre (`CSCS <https://www.cscs.ch/>`__) in Switzerland, at the National Energy Research Scientific Computing Center (`NERSC <https://www.nersc.gov/>`__) and at the Ohio Supercomputer Center (`OSC <https://www.osc.edu/>`__) in the United States.
@@ -53,7 +53,7 @@ Each regression test file in ReFrame is approximately 100 loc on average.
 However, each regression test file may contain or generate more than one related tests, thus leading to the effective decrease of the line count per test to only 30 loc.
 If we also account for the test cases generated per test, this number decreases further.
 
-Separating the logical description of a regression test from all the unnecessary implementation details contributes significantly in the ease of writing and maintaining new regression tests with ReFrame.
+Separating the logical description of a regression test from all the unnecessary implementation details contributes significantly to the ease of writing and maintaining new regression tests with ReFrame.
 
 .. note:: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.
 
@@ -112,5 +112,5 @@ The correct module file is loaded at runtime, reducing the number of Python clas
 In addition, all application-based ReFrame tests are performed as regression testing of software environment when the system has critical update or rolling reboot.
 
 ReFrame is also used for performance monitoring.
-We run weekly MPI tests and monthly HPCG tests. The performance data is logged directly to internal `Splunk <https://www.splunk.com/>`__ server via Syslog protocol.
+We run weekly MPI tests and monthly HPCG tests. The performance data is logged directly to an internal `Splunk <https://www.splunk.com/>`__ server via Syslog protocol.
 The job summary is sent to the responsible OSC staff member who can watch the performance dashboards.
