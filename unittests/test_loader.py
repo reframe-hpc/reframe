@@ -103,7 +103,8 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
             @rfm.simple_test
             class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
-                # Should not raise a warning because the setup of the parent was not set as final
+                # Should not raise a warning because the setup of the parent
+                # was not set as final
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
 
@@ -130,7 +131,8 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     super().run()
 
             @rfm.simple_test
-            class TestExtendedRunOnly(rfm.RunOnlyRegressionTest, extended_test=True):
+            class TestExtendedRunOnly(rfm.RunOnlyRegressionTest,
+                                      extended_test=True):
                 def __init__(self):
                     pass
 
@@ -143,7 +145,8 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     super().run()
 
             @rfm.simple_test
-            class TestExtendedCompileOnly(rfm.CompileOnlyRegressionTest, extended_test=True):
+            class TestExtendedCompileOnly(rfm.CompileOnlyRegressionTest,
+                                          extended_test=True):
                 def __init__(self):
                     pass
 
