@@ -57,6 +57,8 @@ Separating the logical description of a regression test from all the unnecessary
 
 .. note:: The higher test count of the older suite refers to test cases, i.e., running the same test for different programming environments, whereas for ReFrame the counts do not account for this.
 
+.. note:: CSCS maintains a separate repository for tests related to HPC debugging and performance tools, which you can find `here <https://github.com/eth-cscs/hpctools>`__. These tests were not accounted in this analysis.
+
 
 ReFrame at NERSC
 ----------------
