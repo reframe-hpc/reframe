@@ -159,7 +159,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     #: List of systems supported by this test.
     #: The general syntax for systems is ``<sysname>[:<partname>]``.
-    #: Other supported options are: ``*``, ``*:*``, ``*:<partname>``, ``<sysname>:*``
+    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
+    #: ``*`` is an alias of ``*:*``
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -951,19 +952,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return ret
 
     def supports_system(self, name):
-        # Check if this is a relative name
         if name.find(':') != -1:
-            system_name, partition_name = name.split(':')
+            system, partition = name.split(':')
         else:
-            system_name, partition_name = self.current_system.name, name
+            system, partition = self.current_system.name, name
 
-        names_to_test = ['*', '*:*']
-        names_to_test.append(system_name)
-        names_to_test.append('%s:*' % system_name)
-        names_to_test.append('*:%s' % partition_name)
-        names_to_test.append('%s:%s' % (system_name, partition_name))
+        valid_matches = ['*', '*:*', system, f'{system}:*',
+                         f'*:{partition}', f'{system}:{partition}']
 
-        return any(n in self.valid_systems for n in names_to_test)
+        return any(n in self.valid_systems for n in valid_matches)
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
