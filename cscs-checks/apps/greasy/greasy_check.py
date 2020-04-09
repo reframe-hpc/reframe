@@ -63,12 +63,14 @@ class GREASYCheck(rfm.RegressionTest):
         self.num_tasks = self.num_tasks_per_node * nnodes
         self.num_cpus_per_task = ncpus_per_worker
         self.sanity_patterns = self.eval_sanity()
-        
+
         # Reference value is system agnostic
         # Adding 10 secs of slowdown per greasy tasks
         # this is to compensate for whenever the systems are full and srun gets
         # slightly slower
-        refperf = (self.sleep_time+10)*num_greasy_tasks / nworkes_per_node / nnodes
+        refperf = (
+            (self.sleep_time+10)*num_greasy_tasks / nworkes_per_node / nnodes
+        )
         self.reference = {
             '*': {
                 'time': (refperf, None, 0.5, 's')
@@ -158,61 +160,72 @@ class GREASYCheck(rfm.RegressionTest):
 
             failure_msg = (f'Found {sn.count(result)} Hello, World... '
                            f'pattern(s) but expected '
-                           f'{num_tasks * num_cpus_per_task} pattern(s) inside '
-                           f'the output file {output_file}')
+                           f'{num_tasks * num_cpus_per_task} pattern(s) '
+                           f'inside the output file {output_file}')
             sn.evaluate(sn.assert_eq(sn.count(result),
                                      num_tasks * num_cpus_per_task,
                                      msg=failure_msg))
 
             sn.evaluate(sn.all(
                 sn.chain(
-                    sn.map(lambda x: sn.assert_lt(
-                        tid(x), num_threads(x),
-                        msg=f'Found {tid(x)} threads rather than '
-                        f'{num_threads(x)}'), result
+                    sn.map(
+                        lambda x: sn.assert_lt(
+                            tid(x), num_threads(x),
+                            msg=(f'Found {tid(x)} threads rather than '
+                                 f'{num_threads(x)}')
+                        ), result
                     ),
-                    sn.map(lambda x: sn.assert_lt(
-                        rank(x), num_ranks(x),
-                        msg=f'Rank id {rank(x)} is not lower than the number of'
-                            f' ranks {self.nranks_per_worker} in output file'), 
-                        result
+                    sn.map(
+                        lambda x: sn.assert_lt(
+                            rank(x), num_ranks(x),
+                            msg=(f'Rank id {rank(x)} is not lower than the '
+                                 f'number of ranks {self.nranks_per_worker} '
+                                 f'in output file')
+                        ), result
                     ),
-                    sn.map(lambda x: sn.assert_lt(
-                        tid(x), self.num_cpus_per_task,
-                        msg=f'Rank id {tid(x)} is not lower than the number of '
-                            f'cpus per task {self.num_cpus_per_task} in output ' 
-                            f'file {output_file}'), result
+                    sn.map(
+                        lambda x: sn.assert_lt(
+                            tid(x), self.num_cpus_per_task,
+                            msg=(f'Rank id {tid(x)} is not lower than the '
+                                 f'number of cpus per task '
+                                 f'{self.num_cpus_per_task} in output '
+                                 f'file {output_file}')
+                        ), result
                     ),
-                    sn.map(lambda x: sn.assert_eq(
-                        num_threads(x), num_cpus_per_task,
-                        msg=f'Found {num_threads(x)} threads rather than '
-                            f'{self.num_cpus_per_task} in output file '
-                            f'{output_file}'), result
+                    sn.map(
+                        lambda x: sn.assert_eq(
+                            num_threads(x), num_cpus_per_task,
+                            msg=(f'Found {num_threads(x)} threads rather than '
+                                 f'{self.num_cpus_per_task} in output file '
+                                 f'{output_file}')
+                        ), result
                     ),
-                    sn.map(lambda x: sn.assert_lt(
-                        rank(x), num_tasks,
-                        msg=f'Found {rank(x)} threads rather than '
-                            f'{self.num_cpus_per_task} in output file '
-                            f'{output_file}'), result
+                    sn.map(
+                        lambda x: sn.assert_lt(
+                            rank(x), num_tasks,
+                            msg=(f'Found {rank(x)} threads rather than '
+                                 f'{self.num_cpus_per_task} in output file '
+                                 f'{output_file}')
+                        ), result
                     ),
-                    sn.map(lambda x: sn.assert_eq(
-                        num_ranks(x), num_tasks,
-                        msg=f'Number of ranks {num_ranks(x)} is not equal to '
-                            f'{self.nranks_per_worker} in output file '
-                            f'{output_file}'), result
-                    ),
+                    sn.map(
+                        lambda x: sn.assert_eq(
+                            num_ranks(x), num_tasks,
+                            msg=(f'Number of ranks {num_ranks(x)} is not equal to '
+                                 f'{self.nranks_per_worker} in output file '
+                                 f'{output_file}')
+                        ), result
+                    )
                 )
             ))
-
         sn.evaluate(sn.assert_found(r'Finished greasing', self.greasy_logfile))
-
-        sn.evaluate(sn.assert_found(f'INFO: Summary of {self.num_greasy_tasks} '
-                                    f'tasks: '
-                                    f'{self.num_greasy_tasks} OK, '
-                                    f'0 FAILED, '
-                                    f'0 CANCELLED, '
-                                    fr'0 INVALID\.',
-                                    self.greasy_logfile)
-                    )
+        sn.evaluate(sn.assert_found(
+            (f'INFO: Summary of {self.num_greasy_tasks} '
+             f'tasks: '
+             f'{self.num_greasy_tasks} OK, '
+             f'0 FAILED, '
+             f'0 CANCELLED, '
+             fr'0 INVALID\.'), self.greasy_logfile
+        ))
 
         return True
