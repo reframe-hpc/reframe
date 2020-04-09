@@ -19,6 +19,7 @@ class VcSimdTest(rfm.RegressionTest):
         - dom:mc
            - PrgEnv-gnu
               * speedup: 1.381
+
     > reframe --system dom:gpu -p PrgEnv-gnu -r -c vc.py --performance-report
         PERFORMANCE REPORT
         -----------------------------------------------------------------------
@@ -27,6 +28,7 @@ class VcSimdTest(rfm.RegressionTest):
            - PrgEnv-gnu
               * speedup: 1.382
     '''
+
     def __init__(self):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['builtin']
@@ -43,7 +45,7 @@ class VcSimdTest(rfm.RegressionTest):
         self.sourcesdir = None
         self.sourcepath = 'main.cpp'
         self.executable = '%s.exe' % self.testname
-        self.modules = ['Vc/1.4.1-CrayGNU-19.06']
+        self.modules = ['Vc/1.4.1-CrayGNU-19.10']
         self.build_system.cxxflags = [
             '-DVc_IMPL=AVX2', '-std=c++14', '-O3', '-DNDEBUG', '-dynamic',
             '-I$EBROOTVC/include']

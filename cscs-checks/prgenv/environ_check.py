@@ -13,31 +13,13 @@ from reframe.core.runtime import runtime
 class DefaultPrgEnvCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'Ensure PrgEnv-cray is loaded by default'
-        self.valid_prog_environs = ['PrgEnv-cray']
+        self.valid_prog_environs = ['builtin']
         self.valid_systems = ['daint:login', 'dom:login']
+        self.executable = 'module'
+        self.executable_opts = ['list', '-t']
         self.maintainers = ['TM', 'CB']
         self.tags = {'production', 'craype'}
-
-    # We need to override setup, because otherwise environ will be loaded and
-    # we could not check if PrgEnv-cray is the default environment. This,
-    # however, requires that we set explicitly the current partition and
-    # environment (this is not sth a normal test should do!) and we disable
-    # completely the logic of the rest of the methods.
-    def setup(self, partition, environ, **job_opts):
-        self._current_partition = partition
-        self._current_environ = environ
-
-    def run(self):
-        pass
-
-    def wait(self):
-        pass
-
-    def check_sanity(self):
-        return runtime().modules_system.is_module_loaded('PrgEnv-cray')
-
-    def cleanup(self, remove_files=False, unload_env=True):
-        pass
+        self.sanity_patterns = sn.assert_found(r'^PrgEnv-cray', self.stderr)
 
 
 @rfm.simple_test
