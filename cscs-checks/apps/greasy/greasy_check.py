@@ -211,9 +211,9 @@ class GREASYCheck(rfm.RegressionTest):
                     sn.map(
                         lambda x: sn.assert_eq(
                             num_ranks(x), num_tasks,
-                            msg=(f'Number of ranks {num_ranks(x)} is not equal to '
-                                 f'{self.nranks_per_worker} in output file '
-                                 f'{output_file}')
+                            msg=(f'Number of ranks {num_ranks(x)} is not '
+                                 f'equal to {self.nranks_per_worker} in '
+                                 f'output file {output_file}')
                         ), result
                     )
                 )
