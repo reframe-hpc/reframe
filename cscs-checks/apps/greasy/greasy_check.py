@@ -63,11 +63,12 @@ class GREASYCheck(rfm.RegressionTest):
         self.num_tasks = self.num_tasks_per_node * nnodes
         self.num_cpus_per_task = ncpus_per_worker
         self.sanity_patterns = self.eval_sanity()
+        
         # Reference value is system agnostic
-        refperf = self.sleep_time * num_greasy_tasks / nworkes_per_node / nnodes
+        refperf = self.sleep_time*num_greasy_tasks / nworkes_per_node / nnodes
         self.reference = {
             '*': {
-                'time': (refperf, None, 0.3, 's')
+                'time': (refperf, None, 0.5, 's')
             }
         }
         self.perf_patterns = {
@@ -90,7 +91,7 @@ class GREASYCheck(rfm.RegressionTest):
     def generate_tasks_file(self):
         with open(os.path.join(self.stagedir, self.tasks_file), 'w') as fp:
             for i in range(self.num_greasy_tasks):
-                fp.write('./%s output-%d\n' % (self.executable, i))
+                fp.write(f'./{self.executable} output-{i}\n')
 
     @rfm.run_before('run')
     def daint_dom_gpu_specific_workaround(self):
@@ -126,7 +127,7 @@ class GREASYCheck(rfm.RegressionTest):
     def eval_sanity(self):
         output_files = []
         output_files = [file for file in os.listdir(self.stagedir)
-                                      if file.startswith('output-')]
+                        if file.startswith('output-')]
         num_greasy_tasks = len(output_files)
         failure_msg = (f'Requested {self.num_greasy_tasks} task(s), but '
                        f'executed only {num_greasy_tasks} tasks(s)')
@@ -162,45 +163,41 @@ class GREASYCheck(rfm.RegressionTest):
 
             sn.evaluate(sn.all(
                 sn.chain(
-                    sn.map(lambda x: sn.assert_lt(tid(x), num_threads(x),
-                                                  msg=f'Found {tid(x)} threads '
-                                                  'rather than '
-                                                  f'{num_threads(x)}'), result),
-                    sn.map(lambda x: sn.assert_lt(rank(x), num_ranks(x),
-                                                  msg=f'Rank id {rank(x)} is '
-                                                  'not lower than the number'
-                                                  'of ranks '
-                                                  f'{self.nranks_per_worker} in'
-                                                  ' output file '), result),
-                    sn.map(lambda x: sn.assert_lt(tid(x),
-                                                  self.num_cpus_per_task,
-                                                  msg=f'Rank id {tid(x)} is not'
-                                                  ' lower than the number of '
-                                                  'cpus per task '
-                                                  f'{self.num_cpus_per_task} in'
-                                                  f' output file {output_file}'),
-                           result),
-                    sn.map(lambda x: sn.assert_eq(num_threads(x),
-                                                  num_cpus_per_task,
-                                                  msg=f'Found {num_threads(x)} '
-                                                      'threads rather '
-                                                      'than '
-                                                      f'{self.num_cpus_per_task}'
-                                                      ' in output file '
-                                                      f'{output_file}'), result),
-                    sn.map(lambda x: sn.assert_lt(rank(x), num_tasks,
-                                                  msg=f'Found {rank(x)} threads'
-                                                  ' rather than '
-                                                  f'{self.num_cpus_per_task} in'
-                                                  f' output file {output_file}'),
-                           result),
-                    sn.map(lambda x: sn.assert_eq(num_ranks(x), num_tasks,
-                                                  msg=f'Number of ranks '
-                                                      f'{num_ranks(x)} is not '
-                                                      'equal to '
-                                                      f'{self.nranks_per_worker}'
-                                                      ' in output file '
-                                                      f'{output_file}'), result),
+                    sn.map(lambda x: sn.assert_lt(
+                        tid(x), num_threads(x),
+                        msg=f'Found {tid(x)} threads rather than '
+                        f'{num_threads(x)}'), result
+                    ),
+                    sn.map(lambda x: sn.assert_lt(
+                        rank(x), num_ranks(x),
+                        msg=f'Rank id {rank(x)} is not lower than the number of'
+                            f' ranks {self.nranks_per_worker} in output file'), 
+                        result
+                    ),
+                    sn.map(lambda x: sn.assert_lt(
+                        tid(x), self.num_cpus_per_task,
+                        msg=f'Rank id {tid(x)} is not lower than the number of '
+                            f'cpus per task {self.num_cpus_per_task} in output ' 
+                            f'file {output_file}'), result
+                    ),
+                    sn.map(lambda x: sn.assert_eq(
+                        num_threads(x), num_cpus_per_task,
+                        msg=f'Found {num_threads(x)} threads rather than '
+                            f'{self.num_cpus_per_task} in output file '
+                            f'{output_file}'), result
+                    ),
+                    sn.map(lambda x: sn.assert_lt(
+                        rank(x), num_tasks,
+                        msg=f'Found {rank(x)} threads rather than '
+                            f'{self.num_cpus_per_task} in output file '
+                            f'{output_file}'), result
+                    ),
+                    sn.map(lambda x: sn.assert_eq(
+                        num_ranks(x), num_tasks,
+                        msg=f'Number of ranks {num_ranks(x)} is not equal to '
+                            f'{self.nranks_per_worker} in output file '
+                            f'{output_file}'), result
+                    ),
                 )
             ))
 
@@ -211,7 +208,7 @@ class GREASYCheck(rfm.RegressionTest):
                                     f'{self.num_greasy_tasks} OK, '
                                     f'0 FAILED, '
                                     f'0 CANCELLED, '
-                                    f'0 INVALID\.',
+                                    fr'0 INVALID\.',
                                     self.greasy_logfile)
                     )
 
