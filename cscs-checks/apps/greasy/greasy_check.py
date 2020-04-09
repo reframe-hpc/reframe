@@ -65,7 +65,10 @@ class GREASYCheck(rfm.RegressionTest):
         self.sanity_patterns = self.eval_sanity()
         
         # Reference value is system agnostic
-        refperf = self.sleep_time*num_greasy_tasks / nworkes_per_node / nnodes
+        # Adding 10 secs of slowdown per greasy tasks
+        # this is to compensate for whenever the systems are full and srun gets
+        # slightly slower
+        refperf = (self.sleep_time+10)*num_greasy_tasks / nworkes_per_node / nnodes
         self.reference = {
             '*': {
                 'time': (refperf, None, 0.5, 's')
