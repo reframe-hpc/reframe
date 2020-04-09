@@ -2,6 +2,7 @@
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+
 import os
 import reframe as rfm
 import reframe.utility.sanity as sn
@@ -19,7 +20,7 @@ class MpiTCheck(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.variables = {'MPITEST_VERBOSE': '1', 'MPICH_VERSION_DISPLAY': '1'}
         self.rpt = 'rpt'
-        self.executable_opts = ['&> %s' % self.rpt]
+        self.executable_opts = [f'&> {self.rpt}']
         self.maintainers = ['JG']
         self.tags = {'production', 'craype', 'maintenance'}
 
@@ -55,10 +56,8 @@ class MpiTCheck(rfm.RegressionTest):
         rpt = os.path.join(self.stagedir, self.rpt)
         self.run_cat_vars = sorted(sn.extractall(regex, rpt, 'category'))
         # 4/ Extracted lists can be compared (when sorted):
-        self.sanity_patterns = sn.all([sn.assert_eq(self.ref_control_vars,
-                                                    self.run_control_vars),
-                                       sn.assert_eq(self.ref_perf_vars,
-                                                    self.run_perf_vars),
-                                       sn.assert_eq(self.ref_cat_vars,
-                                                    self.run_cat_vars),
-                                       ])
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(self.ref_control_vars, self.run_control_vars),
+            sn.assert_eq(self.ref_perf_vars, self.run_perf_vars),
+            sn.assert_eq(self.ref_cat_vars, self.run_cat_vars),
+        ])
