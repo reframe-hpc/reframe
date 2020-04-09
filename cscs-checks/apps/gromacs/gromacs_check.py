@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import contextlib
 import itertools
 import os
 
@@ -72,12 +73,8 @@ class GromacsGPUCheck(GromacsBaseCheck):
 
         references = {
             'maint': {
-                'small': {
-                    'dom:gpu': {'perf': (0.0, -0.05, None, 'ns/day')},
-                    'daint:gpu': {'perf': (0.0, -0.10, None, 'ns/day')}
-                },
                 'large': {
-                    'daint:gpu': {'perf': (0.0, -0.10, None, 'ns/day')}
+                    'daint:gpu': {'perf': (73.4, -0.10, None, 'ns/day')}
                 }
             },
             'prod': {
@@ -90,7 +87,9 @@ class GromacsGPUCheck(GromacsBaseCheck):
                 }
             },
         }
-        self.reference = references[variant][scale]
+        with contextlib.suppress(KeyError):
+            self.reference = references[variant][scale]
+
         self.tags |= {'maintenance' if variant == 'maint' else 'production'}
 
 
@@ -115,15 +114,6 @@ class GromacsCPUCheck(GromacsBaseCheck):
             self.num_tasks_per_node = 36
 
         references = {
-            'maint': {
-                'small': {
-                    'dom:mc': {'perf': (0.0, None, None, 'ns/day')},
-                    'daint:mc': {'perf': (0.0, -0.10, None, 'ns/day')}
-                },
-                'large': {
-                    'daint:mc': {'perf': (0.0, None, None, 'ns/day')}
-                }
-            },
             'prod': {
                 'small': {
                     'dom:mc': {'perf': (40.0, -0.05, None, 'ns/day')},
