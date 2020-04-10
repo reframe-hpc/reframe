@@ -24,6 +24,12 @@ class MpiTCheck(rfm.RegressionTest):
         self.maintainers = ['JG']
         self.tags = {'production', 'craype', 'maintenance'}
 
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name.startswith('PrgEnv-cray')):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+
     @rfm.run_before('sanity')
     def set_sanity(self):
         # 1/ MPI Control Variables:

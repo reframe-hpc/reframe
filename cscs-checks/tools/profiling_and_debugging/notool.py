@@ -96,3 +96,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         ])
         if self.current_system.name in {'dom', 'daint'}:
             self.reference['*:elapsed_time'] = self.reference_lang
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        if self.current_environ.name.startswith('PrgEnv-cray'):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'

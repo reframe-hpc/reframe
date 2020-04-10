@@ -85,9 +85,6 @@ class HDF5Test(rfm.RegressionTest):
     def cray_linker_workaround(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
-        if not (self.linkage == 'static' and
-                self.current_system.name == 'dom' and
-                self.current_environ.name == 'PrgEnv-cray'):
-            return
-
-        self.variables = {'ALT_LINKER': '/usr/bin/ld'}
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray'):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'

@@ -66,3 +66,9 @@ class OpenACCFortranCheck(rfm.RegressionTest):
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags = ['-acc', '-ta=tesla:cc70']
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name.startswith('PrgEnv-cray')):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'

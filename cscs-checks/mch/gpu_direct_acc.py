@@ -72,3 +72,11 @@ class GpuDirectAccCheck(rfm.RegressionTest):
                 self.build_system.fflags += ['-ta=tesla:cc35']
             elif self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla:cc70']
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray'):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'

@@ -126,3 +126,11 @@ class StreamTest(rfm.RegressionTest):
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
             pass
+
+    @rfm.run_before('compile')
+    def cray_linker_workaround(self):
+        # FIXME: static compilation yields a link error in case of
+        # PrgEnv-cray(Cray Bug #255707)
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-cray_classic'):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'

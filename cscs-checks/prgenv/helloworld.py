@@ -108,12 +108,9 @@ class HelloWorldBaseTest(rfm.RegressionTest):
     def cray_linker_workaround(self):
         # FIXME: static compilation yields a link error in case of
         # PrgEnv-cray(Cray Bug #255707)
-        if not (self.linkage == 'static' and
-                self.current_system.name == 'dom' and
-                self.current_environ.name.startswith('PrgEnv-cray')):
-            return
-
-        self.variables['ALT_LINKER'] = '/usr/bin/ld'
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name.startswith('PrgEnv-cray')):
+            self.variables['LINKER_X86_64'] = '/usr/bin/ld'
 
 
 @rfm.required_version('>=2.14')
