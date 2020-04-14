@@ -1030,6 +1030,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
             When overriding this method users should always pass through
             ``job_opts`` to the base class method.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._current_partition = partition
         self._current_environ = environ
@@ -1058,6 +1067,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''The compilation phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self._current_environ:
             raise PipelineError('no programming environment set')
@@ -1147,6 +1165,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Wait for compilation phase to finish.
 
         .. versionadded:: 2.13
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._build_job.wait()
         self.logger.debug('compilation finished')
@@ -1162,6 +1189,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         This call is non-blocking.
         It simply submits the job associated with this test and returns.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
@@ -1255,6 +1291,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
             If no job descriptor is yet associated with this test,
             :class:`True` is returned.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self._job:
             return True
@@ -1267,6 +1312,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Wait for this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._job.wait()
         self.logger.debug('spawned job finished')
@@ -1285,10 +1339,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if self.strict_check:
                 raise
 
+    @final
     def check_sanity(self):
         '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
@@ -1298,11 +1362,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if not success:
                 raise SanityError()
 
+    @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the performance check
             fails.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if self.perf_patterns is None:
             return
@@ -1412,6 +1486,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         :arg remove_files: If :class:`True`, the stage directory associated
             with this test will be removed.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
