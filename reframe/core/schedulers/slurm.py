@@ -228,22 +228,24 @@ class SlurmJobScheduler(sched.JobScheduler):
             os_ext.concat_files(job.stderr, *err_glob, overwrite=True)
 
     def filternodes(self, job, nodes):
-        # Collect options that restrict node selection
-        options = job.sched_access + job.options
+        # Collect options that restrict node selection, but we need to first
+        # create a mutable list out of the immutable SequenceView that
+        # sched_access is
+        options = list(job.sched_access + job.options)
         if job.sched_partition:
-            options += ['--partition=%s' % job.sched_partition]
+            options.append('--partition=%s' % job.sched_partition)
 
         if job.sched_account:
-            options += ['--account=%s' % job.sched_account]
+            options.append('--account=%s' % job.sched_account)
 
         if job.sched_nodelist:
-            options += ['--nodelist=%s' % job.sched_nodelist]
+            options.append('--nodelist=%s' % job.sched_nodelist)
 
         if job.sched_exclude_nodelist:
-            options += ['--exclude=%s' % job.sched_exclude_nodelist]
+            options.append('--exclude=%s' % job.sched_exclude_nodelist)
 
         if job.sched_reservation:
-            options += ['--reservation=%s' % job.sched_reservation]
+            options.append('--reservation=%s' % job.sched_reservation)
 
         option_parser = ArgumentParser()
         option_parser.add_argument('--reservation')
