@@ -115,7 +115,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
             @rfm.simple_test
             class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
-                                      special=True):
+                                     special=True):
                 def __init__(self):
                     pass
 
@@ -127,7 +127,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
             @rfm.simple_test
             class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
-                                          special=True):
+                                         special=True):
                 def __init__(self):
                     pass
 
