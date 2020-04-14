@@ -74,7 +74,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
             'unittests/resources/checks_unlisted/bad_init_check.py')
         assert 0 == len(tests)
 
-    def test_extended_test(self):
+    def test_special_test(self):
         with pytest.warns(ReframeDeprecationWarning):
             @rfm.simple_test
             class TestDeprecated(rfm.RegressionTest):
@@ -106,7 +106,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     pass
 
             @rfm.simple_test
-            class TestExtended(rfm.RegressionTest, special=True):
+            class TestSpecial(rfm.RegressionTest, special=True):
                 def __init__(self):
                     pass
 
@@ -114,7 +114,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     super().setup(system, environ, **job_opts)
 
             @rfm.simple_test
-            class TestExtendedRunOnly(rfm.RunOnlyRegressionTest,
+            class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
                                       special=True):
                 def __init__(self):
                     pass
@@ -126,7 +126,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     super().run()
 
             @rfm.simple_test
-            class TestExtendedCompileOnly(rfm.CompileOnlyRegressionTest,
+            class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
                                           special=True):
                 def __init__(self):
                     pass
@@ -142,7 +142,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
         with pytest.warns(ReframeDeprecationWarning) as warnings:
             @rfm.simple_test
-            class TestExtendedDerived(TestExtended):
+            class TestSpecialDerived(TestSpecial):
                 def __init__(self):
                     pass
 
