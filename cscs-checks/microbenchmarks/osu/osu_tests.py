@@ -111,10 +111,10 @@ class AllreduceTest(rfm.RegressionTest):
                     'latency': (6.0, None, 0.10, 'us')
                 },
                 'daint:gpu': {
-                    'latency': (7.81, None, 0.25, 'us')
+                    'latency': (13.75, None, 0.25, 'us')
                 },
                 'daint:mc': {
-                    'latency': (8.79, None, 0.25, 'us')
+                    'latency': (14.77, None, 0.25, 'us')
                 }
             }
         else:
