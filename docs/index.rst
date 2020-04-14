@@ -46,7 +46,7 @@ Publications
 
 
 .. toctree::
-   :caption: Table of Contents:
+   :caption: Table of Contents
    :hidden:
 
    Getting Started <started>
@@ -58,6 +58,7 @@ Publications
    Understanding The Mechanism Of Sanity Functions <deferrables>
    Running ReFrame <running>
    Use cases <usecases>
+   Migrating to ReFrame 3 <migration_2_to_3>
    About ReFrame <about>
    Reference Guide <reference>
    Sanity Functions Reference <sanity_functions_reference>
