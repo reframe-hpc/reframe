@@ -11,7 +11,7 @@ import socket
 import tempfile
 import time
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
@@ -197,6 +197,21 @@ class _TestJob(abc.ABC):
         with pytest.raises(NotImplementedError):
             self.testjob.guess_num_tasks()
 
+    # Monkey patch `self._update_state` to simulate that the job is
+    # pending on the queue for enough time so it can be canceled due
+    # to exceeding the maximum pending time
+    @fixtures.switch_to_user_runtime
+    def test_submit_max_pending_time(self):
+        self.setup_user()
+        self.parallel_cmd = 'sleep 30'
+        self.prepare()
+        self.testjob.scheduler._update_state = self._update_state
+        self.testjob._max_pending_time = timedelta(milliseconds=50)
+        self.testjob.submit()
+        with pytest.raises(JobError,
+                           match='maximum pending time exceeded'):
+            self.testjob.wait()
+
 
 class TestLocalJob(_TestJob, unittest.TestCase):
     def assertProcessDied(self, pid):
@@ -321,6 +336,10 @@ class TestLocalJob(_TestJob, unittest.TestCase):
         self.testjob.wait()
         assert self.testjob.num_tasks == 1
 
+    def test_submit_max_pending_time(self):
+        pytest.skip('the maximum pending time has no effect on the '
+                    'local scheduler')
+
 
 class TestSlurmJob(_TestJob, unittest.TestCase):
     @property
@@ -337,6 +356,9 @@ class TestSlurmJob(_TestJob, unittest.TestCase):
 
     def setup_user(self, msg=None):
         super().setup_user(msg='SLURM (with sacct) not configured')
+
+    def _update_state(self, job):
+        job.state = 'PENDING'
 
     def test_prepare(self):
         self.setup_job()
@@ -529,8 +551,11 @@ class TestPbsJob(_TestJob, unittest.TestCase):
         assert self.expected_directives == found_directives
 
     def test_submit_timelimit(self):
-        # Skip this test for PBS, since we the minimum time limit is 1min
+        # Skip this test for PBS, since the minimum time limit is 1min
         pytest.skip("PBS minimum time limit is 60s")
+
+    def test_submit_max_pending_time(self):
+        pytest.skip('not implemented for the pbs scheduler')
 
 
 class TestTorqueJob(TestPbsJob):
@@ -560,6 +585,12 @@ class TestTorqueJob(TestPbsJob):
     def test_submit_timelimit(self):
         # Skip this test for PBS, since we the minimum time limit is 1min
         pytest.skip("Torque minimum time limit is 60s")
+
+    def _update_state(self, job):
+        job.state = 'QUEUED'
+
+    def test_submit_max_pending_time(self):
+        _TestJob.test_submit_max_pending_time(self)
 
 
 class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
@@ -711,6 +742,18 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.testjob._sched_access = ['--constraint=f1']
         self.prepare_job()
         assert self.testjob.num_tasks == 8
+
+    def test_sched_access_idle_sequence_view(self):
+        from reframe.utility import SequenceView
+
+        self.testjob._sched_flex_alloc_nodes = 'idle'
+
+        # Here simulate passing a readonly 'sched_access' as returned
+        # by a 'SystemPartition' instance.
+        self.testjob._sched_access = SequenceView(['--constraint=f3'])
+        self.testjob._sched_partition = 'p3'
+        self.prepare_job()
+        assert self.testjob.num_tasks == 4
 
     def test_sched_access_constraint_partition(self):
         self.testjob._sched_flex_alloc_nodes = 'all'

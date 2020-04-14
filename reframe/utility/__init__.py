@@ -126,6 +126,64 @@ def toalphanum(s):
     return re.sub(r'\W', '_', s)
 
 
+def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
+    '''Format string of dictionaries, lists and tuples
+
+    :arg value: The value to be formatted.
+    :arg htchar: Horizontal-tab character.
+    :arg lfchar: Linefeed character.
+    :arg indent: Number of htchar characters for every indentation level.
+    :arg basic_offset: Basic offset for the representation, any additional
+        indentation space is added to the ``basic_offset``.
+    :returns: a formatted string of the ``value``.
+    '''
+
+    nlch = lfchar + htchar * indent * (basic_offset + 1)
+    if isinstance(value, tuple):
+        if value == ():
+            return '()'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
+            for item in value
+        ]
+        return '(%s)' % (','.join(items) + lfchar +
+                         htchar * indent * basic_offset)
+    elif isinstance(value, list):
+        if value == []:
+            return '[]'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
+            for item in value
+        ]
+        return '[%s]' % (','.join(items) + lfchar +
+                         htchar * indent * basic_offset)
+    elif isinstance(value, dict):
+        if value == {}:
+            return '{}'
+
+        items = [
+            nlch + repr(key) + ': ' +
+            ppretty(value[key], htchar, lfchar, indent, basic_offset + 1)
+            for key in value
+        ]
+        return '{%s}' % (','.join(items) + lfchar +
+                         htchar * indent * basic_offset)
+    elif isinstance(value, set):
+        if value == set():
+            return 'set()'
+
+        items = [
+            nlch + ppretty(item, htchar, lfchar, indent, basic_offset + 1)
+            for item in value
+        ]
+        return '{%s}' % (','.join(items) + lfchar +
+                         htchar * indent * basic_offset)
+    else:
+        return repr(value)
+
+
 class ScopedDict(UserDict):
     '''This is a special dict that imposes scopes on its keys.
 

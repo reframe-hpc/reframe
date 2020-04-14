@@ -232,48 +232,52 @@ The output of the regression run looks like the following:
 .. code-block:: none
 
   Command line: ./reframe.py -C tutorial/config/settings.py -c tutorial/example1.py -r
-  Reframe version: 2.13-dev0
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
-  Launched on host: daint103
+  Launched on host: daint105
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/example1.py'
-      Stage dir prefix  : /path/to/reframe/stage/
-      Output dir prefix : /path/to/reframe/output/
-      Logging dir       : /path/to/reframe/logs
+      Check search path : '/path/to/reframe/tutorial/example1.py'
+      Current working dir  : /path/to/reframe
+      Stage dir prefix     : /path/to/reframe/stage/
+      Output dir prefix    : /path/to/reframe/output/
+      Perf. logging prefix : /path/to/reframe/perflogs
   [==========] Running 1 check(s)
-  [==========] Started on Sat May 26 00:34:34 2018
+  [==========] Started on Wed Mar 25 10:13:13 2020
 
   [----------] started processing Example1Test (Simple matrix-vector multiplication example)
   [ RUN      ] Example1Test on daint:login using PrgEnv-cray
-  [       OK ] Example1Test on daint:login using PrgEnv-cray
   [ RUN      ] Example1Test on daint:login using PrgEnv-gnu
-  [       OK ] Example1Test on daint:login using PrgEnv-gnu
   [ RUN      ] Example1Test on daint:login using PrgEnv-intel
-  [       OK ] Example1Test on daint:login using PrgEnv-intel
   [ RUN      ] Example1Test on daint:login using PrgEnv-pgi
-  [       OK ] Example1Test on daint:login using PrgEnv-pgi
   [ RUN      ] Example1Test on daint:gpu using PrgEnv-cray
-  [       OK ] Example1Test on daint:gpu using PrgEnv-cray
   [ RUN      ] Example1Test on daint:gpu using PrgEnv-gnu
-  [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
   [ RUN      ] Example1Test on daint:gpu using PrgEnv-intel
-  [       OK ] Example1Test on daint:gpu using PrgEnv-intel
   [ RUN      ] Example1Test on daint:gpu using PrgEnv-pgi
-  [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
   [ RUN      ] Example1Test on daint:mc using PrgEnv-cray
-  [       OK ] Example1Test on daint:mc using PrgEnv-cray
   [ RUN      ] Example1Test on daint:mc using PrgEnv-gnu
-  [       OK ] Example1Test on daint:mc using PrgEnv-gnu
   [ RUN      ] Example1Test on daint:mc using PrgEnv-intel
-  [       OK ] Example1Test on daint:mc using PrgEnv-intel
   [ RUN      ] Example1Test on daint:mc using PrgEnv-pgi
-  [       OK ] Example1Test on daint:mc using PrgEnv-pgi
   [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
+  [----------] waiting for spawned checks to finish
+  [       OK ] ( 1/12) Example1Test on daint:login using PrgEnv-intel
+  [       OK ] ( 2/12) Example1Test on daint:login using PrgEnv-cray
+  [       OK ] ( 3/12) Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] ( 4/12) Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] ( 5/12) Example1Test on daint:mc using PrgEnv-gnu
+  [       OK ] ( 6/12) Example1Test on daint:mc using PrgEnv-pgi
+  [       OK ] ( 7/12) Example1Test on daint:mc using PrgEnv-cray
+  [       OK ] ( 8/12) Example1Test on daint:mc using PrgEnv-intel
+  [       OK ] ( 9/12) Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] (10/12) Example1Test on daint:gpu using PrgEnv-cray
+  [       OK ] (11/12) Example1Test on daint:gpu using PrgEnv-gnu
+  [       OK ] (12/12) Example1Test on daint:gpu using PrgEnv-pgi
+  [----------] all spawned checks have finished
+
   [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Sat May 26 00:35:39 2018
+  [==========] Finished on Wed Mar 25 10:21:08 2020
 
 
 Discovery of Regression Tests
@@ -591,44 +595,48 @@ The following command will run the CUDA matrix-vector multiplication example fro
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example7.py -r --performance-report
-  Reframe version: 2.20-dev2
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
-  Launched on host: daint101
+  Launched on host: daint105
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'example7.py'
+      Check search path : '/path/to/reframe/tutorial/example7.py'
+      Current working dir  : /path/to/reframe
       Stage dir prefix     : /path/to/reframe/stage/
       Output dir prefix    : /path/to/reframe/output/
       Perf. logging prefix : /path/to/reframe/perflogs
   [==========] Running 1 check(s)
-  [==========] Started on Thu Oct 24 17:46:55 2019
+  [==========] Started on Wed Mar 25 10:40:25 2020
 
   [----------] started processing Example7Test (Matrix-vector multiplication (CUDA performance test))
   [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
-  [       OK ] Example7Test on daint:gpu using PrgEnv-cray
   [ RUN      ] Example7Test on daint:gpu using PrgEnv-gnu
-  [       OK ] Example7Test on daint:gpu using PrgEnv-gnu
   [ RUN      ] Example7Test on daint:gpu using PrgEnv-pgi
-  [       OK ] Example7Test on daint:gpu using PrgEnv-pgi
   [----------] finished processing Example7Test (Matrix-vector multiplication (CUDA performance test))
 
+  [----------] waiting for spawned checks to finish
+  [       OK ] (1/3) Example7Test on daint:gpu using PrgEnv-gnu
+  [       OK ] (2/3) Example7Test on daint:gpu using PrgEnv-cray
+  [       OK ] (3/3) Example7Test on daint:gpu using PrgEnv-pgi
+  [----------] all spawned checks have finished
+
   [  PASSED  ] Ran 3 test case(s) from 1 check(s) (0 failure(s))
-  [==========] Finished on Thu Oct 24 17:47:34 2019
+  [==========] Finished on Wed Mar 25 10:43:53 2020
   ==============================================================================
   PERFORMANCE REPORT
   ------------------------------------------------------------------------------
   Example7Test
   - daint:gpu
-     - PrgEnv-cray
+    - PrgEnv-cray
         * num_tasks: 1
-        * perf: 49.403965 Gflop/s
-     - PrgEnv-gnu
+        * perf: 50.184982 Gflop/s
+    - PrgEnv-gnu
         * num_tasks: 1
-        * perf: 50.093877 Gflop/s
-     - PrgEnv-pgi
+        * perf: 50.205857 Gflop/s
+    - PrgEnv-pgi
         * num_tasks: 1
-        * perf: 50.549009 Gflop/s
+        * perf: 49.691865 Gflop/s
   ------------------------------------------------------------------------------
 
 
@@ -741,51 +749,40 @@ By default, the output in ``reframe.log`` looks like the following:
 
 .. code-block:: none
 
-  2018-05-26T00:30:39] info: reframe: [ RUN      ] Example7Test on daint:gpu using PrgEnv-cray
-  [2018-05-26T00:30:39] debug: Example7Test: entering stage: setup
-  [2018-05-26T00:30:39] debug: Example7Test: loading environment for the current partition
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show daint-gpu
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load daint-gpu
-  [2018-05-26T00:30:39] debug: Example7Test: loading test's environment
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show PrgEnv-cray
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python unload PrgEnv-gnu
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load PrgEnv-cray
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python show cudatoolkit
-  [2018-05-26T00:30:39] debug: Example7Test: executing OS command: modulecmd python load cudatoolkit
-  [2018-05-26T00:30:39] debug: Example7Test: setting up paths
-  [2018-05-26T00:30:40] debug: Example7Test: setting up the job descriptor
-  [2018-05-26T00:30:40] debug: Example7Test: job scheduler backend: local
-  [2018-05-26T00:30:40] debug: Example7Test: setting up performance logging
-  [2018-05-26T00:30:40] debug: Example7Test: entering stage: compile
-  [2018-05-26T00:30:40] debug: Example7Test: copying /path/to/reframe/tutorial/src to stage directory (/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray)
-  [2018-05-26T00:30:40] debug: Example7Test: symlinking files: []
-  [2018-05-26T00:30:40] debug: Example7Test: Staged sourcepath: /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/example_matrix_vector_multiplication_cuda.cu
-  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: nvcc  -O3 -I/path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/e
-  xample_matrix_vector_multiplication_cuda.cu -o /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/./Example7Test
-  [2018-05-26T00:30:40] debug: Example7Test: compilation stdout:
-
-  [2018-05-26T00:30:40] debug: Example7Test: compilation stderr:
-  nvcc warning : The 'compute_20', 'sm_20', and 'sm_21' architectures are deprecated, and may be removed in a future release (Use -Wno-deprecated-gpu-targets to suppress warning).
-
-  [2018-05-26T00:30:40] debug: Example7Test: compilation finished
-  [2018-05-26T00:30:40] debug: Example7Test: entering stage: run
-  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sbatch /path/to/reframe/stage/gpu/Example7Test/PrgEnv-cray/Example7Test_daint_gpu_PrgEnv-cray.sh
-  [2018-05-26T00:30:40] debug: Example7Test: spawned job (jobid=746641)
-  [2018-05-26T00:30:40] debug: Example7Test: entering stage: wait
-  [2018-05-26T00:30:40] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
-  [2018-05-26T00:30:40] debug: Example7Test: job state not matched (stdout follows)
-  JobID|State|ExitCode
-
-  [2018-05-26T00:30:41] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
-  [2018-05-26T00:30:44] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
-  [2018-05-26T00:30:47] debug: Example7Test: executing OS command: sacct -S 2018-05-26 -P -j 746641 -o jobid,state,exitcode
-  [2018-05-26T00:30:47] debug: Example7Test: spawned job finished
-  [2018-05-26T00:30:47] debug: Example7Test: entering stage: sanity
-  [2018-05-26T00:30:47] debug: Example7Test: entering stage: performance
-  [2018-05-26T00:30:47] debug: Example7Test: entering stage: cleanup
-  [2018-05-26T00:30:47] debug: Example7Test: copying interesting files to output directory
-  [2018-05-26T00:30:47] debug: Example7Test: removing stage directory
-  [2018-05-26T00:30:47] info: reframe: [       OK ] Example7Test on daint:gpu using PrgEnv-cray
+  [2020-03-25T10:42:57] info: reframe: [       OK ] (1/3) Example7Test on daint:gpu using PrgEnv-gnu
+  [2020-03-25T10:42:57] debug: Example7Test: entering stage: cleanup
+  [2020-03-25T10:42:57] debug: Example7Test: copying interesting files to output directory
+  [2020-03-25T10:42:57] debug: Example7Test: removing stage directory
+  [2020-03-25T10:42:57] debug: reframe: polling rate (real): 0.614 polls/sec
+  [2020-03-25T10:42:57] debug: reframe: polling rate (desired): 0.200
+  [2020-03-25T10:42:57] debug: reframe: sleeping: 10.000s
+  [2020-03-25T10:43:07] debug: reframe: running tasks: 2
+  [2020-03-25T10:43:07] debug: reframe: updating counts for running test cases
+  [2020-03-25T10:43:07] debug: reframe: polling 2 task(s)
+  [2020-03-25T10:43:07] debug: Example7Test: entering stage: run
+  [2020-03-25T10:43:07] debug: Example7Test: executing OS command: sacct -S 2020-03-25 -P -j 21424988 -o jobid,state,ex
+  itcode,nodelist
+  [2020-03-25T10:43:07] debug: Example7Test: entering stage: run
+  [2020-03-25T10:43:07] debug: Example7Test: executing OS command: sacct -S 2020-03-25 -P -j 21424991 -o jobid,state,ex
+  itcode,nodelist
+  [2020-03-25T10:43:07] debug: reframe: finalizing tasks: 0
+  [2020-03-25T10:43:07] debug: reframe: polling rate (real): 0.586 polls/sec
+  [2020-03-25T10:43:07] debug: reframe: polling rate (desired): 0.200
+  [2020-03-25T10:43:07] debug: reframe: sleeping: 10.000s
+  [2020-03-25T10:43:17] debug: reframe: running tasks: 2
+  [2020-03-25T10:43:17] debug: reframe: updating counts for running test cases
+  [2020-03-25T10:43:17] debug: reframe: polling 2 task(s)
+  [2020-03-25T10:43:17] debug: Example7Test: entering stage: run
+  [2020-03-25T10:43:17] debug: Example7Test: executing OS command: sacct -S 2020-03-25 -P -j 21424988 -o jobid,state,ex
+  itcode,nodelist
+  [2020-03-25T10:43:17] debug: Example7Test: entering stage: wait
+  [2020-03-25T10:43:17] debug: Example7Test: spawned job finished
+  [2020-03-25T10:43:17] debug: reframe: removing task from running list: Example7Test on daint:gpu using PrgEnv-cray
+  [2020-03-25T10:43:17] debug: reframe: finalizing tasks: 1
+  [2020-03-25T10:43:17] debug: reframe: finalizing task: Example7Test on daint:gpu using PrgEnv-cray
+  [2020-03-25T10:43:17] debug: Example7Test: entering stage: sanity
+  [2020-03-25T10:43:17] debug: Example7Test: entering stage: performance
+  [2020-03-25T10:43:17] info: reframe: [       OK ] (2/3) Example7Test on daint:gpu using PrgEnv-cray
 
 
 Each line starts with a timestamp, the level of the message (``info``, ``debug`` etc.), the context in which the framework is currently executing (either ``reframe`` or the name of the current test and, finally, the actual message.
@@ -998,7 +995,7 @@ The attributes of this handler are the following:
   - ``check_perf_ref``: The reference performance value of a certain performance variable.
   - ``check_perf_value``: The performance value obtained by this test for a certain performance variable.
   - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
-  - ``check_perf_unit``: The unit of measurement for the measured performance variable, if specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
+  - ``check_perf_unit``: The unit of measurement for the measured performance variable specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
 
 .. note::
    .. versionchanged:: 2.20
@@ -1090,18 +1087,19 @@ Here is an example output of ReFrame using asynchronous execution policy:
 .. code-block:: none
 
   Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/ --exec-policy=async -r
-  Reframe version: 2.13-dev0
+  Reframe version: 3.0-dev3 (rev: 0c62d00c)
   Launched by user: USER
-  Launched on host: daint103
+  Launched on host: daint105
   Reframe paths
   =============
       Check prefix      :
-      Check search path : 'tutorial/'
-      Stage dir prefix  : /path/to/reframe/stage/
-      Output dir prefix : /path/to/reframe/output/
-      Logging dir       : /path/to/reframe/logs
+      Check search path : '/path/to/reframe/tutorial'
+      Current working dir  : /path/to/reframe
+      Stage dir prefix     : /path/to/reframe/stage/
+      Output dir prefix    : /path/to/reframe/output/
+      Perf. logging prefix : /path/to/reframe/perflogs
   [==========] Running 13 check(s)
-  [==========] Started on Sat May 26 00:48:03 2018
+  [==========] Started on Wed Mar 25 10:55:35 2020
 
   [----------] started processing Example1Test (Simple matrix-vector multiplication example)
   [ RUN      ] Example1Test on daint:login using PrgEnv-cray
@@ -1134,35 +1132,35 @@ Here is an example output of ReFrame using asynchronous execution policy:
   [----------] finished processing Example2aTest (Matrix-vector multiplication example with OpenMP)
   <output omitted>
   [----------] waiting for spawned checks to finish
-  [       OK ] MPITest on daint:gpu using PrgEnv-pgi
-  [       OK ] MPITest on daint:gpu using PrgEnv-gnu
-  [       OK ] OpenMPTest on daint:mc using PrgEnv-pgi
-  [       OK ] OpenMPTest on daint:mc using PrgEnv-gnu
-  [       OK ] OpenMPTest on daint:gpu using PrgEnv-pgi
-  [       OK ] OpenMPTest on daint:gpu using PrgEnv-gnu
+  [       OK ] (  1/101) Example1Test on daint:login using PrgEnv-pgi
+  [       OK ] (  2/101) Example1Test on daint:login using PrgEnv-gnu
+  [       OK ] (  3/101) OpenMPTest on daint:login using PrgEnv-pgi
+  [       OK ] (  4/101) SerialTest on daint:mc using PrgEnv-gnu
+  [       OK ] (  5/101) Example6Test on daint:mc using PrgEnv-gnu
+  [       OK ] (  6/101) Example1Test on daint:login using PrgEnv-cray
   <output omitted>
-  [       OK ] Example1Test on daint:login using PrgEnv-cray
-  [       OK ] MPITest on daint:mc using PrgEnv-cray
-  [       OK ] MPITest on daint:gpu using PrgEnv-cray
-  [       OK ] OpenMPTest on daint:mc using PrgEnv-cray
-  [       OK ] OpenMPTest on daint:gpu using PrgEnv-cray
-  [       OK ] SerialTest on daint:login using PrgEnv-pgi
-  [       OK ] MPITest on daint:mc using PrgEnv-gnu
-  [       OK ] OpenMPTest on daint:mc using PrgEnv-intel
-  [       OK ] OpenMPTest on daint:login using PrgEnv-gnu
-  [       OK ] OpenMPTest on daint:gpu using PrgEnv-intel
-  [       OK ] MPITest on daint:gpu using PrgEnv-intel
-  [       OK ] CudaTest on daint:gpu using PrgEnv-gnu
-  [       OK ] OpenACCTest on daint:gpu using PrgEnv-pgi
-  [       OK ] MPITest on daint:mc using PrgEnv-intel
-  [       OK ] CudaTest on daint:gpu using PrgEnv-cray
-  [       OK ] MPITest on daint:mc using PrgEnv-pgi
-  [       OK ] OpenACCTest on daint:gpu using PrgEnv-cray
-  [       OK ] CudaTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 84/101) SerialTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 85/101) MPITest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 86/101) OpenMPTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 87/101) OpenMPTest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 88/101) MPITest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 89/101) OpenMPTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 90/101) OpenMPTest on daint:gpu using PrgEnv-intel
+  [       OK ] ( 91/101) MPITest on daint:gpu using PrgEnv-intel
+  [       OK ] ( 92/101) OpenACCTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 93/101) Example1Test on daint:gpu using PrgEnv-cray
+  [       OK ] ( 94/101) CudaTest on daint:gpu using PrgEnv-gnu
+  [       OK ] ( 95/101) MPITest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 96/101) CudaTest on daint:gpu using PrgEnv-pgi
+  [       OK ] ( 97/101) Example1Test on daint:gpu using PrgEnv-intel
+  [       OK ] ( 98/101) CudaTest on daint:gpu using PrgEnv-cray
+  [       OK ] ( 99/101) Example1Test on daint:gpu using PrgEnv-pgi
+  [       OK ] (100/101) OpenACCTest on daint:gpu using PrgEnv-cray
+  [       OK ] (101/101) Example1Test on daint:gpu using PrgEnv-gnu
   [----------] all spawned checks have finished
 
   [  PASSED  ] Ran 101 test case(s) from 13 check(s) (0 failure(s))
-  [==========] Finished on Sat May 26 00:52:02 2018
+  [==========] Finished on Wed Mar 25 13:40:48 2020
 
 
 The asynchronous execution policy may provide significant overall performance benefits for run-only regression tests.

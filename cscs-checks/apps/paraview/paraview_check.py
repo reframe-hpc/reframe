@@ -11,7 +11,7 @@ import reframe.utility.sanity as sn
 class ParaViewCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc']
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.num_tasks = 12
         self.num_tasks_per_node = 12
         self.modules = ['ParaView']

@@ -102,6 +102,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
+        self._submit_time = None
         self._completion_time = None
 
     def completion_time(self, job):
@@ -112,7 +113,7 @@ class SlurmJobScheduler(sched.JobScheduler):
         with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
-                (datetime.now().strftime('%F'), job.jobid),
+                (self._submit_time.strftime('%F'), job.jobid),
                 log=False
             )
 
@@ -195,6 +196,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 'could not retrieve the job id of the submitted job')
 
         job.jobid = int(jobid_match.group('jobid'))
+        self._submit_time = datetime.now()
 
     def allnodes(self):
         try:
@@ -226,8 +228,10 @@ class SlurmJobScheduler(sched.JobScheduler):
             os_ext.concat_files(job.stderr, *err_glob, overwrite=True)
 
     def filternodes(self, job, nodes):
-        # Collect options that restrict node selection
-        options = job.sched_access + job.options
+        # Collect options that restrict node selection, but we need to first
+        # create a mutable list out of the immutable SequenceView that
+        # sched_access is
+        options = list(job.sched_access + job.options)
         if job.sched_partition:
             options.append('--partition=%s' % job.sched_partition)
 
@@ -329,7 +333,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (datetime.now().strftime('%F'), job.jobid)
+            (self._submit_time.strftime('%F'), job.jobid)
         )
         self._update_state_count += 1
 
@@ -418,7 +422,14 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         intervals = itertools.cycle(settings().job_poll_intervals)
         self._update_state(job)
+
         while not slurm_state_completed(job.state):
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
+
             time.sleep(next(intervals))
             self._update_state(job)
 
@@ -443,6 +454,12 @@ class SlurmJobScheduler(sched.JobScheduler):
             getlogger().debug('ignoring error during polling: %s' % e)
             return False
         else:
+            if job.max_pending_time and slurm_state_pending(job.state):
+                if datetime.now() - self._submit_time >= job.max_pending_time:
+                    self.cancel(job)
+                    raise JobError('maximum pending time exceeded',
+                                   jobid=job.jobid)
+
             return slurm_state_completed(job.state)
 
     def is_array(self, job):
@@ -466,16 +483,11 @@ class SqueueJobScheduler(SlurmJobScheduler):
 
     def __init__(self):
         super().__init__()
-        self._submit_time = None
         self._squeue_delay = 2
         self._cancelled = False
 
     def completion_time(self, job):
         return None
-
-    def submit(self, job):
-        super().submit(job)
-        self._submit_time = datetime.now()
 
     def _update_state(self, job):
         time_from_submit = datetime.now() - self._submit_time

@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
 
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.valid_prog_environs = ['PrgEnv-gnu']
+        self.valid_prog_environs = ['builtin']
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
@@ -62,7 +62,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             'maint': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (141.0, None, 0.05, 's')}
@@ -71,7 +71,7 @@ class Cp2kCpuCheck(Cp2kCheck):
             'prod': {
                 'small': {
                     'dom:mc': {'time': (202.2, None, 0.05, 's')},
-                    'daint:mc': {'time': (214.5, None, 0.15, 's')}
+                    'daint:mc': {'time': (180.9, None, 0.08, 's')}
                 },
                 'large': {
                     'daint:mc': {'time': (113.0, None, 0.05, 's')}
@@ -105,19 +105,19 @@ class Cp2kGpuCheck(Cp2kCheck):
             'maint': {
                 'small': {
                     'dom:gpu': {'time': (251.8, None, 0.15, 's')},
-                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
+                    'daint:gpu': {'time': (241.3, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                    'daint:gpu': {'time': (199.6, None, 0.06, 's')}
                 }
             },
             'prod': {
                 'small': {
                     'dom:gpu': {'time': (240.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (262.6, None, 0.10, 's')}
+                    'daint:gpu': {'time': (241.3, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (222.6, None, 0.05, 's')}
+                    'daint:gpu': {'time': (199.6, None, 0.06, 's')}
                 }
             }
         }

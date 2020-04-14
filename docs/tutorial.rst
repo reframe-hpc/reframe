@@ -173,18 +173,19 @@ If everything is configured correctly for your system, you should get an output 
 .. code-block:: none
 
     Command line: ./bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r
-    Reframe version: 3.0-dev0
-    Launched by user: XXX
-    Launched on host: daint103
+    Reframe version: 3.0-dev3 (rev: 0c62d00c)
+    Launched by user: USER
+    Launched on host: daint105
     Reframe paths
     =============
         Check prefix      :
-        Check search path : 'tutorial/example1.py'
-        Stage dir prefix     : /current/working/dir/stage/
-        Output dir prefix    : /current/working/dir/output/
-        Perf. logging prefix : /current/working/dir/perflogs/
+        Check search path : '/path/to/reframe/tutorial/example1.py'
+        Current working dir  : /path/to/reframe
+        Stage dir prefix     : /path/to/reframe/stage/
+        Output dir prefix    : /path/to/reframe/output/
+        Perf. logging prefix : /path/to/reframe/perflogs
     [==========] Running 1 check(s)
-    [==========] Started on Thu Jan 23 14:14:12 2020
+    [==========] Started on Wed Mar 25 10:13:13 2020
 
     [----------] started processing Example1Test (Simple matrix-vector multiplication example)
     [ RUN      ] Example1Test on daint:login using PrgEnv-cray
@@ -202,22 +203,22 @@ If everything is configured correctly for your system, you should get an output 
     [----------] finished processing Example1Test (Simple matrix-vector multiplication example)
 
     [----------] waiting for spawned checks to finish
-    [       OK ] Example1Test on daint:login using PrgEnv-intel
-    [       OK ] Example1Test on daint:login using PrgEnv-cray
-    [       OK ] Example1Test on daint:login using PrgEnv-gnu
-    [       OK ] Example1Test on daint:login using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-gnu
-    [       OK ] Example1Test on daint:gpu using PrgEnv-intel
-    [       OK ] Example1Test on daint:gpu using PrgEnv-cray
-    [       OK ] Example1Test on daint:mc using PrgEnv-cray
-    [       OK ] Example1Test on daint:gpu using PrgEnv-gnu
-    [       OK ] Example1Test on daint:gpu using PrgEnv-pgi
-    [       OK ] Example1Test on daint:mc using PrgEnv-intel
+    [       OK ] ( 1/12) Example1Test on daint:login using PrgEnv-intel
+    [       OK ] ( 2/12) Example1Test on daint:login using PrgEnv-cray
+    [       OK ] ( 3/12) Example1Test on daint:login using PrgEnv-gnu
+    [       OK ] ( 4/12) Example1Test on daint:login using PrgEnv-pgi
+    [       OK ] ( 5/12) Example1Test on daint:mc using PrgEnv-gnu
+    [       OK ] ( 6/12) Example1Test on daint:mc using PrgEnv-pgi
+    [       OK ] ( 7/12) Example1Test on daint:mc using PrgEnv-cray
+    [       OK ] ( 8/12) Example1Test on daint:mc using PrgEnv-intel
+    [       OK ] ( 9/12) Example1Test on daint:gpu using PrgEnv-intel
+    [       OK ] (10/12) Example1Test on daint:gpu using PrgEnv-cray
+    [       OK ] (11/12) Example1Test on daint:gpu using PrgEnv-gnu
+    [       OK ] (12/12) Example1Test on daint:gpu using PrgEnv-pgi
     [----------] all spawned checks have finished
 
     [  PASSED  ] Ran 12 test case(s) from 1 check(s) (0 failure(s))
-    [==========] Finished on Thu Jan 23 14:16:25 2020
+    [==========] Finished on Wed Mar 25 10:21:08 2020
 
 Notice how our regression test is run on every partition of the configured system and for every programming environment.
 
@@ -678,7 +679,8 @@ The ``perf`` subkey will then be searched in the following scopes in this order:
 The first occurrence will be used as the reference value of the ``perf`` performance variable.
 In our example, the ``perf`` key will be resolved in the ``daint:gpu`` scope giving us the reference value.
 
-Reference values in ReFrame are specified as a three-tuple or four-tuple comprising the reference value, the lower and upper thresholds and, optionally, the measurement unit.
+Reference values in ReFrame are specified as a four-tuple comprising the reference value, the lower and upper thresholds and the measurement unit.
+If no unit is relevant, then you have to insert :class:`None` explicitly.
 Thresholds are specified as decimal fractions of the reference value. For nonnegative reference values, the lower threshold must lie in the [-1,0], whereas the upper threshold may be any positive real number or zero.
 In our example, the reference value for this test on ``daint:gpu`` is 50 Gflop/s ±10%. Setting a threshold value to :class:`None` disables the threshold.
 If you specify a measurement unit as well, you will be able to log it the performance logs of the test; this is handy when you are inspecting or plotting the performance values.
@@ -695,6 +697,11 @@ This is useful when using ReFrame for benchmarking purposes and you would like t
    A default ``*`` entry is now always added to the reference dictionary.
 
    .. versionadded:: 2.19
+
+.. note::
+   Reference tuples now require the measurement unit.
+   .. versionchanged:: 3.0
+
 
 Combining It All Together
 -------------------------

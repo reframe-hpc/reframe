@@ -228,6 +228,17 @@ class TestFrontend(unittest.TestCase):
                                   self.environs)
         assert self._perflog_exists('PerformanceFailureCheck')
 
+    def test_failure_stats(self):
+        self.checkpath = ['unittests/resources/checks/frontend_checks.py']
+        self.more_options = ['-t', 'SanityFailureCheck', '--failure-stats']
+        returncode, stdout, stderr = self._run_reframe()
+
+        assert r'FAILURE STATISTICS' in stdout
+        assert r'sanity      1     [SanityFailureCheck' in stdout
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert returncode != 0
+
     def test_performance_report(self):
         self.checkpath = ['unittests/resources/checks/frontend_checks.py']
         self.more_options = ['-t', 'PerformanceFailureCheck',

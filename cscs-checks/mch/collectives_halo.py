@@ -97,18 +97,21 @@ class CollectivesBaseTest(rfm.RegressionTest):
 
         self.reference = {
             'kesch:cn': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
             'daint': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
             'dom': {
-                'elapsed_time': (ref, None, 0.15)
+                'elapsed_time': (ref, None, 0.15, 's')
             },
         }
 
         self.maintainers = ['AJ', 'MKr']
-        self.tags = {'production', 'mch', 'craype'}
+        if self.current_system.name == 'tsa':
+            self.tags = {'mch'}
+        else:
+            self.tags = {'production', 'mch', 'craype'}
 
     @rfm.run_before('run')
     def set_launcher_options(self):
