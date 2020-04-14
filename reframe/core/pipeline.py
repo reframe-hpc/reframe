@@ -164,8 +164,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    valid_systems = fields.TypedField('valid_systems',
-                                      typ.List[typ.Str[r'^[^:]+(:[^:]+)?$']])
+    valid_systems = fields.TypedField('valid_systems', typ.List[str])
 
     #: A detailed description of the test.
     #:
