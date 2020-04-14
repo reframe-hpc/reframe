@@ -263,6 +263,12 @@ class TestRegressionTest(unittest.TestCase):
         assert test.supports_system('testsys:gpu')
         assert test.supports_system('testsys:login')
 
+        test.valid_systems = ['*:*']
+        assert test.supports_system('gpu')
+        assert test.supports_system('login')
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('testsys:login')
+
         test.valid_systems = ['testsys']
         assert test.supports_system('gpu')
         assert test.supports_system('login')
@@ -286,6 +292,17 @@ class TestRegressionTest(unittest.TestCase):
         assert not test.supports_system('login')
         assert not test.supports_system('testsys:gpu')
         assert not test.supports_system('testsys:login')
+
+        test.valid_systems = ['*:gpu']
+        assert test.supports_system('testsys:gpu')
+        assert test.supports_system('foo:gpu')
+        assert not test.supports_system('testsys:cpu')
+        assert not test.supports_system('testsys:login')
+
+        test.valid_systems = ['testsys:*']
+        assert test.supports_system('testsys:login')
+        assert test.supports_system('gpu')
+        assert not test.supports_system('foo:gpu')
 
     def test_supports_environ(self):
         test = self.loader.load_from_file(
