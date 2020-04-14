@@ -75,7 +75,34 @@ class TestRegressionCheckLoader(unittest.TestCase):
         assert 0 == len(tests)
 
     def test_extended_test(self):
-        with pytest.warns(ReframeDeprecationWarning) as record:
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecated(rfm.RegressionTest):
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedRunOnly(rfm.RunOnlyRegressionTest):
+                # Should raise a warning
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedCompileOnly(rfm.CompileOnlyRegressionTest):
+                # Should raise a warning
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
+                # Should raise a warning
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(None) as warnings:
             @rfm.simple_test
             class TestSimple(rfm.RegressionTest):
                 # The test should not raise a deprecation warning even though
@@ -84,55 +111,17 @@ class TestRegressionCheckLoader(unittest.TestCase):
                     pass
 
             @rfm.simple_test
-            class TestDeprecated(rfm.RegressionTest):
-                # Should raise a warning
-                def setup(self, partition, environ, **job_opts):
-                    super().setup(system, environ, **job_opts)
-
-            @rfm.simple_test
-            class TestDeprecatedRunOnly(rfm.RunOnlyRegressionTest):
-                # Should raise a warning
-                def setup(self, partition, environ, **job_opts):
-                    super().setup(system, environ, **job_opts)
-
-            @rfm.simple_test
-            class TestDeprecatedCompileOnly(rfm.CompileOnlyRegressionTest):
-                # Should raise a warning
-                def setup(self, partition, environ, **job_opts):
-                    super().setup(system, environ, **job_opts)
-
-            @rfm.simple_test
-            class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
-                # Should not raise a warning because the setup of the parent
-                # was not set as final
-                def setup(self, partition, environ, **job_opts):
-                    super().setup(system, environ, **job_opts)
-
-            @rfm.simple_test
-            class TestExtended(rfm.RegressionTest, extended_test=True):
+            class TestExtended(rfm.RegressionTest, special=True):
                 def __init__(self):
                     pass
 
                 # Should not raise a warning
                 def setup(self, partition, environ, **job_opts):
                     super().setup(system, environ, **job_opts)
-
-            @rfm.simple_test
-            class TestExtendedDerived(TestExtended):
-                def __init__(self):
-                    pass
-
-                # Should not raise a warning
-                def setup(self, partition, environ, **job_opts):
-                    super().setup(system, environ, **job_opts)
-
-                # Should raise a warning
-                def run(self):
-                    super().run()
 
             @rfm.simple_test
             class TestExtendedRunOnly(rfm.RunOnlyRegressionTest,
-                                      extended_test=True):
+                                      special=True):
                 def __init__(self):
                     pass
 
@@ -146,7 +135,7 @@ class TestRegressionCheckLoader(unittest.TestCase):
 
             @rfm.simple_test
             class TestExtendedCompileOnly(rfm.CompileOnlyRegressionTest,
-                                          extended_test=True):
+                                          special=True):
                 def __init__(self):
                     pass
 
@@ -158,4 +147,37 @@ class TestRegressionCheckLoader(unittest.TestCase):
                 def run(self):
                     super().run()
 
-        assert len(record) == 4
+        assert not any(isinstance(w.message, ReframeDeprecationWarning)
+                       for w in warnings)
+
+        with pytest.warns(ReframeDeprecationWarning) as warnings:
+            @rfm.simple_test
+            class TestExtendedDerived(TestExtended):
+                def __init__(self):
+                    pass
+
+                # Should raise a warning
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+                # Should raise a warning
+                def run(self):
+                    super().run()
+
+        assert len(warnings) == 2
+
+        @rfm.simple_test
+        class TestFinal(rfm.RegressionTest):
+            def __init__(self):
+                pass
+
+            @rfm.final
+            def my_new_final(seld):
+                pass
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestFinalDerived(TestFinal):
+                # Should raise a warning
+                def my_new_final(self, a, b):
+                    pass

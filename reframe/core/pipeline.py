@@ -7,7 +7,7 @@
 # Basic functionality for regression tests
 #
 
-__all__ = ['RegressionTest',
+__all__ = ['final', 'RegressionTest',
            'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
            'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
@@ -108,7 +108,7 @@ def _run_hooks(name=None):
 
 
 def final(fn):
-    fn._final = True
+    fn._rfm_final = True
 
     @functools.wraps(fn)
     def _wrapped(*args, **kwargs):
@@ -692,9 +692,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
         pass
 
     @classmethod
-    def __init_subclass__(cls, *, extended_test=False, **kwargs):
+    def __init_subclass__(cls, *, special=False, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._extended_test = extended_test
+        cls._rfm_special_test = special
 
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
@@ -1511,21 +1511,19 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                                self.name, self.prefix)
 
 
-class RunOnlyRegressionTest(RegressionTest, extended_test=True):
+class RunOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for run-only regression tests.
 
     This class is also directly available under the top-level :mod:`reframe`
     module.
     '''
 
-    @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
         This is a no-op for this type of test.
         '''
 
-    @final
     def compile_wait(self):
         '''Wait for compilation phase to finish.
 
@@ -1533,7 +1531,6 @@ class RunOnlyRegressionTest(RegressionTest, extended_test=True):
         '''
 
     @_run_hooks('pre_run')
-    @final
     def run(self):
         '''The run phase of the regression test pipeline.
 
@@ -1550,7 +1547,7 @@ class RunOnlyRegressionTest(RegressionTest, extended_test=True):
         super().run.__wrapped__(self)
 
 
-class CompileOnlyRegressionTest(RegressionTest, extended_test=True):
+class CompileOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for compile-only regression tests.
 
     These tests are by default local and will skip the run phase of the
@@ -1568,7 +1565,6 @@ class CompileOnlyRegressionTest(RegressionTest, extended_test=True):
         self.local = True
 
     @_run_hooks()
-    @final
     def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
@@ -1590,14 +1586,12 @@ class CompileOnlyRegressionTest(RegressionTest, extended_test=True):
     def stderr(self):
         return self._build_job.stderr
 
-    @final
     def run(self):
         '''The run stage of the regression test pipeline.
 
         Implemented as no-op.
         '''
 
-    @final
     def wait(self):
         '''Wait for this test to finish.
 

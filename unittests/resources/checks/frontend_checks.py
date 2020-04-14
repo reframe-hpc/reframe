@@ -98,7 +98,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         raise PerformanceError('performance failure')
 
 
-class KeyboardInterruptCheck(BaseFrontendCheck, extended_test=True):
+class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
     '''Simulate keyboard interrupt during test's execution.'''
 
     def __init__(self, phase='wait'):
@@ -121,7 +121,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck, extended_test=True):
             super().wait()
 
 
-class SystemExitCheck(BaseFrontendCheck, extended_test=True):
+class SystemExitCheck(BaseFrontendCheck, special=True):
     '''Simulate system exit from within a check.'''
 
     def __init__(self):
@@ -172,14 +172,14 @@ class SleepCheck(BaseFrontendCheck):
         SleepCheck._next_id += 1
 
 
-class SleepCheckPollFail(SleepCheck, extended_test=True):
+class SleepCheckPollFail(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase.'''
 
     def poll(self):
         raise ValueError
 
 
-class SleepCheckPollFailLate(SleepCheck, extended_test=True):
+class SleepCheckPollFailLate(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase
     after the test has finished.'''
 
