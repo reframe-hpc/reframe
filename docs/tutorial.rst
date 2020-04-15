@@ -461,12 +461,16 @@ Notice that in order to redefine a hook, you need not only redefine the method i
 Otherwise, the base class hook will be executed.
 
 
-.. note::
-   You may still configure your test per programming environment and per system partition by overriding the :func:`setup <reframe.core.pipeline.RegressionTest.setup>` method, as in ReFrame versions prior to 2.20, but this is now discouraged since it is more error prone, as you have to memorize the signature of the pipeline methods that you override and also remember to call ``super()``.
+.. warning::
+   Configuring your test per programming environment and per system partition by overriding the :func:`setup() <reframe.core.pipeline.RegressionTest.setup>` method is deprecated.
+   Please refer to the `Migrate to ReFrame 3 <migration_2_to_3.html#updating-your-tests>`__ guide for more details.
 
+   .. versionchanged:: 3.0
 
 .. warning::
-   Setting the compiler flags in the programming environment has been dropped completely in version 2.17.
+   Support for setting the compiler flags in the programming environment has been dropped completely.
+
+   .. versionchanged:: 2.17
 
 
 An alternative implementation using dictionaries
