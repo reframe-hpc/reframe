@@ -108,23 +108,23 @@ class AllreduceTest(rfm.RegressionTest):
             self.num_tasks = 6
             self.reference = {
                 'dom:gpu': {
-                    'latency': (6.0, None, 0.10, 'us')
+                    'latency': (5.67, None, 0.05, 'us')
                 },
                 'daint:gpu': {
-                    'latency': (13.75, None, 0.25, 'us')
+                    'latency': (9.30, None, 0.75, 'us')
                 },
                 'daint:mc': {
-                    'latency': (14.77, None, 0.25, 'us')
+                    'latency': (11.74, None, 1.51, 'us')
                 }
             }
         else:
             self.num_tasks = 16
             self.reference = {
                 'daint:gpu': {
-                    'latency': (16.87, None, 0.40, 'us')
+                    'latency': (13.62, None, 1.16, 'us')
                 },
                 'daint:mc': {
-                    'latency': (10.85, None, 0.20, 'us')
+                    'latency': (19.07, None, 1.64, 'us')
                 }
             }
 
