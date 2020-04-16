@@ -743,6 +743,18 @@ class TestSlurmFlexibleNodeAllocation(unittest.TestCase):
         self.prepare_job()
         assert self.testjob.num_tasks == 8
 
+    def test_sched_access_idle_sequence_view(self):
+        from reframe.utility import SequenceView
+
+        self.testjob._sched_flex_alloc_nodes = 'idle'
+
+        # Here simulate passing a readonly 'sched_access' as returned
+        # by a 'SystemPartition' instance.
+        self.testjob._sched_access = SequenceView(['--constraint=f3'])
+        self.testjob._sched_partition = 'p3'
+        self.prepare_job()
+        assert self.testjob.num_tasks == 4
+
     def test_sched_access_constraint_partition(self):
         self.testjob._sched_flex_alloc_nodes = 'all'
         self.testjob._sched_access = ['--constraint=f1', '--partition=p2']
