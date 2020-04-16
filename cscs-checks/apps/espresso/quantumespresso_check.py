@@ -16,16 +16,16 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
 
         energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
                                   self.stdout, 'energy', float)
-        energy_reference = -11427.09017179
+        energy_reference = -11427.09017176
         energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
-            sn.assert_lt(energy_diff, 1e-10)
+            sn.assert_lt(energy_diff, 2e-7)
         ])
 
         self.perf_patterns = {
-            'time': sn.extractsingle(r'electrons    :\s+(?P<sec>\S+)s CPU ',
-                                     self.stdout, 'sec', float)
+            'time': sn.extractsingle(r'electrons.+\s(?P<wtime>\S+)s WALL',
+                                     self.stdout, 'wtime', float)
         }
 
         self.maintainers = ['LM']
@@ -91,11 +91,12 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
-            self.num_tasks = 72
+            self.num_tasks = 6
         else:
-            self.num_tasks = 192
+            self.num_tasks = 16
 
-        self.num_tasks_per_node = 12
+        self.num_tasks_per_node = 1
+        self.num_cpus_per_task = 12
         references = {
             'maint': {
                 'small': {
