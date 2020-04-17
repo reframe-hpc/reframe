@@ -146,6 +146,9 @@ python3 -m venv venv.unittests
 source venv.unittests/bin/activate
 pip install -r requirements.txt
 
+# FIXME: XALT is causing linking problems (see UES-823)
+module unload xalt
+
 echo "=============="
 echo "Loaded Modules"
 echo "=============="
