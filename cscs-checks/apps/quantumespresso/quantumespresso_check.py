@@ -26,7 +26,6 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['LM']
         self.tags = {'scs'}
         self.strict_check = False
-        self.modules = ['QuantumESPRESSO']
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -42,6 +41,7 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = 'QuantumESPRESSO CPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:mc']
+        self.modules = ['QuantumESPRESSO/6.5-CrayIntel-19.10']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -92,6 +92,7 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = 'QuantumESPRESSO GPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:gpu']
+        self.modules = ['QuantumESPRESSO/6.5a1-CrayPGI-19.10-cuda-10.1']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
