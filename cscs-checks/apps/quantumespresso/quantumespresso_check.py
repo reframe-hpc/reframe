@@ -14,13 +14,8 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
         self.executable = 'pw.x'
         self.executable_opts = ['-in', 'ausurf.in']
 
-        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
-                                  self.stdout, 'energy', float)
-        energy_reference = -11427.09017176
-        energy_diff = sn.abs(energy-energy_reference)
         self.sanity_patterns = sn.all([
             sn.assert_found(r'convergence has been achieved', self.stdout),
-            sn.assert_lt(energy_diff, 2e-7)
         ])
 
         self.perf_patterns = {
@@ -50,27 +45,37 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
+            energy_reference = -11427.09017162
         else:
             self.num_tasks = 576
+            energy_reference = -11427.09017152
 
         self.num_tasks_per_node = 36
+
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                                  self.stdout, 'energy', float)
+        energy_diff = sn.abs(energy-energy_reference)
+        self.sanity_patterns = sn.all([
+            sn.assert_lt(energy_diff, 1e-8)
+        ])
+
         references = {
             'maint': {
                 'small': {
-                    'dom:mc': {'time': (159.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (147.3, None, 0.41, 's')}
+                    'dom:mc': {'time': (115.0, None, 0.05, 's')},
+                    'daint:mc': {'time': (115.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (149.7, None, 0.52, 's')}
+                    'daint:mc': {'time': (115.0, None, 0.10, 's')}
                 }
             },
             'prod': {
                 'small': {
-                    'dom:mc': {'time': (159.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (147.3, None, 0.41, 's')}
+                    'dom:mc': {'time': (115.0, None, 0.05, 's')},
+                    'daint:mc': {'time': (115.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (149.7, None, 0.52, 's')}
+                    'daint:mc': {'time': (115.0, None, 0.10, 's')}
                 }
             }
         }
@@ -87,33 +92,42 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         super().__init__()
         self.descr = 'QuantumESPRESSO GPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:gpu']
-        self.variables = {'CRAY_CUDA_MPS': '1'}
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
             self.num_tasks = 6
+            energy_reference = -11427.09017176
         else:
             self.num_tasks = 16
+            energy_reference = -11427.09017179
 
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = 12
+
+        energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
+                                  self.stdout, 'energy', float)
+        energy_diff = sn.abs(energy-energy_reference)
+        self.sanity_patterns = sn.all([
+            sn.assert_lt(energy_diff, 1e-8)
+        ])
+
         references = {
             'maint': {
                 'small': {
-                    'dom:mc': {'time': (159.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (147.3, None, 0.41, 's')}
+                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (149.7, None, 0.52, 's')}
+                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
                 }
             },
             'prod': {
                 'small': {
-                    'dom:mc': {'time': (159.0, None, 0.05, 's')},
-                    'daint:mc': {'time': (147.3, None, 0.41, 's')}
+                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
                 },
                 'large': {
-                    'daint:mc': {'time': (149.7, None, 0.52, 's')}
+                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
                 }
             }
         }
