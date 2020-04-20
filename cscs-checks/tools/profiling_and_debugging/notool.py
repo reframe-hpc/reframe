@@ -99,5 +99,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def cray_linker_workaround(self):
-        if self.current_environ.name.startswith('PrgEnv-cray'):
+        # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
+        # See Patch Set README.txt for more details.
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name.startswith('PrgEnv-cray')):
             self.variables['LINKER_X86_64'] = '/usr/bin/ld'
