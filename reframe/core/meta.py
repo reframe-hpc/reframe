@@ -52,5 +52,5 @@ class RegressionTestMeta(type):
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "
                            f"'{b.__qualname__}.{v.__name__}'; "
-                           f"consider using the reframe hooks instead")
+                           f"consider using the pipeline hooks instead")
                     user_deprecation_warning(msg)
