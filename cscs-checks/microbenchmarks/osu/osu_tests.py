@@ -301,10 +301,10 @@ class G2GLatencyTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'latency': (5.49, None, 0.1, 'us')
+                'latency': (5.62, None, 0.1, 'us')
             },
             'daint:gpu': {
-                'latency': (5.73, None, 1.0, 'us')
+                'latency': (6.8, None, 0.65, 'us')
             },
             'kesch:cn': {
                 'latency': (23.09, None, 0.1, 'us')
