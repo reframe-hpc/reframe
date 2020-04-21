@@ -9,7 +9,7 @@ Updating your tests
 
 ReFrame 2.20 introduced a new powerful mechanism for attaching arbitrary functions hooks at the different pipeline stages.
 This mechanism provides an easy way to configure and extend the functionality of a test, eliminating essentially the need to override pipeline stages for this purpose.
-ReFrame 3.0 deprecates the old practice for overriding pipeline stage methods in favor of using pipeline hooks.
+ReFrame 3.0 deprecates the old practice of overriding pipeline stage methods in favor of using pipeline hooks.
 In the old syntax, it was quite common to override the ``setup()`` method, in order to configure your test based on the current programming environment or the current system partition.
 The following is a typical example of that:
 
@@ -74,5 +74,5 @@ If you try to override the ``setup()`` method in any of the subclasses of ``MyEx
 Suppressing deprecation warnings
 ================================
 
-You can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
+Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 

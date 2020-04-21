@@ -12,35 +12,29 @@ site_configuration = {
         {
             'name': 'daint',
             'descr': 'Piz Daint',
-            'hostnames': [
-                'daint'
-            ],
+            'hostnames': ['daint'],
             'modules_system': 'tmod',
             'partitions': [
                 {
                     'name': 'login',
+                    'descr': 'Login nodes',
                     'scheduler': 'local',
-                    'modules': [],
-                    'access': [],
+                    'launcher': 'local',
                     'environs': [
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
                     ],
-                    'descr': 'Login nodes',
                     'max_jobs': 4,
-                    'launcher': 'local'
                 },
                 {
                     'name': 'gpu',
+                    'descr': 'Hybrid nodes (Haswell/P100)',
                     'scheduler': 'slurm',
-                    'modules': [
-                        'daint-gpu'
-                    ],
-                    'access': [
-                        '--constraint=gpu'
-                    ],
+                    'launcher': 'srun',
+                    'modules': ['daint-gpu'],
+                    'access': ['--constraint=gpu'],
                     'environs': [
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
@@ -50,24 +44,18 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'name': 'Singularity',
-                            'modules': [
-                                'Singularity'
-                            ]
+                            'modules': ['Singularity']
                         }
                     ],
-                    'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
-                    'launcher': 'srun'
                 },
                 {
                     'name': 'mc',
+                    'descr': 'Multicore nodes (Broadwell)',
                     'scheduler': 'slurm',
-                    'modules': [
-                        'daint-mc'
-                    ],
-                    'access': [
-                        '--constraint=mc'
-                    ],
+                    'launcher': 'srun',
+                    'modules': ['daint-mc'],
+                    'access': ['--constraint=mc'],
                     'environs': [
                         'PrgEnv-cray',
                         'PrgEnv-gnu',
@@ -77,14 +65,10 @@ site_configuration = {
                     'container_platforms': [
                         {
                             'name': 'Singularity',
-                            'modules': [
-                                'Singularity'
-                            ]
+                            'modules': ['Singularity']
                         }
                     ],
-                    'descr': 'Multicore nodes (Broadwell)',
                     'max_jobs': 100,
-                    'launcher': 'srun'
                 }
             ]
         }
@@ -92,27 +76,19 @@ site_configuration = {
     'environments': [
         {
             'name': 'PrgEnv-cray',
-            'modules': [
-                'PrgEnv-cray'
-            ]
+            'modules': ['PrgEnv-cray']
         },
         {
             'name': 'PrgEnv-gnu',
-            'modules': [
-                'PrgEnv-gnu'
-            ]
+            'modules': ['PrgEnv-gnu']
         },
         {
             'name': 'PrgEnv-intel',
-            'modules': [
-                'PrgEnv-intel'
-            ]
+            'modules': ['PrgEnv-intel']
         },
         {
             'name': 'PrgEnv-pgi',
-            'modules': [
-                'PrgEnv-pgi'
-            ]
+            'modules': ['PrgEnv-pgi']
         }
     ],
     'logging': [
@@ -154,9 +130,7 @@ site_configuration = {
     ],
     'general': [
         {
-            'check_search_path': [
-                'checks/'
-            ],
+            'check_search_path': ['tutorial/'],
             'check_search_recursive': True
         }
     ]
