@@ -187,6 +187,10 @@ site_configuration = {
                             'options': [
                                 '--switches={num_switches}'
                             ]
+                        },
+                        {
+                            'name': 'gres',
+                            'options': ['--gres={gres}']
                         }
                     ],
                     'launcher': 'srun'
@@ -229,6 +233,10 @@ site_configuration = {
                             'options': [
                                 '--switches={num_switches}'
                             ]
+                        },
+                        {
+                            'name': 'gres',
+                            'options': ['--gres={gres}']
                         }
                     ],
                     'launcher': 'srun'
@@ -323,6 +331,12 @@ site_configuration = {
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
                     'launcher': 'srun'
+                    'resources': [
+                        {
+                            'name': 'gres',
+                            'options': ['--gres={gres}']
+                        }
+                    ]
                 },
                 {
                     'name': 'mc',
@@ -359,10 +373,8 @@ site_configuration = {
                     'max_jobs': 100,
                     'resources': [
                         {
-                            'name': 'switches',
-                            'options': [
-                                '--switches={num_switches}'
-                            ]
+                            'name': 'gres',
+                            'options': ['--gres={gres}']
                         }
                     ],
                     'launcher': 'srun'

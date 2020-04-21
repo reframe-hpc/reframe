@@ -7,7 +7,9 @@ import os
 import pytest
 import unittest
 
+import reframe as rfm
 from reframe.core.exceptions import (ConfigError, NameConflictError,
+                                     ReframeDeprecationWarning,
                                      RegressionTestLoadError)
 from reframe.core.systems import System
 from reframe.frontend.loader import RegressionCheckLoader
@@ -64,3 +66,98 @@ class TestRegressionCheckLoader(unittest.TestCase):
         tests = self.loader.load_from_file(
             'unittests/resources/checks_unlisted/bad_init_check.py')
         assert 0 == len(tests)
+
+    def test_special_test(self):
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecated(rfm.RegressionTest):
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedRunOnly(rfm.RunOnlyRegressionTest):
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedCompileOnly(rfm.CompileOnlyRegressionTest):
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestDeprecatedCompileOnlyDerived(TestDeprecatedCompileOnly):
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+        with pytest.warns(None) as warnings:
+            @rfm.simple_test
+            class TestSimple(rfm.RegressionTest):
+                def __init__(self):
+                    pass
+
+            @rfm.simple_test
+            class TestSpecial(rfm.RegressionTest, special=True):
+                def __init__(self):
+                    pass
+
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+            @rfm.simple_test
+            class TestSpecialRunOnly(rfm.RunOnlyRegressionTest,
+                                     special=True):
+                def __init__(self):
+                    pass
+
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+                def run(self):
+                    super().run()
+
+            @rfm.simple_test
+            class TestSpecialCompileOnly(rfm.CompileOnlyRegressionTest,
+                                         special=True):
+                def __init__(self):
+                    pass
+
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+                def run(self):
+                    super().run()
+
+        assert not any(isinstance(w.message, ReframeDeprecationWarning)
+                       for w in warnings)
+
+        with pytest.warns(ReframeDeprecationWarning) as warnings:
+            @rfm.simple_test
+            class TestSpecialDerived(TestSpecial):
+                def __init__(self):
+                    pass
+
+                def setup(self, partition, environ, **job_opts):
+                    super().setup(system, environ, **job_opts)
+
+                def run(self):
+                    super().run()
+
+        assert len(warnings) == 2
+
+        @rfm.simple_test
+        class TestFinal(rfm.RegressionTest):
+            def __init__(self):
+                pass
+
+            @rfm.final
+            def my_new_final(seld):
+                pass
+
+        with pytest.warns(ReframeDeprecationWarning):
+            @rfm.simple_test
+            class TestFinalDerived(TestFinal):
+                def my_new_final(self, a, b):
+                    pass

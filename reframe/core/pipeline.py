@@ -7,7 +7,7 @@
 # Basic functionality for regression tests
 #
 
-__all__ = ['RegressionTest',
+__all__ = ['final', 'RegressionTest',
            'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
            'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
 
@@ -105,6 +105,16 @@ def _run_hooks(name=None):
     return _deco
 
 
+def final(fn):
+    fn._rfm_final = True
+
+    @functools.wraps(fn)
+    def _wrapped(*args, **kwargs):
+        return fn(*args, **kwargs)
+
+    return _wrapped
+
+
 class RegressionTest(metaclass=RegressionTestMeta):
     '''Base class for regression tests.
 
@@ -156,7 +166,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                             typ.List[str])
 
     #: List of systems supported by this test.
-    #: The general syntax for systems is ``<sysname>[:<partname]``.
+    #: The general syntax for systems is ``<sysname>[:<partname>]``.
+    #: Both <sysname> and <partname> accept the value ``*`` to mean any value.
+    #: ``*`` is an alias of ``*:*``
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
@@ -684,6 +696,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     def __init__(self):
         pass
 
+    @classmethod
+    def __init_subclass__(cls, *, special=False, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._rfm_special_test = special
+
     def _rfm_init(self, name=None, prefix=None):
         if name is not None:
             self.name = name
@@ -934,19 +951,16 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         return ret
 
-    def supports_system(self, partition_name):
-        if '*' in self.valid_systems:
-            return True
+    def supports_system(self, name):
+        if name.find(':') != -1:
+            system, partition = name.split(':')
+        else:
+            system, partition = self.current_system.name, name
 
-        if self.current_system.name in self.valid_systems:
-            return True
+        valid_matches = ['*', '*:*', system, f'{system}:*',
+                         f'*:{partition}', f'{system}:{partition}']
 
-        # Check if this is a relative name
-        if partition_name.find(':') == -1:
-            partition_name = '%s:%s' % (self.current_system.name,
-                                        partition_name)
-
-        return partition_name in self.valid_systems
+        return any(n in self.valid_systems for n in valid_matches)
 
     def supports_environ(self, env_name):
         if '*' in self.valid_prog_environs:
@@ -1012,6 +1026,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._perf_logger = logging.getperflogger(self)
 
     @_run_hooks()
+    @final
     def setup(self, partition, environ, **job_opts):
         '''The setup phase of the regression test pipeline.
 
@@ -1021,6 +1036,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
             When overriding this method users should always pass through
             ``job_opts`` to the base class method.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._current_partition = partition
         self._current_environ = environ
@@ -1044,10 +1068,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
         os_ext.git_clone(self.sourcesdir, self._stagedir)
 
     @_run_hooks('pre_compile')
+    @final
     def compile(self):
         '''The compilation phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self._current_environ:
             raise PipelineError('no programming environment set')
@@ -1132,10 +1166,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self._build_job.submit()
 
     @_run_hooks('post_compile')
+    @final
     def compile_wait(self):
         '''Wait for compilation phase to finish.
 
         .. versionadded:: 2.13
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._build_job.wait()
         self.logger.debug('compilation finished')
@@ -1145,11 +1189,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
             raise BuildError(self._build_job.stdout, self._build_job.stderr)
 
     @_run_hooks('pre_run')
+    @final
     def run(self):
         '''The run phase of the regression test pipeline.
 
         This call is non-blocking.
         It simply submits the job associated with this test and returns.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self.current_system or not self._current_partition:
             raise PipelineError('no system or system partition is set')
@@ -1233,6 +1287,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         if self.job.sched_flex_alloc_nodes:
             self.num_tasks = self.job.num_tasks
 
+    @final
     def poll(self):
         '''Poll the test's state.
 
@@ -1242,6 +1297,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
             If no job descriptor is yet associated with this test,
             :class:`True` is returned.
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if not self._job:
             return True
@@ -1249,19 +1313,31 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._job.finished()
 
     @_run_hooks('post_run')
+    @final
     def wait(self):
         '''Wait for this test to finish.
 
         :raises reframe.core.exceptions.ReframeError: In case of errors.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         self._job.wait()
         self.logger.debug('spawned job finished')
 
     @_run_hooks()
+    @final
     def sanity(self):
         self.check_sanity()
 
     @_run_hooks()
+    @final
     def performance(self):
         try:
             self.check_performance()
@@ -1269,10 +1345,20 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if self.strict_check:
                 raise
 
+    @final
     def check_sanity(self):
         '''The sanity checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the sanity check fails.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if self.sanity_patterns is None:
             raise SanityError('sanity_patterns not set')
@@ -1282,11 +1368,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
             if not success:
                 raise SanityError()
 
+    @final
     def check_performance(self):
         '''The performance checking phase of the regression test pipeline.
 
         :raises reframe.core.exceptions.SanityError: If the performance check
             fails.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         if self.perf_patterns is None:
             return
@@ -1386,11 +1482,21 @@ class RegressionTest(metaclass=RegressionTestMeta):
                 shutil.copytree(f, os.path.join(self.outputdir, f_orig))
 
     @_run_hooks()
+    @final
     def cleanup(self, remove_files=False):
         '''The cleanup phase of the regression test pipeline.
 
         :arg remove_files: If :class:`True`, the stage directory associated
             with this test will be removed.
+
+        .. warning::
+
+           You may not override this method directly unless you are in special
+           test. See `here
+           <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
+           more details.
+
+           .. versionchanged:: 3.0
         '''
         aliased = os.path.samefile(self._stagedir, self._outputdir)
         if aliased:
@@ -1490,7 +1596,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                                self.name, self.prefix)
 
 
-class RunOnlyRegressionTest(RegressionTest):
+class RunOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for run-only regression tests.
 
     This class is also directly available under the top-level :mod:`reframe`
@@ -1526,7 +1632,7 @@ class RunOnlyRegressionTest(RegressionTest):
         super().run.__wrapped__(self)
 
 
-class CompileOnlyRegressionTest(RegressionTest):
+class CompileOnlyRegressionTest(RegressionTest, special=True):
     '''Base class for compile-only regression tests.
 
     These tests are by default local and will skip the run phase of the

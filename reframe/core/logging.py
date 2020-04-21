@@ -101,6 +101,24 @@ def set_handler_level(hdlr, level):
 logging.Handler.setLevel = set_handler_level
 
 
+# Here we monkeypatch the `handleError` method of `logging.Handler` in
+# order to ignore `BrokenPipeError` exceptions while keeping the default
+# behavior for all the other types of exceptions.
+
+def handleError(func):
+    def ignore_brokenpipe(hdlr, l):
+        exc_type, *_ = sys.exc_info()
+        if exc_type == BrokenPipeError:
+            pass
+        else:
+            func(hdlr, l)
+
+    return ignore_brokenpipe
+
+
+logging.Handler.handleError = handleError(logging.Handler.handleError)
+
+
 class MultiFileHandler(logging.FileHandler):
     '''A file handler that allows writing on different log files based on
     information from the log record.

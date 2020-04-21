@@ -32,10 +32,9 @@ class BadSetupCheck(BaseFrontendCheck):
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
 
-    def setup(self, system, environ, **job_opts):
-        super().setup(system, environ, **job_opts)
+    @rfm.run_after('setup')
+    def raise_error(self):
         raise ReframeError('Setup failure')
-
 
 @rfm.simple_test
 class BadSetupCheckEarly(BaseFrontendCheck):
@@ -45,7 +44,8 @@ class BadSetupCheckEarly(BaseFrontendCheck):
         self.valid_prog_environs = ['*']
         self.local = False
 
-    def setup(self, system, environ, **job_opts):
+    @rfm.run_before('setup')
+    def raise_error_early(self):
         raise ReframeError('Setup failure')
 
 
@@ -102,7 +102,7 @@ class CustomPerformanceFailureCheck(BaseFrontendCheck):
         raise PerformanceError('performance failure')
 
 
-class KeyboardInterruptCheck(BaseFrontendCheck):
+class KeyboardInterruptCheck(BaseFrontendCheck, special=True):
     '''Simulate keyboard interrupt during test's execution.'''
 
     def __init__(self, phase='wait'):
@@ -112,11 +112,10 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
         self.valid_prog_environs = ['*']
         self.phase = phase
 
-    def setup(self, system, environ, **job_opts):
+    @rfm.run_before('setup')
+    def raise_before_setup(self):
         if self.phase == 'setup':
             raise KeyboardInterrupt
-
-        super().setup(system, environ, **job_opts)
 
     def wait(self):
         # We do our nasty stuff in wait() to make things more complicated
@@ -126,7 +125,7 @@ class KeyboardInterruptCheck(BaseFrontendCheck):
             super().wait()
 
 
-class SystemExitCheck(BaseFrontendCheck):
+class SystemExitCheck(BaseFrontendCheck, special=True):
     '''Simulate system exit from within a check.'''
 
     def __init__(self):
@@ -177,14 +176,14 @@ class SleepCheck(BaseFrontendCheck):
         SleepCheck._next_id += 1
 
 
-class SleepCheckPollFail(SleepCheck):
+class SleepCheckPollFail(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase.'''
 
     def poll(self):
         raise ValueError
 
 
-class SleepCheckPollFailLate(SleepCheck):
+class SleepCheckPollFailLate(SleepCheck, special=True):
     '''Emulate a test failing in the polling phase
     after the test has finished.'''
 

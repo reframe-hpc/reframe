@@ -662,6 +662,19 @@ def test_flex_alloc_sched_access_idle(make_flexible_job):
     assert job.num_tasks == 8
 
 
+def test_flex_alloc_sched_access_idle_sequence_view(make_flexible_job):
+    # Here we simulate passing a readonly 'sched_access' as returned
+    # by a 'SystemPartition' instance.
+
+    from reframe.utility import SequenceView
+
+    job = make_flexible_job('idle',
+                            sched_access=SequenceView(['--constraint=f3']),
+                            sched_partition='p3')
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+
 def test_flex_alloc_sched_access_constraint_partition(make_flexible_job):
     job = make_flexible_job(
         'all', sched_access=['--constraint=f1', '--partition=p2']

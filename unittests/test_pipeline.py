@@ -268,6 +268,12 @@ def test_supports_system(hellotest, testsys_system):
     assert hellotest.supports_system('testsys:gpu')
     assert hellotest.supports_system('testsys:login')
 
+    hellotest.valid_systems = ['*:*']
+    assert hellotest.supports_system('gpu')
+    assert hellotest.supports_system('login')
+    assert hellotest.supports_system('testsys:gpu')
+    assert hellotest.supports_system('testsys:login')
+
     hellotest.valid_systems = ['testsys']
     assert hellotest.supports_system('gpu')
     assert hellotest.supports_system('login')
@@ -291,6 +297,17 @@ def test_supports_system(hellotest, testsys_system):
     assert not hellotest.supports_system('login')
     assert not hellotest.supports_system('testsys:gpu')
     assert not hellotest.supports_system('testsys:login')
+
+    hellotest.valid_systems = ['*:gpu']
+    assert hellotest.supports_system('testsys:gpu')
+    assert hellotest.supports_system('foo:gpu')
+    assert not hellotest.supports_system('testsys:cpu')
+    assert not hellotest.supports_system('testsys:login')
+
+    hellotest.valid_systems = ['testsys:*']
+    assert hellotest.supports_system('testsys:login')
+    assert hellotest.supports_system('gpu')
+    assert not hellotest.supports_system('foo:gpu')
 
 
 def test_supports_environ(hellotest, generic_system):

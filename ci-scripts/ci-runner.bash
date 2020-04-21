@@ -138,9 +138,11 @@ source venv.unittests/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# FIXME: XALT is causing linking problems (see UES-823)
+module unload xalt
+
 echo "[INFO] Loaded Modules"
 module list
-
 
 cd ${CI_FOLDER}
 echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
