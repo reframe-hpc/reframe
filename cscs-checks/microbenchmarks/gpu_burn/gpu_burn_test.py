@@ -72,6 +72,14 @@ class GpuBurnTest(rfm.RegressionTest):
                 'perf': (950, -0.10, None, 'Gflop/s'),
                 'max_temp': (0, None, None, 'Celsius')
             },
+            'arolla:cn': {
+                'perf': (5861, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
+            'tsa:cn': {
+                'perf': (5861, -0.10, None, 'Gflop/s'),
+                'max_temp': (0, None, None, 'Celsius')
+            },
         }
 
         self.num_tasks = 0
