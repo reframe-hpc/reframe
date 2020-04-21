@@ -330,7 +330,7 @@ site_configuration = {
                     ],
                     'descr': 'Hybrid nodes (Haswell/P100)',
                     'max_jobs': 100,
-                    'launcher': 'srun'
+                    'launcher': 'srun',
                     'resources': [
                         {
                             'name': 'gres',
