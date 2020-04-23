@@ -9,6 +9,7 @@
 #
 
 import re
+import os
 from datetime import datetime
 
 import reframe.utility.os_ext as os_ext
@@ -92,4 +93,6 @@ class TorqueJobScheduler(PbsJobScheduler):
                     raise JobError('maximum pending time exceeded',
                                    jobid=job.jobid)
 
-            return job.state == 'COMPLETED'
+            with os_ext.change_dir(job.workdir):
+               done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
+            return job.state == 'COMPLETED' and done
