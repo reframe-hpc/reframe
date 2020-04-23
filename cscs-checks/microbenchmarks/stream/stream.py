@@ -78,6 +78,7 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (117000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (57000, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (117000, -0.05, None, 'MB/s')},
+                '*': {'triad': (0, 0, None, 'MB/s')},
             },
             'PrgEnv-cray': {
                 'daint:gpu': {'triad': (44000, -0.05, None, 'MB/s')},
@@ -86,6 +87,7 @@ class StreamTest(rfm.RegressionTest):
                 'dom:mc': {'triad': (89000, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (85000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (113000, -0.05, None, 'MB/s')},
+                '*': {'triad': (0, 0, None, 'MB/s')},
             },
             'PrgEnv-gnu': {
                 'daint:gpu': {'triad': (43800, -0.05, None, 'MB/s')},
@@ -94,18 +96,24 @@ class StreamTest(rfm.RegressionTest):
                 'dom:mc': {'triad': (87500, -0.05, None, 'MB/s')},
                 'kesch:cn': {'triad': (47000, -0.05, None, 'MB/s')},
                 'kesch:pn': {'triad': (84400, -0.05, None, 'MB/s')},
+                '*': {'triad': (0, 0, None, 'MB/s')},
             },
             'PrgEnv-intel': {
                 'daint:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (119000, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (59500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (119000, -0.05, None, 'MB/s')},
+                '*': {'triad': (0, 0, None, 'MB/s')},
             },
             'PrgEnv-pgi': {
                 'daint:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
+                '*': {'triad': (0, 0, None, 'MB/s')},
+            },
+            '*': {
+                '*': {'triad': (0, 0, None, 'MB/s')},
             }
         }
         self.tags = {'production', 'craype'}
@@ -125,7 +133,7 @@ class StreamTest(rfm.RegressionTest):
         try:
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
-            pass
+            self.reference = self.stream_bw_reference['*']
 
     @rfm.run_before('compile')
     def cray_linker_workaround(self):
