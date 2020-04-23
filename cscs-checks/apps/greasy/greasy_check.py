@@ -42,6 +42,7 @@ class GREASYCheck(rfm.RegressionTest):
         # or not
         self.sleep_time = 60
         self.build_system.cflags = ['-DSLEEP_TIME=%d' % self.sleep_time]
+        self.variant = variant
         if variant == 'openmp':
             self.build_system.cflags += ['-fopenmp']
         elif variant == 'mpi':
@@ -109,12 +110,19 @@ class GREASYCheck(rfm.RegressionTest):
                     'gres': 'gpu:0,craynetwork:4'
                 }
             }
-        elif self.current_partition.fullname in ['daint:mc', 'dom:mc']:
+        elif self.current_partition.fullname in ['dom:mc']:
             self.extra_resources = {
                 'gres': {
                     'gres': 'craynetwork:72'
                 }
             }
+        elif self.current_partition.fullname in ['daint:mc']:
+            if self.variant != 'serial':
+                self.extra_resources = {
+                    'gres': {
+                        'gres': 'craynetwork:72'
+                    }
+                }
 
     @rfm.run_before('run')
     def change_executable_name(self):
