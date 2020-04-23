@@ -175,8 +175,8 @@ class RFC3339Formatter(logging.Formatter):
 
     def format(self, record):
         datefmt = self.datefmt or self.default_time_format
-        if record.check_job_completion_time is not None:
-            ct = self.converter(record.check_job_completion_time)
+        if record.check_job_unix_completion_time is not None:
+            ct = self.converter(record.check_job_unix_completion_time)
             record.check_job_completion_time = _format_time_rfc3339(
                 ct, datefmt
             )
@@ -419,6 +419,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 'check_name': 'reframe',
                 'check_jobid': '-1',
                 'check_job_completion_time': None,
+                'check_job_unix_completion_time': None,
                 'check_info': 'reframe',
                 'check_system': None,
                 'check_partition': None,
@@ -480,7 +481,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             self.extra['check_jobid'] = self.check.job.jobid
             if self.check.job.completion_time:
                 ct = self.check.job.completion_time
-                self.extra['check_job_completion_time'] = ct
+                self.extra['check_job_unix_completion_time'] = ct
 
     def log_performance(self, level, tag, value, ref,
                         low_thres, upper_thres, unit=None, *, msg=None):
