@@ -137,8 +137,8 @@ class TestStats:
         stats_title = 'FAILURE STATISTICS'
         stats_end = line_width * '-'
         stats_body = []
-        row_format = "{:<11} {:<5} {}"
-        stats_hline = row_format.format(11*'-', 5*'-', 60*'-')
+        row_format = "{:<13} {:<5} {}"
+        stats_hline = row_format.format(13*'-', 5*'-', 60*'-')
         stats_header = row_format.format('Phase', '#', 'Failing test cases')
         num_tests = len(self.tasks(current_run))
         num_failures = 0
