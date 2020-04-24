@@ -39,8 +39,7 @@ class QuantumESPRESSOCheck(rfm.RunOnlyRegressionTest):
 class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
     def __init__(self, scale, variant):
         super().__init__()
-        self.descr = 'QuantumESPRESSO CPU check (version: %s, %s)' \
-                     % (scale, variant)
+        self.descr = f'QuantumESPRESSO CPU check (version: {scale}, {variant})'
         self.valid_systems = ['daint:mc']
         self.modules = ['QuantumESPRESSO/6.5-CrayIntel-19.10']
         if scale == 'small':
