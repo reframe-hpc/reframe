@@ -430,7 +430,7 @@ def convert_old_config(filename):
                 if 'container_platforms' in p:
                     new_p['container_platforms'] = []
                     for cname, c in p['container_platforms'].items():
-                        new_c = {'name': cname}
+                        new_c = {'type': cname}
                         new_c.update(c)
                         if 'variables' in c:
                             new_c['variables'] = [

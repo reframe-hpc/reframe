@@ -37,7 +37,10 @@
         "handler_common": {
             "type": "object",
             "properties": {
-                "type": {"type": "string"},
+                "type": {
+                    "type": "string",
+                    "enum": ["file", "filelog", "graylog", "stream", "syslog"]
+                },
                 "level": {"$ref": "#/defs/loglevel"},
                 "format": {"type": "string"},
                 "datefmt": {"type": "string"}
@@ -69,6 +72,7 @@
                     "properties": {
                         "basedir": {"type": "string"},
                         "prefix": {"type": "string"}
+                        "append": {"type": "boolean"}
                     },
                     "required": ["prefix"]
                 }
@@ -149,7 +153,6 @@
                     "prefix": {"type": "string"},
                     "stagedir": {"type": "string"},
                     "outputdir": {"type": "string"},
-                    "perflogdir": {"type": "string"},
                     "resourcesdir": {"type": "string"},
                     "partitions": {
                         "type": "array",
@@ -182,7 +185,7 @@
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "name": {
+                                            "type": {
                                                 "type": "string",
                                                 "enum": [
                                                     "Docker", "Sarus",
@@ -196,7 +199,7 @@
                                                 "$ref": "#/defs/envvar_list"
                                             }
                                         },
-                                        "required": ["name"]
+                                        "required": ["type"]
                                     }
                                 },
                                 "modules": {"$ref": "#/defs/modules_list"},
@@ -211,9 +214,10 @@
                                             "options": {
                                                 "type": "array",
                                                 "items": {"type": "string"}
-                                            },
-                                            "additionalProperties": false
-                                        }
+                                            }
+                                        },
+                                        "required": ["name"],
+                                        "additionalProperties": false
                                     }
                                 }
                             },
@@ -223,7 +227,7 @@
                         "minItems": 1
                     }
                 },
-                "required": ["name", "hostnames"],
+                "required": ["name", "hostnames", "partitions"],
                 "additionalProperties": false
             }
         },
@@ -351,8 +355,8 @@
                     "non_default_craype": {"type": "boolean"},
                     "purge_environment": {"type": "boolean"},
                     "save_log_files": {"type": "boolean"},
-                    "timestamp": {"type": "string"},
                     "target_systems": {"$ref": "#/defs/system_ref"},
+                    "timestamp_dirs": {"type": "string"},
                     "unload_modules": {
                         "type": "array",
                         "items": {"type": "string"}
@@ -391,23 +395,25 @@
         "general/non_default_craype": false,
         "general/purge_environment": false,
         "general/save_log_files": false,
-        "general/timestamp": "",
         "general/target_systems": ["*"],
+        "general/timestamp_dirs": "",
         "general/unload_modules": [],
         "general/user_modules": [],
         "general/verbose": 0,
-        "logging/level": "info",
+        "logging/level": "debug",
         "logging/target_systems": ["*"],
-        "logging/handlers*/*_level": "debug",
+        "logging/handlers*/*_level": "info",
         "logging/handlers*/*_format": "%(message)s",
         "logging/handlers*/*_datefmt": "%FT%T",
         "logging/handlers*/file_append": false,
         "logging/handlers*/file_timestamp": false,
+        "logging/handlers*/filelog_append": true,
         "logging/handlers*/filelog_basedir": "./perflogs",
         "logging/handlers*/graylog_extras": {},
         "logging/handlers*/stream_name": "stdout",
         "logging/handlers*/syslog_socktype": "udp",
         "logging/handlers*/syslog_facility": "user",
+        "modes/options": [],
         "modes/target_systems": ["*"],
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
@@ -416,11 +422,9 @@
         "systems/modules": [],
         "systems/variables": [],
         "systems/prefix": ".",
-        "systems/perflogdir": "",
         "systems/outputdir": "",
         "systems/resourcesdir": ".",
         "systems/stagedir": "",
-        "systems/partitions": {},
         "systems/partitions/descr": "",
         "systems/partitions/access": [],
         "systems/partitions/environs": [],
@@ -428,6 +432,7 @@
         "systems/partitions/container_platforms/modules": [],
         "systems/partitions/container_platforms/variables": [],
         "systems/partitions/resources": [],
+        "systems/partitions/resources/options": [],
         "systems/partitions/modules": [],
         "systems/partitions/variables": [],
         "systems/partitions/environs": [],

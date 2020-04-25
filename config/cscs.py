@@ -154,13 +154,13 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
-                            'name': 'Sarus',
+                            'type': 'Sarus',
                             'modules': [
                                 'sarus'
                             ]
                         },
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': [
                                 'singularity'
                             ]
@@ -200,13 +200,13 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
-                            'name': 'Sarus',
+                            'type': 'Sarus',
                             'modules': [
                                 'sarus'
                             ]
                         },
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': [
                                 'singularity'
                             ]
@@ -302,13 +302,13 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
-                            'name': 'Sarus',
+                            'type': 'Sarus',
                             'modules': [
                                 'sarus'
                             ]
                         },
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': [
                                 'singularity'
                             ]
@@ -343,13 +343,13 @@ site_configuration = {
                     'scheduler': 'slurm',
                     'container_platforms': [
                         {
-                            'name': 'Sarus',
+                            'type': 'Sarus',
                             'modules': [
                                 'sarus'
                             ]
                         },
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': [
                                 'singularity'
                             ]

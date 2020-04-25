@@ -51,7 +51,7 @@ These sections contain other objects which further define in detail the framewor
 If you are using a Python file to configure ReFrame, this big JSON configuration object is stored in a special variable called ``site_configuration``.
 
 We will explore the basic configuration of ReFrame through the following configuration file that permits ReFrame to run on Piz Daint.
-For the complete reference of the different configuration options, you should refer to `XXX <...>`__.
+For the complete listing and description of all configuration options, you should refer to the `Configuration Reference <config_reference.html>`__.
 
 .. literalinclude:: ../tutorial/config/settings.py
    :lines: 10-
@@ -71,7 +71,7 @@ In our example we define only one system, namely Piz Daint:
 .. literalinclude:: ../tutorial/config/settings.py
    :lines: 11-75
 
-Each system is associated with a set of properties, which in this case are the following (for a complete list of properties, refer to the `XXX <...>`__):
+Each system is associated with a set of properties, which in this case are the following (for a complete list of properties, refer to the `configuration reference <config_reference.html#system-configuration>`__):
 
 * ``name``: The name of the system.
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
@@ -99,17 +99,17 @@ The basic properties of a partition are the following:
 * ``descr``: A detailed description of the system partition.
 * ``scheduler``: The workload manager (job scheduler) used in this partition for launching parallel jobs.
   In this particular example, the `Slurm <https://slurm.schedmd.com/>`__ scheduler is used.
-  For a complete list of the supported job schedulers, see `XXX <...>`__.
+  For a complete list of the supported job schedulers, see `here <config_reference.html#.systems[].partitions[].scheduler>`__.
 * ``launcher``: The parallel job launcher used in this partition.
   In this case, the ``srun`` command will be used.
-  For a complete list of the supported parallel job launchers, see `XXX <...>`__.
+  For a complete list of the supported parallel job launchers, see `here <config_reference.html#.systems[].partitions[].launcher>`__.
 * ``access``: A list of scheduler options that will be passed to the generated job script for gaining access to that logical partition.
   Notice how in this case, the nodes are selected through a constraint and not an actual scheduler partition.
 * ``environs``: The list of environments that ReFrame will use to run regression tests on this partition.
   These are just symbolic names that refer to environments defined in the ``environments`` section described below.
 * ``container_platforms``: A set of supported container platforms in this partition.
   Each container platform is an object with a name and list of environment modules to load, in order to enable this platform.
-  For a complete list of the supported container platforms, see `XXX <...>`__.
+  For a complete list of the supported container platforms, see `here <config_reference.html#.systems[].partitions[].container_platforms[].type>`__.
 * ``max_jobs``: The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
   This option is relevant only when ReFrame executes with the `asynchronous execution policy <running.html#asynchronous-execution-of-regression-checks>`__.
 
@@ -134,7 +134,7 @@ In other systems, you could define a ReFrame environment to wrap a toolchain (MP
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
 This environment definition is minimal, since the default values for the rest of the properties serve our purpose.
-For a complete list of the environment properties, see `XXX <...>`__.
+For a complete list of the environment properties, see the `configuration reference <config_reference.html#environment-configuration>`__.
 
 An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions.
 In the following, for demonstration purposes, we define ``PrgEnv-gnu`` differently for the ``mc`` partition of the ``daint`` system (notice the condensed form of writing this as ``daint:mc``):
@@ -184,7 +184,7 @@ These are the following:
   ReFrame uses the format specifiers from `Python Logging <https://docs.python.org/3.8/library/logging.html?highlight=logging#logrecord-attributes>`__, but also defines its owns specifiers.
 * ``datefmt``: A time format string for formatting timestamps.
   There are two log record fields that are considered timestamps: (a) ``asctime`` and (b) ``check_job_completion_time``.
-  ReFrame follows the time formatting syntax of Python's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ with a small tweak allowing full RFC3339 compliance when formatting time zone differences (see `XXX <>`__ for more details).
+  ReFrame follows the time formatting syntax of Python's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ with a small tweak allowing full RFC3339 compliance when formatting time zone differences (see the `configuration reference <config_reference.html#.logging[].handlers[].datefmt>`__ for more details).
 
 We will not go into the details of the individual handlers here. 
 In this particular example we use three handlers of two distinct types:
@@ -207,7 +207,7 @@ The performance handler in this example will create a file per test and per syst
 Notice in the ``format`` property how the message to be logged is structured such that it can be easily parsed from post processing tools.
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
-For a complete description of the logging configuration properties and the different handlers, please refer to `XXX <...>`__.
+For a complete description of the logging configuration properties and the different handlers, please refer to the `configuration reference <config_reference.html#logging-configuration>`__.
 Section `Running ReFrame <running.html>`__ provides also examples of logging.
 
 
@@ -218,7 +218,7 @@ General configuration options
 General configuration options of the framework go under the ``general`` section of the configuration file.
 This section is optional.
 In this case, we define the search path for ReFrame test files to be the ``tutorial/`` subdirectory and we also instruct ReFrame to recursively search for tests there.
-There are several more options that can go into this section, but the reader is referred to `XXX <...>`__ for the complete list.
+There are several more options that can go into this section, but the reader is referred to the `configuration reference <config_reference.html#general-configuration>`__ for the complete list.
 
 
 ---------------------------
@@ -292,77 +292,75 @@ Let's see some concrete examples:
 
   .. code:: javascript
             
-    	[
-    	  {
-    	    "name": "login",
-    	    "scheduler": "local",
-    	    "modules": [],
-    	    "access": [],
-    	    "environs": [
-    	      "PrgEnv-cray",
-    	      "PrgEnv-gnu",
-    	      "PrgEnv-intel",
-    	      "PrgEnv-pgi"
-    	    ],
-    	    "descr": "Login nodes",
-    	    "max_jobs": 4,
-    	    "launcher": "local"
-    	  },
-    	  {
-    	    "name": "gpu",
-    	    "scheduler": "slurm",
-    	    "modules": [
-    	      "daint-gpu"
-    	    ],
-    	    "access": [
-    	      "--constraint=gpu"
-    	    ],
-    	    "environs": [
-    	      "PrgEnv-cray",
-    	      "PrgEnv-gnu",
-    	      "PrgEnv-intel",
-    	      "PrgEnv-pgi"
-    	    ],
-    	    "container_platforms": [
-    	      {
-    	        "name": "Singularity",
-    	        "modules": [
-    	          "Singularity"
-    	        ]
-    	      }
-    	    ],
-    	    "descr": "Hybrid nodes (Haswell/P100)",
-    	    "max_jobs": 100,
-    	    "launcher": "srun"
-    	  },
-    	  {
-    	    "name": "mc",
-    	    "scheduler": "slurm",
-    	    "modules": [
-    	      "daint-mc"
-    	    ],
-    	    "access": [
-    	      "--constraint=mc"
-    	    ],
-    	    "environs": [
-    	      "PrgEnv-cray",
-    	      "PrgEnv-gnu",
-    	      "PrgEnv-intel",
-    	      "PrgEnv-pgi"
-    	    ],
-    	    "container_platforms": [
-    	      {
-    	        "name": "Singularity",
-    	        "modules": [
-    	          "Singularity"
-    	        ]
-    	      }
-    	    ],
-    	    "descr": "Multicore nodes (Broadwell)",
-    	    "max_jobs": 100,
-    	    "launcher": "srun"
-    	  }
-    	]
+			[
+			  {
+			    "name": "login",
+			    "descr": "Login nodes",
+			    "scheduler": "local",
+			    "launcher": "local",
+			    "environs": [
+			      "PrgEnv-cray",
+			      "PrgEnv-gnu",
+			      "PrgEnv-intel",
+			      "PrgEnv-pgi"
+			    ],
+			    "max_jobs": 4
+			  },
+			  {
+			    "name": "gpu",
+			    "descr": "Hybrid nodes (Haswell/P100)",
+			    "scheduler": "slurm",
+			    "launcher": "srun",
+			    "modules": [
+			      "daint-gpu"
+			    ],
+			    "access": [
+			      "--constraint=gpu"
+			    ],
+			    "environs": [
+			      "PrgEnv-cray",
+			      "PrgEnv-gnu",
+			      "PrgEnv-intel",
+			      "PrgEnv-pgi"
+			    ],
+			    "container_platforms": [
+			      {
+			        "name": "Singularity",
+			        "modules": [
+			          "Singularity"
+			        ]
+			      }
+			    ],
+			    "max_jobs": 100
+			  },
+			  {
+			    "name": "mc",
+			    "descr": "Multicore nodes (Broadwell)",
+			    "scheduler": "slurm",
+			    "launcher": "srun",
+			    "modules": [
+			      "daint-mc"
+			    ],
+			    "access": [
+			      "--constraint=mc"
+			    ],
+			    "environs": [
+			      "PrgEnv-cray",
+			      "PrgEnv-gnu",
+			      "PrgEnv-intel",
+			      "PrgEnv-pgi"
+			    ],
+			    "container_platforms": [
+			      {
+			        "name": "Singularity",
+			        "modules": [
+			          "Singularity"
+			        ]
+			      }
+			    ],
+			    "max_jobs": 100
+			  }
+			]
 
   Check how the output changes if we explicitly set system to ``daint:login``:
 
@@ -376,18 +374,16 @@ Let's see some concrete examples:
 			[
 			  {
 			    "name": "login",
+			    "descr": "Login nodes",
 			    "scheduler": "local",
-			    "modules": [],
-			    "access": [],
+			    "launcher": "local",
 			    "environs": [
 			      "PrgEnv-cray",
 			      "PrgEnv-gnu",
 			      "PrgEnv-intel",
 			      "PrgEnv-pgi"
 			    ],
-			    "descr": "Login nodes",
-			    "max_jobs": 4,
-			    "launcher": "local"
+			    "max_jobs": 4
 			  }
 			]
 

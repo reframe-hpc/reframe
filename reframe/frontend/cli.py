@@ -229,7 +229,7 @@ def main():
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
         help='Apply a single module mapping',
-        envvar='RFM_MODULE_MAPPINGS', configvar='general/module_mappings'
+        envvar='RFM_MODULE_MAPPINGS ,', configvar='general/module_mappings'
     )
     env_options.add_argument(
         '-m', '--module', action='append', default=[],
@@ -295,7 +295,7 @@ def main():
         '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
         help=('Append a timestamp component to the various '
               'ReFrame directories (default format: "%%FT%%T")'),
-        envvar='RFM_TIMESTAMP', configvar='general/timestamp'
+        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     misc_options.add_argument('-V', '--version', action='version',
                               version=os_ext.reframe_version())

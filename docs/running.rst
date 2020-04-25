@@ -1320,3 +1320,10 @@ Here is an example that shows how to test a non-default Cray PE with ReFrame:
 
    module load cdt/19.08
    reframe <options> --non-default-craype  -r
+
+
+Since CDT 19.11 you can load the CDT module from within ReFrame as follows:
+
+.. code:: bash
+
+   reframe <options> -m cdt/20.03 --non-default-craype  -r

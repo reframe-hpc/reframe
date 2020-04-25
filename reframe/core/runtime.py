@@ -112,7 +112,7 @@ class RuntimeContext:
 
     @property
     def timestamp(self):
-        timefmt = self.site_config.get('general/0/timestamp')
+        timefmt = self.site_config.get('general/0/timestamp_dirs')
         return self._timestamp.strftime(timefmt)
 
     @property

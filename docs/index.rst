@@ -62,3 +62,4 @@ Publications
    About ReFrame <about>
    Reference Guide <reference>
    Sanity Functions Reference <sanity_functions_reference>
+   Configuration Reference <config_reference>

@@ -100,7 +100,7 @@ def extended_parser():
     )
     foo_options.add_argument(
         '--timestamp', action='store',
-        envvar='RFM_TIMESTAMP', configvar='general/timestamp'
+        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
     )
     foo_options.add_argument(
         '-C', '--config-file', action='store', envvar='RFM_CONFIG_FILE'
@@ -157,7 +157,7 @@ def test_option_with_config(extended_parser):
         )
         options.update_config(site_config)
         assert site_config.get('general/0/check_search_recursive') is True
-        assert site_config.get('general/0/timestamp') == '%FT%T'
+        assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
         assert site_config.get('general/0/non_default_craype') is True
         assert site_config.get('systems/0/prefix') == '.'
         assert site_config.get('general/0/colorize') is False

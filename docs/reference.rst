@@ -43,7 +43,7 @@ Job schedulers and parallel launchers
    :show-inheritance:
 
 
-.. automodule:: reframe.core.launchers.registry
+.. automodule:: reframe.core.backends
    :members:
    :show-inheritance:
 

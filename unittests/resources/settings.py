@@ -29,7 +29,6 @@ site_configuration = {
             'hostnames': ['testsys'],
             'prefix': '.rfm_testing',
             'resourcesdir': '.rfm_testing/resources',
-            'perflogdir': '.rfm_testing/perflogs',
             'modules': ['foo/1.0'],
             'variables': [['FOO_CMD', 'foobar']],
             'partitions': [

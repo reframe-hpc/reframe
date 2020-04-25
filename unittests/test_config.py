@@ -199,7 +199,6 @@ def test_select_subconfig():
     assert site_config.get('systems/0/prefix') == '.rfm_testing'
     assert (site_config.get('systems/0/resourcesdir') ==
             '.rfm_testing/resources')
-    assert site_config.get('systems/0/perflogdir') == '.rfm_testing/perflogs'
     assert site_config.get('systems/0/modules') == ['foo/1.0']
     assert site_config.get('systems/0/variables') == [['FOO_CMD', 'foobar']]
     assert site_config.get('systems/0/modules_system') == 'nomod'
@@ -308,7 +307,6 @@ def test_system_create():
     assert system.stagedir == ''
     assert system.outputdir == ''
     assert system.resourcesdir == '.rfm_testing/resources'
-    assert system.perflogdir == '.rfm_testing/perflogs'
     assert len(system.partitions) == 1
 
     partition = system.partitions[0]

@@ -140,11 +140,11 @@ class _SystemPartition:
             'access': self._access,
             'container_platforms': [
                 {
-                    'name': name,
+                    'type': ctype,
                     'modules': [m.name for m in cpenv.modules],
                     'variables': [[n, v] for n, v in cpenv.variables.items()]
                 }
-                for name, cpenv in self._container_environs.items()
+                for ctype, cpenv in self._container_environs.items()
             ],
             'modules': [m.name for m in self._local_env.modules],
             'variables': [[n, v]
@@ -168,7 +168,7 @@ class System:
     '''A representation of a system inside ReFrame.'''
 
     def __init__(self, name, descr, hostnames, modules_system,
-                 preload_env, prefix, perflogdir, outputdir,
+                 preload_env, prefix, outputdir,
                  resourcesdir, stagedir, partitions):
         self._name = name
         self._descr = descr
@@ -176,7 +176,6 @@ class System:
         self._modules_system = ModulesSystem.create(modules_system)
         self._preload_env = preload_env
         self._prefix = prefix
-        self._perflogdir = perflogdir
         self._outputdir = outputdir
         self._resourcesdir = resourcesdir
         self._stagedir = stagedir
@@ -195,15 +194,17 @@ class System:
             part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
             part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
             part_container_environs = {}
-            for p in site_config.get(f'{partid}/container_platforms'):
-                name = p['name']
-                part_container_environs[name] = Environment(
-                    name=f'__rfm_env_{name}',
+            for i, p in enumerate(
+                    site_config.get(f'{partid}/container_platforms')
+            ):
+                ctype = p['type']
+                part_container_environs[ctype] = Environment(
+                    name=f'__rfm_env_{ctype}',
                     modules=site_config.get(
-                        f'{partid}/container_platforms/@{name}/modules'
+                        f'{partid}/container_platforms/{i}/modules'
                     ),
                     variables=site_config.get(
-                        f'{partid}/container_platforms/@{name}/variables'
+                        f'{partid}/container_platforms/{i}/variables'
                     )
                 )
 
@@ -255,7 +256,6 @@ class System:
                 variables=site_config.get('systems/0/variables')
             ),
             prefix=site_config.get('systems/0/prefix'),
-            perflogdir=site_config.get('systems/0/perflogdir'),
             outputdir=site_config.get('systems/0/outputdir'),
             resourcesdir=site_config.get('systems/0/resourcesdir'),
             stagedir=site_config.get('systems/0/stagedir'),
@@ -307,11 +307,6 @@ class System:
         return self._outputdir
 
     @property
-    def perflogdir(self):
-        '''The ReFrame log directory prefix associated with this system.'''
-        return self._perflogdir
-
-    @property
     def resourcesdir(self):
         '''Global resources directory for this system.
 
@@ -351,7 +346,6 @@ class System:
             'prefix': self._prefix,
             'outputdir': self._outputdir,
             'stagedir': self._stagedir,
-            'perflogdir': self._perflogdir,
             'resourcesdir': self._resourcesdir,
             'partitions': [p.json() for p in self._partitions]
         }
@@ -366,7 +360,7 @@ class System:
             f'hostnames={self._hostnames!r}, '
             f'modules_system={self.modules_system.name!r}, '
             f'preload_env={self._preload_env!r}, prefix={self._prefix!r}, '
-            f'perflogdir={self._perflogdir!r}, outputdir={self._outputdir!r}, '
+            f'outputdir={self._outputdir!r}, '
             f'resourcesdir={self._resourcesdir!r}, '
             f'stagedir={self._stagedir!r}, partitions={self._partitions!r})'
         )
