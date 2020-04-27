@@ -234,7 +234,7 @@ class TestFrontend(unittest.TestCase):
         returncode, stdout, stderr = self._run_reframe()
 
         assert r'FAILURE STATISTICS' in stdout
-        assert r'sanity      1     [SanityFailureCheck' in stdout
+        assert r'sanity        1     [SanityFailureCheck' in stdout
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert returncode != 0
