@@ -55,7 +55,8 @@ class QuantumESPRESSOCpuCheck(QuantumESPRESSOCheck):
         energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
                                   self.stdout, 'energy', float)
         energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns += sn.all([
+        self.sanity_patterns = sn.all([
+            self.sanity_patterns,
             sn.assert_lt(energy_diff, 1e-8)
         ])
 
@@ -108,7 +109,8 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         energy = sn.extractsingle(r'!\s+total energy\s+=\s+(?P<energy>\S+) Ry',
                                   self.stdout, 'energy', float)
         energy_diff = sn.abs(energy-energy_reference)
-        self.sanity_patterns += sn.all([
+        self.sanity_patterns = sn.all([
+            self.sanity_patterns,
             sn.assert_lt(energy_diff, 1e-8)
         ])
 
