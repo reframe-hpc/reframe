@@ -95,4 +95,5 @@ class TorqueJobScheduler(PbsJobScheduler):
 
             with os_ext.change_dir(job.workdir):
                done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
+
             return job.state == 'COMPLETED' and done
