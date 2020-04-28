@@ -125,7 +125,7 @@ class StreamTest(rfm.RegressionTest):
         try:
             self.reference = self.stream_bw_reference[envname]
         except KeyError:
-            pass
+            self.reference = self.stream_bw_reference['PrgEnv-gnu']
 
     @rfm.run_before('compile')
     def cray_linker_workaround(self):
