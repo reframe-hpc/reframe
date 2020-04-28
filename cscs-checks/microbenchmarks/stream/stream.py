@@ -106,7 +106,7 @@ class StreamTest(rfm.RegressionTest):
                 'daint:mc': {'triad': (88500, -0.05, None, 'MB/s')},
                 'dom:gpu': {'triad': (44500, -0.05, None, 'MB/s')},
                 'dom:mc': {'triad': (88500, -0.05, None, 'MB/s')},
-            },
+            }
         }
         self.tags = {'production', 'craype'}
         self.maintainers = ['RS', 'SK']
