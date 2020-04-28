@@ -473,6 +473,15 @@ class TestFrontend(unittest.TestCase):
         assert 'Traceback' not in stderr
         assert 0 == returncode
 
+    def test_verbosity_with_check(self):
+        self.more_options = ['-vvvvv']
+        self.checkpath = ['unittests/resources/checks/hellocheck.py']
+        returncode, stdout, stderr = self._run_reframe()
+        assert '' != stdout
+        assert 'Traceback' not in stdout
+        assert 'Traceback' not in stderr
+        assert 0 == returncode
+
     @fixtures.switch_to_user_runtime
     def test_unload_module(self):
         # This test is mostly for ensuring coverage. `_run_reframe()` restores
