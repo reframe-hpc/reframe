@@ -478,6 +478,7 @@ class TestFrontend(unittest.TestCase):
         self.checkpath = ['unittests/resources/checks/hellocheck.py']
         returncode, stdout, stderr = self._run_reframe()
         assert '' != stdout
+        assert '--- Logging error ---' not in stdout
         assert 'Traceback' not in stdout
         assert 'Traceback' not in stderr
         assert 0 == returncode
