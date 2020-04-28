@@ -93,7 +93,7 @@ class TorqueJobScheduler(PbsJobScheduler):
                     raise JobError('maximum pending time exceeded',
                                    jobid=job.jobid)
 
-            with os_ext.change_dir(job.workdir):
-               done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
-
+            stdout = os.path.join(job.workdir, job.stdout)
+            stderr = os.path.join(job.workdir, job.stderr)
+            done = os.path.exists(stdout) and os.path.exists(stderr)
             return job.state == 'COMPLETED' and done
