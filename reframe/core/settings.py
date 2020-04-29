@@ -40,6 +40,13 @@ site_configuration = {
                     'name': 'stdout',
                     'level': 'info',
                     'format': '%(message)s'
+                },
+                {
+                    'type': 'file',
+                    'name': 'reframe.log',
+                    'level': 'debug',
+                    'format': '[%(asctime)s] %(levelname)s: %(check_info)s: %(message)s',   # noqa: E501
+                    'append': False
                 }
             ],
             'handlers_perflog': [

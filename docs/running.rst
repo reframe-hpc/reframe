@@ -6,7 +6,7 @@ Before getting into any details, the simplest way to invoke ReFrame is the follo
 
 .. code-block:: bash
 
-  ./bin/reframe -c /path/to/checks -R --run
+  ./bin/reframe -c /path/to/checks -R -r
 
 This will search recursively for test files in ``/path/to/checks`` and will start running them on the current system.
 
@@ -28,8 +28,9 @@ Currently there are only two available actions:
 1. Listing of the selected checks
 2. Execution of the selected checks
 
+-------------------------------
 Listing of the regression tests
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 To retrieve a listing of the selected checks, you must specify the ``-l`` or ``--list`` options.
 This will provide a list with a brief description for each test containing only its name and the path to the file where it is defined.
@@ -215,8 +216,9 @@ The detailed listing shows the description of the test, its supported systems an
       Previous versions were showing all the tests found.
 
 
+---------------------------------
 Execution of the regression tests
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------
 
 To run the regression tests you should specify the *run* action though the ``-r`` or ``--run`` options.
 
@@ -310,8 +312,9 @@ ReFrame the does not search recursively into directories specified with the ``-c
 
 The ``-c`` option completely overrides the default path.
 Currently, there is no option to prepend or append to the default regression path.
-However, you can build your own check path by specifying a colon separated list of paths to the ``-c`` option.
-The ``-c``\ option accepts also regular files. This is very useful when you are implementing new regression tests, since it allows you to run only your test:
+However, you can build your own check path by specifying multiple times the ``-c`` option.
+The ``-c`` option accepts also regular files.
+This is very useful when you are implementing new regression tests, since it allows you to run only your test:
 
 .. code-block:: bash
 
@@ -325,16 +328,6 @@ The ``-c``\ option accepts also regular files. This is very useful when you are 
 
    .. versionadded:: 2.12
 
-.. warning::
-   Using the command line ``-c`` or ``--checkpath`` multiple times is not supported anymore and only the last option will be considered.
-   Multiple paths should be passed instead as a colon separated list:
-
-   .. code-block:: bash
-
-      ./bin/reframe -c /path/to/my/first/test.py:/path/to/my/second/ -r
-
-
-   .. versionchanged:: 3.0
 
 
 Filtering of Regression Tests
@@ -343,8 +336,9 @@ Filtering of Regression Tests
 At this phase you can select which regression tests should be run or listed.
 There are several ways to select regression tests, which we describe in more detail here:
 
+-------------------------
 Selecting tests by system
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 .. versionadded:: 2.15
 
@@ -373,8 +367,9 @@ Finally, in order to list all the tests found regardless of their supported syst
   ./bin/reframe --skip-system-check -l
 
 
+------------------------------------------
 Selecting tests by programming environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------------------
 
 To select tests by the programming environment, use the ``-p`` or ``--prgenv`` options:
 
@@ -411,8 +406,9 @@ For example, the following will select all tests that support programming enviro
    The ``-p`` option recognizes regular expressions as arguments.
 
 
+-----------------------
 Selecting tests by tags
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 As we have seen in the `"ReFrame tutorial" <tutorial.html>`__, every regression test may be associated with a set of tags.
 Using the ``-t`` or ``--tag`` option you can select the regression tests associated with a specific tag.
@@ -430,8 +426,9 @@ The list of tags associated with a check can be viewed in the listing output whe
 
    The ``-t`` option recognizes regular expressions as arguments.
 
+-----------------------
 Selecting tests by name
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
 
 It is possible to select or exclude tests by name through the ``--name`` or ``-n`` and ``--exclude`` or ``-x`` options.
 For example, you can select only the ``Example7Test`` from the tutorial as follows:
@@ -736,16 +733,14 @@ This is useful if you want to check the directories that ReFrame will create.
 You can also define different default directories per system by specifying them in the `site configuration <configure.html#the-configuration-file>`__ settings file.
 The command line options, though, take always precedence over any default directory.
 
+
 Logging
 -------
 
-From version 2.4 onward, ReFrame supports logging of its actions.
-ReFrame creates two files inside the current working directory every time it is run:
-
-* ``reframe.out``: This file stores the output of a run as it was printed in the standard output.
-* ``reframe.log``: This file stores more detailed of information on ReFrame's actions.
-
-By default, the output in ``reframe.log`` looks like the following:
+From version 2.4 onward, ReFrame not only supports logging of its actions, but its normal output is also fully configurable.
+All output of ReFrame is handled by logging handlers, which can send information to multiple channels at once filtering it independently based on severity levels.
+By default, using its generic configuration, ReFrame sends informational data to its standard output and debug data to ``reframe.log``.
+The debug information in ``reframe.log`` looks like the following:
 
 .. code-block:: none
 
@@ -787,177 +782,24 @@ By default, the output in ``reframe.log`` looks like the following:
 
 Each line starts with a timestamp, the level of the message (``info``, ``debug`` etc.), the context in which the framework is currently executing (either ``reframe`` or the name of the current test and, finally, the actual message.
 
-Every time ReFrame is run, both ``reframe.out`` and ``reframe.log`` files will be rewritten.
-However, you can ask ReFrame to copy them to the output directory before exiting by passing it the ``--save-log-files`` option.
+Every time ReFrame is run, the ``reframe.log`` files will be rewritten.
+However, you can ask ReFrame to copy it to the output directory before exiting by passing it the ``--save-log-files`` option.
 
-Configuring Logging
-^^^^^^^^^^^^^^^^^^^
-
-You can configure several aspects of logging in ReFrame and even how the output will look like.
-ReFrame's logging mechanism is built upon Python's `logging <https://docs.python.org/3.6/library/logging.html>`__ framework adding extra logging levels and more formatting capabilities.
-
-Logging in ReFrame is configured by the ``logging_config`` variable in the ``reframe/settings.py`` file.
-The default configuration looks as follows:
-
-.. literalinclude:: ../reframe/settings.py
-  :lines: 47-74
-  :dedent: 4
-
-Note that this configuration dictionary is not the same as the one used by Python's logging framework.
-It is a simplified version adapted to the needs of ReFrame.
-
-The ``logging_config`` dictionary has two main key entries:
-
-* ``level`` (default: ``'INFO'``):
-  This is the lowest level of messages that will be passed down to the different log record handlers.
-  Any message with a lower level than that, it will be filtered out immediately and will not be passed to any handler.
-  ReFrame defines the following logging levels with a decreasing severity: ``CRITICAL``, ``ERROR``, ``WARNING``, ``INFO``, ``VERBOSE`` and ``DEBUG``.
-  Note that the level name is *not* case sensitive in ReFrame.
-* ``handlers``:
-  A list of log record handlers that are attached to ReFrame's logging mechanism.
-  You can attach as many handlers as you like.
-  For example, by default ReFrame uses three handlers: (a) a handler that logs debug information into ``reframe.log``, (b) a handler that controls the actual output of the framework to the standart output, which does not print any debug messages, and (c) a handler that writes the same output to a file ``reframe.out``.
-
-Each handler is configured by another dictionary that holds its properties as string key/value pairs.
-For standard ReFrame logging there are currently two types of handlers, which recognize different properties.
-
-.. note::
-   New syntax for handlers is introduced.
-   The old syntax is still valid, but users are advised to update their logging configuration to the new syntax.
-
-   .. versionchanged:: 2.13
+Users have full control over what is being logged, where it is send and how log records are formatted.
+The `configuration guide <configure.html#logging-configuration>`__ gives an overview of the logging configuration, whereas a complete description of the available options can be found in the `configuration reference <config_reference.html#logging-configuration>`__.
 
 
-Common Log Handler Attributes
-"""""""""""""""""""""""""""""
-
-All handlers accept the following set of attributes (keys) in their configuration:
-
-* ``type``: (required) the type of the handler.
-  There are several types of handlers used for logging in ReFrame.
-  Some of them are only relevant for performance logging:
-
-  1. ``file``: a handler that writes log records in file.
-  2. ``stream``: a handler that writes log records in a file stream.
-  3. ``syslog``: a handler that sends log records to Unix syslog.
-  4. ``filelog``: a handler for writing performance logs (relevant only for `performance logging <#performance-logging>`__).
-  5. ``graylog``: a handler for sending performance logs to a Graylog server (relevant only for `performance logging <#performance-logging>`__).
-
-
-* ``level``: (default: ``DEBUG``) The lowest level of log records that this handler can process.
-* ``format`` (default: ``'%(message)s'``): Format string for the printout of the log record.
-  ReFrame supports all the `log record attributes <https://docs.python.org/3.6/library/logging.html#logrecord-attributes>`__ from Python's logging library and provides the following additional ones:
-
-  - ``check_environ``: The programming environment a test is currently executing for.
-  - ``check_info``: Print live information of the currently executing check.
-    By default this field has the form ``<check_name> on <current_partition> using <current_environment>``.
-    It can be configured on a per test basis by overriding the :func:`info <reframe.core.pipeline.RegressionTest.info>` method of a specific regression test.
-  - ``check_jobid``: Prints the job or process id of the job or process associated with the currently executing regression test.
-    If a job or process is not yet created, ``-1`` will be printed.
-  - ``check_job_completion_time``: *[new in 2.21]* The completion time of the job spawned by this regression test.
-    This timestamp will be formatted according to ``datefmt`` (see below).
-    The accuracy of the timestamp depends on the backend scheduler.
-    The ``slurm`` scheduler backend relies on job accounting and returns the actual termination time of the job.
-    The rest of the backends report as completion time the moment when the framework realizes that the spawned job has finished.
-    In this case, the accuracy depends on the execution policy used.
-    If tests are executed with the serial execution policy, this is close to the real completion time, but if the asynchronous execution policy is used, it can differ significantly.
-    If the job completion time cannot be retrieved, ``None`` will be printed.
-  - ``check_name``: Prints the name of the regression test on behalf of which ReFrame is currently executing.
-    If ReFrame is not in the context of regression test, ``reframe`` will be printed.
-  - ``check_num_tasks``: The number of tasks assigned to the regression test.
-  - ``check_outputdir``: The output directory associated with the currently executing test.
-  - ``check_partition``: The system partition where this test is currently executing.
-  - ``check_stagedir``: The stage directory associated with the currently executing test.
-  - ``check_system``: The host system where this test is currently executing.
-  - ``check_tags``: The tags associated with this test.
-  - ``osuser``: The name of the OS user running ReFrame.
-  - ``osgroup``: The group name of the OS user running ReFrame.
-  - ``version``: The ReFrame version.
-
-* ``datefmt`` (default: ``'%FT%T'``) The format that will be used for outputting timestamps (i.e., the ``%(asctime)s`` and the ``%(check_job_completion_time)s`` fields).
-  In addition to the format directives supported by the standard library's `time.strftime() <https://docs.python.org/3.6/library/time.html#time.strftime>`__ function, ReFrame allows you to use the ``%:z`` directive -- a GNU ``date`` extension --  that will print the time zone difference in a RFC3339 compliant way, i.e., ``+/-HH:MM`` instead of ``+/-HHMM``.
-
-.. caution::
-   The ``testcase_name`` logging attribute is replaced with the ``check_info``, which is now also configurable
-
-   .. versionchanged:: 2.10
-
-
-.. note::
-   Support for fully RFC3339 compliant time zone formatting.
-
-   .. versionadded:: 3.0
-
-
-File log handlers
-"""""""""""""""""
-
-In addition to the common log handler attributes, file log handlers accept the following:
-
-* ``name``: (required) The name of the file where log records will be written.
-* ``append`` (default: :class:`False`) Controls whether ReFrame should append to this file or not.
-* ``timestamp`` (default: :class:`None`): Append a timestamp to this log filename.
-  This property may accept any date format that is accepted also by the ``datefmt`` property.
-  If the name of the file is ``filename.log`` and this attribute is set to ``True``, the resulting log file name will be ``filename_<timestamp>.log``.
-
-
-
-Stream log handlers
-"""""""""""""""""""
-
-In addition to the common log handler attributes, file log handlers accept the following:
-
-* ``name``: (default ``stdout``) The symbolic name of the log stream to use.
-  Available values: ``stdout`` for standard output and ``stderr`` for standard error.
-
-
-Syslog log handler
-""""""""""""""""""
-
-In addition to the common log handler attributes, file log handlers accept the following:
-
-* ``socktype``: The type of socket where the handler will send log records to. There are two socket types:
-
-   1. ``udp``: (default) This opens a UDP datagram socket.
-   2. ``tcp``: This opens a TCP stream socket.
-
-* ``facility``: (default: ``user``) The Syslog facility to send records to.
-  The list of supported facilities can be found `here <https://docs.python.org/3.6/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
-* ``address``: (required) The address where the handler will connect to.
-  This can either be of the form ``<host>:<port>`` or simply a path that refers to a Unix domain socket.
-
-
-.. note::
-   .. versionadded:: 2.17
-
-
+-------------------
 Performance Logging
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
-ReFrame supports an additional logging facility for recording performance values, in order to be able to keep historical performance data.
-This is configured by the ``perf_logging_config`` variables, whose syntax is the same as for the ``logging_config``:
-
-.. literalinclude:: ../reframe/settings.py
-  :lines: 76-95
-  :dedent: 4
-
-Performance logging introduces two new log record handlers, specifically designed for this purpose.
-
-File-based Performance Logging
-""""""""""""""""""""""""""""""
-
-The type of this handler is ``filelog`` and logs the performance of a regression test in one or more files.
-The attributes of this handler are the following:
-
-* ``prefix``: This is the directory prefix (usually dynamic) where the performance logs of a test will be stored.
-  This attribute accepts any of the check-specific formatting placeholders described `above <#common-log-handler-attributes>`__.
-  This allows you to create dynamic paths based on the current system, partition and/or programming environment a test executes.
-  This dynamic prefix is appended to the "global" performance log directory prefix, configurable through the ``--perflogdir`` option or the ``perflogdir`` attribute of the `system configuration <configuring.html#system-configuration>`__.
-  The default configuration of ReFrame for performance logging (shown in the previous listing) generates the following files:
+Performance testing is an essential part of ReFrame and performance data from tests is handled specially.
+ReFrame allows you to send performance data to multiple channels, such as files, log servers and system logs.
+By default, performance data is sent to files organized the per system, per partition and per test as follows:
 
   .. code-block:: none
 
-    {PERFLOG_PREFIX}/
+    {perflog_basedir}/
        system1/
            partition1/
                test_name.log
@@ -967,41 +809,8 @@ The attributes of this handler are the following:
        system2/
        ...
 
-  A log file, named after the test's name, is generated in different directories, which are themselves named after the system and partition names that this test has run on.
-  The ``PERFLOG_PREFIX`` will have the value of ``--perflogdir`` option, if specified, otherwise it will default to ``{REFRAME_PREFIX}/perflogs``.
-  You can always check its value by looking into the paths printed by ReFrame at the beginning of its output:
-
-  .. code-block:: none
-
-    Command line: ./reframe.py --prefix=/foo --system=generic -l
-    Reframe version: 2.13-dev0
-    Launched by user: USER
-    Launched on host: HOSTNAME
-    Reframe paths
-    =============
-        Check prefix      : /Users/karakasv/Repositories/reframe
-    (R) Check search path : 'checks/'
-        Stage dir prefix     : /foo/stage/
-        Output dir prefix    : /foo/output/
-        Perf. logging prefix : /foo/perflogs
-    List of matched checks
-    ======================
-    Found 0 check(s).
-
-* ``format``: The syntax of this attribute is the same as of the standard logging facility, except that it adds a couple more performance-specific formatting placeholders:
-
-  - ``check_perf_lower_thres``: The lower threshold of the difference from the reference value expressed as a fraction of the reference.
-  - ``check_perf_upper_thres``: The upper threshold of the difference from the reference value expressed as a fraction of the reference.
-  - ``check_perf_ref``: The reference performance value of a certain performance variable.
-  - ``check_perf_value``: The performance value obtained by this test for a certain performance variable.
-  - ``check_perf_var``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__, whose value is logged.
-  - ``check_perf_unit``: The unit of measurement for the measured performance variable specified in the corresponding tuple of the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute.
-
-.. note::
-   .. versionchanged:: 2.20
-      Support for logging `num_tasks` in performance logs was added.
-
-Using the default performance log format, the resulting log entries look like the following:
+Whenever a test executes on a specific system/partition combination, the obtained performance data will be appended to a file.
+A performance log record has the following format by default:
 
 .. code-block:: none
 
@@ -1009,63 +818,47 @@ Using the default performance log format, the resulting log entries look like th
     2019-10-23T13:46:27|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-gnu|jobid=813560|num_tasks=1|perf=50.737651|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
     2019-10-23T13:46:48|reframe 2.20-dev2|Example7Test on daint:gpu using PrgEnv-pgi|jobid=813561|num_tasks=1|perf=50.720164|ref=50.0 (l=-0.1, u=0.1)|Gflop/s
 
-The interpretation of the performance values depends on the individual tests.
-The above output is from the CUDA performance test we presented in the `tutorial <tutorial.html#writing-a-performance-test>`__, so the value refers to the achieved Gflop/s.
+There is information about the actual test run and the performance data obtained for the different performance variables.
+The log record format is fully configurable as well as the directory structure.
+More information can be found in the `configuration reference <config_reference.html#the-filelog-log-handler>`__.
 
 
-Performance Logging Using Graylog
-"""""""""""""""""""""""""""""""""
+More Advanced Performance Logging
+=================================
 
-The type of this handler is ``graylog`` and it logs performance data to a `Graylog <https://www.graylog.org/>`__ server.
-Graylog is a distributed enterprise log management service.
-An example configuration of such a handler is the following:
+ReFrame offers additional capabilities for performance logging.
+You can instruct it to send data to a log management server, which provides a dedicated service for handling large amount of logs.
+These services are usually combined with log analysis tools, such `Grafana <https://grafana.com/>`__ and `Kibana <https://www.elastic.co/kibana>`__, which offer specialized functionality for log analysis.
+If your site uses a centralized log management, you could feed the ReFrame performance logs, create dashboards and correlate it with other events on the system.
 
-.. code-block:: python
+There are two ways to achieve this in ReFrame, either through the `graylog <config_reference.html#the-graylog-log-handler>`__ log handler or the `syslog <config_reference.html#the-syslog-log-handler>`__ log  handler.
+The first one sends data to a `Graylog <https://www.graylog.org/>`__ server, whereas the second one sends data to a Syslog server.
+A usual setup for centers is to feed all the syslog data to a centralized log management system, where the logs can be visualized and analyzed.
 
-  {
-      'type': 'graylog',
-      'host': 'my.graylog.server',
-      'port': 12345,
-      'level': 'INFO',
-      'format': (
-          '%(asctime)s|reframe %(version)s|'
-          '%(check_info)s|jobid=%(check_jobid)s|'
-          'num_tasks=%(check_num_tasks)s|'
-          '%(check_perf_var)s=%(check_perf_value)s|'
-          'ref=%(check_perf_ref)s '
-          '(l=%(check_perf_lower_thres)s, '
-          'u=%(check_perf_upper_thres)s)'
-      ),
-      'extras': {
-          'facility': 'reframe',
-      }
-  },
-
-This handler introduces three new attributes:
-
-* ``host``: (required) The Graylog server that accepts the log messages.
-* ``port``: (required) The port where the Graylog server accepts connections.
-* ``extras``: (optional) A set of optional user attributes to be passed with each log record to the server.
-  These may depend on the server configuration.
-
-This log handler uses internally `pygelf <https://pypi.org/project/pygelf/>`__, so this Python module must be available, otherwise this log handler will be ignored.
-`GELF <http://docs.graylog.org/en/latest/pages/gelf.html>`__ is a format specification for log messages that are sent over the network.
-The ReFrame's ``graylog`` handler sends log messages in JSON format using an HTTP POST request to the specified host and port.
-More details on this log format may be found `here <http://docs.graylog.org/en/latest/pages/gelf.html#gelf-payload-specification>`__.
+The following image is a snapshot of an actual dashboard visualizing `GROMACS <http://www.gromacs.org/>`__ performance data from ReFrame over time.
 
 
+.. figure:: _static/img/gromacs-perf.png
+   :align: center
+   :alt: Visualization of GROMACS performance data from ReFrame over time.
+
+
+-----------------------------
 Adjusting verbosity of output
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 
-ReFrame's output is handled by a logging mechanism.
-In fact, as revealed in the corresponding configuration entry (see `Configuring Logging <#configuring-logging>`__), a specific logging handler takes care of printing ReFrame's message in the standard output.
-One way to change the verbosity level of the output is by explicitly setting the value of the ``level`` key in the configuration of the output handler.
+As discussed in the `configuration guide <configure.html#configure-logging>`__, ReFrame's output is handled also by its logging  mechanism.
+Increasing or decreasing the verbosity of its output can be achieved by adjusting the level of the log handler that sends data to standard output.
 Alternatively, you may increase the verbosity level from the command line by chaining the ``-v`` or ``--verbose`` option.
 Every time ``-v`` is specified, the next verbosity level will be selected for the output.
-For example, if the initial level of the output handler is set to ``INFO`` (in the configuration file), specifying ``-v`` twice will make ReFrame spit out all ``DEBUG`` messages.
+For example, if the initial level of the output log handler is set to ``info`` (in the configuration file), specifying ``-v`` twice will make ReFrame spit out all ``debug`` messages.
 
-.. versionadded:: 2.16
-   ``-v`` and ``--verbose`` options are added.
+.. note::
+
+  .. versionadded:: 2.16
+
+  The ``--verbose`` option was added.
+
 
 
 Asynchronous Execution of Regression Checks
