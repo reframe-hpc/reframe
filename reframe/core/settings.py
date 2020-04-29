@@ -16,7 +16,6 @@ site_configuration = {
             'partitions': [
                 {
                     'name': 'default',
-                    'descr': 'Login nodes',
                     'scheduler': 'local',
                     'launcher': 'local',
                     'environs': ['builtin']

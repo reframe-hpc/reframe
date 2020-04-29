@@ -71,7 +71,7 @@
                 {
                     "properties": {
                         "basedir": {"type": "string"},
-                        "prefix": {"type": "string"}
+                        "prefix": {"type": "string"},
                         "append": {"type": "boolean"}
                     },
                     "required": ["prefix"]
