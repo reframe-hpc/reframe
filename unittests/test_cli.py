@@ -520,7 +520,7 @@ def test_failure_stats(run_reframe):
         more_options=['-t', 'SanityFailureCheck', '--failure-stats']
     )
     assert r'FAILURE STATISTICS' in stdout
-    assert r'sanity      1     [SanityFailureCheck' in stdout
+    assert r'sanity        1     [SanityFailureCheck' in stdout
     assert 'Traceback' not in stdout
     assert 'Traceback' not in stderr
     assert returncode != 0
