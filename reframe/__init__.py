@@ -7,7 +7,7 @@ import os
 import sys
 
 
-VERSION = '3.0-dev5'
+VERSION = '3.0-dev6'
 INSTALL_PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 MIN_PYTHON_VERSION = (3, 6, 0)
 
