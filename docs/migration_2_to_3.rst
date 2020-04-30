@@ -2,8 +2,50 @@
 Migrating to ReFrame 3
 ======================
 
+ReFrame 3 brings substantial changes in its configuration.
+The configuration component was completely revised and rewritten from scratch in order to allow much more flexibility in how the framework's configuration options are handled, as well as to ensure the maintainability of the framework in the future.
 
-Updating your tests
+At the same time, ReFrame 3 deprecates some common pre-2.20 test syntax in favor of the more modern and intuitive pipeline hooks.
+
+This guide details the necessary steps in order to easily migrate to ReFrame 3.
+
+
+Updating Your Site Configuration
+--------------------------------
+
+As described in `Configuring ReFrame for Your Site <configure.html>`__, ReFrame's configuration file has changed substantially.
+However, you don't need to manually update your configuration; ReFrame will do that automatically for you.
+As soon as it detects an old-style configuration file, it will convert it to the new syntax save it in a temporary file:
+
+
+.. code-block:: none
+
+   $ ./bin/reframe -C unittests/resources/settings_old_syntax.py -l
+   ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
+   ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
+
+Alternatively, you can convert any old configuration file using the conversion tool ``tools/convert_config.py``:
+
+.. code-block:: none
+
+   $ python3 tools/convert_config.py unittests/resources/settings_old_syntax.py
+   Conversion successful! The converted file can be found at '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmpz4f6yer4.py'.
+
+
+Automatic conversion limitations
+================================
+
+ReFrame does a pretty good job in converting correctly your old configuration files, but there are some limitations:
+
+- Your code formatting will be lost.
+  ReFrame will use its own, which is PEP8 compliant nonetheless.
+- Any comments will be lost.
+- Any code that was used to dynamically generate configuration parameters will be lost.
+  ReFrame will generate the new configuration based on what was the actual old configuration after any dynamic generation.
+
+
+
+Updating Your Tests
 -------------------
 
 

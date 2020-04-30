@@ -28,5 +28,5 @@ if __name__ == '__main__':
 
     print(
         f"Conversion successful! "
-        f"Please find the converted file at '{new_config}'."
+        f"The converted file can be found at '{new_config}'."
     )

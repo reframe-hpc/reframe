@@ -35,6 +35,7 @@ def test_convert_old_config():
         'unittests/resources/settings_old_syntax.py'
     )
     site_config = config.load_config(converted)
+    site_config.validate()
     assert len(site_config.get('systems')) == 3
 
     site_config.select_subconfig('testsys')

@@ -8,7 +8,7 @@ Of course, ReFrame is much more powerful than that.
 This section will guide you through configuring ReFrame for your HPC cluster.
 We will use as a starting point a simplified configuration for the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS and we will elaborate along the way.
 
-If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the `Migrating to ReFrame 3 <migration_2_to_3.html>`__ page.
+If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the `Migrating to ReFrame 3 <migration_2_to_3.html#updating-your-site-configuration>`__ page.
 
 
 ReFrame's configuration file can be either a JSON file or Python file storing the site configuration in a JSON-formatted string.

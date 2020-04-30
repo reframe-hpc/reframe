@@ -380,11 +380,18 @@ def convert_old_config(filename):
         'systems': [],
         'environments': [],
         'logging': [],
-        'perf_logging': [],
     }
+    perflogdir = None
     old_systems = old_config.site_configuration['systems'].items()
     for sys_name, sys_spec in old_systems:
         sys_dict = {'name': sys_name}
+
+        # FIXME: We pick the perflogdir that we first find we use it as
+        # filelog's basedir for all systems. This is not correct since
+        # per-system customizations of perflogdir will be lost
+        if perflogdir is None:
+            perflogdir = sys_spec.pop('perflogdir', None)
+
         sys_dict.update(sys_spec)
 
         # hostnames is now a required property
@@ -410,9 +417,9 @@ def convert_old_config(filename):
                     new_p['scheduler'] = 'local'
                     new_p['launcher'] = 'local'
                 else:
-                    sched, launch, *_ = p['scheduler'].split('+')
+                    sched, launcher, *_ = p['scheduler'].split('+')
                     new_p['scheduler'] = sched
-                    new_p['launcher'] = launch
+                    new_p['launcher'] = launcher
 
                 # Make resources dictionary into a list
                 if 'resources' in p:
@@ -485,6 +492,8 @@ def convert_old_config(filename):
                 new_h['address'] = h['host']
                 if 'port' in h:
                     new_h['address'] += ':' + h['port']
+            elif h['type'] == 'filelog' and perflogdir is not None:
+                new_h['basedir'] = perflogdir
 
             ret.append(new_h)
 
