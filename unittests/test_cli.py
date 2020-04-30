@@ -477,6 +477,19 @@ def test_verbosity(run_reframe):
     assert returncode == 0
 
 
+def test_verbosity_with_check(run_reframe):
+    returncode, stdout, stderr = run_reframe(
+        more_options=['-vvvvv'],
+        system='testsys',
+        checkpath=['unittests/resources/checks/hellocheck.py']
+    )
+    assert '' != stdout
+    assert '--- Logging error ---' not in stdout
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert 0 == returncode
+
+
 def test_unload_module(run_reframe, user_exec_ctx):
     # This test is mostly for ensuring coverage. `run_reframe()` restores
     # the current environment, so it is not easy to verify that the modules

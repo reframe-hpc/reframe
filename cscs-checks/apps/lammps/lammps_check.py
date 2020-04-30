@@ -74,10 +74,10 @@ class LAMMPSGPUCheck(LAMMPSBaseCheck):
             'prod': {
                 'small': {
                     'dom:gpu': {'perf': (3132, -0.05, None, 'timesteps/s')},
-                    'daint:gpu': {'perf': (2524, -0.10, None, 'timesteps/s')}
+                    'daint:gpu': {'perf': (2400, -0.40, None, 'timesteps/s')}
                 },
                 'large': {
-                    'daint:gpu': {'perf': (2382, -0.50, None, 'timesteps/s')}
+                    'daint:gpu': {'perf': (3260, -0.50, None, 'timesteps/s')}
                 }
             },
         }
