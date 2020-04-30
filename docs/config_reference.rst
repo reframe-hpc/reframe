@@ -911,7 +911,7 @@ The additional properties for the ``syslog`` handler are the following:
 
    The Syslog facility where this handler will send log records to.
    The list of supported facilities can be found `here <https://docs.python.org/3.8/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
-   
+
 
 .. js:attribute:: .logging[].handlers[].address
 
@@ -977,7 +977,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    The name of this execution mode.
    This can be used with the ``-mode`` command line option to invoke this mode.
 
-   
+
 .. js:attribute:: .modes[].options
 
    :required: No
@@ -1190,3 +1190,23 @@ General Configuration
    Increase the verbosity level of the output.
    The higher the number, the more verbose the output will be.
    If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
+
+
+Additional Environment Variables
+--------------------------------
+
+Here is a list of environment variables that do not have a configuration option counterpart.
+
+
+.. envvar:: RFM_CONFIG_FILE
+
+.. option:: -C FILE | --config-file FILE
+
+   The path to ReFrame's configuration file.
+
+
+.. envvar:: RFM_SYSTEM
+
+.. option:: --system NAME
+
+   The name of the system, whose configuration will be loaded.
