@@ -122,27 +122,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    :arg name: The name of the test.
-        If :class:`None`, the framework will try to assign a unique and
-        human-readable name to the test.
-
-    :arg prefix: The directory prefix of the test.
-        If :class:`None`, the framework will set it to the directory containing
-        the test file.
-
     .. note::
-        The ``name`` and ``prefix`` arguments are just maintained for backward
-        compatibility to the old (prior to 2.13) syntax of regression tests.
-        Users are advised to use the new simplified syntax for writing
-        regression tests.
-        Refer to the :doc:`ReFrame Tutorial </tutorial>` for more information.
+        .. versionchanged:: 2.19
 
-        This class is also directly available under the top-level
-        :mod:`reframe` module.
-
-       .. versionchanged:: 2.13
+        Base constructor takes no arguments.
 
     '''
+
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
@@ -922,12 +908,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._build_job.stderr
 
     def info(self):
-        '''Provide live information of a running test.
+        '''Provide live information for this test.
 
-        This method is used by the front-end to print the status message during
-        the test's execution.
-        This function is also called to provide the message for the
-        ``check_info`` `logging attribute <running.html#logging>`__.
+        This method is used by the front-end to print the status message
+        during the test's execution. This function is also called to provide
+        the message for the `check_info
+        <config_reference.html#.logging[].handlers[].format>`__ logging
+        attribute.
         By default, it returns a message reporting the test name, the current
         partition and the current programming environment that the test is
         currently executing on.
