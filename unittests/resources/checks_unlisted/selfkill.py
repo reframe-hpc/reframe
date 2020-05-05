@@ -15,7 +15,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class SelfKillCheck(rfm.RunOnlyRegressionTest):
+class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
     def __init__(self):
         self.local = True
         self.valid_systems = ['*']
