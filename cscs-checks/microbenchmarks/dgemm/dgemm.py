@@ -57,9 +57,8 @@ class DGEMMTest(rfm.RegressionTest):
                 '-DMKL_ILP64', '-I${MKLROOT}/include']
             self.build_system.cflags = ['-qopenmp']
             self.build_system.ldflags = [
-                '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
-                '${MKLROOT}/lib/intel64/libmkl_intel_thread.a',
-                '${MKLROOT}/lib/intel64/libmkl_core.a',
+                '-mkl',
+                '-static-intel',
                 '-liomp5', '-lpthread', '-lm', '-ldl']
 
         if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
