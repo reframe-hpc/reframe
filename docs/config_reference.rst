@@ -7,7 +7,7 @@ Configuration Reference
 
 ReFrame's behavior can be configured through its configuration file (see `Configuring ReFrame for Your Site <configure.html>`__), environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
-This section provides a complete reference guide of the configuration option of ReFrame that can be set in its configuration file or specified using environment variables.
+This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
 ReFrame's configuration is in JSON syntax.
 The full schema describing it can be found in `schemas/config.json <https://github.com/eth-cscs/reframe/blob/master/schemas/config.json>`__ file.
@@ -134,7 +134,7 @@ System Configuration
    :default: ``"."``
 
    Directory prefix for a ReFrame run on this system.
-   Any directories or files produced by ReFrame will be placed use this prefix, if not specified otherwise.
+   Any directories or files produced by ReFrame will use this prefix, if not specified otherwise.
 
 .. js:attribute:: .systems[].stagedir
 
@@ -159,7 +159,7 @@ System Configuration
    :default: ``"${RFM_PREFIX}/output"``
 
    Output directory prefix for this system.
-   This is the directory prefix, where ReFrame will save information about the succeeded tests.
+   This is the directory prefix, where ReFrame will save information about the successful tests.
 
 
 .. js:attribute:: .systems[].resourcesdir
@@ -217,14 +217,14 @@ System Partition Configuration
 
    :required: Yes
 
-   The parallel job launcher that will used in this partition to launch parallel programs.
+   The parallel job launcher that will be used in this partition to launch parallel programs.
    Available values are the following:
 
    - ``alps``: Parallel programs will be launched using the `Cray ALPS <https://pubs.cray.com/content/S-2393/CLE%205.2.UP03/cle-xc-system-administration-guide-s-2393-5203-xc/the-aprun-client>`__ ``aprun`` command.
    - ``ibrun``: Parallel programs will be launched using the ``ibrun`` command.
      This is a custom parallel program launcher used at `TACC <https://portal.tacc.utexas.edu/user-guides/stampede2>`__.
    - ``local``: No parallel program launcher will be used.
-     The program will launched locally.
+     The program will be launched locally.
    - ``mpirun``: Parallel programs will be launched using the ``mpirun`` command.
    - ``mpiexec``: Parallel programs will be launched using the ``mpiexec`` command.
    - ``srun``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command.
@@ -250,7 +250,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition
+   A list of job scheduler options that will be passed to the generated job script for gaining access to that logical partition.
 
 
 .. js:attribute:: .systems[].partitions[].environs

@@ -120,7 +120,7 @@ Environments Configuration
 
 We have seen already environments to be referred to by the ``environs`` property of a partition.
 An environment in ReFrame is simply a collection of environment modules, environment variables and compiler and compiler flags definitions.
-None of this attributes is required.
+None of these attributes is required.
 An environment can simply by empty, in which case it refers to the actual environment that ReFrame runs in.
 In fact, this is what the generic fallback configuration of ReFrame does.
 
@@ -194,10 +194,12 @@ In this particular example we use three handlers of two distinct types:
    This handles essentially the actual output of ReFrame.
 3. A file handler to print the framework's output in the ``reframe.out`` file.
 
-It might initially be confusing the fact that there are two ``level`` properties: one at the logger level and one at the handler level.
-This works hierarchically.
-When ReFrame logs a message, this first goes into its internal logger, is checked again the logger's level (here  ``debug``) and if it's above it, it is forwarded to the handlers.
-Then each handlers filters the messages it receives differently.
+It might initially seem confusing the fact that there are two ``level`` properties: one at the logger level and one at the handler level.
+Logging in ReFrame works hierarchically.
+When a message is logged, an log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
+This log record first goes into ReFrame's internal logger, where the record's level is checked against the logger's level (here  ``debug``). 
+If the log record's level exceeds the log level threshold from the logger, it is forwarded to the logger's handlers.
+Then each handler filters the log record differently and takes care of formatting the log record's message appropriately.
 You can view logger's log level as a general cut off.
 For example, if we have set it to ``warning``, no debug or informational messages would ever be printed.
 
@@ -240,7 +242,7 @@ As discussed previously, ReFrame's configuration file can store the configuratio
 When launched, ReFrame will pick the first matching configuration and load it.
 This process is performed as follows:
 ReFrame first tries to obtain the hostname from ``/etc/xthostname``, which provides the unqualified *machine name* in Cray systems.
-If this cannot be found the hostname will be obtained from the standard ``hostname`` command.
+If this cannot be found, the hostname will be obtained from the standard ``hostname`` command.
 Having retrieved the hostname, ReFrame goes through all the systems in its configuration and tries to match the hostname against any of the patterns defined in each system's ``hostnames`` property.
 The detection process stops at the first match found, and that system's configuration is selected.
 

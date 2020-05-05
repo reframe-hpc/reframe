@@ -10,8 +10,8 @@ import json
 import jsonschema
 import os
 import re
-import tempfile
 import socket
+import tempfile
 
 import reframe
 import reframe.core.debug as debug

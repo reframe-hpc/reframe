@@ -795,7 +795,7 @@ Performance Logging
 
 Performance testing is an essential part of ReFrame and performance data from tests is handled specially.
 ReFrame allows you to send performance data to multiple channels, such as files, log servers and system logs.
-By default, performance data is sent to files organized the per system, per partition and per test as follows:
+By default, performance data is sent to files organized per system, per partition and per test as follows:
 
   .. code-block:: none
 

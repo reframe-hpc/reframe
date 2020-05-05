@@ -34,8 +34,7 @@ import os
 # associations of command-line arguments with environment variables and/or
 # configuration parameters. Additionally, we allow to define pseudo-arguments
 # that essentially associate environment variables with configuration
-# arguments, without having to have to define a corresponding command line
-# option.
+# arguments, without having to define a corresponding command line option.
 
 
 def _convert_to_bool(s):
