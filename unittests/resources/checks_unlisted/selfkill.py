@@ -25,7 +25,7 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest):
         self.tags = {type(self).__name__}
         self.maintainers = ['TM']
 
-    def run(self):
-        super().run()
+    @rfm.run_before('run')
+    def self_kill(self):
         time.sleep(0.5)
         os.kill(os.getpid(), signal.SIGTERM)
