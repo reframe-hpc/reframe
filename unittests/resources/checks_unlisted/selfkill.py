@@ -15,7 +15,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class SelfKillCheck(rfm.RunOnlyRegressionTest):
+class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
     def __init__(self):
         self.local = True
         self.valid_systems = ['*']
@@ -25,7 +25,7 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest):
         self.tags = {type(self).__name__}
         self.maintainers = ['TM']
 
-    @rfm.run_before('run')
-    def self_kill(self):
+    def run(self):
+        super().run()
         time.sleep(0.5)
         os.kill(os.getpid(), signal.SIGTERM)
