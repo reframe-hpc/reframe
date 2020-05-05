@@ -84,6 +84,10 @@ class PbsJobScheduler(sched.JobScheduler):
             self._format_option('-e %s' % job.stderr),
         ]
 
+        if job.sched_account:
+            preamble.append(
+                self._format_option('-A %s' % job.sched_account))
+
         if job.time_limit is not None:
             h, m, s = seconds_to_hms(job.time_limit.total_seconds())
             preamble.append(

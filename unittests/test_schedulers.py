@@ -515,6 +515,7 @@ class TestPbsJob(_TestJob, unittest.TestCase):
             '#PBS -l walltime=0:5:0',
             '#PBS -o %s' % self.testjob.stdout,
             '#PBS -e %s' % self.testjob.stderr,
+            '#PBS -A %s' % self.testjob.sched_account,
             *self.node_select_options,
             '#PBS -q %s' % self.testjob.sched_partition,
             '#PBS --gres=gpu:4',
