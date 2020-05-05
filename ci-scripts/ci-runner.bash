@@ -163,8 +163,8 @@ if [ $CI_GENERIC -eq 1 ]; then
     echo "========================================"
     echo "Running unit tests with generic settings"
     echo "========================================"
-    checked_exec ./test_reframe.py
-    checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
+    checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning
+    checked_exec ! ./bin/reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
@@ -190,7 +190,7 @@ else
     echo "Running unit tests"
     echo "=================="
 
-    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py
+    checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --rfm-user-config=config/cscs-ci.py
 
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
@@ -199,7 +199,7 @@ else
             echo "Running unit tests with ${backend}"
             echo "=================================="
             export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-${backend}.py
+            checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --rfm-user-config=config/cscs-${backend}.py
         done
         export PATH=$PATH_save
     fi
