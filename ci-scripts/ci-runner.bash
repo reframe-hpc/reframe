@@ -173,22 +173,22 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
     fi
 else
     # Run unit tests with the scheduler backends
-    PATH_save=$PATH
     tempdir=$(mktemp -d -p $SCRATCH)
     if [[ $(hostname) =~ dom ]]; then
+        PATH_save=$PATH
         export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-        # for backend in slurm pbs torque; do
-        #     echo "[INFO] Running unit tests with ${backend}"
-        #     checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-        #                  --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
-        # done
+        for backend in slurm pbs torque; do
+            echo "[INFO] Running unit tests with ${backend}"
+            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                         --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
+        done
+        export PATH=$PATH_save
+    else
+        echo "[INFO] Running unit tests"
+        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                     --basetemp=$tempdir -ra
     fi
 
-    echo "[INFO] Running unit tests"
-    checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
-                 --basetemp=$tempdir -ra
-
-    export PATH=$PATH_save
     if [ $CI_EXITCODE -eq 0 ]; then
         /bin/rm -rf $tempdir
     fi
