@@ -89,7 +89,7 @@ class PerformanceFailureCheck(BaseFrontendCheck):
 
 
 @rfm.simple_test
-class CustomPerformanceFailureCheck(BaseFrontendCheck):
+class CustomPerformanceFailureCheck(BaseFrontendCheck, special=True):
     '''Simulate a performance check that ignores completely logging'''
 
     def __init__(self):

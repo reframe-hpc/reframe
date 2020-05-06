@@ -13,11 +13,10 @@ class DGEMMTest(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'DGEMM performance test'
         self.sourcepath = 'dgemm.c'
-
         self.sanity_patterns = self.eval_sanity()
+
         # the perf patterns are automaticaly generated inside sanity
         self.perf_patterns = {}
-
         self.valid_systems = [
             'daint:gpu', 'daint:mc',
             'dom:gpu', 'dom:mc',
@@ -25,7 +24,6 @@ class DGEMMTest(rfm.RegressionTest):
             'arolla:cn', 'arolla:pn',
             'tsa:cn', 'tsa:pn'
         ]
-
         if self.current_system.name in ['daint', 'dom', 'tiger']:
             self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-intel']
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
@@ -44,7 +42,6 @@ class DGEMMTest(rfm.RegressionTest):
             'kesch:cn': (300.0, -0.15, None, 'Gflop/s'),
             'kesch:pn': (300.0, -0.15, None, 'Gflop/s'),
         }
-
         self.maintainers = ['AJ', 'VH']
         self.tags = {'benchmark', 'diagnostic', 'craype'}
 
@@ -54,13 +51,12 @@ class DGEMMTest(rfm.RegressionTest):
             self.build_system.cflags += ['-fopenmp']
         elif self.current_environ.name.startswith('PrgEnv-intel'):
             self.build_system.cppflags = [
-                '-DMKL_ILP64', '-I${MKLROOT}/include']
+                '-DMKL_ILP64', '-I${MKLROOT}/include'
+            ]
             self.build_system.cflags = ['-qopenmp']
             self.build_system.ldflags = [
-                '${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a',
-                '${MKLROOT}/lib/intel64/libmkl_intel_thread.a',
-                '${MKLROOT}/lib/intel64/libmkl_core.a',
-                '-liomp5', '-lpthread', '-lm', '-ldl']
+                '-mkl', '-static-intel', '-liomp5', '-lpthread', '-lm', '-ldl'
+            ]
 
         if self.current_partition.fullname in ['arolla:cn', 'arolla:pn',
                                                'kesch:cn', 'kesch:pn',

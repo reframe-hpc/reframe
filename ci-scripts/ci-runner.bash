@@ -150,7 +150,8 @@ echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
     echo "[INFO] Running unit tests with generic settings"
-    checked_exec ./test_reframe.py -ra
+    checked_exec ./test_reframe.py \
+                 -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
     checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
@@ -180,12 +181,14 @@ else
         for backend in slurm pbs torque; do
             echo "[INFO] Running unit tests with ${backend}"
             checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                         -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
                          --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
         done
         export PATH=$PATH_save
     else
         echo "[INFO] Running unit tests"
         checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                     -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
                      --basetemp=$tempdir -ra
     fi
 
