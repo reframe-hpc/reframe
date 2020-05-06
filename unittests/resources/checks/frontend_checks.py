@@ -36,6 +36,7 @@ class BadSetupCheck(BaseFrontendCheck):
     def raise_error(self):
         raise ReframeError('Setup failure')
 
+
 @rfm.simple_test
 class BadSetupCheckEarly(BaseFrontendCheck):
     def __init__(self):
@@ -205,7 +206,7 @@ class RetriesCheck(BaseFrontendCheck):
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
 
 
-class SelfKillCheck(rfm.RunOnlyRegressionTest):
+class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
     def __init__(self):
         self.local = True
         self.valid_systems = ['*']
