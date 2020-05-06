@@ -675,9 +675,9 @@ All logging handlers share the following set of common attributes:
      In this case, the accuracy depends on the execution policy used.
      If tests are executed with the serial execution policy, this is close to the real completion time, but if the asynchronous execution policy is used, it can differ significantly.
      If the job completion time cannot be retrieved, ``None`` will be printed.
-  - ``%(check_job_completion_time_unix)s``: The completion time of the job spawned by this regression test expressed as UNIX time.
-    This is a raw time field and will not be formatted according to ``datefmt``.
-    If specific formatting is desired, the ``check_job_completion_time`` should be used instead.
+   - ``%(check_job_completion_time_unix)s``: The completion time of the job spawned by this regression test expressed as UNIX time.
+     This is a raw time field and will not be formatted according to ``datefmt``.
+     If specific formatting is desired, the ``check_job_completion_time`` should be used instead.
    - ``%(check_name)s``: The name of the regression test on behalf of which ReFrame is currently executing.
      If ReFrame is not executing in the context of a regression test, ``reframe`` will be printed instead.
    - ``%(check_num_tasks)s``: The number of tasks assigned to the regression test.

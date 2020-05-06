@@ -32,6 +32,11 @@ Alternatively, you can convert any old configuration file using the conversion t
    Conversion successful! The converted file can be found at '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmpz4f6yer4.py'.
 
 
+Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
+That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.
+You have to move it to any of the default settings locations or set the corresponding command line option or environment variable.
+
+
 Automatic conversion limitations
 ================================
 
@@ -43,6 +48,11 @@ ReFrame does a pretty good job in converting correctly your old configuration fi
 - Any code that was used to dynamically generate configuration parameters will be lost.
   ReFrame will generate the new configuration based on what was the actual old configuration after any dynamic generation.
 
+
+
+.. note::
+
+   The very old logging configuration syntax (prior to ReFrame 2.13) is no more recognized and the configuration conversion tool does not take it into account.
 
 
 Updating Your Tests
@@ -118,3 +128,34 @@ Suppressing deprecation warnings
 
 Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 
+
+Getting schedulers and launchers by name
+========================================
+
+
+The way to get a scheduler or launcher instance by name has changed.
+Prior to ReFrame 3, this was written as follows:
+
+.. code:: python
+
+	 from reframe.core.launchers.registry import getlauncher
+
+
+	 class MyTest(rfm.RegressionTest):
+	     ...
+
+	     @rfm.run_before('run')
+	     def setlauncher(self):
+	         self.job.launcher = getlauncher('local')()
+
+
+
+Now you have to simply replace the import statement with the following:
+
+
+.. code:: python
+
+	 from reframe.core.backends import getlauncher
+
+
+Similarly for schedulers, the ``reframe.core.schedulers.registry`` module must be replaced with ``reframe.core.backends``.
