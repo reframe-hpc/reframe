@@ -374,7 +374,7 @@ class _SiteConfig:
         self._local_system = system_fullname
 
 
-def convert_old_config(filename):
+def convert_old_config(filename, newfilename=None):
     old_config = util.import_module_from_file(filename).settings
     converted = {
         'systems': [],
@@ -524,11 +524,17 @@ def convert_old_config(filename):
     if converted['general'] == [{}]:
         del converted['general']
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
-                                     delete=False) as fp:
-        fp.write(f"#\n# This file was automatically generated "
-                 f"by ReFrame based on '{filename}'.\n#\n\n")
-        fp.write(f'site_configuration = {util.ppretty(converted)}\n')
+    contents = (f"#\n# This file was automatically generated "
+                f"by ReFrame based on '{filename}'.\n#\n\n"
+                f"site_configuration = {util.ppretty(converted)}\n")
+
+    if newfilename:
+        with open(newfilename, 'w') as fp:
+            fp.write(contents)
+    else:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
+                                         delete=False) as fp:
+            fp.write(contents)
 
     return fp.name
 

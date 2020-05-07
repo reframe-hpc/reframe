@@ -16,11 +16,16 @@ if __name__ == '__main__':
         old_config = sys.argv[1]
     except IndexError:
         print(f'{sys.argv[0]}: too few arguments', file=sys.stderr)
-        print(f'Usage: {sys.argv[0]} OLD_CONFIG_FILE', file=sys.stderr)
+        print(f'Usage: {sys.argv[0]} OLD_CONFIG_FILE [NEW_CONFIG_FILE]', file=sys.stderr)
         sys.exit(1)
 
     try:
-        new_config = config.convert_old_config(old_config)
+        new_config = sys.argv[2]
+    except IndexError:
+        new_config = None
+
+    try:
+        new_config = config.convert_old_config(old_config, new_config)
     except Exception as e:
         print(f'{sys.argv[0]}: could not convert file: {e}',
               file=sys.stderr)
