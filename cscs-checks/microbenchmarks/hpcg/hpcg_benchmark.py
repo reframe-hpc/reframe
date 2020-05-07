@@ -175,6 +175,9 @@ class HPCGCheckMKL(rfm.RegressionTest):
     @rfm.run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all([
+            sn.assert_not_found(r'invalid because the ratio',
+                self.outfile_lazy, msg = r'number of processes assigned could'
+                ' not be factorized'),
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.outfile_lazy))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
