@@ -10,7 +10,7 @@ from datetime import datetime
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.launchers.registry import getlauncher
+from reframe.core.backends import getlauncher
 
 
 def to_seconds(str):
