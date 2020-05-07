@@ -24,7 +24,8 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
 
         # FIXME: Remove this after the OpenMP pragma gets fixed in hpcg master
-        self.prebuild_cmd = ['git checkout 9484cd7f2c4744c783abbdcfd4f5cc34807b42b1']
+        self.prebuild_cmd = [
+            'git checkout 9484cd7f2c4744c783abbdcfd4f5cc34807b42b1']
 
         self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
@@ -176,8 +177,9 @@ class HPCGCheckMKL(rfm.RegressionTest):
     def set_sanity(self):
         self.sanity_patterns = sn.all([
             sn.assert_not_found(r'invalid because the ratio',
-                self.outfile_lazy, msg = r'number of processes assigned could'
-                ' not be factorized'),
+                                self.outfile_lazy,
+                                msg=r'number of processes assigned could'
+                                ' not be factorized'),
             sn.assert_eq(4, sn.count(
                 sn.findall(r'PASSED', self.outfile_lazy))),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
