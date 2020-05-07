@@ -312,10 +312,21 @@ def test_submit_job_array(make_job, slurm_only, exec_ctx):
 
 def test_cancel(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
+    sched_name = minimal_job.scheduler.registered_name
     prepare_job(minimal_job, 'sleep 30')
     t_job = datetime.now()
     minimal_job.submit()
     minimal_job.cancel()
+
+    # Here we trick the torque scheduler which expects stdout and sterr
+    # to consider the job finished.
+    if sched_name == 'torque':
+        if not os.path.exists(minimal_job.stdout):
+            os.mknod(minimal_job.stdout)
+
+        if not os.path.exists(minimal_job.stderr):
+            os.mknod(minimal_job.stderr)
+
     minimal_job.wait()
     t_job = datetime.now() - t_job
     assert minimal_job.finished()
