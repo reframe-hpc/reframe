@@ -318,9 +318,9 @@ def test_cancel(make_job, exec_ctx):
     minimal_job.submit()
     minimal_job.cancel()
 
-    # Here we trick the torque scheduler which expects stdout and sterr
-    # to consider the job finished.
-    if sched_name == 'torque':
+    # Here we trick the pbs based schedulers which expect stdout and sterr
+    # to exist in order to consider the job finished.
+    if sched_name in {'pbs', 'torque'}:
         if not os.path.exists(minimal_job.stdout):
             os.mknod(minimal_job.stdout)
 
