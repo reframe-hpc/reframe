@@ -89,7 +89,7 @@ class ModulesSystem:
 
     @classmethod
     def create(cls, modules_kind=None):
-        if modules_kind is None:
+        if modules_kind is None or modules_kind == 'nomod':
             return ModulesSystem(NoModImpl())
         elif modules_kind == 'tmod31':
             return ModulesSystem(TMod31Impl())
@@ -493,7 +493,8 @@ class TModImpl(ModulesSystemImpl):
         self._exec_module_command('purge')
 
     def searchpath(self):
-        return os.environ['MODULEPATH'].split(':')
+        path = os.getenv('MODULEPATH', '')
+        return path.split(':')
 
     def searchpath_add(self, *dirs):
         self._exec_module_command('use', *dirs)

@@ -74,11 +74,11 @@ class TestCheckFilters(unittest.TestCase):
         assert 1 == self.count_checks(filters.have_prgenv('env4'))
         assert 3 == self.count_checks(filters.have_prgenv('env1|env3'))
 
-    @rt.switch_runtime(fixtures.TEST_SITE_CONFIG, 'testsys')
+    @rt.switch_runtime(fixtures.TEST_CONFIG_FILE, 'testsys')
     def test_partition(self):
-        p = rt.runtime().system.partition('gpu')
+        p = fixtures.partition_by_name('gpu')
         assert 2 == self.count_checks(filters.have_partition([p]))
-        p = rt.runtime().system.partition('login')
+        p = fixtures.partition_by_name('login')
         assert 0 == self.count_checks(filters.have_partition([p]))
 
     def test_have_gpu_only(self):

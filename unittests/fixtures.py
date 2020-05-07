@@ -9,41 +9,33 @@
 import os
 import tempfile
 
+import reframe
 import reframe.core.config as config
 import reframe.core.modules as modules
 import reframe.core.runtime as rt
-from reframe.core.exceptions import UnknownSystemError
+import reframe.utility.os_ext as os_ext
 
 
 TEST_RESOURCES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'resources')
+    os.path.dirname(os.path.realpath(__file__)), 'resources'
+)
 TEST_RESOURCES_CHECKS = os.path.join(TEST_RESOURCES, 'checks')
 TEST_MODULES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'modules')
+    os.path.dirname(os.path.realpath(__file__)), 'modules'
+)
 
 # Unit tests site configuration
-TEST_SITE_CONFIG = None
+TEST_CONFIG_FILE = 'unittests/resources/settings.py'
 
 # User supplied configuration file and site configuration
 USER_CONFIG_FILE = None
-USER_SITE_CONFIG = None
-
-
-def set_user_config(config_file):
-    global USER_CONFIG_FILE, USER_SITE_CONFIG
-
-    USER_CONFIG_FILE = config_file
-    user_settings = config.load_settings_from_file(config_file)
-    USER_SITE_CONFIG = user_settings.site_configuration
+USER_SYSTEM = None
 
 
 def init_runtime():
-    global TEST_SITE_CONFIG
-
-    settings = config.load_settings_from_file(
-        'unittests/resources/settings.py')
-    TEST_SITE_CONFIG = settings.site_configuration
-    rt.init_runtime(TEST_SITE_CONFIG, 'generic')
+    site_config = config.load_config('unittests/resources/settings.py')
+    site_config.select_subconfig('generic')
+    rt.init_runtime(site_config)
 
 
 def switch_to_user_runtime(fn):
@@ -52,33 +44,43 @@ def switch_to_user_runtime(fn):
     If no such configuration exists, this decorator returns the target function
     untouched.
     '''
-    if USER_SITE_CONFIG is None:
+    if USER_CONFIG_FILE is None:
         return fn
 
-    return rt.switch_runtime(USER_SITE_CONFIG)(fn)
+    return rt.switch_runtime(USER_CONFIG_FILE, USER_SYSTEM)(fn)
 
 
-# FIXME: This may conflict in the unlikely situation that a user defines a
-# system named `kesch` with a partition named `pn`.
-def partition_with_scheduler(name=None, skip_partitions=['kesch:pn']):
+def partition_by_scheduler(name=None):
     '''Retrieve a system partition from the runtime whose scheduler is
     registered with ``name``.
 
     If ``name`` is :class:`None`, any partition with a non-local scheduler will
     be returned.
-    Partitions specified in ``skip_partitions`` will be skipped from searching.
     '''
 
     system = rt.runtime().system
     for p in system.partitions:
-        if p.fullname in skip_partitions:
-            continue
-
         if name is None and not p.scheduler.is_local:
             return p
 
         if p.scheduler.registered_name == name:
             return p
+
+    return None
+
+
+def partition_by_name(name):
+    for p in rt.runtime().system.partitions:
+        if p.name == name:
+            return p
+
+    return None
+
+
+def environment_by_name(name, partition):
+    for e in partition.environs:
+        if e.name == name:
+            return e
 
     return None
 
@@ -99,3 +101,19 @@ def custom_prefix(prefix):
         return cls
 
     return _set_prefix
+
+
+def safe_rmtree(path, **kwargs):
+    '''Do some safety checks before removing path to protect against silly, but
+    catastrophic bugs, during development.
+
+    Do not allow removing any subdirectory of reframe or any directory
+    containing reframe. Also do not allow removing the user's $HOME directory.
+    '''
+
+    path = os.path.abspath(path)
+    common_path = os.path.commonpath([reframe.INSTALL_PREFIX, path])
+    assert common_path != reframe.INSTALL_PREFIX
+    assert common_path != path
+    assert path != os.environ['HOME']
+    os_ext.rmtree(path, **kwargs)

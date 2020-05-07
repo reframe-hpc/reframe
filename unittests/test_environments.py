@@ -8,9 +8,9 @@ import pytest
 import unittest
 
 import reframe.core.environments as env
+import reframe.core.runtime as rt
 import reframe.utility.os_ext as os_ext
 import unittests.fixtures as fixtures
-from reframe.core.runtime import runtime
 from reframe.core.exceptions import EnvironError
 
 
@@ -27,7 +27,7 @@ class TestEnvironment(unittest.TestCase):
         if not fixtures.has_sane_modules_system():
             pytest.skip('no modules system configured')
 
-        self.modules_system = runtime().modules_system
+        self.modules_system = rt.runtime().modules_system
         self.modules_system.searchpath_add(fixtures.TEST_MODULES)
 
         # Always add a base module; this is a workaround for the modules
@@ -69,14 +69,14 @@ class TestEnvironment(unittest.TestCase):
         self.environ.variables['_var3'] == '${_var1}'
 
     def test_environ_snapshot(self):
-        env.load(self.environ, self.environ_other)
+        rt.loadenv(self.environ, self.environ_other)
         self.environ_save.restore()
         assert self.environ_save == env.snapshot()
-        assert not self.environ.is_loaded
-        assert not self.environ_other.is_loaded
+        assert not rt.is_env_loaded(self.environ)
+        assert not rt.is_env_loaded(self.environ_other)
 
     def test_load_restore(self):
-        snapshot, _ = env.load(self.environ)
+        snapshot, _ = rt.loadenv(self.environ)
         os.environ['_var0'] == 'val1'
         os.environ['_var1'] == 'val1'
         os.environ['_var2'] == 'val1'
@@ -84,46 +84,46 @@ class TestEnvironment(unittest.TestCase):
         if fixtures.has_sane_modules_system():
             self.assertModulesLoaded(self.environ.modules)
 
-        assert self.environ.is_loaded
+        assert rt.is_env_loaded(self.environ)
         snapshot.restore()
         self.environ_save == env.snapshot()
         os.environ['_var0'], 'val0'
         if fixtures.has_sane_modules_system():
             assert not self.modules_system.is_module_loaded('testmod_foo')
 
-        assert not self.environ.is_loaded
+        assert not rt.is_env_loaded(self.environ)
 
     @fixtures.switch_to_user_runtime
     def test_temp_environment(self):
         self.setup_modules_system()
-        with env.temp_environment(
+        with rt.temp_environment(
                 ['testmod_foo'], {'_var0': 'val2', '_var3': 'val3'}
         ) as environ:
-            assert environ.is_loaded
+            assert rt.is_env_loaded(environ)
 
-        assert not environ.is_loaded
+        assert not rt.is_env_loaded(environ)
 
     @fixtures.switch_to_user_runtime
     def test_load_already_present(self):
         self.setup_modules_system()
         self.modules_system.load_module('testmod_boo')
-        snapshot, _ = env.load(self.environ)
+        snapshot, _ = rt.loadenv(self.environ)
         snapshot.restore()
         assert self.modules_system.is_module_loaded('testmod_boo')
 
     def test_load_non_overlapping(self):
         e0 = env.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
         e1 = env.Environment(name='e1', variables=[('c', '3'), ('d', '4')])
-        env.load(e0, e1)
-        assert e0.is_loaded
-        assert e1.is_loaded
+        rt.loadenv(e0, e1)
+        assert rt.is_env_loaded(e0)
+        assert rt.is_env_loaded(e1)
 
     def test_load_overlapping(self):
         e0 = env.Environment(name='e0', variables=[('a', '1'), ('b', '2')])
         e1 = env.Environment(name='e1', variables=[('b', '3'), ('c', '4')])
-        env.load(e0, e1)
-        assert not e0.is_loaded
-        assert e1.is_loaded
+        rt.loadenv(e0, e1)
+        assert not rt.is_env_loaded(e0)
+        assert rt.is_env_loaded(e1)
 
     def test_equal(self):
         env1 = env.Environment('env1', modules=['foo', 'bar'])
@@ -147,7 +147,7 @@ class TestEnvironment(unittest.TestCase):
         envfoo = env.Environment(name='envfoo',
                                  modules=['testmod_foo', 'testmod_boo'])
         envbar = env.Environment(name='envbar', modules=['testmod_bar'])
-        env.load(envfoo, envbar)
+        rt.loadenv(envfoo, envbar)
         for m in envbar.modules:
             assert self.modules_system.is_module_loaded(m)
 
@@ -159,7 +159,7 @@ class TestEnvironment(unittest.TestCase):
         self.setup_modules_system()
         self.modules_system.load_module('testmod_foo')
         envfoo = env.Environment(name='envfoo', modules=['testmod_foo'])
-        snapshot, _ = env.load(envfoo)
+        snapshot, _ = rt.loadenv(envfoo)
         snapshot.restore()
         assert self.modules_system.is_module_loaded('testmod_foo')
 
@@ -168,17 +168,17 @@ class TestEnvironment(unittest.TestCase):
         self.setup_modules_system()
         self.modules_system.load_module('testmod_foo')
         envbar = env.Environment(name='envbar', modules=['testmod_bar'])
-        snapshot, _ = env.load(envbar)
+        snapshot, _ = rt.loadenv(envbar)
         snapshot.restore()
         assert self.modules_system.is_module_loaded('testmod_foo')
 
     def test_immutability(self):
         # Check emit_load_commands()
-        _, commands = env.load(self.environ)
+        _, commands = rt.loadenv(self.environ)
 
         # Try to modify the returned list of commands
         commands.append('foo')
-        assert 'foo' not in env.load(self.environ)[1]
+        assert 'foo' not in rt.loadenv(self.environ)[1]
 
         # Test ProgEnvironment
         prgenv = env.ProgEnvironment('foo_prgenv')
@@ -213,14 +213,14 @@ class TestEnvironment(unittest.TestCase):
     @fixtures.switch_to_user_runtime
     def test_emit_load_commands(self):
         self.setup_modules_system()
-        rt = runtime()
+        ms = rt.runtime().modules_system
         expected_commands = [
-            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            ms.emit_load_commands('testmod_foo')[0],
             'export _var0=val1',
             'export _var2=$_var0',
             'export _var3=${_var1}',
         ]
-        assert expected_commands == env.emit_load_commands(self.environ)
+        assert expected_commands == rt.emit_loadenv_commands(self.environ)
 
     @fixtures.switch_to_user_runtime
     def test_emit_load_commands_with_confict(self):
@@ -228,12 +228,12 @@ class TestEnvironment(unittest.TestCase):
 
         # Load a conflicting module
         self.modules_system.load_module('testmod_bar')
-        rt = runtime()
+        ms = rt.runtime().modules_system
         expected_commands = [
-            rt.modules_system.emit_unload_commands('testmod_bar')[0],
-            rt.modules_system.emit_load_commands('testmod_foo')[0],
+            ms.emit_unload_commands('testmod_bar')[0],
+            ms.emit_load_commands('testmod_foo')[0],
             'export _var0=val1',
             'export _var2=$_var0',
             'export _var3=${_var1}',
         ]
-        assert expected_commands == env.emit_load_commands(self.environ)
+        assert expected_commands == rt.emit_loadenv_commands(self.environ)

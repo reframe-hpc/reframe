@@ -278,6 +278,10 @@ class Runner:
         return debug.repr(self)
 
     @property
+    def max_retries(self):
+        return self._max_retries
+
+    @property
     def policy(self):
         return self._policy
 
@@ -398,6 +402,10 @@ class ExecutionPolicy(abc.ABC):
     def runcase(self, case):
         '''Run a test case.'''
 
+        # Pick the right subconfig for the current partition
+        rt = runtime.runtime()
+        _, partition, _ = case
+        rt.site_config.select_subconfig(partition.fullname)
         if self.strict_check:
             case.check.strict_check = True
 

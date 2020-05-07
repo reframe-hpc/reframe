@@ -8,8 +8,7 @@ import math
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.launchers import LauncherWrapper
-from reframe.core.launchers.registry import getlauncher
+from reframe.core.backends import getlauncher
 
 
 @rfm.simple_test

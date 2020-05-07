@@ -3,12 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import copy
 import logging
 import logging.handlers
 import os
 import pytest
-import sys
 import re
+import sys
 import tempfile
 import time
 import unittest
@@ -16,10 +17,12 @@ from datetime import datetime
 
 import reframe as rfm
 import reframe.core.logging as rlog
+import reframe.core.runtime as rt
+import reframe.core.settings as settings
+import reframe.utility as util
 from reframe.core.exceptions import ConfigError, ReframeError
-from reframe.core.launchers.registry import getlauncher
+from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.registry import getscheduler
 
 
 class _FakeCheck(rfm.RegressionTest):
@@ -143,324 +146,257 @@ class TestLogger(unittest.TestCase):
         assert self.found_in_logfile(':z')
 
 
-class TestLoggingConfiguration(unittest.TestCase):
-    def setUp(self):
-        tmpfd, self.logfile = tempfile.mkstemp(dir='.')
-        os.close(tmpfd)
-        self.logging_config = {
-            'level': 'INFO',
+@pytest.fixture
+def temp_runtime(tmp_path):
+    def _temp_runtime(logging_config):
+        site_config = copy.deepcopy(settings.site_configuration)
+        site_config['logging'] = [logging_config]
+        with tempfile.NamedTemporaryFile(mode='w+t', dir=str(tmp_path),
+                                         suffix='.py', delete=False) as fp:
+            fp.write(f'site_configuration = {util.ppretty(site_config)}')
+
+        with rt.temp_runtime(fp.name):
+            yield rt.runtime()
+
+    return _temp_runtime
+
+
+@pytest.fixture
+def logfile(tmp_path):
+    return str(tmp_path / 'test.log')
+
+
+@pytest.fixture
+def basic_config(temp_runtime, logfile):
+    yield from temp_runtime({
+        'level': 'info',
+        'handlers': [
+            {
+                'type': 'file',
+                'name': logfile,
+                'level': 'warning',
+                'format': '[%(asctime)s] %(levelname)s: '
+                '%(check_name)s: %(message)s',
+                'datefmt': '%F',
+                'append': True,
+            },
+        ],
+        'handlers_perflog': []
+    })
+
+
+def _flush_handlers():
+    for h in rlog.getlogger().logger.handlers:
+        h.flush()
+
+
+def _close_handlers():
+    for h in rlog.getlogger().logger.handlers:
+        h.close()
+
+
+def _found_in_logfile(string, filename):
+    _flush_handlers()
+    _close_handlers()
+    found = False
+    with open(filename, 'rt') as fp:
+        found = string in fp.read()
+
+    return found
+
+
+def test_valid_level(basic_config):
+    rlog.configure_logging(rt.runtime().site_config)
+    assert rlog.INFO == rlog.getlogger().getEffectiveLevel()
+
+
+def test_handler_level(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().info('foo')
+    rlog.getlogger().warning('bar')
+    assert not _found_in_logfile('foo', logfile)
+    assert _found_in_logfile('bar', logfile)
+
+
+def test_handler_append(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo')
+    _close_handlers()
+
+    # Reload logger
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('bar')
+
+    assert _found_in_logfile('foo', logfile)
+    assert _found_in_logfile('bar', logfile)
+
+
+def test_handler_noappend(temp_runtime, logfile):
+    runtime = temp_runtime(
+        {
+            'level': 'info',
             'handlers': [
                 {
                     'type': 'file',
-                    'name': self.logfile,
-                    'level': 'WARNING',
-                    'format': '[%(asctime)s] %(levelname)s: '
-                              '%(check_name)s: %(message)s',
-                    'datefmt': '%F',
-                    'append': True,
-                }
-            ]
-        }
-        self.check = _FakeCheck()
-
-    def tearDown(self):
-        if os.path.exists(self.logfile):
-            os.remove(self.logfile)
-
-    def found_in_logfile(self, string):
-        for handler in rlog.getlogger().logger.handlers:
-            handler.flush()
-            handler.close()
-
-        found = False
-        with open(self.logfile, 'rt') as f:
-            found = string in f.read()
-
-        return found
-
-    def close_handlers(self):
-        for h in rlog.getlogger().logger.handlers:
-            h.close()
-
-    def flush_handlers(self):
-        for h in rlog.getlogger().logger.handlers:
-            h.flush()
-
-    def test_valid_level(self):
-        rlog.configure_logging(self.logging_config)
-        assert rlog.INFO == rlog.getlogger().getEffectiveLevel()
-
-    def test_no_handlers(self):
-        del self.logging_config['handlers']
-        with pytest.raises(ValueError):
-            rlog.configure_logging(self.logging_config)
-
-    def test_empty_handlers(self):
-        self.logging_config['handlers'] = []
-        with pytest.raises(ValueError):
-            rlog.configure_logging(self.logging_config)
-
-    def test_handler_level(self):
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().info('foo')
-        rlog.getlogger().warning('bar')
-
-        assert not self.found_in_logfile('foo')
-        assert self.found_in_logfile('bar')
-
-    def test_handler_append(self):
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('foo')
-        self.close_handlers()
-
-        # Reload logger
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('bar')
-
-        assert self.found_in_logfile('foo')
-        assert self.found_in_logfile('bar')
-
-    def test_handler_noappend(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [
-                {
-                    'type': 'file',
-                    'name': self.logfile,
-                    'level': 'WARNING',
+                    'name': logfile,
+                    'level': 'warning',
                     'format': '[%(asctime)s] %(levelname)s: %(message)s',
                     'datefmt': '%F',
                     'append': False,
                 }
-            ]
-        }
-
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('foo')
-        self.close_handlers()
-
-        # Reload logger
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('bar')
-
-        assert not self.found_in_logfile('foo')
-        assert self.found_in_logfile('bar')
-
-    def test_date_format(self):
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('foo')
-        assert self.found_in_logfile(datetime.now().strftime('%F'))
-
-    def test_unknown_handler(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [
-                {'type': 'stream', 'name': 'stderr'},
-                {'type': 'foo'}
             ],
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
-
-    def test_handler_syntax_no_type(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'name': 'stderr'}]
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
-
-    def test_handler_convert_syntax(self):
-        old_syntax = {
-            self.logfile: {
-                'level': 'INFO',
-                'format': '%(message)s',
-                'append': False,
-            },
-            '&1': {
-                'level': 'INFO',
-                'format': '%(message)s'
-            },
-            '&2': {
-                'level': 'ERROR',
-                'format': '%(message)s'
-            }
+            'handlers_perflog': []
         }
 
-        new_syntax = [
+    )
+    next(runtime)
+
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo')
+    _close_handlers()
+
+    # Reload logger
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('bar')
+
+    assert not _found_in_logfile('foo', logfile)
+    assert _found_in_logfile('bar', logfile)
+
+
+def test_date_format(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo')
+    assert _found_in_logfile(datetime.now().strftime('%F'), logfile)
+
+
+@pytest.fixture(params=['stdout', 'stderr'])
+def stream(request):
+    return request.param
+
+
+def test_stream_handler(temp_runtime, logfile, stream):
+    runtime = temp_runtime({
+        'level': 'info',
+        'handlers': [{'type': 'stream', 'name': stream}],
+        'handlers_perflog': []
+    })
+    next(runtime)
+    rlog.configure_logging(rt.runtime().site_config)
+    raw_logger = rlog.getlogger().logger
+    assert len(raw_logger.handlers) == 1
+    handler = raw_logger.handlers[0]
+
+    assert isinstance(handler, logging.StreamHandler)
+    stream = sys.stdout if stream == 'stdout' else sys.stderr
+    assert handler.stream == stream
+
+
+def test_multiple_handlers(temp_runtime, logfile):
+    runtime = temp_runtime({
+        'level': 'info',
+        'handlers': [
+            {'type': 'stream', 'name': 'stderr'},
+            {'type': 'file', 'name': logfile},
+            {'type': 'syslog', 'address': '/dev/log'}
+        ],
+        'handlers_perflog': []
+    })
+    next(runtime)
+    rlog.configure_logging(rt.runtime().site_config)
+    assert len(rlog.getlogger().logger.handlers) == 3
+
+
+def test_file_handler_timestamp(temp_runtime, logfile):
+    runtime = temp_runtime({
+        'level': 'info',
+        'handlers': [
             {
                 'type': 'file',
-                'name': self.logfile,
-                'level': 'INFO',
-                'format': '%(message)s',
-                'append': False
+                'name': logfile,
+                'level': 'warning',
+                'format': '[%(asctime)s] %(levelname)s: '
+                '%(check_name)s: %(message)s',
+                'datefmt': '%F',
+                'timestamp': '%F',
+                'append': True,
             },
-            {
-                'type': 'stream',
-                'name': 'stdout',
-                'level': 'INFO',
-                'format': '%(message)s'
-            },
-            {
-                'type': 'stream',
-                'name': 'stderr',
-                'level': 'ERROR',
-                'format': '%(message)s'
-            }
-        ]
+        ],
+        'handlers_perflog': []
+    })
+    next(runtime)
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().warning('foo')
+    base, ext = os.path.splitext(logfile)
+    filename = f"{base}_{datetime.now().strftime('%F')}.log"
+    assert os.path.exists(filename)
 
-        self.assertCountEqual(new_syntax,
-                              rlog._convert_handler_syntax(old_syntax))
 
-    def test_stream_handler_stdout(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'stream', 'name': 'stdout'}],
-        }
-        rlog.configure_logging(self.logging_config)
-        raw_logger = rlog.getlogger().logger
-        assert len(raw_logger.handlers) == 1
-        handler = raw_logger.handlers[0]
+def test_syslog_handler(temp_runtime):
+    import platform
 
-        assert isinstance(handler, logging.StreamHandler)
-        assert handler.stream == sys.stdout
+    if platform.system() == 'Linux':
+        addr = '/dev/log'
+    elif platform.system() == 'Darwin':
+        addr = '/dev/run/syslog'
+    else:
+        pytest.skip('unknown system platform')
 
-    def test_stream_handler_stderr(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'stream', 'name': 'stderr'}],
-        }
+    runtime = temp_runtime({
+        'level': 'info',
+        'handlers': [{'type': 'syslog', 'address': addr}],
+        'handlers_perflog': []
+    })
+    next(runtime)
+    rlog.configure_logging(rt.runtime().site_config)
+    rlog.getlogger().info('foo')
 
-        rlog.configure_logging(self.logging_config)
-        raw_logger = rlog.getlogger().logger
-        assert len(raw_logger.handlers) == 1
-        handler = raw_logger.handlers[0]
 
-        assert isinstance(handler, logging.StreamHandler)
-        assert handler.stream == sys.stderr
+def test_global_noconfig():
+    # This is to test the case when no configuration is set, but since the
+    # order the unit tests are invoked is arbitrary, we emulate the
+    # 'no-config' state by passing `None` to `configure_logging()`
 
-    def test_multiple_handlers(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [
-                {'type': 'stream', 'name': 'stderr'},
-                {'type': 'file', 'name': self.logfile},
-                {'type': 'syslog', 'address': '/dev/log'}
-            ],
-        }
-        rlog.configure_logging(self.logging_config)
-        assert len(rlog.getlogger().logger.handlers) == 3
+    rlog.configure_logging(None)
+    assert rlog.getlogger() is rlog.null_logger
 
-    def test_file_handler_timestamp(self):
-        self.logging_config['handlers'][0]['timestamp'] = '%F'
-        rlog.configure_logging(self.logging_config)
-        rlog.getlogger().warning('foo')
-        logfile = '%s_%s' % (self.logfile, datetime.now().strftime('%F'))
-        assert os.path.exists(logfile)
-        os.remove(logfile)
 
-    def test_file_handler_syntax_no_name(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [
-                {'type': 'file'}
-            ],
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
+def test_global_config(basic_config):
+    rlog.configure_logging(rt.runtime().site_config)
+    assert rlog.getlogger() is not rlog.null_logger
 
-    def test_stream_handler_unknown_stream(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [
-                {'type': 'stream', 'name': 'foo'},
-            ],
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
 
-    def test_syslog_handler(self):
-        import platform
+def test_logging_context(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    with rlog.logging_context() as logger:
+        assert logger is rlog.getlogger()
+        assert logger is not rlog.null_logger
+        rlog.getlogger().error('error from context')
 
-        if platform.system() == 'Linux':
-            addr = '/dev/log'
-        elif platform.system() == 'Darwin':
-            addr = '/dev/run/syslog'
-        else:
-            pytest.skip()
+    assert _found_in_logfile('reframe', logfile)
+    assert _found_in_logfile('error from context', logfile)
 
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'syslog', 'address': addr}]
-        }
-        rlog.getlogger().info('foo')
 
-    def test_syslog_handler_no_address(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'syslog'}]
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
+def test_logging_context_check(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    with rlog.logging_context(check=_FakeCheck()):
+        rlog.getlogger().error('error from context')
 
-    def test_syslog_handler_unknown_facility(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'syslog', 'facility': 'foo'}]
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
+    rlog.getlogger().error('error outside context')
+    assert _found_in_logfile(f'_FakeCheck: {sys.argv[0]}: error from context',
+                             logfile)
+    assert _found_in_logfile(f'reframe: {sys.argv[0]}: error outside context',
+                             logfile)
 
-    def test_syslog_handler_unknown_socktype(self):
-        self.logging_config = {
-            'level': 'INFO',
-            'handlers': [{'type': 'syslog', 'socktype': 'foo'}]
-        }
-        with pytest.raises(ConfigError):
-            rlog.configure_logging(self.logging_config)
 
-    def test_global_noconfig(self):
-        # This is to test the case when no configuration is set, but since the
-        # order the unit tests are invoked is arbitrary, we emulate the
-        # 'no-config' state by passing `None` to `configure_logging()`
+def test_logging_context_error(basic_config, logfile):
+    rlog.configure_logging(rt.runtime().site_config)
+    try:
+        with rlog.logging_context(level=rlog.ERROR):
+            raise ReframeError('error from context')
 
-        rlog.configure_logging(None)
-        assert rlog.getlogger() is rlog.null_logger
+        pytest.fail('logging_context did not propagate the exception')
+    except ReframeError:
+        pass
 
-    def test_global_config(self):
-        rlog.configure_logging(self.logging_config)
-        assert rlog.getlogger() is not rlog.null_logger
-
-    def test_logging_context(self):
-        rlog.configure_logging(self.logging_config)
-        with rlog.logging_context() as logger:
-            assert logger is rlog.getlogger()
-            assert logger is not rlog.null_logger
-            rlog.getlogger().error('error from context')
-
-        assert self.found_in_logfile('reframe')
-        assert self.found_in_logfile('error from context')
-
-    def test_logging_context_check(self):
-        rlog.configure_logging(self.logging_config)
-        with rlog.logging_context(check=self.check):
-            rlog.getlogger().error('error from context')
-
-        rlog.getlogger().error('error outside context')
-        assert self.found_in_logfile(
-            '_FakeCheck: %s: error from context' % sys.argv[0])
-        assert self.found_in_logfile(
-            'reframe: %s: error outside context' % sys.argv[0])
-
-    def test_logging_context_error(self):
-        rlog.configure_logging(self.logging_config)
-        try:
-            with rlog.logging_context(level=rlog.ERROR):
-                raise ReframeError('error from context')
-
-            pytest.fail('logging_context did not propagate the exception')
-        except ReframeError:
-            pass
-
-        assert self.found_in_logfile('reframe')
-        assert self.found_in_logfile('error from context')
+    assert _found_in_logfile('reframe', logfile)
+    assert _found_in_logfile('error from context', logfile)

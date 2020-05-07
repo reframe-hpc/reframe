@@ -3,49 +3,30 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import json
 import re
 
-import reframe.core.debug as debug
-import reframe.core.fields as fields
 import reframe.utility as utility
-import reframe.utility.typecheck as typ
-from reframe.core.environments import Environment
+from reframe.core.backends import (getlauncher, getscheduler)
+from reframe.core.modules import ModulesSystem
+from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-class SystemPartition:
-    '''A representation of a system partition inside ReFrame.
-
-    This class is immutable.
-    '''
-
-    _name      = fields.TypedField('_name', typ.Str[r'(\w|-)+'])
-    _descr     = fields.TypedField('_descr', str)
-    _access    = fields.TypedField('_access', typ.List[str])
-    _environs  = fields.TypedField('_environs', typ.List[Environment])
-    _resources = fields.TypedField('_resources', typ.Dict[str, typ.List[str]])
-    _local_env = fields.TypedField('_local_env', Environment, type(None))
-    _container_environs = fields.TypedField('_container_environs',
-                                            typ.Dict[str, Environment])
-
-    # maximum concurrent jobs
-    _max_jobs  = fields.TypedField('_max_jobs', int)
-
-    def __init__(self, name, descr=None, scheduler=None, launcher=None,
-                 access=[], environs=[], resources={}, local_env=None,
-                 max_jobs=1):
-        self._name  = name
-        self._descr = descr or name
+class _SystemPartition:
+    def __init__(self, parent, name, scheduler, launcher,
+                 descr, access, container_environs, resources,
+                 local_env, environs, max_jobs):
+        self._parent_system = parent
+        self._name = name
         self._scheduler = scheduler
-        self._launcher  = launcher
-        self._access    = list(access)
-        self._environs  = list(environs)
-        self._resources = dict(resources)
-        self._max_jobs  = max_jobs
+        self._launcher = launcher
+        self._descr = descr
+        self._access = access
+        self._container_environs = container_environs
         self._local_env = local_env
-        self._container_environs = {}
-
-        # Parent system
-        self._system = None
+        self._environs = environs
+        self._max_jobs = max_jobs
+        self._resources = {r['name']: r['options'] for r in resources}
 
     @property
     def access(self):
@@ -73,10 +54,7 @@ class SystemPartition:
 
         :type: `str`
         '''
-        if self._system is None:
-            return self._name
-        else:
-            return '%s:%s' % (self._system.name, self._name)
+        return f'{self._parent_system}:{self._name}'
 
     @property
     def local_env(self):
@@ -102,7 +80,7 @@ class SystemPartition:
     def scheduler(self):
         '''The type of the backend scheduler of this partition.
 
-        :returns: a subclass of :class:`reframe.core.schedulers.Job`.
+        :returns: a subclass of :class:`reframe.core.schedulers.JobScheduler`.
 
         .. note::
            .. versionchanged:: 2.8
@@ -123,9 +101,6 @@ class SystemPartition:
         '''
         return self._launcher
 
-    def add_container_env(self, env_name, environ):
-        self._container_environs[env_name] = environ
-
     # Instantiate managed resource `name` with `value`.
     def get_resource(self, name, **values):
         ret = []
@@ -138,7 +113,7 @@ class SystemPartition:
         return ret
 
     def environment(self, name):
-        for e in self._environs:
+        for e in self.environs:
             if e.name == name:
                 return e
 
@@ -156,56 +131,136 @@ class SystemPartition:
                 self._resources == other._resources and
                 self._local_env == other._local_env)
 
-    def __str__(self):
-        local_env = re.sub('(?m)^', 6*' ', ' - ' + self._local_env.details())
-        lines = [
-            '%s [%s]:' % (self._name, self._descr),
-            '    fullname: ' + self.fullname,
-            '    scheduler: ' + self._scheduler.registered_name,
-            '    launcher: '  + self._launcher.registered_name,
-            '    access: ' + ' '.join(self._access),
-            '    local_env:\n' + local_env,
-            '    environs: ' + ', '.join(str(e) for e in self._environs)
-        ]
-        return '\n'.join(lines)
+    def json(self):
+        return {
+            'name': self._name,
+            'descr': self._descr,
+            'scheduler': self._scheduler.registered_name,
+            'launcher': self._launcher.registered_name,
+            'access': self._access,
+            'container_platforms': [
+                {
+                    'type': ctype,
+                    'modules': [m.name for m in cpenv.modules],
+                    'variables': [[n, v] for n, v in cpenv.variables.items()]
+                }
+                for ctype, cpenv in self._container_environs.items()
+            ],
+            'modules': [m.name for m in self._local_env.modules],
+            'variables': [[n, v]
+                          for n, v in self._local_env.variables.items()],
+            'environs': [e.name for e in self._environs],
+            'max_jobs': self._max_jobs,
+            'resources': [
+                {
+                    'name': name,
+                    'options': options
+                }
+                for name, options in self._resources.items()
+            ]
+        }
 
-    def __repr__(self):
-        return debug.repr(self)
+    def __str__(self):
+        return json.dumps(self.json(), indent=2)
 
 
 class System:
     '''A representation of a system inside ReFrame.'''
-    _name  = fields.TypedField('_name', typ.Str[r'(\w|-)+'])
-    _descr = fields.TypedField('_descr', str)
-    _hostnames  = fields.TypedField('_hostnames', typ.List[str])
-    _partitions = fields.TypedField('_partitions', typ.List[SystemPartition])
-    _modules_system = fields.TypedField('_modules_system',
-                                        typ.Str[r'(\w|-)+'], type(None))
-    _preload_env = fields.TypedField('_preload_env', Environment, type(None))
-    _prefix = fields.TypedField('_prefix', str)
-    _stagedir  = fields.TypedField('_stagedir', str, type(None))
-    _outputdir = fields.TypedField('_outputdir', str, type(None))
-    _perflogdir = fields.TypedField('_perflogdir', str, type(None))
-    _resourcesdir = fields.TypedField('_resourcesdir', str)
 
-    def __init__(self, name, descr=None, hostnames=[], partitions=[],
-                 preload_env=None, prefix='.', stagedir=None, outputdir=None,
-                 perflogdir=None, resourcesdir='.', modules_system=None):
-        self._name  = name
-        self._descr = descr or name
-        self._hostnames  = list(hostnames)
-        self._partitions = list(partitions)
-        self._modules_system = modules_system
+    def __init__(self, name, descr, hostnames, modules_system,
+                 preload_env, prefix, outputdir,
+                 resourcesdir, stagedir, partitions):
+        self._name = name
+        self._descr = descr
+        self._hostnames = hostnames
+        self._modules_system = ModulesSystem.create(modules_system)
         self._preload_env = preload_env
         self._prefix = prefix
-        self._stagedir = stagedir
         self._outputdir = outputdir
-        self._perflogdir = perflogdir
         self._resourcesdir = resourcesdir
+        self._stagedir = stagedir
+        self._partitions = partitions
 
-        # Set parent system for the given partitions
-        for p in partitions:
-            p._system = self
+    @classmethod
+    def create(cls, site_config):
+        # Create the whole system hierarchy from bottom up
+        sysname = site_config.get('systems/0/name')
+        partitions = []
+        config_save = site_config.subconfig_system
+        for p in site_config.get('systems/0/partitions'):
+            site_config.select_subconfig(f'{sysname}:{p["name"]}')
+            partid = f"systems/0/partitions/@{p['name']}"
+            part_name = site_config.get(f'{partid}/name')
+            part_sched = getscheduler(site_config.get(f'{partid}/scheduler'))
+            part_launcher = getlauncher(site_config.get(f'{partid}/launcher'))
+            part_container_environs = {}
+            for i, p in enumerate(
+                    site_config.get(f'{partid}/container_platforms')
+            ):
+                ctype = p['type']
+                part_container_environs[ctype] = Environment(
+                    name=f'__rfm_env_{ctype}',
+                    modules=site_config.get(
+                        f'{partid}/container_platforms/{i}/modules'
+                    ),
+                    variables=site_config.get(
+                        f'{partid}/container_platforms/{i}/variables'
+                    )
+                )
+
+            part_environs = [
+                ProgEnvironment(
+                    name=e,
+                    modules=site_config.get(f'environments/@{e}/modules'),
+                    variables=site_config.get(f'environments/@{e}/variables'),
+                    cc=site_config.get(f'environments/@{e}/cc'),
+                    cxx=site_config.get(f'environments/@{e}/cxx'),
+                    ftn=site_config.get(f'environments/@{e}/ftn'),
+                    cppflags=site_config.get(f'environments/@{e}/cppflags'),
+                    cflags=site_config.get(f'environments/@{e}/cflags'),
+                    cxxflags=site_config.get(f'environments/@{e}/cxxflags'),
+                    fflags=site_config.get(f'environments/@{e}/fflags'),
+                    ldflags=site_config.get(f'environments/@{e}/ldflags')
+                ) for e in site_config.get(f'{partid}/environs')
+            ]
+            partitions.append(
+                _SystemPartition(
+                    parent=site_config.get('systems/0/name'),
+                    name=part_name,
+                    scheduler=part_sched,
+                    launcher=part_launcher,
+                    descr=site_config.get(f'{partid}/descr'),
+                    access=site_config.get(f'{partid}/access'),
+                    resources=site_config.get(f'{partid}/resources'),
+                    environs=part_environs,
+                    container_environs=part_container_environs,
+                    local_env=Environment(
+                        name=f'__rfm_env_{part_name}',
+                        modules=site_config.get(f'{partid}/modules'),
+                        variables=site_config.get(f'{partid}/variables')
+                    ),
+                    max_jobs=site_config.get(f'{partid}/max_jobs')
+                )
+            )
+
+        # Restore configuration
+        site_config.select_subconfig(config_save)
+        return System(
+            name=sysname,
+            descr=site_config.get('systems/0/descr'),
+            hostnames=site_config.get('systems/0/hostnames'),
+            modules_system=site_config.get('systems/0/modules_system'),
+            preload_env=Environment(
+                name=f'__rfm_env_{sysname}',
+                modules=site_config.get('systems/0/modules'),
+                variables=site_config.get('systems/0/variables')
+            ),
+            prefix=site_config.get('systems/0/prefix'),
+            outputdir=site_config.get('systems/0/outputdir'),
+            resourcesdir=site_config.get('systems/0/resourcesdir'),
+            stagedir=site_config.get('systems/0/stagedir'),
+            partitions=partitions
+        )
 
     @property
     def name(self):
@@ -252,11 +307,6 @@ class System:
         return self._outputdir
 
     @property
-    def perflogdir(self):
-        '''The ReFrame log directory prefix associated with this system.'''
-        return self._perflogdir
-
-    @property
     def resourcesdir(self):
         '''Global resources directory for this system.
 
@@ -274,10 +324,6 @@ class System:
         '''All the system partitions associated with this system.'''
         return utility.SequenceView(self._partitions)
 
-    def add_partition(self, partition):
-        partition._system = self
-        self._partitions.append(partition)
-
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
@@ -286,5 +332,35 @@ class System:
                 self._hostnames  == other._hostnames and
                 self._partitions == other._partitions)
 
+    def json(self):
+        return {
+            'name': self._name,
+            'descr': self._descr,
+            'hostnames': self._hostnames,
+            'modules_system': self._modules_system.name,
+            'modules': [m.name for m in self._preload_env.modules],
+            'variables': [
+                [name, value]
+                for name, value in self._preload_env.variables.items()
+            ],
+            'prefix': self._prefix,
+            'outputdir': self._outputdir,
+            'stagedir': self._stagedir,
+            'resourcesdir': self._resourcesdir,
+            'partitions': [p.json() for p in self._partitions]
+        }
+
+    def __str__(self):
+        return json.dumps(self.json(), indent=2)
+
     def __repr__(self):
-        return debug.repr(self)
+        return (
+            f'{type(self).__name__}( '
+            f'name={self._name!r}, descr={self._descr!r}, '
+            f'hostnames={self._hostnames!r}, '
+            f'modules_system={self.modules_system.name!r}, '
+            f'preload_env={self._preload_env!r}, prefix={self._prefix!r}, '
+            f'outputdir={self._outputdir!r}, '
+            f'resourcesdir={self._resourcesdir!r}, '
+            f'stagedir={self._stagedir!r}, partitions={self._partitions!r})'
+        )

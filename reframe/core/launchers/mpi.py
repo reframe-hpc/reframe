@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+from reframe.core.backends import register_launcher
 from reframe.core.launchers import JobLauncher
-from reframe.core.launchers.registry import register_launcher
 from reframe.utility import seconds_to_hms
 
 
