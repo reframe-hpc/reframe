@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+#
 # Copyright 2016-2020 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
