@@ -28,7 +28,7 @@ Alternatively, you can convert any old configuration file using the conversion t
 
 .. code-block:: none
 
-   $ python3 tools/convert_config.py unittests/resources/settings_old_syntax.py
+   $ ./tools/convert-config unittests/resources/settings_old_syntax.py
    Conversion successful! The converted file can be found at '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmpz4f6yer4.py'.
 
 
