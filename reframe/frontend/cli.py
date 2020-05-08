@@ -440,7 +440,6 @@ def main():
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(rt.stage_prefix))
     print_infoline('output directory', repr(rt.output_prefix))
-    print_infoline('performance logs', repr(rt.perflogdir))
     printer.info('')
     try:
         # Locate and load checks
