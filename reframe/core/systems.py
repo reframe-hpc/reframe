@@ -12,7 +12,13 @@ from reframe.core.modules import ModulesSystem
 from reframe.core.environments import (Environment, ProgEnvironment)
 
 
-class _SystemPartition:
+class SystemPartition:
+    '''A representation of a system partition inside ReFrame.
+
+    .. warning::
+       Users may not create :class:`SystemPartition` objects directly.
+    '''
+
     def __init__(self, parent, name, scheduler, launcher,
                  descr, access, container_environs, resources,
                  local_env, environs, max_jobs):
@@ -30,19 +36,36 @@ class _SystemPartition:
 
     @property
     def access(self):
+        '''The scheduler options for accessing this system partition.
+
+        :type: :class:`List[str]`
+        '''
         return utility.SequenceView(self._access)
 
     @property
     def descr(self):
-        '''A detailed description of this partition.'''
+        '''The description of this partition.
+
+        :type: :class:`str`
+        '''
         return self._descr
 
     @property
     def environs(self):
+        '''The programming environments associated with this system partition.
+
+        :type: :class:`List[ProgEnvironment]`
+        '''
+
         return utility.SequenceView(self._environs)
 
     @property
     def container_environs(self):
+        '''Environments associated with the different container platforms.
+
+        :type: :class:`Dict[str, Environment]`
+        '''
+
         return utility.MappingView(self._container_environs)
 
     @property
@@ -52,28 +75,46 @@ class _SystemPartition:
         The fully-qualified name is of the form
         ``<parent-system-name>:<partition-name>``.
 
-        :type: `str`
+        :type: :class:`str`
         '''
         return f'{self._parent_system}:{self._name}'
 
     @property
     def local_env(self):
+        '''The local environment associated with this partition.
+
+        :type: :class:`Environment`
+        '''
         return self._local_env
 
     @property
     def max_jobs(self):
+        '''The maximum number of concurrent jobs allowed on this partition.
+
+        :type: integral
+        '''
         return self._max_jobs
 
     @property
     def name(self):
         '''The name of this partition.
 
-        :type: `str`
+        :type: :class:`str`
         '''
         return self._name
 
     @property
     def resources(self):
+        '''The resources template strings associated with this partition.
+
+        This is a dictionary, where the key is the name of a resource and the
+        value is the scheduler options or directives associated with this
+        resource.
+
+        :type: :class:`Dict[str, List[str]]`
+
+        '''
+
         return utility.MappingView(self._resources)
 
     @property
@@ -84,9 +125,9 @@ class _SystemPartition:
 
         .. note::
            .. versionchanged:: 2.8
+              Prior versions returned a string representing the scheduler and
+              job launcher combination.
 
-           Prior versions returned a string representing the scheduler and job
-           launcher combination.
         '''
         return self._scheduler
 
@@ -101,8 +142,12 @@ class _SystemPartition:
         '''
         return self._launcher
 
-    # Instantiate managed resource `name` with `value`.
     def get_resource(self, name, **values):
+        '''Instantiate managed resource ``name`` with ``value``.
+
+        :meta private:
+        '''
+
         ret = []
         for r in self._resources.get(name, []):
             try:
@@ -113,6 +158,8 @@ class _SystemPartition:
         return ret
 
     def environment(self, name):
+        '''Return the partition environment named ``name``.'''
+
         for e in self.environs:
             if e.name == name:
                 return e
@@ -132,6 +179,8 @@ class _SystemPartition:
                 self._local_env == other._local_env)
 
     def json(self):
+        '''Return a JSON object representing this system partition.'''
+
         return {
             'name': self._name,
             'descr': self._descr,
@@ -165,7 +214,11 @@ class _SystemPartition:
 
 
 class System:
-    '''A representation of a system inside ReFrame.'''
+    '''A representation of a system inside ReFrame.
+
+    .. warning::
+       Users may not create :class:`System` objects directly.
+    '''
 
     def __init__(self, name, descr, hostnames, modules_system,
                  preload_env, prefix, outputdir,
@@ -224,7 +277,7 @@ class System:
                 ) for e in site_config.get(f'{partid}/environs')
             ]
             partitions.append(
-                _SystemPartition(
+                SystemPartition(
                     parent=site_config.get('systems/0/name'),
                     name=part_name,
                     scheduler=part_sched,
@@ -264,27 +317,41 @@ class System:
 
     @property
     def name(self):
-        '''The name of this system.'''
+        '''The name of this system.
+
+        :type: :class:`str`
+        '''
         return self._name
 
     @property
     def descr(self):
-        '''The description of this system.'''
+        '''The description of this system.
+
+        :type: :class:`str`
+        '''
         return self._descr
 
     @property
     def hostnames(self):
-        '''The hostname patterns associated with this system.'''
+        '''The hostname patterns associated with this system.
+
+        :type: :class:`List[str]`
+        '''
         return self._hostnames
 
     @property
     def modules_system(self):
-        '''The modules system name associated with this system.'''
+        '''The modules system name associated with this system.
+
+        :type: :class:`reframe.core.modules.ModulesSystem`
+        '''
         return self._modules_system
 
     @property
     def preload_environ(self):
         '''The environment to load whenever ReFrame runs on this system.
+
+        :type: :class:`reframe.core.environments.Environment`
 
         .. note::
            .. versionadded:: 2.19
@@ -293,35 +360,48 @@ class System:
 
     @property
     def prefix(self):
-        '''The ReFrame prefix associated with this system.'''
+        '''The ReFrame prefix associated with this system.
+
+        :type: :class:`str`
+        '''
         return self._prefix
 
     @property
     def stagedir(self):
-        '''The ReFrame stage directory prefix associated with this system.'''
+        '''The ReFrame stage directory prefix associated with this system.
+
+        :type: :class:`str`
+        '''
         return self._stagedir
 
     @property
     def outputdir(self):
-        '''The ReFrame output directory prefix associated with this system.'''
+        '''The ReFrame output directory prefix associated with this system.
+
+        :type: :class:`str`
+        '''
         return self._outputdir
 
     @property
     def resourcesdir(self):
         '''Global resources directory for this system.
 
-        You may use this directory for storing large resource files of your
-        regression tests.
-        See `here <configure.html#system-configuration>`__ on how to configure
-        this.
+        This directory may be used for storing large files related to
+        regression tests. The value of this directory is controlled by the See
+        `resourcesdir <config_reference.html#.systems[].resourcesdir>`__
+        configuration parameter.
 
         :type: :class:`str`
+
         '''
         return self._resourcesdir
 
     @property
     def partitions(self):
-        '''All the system partitions associated with this system.'''
+        '''The system partitions associated with this system.
+
+        :type: :class:`List[SystemPartition]`
+        '''
         return utility.SequenceView(self._partitions)
 
     def __eq__(self, other):
@@ -333,6 +413,8 @@ class System:
                 self._partitions == other._partitions)
 
     def json(self):
+        '''Return a JSON object representing this system.'''
+
         return {
             'name': self._name,
             'descr': self._descr,

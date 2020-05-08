@@ -7,7 +7,6 @@ import reframe as rfm
 import reframe.utility.sanity as sn
 
 
-@rfm.required_version('>=2.20-dev2')
 @rfm.simple_test
 class Example10Test(rfm.RunOnlyRegressionTest):
     def __init__(self):
