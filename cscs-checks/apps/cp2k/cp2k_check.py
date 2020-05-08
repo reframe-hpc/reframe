@@ -35,7 +35,6 @@ class Cp2kCheck(rfm.RunOnlyRegressionTest):
         self.maintainers = ['LM']
         self.tags = {'scs'}
         self.strict_check = False
-        self.modules = ['CP2K']
         self.extra_resources = {
             'switches': {
                 'num_switches': 1
@@ -51,6 +50,7 @@ class Cp2kCpuCheck(Cp2kCheck):
         super().__init__()
         self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:mc']
+        self.modules = ['CP2K/7.1-CrayGNU-19.10']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -91,16 +91,20 @@ class Cp2kGpuCheck(Cp2kCheck):
         super().__init__()
         self.descr = 'CP2K GPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:gpu']
-        self.variables = {'CRAY_CUDA_MPS': '1'}
-        self.modules = ['CP2K']
+        self.modules = ['CP2K/7.1-CrayGNU-19.10-cuda-10.1']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
-            self.num_tasks = 72
+            self.num_tasks = 36
         else:
-            self.num_tasks = 192
+            self.num_tasks = 96
 
-        self.num_tasks_per_node = 12
+        self.num_tasks_per_node = 6 
+        self.num_cpus_per_task = 2 
+        self.variables = {
+            'CRAY_CUDA_MPS': '1',
+            'OMP_NUM_THREADS': str(self.num_cpus_per_task)
+        }
         references = {
             'maint': {
                 'small': {
