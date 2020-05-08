@@ -16,7 +16,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                               'kesch:cn', 'kesch:pn',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
@@ -35,7 +35,7 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
                               'kesch:cn', 'kesch:pn',
                               'arolla:cn', 'arolla:pn',
                               'tsa:cn', 'tsa:pn']
-        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-gnu']
+        self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
@@ -159,11 +159,27 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc']
         self.executable = 'cat /proc/cray_xt/cname'
-        self.sanity_patterns = sn.assert_found(r'c0-0.*', self.stdout)
+        self.cabinets = {
+            'daint:gpu': 'c0-1',
+            'daint:mc': 'c1-0',
+
+            # Numbering is inverse in Dom
+            'dom:gpu': 'c0-0',
+            'dom:mc': 'c0-1',
+        }
+
+        # We choose a default pattern that will cause assert_found() to fail
+        cabinet = self.cabinets.get(self.current_system.name, r'$^')
+        self.sanity_patterns = sn.assert_found(fr'{cabinet}.*', self.stdout)
 
     @rfm.run_before('run')
     def set_slurm_constraint(self):
-        self.job.options = ['--constraint=c0-0']
+        cabinet = self.cabinets.get(self.current_partition.fullname)
+        constraint = f'--constraint={self.current_partition.name}'
+        if cabinet:
+            constraint += f'&{cabinet}'
+
+        self.job.options += [constraint]
 
 
 @rfm.simple_test

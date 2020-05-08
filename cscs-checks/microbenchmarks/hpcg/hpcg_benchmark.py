@@ -24,8 +24,9 @@ class HPCGCheckRef(rfm.RegressionTest):
         self.sourcesdir = 'https://github.com/hpcg-benchmark/hpcg.git'
 
         # FIXME: Remove this after the OpenMP pragma gets fixed in hpcg master
-        self.prebuild_cmd = ['git checkout 9484cd7f2c4744c783abbdcfd4f5cc34807b42b1']
-
+        self.prebuild_cmd = [
+            'git checkout 9484cd7f2c4744c783abbdcfd4f5cc34807b42b1'
+        ]
         self.executable = 'bin/xhpcg'
         self.executable_opts = ['--nx=104', '--ny=104', '--nz=104', '-t2']
         # use glob to catch the output file suffix dependent on execution time
@@ -37,7 +38,7 @@ class HPCGCheckRef(rfm.RegressionTest):
             'daint:mc':  36,
             'daint:gpu': 12,
             'dom:mc':  36,
-            'dom:gpu': 12,
+            'dom:gpu': 12
         }
 
         self.reference = {
@@ -175,8 +176,14 @@ class HPCGCheckMKL(rfm.RegressionTest):
     @rfm.run_before('sanity')
     def set_sanity(self):
         self.sanity_patterns = sn.all([
-            sn.assert_eq(4, sn.count(
-                sn.findall(r'PASSED', self.outfile_lazy))),
+            sn.assert_not_found(
+                r'invalid because the ratio',
+                self.outfile_lazy,
+                msg='number of processes assigned could not be factorized'
+            ),
+            sn.assert_eq(
+                4, sn.count(sn.findall(r'PASSED', self.outfile_lazy))
+            ),
             sn.assert_eq(0, self.num_tasks_assigned % self.num_tasks_per_node)
         ])
 

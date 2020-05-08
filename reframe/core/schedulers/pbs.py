@@ -51,6 +51,7 @@ class PbsJobScheduler(sched.JobScheduler):
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
+        self._cancelled = False
 
         # Optional part of the job id refering to the PBS server
         self._pbs_server = None
@@ -140,6 +141,8 @@ class PbsJobScheduler(sched.JobScheduler):
             time.sleep(next(intervals))
 
     def cancel(self, job):
+        self._cancelled = True
+
         # Recreate the full job id
         jobid = str(job.jobid)
         if self._pbs_server:
@@ -154,7 +157,10 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def finished(self, job):
         with os_ext.change_dir(job.workdir):
-            done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
+            output_ready = (os.path.exists(job.stdout) and
+                            os.path.exists(job.stderr))
+
+        done = self._cancelled or output_ready
 
         if done:
             t_now = datetime.now()
