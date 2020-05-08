@@ -119,17 +119,21 @@ class RuntimeContext:
     def output_prefix(self):
         '''The output prefix directory of ReFrame.'''
         if self.outputdir:
-            return os.path.join(self.outputdir, self.timestamp)
+            ret = os.path.join(self.outputdir, self.timestamp)
         else:
-            return os.path.join(self.prefix, 'output', self.timestamp)
+            ret = os.path.join(self.prefix, 'output', self.timestamp)
+
+        return os.path.abspath(ret)
 
     @property
     def stage_prefix(self):
         '''The stage prefix directory of ReFrame.'''
         if self.stagedir:
-            return os.path.join(self.stagedir, self.timestamp)
+            ret = os.path.join(self.stagedir, self.timestamp)
         else:
-            return os.path.join(self.prefix, 'stage', self.timestamp)
+            ret = os.path.join(self.prefix, 'stage', self.timestamp)
+
+        return os.path.abspath(ret)
 
     def make_stagedir(self, *dirs, wipeout=True):
         return self._makedir(self.stage_prefix,
