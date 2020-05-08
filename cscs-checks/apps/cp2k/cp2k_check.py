@@ -99,8 +99,8 @@ class Cp2kGpuCheck(Cp2kCheck):
         else:
             self.num_tasks = 96
 
-        self.num_tasks_per_node = 6 
-        self.num_cpus_per_task = 2 
+        self.num_tasks_per_node = 6
+        self.num_cpus_per_task = 2
         self.variables = {
             'CRAY_CUDA_MPS': '1',
             'OMP_NUM_THREADS': str(self.num_cpus_per_task)
