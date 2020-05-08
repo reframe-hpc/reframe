@@ -140,6 +140,8 @@ class PbsJobScheduler(sched.JobScheduler):
             time.sleep(next(intervals))
 
     def cancel(self, job):
+        self._is_cancelling = True
+
         # Recreate the full job id
         jobid = str(job.jobid)
         if self._pbs_server:
@@ -155,6 +157,8 @@ class PbsJobScheduler(sched.JobScheduler):
     def finished(self, job):
         with os_ext.change_dir(job.workdir):
             done = os.path.exists(job.stdout) and os.path.exists(job.stderr)
+
+        done = done or getattr(self, '_is_cancelling', False)
 
         if done:
             t_now = datetime.now()
