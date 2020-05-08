@@ -94,5 +94,6 @@ class TorqueJobScheduler(PbsJobScheduler):
 
             stdout = os.path.join(job.workdir, job.stdout)
             stderr = os.path.join(job.workdir, job.stderr)
-            done = os.path.exists(stdout) and os.path.exists(stderr)
+            output_ready = os.path.exists(stdout) and os.path.exists(stderr)
+            done = self._cancelled or output_ready
             return job.state == 'COMPLETED' and done
