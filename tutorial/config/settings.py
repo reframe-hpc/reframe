@@ -43,7 +43,7 @@ site_configuration = {
                     ],
                     'container_platforms': [
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': ['Singularity']
                         }
                     ],
@@ -64,7 +64,7 @@ site_configuration = {
                     ],
                     'container_platforms': [
                         {
-                            'name': 'Singularity',
+                            'type': 'Singularity',
                             'modules': ['Singularity']
                         }
                     ],
