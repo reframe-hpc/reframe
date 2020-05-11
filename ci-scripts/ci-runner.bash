@@ -158,7 +158,7 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
     tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                       grep -e '^tutorial/(?!config/).*\.py') )
+                       grep -e '^tutorial/.*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
         tutorialchecks_path=""
