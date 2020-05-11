@@ -360,6 +360,7 @@ def main():
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
+    printer.inc_verbosity(site_config.get('general/verbose'))
     try:
         runtime.init_runtime(site_config)
     except ConfigError as e:
