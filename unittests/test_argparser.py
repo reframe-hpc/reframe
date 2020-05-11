@@ -156,7 +156,7 @@ def test_option_with_config(extended_parser):
             ['--timestamp=%FT%T', '--nocolor']
         )
         options.update_config(site_config)
-        assert site_config.get('general/0/check_search_recursive') is True
+        assert site_config.get('general/0/check_search_recursive') is False
         assert site_config.get('general/0/timestamp_dirs') == '%FT%T'
         assert site_config.get('general/0/non_default_craype') is True
         assert site_config.get('systems/0/prefix') == '.'
