@@ -1,0 +1,45 @@
+def tag = env.TAG_NAME
+def version = tag.substring(1)
+
+stage('Test stage') {
+    node('master') {
+            println("Triggered by tag ${tag}")
+    }
+}
+
+stage('Deploy Tests') {
+    node('dom') {
+        dir('private_tests') {
+            sh(returnStatus: true,
+               script: """#!/bin/bash -l
+                          git clone git@github.com:eth-cscs/reframe-tests.git
+                          cd reframe-tests
+                          git tag -a -m "test tag" -f ${tag}
+                          git archive --format=tar.gz --prefix=reframe-tests-${version}/ ${tag} -o reframe-tests-${version}.tar.gz
+                          git push origin -f ${tag}
+                          cp reframe-tests-${version}.tar.gz /apps/common/easybuild/sources/r/reframe""")
+            deleteDir()
+        }
+    }
+}
+
+stage('Production PR') {
+    node('dom') {
+            dir('production_repo') {
+                sh(returnStatus: true,
+                   script: """#!/bin/bash -l
+                              module load daint-gpu
+                              module load hub
+                              git clone git@github.com:eth-cscs/production.git
+                              cd production/easybuild/easyconfigs/r/reframe
+                              git checkout -b reframe/${version}
+                              sed 's/3.0-dev5/${version}/g' reframe-3.0-dev5.eb > reframe-${version}.eb
+                              git add reframe-${version}.eb
+                              git commit -m "Add recipe for Reframe version ${version}"
+                              git push origin HEAD
+                              hub pull-request -r teojgo,vkarak -m "[dom TSAtds] Add Reframe ${version}"
+                              """)
+            deleteDir()
+        }
+    }
+}
