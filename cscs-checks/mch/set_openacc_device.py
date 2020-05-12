@@ -40,7 +40,8 @@ class SetOpenaccDevice(rfm.RegressionTest):
             }
 
         self.executable = 'set_openacc_device'
-        self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK', self.stdout)
+        self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK', 
+                                               self.stdout)
         self.maintainers = ['LM']
         self.tags = {'production', 'mch'}
 
@@ -48,13 +49,13 @@ class SetOpenaccDevice(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
-            #if self.current_system.name == 'kesch':
-            #    self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
-            #    self.build_system.ldflags = [
-            #        '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
-            #        '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
-            #        '-lcublas', '-lcudart'
-            #    ]
+#            if self.current_system.name == 'kesch':
+#                self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
+#                self.build_system.ldflags = [
+#                    '-acc', '-ta:tesla:cc35,cuda8.0', '-lstdc++',
+#                    '-L/global/opt/nvidia/cudatoolkit/8.0.61/lib64',
+#                    '-lcublas', '-lcudart'
+#                ]
             if self.current_system.name in ['arolla', 'tsa']:
                 self.build_system.fflags += ['-ta=tesla,cc70,cuda10.1']
                 self.build_system.ldflags = [
