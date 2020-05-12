@@ -1,6 +1,6 @@
 ! This code tests MPI tasks communication with GPU devices 
 ! using OpenACC directives and setting one device per task
-program set_openacc_cuda_mpi
+program set_openacc_device
   use openacc
   implicit none
 
@@ -20,54 +20,62 @@ program set_openacc_cuda_mpi
   call MPI_Comm_size(MPI_COMM_WORLD, mpi_size, ierr)
   call MPI_Comm_rank(MPI_COMM_WORLD, mpi_rank, ierr)
 
-! each task creates two different arrays: the sum of their elements will be 10*mpi_rank
+! each task creates two arrays: the sum of their elements will be 10*mpi_rank
   allocate(array1(ARRAYSIZE))
   allocate(array2(ARRAYSIZE))
 
-#ifdef _OPENACC
+! get number of gpu devices
+  devicetype = acc_get_device_type()
+  ngpus = acc_get_num_devices(devicetype)
+
+! rank 0 prints number of tasks and number of gpu devices
   if (mpi_rank == 0) then 
-    devicetype = acc_get_device_type()
-    ngpus = acc_get_num_devices(devicetype)
-    write(*,*) "MPI test with OpenACC using", mpi_size, "tasks and ", ngpus-1, "GPU devices"
+    write(*,*) "MPI test with OpenACC using", mpi_size, "tasks and ", ngpus, "GPU devices"
+! initialization of the arrays on rank 0
     do i = 1, ARRAYSIZE
      array1(i) = .0
      array2(i) = .0
     end do
   else
-   ! each task different from 0 addresses a different GPU device
+! each MPI rank different from 0 addresses a different GPU device
    gpuid = mod(mpi_rank, ngpus)
    call acc_set_device_num(gpuid, acc_device_nvidia)
    call acc_init(acc_device_nvidia)
    gpuid = acc_get_device_num(devicetype)
-   write(*,*) "MPI task ", mpi_rank, "is using GPU id ", gpuid
+   write(*,*) "MPI task ", mpi_rank, "is using GPU id ", gpuid, "out of ", ngpus
 
+! initialization of the arrays on the gpu device used by the current MPI rank 
    !$acc data pcreate(array1,array2)
    !$acc parallel loop  
    do i = 1, ARRAYSIZE
      array1(i) = mpi_rank*0.25
      array2(i) = mpi_rank*0.75
    end do
+! update the arrays on the current MPI rank
    !$acc update host(array1,array2)
 
-! the current mpi_rank computes localsum(1)
+! the current MPI rank computes localsum(1)
    localsum(1) = sum(array1)+sum(array2)
+  
+! call external c++ function 
    call call_cpp_std(array1, ARRAYSIZE, i)
 
-   ! compute the sum of the arrays on the GPU calling a CUDA kernel using device ptr 
+! compute the sum of the arrays on the GPU using device ptr 
    call call_cuda_kernel_no_copy(array1, array2, ARRAYSIZE)
+! update array1 on the current MPI rank
    !$acc update host(array1)
    !$acc end data
+! array1 is now equal to sum(array1)+sum(array2)
 
-! array1 is now equal to sum(array1)+sum(array2): compute localsum(2)
+! compute localsum(2)
    localsum(2) = sum(array1)
   end if
-#endif
 
-! the current mpi_rank sends localsum to compute globalsum over all mpi tasks
+! the current MPI rank adds localsum to globalsum on rank 0
   call MPI_Reduce(localsum, globalsum, 2, MPI_INTEGER, MPI_SUM, 0, MPI_COMM_WORLD, ierr)
-
+! globalsum is 10*n*(n+1)/2 where n is the number of gpu devices
  if(mpi_rank == 0) then
-    if (globalsum(1) == globalsum(2)) then
+   if (globalsum(1) == globalsum(2)) then
       write (*,*) "CPU sum : ", globalsum(1), " GPU sum : ", globalsum(2)
       write (*,*) "Test Result : OK"
     else
@@ -144,4 +152,4 @@ contains
     call cpp_call(c_loc(fp(1)), n, i)
   end subroutine call_cpp_std
 
-end program set_openacc_cuda_mpi
+end program set_openacc_device
