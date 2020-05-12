@@ -40,7 +40,7 @@ class SetOpenaccDevice(rfm.RegressionTest):
             }
 
         self.executable = 'set_openacc_device'
-        self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK', 
+        self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK',
                                                self.stdout)
         self.maintainers = ['LM']
         self.tags = {'production', 'mch'}
