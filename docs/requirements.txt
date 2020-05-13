@@ -18,7 +18,7 @@ requests>=2.18.4
 setuptools>=31.0.1
 six>=1.11.0
 snowballstemmer>=1.2.1
-Sphinx
+Sphinx>=1.7.5
 sphinx-autobuild>=0.7.1
 sphinx-bootstrap-theme>=0.5.3
 sphinx-fakeinv>=1.0.0

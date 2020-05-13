@@ -13,13 +13,13 @@ from contextlib import suppress
 from datetime import datetime
 
 import reframe.core.environments as env
+import reframe.core.runtime as rt
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
-from reframe.core.config import settings
+from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import (SpawnedProcessError,
                                      JobBlockedError, JobError)
 from reframe.core.logging import getlogger
-from reframe.core.schedulers.registry import register_scheduler
 from reframe.utility import seconds_to_hms
 
 
@@ -104,13 +104,16 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._update_state_count = 0
         self._submit_time = None
         self._completion_time = None
+        self._job_submit_timeout = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/job_submit_timeout'
+        )
 
     def completion_time(self, job):
         if (self._completion_time or
             not slurm_state_completed(job.state)):
             return self._completion_time
 
-        with env.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
+        with rt.temp_environment(variables={'SLURM_TIME_FORMAT': '%s'}):
             completed = os_ext.run_command(
                 'sacct -S %s -P -j %s -o jobid,end' %
                 (self._submit_time.strftime('%F'), job.jobid),
@@ -188,7 +191,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def submit(self, job):
         cmd = 'sbatch %s' % job.script_filename
-        completed = _run_strict(cmd, timeout=settings().job_submit_timeout)
+        completed = _run_strict(cmd, timeout=self._job_submit_timeout)
         jobid_match = re.search(r'Submitted batch job (?P<jobid>\d+)',
                                 completed.stdout)
         if not jobid_match:
@@ -420,7 +423,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
             return
 
-        intervals = itertools.cycle(settings().job_poll_intervals)
+        intervals = itertools.cycle([1, 2, 3])
         self._update_state(job)
 
         while not slurm_state_completed(job.state):
@@ -438,8 +441,7 @@ class SlurmJobScheduler(sched.JobScheduler):
 
     def cancel(self, job):
         getlogger().debug('cancelling job (id=%s)' % job.jobid)
-        _run_strict('scancel %s' % job.jobid,
-                    timeout=settings().job_submit_timeout)
+        _run_strict('scancel %s' % job.jobid, timeout=self._job_submit_timeout)
         self._is_cancelling = True
 
     def finished(self, job):
@@ -555,6 +557,7 @@ class _SlurmNode(sched.Node):
             'ActiveFeatures', node_descr, sep=',') or set()
         self._states = self._extract_attribute(
             'State', node_descr, sep='+') or set()
+        self._descr = node_descr
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -587,6 +590,10 @@ class _SlurmNode(sched.Node):
     @property
     def states(self):
         return self._states
+
+    @property
+    def descr(self):
+        return self._descr
 
     def _extract_attribute(self, attr_name, node_descr, sep=None):
         attr_match = re.search(r'%s=(\S+)' % attr_name, node_descr)

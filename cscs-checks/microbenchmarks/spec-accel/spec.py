@@ -7,7 +7,7 @@ import os
 
 import reframe as rfm
 import reframe.utility.sanity as sn
-from reframe.core.launchers.registry import getlauncher
+from reframe.core.backends import getlauncher
 
 
 class SpecAccelCheckBase(rfm.RegressionTest):

@@ -27,17 +27,15 @@ import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
+from reframe.core.backends import (getlauncher, getscheduler)
 from reframe.core.buildsystems import BuildSystemField
 from reframe.core.containers import ContainerPlatform, ContainerPlatformField
 from reframe.core.deferrable import _DeferredExpression
 from reframe.core.exceptions import (BuildError, DependencyError,
                                      PipelineError, SanityError,
                                      PerformanceError)
-from reframe.core.launchers.registry import getlauncher
 from reframe.core.meta import RegressionTestMeta
 from reframe.core.schedulers import Job
-from reframe.core.schedulers.registry import getscheduler
-from reframe.core.systems import SystemPartition
 
 
 # Dependency kinds
@@ -124,27 +122,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
     This class provides the implementation of the pipeline phases that the
     regression test goes through during its lifetime.
 
-    :arg name: The name of the test.
-        If :class:`None`, the framework will try to assign a unique and
-        human-readable name to the test.
-
-    :arg prefix: The directory prefix of the test.
-        If :class:`None`, the framework will set it to the directory containing
-        the test file.
-
     .. note::
-        The ``name`` and ``prefix`` arguments are just maintained for backward
-        compatibility to the old (prior to 2.13) syntax of regression tests.
-        Users are advised to use the new simplified syntax for writing
-        regression tests.
-        Refer to the :doc:`ReFrame Tutorial </tutorial>` for more information.
+        .. versionchanged:: 2.19
 
-        This class is also directly available under the top-level
-        :mod:`reframe` module.
-
-       .. versionchanged:: 2.13
+        Base constructor takes no arguments.
 
     '''
+
     #: The name of the test.
     #:
     #: :type: string that can contain any character except ``/``
@@ -672,19 +656,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     extra_resources = fields.TypedField('extra_resources',
                                         typ.Dict[str, typ.Dict[str, object]])
 
-    # Private properties
-    _prefix = fields.TypedField('_prefix', str)
-    _stagedir = fields.TypedField('_stagedir', str, type(None))
-    _stdout = fields.TypedField('_stdout', str, type(None))
-    _stderr = fields.TypedField('_stderr', str, type(None))
-    _current_partition = fields.TypedField('_current_partition',
-                                           SystemPartition, type(None))
-    _current_environ = fields.TypedField('_current_environ',
-                                         env.Environment, type(None))
-    _cdt_environ = fields.TypedField('_cdt_environ', env.Environment)
-    _job = fields.TypedField('_job', Job, type(None))
-    _build_job = fields.TypedField('_build_job', Job, type(None))
-
     def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
 
@@ -803,7 +774,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         # Weak reference to the test case associated with this check
         self._case = None
 
-        if rt.runtime().non_default_craype:
+        if rt.runtime().get_option('general/0/non_default_craype'):
             self._cdt_environ = env.Environment(
                 name='__rfm_cdt_environ',
                 variables={
@@ -832,7 +803,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         This is set by the framework during the :func:`setup` phase.
 
-        :type: :class:`reframe.core.systems.SystemPartition`.
+        :type: :class:`reframe.core.systems._SystemPartition`.
         '''
         return self._current_partition
 
@@ -937,12 +908,13 @@ class RegressionTest(metaclass=RegressionTestMeta):
         return self._build_job.stderr
 
     def info(self):
-        '''Provide live information of a running test.
+        '''Provide live information for this test.
 
-        This method is used by the front-end to print the status message during
-        the test's execution.
-        This function is also called to provide the message for the
-        ``check_info`` `logging attribute <running.html#logging>`__.
+        This method is used by the front-end to print the status message
+        during the test's execution. This function is also called to provide
+        the message for the `check_info
+        <config_reference.html#.logging[].handlers[].format>`__ logging
+        attribute.
         By default, it returns a message reporting the test name, the current
         partition and the current programming environment that the test is
         currently executing on.
@@ -998,13 +970,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
         '''Setup the check's dynamic paths.'''
         self.logger.debug('setting up paths')
         try:
-            resources = rt.runtime().resources
-            self._stagedir = resources.make_stagedir(
+            runtime = rt.runtime()
+            self._stagedir = runtime.make_stagedir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
-            self._outputdir = resources.make_outputdir(
+                self._current_environ.name, self.name
+            )
+            self._outputdir = runtime.make_outputdir(
                 self.current_system.name, self._current_partition.name,
-                self._current_environ.name, self.name)
+                self._current_environ.name, self.name
+            )
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 

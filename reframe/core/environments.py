@@ -10,7 +10,6 @@ import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 import reframe.utility.typecheck as typ
-from reframe.core.runtime import runtime
 
 
 class Environment:
@@ -19,11 +18,10 @@ class Environment:
     It is simply a collection of modules to be loaded and environment variables
     to be set when this environment is loaded by the framework.
     '''
-    name = fields.TypedField('name', typ.Str[r'(\w|-)+'])
-    modules = fields.TypedField('modules', typ.List[str])
-    variables = fields.TypedField('variables', typ.Dict[str, str])
 
-    def __init__(self, name, modules=[], variables=[]):
+    def __init__(self, name, modules=None, variables=None):
+        modules = modules or []
+        variables = variables or []
         self._name = name
         self._modules = list(modules)
         self._variables = collections.OrderedDict(variables)
@@ -52,16 +50,6 @@ class Environment:
         '''
         return util.MappingView(self._variables)
 
-    @property
-    def is_loaded(self):
-        ''':class:`True` if this environment is loaded,
-        :class:`False` otherwise.
-        '''
-        is_module_loaded = runtime().modules_system.is_module_loaded
-        return (all(map(is_module_loaded, self._modules)) and
-                all(os.environ.get(k, None) == os_ext.expandvars(v)
-                    for k, v in self._variables.items()))
-
     def details(self):
         '''Return a detailed description of this environment.'''
         variables = '\n'.join(' '*8 + '- %s=%s' % (k, v)
@@ -85,16 +73,15 @@ class Environment:
         return self.name
 
     def __repr__(self):
-        ret = "{0}(name='{1}', modules={2}, variables={3})"
-        return ret.format(type(self).__name__, self.name,
-                          self.modules, self.variables)
+        return (f'{type(self).__name__}('
+                f'name={self._name!r}, '
+                f'modules={self._modules!r}, '
+                f'variables={list(self._variables.items())!r})')
 
 
 class _EnvironmentSnapshot(Environment):
     def __init__(self, name='env_snapshot'):
-        super().__init__(name,
-                         runtime().modules_system.loaded_modules(),
-                         os.environ.items())
+        super().__init__(name, [], os.environ.items())
 
     def restore(self):
         '''Restore this environment snapshot.'''
@@ -110,59 +97,12 @@ class _EnvironmentSnapshot(Environment):
             if other.variables[k] != v:
                 return False
 
-        return (self.name == other.name and
-                set(self.modules) == set(other.modules))
+        return self.name == other.name
 
 
 def snapshot():
     '''Create an environment snapshot'''
     return _EnvironmentSnapshot()
-
-
-def load(*environs):
-    '''Load environments in the current Python context.
-
-    Returns a tuple containing a snapshot of the environment at entry to this
-    function and a list of shell commands required to load ``environs``.
-    '''
-    env_snapshot = snapshot()
-    commands = []
-    rt = runtime()
-    for env in environs:
-        for m in env.modules:
-            conflicted = rt.modules_system.load_module(m, force=True)
-            for c in conflicted:
-                commands += rt.modules_system.emit_unload_commands(c)
-
-            commands += rt.modules_system.emit_load_commands(m)
-
-        for k, v in env.variables.items():
-            os.environ[k] = os_ext.expandvars(v)
-            commands.append('export %s=%s' % (k, v))
-
-    return env_snapshot, commands
-
-
-def emit_load_commands(*environs):
-    env_snapshot, commands = load(*environs)
-    env_snapshot.restore()
-    return commands
-
-
-class temp_environment:
-    '''Context manager to temporarily change the environment.'''
-
-    def __init__(self, modules=[], variables=[]):
-        self._modules = modules
-        self._variables = variables
-
-    def __enter__(self):
-        new_env = Environment('_rfm_temp_env', self._modules, self._variables)
-        self._environ_save, _ = load(new_env)
-        return new_env
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._environ_save.restore()
 
 
 class ProgEnvironment(Environment):
@@ -184,16 +124,16 @@ class ProgEnvironment(Environment):
     _cc = fields.TypedField('_cc', str)
     _cxx = fields.TypedField('_cxx', str)
     _ftn = fields.TypedField('_ftn', str)
-    _cppflags = fields.TypedField('_cppflags', typ.List[str], type(None))
-    _cflags = fields.TypedField('_cflags', typ.List[str], type(None))
-    _cxxflags = fields.TypedField('_cxxflags', typ.List[str], type(None))
-    _fflags = fields.TypedField('_fflags', typ.List[str], type(None))
-    _ldflags = fields.TypedField('_ldflags', typ.List[str], type(None))
+    _cppflags = fields.TypedField('_cppflags', typ.List[str])
+    _cflags = fields.TypedField('_cflags', typ.List[str])
+    _cxxflags = fields.TypedField('_cxxflags', typ.List[str])
+    _fflags = fields.TypedField('_fflags', typ.List[str])
+    _ldflags = fields.TypedField('_ldflags', typ.List[str])
 
     def __init__(self,
                  name,
-                 modules=[],
-                 variables={},
+                 modules=None,
+                 variables=None,
                  cc='cc',
                  cxx='CC',
                  ftn='ftn',
@@ -209,11 +149,11 @@ class ProgEnvironment(Environment):
         self._cxx = cxx
         self._ftn = ftn
         self._nvcc = nvcc
-        self._cppflags = cppflags
-        self._cflags = cflags
-        self._cxxflags = cxxflags
-        self._fflags = fflags
-        self._ldflags = ldflags
+        self._cppflags = cppflags or []
+        self._cflags   = cflags   or []
+        self._cxxflags = cxxflags or []
+        self._fflags   = fflags   or []
+        self._ldflags  = ldflags  or []
 
     @property
     def cc(self):
@@ -227,7 +167,7 @@ class ProgEnvironment(Environment):
     def cxx(self):
         '''The C++ compiler of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`str`
         '''
         return self._cxx
 
@@ -235,7 +175,7 @@ class ProgEnvironment(Environment):
     def ftn(self):
         '''The Fortran compiler of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`str`
         '''
         return self._ftn
 
@@ -243,7 +183,7 @@ class ProgEnvironment(Environment):
     def cppflags(self):
         '''The preprocessor flags of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`List[str]`
         '''
         return self._cppflags
 
@@ -251,7 +191,7 @@ class ProgEnvironment(Environment):
     def cflags(self):
         '''The C compiler flags of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`List[str]`
         '''
         return self._cflags
 
@@ -259,7 +199,7 @@ class ProgEnvironment(Environment):
     def cxxflags(self):
         '''The C++ compiler flags of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`List[str]`
         '''
         return self._cxxflags
 
@@ -267,7 +207,7 @@ class ProgEnvironment(Environment):
     def fflags(self):
         '''The Fortran compiler flags of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`List[str]`
         '''
         return self._fflags
 
@@ -275,7 +215,7 @@ class ProgEnvironment(Environment):
     def ldflags(self):
         '''The linker flags of this programming environment.
 
-        :type: :class:`str` or :class:`None`
+        :type: :class:`List[str]`
         '''
         return self._ldflags
 
@@ -285,10 +225,8 @@ class ProgEnvironment(Environment):
 
     def details(self):
         def format_flags(flags):
-            if flags is None:
+            if not flags:
                 return '<None>'
-            elif len(flags) == 0:
-                return "''"
             else:
                 return ' '.join(flags)
 

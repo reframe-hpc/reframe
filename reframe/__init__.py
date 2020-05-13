@@ -17,6 +17,8 @@ if sys.version_info[:3] < MIN_PYTHON_VERSION:
                      'Python >= %d.%d.%d is required\n' % MIN_PYTHON_VERSION)
     sys.exit(1)
 
+os.environ['RFM_INSTALL_PREFIX'] = INSTALL_PREFIX
+
 
 # Import important names for user tests
 from reframe.core.pipeline import *     # noqa: F401, F403

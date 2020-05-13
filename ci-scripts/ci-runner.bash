@@ -33,7 +33,7 @@ EOF
 
 checked_exec()
 {
-    "$@"
+    echo "[RUN] $@" && "$@"
     if [ $? -ne 0 ]; then
         CI_EXITCODE=1
     fi
@@ -43,7 +43,7 @@ run_tutorial_checks()
 {
     cmd="./bin/reframe -C tutorial/config/settings.py \
 --save-log-files -r -t tutorial $@"
-    echo "Running tutorial checks with \`$cmd'"
+    echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
 
@@ -51,18 +51,9 @@ run_user_checks()
 {
     cmd="./bin/reframe -C config/cscs.py --save-log-files \
 -r --flex-alloc-nodes=2 -t production|benchmark $@"
-    echo "Running user checks with \`$cmd'"
+    echo "[INFO] Running user checks with \`$cmd'"
     checked_exec $cmd
 }
-
-run_serial_user_checks()
-{
-    cmd="./bin/reframe -C config/cscs.py --exec-policy=serial --save-log-files \
--r -t production-serial $@"
-    echo "Running user checks with \`$cmd'"
-    checked_exec $cmd
-}
-
 
 ### Main script ###
 
@@ -105,7 +96,7 @@ while [ $# -ne 0 ]; do
         --)
             ;;
         *)
-            echo "${scriptname}: Unrecognized argument \`$1'" >&2
+            echo "[ERROR] ${scriptname}: Unrecognized argument \`$1'" >&2
             usage
             exit 1 ;;
     esac
@@ -144,75 +135,77 @@ fi
 # Always install our requirements
 python3 -m venv venv.unittests
 source venv.unittests/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 
 # FIXME: XALT is causing linking problems (see UES-823)
 module unload xalt
 
-echo "=============="
-echo "Loaded Modules"
-echo "=============="
+echo "[INFO] Loaded Modules"
 module list
 
-
 cd ${CI_FOLDER}
-echo "Running regression on $(hostname) in ${CI_FOLDER}"
+echo "[INFO] Running unit tests on $(hostname) in ${CI_FOLDER}"
 
 if [ $CI_GENERIC -eq 1 ]; then
     # Run unit tests for the public release
-    echo "========================================"
-    echo "Running unit tests with generic settings"
-    echo "========================================"
-    checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning
-    checked_exec ! ./bin/reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --system=generic -l 2>&1 | \
+    echo "[INFO] Running unit tests with generic settings"
+    checked_exec ./test_reframe.py \
+                 -W=error::reframe.core.exceptions.ReframeDeprecationWarning -ra
+    checked_exec ! ./bin/reframe.py --system=generic -l 2>&1 | \
         grep -- '--- Logging error ---'
 elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
     tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                       grep -e '^tutorial/(?!config/).*\.py') )
+                       grep -e '^tutorial/.*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
-        tutorialchecks_path="-c $(IFS=: eval 'echo "${tutorialchecks[*]}"')"
+        tutorialchecks_path=""
+        for check in ${tutorialchecks[@]}; do
+            tutorialchecks_path="${tutorialchecks_path} -c ${check}"
+        done
 
-        echo "========================"
-        echo "Modified tutorial checks"
-        echo "========================"
+        echo "[INFO] Modified tutorial checks"
         echo ${tutorialchecks_path}
-
         for i in ${!invocations[@]}; do
             run_tutorial_checks ${tutorialchecks_path} ${invocations[i]}
         done
     fi
 else
-    # Performing the unittests
-    echo "=================="
-    echo "Running unit tests"
-    echo "=================="
-
-    checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --rfm-user-config=config/cscs-ci.py
-
+    # Run unit tests with the scheduler backends
+    tempdir=$(mktemp -d -p $SCRATCH)
     if [[ $(hostname) =~ dom ]]; then
         PATH_save=$PATH
-        for backend in pbs torque; do
-            echo "=================================="
-            echo "Running unit tests with ${backend}"
-            echo "=================================="
-            export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
-            checked_exec ./test_reframe.py -W=error::reframe.core.exceptions.ReframeDeprecationWarning --rfm-user-config=config/cscs-${backend}.py
+        export PATH=/apps/dom/UES/karakasv/slurm-wrappers/bin:$PATH
+        for backend in slurm pbs torque; do
+            echo "[INFO] Running unit tests with ${backend}"
+            checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                         -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
+                         --rfm-user-system=dom:${backend} --basetemp=$tempdir -ra
         done
         export PATH=$PATH_save
+    else
+        echo "[INFO] Running unit tests"
+        checked_exec ./test_reframe.py --rfm-user-config=config/cscs-ci.py \
+                     -W=error::reframe.core.exceptions.ReframeDeprecationWarning \
+                     --basetemp=$tempdir -ra
+    fi
+
+    if [ $CI_EXITCODE -eq 0 ]; then
+        /bin/rm -rf $tempdir
     fi
 
     # Find modified or added user checks
     userchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
                    grep -e '^cscs-checks/.*\.py') )
     if [ ${#userchecks[@]} -ne 0 ]; then
-        userchecks_path="-c $(IFS=: eval 'echo "${userchecks[*]}"')"
+        userchecks_path=""
+        for check in ${userchecks[@]}; do
+            userchecks_path="${userchecks_path} -c ${check}"
+        done
 
-        echo "===================="
-        echo "Modified user checks"
-        echo "===================="
+        echo "[INFO] Modified user checks"
         echo ${userchecks_path}
 
         #
@@ -220,8 +213,8 @@ else
         #
         for i in ${!invocations[@]}; do
             run_user_checks ${userchecks_path} ${invocations[i]}
-            run_serial_user_checks ${userchecks_path} ${invocations[i]}
         done
     fi
 fi
+deactivate
 exit $CI_EXITCODE

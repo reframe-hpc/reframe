@@ -4,9 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import argparse
-
-from reframe.core.fields import ForwardField
-
+import os
 
 #
 # Notes on the ArgumentParser design
@@ -20,7 +18,7 @@ from reframe.core.fields import ForwardField
 # For this reason, we base our design on composition by implementing wrappers
 # of both the argument group and the argument parser. These wrappers provide
 # the same public interface as their `argparse` counterparts (currently we only
-# implement the part of the interface that matters for Reframe), delegating the
+# implement the part of the interface that matters for ReFrame), delegating the
 # parsing work to them. For these "shadow" data structures for argument groups
 # and the parser, we follow a similar design as in the `argparse` module: both
 # the argument group and the parser inherit from a base class implementing the
@@ -28,49 +26,177 @@ from reframe.core.fields import ForwardField
 #
 # A final trick we had to do in order to avoid repeating all the public fields
 # of the internal argument holders (`argparse`'s argument group or argument
-# parser) was to programmaticallly export them by creating special descriptor
-# fields that forward the set/get actions to the internal argument holder.
+# parser) was to programmaticallly export them by implementing the
+# `__getattr__()` method, such as to delegate any lookup of unknown public
+# attributes to the underlying `argparse.ArgumentParser`.
 #
+# Finally, the functionality of the ArgumentParser is extended to support
+# associations of command-line arguments with environment variables and/or
+# configuration parameters. Additionally, we allow to define pseudo-arguments
+# that essentially associate environment variables with configuration
+# arguments, without having to define a corresponding command line option.
+
+
+def _convert_to_bool(s):
+    if s.lower() in ('true', 'yes', 'y'):
+        return True
+
+    if s.lower() in ('false', 'no', 'n'):
+        return False
+
+    raise ValueError
+
+
+class _Namespace:
+    def __init__(self, namespace, option_map):
+        self.__namespace = namespace
+        self.__option_map = option_map
+
+    @property
+    def cmd_options(self):
+        '''Options filled in by command-line'''
+        return self.__namespace
+
+    def __getattr__(self, name):
+        if name.startswith('_'):
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
+
+        try:
+            ret = getattr(self.__namespace, name)
+        except AttributeError:
+            if name not in self.__option_map:
+                # Option not defined at all
+                raise
+
+            # Option is not associated with a command-line argument
+            ret = None
+
+        if name not in self.__option_map:
+            return ret
+
+        envvar, _, action = self.__option_map[name]
+        if ret is None and envvar is not None:
+            # Try the environment variable
+            envvar, *delim = envvar.split(maxsplit=2)
+            delim = delim[0] if delim else ','
+            ret = os.getenv(envvar)
+            if ret is not None:
+                if action.startswith('append'):
+                    # The option should be interpreted as comma separated list
+                    ret = ret.split(delim)
+                elif action in ('store_true', 'store_false'):
+                    try:
+                        ret = _convert_to_bool(ret)
+                    except ValueError:
+                        raise ValueError(
+                            f'environment variable {envvar!r} not a boolean'
+                        ) from None
+
+        return ret
+
+    def update_config(self, site_config):
+        '''Update the site configuration with the options represented by this
+        namespace'''
+        errors = []
+        for option, spec in self.__option_map.items():
+            _, confvar, action = spec
+            if action == 'version' or confvar is None:
+                continue
+
+            try:
+                value = getattr(self, option)
+            except ValueError as e:
+                errors.append(e)
+                continue
+
+            if value is not None:
+                site_config.add_sticky_option(confvar, value)
+
+        return errors
+
+    def __repr__(self):
+        return (f'{type(self).__name__}({self.__namespace!r}, '
+                '{self.__option_map})')
 
 
 class _ArgumentHolder:
-    def __init__(self, holder):
+    def __init__(self, holder, shared_options=None):
         self._holder = holder
         self._defaults = argparse.Namespace()
 
-        # Create forward descriptors to all public members of _holder
-        for m in self._holder.__dict__.keys():
-            if m[0] != '_':
-                setattr(type(self), m, ForwardField(self._holder, m))
+        # Map command-line options to environment variables and configuration
+        # options. Values are tuples of the form (envvar, configvar)
+        self._option_map = shared_options if shared_options is not None else {}
 
-    def _attr_from_flag(self, *flags):
-        if not flags:
-            raise ValueError('could not infer a dest name: no flags defined')
+    def __getattr__(self, name):
+        # Delegate all unknown public attribute requests to the underlying
+        # holder
+        if name.startswith('_'):
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
 
-        return flags[-1].lstrip('-').replace('-', '_')
-
-    def _extract_default(self, *flags, **kwargs):
-        attr = kwargs.get('dest', self._attr_from_flag(*flags))
-        action = kwargs.get('action', None)
-        if action == 'store_true' or action == 'store_false':
-            # These actions imply a default; we will convert them to their
-            # 'const' action equivalent and add an explicit default value
-            kwargs['action'] = 'store_const'
-            kwargs['const'] = True if action == 'store_true' else False
-            kwargs['default'] = False if action == 'store_true' else True
-
-        try:
-            self._defaults.__dict__[attr] = kwargs['default']
-            del kwargs['default']
-        except KeyError:
-            self._defaults.__dict__[attr] = None
-        finally:
-            return kwargs
+        return getattr(self._holder, name)
 
     def add_argument(self, *flags, **kwargs):
-        return self._holder.add_argument(
-            *flags, **self._extract_default(*flags, **kwargs)
+        try:
+            opt_name = kwargs['dest']
+        except KeyError:
+            # Try to figure out the dest name as the original ArgumentParser
+            opt_name = None
+            for f in flags:
+                # The last long option is taken into account as the option
+                # name
+                if f.startswith('--'):
+                    opt_name = f[2:].replace('-', '_')
+
+            if flags and opt_name is None:
+                # The first short option is taken into account as the
+                # option name
+                if flags[0].startswith('-'):
+                    opt_name = flags[0][1:].replace('-', '_')
+
+            if flags and opt_name is None:
+                # A positional argument
+                opt_name = flags[-1]
+
+        if opt_name is None:
+            raise ValueError('could not infer a dest name: no flags defined')
+
+        self._option_map[opt_name] = (
+            kwargs.get('envvar', None),
+            kwargs.get('configvar', None),
+            kwargs.get('action', 'store')
         )
+        # Remove envvar and configvar keyword arguments and force dest
+        # argument, even if we guessed it, in order to guard against changes
+        # in ArgumentParser's implementation
+        kwargs.pop('envvar', None)
+        kwargs.pop('configvar', None)
+        kwargs['dest'] = opt_name
+
+        # Convert 'store_true' and 'store_false' actions to their
+        # 'store_const' equivalents, because they otherwise imply imply a
+        # default
+        action = kwargs.get('action', None)
+        if action == 'store_true' or action == 'store_false':
+            kwargs['action'] = 'store_const'
+            kwargs['const'] = True  if action == 'store_true'  else False
+            kwargs['const'] = False if action == 'store_false' else True
+
+        # Remove defaults
+        try:
+            self._defaults.__dict__[opt_name] = kwargs['default']
+            del kwargs['default']
+        except KeyError:
+            self._defaults.__dict__[opt_name] = None
+
+        if not flags:
+            return None
+
+        return self._holder.add_argument(*flags, **kwargs)
 
 
 class _ArgumentGroup(_ArgumentHolder):
@@ -91,7 +217,9 @@ class ArgumentParser(_ArgumentHolder):
 
     def add_argument_group(self, *args, **kwargs):
         group = _ArgumentGroup(
-            self._holder.add_argument_group(*args, **kwargs))
+            self._holder.add_argument_group(*args, **kwargs),
+            self._option_map
+        )
         self._groups.append(group)
         return group
 
@@ -109,9 +237,6 @@ class ArgumentParser(_ArgumentHolder):
     def _update_defaults(self):
         for g in self._groups:
             self._defaults.__dict__.update(g._defaults.__dict__)
-
-    def print_help(self):
-        self._holder.print_help()
 
     def parse_args(self, args=None, namespace=None):
         '''Convert argument strings to objects and return them as attributes of
@@ -134,6 +259,11 @@ class ArgumentParser(_ArgumentHolder):
         # do this in options with an 'append' action.
         options = self._holder.parse_args(args, None)
 
+        # Check if namespace refers to our namespace and take the cmd options
+        # namespace suitable for ArgumentParser
+        if isinstance(namespace, _Namespace):
+            namespace = namespace.cmd_options
+
         # Update parser's defaults with groups' defaults
         self._update_defaults()
         for attr, val in options.__dict__.items():
@@ -142,12 +272,14 @@ class ArgumentParser(_ArgumentHolder):
                     attr, [namespace, self._defaults]
                 )
 
-        return options
+        return _Namespace(options, self._option_map)
 
 
 def format_options(namespace):
     '''Format parsed arguments in ``namespace``.'''
     ret = 'Command-line configuration:\n'
-    ret += '\n'.join(['    %s=%s' % (attr, val)
-                      for attr, val in sorted(namespace.__dict__.items())])
+    ret += '\n'.join(
+        ['    %s=%s' % (attr, val)
+         for attr, val in sorted(namespace.cmd_options.__dict__.items())]
+    )
     return ret

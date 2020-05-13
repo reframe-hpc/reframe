@@ -13,9 +13,9 @@ from datetime import datetime, timedelta
 
 import reframe.core.schedulers as sched
 import reframe.utility.os_ext as os_ext
+from reframe.core.backends import register_scheduler
 from reframe.core.exceptions import ReframeError
 from reframe.core.logging import getlogger
-from reframe.core.schedulers.registry import register_scheduler
 
 
 class _TimeoutExpired(ReframeError):

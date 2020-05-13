@@ -19,13 +19,16 @@ class JobLauncher(abc.ABC):
 
        Users cannot create job launchers directly. You may retrieve a
        registered launcher backend through the
-       :func:`reframe.core.launchers.registry.getlauncher` function.
+       :func:`reframe.core.backends.getlauncher` function.
 
     .. note::
        .. versionchanged:: 2.8
           Job launchers do not get a reference to a job during their
           initialization.
 
+    .. note::
+       .. versionchanged:: 3.0
+          The :func:`getlauncher` function has moved to a different module.
     '''
 
     #: List of options to be passed to the job launcher invocation.
