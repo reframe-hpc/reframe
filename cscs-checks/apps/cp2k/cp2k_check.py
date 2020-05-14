@@ -11,6 +11,7 @@ import reframe.utility.sanity as sn
 class Cp2kCheck(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.valid_prog_environs = ['builtin']
+        self.modules = ['CP2K']
         self.executable = 'cp2k.psmp'
         self.executable_opts = ['H2O-256.inp']
 
@@ -50,7 +51,6 @@ class Cp2kCpuCheck(Cp2kCheck):
         super().__init__()
         self.descr = 'CP2K CPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:mc']
-        self.modules = ['CP2K/7.1-CrayGNU-19.10']
         if scale == 'small':
             self.valid_systems += ['dom:mc']
             self.num_tasks = 216
@@ -91,7 +91,6 @@ class Cp2kGpuCheck(Cp2kCheck):
         super().__init__()
         self.descr = 'CP2K GPU check (version: %s, %s)' % (scale, variant)
         self.valid_systems = ['daint:gpu']
-        self.modules = ['CP2K/7.1-CrayGNU-19.10-cuda-10.1']
         self.num_gpus_per_node = 1
         if scale == 'small':
             self.valid_systems += ['dom:gpu']
