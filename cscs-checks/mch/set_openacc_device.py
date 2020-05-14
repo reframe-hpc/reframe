@@ -8,7 +8,7 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class SetOpenaccDevice(rfm.RegressionTest):
+class SetOpenaccDeviceTest(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Use OpenAcc, CUDA, MPI, and C++ on multi-device nodes'
         self.valid_systems = ['arolla:cn', 'tsa:cn']
