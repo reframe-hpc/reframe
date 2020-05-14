@@ -332,7 +332,7 @@ def main():
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/verbose'))
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
 
     # Now configure ReFrame according to the user configuration file
     try:
@@ -359,7 +359,7 @@ def main():
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
-    printer.inc_verbosity(site_config.get('general/verbose'))
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
         runtime.init_runtime(site_config)
     except ConfigError as e:
