@@ -1,7 +1,8 @@
 def tag = env.TAG_NAME
 def version = tag.substring(1)      // Remove the first character of the tag which is 'v'
-def machines = "[dom daint TSAtds]" // To be included in the PR title
-def reviewersPR = "teojgo,vkarak"   // The Github usernames requested for review
+def machines = '[dom daint TSAtds]' // To be included in the PR title
+def reviewersPR = 'teojgo,vkarak'   // The Github usernames requested for review
+def ebTemplate = '3.0-dev5'         // The eb recipe of ReFrame to use as template
 
 stage('Deploy Tests') {
     node('dom') {
@@ -30,9 +31,9 @@ stage('Production PR') {
                           git clone git@github.com:eth-cscs/production.git
                           cd production/easybuild/easyconfigs/r/reframe
                           git checkout -b reframe/${version}
-                          sed 's/3.0-dev5/${version}/g' reframe-3.0-dev5.eb > reframe-${version}.eb
+                          sed -r "s/(version\s*=\s*)'${ebTemplate}'/\1'${version}'/g" reframe-${ebTemplate}.eb > reframe-${version}.eb
                           git add reframe-${version}.eb
-                          git commit -m "Add recipe for Reframe version ${version}"
+                          git commit -m "Add recipe for ReFrame version ${version}"
                           git push origin HEAD
                           hub pull-request -r ${reviewersPR} -m "${machines} Add recipe for ReFrame version ${version}"
                           """)
