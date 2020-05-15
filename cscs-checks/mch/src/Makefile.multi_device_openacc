@@ -1,10 +1,10 @@
 RM := rm -f
-EXECUTABLE := set_openacc_device
+EXECUTABLE := multi_device_openacc
 
 all: $(EXECUTABLE)
 LD = $(FC)
 
-OBJS = compute_cuda.o set_openacc_device.o std_cpp_call.o
+OBJS = compute_cuda.o multi_device_openacc.o std_cpp_call.o
 # OBJ2 = $(subst _,$(PE_ENV)_,$(OBJ))
 LIB  =
 

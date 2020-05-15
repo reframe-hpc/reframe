@@ -8,13 +8,13 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class SetOpenaccDeviceTest(rfm.RegressionTest):
+class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def __init__(self):
-        self.descr = 'Use OpenAcc, CUDA, MPI, and C++ on multi-device nodes'
+        self.descr = 'Allocate one accelerator per MPI task using OpenAcc with CUDA, MPI, and C++ on multi-device nodes'
         self.valid_systems = ['arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-pgi']
         self.build_system = 'Make'
-        self.build_system.makefile = 'Makefile.set_openacc_device'
+        self.build_system.makefile = 'Makefile.multi_device_openacc'
         self.build_system.fflags = ['-O2']
 
 #        if self.current_system.name == 'kesch':
@@ -39,7 +39,7 @@ class SetOpenaccDeviceTest(rfm.RegressionTest):
                 'G2G': '1'
             }
 
-        self.executable = 'set_openacc_device'
+        self.executable = 'multi_device_openacc'
         self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK',
                                                self.stdout)
         self.maintainers = ['LM']
