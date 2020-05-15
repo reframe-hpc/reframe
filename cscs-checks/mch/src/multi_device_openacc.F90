@@ -1,6 +1,6 @@
 ! This code tests MPI tasks communication with GPU devices 
 ! using OpenACC directives and setting one device per task
-program set_openacc_device
+program multi_device_openacc
   use openacc
   implicit none
 
@@ -152,4 +152,4 @@ contains
     call cpp_call(c_loc(fp(1)), n, i)
   end subroutine call_cpp_std
 
-end program set_openacc_device
+end program multi_device_openacc
