@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def __init__(self):
-        self.descr = 'Allocate one accelerator per MPI task using OpenAcc with CUDA, MPI, and C++ on multi-device nodes'
+        self.descr = 'Allocate one accelerator per MPI task using OpenAcc on multi-device nodes with additional CUDA, MPI, and C++ calls'
         self.valid_systems = ['arolla:cn', 'tsa:cn']
         self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-pgi']
         self.build_system = 'Make'
