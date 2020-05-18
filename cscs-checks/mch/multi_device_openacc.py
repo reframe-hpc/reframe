@@ -12,7 +12,7 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def __init__(self):
         self.descr = 'Allocate one accelerator per MPI task using OpenAcc on multi-device nodes with additional CUDA, MPI, and C++ calls'
         self.valid_systems = ['arolla:cn', 'tsa:cn', 'kesch:cn']
-        self.valid_prog_environs = ['PrgEnv-cce', 'PrgEnv-pgi']
+        self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile.multi_device_openacc'
         self.build_system.fflags = ['-O2']
@@ -24,10 +24,6 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
             self.num_tasks_per_node = 9
             self.num_gpus_per_node = 8
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_37"']
-            self.variables = {
-                'MV2_USE_CUDA': '1',
-                'G2G': '1'
-            }
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
             self.modules = ['cuda/10.1.243']
@@ -35,9 +31,6 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
             self.num_tasks_per_node = 9
             self.num_gpus_per_node = 8
             self.build_system.options = ['NVCC_FLAGS="-arch=compute_70"']
-            self.variables = {
-                'G2G': '1'
-            }
 
         self.executable = 'multi_device_openacc'
         self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK',
@@ -49,7 +42,6 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name.startswith('PrgEnv-pgi'):
             self.build_system.fflags += ['-acc']
-
             if self.current_system.name == 'kesch':
                 self.build_system.fflags += ['-ta=tesla,cc35,cuda8.0']
                 self.build_system.ldflags = [
@@ -63,3 +55,9 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
                     '-acc', '-ta:tesla:cc70,cuda10.1', '-lstdc++',
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
+        elif self.current_environ.name.startswith('PrgEnv-cray'):
+           self.build_system.fflags += ['-DCRAY', '-hacc', '-hnoomp']
+           self.variables = {
+               'CRAY_ACCEL_TARGET': 'nvidia35',
+               'MV2_USE_CUDA': '1'
+           }
