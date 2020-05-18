@@ -528,7 +528,7 @@ def convert_old_config(filename, newfilename=None):
                 f"by ReFrame based on '{filename}'.\n#\n\n"
                 f"site_configuration = {util.ppretty(converted)}\n")
 
-    contents = '\n'.join(l if len(l) < 80 else f'{l}  # noqa'
+    contents = '\n'.join(l if len(l) < 80 else f'{l}  # noqa: E501'
                          for l in contents.split('\n'))
 
     if newfilename:
