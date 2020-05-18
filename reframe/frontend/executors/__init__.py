@@ -7,6 +7,7 @@ import abc
 import copy
 import signal
 import sys
+import time
 import weakref
 
 import reframe.core.debug as debug
@@ -130,6 +131,37 @@ class RegressionTask:
         # Test case has finished, but has not been waited for yet
         self.zombie = False
 
+        # Timestamps
+        self._timestamp = {
+            'start_setup': None,
+            'finish_setup': None,
+            'start_compile': None,
+            'finish_compile': None,
+            'start_run': None,
+            'finish_run': None,
+            'start_sanity': None,
+            'finish_sanity': None,
+            'start_performance': None,
+            'finish_performance': None,
+            'start_cleanup': None,
+            'finish_cleanup': None
+        }
+
+    @property
+    def duration(self):
+        res = {'total': 0.0}
+        for phase in ['setup', 'compile', 'run', 'sanity',
+                      'performance', 'cleanup']:
+            try:
+                d = (self._timestamp[f'finish_{phase}'] -
+                     self._timestamp[f'start_{phase}'])
+                res[phase] = d
+                res['total'] += d
+            except TypeError:
+                res[phase] = None
+
+        return res
+
     @property
     def testcase(self):
         return self._case
@@ -175,22 +207,28 @@ class RegressionTask:
             raise TaskExit from e
 
     def setup(self, *args, **kwargs):
+        self._timestamp['start_setup'] = time.time()
         self._safe_call(self.check.setup, *args, **kwargs)
+        self._timestamp['finish_setup'] = time.time()
         self._notify_listeners('on_task_setup')
 
     def compile(self):
+        self._timestamp['start_compile'] = time.time()
         self._safe_call(self.check.compile)
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
+        self._timestamp['finish_compile'] = time.time()
 
     def run(self):
+        self._timestamp['start_run'] = time.time()
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
     def wait(self):
         self._safe_call(self.check.wait)
         self.zombie = False
+        self._timestamp['finish_run'] = time.time()
 
     def poll(self):
         finished = self._safe_call(self.check.poll)
@@ -201,20 +239,36 @@ class RegressionTask:
         return finished
 
     def sanity(self):
+        self._timestamp['start_sanity'] = time.time()
         self._safe_call(self.check.sanity)
+        self._timestamp['finish_sanity'] = time.time()
 
     def performance(self):
+        self._timestamp['start_performance'] = time.time()
         self._safe_call(self.check.performance)
+        self._timestamp['finish_performance'] = time.time()
 
     def finalize(self):
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
 
     def cleanup(self, *args, **kwargs):
+        self._timestamp['start_cleanup'] = time.time()
         self._safe_call(self.check.cleanup, *args, **kwargs)
+        self._timestamp['finish_cleanup'] = time.time()
 
     def fail(self, exc_info=None):
         self._failed_stage = self._current_stage
+        if self._current_stage in ['compile', 'compile_wait']:
+            self._timestamp['finish_compile'] = time.time()
+        elif self._current_stage in ['run', 'run_wait']:
+            self._timestamp['finish_run'] = time.time()
+        elif self._current_stage in ['setup',
+                                     'sanity',
+                                     'performance',
+                                     'cleanup']:
+            self._timestamp[f'finish_{self._current_stage}'] = time.time()
+
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
 

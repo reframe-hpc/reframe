@@ -210,8 +210,31 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._remove_from_running(task)
             self.printer.status('FAIL', task.check.info(), just='right')
 
+        timing = task.duration
+        mssg = ''
+        for phase in [
+            'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
+            mssg += f"{phase}: "
+            if timing[phase]:
+                mssg += f"{timing[phase]:.3f} "
+            else:
+                mssg += '- '
+
+        self.printer.status('', mssg, just='right')
+
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
+        timing = task.duration
+        mssg = ''
+        for phase in [
+            'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
+            mssg += f"{phase}: "
+            if timing[phase]:
+                mssg += f"{timing[phase]:.3f} "
+            else:
+                mssg += '- '
+
+        self.printer.status('', mssg, just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
