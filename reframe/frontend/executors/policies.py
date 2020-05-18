@@ -26,6 +26,18 @@ def _cleanup_all(tasks, *args, **kwargs):
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
 
+def time_profiling(duration):
+    mssg = ''
+    for phase in [
+        'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
+        mssg += f"{phase}: "
+        if duration[phase]:
+            mssg += f"{duration[phase]:.3f} "
+        else:
+            mssg += '- '
+
+    return mssg
+
 
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
@@ -99,8 +111,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         else:
             self.printer.status('FAIL', task.check.info(), just='right')
 
+        self.printer.status('', time_profiling(task.duration), just='right')
+
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
+        self.printer.status('', time_profiling(task.duration), just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -210,31 +225,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             self._remove_from_running(task)
             self.printer.status('FAIL', task.check.info(), just='right')
 
-        timing = task.duration
-        mssg = ''
-        for phase in [
-            'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
-            mssg += f"{phase}: "
-            if timing[phase]:
-                mssg += f"{timing[phase]:.3f} "
-            else:
-                mssg += '- '
-
-        self.printer.status('', mssg, just='right')
+        self.printer.status('', time_profiling(task.duration), just='right')
 
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
-        timing = task.duration
-        mssg = ''
-        for phase in [
-            'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
-            mssg += f"{phase}: "
-            if timing[phase]:
-                mssg += f"{timing[phase]:.3f} "
-            else:
-                mssg += '- '
+        self.printer.status('', time_profiling(task.duration), just='right')
 
-        self.printer.status('', mssg, just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
