@@ -230,7 +230,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_success(self, task):
         self.printer.status('OK', task.check.info(), just='right')
         self.printer.status('', time_profiling(task.duration), just='right')
-
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
