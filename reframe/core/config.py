@@ -511,7 +511,7 @@ def convert_old_config(filename, newfilename=None):
                 'target_systems': target_systems
             }
         )
-        if basedir == None:
+        if basedir is None:
             del converted['logging'][-1]['target_systems']
 
     converted['general'] = [{}]
