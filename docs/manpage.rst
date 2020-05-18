@@ -109,7 +109,7 @@ Tests can be filtered by different attributes and there are specific command lin
 
    Select tests that do not target GPUs.
    These are all tests with :attr:`num_gpus_per_node` equals to zero
-   This option and :option:`--cpu-only` are mutually exclusive.
+   This option and :option:`--gpu-only` are mutually exclusive.
 
    The :option:`--gpu-only` and :option:`--cpu-only` check only the value of the :attr:`num_gpus_per_node` attribute of tests.
    The value of this attribute is not required to be non-zero for GPU tests.
@@ -177,7 +177,7 @@ Options controlling ReFrame output
 
    - The ReFrame-generated build script, if not a run-only test.
    - The standard output and standard error of the build phase, if not a run-only test.
-   - The ReFrame-generated job script, if not a compile-onlyl test.
+   - The ReFrame-generated job script, if not a compile-only test.
    - The standard output and standard error of the run phase, if not a compile-only test.
    - Any additional files specified by the :attr:`keep_files` regression test attribute.
 
@@ -328,7 +328,7 @@ Flexible node allocation
 
 ReFrame can automatically set the number of tasks of a test, if its :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` attribute is set to a value less than or equal to zero.
 This scheme is conveniently called *flexible node allocation* and is valid only for the Slurm backend.
-When allocating nodes automatically, ReFrame will take into account all node limiting factors, such as partition :js:attr:`access`` options, and any job submission control options described above.
+When allocating nodes automatically, ReFrame will take into account all node limiting factors, such as partition :js:attr:`access` options, and any job submission control options described above.
 Nodes from this pool are allocated according to different policies.
 If no node can be selected, the test will be marked as a failure with an appropriate message.
 
@@ -338,7 +338,7 @@ If no node can be selected, the test will be marked as a failure with an appropr
    Available values are the following:
 
    - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``idle``: Flexible tests will be assigned as many tasks as needed in order to span over the *idle* the nodes of the node pool.
+   - ``idle``: Flexible tests will be assigned as many tasks as needed in order to span over the *idle* nodes of the node pool.
      Querying of the node state and submission of the test job are two separate steps not executed atomically.
      It is therefore possible that the number of tasks assigned does not correspond to the actual idle nodes.
 

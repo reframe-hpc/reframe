@@ -478,7 +478,7 @@ For a complete list of supported container platforms, the user is referred to th
 As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 18-21
+  :lines: 17-20
 
 These two attributes are mandatory for container-based check.
 The :attr:`image <reframe.core.containers.ContainerPlatform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` attribute provides the list of commands to be run inside the container.
@@ -488,7 +488,7 @@ In the above example, ReFrame will run the container as follows:
 
 .. code:: shell
 
-    singularity exec -B"/path/to/test/stagedir:/rfm_workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
+    singularity exec -B"/path/to/test/stagedir:/workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
 
 By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
 The user commands then are then run from that directory one after the other.

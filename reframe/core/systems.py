@@ -387,7 +387,7 @@ class System:
         '''Global resources directory for this system.
 
         This directory may be used for storing large files related to
-        regression tests. The value of this directory is controlled by the See
+        regression tests. The value of this directory is controlled by the
         `resourcesdir <config_reference.html#.systems[].resourcesdir>`__
         configuration parameter.
 

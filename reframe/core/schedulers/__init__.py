@@ -65,7 +65,7 @@ class JobScheduler(abc.ABC):
 
     @abc.abstractmethod
     def wait(self, job):
-        '''Wait a job to finish.
+        '''Wait for a job to finish.
 
         :arg job: A job descriptor.
         :meta private:
@@ -98,7 +98,7 @@ class Job:
     is associated with the test.
 
     .. warning::
-       Users may no create a job descriptor directly.
+       Users may not create a job descriptor directly.
 
     '''
 

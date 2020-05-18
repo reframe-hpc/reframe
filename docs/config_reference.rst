@@ -690,7 +690,7 @@ All logging handlers share the following set of common attributes:
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_ref)s``: The reference performance value of a certain performance variable.
    - ``%(check_perf_unit)s``: The unit of measurement for the measured performance variable.
-   - ``%(check_perf_upper_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
+   - ``%(check_perf_upper_thres)s``: The upper threshold of the performance difference from the reference value expressed as a fractional value.
      See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
    - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.

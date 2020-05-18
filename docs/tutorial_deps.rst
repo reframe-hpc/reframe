@@ -68,7 +68,7 @@ The full set of OSU example tests is shown below:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
 
-Notice that the order dependencies are defined in a test file is irrelevant.
+Notice that the order in which dependencies are defined in a test file is irrelevant.
 In this case, we define :class:`OSUBuildTest` at the end.
 ReFrame will make sure to properly sort the tests and execute them.
 

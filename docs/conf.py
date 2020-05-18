@@ -232,12 +232,15 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manpage', 'reframe', 'The CLI frontend for managing and executing ReFrame tests',
+    ('manpage', 'reframe',
+     'The CLI frontend for managing and executing ReFrame tests',
      [author], 1),
     ('config_reference', 'reframe.settings', 'ReFrame Configuration Manual',
      [author], 8)
 ]
-manpages_url = 'http://man7.org/linux/man-pages/man{section}/{page}.{section}.html'
+manpages_url = (
+    'http://man7.org/linux/man-pages/man{section}/{page}.{section}.html'
+)
 
 
 # -- Options for Texinfo output -------------------------------------------

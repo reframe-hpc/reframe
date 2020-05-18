@@ -192,9 +192,9 @@ def loadenv(*environs):
     :arg environs: A list of environments to load.
     :type environs: List[Environment]
 
-    :returns: A tuple containing snapshot of the current environment upon entry to
-        this function and a list of shell commands required to load the
-        environments.
+    :returns: A tuple containing snapshot of the current environment upon
+        entry to this function and a list of shell commands required to load
+        the environments.
     :rtype: Tuple[_EnvironmentSnapshot, List[str]]
 
     '''
@@ -228,7 +228,8 @@ def is_env_loaded(environ):
     :arg environ: Environment to check for.
     :type environ: Environment
 
-    :returns: :class:`True` if this environment is loaded, :class:`False` otherwise.
+    :returns: :class:`True` if this environment is loaded, :class:`False`
+        otherwise.
     '''
     is_module_loaded = runtime().modules_system.is_module_loaded
     return (all(map(is_module_loaded, environ.modules)) and

@@ -2,8 +2,8 @@
 Welcome to ReFrame
 ==================
 
-ReFrame is a framework for writing tests for HPC systems that can check for functionality and performance regressions.
-The goal of this framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
+ReFrame is a high-level framework for writing regression tests for HPC systems.
+The goal of the framework is to abstract away the complexity of the interactions with the system, separating the logic of a regression test from the low-level details, which pertain to the system configuration and setup.
 This allows users to write easily portable regression tests, focusing only on the functionality.
 
 Regression tests in ReFrame are simple Python classes that specify the basic parameters of the test.

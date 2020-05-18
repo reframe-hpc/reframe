@@ -1329,7 +1329,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
            .. versionchanged:: 3.0
               You may not override this method directly unless you are in
-              speciaxl test. See `here
+              special test. See `here
               <migration_2_to_3.html#force-override-a-pipeline-method>`__ for
               more details.
 

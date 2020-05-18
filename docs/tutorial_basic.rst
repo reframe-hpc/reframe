@@ -139,11 +139,11 @@ ReFrame provides already a wide range of useful sanity functions ranging from wr
 For a complete listing of the available functions, you may have a look at the :doc:`sanity_functions_reference`.
 
 In our example, the :func:`assert_found <reframe.utility.sanity.assert_found>` function accepts a regular expression pattern to be searched in a file and either returns :class:`True` on success or raises a :class:`SanityError <reframe.core.exceptions.SanityError>` in case of failure with a descriptive message.
-This function accepts any valid `Python Regular Expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__ syntax.
+This function accepts any valid `Python Regular Expression <https://docs.python.org/3/library/re.html#regular-expression-syntax>`__.
 As a file argument, :func:`assert_found <reframe.utility.sanity.assert_found>` accepts any filename, which will be resolved against the stage directory of the test.
 You can also use the :attr:`stdout <reframe.core.pipeline.RegressionTest.stdout>` and :attr:`stderr <reframe.core.pipeline.RegressionTest.stderr>` attributes to reference the standard output and standard error, respectively.
 
-.. tip:: You need not to care about handling exceptions, and error handling in general, inside your test.
+.. tip:: You don't need to care about handling exceptions, and error handling in general, inside your test.
   The framework will automatically abort the execution of the test, report the error and continue with the next test case.
 
 The last two lines of the regression test are optional, but serve a good role in a production environment:

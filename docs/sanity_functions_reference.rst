@@ -57,7 +57,7 @@ The page ":doc:`deferrables`" explains in detail how sanity functions work and h
 
     Sanity function decorator.
 
-    The evaluation of the decorated will be deferred and it will be suitable for use in the sanity and performance patterns of a regression test.
+    The evaluation of the decorated function will be deferred and it will become suitable for use in the sanity and performance patterns of a regression test.
 
     .. code:: python
 
