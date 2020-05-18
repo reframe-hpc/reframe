@@ -37,6 +37,7 @@ def test_convert_old_config():
     site_config = config.load_config(converted)
     site_config.validate()
     assert len(site_config.get('systems')) == 3
+    assert len(site_config.get('logging')) == 2
 
     site_config.select_subconfig('testsys')
     assert len(site_config.get('systems/0/partitions')) == 2
