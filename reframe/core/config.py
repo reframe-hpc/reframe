@@ -530,7 +530,11 @@ def convert_old_config(filename, newfilename=None):
 
     if newfilename:
         with open(newfilename, 'w') as fp:
-            fp.write(contents)
+            if newfilename.endswith('.json'):
+                json.dump(converted, fp, indent=4)
+            else:
+                fp.write(contents)
+
     else:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
                                          delete=False) as fp:
