@@ -387,10 +387,8 @@ def convert_old_config(filename, newfilename=None):
         sys_dict = {'name': sys_name}
 
         system_perflogdir = sys_spec.pop('perflogdir', None)
-        if system_perflogdir in perflogdir:
-            perflogdir[system_perflogdir].append(sys_name)
-        else:
-            perflogdir[system_perflogdir] = [sys_name]
+        perflogdir.setdefault(system_perflogdir, [])
+        perflogdir[system_perflogdir].append(sys_name)
 
         sys_dict.update(sys_spec)
 
@@ -513,6 +511,8 @@ def convert_old_config(filename, newfilename=None):
                 'target_systems': target_systems
             }
         )
+        if basedir == None:
+            del converted['logging'][-1]['target_systems']
 
     converted['general'] = [{}]
     if hasattr(old_config, 'checks_path'):
