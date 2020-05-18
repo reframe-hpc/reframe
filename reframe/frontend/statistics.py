@@ -165,7 +165,7 @@ class TestStats:
         line_width = 78
         report_start = line_width * '='
         report_title = 'PERFORMANCE REPORT'
-        report_end = line_width * '_'
+        report_end = line_width * '-'
         report_body = []
         previous_name = ''
         previous_part = ''

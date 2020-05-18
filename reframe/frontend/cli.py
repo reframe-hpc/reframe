@@ -436,7 +436,7 @@ def main():
                    f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
     print_infoline('working directory', repr(os.getcwd()))
     print_infoline('check search path',
-                   f"{'(R)' if loader.recurse else ''} "
+                   f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(rt.stage_prefix))
     print_infoline('output directory', repr(rt.output_prefix))
