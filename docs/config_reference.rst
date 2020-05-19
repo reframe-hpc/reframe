@@ -1009,7 +1009,7 @@ General Configuration
 .. js:attribute:: .general[].check_search_recursive
 
    :required: No
-   :default: ``true``
+   :default: ``false``
 
    Search directories in the `search path <#.general[].check_search_path>`__ recursively.
 

@@ -332,8 +332,7 @@ def main():
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    if options.verbose:
-        printer.inc_verbosity(options.verbose)
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
 
     # Now configure ReFrame according to the user configuration file
     try:
@@ -360,6 +359,7 @@ def main():
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
         runtime.init_runtime(site_config)
     except ConfigError as e:
@@ -436,7 +436,7 @@ def main():
                    f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
     print_infoline('working directory', repr(os.getcwd()))
     print_infoline('check search path',
-                   f"{'(R)' if loader.recurse else ''} "
+                   f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
     print_infoline('stage directory', repr(rt.stage_prefix))
     print_infoline('output directory', repr(rt.output_prefix))
