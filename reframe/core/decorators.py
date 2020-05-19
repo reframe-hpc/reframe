@@ -129,13 +129,11 @@ def required_version(*versions):
       following formats:
 
       1. ``VERSION``: Specifies a single version.
-
       2. ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
-      ``<=``, ``==`` and ``!=``. For example, the version specification string
-      ``'>=2.15'`` will only allow the following test to be loaded only by
-      ReFrame 2.15 and higher. The ``==VERSION`` specification is the
-      equivalent of ``VERSION``.
-
+         ``<=``, ``==`` and ``!=``. For example, the version specification
+         string ``'>=2.15'`` will allow the following test to be loaded only
+         by ReFrame 2.15 and higher. The ``==VERSION`` specification is the
+         equivalent of ``VERSION``.
       3. ``V1..V2``: Specifies a range of versions.
 
       You can specify multiple versions with this decorator, such as
@@ -190,9 +188,16 @@ def _runx(phase):
 
 
 def run_before(stage):
-    '''Run the decorated function before the specified pipeline stage.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    The decorated function must be a method of a regression test.
+    The method will run just before the specified pipeline stage and it should
+    not accept any arguments except ``self``.
+
+    This decorator can be stacked, in which case the function will be attached
+    to multiple pipeline stages.
+
+    The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
+    ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     .. versionadded:: 2.20
 
@@ -201,9 +206,10 @@ def run_before(stage):
 
 
 def run_after(stage):
-    '''Run the decorated function after the specified pipeline stage.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    The decorated function must be a method of a regression test.
+    This is completely analogous to the
+    :py:attr:`reframe.core.decorators.run_before`.
 
     .. versionadded:: 2.20
 
@@ -220,7 +226,7 @@ def require_deps(func):
     :func:`reframe.core.pipeline.RegressionTest.getdep` function, such that
     conceptually the new function arguments will be the following:
 
-    .. code:: python
+    .. code-block:: python
 
        new_arg = functools.partial(getdep, orig_arg_name)
 

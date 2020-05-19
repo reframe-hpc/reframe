@@ -10,30 +10,25 @@ import reframe.utility.typecheck as typ
 
 
 class JobLauncher(abc.ABC):
-    '''A job launcher.
+    '''Abstract base class for job launchers.
 
     A job launcher is the executable that actually launches a distributed
     program to multiple nodes, e.g., ``mpirun``, ``srun`` etc.
 
-    .. note::
+    .. warning::
 
-       Users cannot create job launchers directly. You may retrieve a
-       registered launcher backend through the
-       :func:`reframe.core.backends.getlauncher` function.
+       Users may not create job launchers directly.
 
     .. note::
        .. versionchanged:: 2.8
           Job launchers do not get a reference to a job during their
           initialization.
 
-    .. note::
-       .. versionchanged:: 3.0
-          The :func:`getlauncher` function has moved to a different module.
     '''
 
     #: List of options to be passed to the job launcher invocation.
     #:
-    #: :type: :class:`list` of :class:`str`
+    #: :type: :class:`List[str]`
     #: :default: ``[]``
     options = fields.TypedField('options', typ.List[str])
 

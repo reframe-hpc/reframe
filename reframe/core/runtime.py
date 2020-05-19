@@ -22,11 +22,6 @@ from reframe.core.systems import System
 class RuntimeContext:
     '''The runtime context of the framework.
 
-    This class essentially groups the current host system and the associated
-    resources of the framework on the current system.
-    It also encapsulates other runtime parameters that are relevant to the
-    framework's execution.
-
     There is a single instance of this class globally in the framework.
 
     .. note::
@@ -76,7 +71,7 @@ class RuntimeContext:
     def system(self):
         '''The current host system.
 
-        :type: :class:`reframe.core.runtime.HostSystem`
+        :type: :class:`reframe.core.systems.System`
         '''
         return self._system
 
@@ -117,7 +112,10 @@ class RuntimeContext:
 
     @property
     def output_prefix(self):
-        '''The output prefix directory of ReFrame.'''
+        '''The output directory prefix.
+
+        :type: :class:`str`
+        '''
         if self.outputdir:
             ret = os.path.join(self.outputdir, self.timestamp)
         else:
@@ -127,7 +125,10 @@ class RuntimeContext:
 
     @property
     def stage_prefix(self):
-        '''The stage prefix directory of ReFrame.'''
+        '''The stage directory prefix.
+
+        :type: :class:`str`
+        '''
         if self.stagedir:
             ret = os.path.join(self.stagedir, self.timestamp)
         else:
@@ -145,13 +146,18 @@ class RuntimeContext:
 
     @property
     def modules_system(self):
-        '''The modules system used by the current host system.
+        '''The environment modules system used in the current host.
 
         :type: :class:`reframe.core.modules.ModulesSystem`.
         '''
         return self._system.modules_system
 
     def get_option(self, option):
+        '''Get a configuration option.
+
+        :arg option: The option to be retrieved.
+        :returns: The value of the option.
+        '''
         return self._site_config.get(option)
 
 
@@ -167,9 +173,9 @@ def init_runtime(site_config):
 
 
 def runtime():
-    '''Retrieve the framework's runtime context.
+    '''Get the runtime context of the framework.
 
-    :type: :class:`reframe.core.runtime.RuntimeContext`
+    :returns: A :class:`reframe.core.runtime.RuntimeContext` object.
 
     .. note::
        .. versionadded:: 2.13
@@ -183,8 +189,14 @@ def runtime():
 def loadenv(*environs):
     '''Load environments in the current Python context.
 
-    Returns a tuple containing a snapshot of the environment at entry to this
-    function and a list of shell commands required to load ``environs``.
+    :arg environs: A list of environments to load.
+    :type environs: List[Environment]
+
+    :returns: A tuple containing snapshot of the current environment upon
+        entry to this function and a list of shell commands required to load
+        the environments.
+    :rtype: Tuple[_EnvironmentSnapshot, List[str]]
+
     '''
     modules_system = runtime().modules_system
     env_snapshot = snapshot()
@@ -211,7 +223,13 @@ def emit_loadenv_commands(*environs):
 
 
 def is_env_loaded(environ):
-    ''':class:`True` if this environment is loaded, :class:`False` otherwise.
+    '''Check if environment is loaded.
+
+    :arg environ: Environment to check for.
+    :type environ: Environment
+
+    :returns: :class:`True` if this environment is loaded, :class:`False`
+        otherwise.
     '''
     is_module_loaded = runtime().modules_system.is_module_loaded
     return (all(map(is_module_loaded, environ.modules)) and
@@ -238,7 +256,10 @@ class temp_environment:
 # The following utilities are useful only for the unit tests
 
 class temp_runtime:
-    '''Context manager to temporarily switch to another runtime.'''
+    '''Context manager to temporarily switch to another runtime.
+
+    :meta private:
+    '''
 
     def __init__(self, config_file, sysname=None, options=None):
         global _runtime_context
@@ -265,7 +286,10 @@ class temp_runtime:
 
 def switch_runtime(config_file, sysname=None, options=None):
     '''Function decorator for temporarily changing the runtime for a
-    function.'''
+    function.
+
+    :meta private:
+    '''
     def _runtime_deco(fn):
         @functools.wraps(fn)
         def _fn(*args, **kwargs):
@@ -280,7 +304,7 @@ def switch_runtime(config_file, sysname=None, options=None):
 
 
 class module_use:
-    '''Context manager for temporarily modifying the module path'''
+    '''Context manager for temporarily modifying the module path.'''
 
     def __init__(self, *paths):
         self._paths = paths
