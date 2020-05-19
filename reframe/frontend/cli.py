@@ -32,6 +32,31 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
+REFRAME_ENV = [
+    'RFM_CHECK_SEARCH_PATH',
+    'RFM_CHECK_SEARCH_RECURSIVE',
+    'RFM_COLORIZE',
+    'RFM_CONFIG_FILE',
+    'RFM_GRAYLOG_SERVER',
+    'RFM_IGNORE_CHECK_CONFLICTS',
+    'RFM_KEEP_STAGE_FILES',
+    'RFM_MODULE_MAP_FILE',
+    'RFM_MODULE_MAPPINGS',
+    'RFM_NON_DEFAULT_CRAYPE',
+    'RFM_OUTPUT_DIR',
+    'RFM_PERFLOG_DIR',
+    'RFM_PREFIX',
+    'RFM_PURGE_ENVIRONMENT',
+    'RFM_SAVE_LOG_FILES',
+    'RFM_STAGE_DIR',
+    'RFM_SYSTEM',
+    'RFM_TIMESTAMP_DIRS',
+    'RFM_UNLOAD_MODULES',
+    'RFM_USER_MODULES',
+    'RFM_VERBOSE'
+]
+
+
 def format_check(check, detailed):
     lines = ['  - %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
@@ -51,6 +76,14 @@ def format_check(check, detailed):
         ]
 
     return '\n'.join(lines)
+
+
+def format_env():
+    ret = 'ReFrame environment variables:\n'
+    notset = "''"
+    ret += '\n'.join(
+        [f'    {e}={os.environ.get(e, notset)}' for e in REFRAME_ENV])
+    return ret
 
 
 def list_checks(checks, printer, detailed=False):
@@ -415,6 +448,8 @@ def main():
                 printer.info(json.dumps(value, indent=2))
 
         sys.exit(0)
+
+    printer.debug(format_env())
 
     # Setup the check loader
     loader = RegressionCheckLoader(
