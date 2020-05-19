@@ -38,7 +38,7 @@ import reframe.utility.os_ext as os_ext  # noqa: F401, F403
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '1.6.3'
+needs_sphinx = '3.0.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
