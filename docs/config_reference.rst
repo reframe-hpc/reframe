@@ -2,19 +2,32 @@
 Configuration Reference
 =======================
 
-.. versionadded:: 3.0
-
-
-ReFrame's behavior can be configured through its configuration file (see `Configuring ReFrame for Your Site <configure.html>`__), environment variables and command-line options.
+ReFrame's behavior can be configured through its configuration file (see :doc:`configure`), environment variables and command-line options.
 An option can be specified via multiple paths (e.g., a configuration file parameter and an environment variable), in which case command-line options precede environment variables, which in turn precede configuration file options.
 This section provides a complete reference guide of the configuration options of ReFrame that can be set in its configuration file or specified using environment variables.
 
 ReFrame's configuration is in JSON syntax.
-The full schema describing it can be found in `schemas/config.json <https://github.com/eth-cscs/reframe/blob/master/schemas/config.json>`__ file.
+The full schema describing it can be found in |schemas/config.json|_ file.
 Any configuration file given to ReFrame is validated against this schema.
 
-The syntax we use in the following to describe the different configuration object attributes is a valid query string for the `jq <https://stedolan.github.io/jq/>`__ JSON command-line processor.
-Along the configuration option, the corresponding environment variable and command-line options are listed, if any.
+The syntax we use in the following to describe the different configuration object attributes is a valid query string for the |jq|_ command-line processor.
+
+.. |jq| replace:: :attr:`jq(1)`
+.. _jq: https://stedolan.github.io/jq/manual/
+.. |schemas/config.json| replace:: ``schemas/config.json``
+.. _schemas/config.json: https://github.com/eth-cscs/reframe/blob/master/schemas/config.json
+.. |access| replace:: :attr:`access`
+.. _access: #.systems[].partitions[].access
+.. |basedir| replace:: :attr:`basedir`
+.. _basedir: #.logging[].handlers[].basedir
+.. |datefmt| replace:: :attr:`datefmt`
+.. _datefmt: #.logging[].handlers[].datefmt
+.. |environments| replace:: :attr:`environments`
+.. _environments: #.environments
+.. |handler_name| replace:: :attr:`name`
+.. _handler_name: #.logging[].handlers[].name
+.. |resources| replace:: :attr:`resources`
+.. _resources: #.systems[].partitions[].resources
 
 
 Top-level Configuration
@@ -126,10 +139,6 @@ System Configuration
 
 .. js:attribute:: .systems[].prefix
 
-.. envvar:: RFM_PREFIX
-
-.. option:: --prefix
-
    :required: No
    :default: ``"."``
 
@@ -137,10 +146,6 @@ System Configuration
    Any directories or files produced by ReFrame will use this prefix, if not specified otherwise.
 
 .. js:attribute:: .systems[].stagedir
-
-.. envvar:: RFM_STAGE_DIR
-
-.. option:: -s DIR | --stage DIR
 
    :required: No
    :default: ``"${RFM_PREFIX}/stage"``
@@ -150,10 +155,6 @@ System Configuration
 
 
 .. js:attribute:: .systems[].outputdir
-
-.. envvar:: RFM_OUTPUT_DIR
-
-.. option:: -o DIR | --output DIR
 
    :required: No
    :default: ``"${RFM_PREFIX}/output"``
@@ -168,7 +169,7 @@ System Configuration
    :default: ``"."``
 
    Directory prefix where external test resources (e.g., large input files) are stored.
-   You may reference this prefix from within a regression test by accessing the corresponding `attribute <reference.html#reframe.core.systems.System.resourcesdir>`__ of the current system.
+   You may reference this prefix from within a regression test by accessing the :attr:`reframe.core.systems.System.resourcesdir` attribute of the current system.
 
 
 .. js:attribute:: .systems[].partitions
@@ -231,7 +232,7 @@ System Partition Configuration
    - ``srunalloc``: Parallel programs will be launched using `Slurm <https://slurm.schedmd.com/srun.html>`__'s ``srun`` command, but job allocation options will also be emitted.
      This can be useful when combined with the ``local`` job scheduler.
    - ``ssh``: Parallel programs will be launched using SSH.
-     This launcher uses the partition’s `access <config_reference.rst#.systems[].partitions[].access>`__ property in order to determine the remote host and any additional options to be passed to the SSH client.
+     This launcher uses the partition’s |access|_ property in order to determine the remote host and any additional options to be passed to the SSH client.
      The ssh command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
      Here is an example configuration for the ssh launcher:
 
@@ -259,7 +260,7 @@ System Partition Configuration
    :default: ``[]``
 
   A list of environment names that ReFrame will use to run regression tests on this partition.
-  Each environment must be defined in the `environments <config_reference.html#.environments>`__ section of the configuration and the definition of the environment must be valid for this partition.
+  Each environment must be defined in the |environments|_ section of the configuration and the definition of the environment must be valid for this partition.
 
 
 .. js:attribute:: .systems[].partitions[].container_platforms
@@ -268,7 +269,7 @@ System Partition Configuration
    :default: ``[]``
 
    A list for `container platform configuration objects <#container-platform-configuration>`__.
-   This will allow launching regression tests that use `containers <advanced.html#testing-containerized-applications>`__ on this partition.
+   This will allow launching regression tests that use containers on this partition.
 
 
 .. js:attribute:: .systems[].partitions[].modules
@@ -297,7 +298,7 @@ System Partition Configuration
    :default: ``1``
 
    The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
-   This option is relevant only when ReFrame executes with the `asynchronous execution policy <running.html#asynchronous-execution-of-regression-checks>`__.
+   This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
 
 
 .. js:attribute:: .systems[].partitions[].resources
@@ -305,7 +306,7 @@ System Partition Configuration
    :required: No
    :default: ``[]``
 
-   A list of job scheduler `resource specification <#config_reference.html#custom-job-scheduler-resources>`__ objects.
+   A list of job scheduler `resource specification <config_reference.html#custom-job-scheduler-resources>`__ objects.
 
 
 
@@ -428,8 +429,7 @@ ReFrame allows you to define custom scheduler resources for each partition that 
      }
 
  .. note::
-
-    For the ``pbs`` and ``torque`` backends, options accepted in the `access <#.systems[].partitions[].access>`__ and `resources <#.systems[].partitions[].resources>`__ attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
+    For the ``pbs`` and ``torque`` backends, options accepted in the |access|_ and |resources|_ attributes may either refer to actual ``qsub`` options or may be just resources specifications to be passed to the ``-l`` option.
     The backend assumes a ``qsub`` option, if the options passed in these attributes start with a ``-``.
 
 
@@ -592,14 +592,14 @@ You may define different logger objects per system but *not* per partition.
 
    :required: Yes
 
-   A list of `logging handlers <#logging-handlers>`__ responsible for handling normal framework output.
+   A list of logging handlers responsible for handling normal framework output.
 
 
 .. js:attribute:: .logging[].handlers_perflog
 
    :required: Yes
 
-   A list of logging handlers responsible for handling `performance data <#performance-logging-handlers>`__ from tests.
+   A list of logging handlers responsible for handling performance data from tests.
 
 
 .. js:attribute:: .logging[].target_systems
@@ -629,15 +629,15 @@ All logging handlers share the following set of common attributes:
    There are the following types available:
 
    - ``file``: This handler sends log records to file.
-     See `here <#the-file-handler>`__ for more details.
+     See `here <#the-file-log-handler>`__ for more details.
    - ``filelog``: This handler sends performance log records to files.
-     See `here <#the-filelog-handler>`__ for more details.
+     See `here <#the-filelog-log-handler>`__ for more details.
    - ``graylog``: This handler sends performance log records to Graylog.
-     See `here <#the-graylog-handler>`__ for more details.
+     See `here <#the-graylog-log-handler>`__ for more details.
    - ``stream``: This handler sends log records to a file stream.
-     See `here <#the-stream-handler>`__ for more details.
+     See `here <#the-stream-log-handler>`__ for more details.
    - ``syslog``: This handler sends log records to a Syslog facility.
-     See `here <#the-syslog-handler>`__ for more details.
+     See `here <#the-syslog-log-handler>`__ for more details.
 
 
 .. js:attribute:: .logging[].handlers[].level
@@ -668,7 +668,7 @@ All logging handlers share the following set of common attributes:
    - ``%(check_jobid)s``: The job or process id of the job or process associated with the currently executing regression test.
      If a job or process is not yet created, ``-1`` will be printed.
    - ``%(check_job_completion_time)s``: The completion time of the job spawned by this regression test.
-     This timestamp will be formatted according to `datefmt <#.logging[].handlers[].datefmt>`__ handler property.
+     This timestamp will be formatted according to |datefmt|_ handler property.
      The accuracy of this timestamp depends on the backend scheduler.
      The ``slurm`` scheduler `backend <#.systems[].partitions[].scheduler>`__ relies on job accounting and returns the actual termination time of the job.
      The rest of the backends report as completion time the moment when the framework realizes that the spawned job has finished.
@@ -687,13 +687,13 @@ All logging handlers share the following set of common attributes:
    - ``%(check_system)s``: The system where this test is currently executing.
    - ``%(check_tags)s``: The tags associated with this test.
    - ``%(check_perf_lower_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
-     See the `reference <tutorial.html#writing-a-performance-test>`__ attribute of regression tests for more details.
+     See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_ref)s``: The reference performance value of a certain performance variable.
    - ``%(check_perf_unit)s``: The unit of measurement for the measured performance variable.
-   - ``%(check_perf_upper_thres)s``: The lower threshold of the performance difference from the reference value expressed as a fractional value.
-     See the `reference <tutorial.html#writing-a-performance-test>`__ attribute of regression tests for more details.
+   - ``%(check_perf_upper_thres)s``: The upper threshold of the performance difference from the reference value expressed as a fractional value.
+     See the :attr:`reframe.core.pipeline.RegressionTest.reference` attribute of regression tests for more details.
    - ``%(check_perf_value)s``: The performance value obtained for a certain performance variable.
-   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial.html#writing-a-performance-test>`__ being logged.
+   - ``%(check_perf_var)s``: The name of the `performance variable <tutorial_basic.html#writing-a-performance-test>`__ being logged.
    - ``%(osuser)s``: The name of the OS user running ReFrame.
    - ``%(osgroup)s``: The name of the OS group running ReFrame.
    - ``%(version)s``: The ReFrame version.
@@ -701,7 +701,7 @@ All logging handlers share the following set of common attributes:
 
 .. js:attribute:: .logging[].handlers[].datefmt
 
-.. js:attribute:: .logging[].handlers_perflog[].datefmt
+.. object:: .logging[].handlers_perflog[].datefmt
 
    :required: No
    :default: ``"%FT%T"``
@@ -721,7 +721,7 @@ The additional properties for the ``file`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].name
 
-.. js:attribute:: .logging[].handlers_perflog[].name
+.. object:: .logging[].handlers_perflog[].name
 
    :required: Yes
 
@@ -730,7 +730,7 @@ The additional properties for the ``file`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].append
 
-.. js:attribute:: .logging[].handlers_perflog[].append
+.. object:: .logging[].handlers_perflog[].append
 
    :required: No
    :default: ``false``
@@ -740,14 +740,14 @@ The additional properties for the ``file`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].timestamp
 
-.. js:attribute:: .logging[].handlers_perflog[].timestamp
+.. object:: .logging[].handlers_perflog[].timestamp
 
    :required: No
    :default: ``false``
 
    Append a timestamp to this handler's log file.
-   This property may also accept a date format as described in the `datefmt <#.logging[].handlers[].datefmt>`__ property.
-   If the handler's `name <#.logging[].handlers[].name>`__ property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
+   This property may also accept a date format as described in the |datefmt|_ property.
+   If the handler's |handler_name|_ property is set to ``filename.log`` and this property is set to ``true`` or to a specific timestamp format, the resulting log file will be ``filename_<timestamp>.log``.
 
 
 ---------------------------
@@ -760,11 +760,7 @@ The additional properties for the ``filelog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].basedir
 
-.. js:attribute:: .logging[].handlers_perflog[].basedir
-
-.. envvar:: RFM_PERFLOG_DIR
-
-.. option:: --perflogdir
+.. object:: .logging[].handlers_perflog[].basedir
 
    :required: No
    :default: ``"./perflogs"``
@@ -774,11 +770,11 @@ The additional properties for the ``filelog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].prefix
 
-.. js:attribute:: .logging[].handlers_perflog[].prefix
+.. object:: .logging[].handlers_perflog[].prefix
 
    :required: Yes
 
-   This is a directory prefix (usually dynamic), appended to the `basedir <#.logging[].handlers_perflog[].basedir>`__, where the performance logs of a test will be stored.
+   This is a directory prefix (usually dynamic), appended to the |basedir|_, where the performance logs of a test will be stored.
    This attribute accepts any of the check-specific `formatting placeholders <#.logging[].handlers_perflog[].format>`__.
    This allows to create dynamic paths based on the current system, partition and/or programming environment a test executes with.
    For example, a value of ``%(check_system)s/%(check_partition)s`` would generate the following structure of performance log files:
@@ -797,9 +793,9 @@ The additional properties for the ``filelog`` handler are the following:
         ...
 
 
-.. js:attribute:: .logging[].handlers[].append
+.. object:: .logging[].handlers[].append
 
-.. js:attribute:: .logging[].handlers_perflog[].append
+.. object:: .logging[].handlers_perflog[].append
 
    :required: No
    :default: ``true``
@@ -816,9 +812,7 @@ The additional properties for the ``graylog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].address
 
-.. js:attribute:: .logging[].handlers_perflog[].address
-
-.. envvar:: RFM_GRAYLOG_SERVER
+.. object:: .logging[].handlers_perflog[].address
 
    :required: Yes
 
@@ -827,7 +821,7 @@ The additional properties for the ``graylog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].extras
 
-.. js:attribute:: .logging[].handlers_perflog[].extras
+.. object:: .logging[].handlers_perflog[].extras
 
    :required: No
    :default: ``{}``
@@ -869,9 +863,9 @@ This handler sends log records to a file stream.
 The additional properties for the ``stream`` handler are the following:
 
 
-.. js:attribute:: .logging[].handlers[].name
+.. object:: .logging[].handlers[].name
 
-.. js:attribute:: .logging[].handlers_perflog[].name
+.. object:: .logging[].handlers_perflog[].name
 
    :required: No
    :default: ``"stdout"``
@@ -893,7 +887,7 @@ The additional properties for the ``syslog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].socktype
 
-.. js:attribute:: .logging[].handlers_perflog[].socktype
+.. object:: .logging[].handlers_perflog[].socktype
 
    :required: No
    :default: ``"udp"``
@@ -907,7 +901,7 @@ The additional properties for the ``syslog`` handler are the following:
 
 .. js:attribute:: .logging[].handlers[].facility
 
-.. js:attribute:: .logging[].handlers_perflog[].facility
+.. object:: .logging[].handlers_perflog[].facility
 
    :required: No
    :default: ``"user"``
@@ -916,9 +910,9 @@ The additional properties for the ``syslog`` handler are the following:
    The list of supported facilities can be found `here <https://docs.python.org/3.8/library/logging.handlers.html#logging.handlers.SysLogHandler.encodePriority>`__.
 
 
-.. js:attribute:: .logging[].handlers[].address
+.. object:: .logging[].handlers[].address
 
-.. js:attribute:: .logging[].handlers_perflog[].address
+.. object:: .logging[].handlers_perflog[].address
 
    :required: Yes
 
@@ -989,7 +983,7 @@ The options of an execution mode will be passed to ReFrame as if they were speci
    The command-line options associated with this execution mode.
 
 
-.. js:attribute:: .schedulers[].target_systems
+.. js:attribute:: .modes[].target_systems
 
    :required: No
    :default: ``["*"]``
@@ -1004,10 +998,6 @@ General Configuration
 
 .. js:attribute:: .general[].check_search_path
 
-.. envvar:: RFM_CHECK_SEARCH_PATH
-
-.. option:: -c PATH | --checkpath PATH
-
    :required: No
    :default: ``["${RFM_INSTALL_PREFIX}/checks/"]``
 
@@ -1018,10 +1008,6 @@ General Configuration
 
 .. js:attribute:: .general[].check_search_recursive
 
-.. envvar:: RFM_CHECK_SEARCH_RECURSIVE
-
-.. option:: -R | --recursive
-
    :required: No
    :default: ``false``
 
@@ -1030,10 +1016,6 @@ General Configuration
 
 
 .. js:attribute:: .general[].colorize
-
-.. envvar:: RFM_COLORIZE
-
-.. option:: --nocolor
 
    :required: No
    :default: ``true``
@@ -1044,10 +1026,6 @@ General Configuration
 
 .. js:attribute:: .general[].ignore_check_conflicts
 
-.. envvar:: RFM_IGNORE_CHECK_CONFLICTS
-
-.. option:: --ignore-check-conflicts
-
    :required: No
    :default: ``false``
 
@@ -1055,10 +1033,6 @@ General Configuration
 
 
 .. js:attribute:: .general[].keep_stage_files
-
-.. envvar:: RFM_KEEP_STAGE_FILES
-
-.. option:: --keep-stage-files
 
    :required: No
    :default: ``false``
@@ -1068,49 +1042,33 @@ General Configuration
 
 .. js:attribute:: .general[].module_map_file
 
-.. envvar:: RFM_MODULE_MAP_FILE
-
-.. option:: --module-mappings
-
    :required: No
    :default: ``""``
 
-   File containing `module mappings <running.html#manipulating-modules>`__.
+   File containing module mappings.
 
 
 .. js:attribute:: .general[].module_mappings
 
-.. envvar:: RFM_MODULE_MAPPINGS
-
-.. option:: -M MAPPING | --map-module MAPPING
-
    :required: No
    :default: ``[]``
 
-   A list of `module mappings <running.html#manipulating-modules>`__.
+   A list of module mappings.
    If specified through the environment variable, the mappings must be separated by commas.
    If specified from command line, multiple module mappings are defined by passing the command line option multiple times.
 
 
 .. js:attribute:: .general[].non_default_craype
 
-.. envvar:: RFM_NON_DEFAULT_CRAYPE
-
-.. option:: --non-default-craype
-
    :required: No
    :default: ``false``
 
    Test a non-default Cray Programming Environment.
    This will emit some special instructions in the generated build and job scripts.
-   For more details, you may refer `here <running.html#testing-non-default-cray-programming-environments>`__.
+   See also :option:`--non-default-craype` for more details.
 
 
 .. js:attribute:: .general[].purge_environment
-
-.. envvar:: RFM_PURGE_ENVIRONMENT
-
-.. option:: --purge-env
 
    :required: No
    :default: ``false``
@@ -1119,10 +1077,6 @@ General Configuration
 
 
 .. js:attribute:: .general[].save_log_files
-
-.. envvar:: RFM_SAVE_LOG_FILES
-
-.. option:: --save-log-files
 
    :required: No
    :default: ``false``
@@ -1141,10 +1095,6 @@ General Configuration
 
 .. js:attribute:: .general[].timestamp_dirs
 
-.. envvar:: RFM_TIMESTAMP_DIRS
-
-.. option:: --timestamp [TIMEFMT]
-
    :required: No
    :default: ``""``
 
@@ -1154,10 +1104,6 @@ General Configuration
 
 
 .. js:attribute:: .general[].unload_modules
-
-.. envvar:: RFM_UNLOAD_MODULES
-
-.. option:: -u MOD | --unload-module MOD
 
    :required: No
    :default: ``[]``
@@ -1169,10 +1115,6 @@ General Configuration
 
 .. js:attribute:: .general[].user_modules
 
-.. envvar:: RFM_USER_MODULES
-
-.. option:: -m MOD | --module MOD
-
    :required: No
    :default: ``[]``
 
@@ -1183,33 +1125,9 @@ General Configuration
 
 .. js:attribute:: .general[].verbose
 
-.. envvar:: RFM_VERBOSE
-
-.. option:: -v | --verbose
-
    :required: No
    :default: 0
 
    Increase the verbosity level of the output.
    The higher the number, the more verbose the output will be.
    If specified from the command line, the command line option must be specified multiple times to increase the verbosity level more than once.
-
-
-Additional Environment Variables
---------------------------------
-
-Here is a list of environment variables that do not have a configuration option counterpart.
-
-
-.. envvar:: RFM_CONFIG_FILE
-
-.. option:: -C FILE | --config-file FILE
-
-   The path to ReFrame's configuration file.
-
-
-.. envvar:: RFM_SYSTEM
-
-.. option:: --system NAME
-
-   The name of the system, whose configuration will be loaded.
