@@ -11,7 +11,8 @@ import time
 
 from datetime import datetime
 
-from reframe.core.exceptions import (TaskDependencyError, TaskExit)
+from reframe.core.exceptions import (TaskDependencyError, TaskExit, 
+                                     BuildError, PipelineError)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
