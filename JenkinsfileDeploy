@@ -5,7 +5,7 @@ def reviewersPR = 'teojgo,vkarak'   // The Github usernames requested for review
 def ebTemplate = '3.0-dev5'         // The eb recipe of ReFrame to use as template
 
 stage('Deploy Tests') {
-    node('dom') {
+    node('daint') {
         dir('private_tests') {
             sh(returnStatus: true,
                script: """#!/bin/bash -l
@@ -22,7 +22,7 @@ stage('Deploy Tests') {
 }
 
 stage('Production PR') {
-    node('dom') {
+    node('daint') {
         dir('production_repo') {
             sh(returnStatus: true,
                script: """#!/bin/bash -l
