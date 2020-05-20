@@ -381,16 +381,14 @@ def convert_old_config(filename, newfilename=None):
         'environments': [],
         'logging': [],
     }
-    perflogdir = None
+    perflogdir = {}
     old_systems = old_config.site_configuration['systems'].items()
     for sys_name, sys_spec in old_systems:
         sys_dict = {'name': sys_name}
 
-        # FIXME: We pick the perflogdir that we first find we use it as
-        # filelog's basedir for all systems. This is not correct since
-        # per-system customizations of perflogdir will be lost
-        if perflogdir is None:
-            perflogdir = sys_spec.pop('perflogdir', None)
+        system_perflogdir = sys_spec.pop('perflogdir', None)
+        perflogdir.setdefault(system_perflogdir, [])
+        perflogdir[system_perflogdir].append(sys_name)
 
         sys_dict.update(sys_spec)
 
@@ -482,34 +480,40 @@ def convert_old_config(filename, newfilename=None):
 
                 converted['modes'].append(new_mode)
 
-    def handler_list(handler_config):
+    def handler_list(handler_config, basedir=None):
         ret = []
         for h in handler_config:
-            new_h = h
+            new_h = h.copy()
             new_h['level'] = h['level'].lower()
             if h['type'] == 'graylog':
                 # `host` and `port` attribute are converted to `address`
                 new_h['address'] = h['host']
                 if 'port' in h:
                     new_h['address'] += ':' + h['port']
-            elif h['type'] == 'filelog' and perflogdir is not None:
-                new_h['basedir'] = perflogdir
+            elif h['type'] == 'filelog' and basedir is not None:
+                new_h['basedir'] = basedir
 
             ret.append(new_h)
 
         return ret
 
-    converted['logging'].append(
-        {
-            'level': old_config.logging_config['level'].lower(),
-            'handlers': handler_list(
-                old_config.logging_config['handlers']
-            ),
-            'handlers_perflog': handler_list(
-                old_config.perf_logging_config['handlers']
-            )
-        }
-    )
+    for basedir, target_systems in perflogdir.items():
+        converted['logging'].append(
+            {
+                'level': old_config.logging_config['level'].lower(),
+                'handlers': handler_list(
+                    old_config.logging_config['handlers']
+                ),
+                'handlers_perflog': handler_list(
+                    old_config.perf_logging_config['handlers'],
+                    basedir=basedir
+                ),
+                'target_systems': target_systems
+            }
+        )
+        if basedir is None:
+            del converted['logging'][-1]['target_systems']
+
     converted['general'] = [{}]
     if hasattr(old_config, 'checks_path'):
         converted['general'][0][
@@ -528,9 +532,16 @@ def convert_old_config(filename, newfilename=None):
                 f"by ReFrame based on '{filename}'.\n#\n\n"
                 f"site_configuration = {util.ppretty(converted)}\n")
 
+    contents = '\n'.join(l if len(l) < 80 else f'{l}  # noqa: E501'
+                         for l in contents.split('\n'))
+
     if newfilename:
         with open(newfilename, 'w') as fp:
-            fp.write(contents)
+            if newfilename.endswith('.json'):
+                json.dump(converted, fp, indent=4)
+            else:
+                fp.write(contents)
+
     else:
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py',
                                          delete=False) as fp:

@@ -8,7 +8,7 @@ Of course, ReFrame is much more powerful than that.
 This section will guide you through configuring ReFrame for your HPC cluster.
 We will use as a starting point a simplified configuration for the `Piz Daint <https://www.cscs.ch/computers/piz-daint/>`__ supercomputer at CSCS and we will elaborate along the way.
 
-If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the `Migrating to ReFrame 3 <migration_2_to_3.html#updating-your-site-configuration>`__ page.
+If you started using ReFrame from version 3.0, you can keep on reading this section, otherwise you are advised to have a look first at the :doc:`migration_2_to_3` page.
 
 
 ReFrame's configuration file can be either a JSON file or Python file storing the site configuration in a JSON-formatted string.
@@ -51,7 +51,7 @@ These sections contain other objects which further define in detail the framewor
 If you are using a Python file to configure ReFrame, this big JSON configuration object is stored in a special variable called ``site_configuration``.
 
 We will explore the basic configuration of ReFrame through the following configuration file that permits ReFrame to run on Piz Daint.
-For the complete listing and description of all configuration options, you should refer to the `Configuration Reference <config_reference.html>`__.
+For the complete listing and description of all configuration options, you should refer to the :doc:`config_reference`.
 
 .. literalinclude:: ../tutorial/config/settings.py
    :lines: 10-
@@ -71,7 +71,7 @@ In our example we define only one system, namely Piz Daint:
 .. literalinclude:: ../tutorial/config/settings.py
    :lines: 11-75
 
-Each system is associated with a set of properties, which in this case are the following (for a complete list of properties, refer to the `configuration reference <config_reference.html#system-configuration>`__):
+Each system is associated with a set of properties, which in this case are the following:
 
 * ``name``: The name of the system.
   This should be an alphanumeric string (dashes ``-`` are allowed) and it will be used to refer to this system in other contexts.
@@ -111,7 +111,7 @@ The basic properties of a partition are the following:
   Each container platform is an object with a name and list of environment modules to load, in order to enable this platform.
   For a complete list of the supported container platforms, see `here <config_reference.html#.systems[].partitions[].container_platforms[].type>`__.
 * ``max_jobs``: The maximum number of concurrent regression tests that may be active (i.e., not completed) on this partition.
-  This option is relevant only when ReFrame executes with the `asynchronous execution policy <running.html#asynchronous-execution-of-regression-checks>`__.
+  This option is relevant only when ReFrame executes with the `asynchronous execution policy <pipeline.html#execution-policies>`__.
 
 
 --------------------------
@@ -134,7 +134,6 @@ In other systems, you could define a ReFrame environment to wrap a toolchain (MP
 Each environment is associated with a name.
 This name will be used to reference this environment in different contexts, as for example in the ``environs`` property of the system partitions.
 This environment definition is minimal, since the default values for the rest of the properties serve our purpose.
-For a complete list of the environment properties, see the `configuration reference <config_reference.html#environment-configuration>`__.
 
 An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions.
 In the following, for demonstration purposes, we define ``PrgEnv-gnu`` differently for the ``mc`` partition of the ``daint`` system (notice the condensed form of writing this as ``daint:mc``):
@@ -181,12 +180,12 @@ These are the following:
 * ``level``: The cut-off level for messages reaching this handler.
   Any message with a lower level number will be filtered out.
 * ``format``: A format string for formatting the emitted log record.
-  ReFrame uses the format specifiers from `Python Logging <https://docs.python.org/3.8/library/logging.html?highlight=logging#logrecord-attributes>`__, but also defines its owns specifiers.
+  ReFrame uses the format specifiers from `Python Logging <https://docs.python.org/3/library/logging.html?highlight=logging#logrecord-attributes>`__, but also defines its owns specifiers.
 * ``datefmt``: A time format string for formatting timestamps.
   There are two log record fields that are considered timestamps: (a) ``asctime`` and (b) ``check_job_completion_time``.
-  ReFrame follows the time formatting syntax of Python's `time.strftime() <https://docs.python.org/3.8/library/time.html#time.strftime>`__ with a small tweak allowing full RFC3339 compliance when formatting time zone differences (see the `configuration reference <config_reference.html#.logging[].handlers[].datefmt>`__ for more details).
+  ReFrame follows the time formatting syntax of Python's `time.strftime() <https://docs.python.org/3/library/time.html#time.strftime>`__ with a small tweak allowing full RFC3339 compliance when formatting time zone differences.
 
-We will not go into the details of the individual handlers here. 
+We will not go into the details of the individual handlers here.
 In this particular example we use three handlers of two distinct types:
 
 1. A file handler to print debug messages in the ``reframe.log`` file using a more extensive message format that contains a timestamp, the level name etc.
@@ -197,7 +196,7 @@ In this particular example we use three handlers of two distinct types:
 It might initially seem confusing the fact that there are two ``level`` properties: one at the logger level and one at the handler level.
 Logging in ReFrame works hierarchically.
 When a message is logged, an log record is created, which contains metadata about the message being logged (log level, timestamp, ReFrame runtime information etc.).
-This log record first goes into ReFrame's internal logger, where the record's level is checked against the logger's level (here  ``debug``). 
+This log record first goes into ReFrame's internal logger, where the record's level is checked against the logger's level (here  ``debug``).
 If the log record's level exceeds the log level threshold from the logger, it is forwarded to the logger's handlers.
 Then each handler filters the log record differently and takes care of formatting the log record's message appropriately.
 You can view logger's log level as a general cut off.
@@ -209,9 +208,6 @@ The performance handler in this example will create a file per test and per syst
 Notice in the ``format`` property how the message to be logged is structured such that it can be easily parsed from post processing tools.
 Apart from file logging, ReFrame offers more advanced performance logging capabilities through Syslog and Graylog.
 
-For a complete description of the logging configuration properties and the different handlers, please refer to the `configuration reference <config_reference.html#logging-configuration>`__.
-Section `Running ReFrame <running.html>`__ provides also examples of logging.
-
 
 -----------------------------
 General configuration options
@@ -220,7 +216,7 @@ General configuration options
 General configuration options of the framework go under the ``general`` section of the configuration file.
 This section is optional.
 In this case, we define the search path for ReFrame test files to be the ``tutorial/`` subdirectory and we also instruct ReFrame to recursively search for tests there.
-There are several more options that can go into this section, but the reader is referred to the `configuration reference <config_reference.html#general-configuration>`__ for the complete list.
+There are several more options that can go into this section, but the reader is referred to the :doc:`config_reference` for the complete list.
 
 
 ---------------------------
@@ -231,7 +227,7 @@ There are finally two more optional configuration sections that are not discusse
 
 1. The ``schedulers`` section holds configuration variables specific to the different scheduler backends and
 2. the ``modes`` section defines different execution modes for the framework.
-   Execution modes are discussed in `Running ReFrame <running.html>`__.
+   Execution modes are discussed in the :doc:`pipeline` page.
 
 
 
@@ -293,7 +289,7 @@ Let's see some concrete examples:
      ./bin/reframe -C tutorial/config/settings.py --system=daint --show-config=systems/0/partitions
 
   .. code:: javascript
-            
+
 			[
 			  {
 			    "name": "login",

@@ -10,7 +10,7 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class TimeLimitTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.descr = ('ReFrame tutorial demonstrating the use'
+        self.descr = ('ReFrame tutorial demonstrating the use '
                       'of a user-defined time limit')
         self.valid_systems = ['daint:gpu', 'daint:mc']
         self.valid_prog_environs = ['*']

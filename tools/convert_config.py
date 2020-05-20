@@ -20,6 +20,9 @@ if __name__ == '__main__':
         print(f'{sys.argv[0]}: too few arguments', file=sys.stderr)
         print(f'Usage: {sys.argv[0]} OLD_CONFIG_FILE [NEW_CONFIG_FILE]',
               file=sys.stderr)
+        print('       Use the extension of NEW_CONFIG_FILE to specify\n'
+              '       python (.py) or json (.json) format.',
+              file=sys.stderr)
         sys.exit(1)
 
     try:
