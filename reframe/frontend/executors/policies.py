@@ -362,7 +362,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         try:
             task.compile()
             task.compile_wait()
-        except (PipelineError, BuildError) as e:
+        except (PipelineError, BuildError, TaskExit) as e:
             getlogger().debug('build failed for %s' % task)
             self.on_task_failure(task)
         except Exception as e:
