@@ -167,7 +167,7 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '-t', '--tag', action='append', dest='tags', default=[],
+        '-t', '--tag', action='append', dest='tags', metavar='TAG', default=[],
         help='Select checks matching TAG'
     )
     select_options.add_argument(
@@ -268,7 +268,7 @@ def main():
         '-m', '--module', action='append', default=[],
         metavar='MOD', dest='user_modules',
         help='Load module MOD before running the regression suite',
-        envvar='RFM_USER_MODULES', configvar='general/user_modules'
+        envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
     )
     env_options.add_argument(
         '--module-mappings', action='store', metavar='FILE',
@@ -280,7 +280,7 @@ def main():
         '-u', '--unload-module', action='append', metavar='MOD',
         dest='unload_modules', default=[],
         help='Unload module MOD before running the regression suite',
-        envvar='RFM_UNLOAD_MODULES', configvar='general/unload_modules'
+        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -313,7 +313,7 @@ def main():
         help='Print a report for performance tests run'
     )
     misc_options.add_argument(
-        '--show-config-param', action='store', nargs='?', const='all',
+        '--show-config', action='store', nargs='?', const='all',
         metavar='PARAM',
         help=(
             'Print how parameter PARAM is configured '
@@ -434,8 +434,8 @@ def main():
         sys.exit(1)
 
     # Show configuration after everything is set up
-    if options.show_config_param:
-        config_param = options.show_config_param
+    if options.show_config:
+        config_param = options.show_config
         if config_param == 'all':
             printer.info(str(rt.site_config))
         else:

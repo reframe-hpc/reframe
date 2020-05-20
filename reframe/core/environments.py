@@ -17,6 +17,9 @@ class Environment:
 
     It is simply a collection of modules to be loaded and environment variables
     to be set when this environment is loaded by the framework.
+
+    .. warning::
+       Users may not create :class:`Environment` objects directly.
     '''
 
     def __init__(self, name, modules=None, variables=None):
@@ -38,7 +41,7 @@ class Environment:
     def modules(self):
         '''The modules associated with this environment.
 
-        :type: :class:`list` of :class:`str`
+        :type: :class:`List[str]`
         '''
         return util.SequenceView(self._modules)
 
@@ -46,20 +49,9 @@ class Environment:
     def variables(self):
         '''The environment variables associated with this environment.
 
-        :type: dictionary of :class:`str` keys/values.
+        :type: :class:`OrderedDict[str, str]`
         '''
         return util.MappingView(self._variables)
-
-    def details(self):
-        '''Return a detailed description of this environment.'''
-        variables = '\n'.join(' '*8 + '- %s=%s' % (k, v)
-                              for k, v in self.variables.items())
-        lines = [
-            self._name + ':',
-            '    modules: ' + ', '.join(self.modules),
-            '    variables:' + ('\n' if variables else '') + variables
-        ]
-        return '\n'.join(lines)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
@@ -80,6 +72,8 @@ class Environment:
 
 
 class _EnvironmentSnapshot(Environment):
+    '''An environment snapshot.'''
+
     def __init__(self, name='env_snapshot'):
         super().__init__(name, [], os.environ.items())
 
@@ -101,24 +95,21 @@ class _EnvironmentSnapshot(Environment):
 
 
 def snapshot():
-    '''Create an environment snapshot'''
+    '''Create an environment snapshot
+
+    :returns: An instance of :class:`_EnvironmentSnapshot`.
+    '''
     return _EnvironmentSnapshot()
 
 
 class ProgEnvironment(Environment):
     '''A class representing a programming environment.
 
-    This type of environment adds also attributes for setting the compiler and
-    compilation flags.
+    This type of environment adds also properties for retrieving the compiler
+    and compilation flags.
 
-    If compilation flags are set to :class:`None` (the default, if not set
-    otherwise in ReFrame's `configuration
-    <configure.html#environments-configuration>`__), they are not passed to the
-    ``make`` invocation.
-
-    If you want to disable completely the propagation of the compilation flags
-    to the ``make`` invocation, even if they are set, you should set the
-    :attr:`propagate` attribute to :class:`False`.
+    .. warning::
+       Users may not create :class:`ProgEnvironment` objects directly.
     '''
 
     _cc = fields.TypedField('_cc', str)
@@ -222,25 +213,3 @@ class ProgEnvironment(Environment):
     @property
     def nvcc(self):
         return self._nvcc
-
-    def details(self):
-        def format_flags(flags):
-            if not flags:
-                return '<None>'
-            else:
-                return ' '.join(flags)
-
-        base_details = super().details()
-        extra_details = [
-            '    CC: %s' % self.cc,
-            '    CXX: %s' % self.cxx,
-            '    FTN: %s' % self.ftn,
-            '    NVCC: %s' % self.nvcc,
-            '    CFLAGS: %s' % format_flags(self.cflags),
-            '    CXXFLAGS: %s' % format_flags(self.cxxflags),
-            '    FFLAGS: %s' % format_flags(self.fflags),
-            '    CPPFLAGS: %s' % format_flags(self.cppflags),
-            '    LDFLAGS: %s' % format_flags(self.ldflags)
-        ]
-
-        return '\n'.join([base_details, '\n'.join(extra_details)])
