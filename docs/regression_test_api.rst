@@ -1,29 +1,45 @@
-===============
-Reference Guide
-===============
+========================
+ReFrame Programming APIs
+========================
 
 This page provides a reference guide of the ReFrame API for writing regression tests covering all the relevant details.
-Internal data structures and APIs are covered only to the extent that might be helpful to the final user of the framework.
+Internal data structures and APIs are covered only to the extent that this might be helpful to the final user of the framework.
 
 
 
-Regression test classes and related utilities
----------------------------------------------
-
-.. automodule:: reframe.core.decorators
-   :members:
-   :show-inheritance:
+Regression Test Base Classes
+----------------------------
 
 .. automodule:: reframe.core.pipeline
    :members:
    :show-inheritance:
 
 
+Regression Test Class Decorators
+--------------------------------
+
+.. autodecorator:: reframe.core.decorators.parameterized_test(*inst)
+
+.. autodecorator:: reframe.core.decorators.required_version(*versions)
+
+.. autodecorator:: reframe.core.decorators.simple_test
+
+
+Pipeline Hooks
+--------------
+
+.. autodecorator:: reframe.core.decorators.run_after(stage)
+
+.. autodecorator:: reframe.core.decorators.run_before(stage)
+
+.. autodecorator:: reframe.core.decorators.require_deps
+
+
 Environments and Systems
 ------------------------
 
 .. automodule:: reframe.core.environments
-   :members:
+   :members: Environment, ProgEnvironment, _EnvironmentSnapshot, snapshot
    :show-inheritance:
 
 .. automodule:: reframe.core.systems
@@ -31,10 +47,10 @@ Environments and Systems
    :show-inheritance:
 
 
-Job schedulers and parallel launchers
+Job Schedulers and Parallel Launchers
 -------------------------------------
 
-.. autoclass:: reframe.core.schedulers.Job
+.. automodule:: reframe.core.schedulers
    :members:
    :show-inheritance:
 
@@ -43,27 +59,38 @@ Job schedulers and parallel launchers
    :show-inheritance:
 
 
-.. automodule:: reframe.core.backends
-   :members:
-   :show-inheritance:
+.. autofunction:: reframe.core.backends.getlauncher(name)
+
+   Retrieve the :class:`reframe.core.launchers.JobLauncher` concrete
+   implementation for a parallel launcher backend.
+
+   :arg name: The registered name of the launcher backend.
 
 
-Runtime services
+.. autofunction:: reframe.core.backends.getscheduler(name)
+
+   Retrieve the :class:`reframe.core.schedulers.JobScheduler` concrete
+   implementation for a scheduler backend.
+
+   :arg name: The registered name of the scheduler backend.
+
+Runtime Services
 ----------------
 
 .. automodule:: reframe.core.runtime
    :members:
-   :exclude-members: temp_runtime, switch_runtime
    :show-inheritance:
 
 
-Modules System API
-------------------
+Modules Systems
+---------------
 
 .. autoclass:: reframe.core.modules.ModulesSystem
+   :members:
+   :show-inheritance:
 
 
-Build systems
+Build Systems
 -------------
 
 .. versionadded:: 2.14
@@ -92,15 +119,10 @@ It is up to the concrete build system implementations on how to use or not these
    :show-inheritance:
 
 
-Container platforms
+Container Platforms
 -------------------
 
 .. versionadded:: 2.20
-
-ReFrame can run a regression test inside a container.
-To achieve that you have to set the :attr:`reframe.core.pipeline.RegressionTest.container_platform` attribute and then set up the container platform (e.g., image to load, commands to execute).
-The :class:`reframe.core.ContainerPlatform` abstract base class define the basic interface and a minimal set of attributes that all concrete container platforms must implement.
-Concrete container platforms may also define additional fields that are specific to them.
 
 .. automodule:: reframe.core.containers
    :members:

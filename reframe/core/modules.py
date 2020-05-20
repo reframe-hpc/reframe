@@ -78,11 +78,7 @@ class Module:
 
 
 class ModulesSystem:
-    '''A modules system abstraction inside ReFrame.
-
-    This class interfaces between the framework internals and the actual
-    modules systems implementation.
-    '''
+    '''A modules system.'''
 
     module_map = fields.TypedField('module_map',
                                    types.Dict[str, types.List[str]])
@@ -114,6 +110,8 @@ class ModulesSystem:
         :returns: the list of real modules names pointed to by ``name``.
         :raises: :class:`reframe.core.exceptions.ConfigError` if the mapping
             contains a cycle.
+
+        :meta private:
         '''
         ret = OrderedSet()
         visited = set()
@@ -157,7 +155,7 @@ class ModulesSystem:
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
-        This method returns a list of strings.
+        :rtype: List[str]
         '''
         return [str(m) for m in self._backend.loaded_modules()]
 
@@ -168,7 +166,7 @@ class ModulesSystem:
         list will be the concatenation of the conflict lists of all the real
         modules.
 
-        This method returns a list of strings.
+        :rtype: List[str]
         '''
         ret = []
         for m in self.resolve_module(name):
@@ -186,7 +184,8 @@ class ModulesSystem:
         conflicting modules currently loaded. If module ``name`` refers to
         multiple real modules, all of the target modules will be loaded.
 
-        Returns the list of unloaded modules as strings.
+        :returns: the list of unloaded modules as strings.
+        :rtype: List[str]
         '''
         ret = []
         for m in self.resolve_module(name):
@@ -243,6 +242,7 @@ class ModulesSystem:
         :arg mapping: a string specifying the module mapping.
             Example syntax: ``'m0: m1 m2'``.
 
+        :meta private:
         '''
         key, *rest = mapping.split(':')
         if len(rest) != 1:
@@ -259,7 +259,10 @@ class ModulesSystem:
         self.module_map[key] = list(OrderedDict.fromkeys(values))
 
     def load_mapping_from_file(self, filename):
-        '''Update the internal module mappings from mappings read from file.'''
+        '''Update the internal module mappings from mappings read from file.
+
+        :meta private:
+        '''
         with open(filename) as fp:
             for lineno, line in enumerate(fp, start=1):
                 line = line.strip().split('#')[0]
@@ -273,12 +276,12 @@ class ModulesSystem:
 
     @property
     def name(self):
-        '''Return the name of this module system.'''
+        '''The name of this module system.'''
         return self._backend.name()
 
     @property
     def version(self):
-        '''Return the version of this module system.'''
+        '''The version of this module system.'''
         return self._backend.version()
 
     def unload_all(self):
@@ -299,13 +302,19 @@ class ModulesSystem:
         return self._backend.searchpath_remove(*dirs)
 
     def emit_load_commands(self, name):
-        '''Return the appropriate shell command for loading module ``name``.'''
+        '''Return the appropriate shell command for loading module ``name``.
+
+        :rtype: List[str]
+        '''
         return [self._backend.emit_load_instr(Module(name))
                 for name in self.resolve_module(name)]
 
     def emit_unload_commands(self, name):
         '''Return the appropriate shell command for unloading module
-        ``name``.'''
+        ``name``.
+
+        :rtype: List[str]
+        '''
         return [self._backend.emit_unload_instr(Module(name))
                 for name in reversed(self.resolve_module(name))]
 

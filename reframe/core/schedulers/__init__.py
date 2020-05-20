@@ -20,53 +20,85 @@ from reframe.core.logging import getlogger
 
 
 class JobScheduler(abc.ABC):
+    '''Abstract base class for job scheduler backends.'''
+
     @abc.abstractmethod
     def completion_time(self, job):
         '''The completion time of this job expressed in seconds from the Epoch.
+
+        :meta private:
         '''
-        pass
 
     @abc.abstractmethod
     def emit_preamble(self, job):
-        pass
+        '''Return the job script preamble as a list of lines.
+
+        :arg job: A job descriptor.
+        :returns: The job preamble as a list of lines.
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def allnodes(self):
-        '''Gets all the available nodes'''
+        '''Return a list of all the available nodes.
+
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def filternodes(self, job, nodes):
-        '''Filter nodes according to the job options'''
+        '''Filter nodes according to job information.
+
+        :arg job: A job descriptor.
+        :arg nodes: The initial set of nodes.
+        :returns: The filtered set of nodes.
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def submit(self, job):
-        pass
+        '''Submit a job.
+
+        :arg job: A job descriptor.
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def wait(self, job):
-        pass
+        '''Wait for a job to finish.
+
+        :arg job: A job descriptor.
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def cancel(self, job):
-        pass
+        '''Cancel a job.
+
+        :arg job: A job descriptor.
+        :meta private:
+        '''
 
     @abc.abstractmethod
     def finished(self, job):
-        pass
+        '''Poll a job.
+
+        :arg job: A job descriptor.
+        :returns: :class:`True` if the job has finished, :class:`False`
+            otherwise.
+
+        :meta private:
+        '''
 
 
 class Job:
     '''A job descriptor.
 
     A job descriptor is created by the framework after the "setup" phase and
-    is associated with the test. It can be retrieved through the
-    :attr:`reframe.core.pipeline.RegressionTest.job` attribute and stores
-    information about the job submitted during the "run" phase.
+    is associated with the test.
 
-    .. note::
-
-       Users cannot create a job descriptor directly and associate it with a
-       test.
+    .. warning::
+       Users may not create a job descriptor directly.
 
     '''
 
@@ -77,8 +109,9 @@ class Job:
                                            int,  type(None))
     num_tasks_per_socket = fields.TypedField('num_tasks_per_socket',
                                              int,  type(None))
-    num_cpus_per_tasks = fields.TypedField('num_cpus_per_task',
-                                           int,  type(None))
+
+    num_cpus_per_task = fields.TypedField('num_cpus_per_task',
+                                          int,  type(None))
     use_smt = fields.TypedField('use_smt', bool,  type(None))
     time_limit = fields.TimerField('time_limit', type(None))
 
@@ -99,7 +132,7 @@ class Job:
     #: The following example shows how you can replace the current partition's
     #: launcher for this test with the "local" launcher:
     #:
-    #: .. code:: python
+    #: .. code-block:: python
     #:
     #:    from reframe.core.backends import getlauncher
     #:
@@ -113,7 +146,7 @@ class Job:
 
     #: The ID of the current job.
     #:
-    #: :type: :class:`int` or ``None``.
+    #: :type: :class:`int` or :class:`None`.
     #:
     #: .. versionadded:: 2.21
     #:
@@ -123,7 +156,7 @@ class Job:
     #:
     #: This may or may not be set depending on the scheduler backend.
     #:
-    #: :type: :class:`int` or ``None``.
+    #: :type: :class:`int` or :class:`None`.
     #:
     #: .. versionadded:: 2.21
     #:
@@ -133,7 +166,7 @@ class Job:
     #:
     #: The value of this field is scheduler-specific.
     #:
-    #: :type: :class:`str` or ``None``.
+    #: :type: :class:`str` or :class:`None`.
     #:
     #: .. versionadded:: 2.21
     #:
@@ -152,9 +185,8 @@ class Job:
     #:
     #: This attribute might be useful in a flexible regression test for
     #: determining the actual nodes that were assigned to the test.
-    #: For more information on flexible node allocation, please refer to the
-    #: corresponding `section <advanced.html#flexible-regression-tests>`__ of
-    #: the tutorial.
+    #: For more information on flexible node allocation, see the
+    #: |--flex-alloc-nodes|_ command-line option
     #:
     #: This attribute is *not* supported by the ``pbs`` scheduler backend.
     #:
@@ -221,7 +253,6 @@ class Job:
         ret.scheduler, ret.launcher = scheduler, launcher
         return ret
 
-    # Read-only properties
     @property
     def name(self):
         return self._name
@@ -365,6 +396,11 @@ class Job:
 
 
 class Node(abc.ABC):
+    '''Abstract base class for representing system nodes.
+
+    :meta private:
+    '''
+
     @abc.abstractmethod
     def is_available(self):
         '''Return ``True`` if this node is available, ``False`` otherwise.'''

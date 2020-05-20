@@ -11,11 +11,7 @@ from reframe.core.exceptions import ContainerError
 
 
 class ContainerPlatform(abc.ABC):
-    '''The abstract base class of any container platform.
-
-    Concrete container platforms inherit from this class and must override the
-    :func:`emit_prepare_commands` and :func:`launch_command` abstract methods.
-    '''
+    '''The abstract base class of any container platform.'''
 
     #: The container image to be used for running the test.
     #:
@@ -74,6 +70,7 @@ class ContainerPlatform(abc.ABC):
             This method is relevant only to developers of new container
             platform backends.
 
+        :meta private:
         '''
 
     @abc.abstractmethod
@@ -85,6 +82,7 @@ class ContainerPlatform(abc.ABC):
             This method is relevant only to developers of new container
             platforms.
 
+        :meta private:
         '''
 
     def validate(self):

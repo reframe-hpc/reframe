@@ -18,9 +18,8 @@ class HelloMakeTest(rfm.RegressionTest):
         self.build_system = 'Make'
         self.build_system.cflags = ['-O3']
         self.build_system.cxxflags = ['-O3']
-        self.build_system.makefile = 'Makefile.nofort'
-        self.executable = './hello_cpp'
-        self.keep_files = ['hello_cpp']
+        self.executable = './hello_c'
+        self.keep_files = ['hello_c']
         self.tags = {'foo', 'bar'}
         self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)
         self.maintainers = ['VK']

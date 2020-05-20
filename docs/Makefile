@@ -38,7 +38,7 @@ TARGET_DOCS := \
 	coverage
 
 latest:
-	@make html
+	@make html man
 	@touch html/.nojekyll
 
 clean:
