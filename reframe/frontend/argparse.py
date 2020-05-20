@@ -57,6 +57,12 @@ class _Namespace:
         '''Options filled in by command-line'''
         return self.__namespace
 
+    @property
+    def env_vars(self):
+        '''Environment variables related to ReFrame'''
+        return sorted(
+            [v[0].split()[0] for v in self.__option_map.values() if v[0]])
+
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(

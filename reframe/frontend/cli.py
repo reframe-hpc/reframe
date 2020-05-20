@@ -32,31 +32,6 @@ from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
 
 
-REFRAME_ENV = [
-    'RFM_CHECK_SEARCH_PATH',
-    'RFM_CHECK_SEARCH_RECURSIVE',
-    'RFM_COLORIZE',
-    'RFM_CONFIG_FILE',
-    'RFM_GRAYLOG_SERVER',
-    'RFM_IGNORE_CHECK_CONFLICTS',
-    'RFM_KEEP_STAGE_FILES',
-    'RFM_MODULE_MAP_FILE',
-    'RFM_MODULE_MAPPINGS',
-    'RFM_NON_DEFAULT_CRAYPE',
-    'RFM_OUTPUT_DIR',
-    'RFM_PERFLOG_DIR',
-    'RFM_PREFIX',
-    'RFM_PURGE_ENVIRONMENT',
-    'RFM_SAVE_LOG_FILES',
-    'RFM_STAGE_DIR',
-    'RFM_SYSTEM',
-    'RFM_TIMESTAMP_DIRS',
-    'RFM_UNLOAD_MODULES',
-    'RFM_USER_MODULES',
-    'RFM_VERBOSE'
-]
-
-
 def format_check(check, detailed):
     lines = ['  - %s (found in %s)' % (check.name,
                                        inspect.getfile(type(check)))]
@@ -78,11 +53,10 @@ def format_check(check, detailed):
     return '\n'.join(lines)
 
 
-def format_env():
+def format_env(envvars):
     ret = 'ReFrame environment variables:\n'
-    notset = "''"
-    ret += '\n'.join(
-        [f'    {e}={os.environ.get(e, notset)}' for e in REFRAME_ENV])
+    notset = "<not set>"
+    ret += '\n'.join([f'    {e}={os.environ.get(e, notset)}' for e in envvars])
     return ret
 
 
@@ -449,7 +423,7 @@ def main():
 
         sys.exit(0)
 
-    printer.debug(format_env())
+    printer.debug(format_env(options.env_vars))
 
     # Setup the check loader
     loader = RegressionCheckLoader(
@@ -457,7 +431,6 @@ def main():
         recurse=site_config.get('general/0/check_search_recursive'),
         ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
     )
-    printer.debug(argparse.format_options(options))
 
     def print_infoline(param, value):
         param = param + ':'
