@@ -11,7 +11,8 @@ import time
 
 from datetime import datetime
 
-from reframe.core.exceptions import (TaskDependencyError, TaskExit)
+from reframe.core.exceptions import (TaskDependencyError, TaskExit, 
+                                     BuildError, PipelineError)
 from reframe.core.logging import getlogger
 from reframe.frontend.executors import (ExecutionPolicy, RegressionTask,
                                         TaskEventListener, ABORT_REASONS)
@@ -358,8 +359,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _reschedule(self, task):
         getlogger().debug('scheduling test case for running')
 
-        task.compile()
-        task.compile_wait()
+        try:
+            task.compile()
+            task.compile_wait()
+        except (PipelineError, BuildError, TaskExit) as e:
+            getlogger().debug('build failed for %s' % task)
+            self.on_task_failure(task)
+        except Exception as e:
+            getlogger().debug(f'build for %s threw unhandled exception %s' % (task, e))
+            raise
         task.run()
 
     def _reschedule_all(self):
