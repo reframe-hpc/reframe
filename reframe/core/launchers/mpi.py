@@ -26,7 +26,6 @@ class IbrunLauncher(JobLauncher):
 class UpcrunLauncher(JobLauncher):
     '''Launcher for UPC applications.'''
 
-    # sleak: I suspect this needs something more..
     def command(self, job):
         cmd = ['upcrun']
         if job.num_tasks:
@@ -41,7 +40,6 @@ class UpcrunLauncher(JobLauncher):
 class UpcxxrunLauncher(JobLauncher):
     '''Launcher for UPC++ applications.'''
 
-    # sleak: I suspect this needs something more..
     def command(self, job):
         cmd = ['upcxx-run']
         if job.num_tasks:
