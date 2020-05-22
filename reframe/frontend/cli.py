@@ -54,9 +54,10 @@ def format_check(check, detailed):
 
 
 def format_env(envvars):
-    ret = 'ReFrame environment variables:\n'
-    notset = "<not set>"
-    ret += '\n'.join([f'    {e}={os.environ.get(e, notset)}' for e in envvars])
+    ret = '[ReFrame Environment]\n'
+    notset = '<not set>'
+    envvars = [*envvars, 'RFM_INSTALL_PREFIX']
+    ret += '\n'.join(sorted(f'  {e}={os.getenv(e, notset)}' for e in envvars))
     return ret
 
 

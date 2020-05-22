@@ -60,8 +60,7 @@ class _Namespace:
     @property
     def env_vars(self):
         '''Environment variables related to ReFrame'''
-        return sorted(
-            [v[0].split()[0] for v in self.__option_map.values() if v[0]])
+        return [v[0].split()[0] for v in self.__option_map.values() if v[0]]
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -279,13 +278,3 @@ class ArgumentParser(_ArgumentHolder):
                 )
 
         return _Namespace(options, self._option_map)
-
-
-def format_options(namespace):
-    '''Format parsed arguments in ``namespace``.'''
-    ret = 'Command-line configuration:\n'
-    ret += '\n'.join(
-        ['    %s=%s' % (attr, val)
-         for attr, val in sorted(namespace.cmd_options.__dict__.items())]
-    )
-    return ret
