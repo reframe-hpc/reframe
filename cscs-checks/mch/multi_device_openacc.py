@@ -10,13 +10,15 @@ import reframe.utility.sanity as sn
 @rfm.simple_test
 class MultiDeviceOpenaccTest(rfm.RegressionTest):
     def __init__(self):
-        self.descr = 'Allocate one accelerator per MPI task using OpenAcc on multi-device nodes with additional CUDA, MPI, and C++ calls'
+        self.descr = (
+            'Allocate one accelerator per MPI task using OpenACC on '
+            'multi-device nodes with additional CUDA, MPI, and C++ calls'
+        )
         self.valid_systems = ['arolla:cn', 'tsa:cn', 'kesch:cn']
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.build_system = 'Make'
         self.build_system.makefile = 'Makefile.multi_device_openacc'
         self.build_system.fflags = ['-O2']
-
         if self.current_system.name == 'kesch':
             self.exclusive_access = True
             self.modules = ['cudatoolkit/8.0.61']
@@ -35,7 +37,7 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
         self.executable = 'multi_device_openacc'
         self.sanity_patterns = sn.assert_found(r'Test\sResult\s*:\s+OK',
                                                self.stdout)
-        self.maintainers = ['LM']
+        self.maintainers = ['LM', 'AJ']
         self.tags = {'production', 'mch'}
 
     @rfm.run_before('compile')
@@ -56,8 +58,8 @@ class MultiDeviceOpenaccTest(rfm.RegressionTest):
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
         elif self.current_environ.name.startswith('PrgEnv-cray'):
-           self.build_system.fflags += ['-DCRAY', '-hacc', '-hnoomp']
-           self.variables = {
-               'CRAY_ACCEL_TARGET': 'nvidia35',
-               'MV2_USE_CUDA': '1'
-           }
+            self.build_system.fflags += ['-DCRAY', '-hacc', '-hnoomp']
+            self.variables = {
+                'CRAY_ACCEL_TARGET': 'nvidia35',
+                'MV2_USE_CUDA': '1'
+            }
