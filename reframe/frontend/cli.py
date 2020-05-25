@@ -53,6 +53,14 @@ def format_check(check, detailed):
     return '\n'.join(lines)
 
 
+def format_env(envvars):
+    ret = '[ReFrame Environment]\n'
+    notset = '<not set>'
+    envvars = [*envvars, 'RFM_INSTALL_PREFIX']
+    ret += '\n'.join(sorted(f'  {e}={os.getenv(e, notset)}' for e in envvars))
+    return ret
+
+
 def list_checks(checks, printer, detailed=False):
     printer.info('[List of matched checks]')
     for c in checks:
@@ -416,13 +424,14 @@ def main():
 
         sys.exit(0)
 
+    printer.debug(format_env(options.env_vars))
+
     # Setup the check loader
     loader = RegressionCheckLoader(
         load_path=site_config.get('general/0/check_search_path'),
         recurse=site_config.get('general/0/check_search_recursive'),
         ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
     )
-    printer.debug(argparse.format_options(options))
 
     def print_infoline(param, value):
         param = param + ':'
