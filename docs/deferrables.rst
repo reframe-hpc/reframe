@@ -3,14 +3,14 @@ Understanding the Mechanism of Sanity Functions
 ===============================================
 
 This section describes the mechanism behind the sanity functions that are used for the sanity and performance checking.
-Generally, writing a new sanity function is as straightforward as decorating a simple Python function with either the :func:`sanity_function <reframe.utility.sanity.sanity_function>` or the :func:`@reframe.core.deferrable.deferrable <reframe.core.deferrable.deferrable>` decorator.
+Generally, writing a new sanity function is as straightforward as decorating a simple Python function with the :func:`reframe.utility.sanity.sanity_function` decorator.
 However, it is important to understand how and when a deferrable function is evaluated, especially if your function takes as arguments the results of other deferrable functions.
 
 What Is a Deferrable Function?
 ------------------------------
 
 A deferrable function is a function whose a evaluation is deferred to a later point in time.
-You can define any function as deferrable by adding the :func:`@sanity_funcion <reframe.utility.sanity.sanity_function>` or the :func:`@deferrable <reframe.core.deferrable.deferrable>` decorator before its definition.
+You can define any function as deferrable by wrapping it with the :func:`reframe.utility.sanity.sanity_function` decorator before its definition.
 The example below demonstrates a simple scenario:
 
 .. code-block:: python
@@ -184,7 +184,7 @@ If you want to defer the execution of such operators, you should use the corresp
 
 In summary deferrable functions have the following characteristics:
 
-* You can make any function deferrable by preceding it with the :func:`@sanity_function <reframe.utility.sanity.sanity_function>` or the :func:`@deferrable <reframe.core.deferrable.deferrable>` decorator.
+* You can make any function deferrable by wrapping it with the :func:`reframe.utility.sanity.sanity_function` decorator.
 * When you call a deferrable function, its body is not executed but its arguments are *captured* and an object representing the deferred function is returned.
 * You can execute the body of a deferrable function at any later point by calling :func:`evaluate <reframe.utility.sanity.evaluate>` on the deferred expression object that it has been returned by the call to the deferred function.
 * Deferred functions can accept other deferred expressions as arguments and may also return a deferred expression.
