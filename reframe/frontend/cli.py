@@ -444,7 +444,7 @@ def main():
     print_infoline('launched by',
                    f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
     print_infoline('working directory', repr(os.getcwd()))
-    print_infoline('configuration', f"'{site_config.filename}'")
+    print_infoline('settings file', f'{site_config.filename!r}')
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")
