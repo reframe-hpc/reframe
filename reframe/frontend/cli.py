@@ -53,6 +53,14 @@ def format_check(check, detailed):
     return '\n'.join(lines)
 
 
+def format_env(envvars):
+    ret = '[ReFrame Environment]\n'
+    notset = '<not set>'
+    envvars = [*envvars, 'RFM_INSTALL_PREFIX']
+    ret += '\n'.join(sorted(f'  {e}={os.getenv(e, notset)}' for e in envvars))
+    return ret
+
+
 def list_checks(checks, printer, detailed=False):
     printer.info('[List of matched checks]')
     for c in checks:
@@ -134,7 +142,7 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '-t', '--tag', action='append', dest='tags', default=[],
+        '-t', '--tag', action='append', dest='tags', metavar='TAG', default=[],
         help='Select checks matching TAG'
     )
     select_options.add_argument(
@@ -235,7 +243,7 @@ def main():
         '-m', '--module', action='append', default=[],
         metavar='MOD', dest='user_modules',
         help='Load module MOD before running the regression suite',
-        envvar='RFM_USER_MODULES', configvar='general/user_modules'
+        envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
     )
     env_options.add_argument(
         '--module-mappings', action='store', metavar='FILE',
@@ -247,7 +255,7 @@ def main():
         '-u', '--unload-module', action='append', metavar='MOD',
         dest='unload_modules', default=[],
         help='Unload module MOD before running the regression suite',
-        envvar='RFM_UNLOAD_MODULES', configvar='general/unload_modules'
+        envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
@@ -280,7 +288,7 @@ def main():
         help='Print a report for performance tests run'
     )
     misc_options.add_argument(
-        '--show-config-param', action='store', nargs='?', const='all',
+        '--show-config', action='store', nargs='?', const='all',
         metavar='PARAM',
         help=(
             'Print how parameter PARAM is configured '
@@ -332,8 +340,7 @@ def main():
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
-    if options.verbose:
-        printer.inc_verbosity(options.verbose)
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
 
     # Now configure ReFrame according to the user configuration file
     try:
@@ -360,6 +367,7 @@ def main():
 
     logging.getlogger().colorize = site_config.get('general/0/colorize')
     printer.colorize = site_config.get('general/0/colorize')
+    printer.inc_verbosity(site_config.get('general/0/verbose'))
     try:
         runtime.init_runtime(site_config)
     except ConfigError as e:
@@ -401,8 +409,8 @@ def main():
         sys.exit(1)
 
     # Show configuration after everything is set up
-    if options.show_config_param:
-        config_param = options.show_config_param
+    if options.show_config:
+        config_param = options.show_config
         if config_param == 'all':
             printer.info(str(rt.site_config))
         else:
@@ -416,13 +424,14 @@ def main():
 
         sys.exit(0)
 
+    printer.debug(format_env(options.env_vars))
+
     # Setup the check loader
     loader = RegressionCheckLoader(
         load_path=site_config.get('general/0/check_search_path'),
         recurse=site_config.get('general/0/check_search_recursive'),
         ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
     )
-    printer.debug(argparse.format_options(options))
 
     def print_infoline(param, value):
         param = param + ':'

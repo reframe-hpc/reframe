@@ -38,7 +38,7 @@ import reframe.utility.os_ext as os_ext  # noqa: F401, F403
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '1.6.3'
+needs_sphinx = '3.0.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -72,7 +72,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'ReFrame'
 copyright = '2016-2020, CSCS/ETH Zurich'
-author = 'CSCS'
+author = 'ReFrame Project Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -232,9 +232,15 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'reframe', 'ReFrame Documentation',
-     [author], 1)
+    ('manpage', 'reframe',
+     'The CLI frontend for managing and executing ReFrame tests',
+     [author], 1),
+    ('config_reference', 'reframe.settings', 'ReFrame Configuration Manual',
+     [author], 8)
 ]
+manpages_url = (
+    'http://man7.org/linux/man-pages/man{section}/{page}.{section}.html'
+)
 
 
 # -- Options for Texinfo output -------------------------------------------
