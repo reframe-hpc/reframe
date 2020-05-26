@@ -239,7 +239,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmd = fields.TypedField('prebuild_cmd', typ.List[str])
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:       Attribute name changed from `prebuild_cmd` to `prebuild_cmds`.
+    prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
     #: List of shell commands to be executed after a successful compilation.
     #:
@@ -249,7 +253,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmd = fields.TypedField('postbuild_cmd', typ.List[str])
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:       Attribute name changed from `postbuild_cmd` to `postbuild_cmds`.
+    postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -299,18 +307,27 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: .. note::
     #:    .. versionadded:: 2.10
-    pre_run = fields.TypedField('pre_run', typ.List[str])
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:       Attribute name changed from `pre_run` to `prerun_cmds`.
+    prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
     #: List of shell commands to execute after launching this job.
     #:
-    #: See :attr:`pre_run` for a more detailed description of the semantics.
+    #: See :attr:`prerun_cmds` for a more detailed description of the
+    #: semantics.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
     #:
     #: .. note::
     #:    .. versionadded:: 2.10
-    post_run = fields.TypedField('post_run', typ.List[str])
+    #:
+    #: .. note::
+    #:    .. versionchanged:: 3.0
+    #:       Attribute name changed from `post_run` to `postrun_cmds`.
+    postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
 
     #: List of files to be kept after the test finishes.
     #:
@@ -684,12 +701,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd = []
-        self.postbuild_cmd = []
+        self.prebuild_cmds = []
+        self.postbuild_cmds = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run = []
-        self.post_run = []
+        self.prerun_cmds = []
+        self.postrun_cmds = []
         self.keep_files = []
         self.readonly_files = []
         self.tags = set()
@@ -1118,9 +1135,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Prepare build job
         build_commands = [
-            *self.prebuild_cmd,
+            *self.prebuild_cmds,
             *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmd
+            *self.postbuild_cmds
         ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
@@ -1201,7 +1218,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.executable_opts = []
             prepare_container = self.container_platform.emit_prepare_commands()
             if prepare_container:
-                self.pre_run += prepare_container
+                self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1212,7 +1229,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [

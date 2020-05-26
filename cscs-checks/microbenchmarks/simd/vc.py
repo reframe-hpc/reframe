@@ -38,7 +38,7 @@ class VcSimdTest(rfm.RegressionTest):
         src_url = 'https://raw.githubusercontent.com/VcDevel/Vc/1.4/examples'
         src1 = '%s/tsc.h' % src_url
         src2 = '%s/finitediff/main.cpp' % src_url
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'wget %s %s' % (src1, src2),
             'sed -ie "s-../tsc.h-./tsc.h-" main.cpp',
         ]

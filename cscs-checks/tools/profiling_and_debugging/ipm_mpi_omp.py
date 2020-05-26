@@ -60,10 +60,12 @@ class Ipm(rfm.RegressionTest):
             'IPM_HPM': 'PAPI_L1_TCM,PAPI_L2_TCM,PAPI_L3_TCM',
         }
         self.txtrpt = 'ipm.rpt'
-        self.post_run = ['ipm_parse.pl -h',
-                         'ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt,
-                         'ipm_parse.pl -html *.ipm.xml',
-                         'cp *ipm.xml_ipm*/index.html .']
+        self.postrun_cmds = [
+            'ipm_parse.pl -h',
+            'ipm_parse.pl -full *.ipm.xml &> %s' % self.txtrpt,
+            'ipm_parse.pl -html *.ipm.xml',
+            'cp *ipm.xml_ipm*/index.html .'
+        ]
         self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
 

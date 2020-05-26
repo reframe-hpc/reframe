@@ -49,7 +49,7 @@ class NvidiaResolveTest(LibSciResolveBaseTest):
         # produce any output when xalt/2.7.10 is loaded, thus we use readelf
         # to find the dynamic libraries of the executable
         # self.build_system.fflags = ['-Wl,-ydgemm_']
-        self.postbuild_cmd = ['readelf -d %s' % self.executable]
+        self.postbuild_cmds = ['readelf -d %s' % self.executable]
 
     @rfm.run_before('sanity')
     def set_sanity(self):
@@ -99,7 +99,7 @@ class MKLResolveTest(LibSciResolveBaseTest):
         # to find the dynamic libraries of the executable
         # self.build_system.fflags = ['-Wl,-ydgemm_', '-mkl']
         self.build_system.fflags = ['-mkl']
-        self.postbuild_cmd = ['readelf -d %s' % self.executable]
+        self.postbuild_cmds = ['readelf -d %s' % self.executable]
         regex = (r'.*\(NEEDED\).*libmkl_(?P<prgenv>[A-Za-z]+)_(?P<version>\S+)'
                  r'\.so')
         self.sanity_patterns = sn.all([

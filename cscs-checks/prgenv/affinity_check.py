@@ -17,7 +17,7 @@ class AffinityTestBase(rfm.RegressionTest):
         # The github URL can not be specifid as `self.sourcedir` as that
         # would prevent the src folder from being copied to stage which is
         # necessary since these tests need files from it.
-        self.prebuild_cmd = ['git clone https://github.com/vkarak/affinity']
+        self.prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
         self.executable = './affinity/affinity'
         self.variant = variant
         self.maintainers = ['RS', 'SK']
