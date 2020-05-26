@@ -140,7 +140,7 @@ def main():
     )
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
-        help='Search for checks in the search path  recursively',
+        help='Search for checks in the search path recursively',
         envvar='RFM_CHECK_SEARCH_RECURSIVE',
         configvar='general/check_search_recursive'
     )
