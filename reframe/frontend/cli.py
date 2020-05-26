@@ -192,7 +192,7 @@ def main():
         '--exclude-nodes', action='store', metavar='NODELIST',
         help='Exclude the list of nodes from running checks')
     run_options.add_argument(
-        '--job-option', action='append', metavar='OPT',
+        '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass OPT to job scheduler')
     run_options.add_argument(
@@ -591,7 +591,41 @@ def main():
             exec_policy.sched_reservation = options.reservation
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
-            exec_policy.sched_options = options.job_options
+            if options.account:
+                printer.warning("`--account' is deprecated and "
+                                "will be removed in the future; "
+                                "you should use `--job-option' instead")
+
+            if options.partition:
+                printer.warning("`--partition' is deprecated and "
+                                "will be removed in the future; "
+                                "you should use `--job-option' instead")
+
+            if options.reservation:
+                printer.warning("`--reservation' is deprecated and "
+                                "will be removed in the future; "
+                                "you should use `--job-option' instead")
+
+            if options.nodelist:
+                printer.warning("`--nodelist' is deprecated and "
+                                "will be removed in the future; "
+                                "you should use `--job-option' instead")
+
+            if options.exclude_nodes:
+                printer.warning("`--exclude-nodes' is deprecated and "
+                                "will be removed in the future; "
+                                "you should use `--job-option' instead")
+
+            parsed_job_options = []
+            for opt in options.job_options:
+                if opt.startswith('-') or opt.startswith('#'):
+                    parsed_job_options.append(opt)
+                elif len(opt) == 1:
+                    parsed_job_options.append(f'-{opt}')
+                else:
+                    parsed_job_options.append(f'--{opt}')
+
+            exec_policy.sched_options = parsed_job_options
             try:
                 max_retries = int(options.max_retries)
             except ValueError:
