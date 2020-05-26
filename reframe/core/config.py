@@ -139,7 +139,6 @@ class _SiteConfig:
                     # Element addressable by name
                     x, found = x[1:], False
                     for obj in value:
-                        value, found = obj, True
                         if obj['name'] == x:
                             value, found = obj, True
                             break
