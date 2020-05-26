@@ -289,32 +289,33 @@ Options controlling job submission
 
 .. option:: -A, --account=NAME
 
-   Submit test-related jobs using the account ``NAME``.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--account`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+   .. deprecated:: 2.21
 
+      Please use :attr:`--job-option` instead.
 
 .. option:: -P, --partition=NAME
 
-   Submit test-related jobs using scheduler partition ``NAME``.
-   This option is relevant only for the Slurm, PBS and Torque backends and it translates to the ``--partition`` or ``-q`` scheduler options, respectively and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+   .. deprecated:: 2.21
+
+      Please use :attr:`--job-option` instead.
 
 .. option:: --reservation=NAME
 
-   Submit test-related jobs on reservation ``NAME``.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--reservation`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+   .. deprecated:: 2.21
+
+      Please use :attr:`--job-option` instead.
 
 .. option:: --nodelist=NODES
 
-   Submit test-related jobs on the selected nodes.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--nodelist`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-   The same node range naming conventions as of Slurm apply.
+   .. deprecated:: 2.21
 
+      Please use :attr:`--job-option` instead.
 
 .. option:: --exclude-nodes=NODES
 
-   Do not submit test-related jobs on the selected nodes.
-   This option is relevant only for the Slurm backend and translates to Slurm's ``--exclude`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
-   The same node range naming conventions as of Slurm apply.
+   .. deprecated:: 2.21
+
+      Please use :attr:`--job-option` instead.
 
 .. option:: --job-option=OPTION
 
