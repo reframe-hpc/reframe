@@ -610,6 +610,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_IGNORE_REQNODENOTAVAIL
+
+   Do not treat specially jobs in pending state with the reason ``ReqNodeNotAvail`` (Slurm only).
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`ignore_reqnodenotavail` scheduler configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_KEEP_STAGE_FILES
 
    Keep test stage directories even for tests that finish successfully.

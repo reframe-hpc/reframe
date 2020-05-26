@@ -346,6 +346,12 @@ def main():
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
     )
+    argparser.add_argument(
+        dest='ignore_reqnodenotavail',
+        envvar='RFM_IGNORE_REQNODENOTAVAIL',
+        configvar='schedulers/ignore_reqnodenotavail',
+        help='Graylog server address'
+    )
 
     if len(sys.argv) == 1:
         argparser.print_help()
