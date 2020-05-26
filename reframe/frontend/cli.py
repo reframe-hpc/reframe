@@ -178,19 +178,19 @@ def main():
     # Run options
     run_options.add_argument(
         '-A', '--account', action='store',
-        help='Use ACCOUNT for submitting jobs')
+        help='*deprecated*, please use --job-option instead')
     run_options.add_argument(
         '-P', '--partition', action='store', metavar='PART',
-        help='Use PART for submitting jobs')
+        help='*deprecated*, please use --job-option instead')
     run_options.add_argument(
         '--reservation', action='store', metavar='RES',
-        help='Use RES for submitting jobs')
+        help='*deprecated*, please use --job-option instead')
     run_options.add_argument(
         '--nodelist', action='store',
-        help='Run checks on the selected list of nodes')
+        help='*deprecated*, please use --job-option instead')
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='Exclude the list of nodes from running checks')
+        help='*deprecated*, please use --flex-alloc-nodes instead')
     run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
