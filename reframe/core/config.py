@@ -51,7 +51,7 @@ class _SiteConfig:
 
         # Open and store the JSON schema for later validation
         schema_filename = os.path.join(reframe.INSTALL_PREFIX,
-                                       'schemas', 'config.json')
+                                       'reframe/schemas', 'config.json')
         with open(schema_filename) as fp:
             try:
                 self._schema = json.loads(fp.read())

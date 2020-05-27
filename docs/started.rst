@@ -57,6 +57,9 @@ ReFrame's latest stable version is available through different channels:
 
      eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
 
+.. note::
+
+    The above methods perform a bare installation of ReFrame, therefore, unittests and tutorial examples are not included.
 
 
 -------------------------------

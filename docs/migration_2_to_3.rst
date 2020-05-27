@@ -26,12 +26,12 @@ As soon as it detects an old-style configuration file, it will convert it to the
 
 Alternatively, you can convert any old configuration file using the conversion tool |convert_config|_:
 
-.. |convert_config| replace:: :obj:`convert-config`
-.. _convert_config: https://github.com/eth-cscs/reframe/blob/master/tools/convert-config
+.. |convert_config| replace:: :obj:`rfm_convert-config`
+.. _convert_config: https://github.com/eth-cscs/reframe/blob/master/tools/rfm_convert-config
 
 .. code-block:: none
 
-   $ ./tools/convert-config unittests/resources/settings_old_syntax.py new_config.py
+   $ ./tools/rfm_convert-config unittests/resources/settings_old_syntax.py new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
 
 
