@@ -226,9 +226,8 @@ class RegressionTask:
             with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
                 ret = fn(*args, **kwargs)
-                if fn.__name__ != 'cleanup':
-                    self._timestamp[f'{self._current_stage}_finish'] = time.time()
-                    self._timestamp['pipeline_end'] = time.time()
+                self._timestamp[f'{self._current_stage}_finish'] = time.time()
+                self._timestamp['pipeline_end'] = time.time()
                 return ret
         except ABORT_REASONS:
             self._timestamp[f'{self._current_stage}_finish'] = time.time()

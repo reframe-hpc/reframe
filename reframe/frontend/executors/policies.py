@@ -26,6 +26,7 @@ def _cleanup_all(tasks, *args, **kwargs):
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
 
+
 def format_duration(duration):
     mssg = '[compile: '
     if duration['compile_complete']:
