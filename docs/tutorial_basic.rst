@@ -24,7 +24,7 @@ This tutorial is tailored to the Piz Daint supercomputer, but you can use the tu
 The configuration file for the tutorial can be found in |tutorial_settings|_ and we list it also here for completeness:
 
 .. literalinclude:: ../tutorial/config/settings.py
-  :lines: 10-137
+  :lines: 10-
 
 
 The First Regression Test
