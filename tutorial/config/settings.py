@@ -131,7 +131,6 @@ site_configuration = {
     'general': [
         {
             'check_search_path': ['tutorial/'],
-            'check_search_recursive': True
         }
     ]
 }

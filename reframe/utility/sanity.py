@@ -3,67 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-'''Sanity deferrable functions.
-
-This module provides functions to be used with the :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` and
-:attr`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>`.
-The key characteristic of these functions is that they are not executed the
-time they are called.  Instead they are evaluated at a later point by the
-framework (inside the :func:`check_sanity <reframe.core.pipeline.RegressionTest.check_sanity>` and :func:`check_performance <reframe.core.pipeline.RegressionTest.check_performance>` methods).
-Any sanity function may be evaluated either explicitly or implicitly.
-
-Explicit evaluation of sanity functions
----------------------------------------
-
-Sanity functions may be evaluated at any time by calling the :func:`evaluate <reframe.core.deferrable.evaluate>` on their return value.
-
-
-Implicit evaluation of sanity functions
----------------------------------------
-
-Sanity functions may also be evaluated implicitly in the following situations:
-
-- When you try to get their truthy value by either explicitly or implicitly
-  calling :func:`bool <python:bool>` on their return value.
-  This implies that when you include the result of a sanity function in an
-  :keyword:`if` statement or when you apply the :keyword:`and`, :keyword:`or`
-  or :keyword:`not` operators, this will trigger their immediate evaluation.
-- When you try to iterate over their result.
-  This implies that including the result of a sanity function in a
-  :keyword:`for` statement will trigger its evaluation immediately.
-- When you try to explicitly or implicitly get its string representation by
-  calling :func:`str <python:str>` on its result.
-  This implies that printing the return value of a sanity function will
-  automatically trigger its evaluation.
-
-This module provides three categories of sanity functions:
-
-1. Deferrable replacements of certain Python built-in functions.
-   These functions simply delegate their execution to the actual built-ins.
-2. Assertion functions.
-   These functions are used to assert certain conditions and they either return
-   :class:`True` or raise :class:`reframe.core.exceptions.SanityError` with a
-   message describing the error.
-   Users may provide their own formatted messages through the ``msg``
-   argument.
-   For example, in the following call to :func:`assert_eq` the ``{0}`` and
-   ``{1}`` placeholders will obtain the actual arguments passed to the
-   assertion function.
-   ::
-
-        assert_eq(a, 1, msg="{0} is not equal to {1}")
-
-   If in the user provided message more placeholders are used than the
-   arguments of the assert function (except the ``msg`` argument), no argument
-   substitution will be performed in the user message.
-3. Utility functions.
-   The are functions that you will normally use when defining :attr:`sanity_patterns <reframe.core.pipeline.RegressionTest.sanity_patterns>` and :attr:`perf_patterns <reframe.core.pipeline.RegressionTest.perf_patterns>`.
-   They include, but are not limited to, functions to iterate over regex
-   matches in a file, extracting and converting values from regex matches,
-   computing statistical information on series of data etc.
-
-'''
-
 import builtins
 import glob as pyglob
 import itertools
@@ -89,25 +28,6 @@ def _format(s, *args, **kwargs):
 
 # Create an alias decorator
 sanity_function = deferrable
-''':decorator: Sanity function decorator.
-
-Decorate any function to be used in sanity and/or performance patterns with
-this decorator:
-::
-
-    @sanity_function
-    def myfunc(*args):
-        do_sth()
-
-This decorator is an alias to the :func:`reframe.core.deferrable.deferrable`
-decorator.
-The following function definition is equivalent to the above:
-::
-
-    @deferrable
-    def myfunc(*args):
-        do_sth()
-'''
 
 
 # Deferrable versions of selected builtins
@@ -441,7 +361,7 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
 
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
-        <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`_
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
         is accepted.
     :arg filename: The name of the file to examine.
         Any :class:`OSError` raised while processing the file will be
@@ -581,12 +501,12 @@ def findall(patt, filename, encoding='utf-8'):
 
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
-        <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`_
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
         is accepted.
     :arg filename: The name of the file to examine.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: A list of raw `regex match objects
-        <https://docs.python.org/3.6/library/re.html#match-objects>`_.
+        <https://docs.python.org/3/library/re.html#match-objects>`_.
     :raises reframe.core.exceptions.SanityError: In case an :class:`OSError` is
         raised while processing ``filename``.
     '''
@@ -634,7 +554,7 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
 
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
-        <https://docs.python.org/3.6/library/re.html#regular-expression-syntax>`_
+        <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
         is accepted.
     :arg filename: The name of the file to examine.
     :arg encoding: The name of the encoding used to decode the file.

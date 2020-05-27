@@ -386,7 +386,7 @@
         "environments/ldflags": [],
         "environments/target_systems": ["*"],
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
-        "general/check_search_recursive": true,
+        "general/check_search_recursive": false,
         "general/colorize": true,
         "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
