@@ -131,34 +131,60 @@ class RegressionTask:
         # Test case has finished, but has not been waited for yet
         self.zombie = False
 
-        # Timestamps
-        self._timestamp = {
-            'start_setup': None,
-            'finish_setup': None,
-            'start_compile': None,
-            'finish_compile': None,
-            'start_run': None,
-            'finish_run': None,
-            'start_sanity': None,
-            'finish_sanity': None,
-            'start_performance': None,
-            'finish_performance': None,
-            'start_cleanup': None,
-            'finish_cleanup': None
-        }
+        # Timestamps for the start and finish phases of the pipeline
+        self._timestamp = {}
 
     @property
-    def duration(self):
-        res = {'total': 0.0}
-        for phase in ['setup', 'compile', 'run', 'sanity',
-                      'performance', 'cleanup']:
+    def duration(self, phase=None):
+        if phase:
             try:
-                d = (self._timestamp[f'finish_{phase}'] -
-                     self._timestamp[f'start_{phase}'])
+                res = (self._timestamp[f'{phase}_finish'] -
+                       self._timestamp[f'{phase}_start'])
+            except KeyError:
+                res = None
+
+            return res
+
+        res = {}
+        for phase in ['setup', 'compile', 'compile_wait', 'run',
+                      'wait', 'sanity', 'performance', 'finalize',
+                      'cleanup']:
+            try:
+                d = (self._timestamp[f'{phase}_finish'] -
+                     self._timestamp[f'{phase}_start'])
                 res[phase] = d
-                res['total'] += d
-            except TypeError:
+            except KeyError:
                 res[phase] = None
+
+        if 'compile_start' in self._timestamp:
+            if 'compile_wait_finish' in self._timestamp:
+                f_t = 'compile_wait_finish'
+            else:
+                f_t = 'compile_finish'
+
+            res['compile_complete'] = (self._timestamp[f_t] -
+                                       self._timestamp['compile_start'])
+        else:
+            res['compile_complete'] = None
+
+        if 'run_start' in self._timestamp:
+            if 'wait_finish' in self._timestamp:
+                f_t = 'wait_finish'
+            else:
+                f_t = 'run_finish'
+
+            res['run_complete'] = (self._timestamp[f_t] -
+                                   self._timestamp['run_start'])
+        else:
+            res['run_complete'] = None
+
+        try:
+            res['total'] = (
+                self._timestamp['pipeline_end'] -
+                self._timestamp['setup_start']
+            )
+        except KeyError:
+            res['total'] = None
 
         return res
 
@@ -194,41 +220,44 @@ class RegressionTask:
     def _safe_call(self, fn, *args, **kwargs):
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
+            self._timestamp[f'{self._current_stage}_start'] = time.time()
 
         try:
             with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
-                return fn(*args, **kwargs)
+                ret = fn(*args, **kwargs)
+                if fn.__name__ != 'cleanup':
+                    self._timestamp[f'{self._current_stage}_finish'] = time.time()
+                    self._timestamp['pipeline_end'] = time.time()
+                return ret
         except ABORT_REASONS:
+            self._timestamp[f'{self._current_stage}_finish'] = time.time()
+            self._timestamp['pipeline_end'] = time.time()
             self.fail()
             raise
         except BaseException as e:
+            self._timestamp[f'{self._current_stage}_finish'] = time.time()
+            self._timestamp['pipeline_end'] = time.time()
             self.fail()
             raise TaskExit from e
 
     def setup(self, *args, **kwargs):
-        self._timestamp['start_setup'] = time.time()
         self._safe_call(self.check.setup, *args, **kwargs)
-        self._timestamp['finish_setup'] = time.time()
         self._notify_listeners('on_task_setup')
 
     def compile(self):
-        self._timestamp['start_compile'] = time.time()
         self._safe_call(self.check.compile)
 
     def compile_wait(self):
         self._safe_call(self.check.compile_wait)
-        self._timestamp['finish_compile'] = time.time()
 
     def run(self):
-        self._timestamp['start_run'] = time.time()
         self._safe_call(self.check.run)
         self._notify_listeners('on_task_run')
 
     def wait(self):
         self._safe_call(self.check.wait)
         self.zombie = False
-        self._timestamp['finish_run'] = time.time()
 
     def poll(self):
         finished = self._safe_call(self.check.poll)
@@ -239,36 +268,20 @@ class RegressionTask:
         return finished
 
     def sanity(self):
-        self._timestamp['start_sanity'] = time.time()
         self._safe_call(self.check.sanity)
-        self._timestamp['finish_sanity'] = time.time()
 
     def performance(self):
-        self._timestamp['start_performance'] = time.time()
         self._safe_call(self.check.performance)
-        self._timestamp['finish_performance'] = time.time()
 
     def finalize(self):
         self._current_stage = 'finalize'
         self._notify_listeners('on_task_success')
 
     def cleanup(self, *args, **kwargs):
-        self._timestamp['start_cleanup'] = time.time()
         self._safe_call(self.check.cleanup, *args, **kwargs)
-        self._timestamp['finish_cleanup'] = time.time()
 
     def fail(self, exc_info=None):
         self._failed_stage = self._current_stage
-        if self._current_stage in ['compile', 'compile_wait']:
-            self._timestamp['finish_compile'] = time.time()
-        elif self._current_stage in ['run', 'run_wait']:
-            self._timestamp['finish_run'] = time.time()
-        elif self._current_stage in ['setup',
-                                     'sanity',
-                                     'performance',
-                                     'cleanup']:
-            self._timestamp[f'finish_{self._current_stage}'] = time.time()
-
         self._exc_info = exc_info or sys.exc_info()
         self._notify_listeners('on_task_failure')
 

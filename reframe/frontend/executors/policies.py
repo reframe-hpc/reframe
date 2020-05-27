@@ -26,15 +26,24 @@ def _cleanup_all(tasks, *args, **kwargs):
     # Remove cleaned up tests
     tasks[:] = [t for t in tasks if t.ref_count]
 
-def time_profiling(duration):
-    mssg = ''
-    for phase in [
-        'setup', 'compile', 'run', 'sanity', 'performance', 'total']:
-        mssg += f"{phase}: "
-        if duration[phase]:
-            mssg += f"{duration[phase]:.3f} "
-        else:
-            mssg += '- '
+def format_duration(duration):
+    mssg = '[compile: '
+    if duration['compile_complete']:
+        mssg += f"{duration['compile_complete']:.3f} "
+    else:
+        mssg += 'n/a '
+
+    mssg += 'run: '
+    if duration['run_complete']:
+        mssg += f"{duration['run_complete']:.3f} "
+    else:
+        mssg += 'n/a '
+
+    mssg += 'total: '
+    if duration['total']:
+        mssg += f"{duration['total']:.3f}]"
+    else:
+        mssg += 'n/a]'
 
     return mssg
 
@@ -106,16 +115,15 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        mssg = f'{task.check.info()} {format_duration(task.duration)}'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', task.check.info(), just='right')
+            self.printer.status('ERROR', mssg, just='right')
         else:
-            self.printer.status('FAIL', task.check.info(), just='right')
-
-        self.printer.status('', time_profiling(task.duration), just='right')
+            self.printer.status('FAIL', mssg, just='right')
 
     def on_task_success(self, task):
-        self.printer.status('OK', task.check.info(), just='right')
-        self.printer.status('', time_profiling(task.duration), just='right')
+        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        self.printer.status('OK', mssg, just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -219,17 +227,16 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks.append(task)
 
     def on_task_failure(self, task):
+        mssg = f'{task.check.info()} {format_duration(task.duration)}'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', task.check.info(), just='right')
+            self.printer.status('ERROR', mssg, just='right')
         else:
             self._remove_from_running(task)
-            self.printer.status('FAIL', task.check.info(), just='right')
-
-        self.printer.status('', time_profiling(task.duration), just='right')
+            self.printer.status('FAIL', mssg, just='right')
 
     def on_task_success(self, task):
-        self.printer.status('OK', task.check.info(), just='right')
-        self.printer.status('', time_profiling(task.duration), just='right')
+        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        self.printer.status('OK', mssg, just='right')
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
