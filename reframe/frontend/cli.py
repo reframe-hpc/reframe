@@ -350,6 +350,7 @@ def main():
         dest='ignore_reqnodenotavail',
         envvar='RFM_IGNORE_REQNODENOTAVAIL',
         configvar='schedulers/ignore_reqnodenotavail',
+        action='store_true',
         help='Graylog server address'
     )
 
