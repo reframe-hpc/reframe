@@ -346,6 +346,13 @@ def main():
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
     )
+    argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
+    )
 
     if len(sys.argv) == 1:
         argparser.print_help()

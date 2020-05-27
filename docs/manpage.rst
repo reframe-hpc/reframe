@@ -783,6 +783,19 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
+.. envvar:: RFM_USE_LOGIN_SHELL
+
+   Use a login shell for the generated job scripts.
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     N/A
+      Associated configuration parameter :js:attr:`use_login_shell` general configuration parameter
+      ================================== ==================
+
+
 .. envvar:: RFM_USER_MODULES
 
    A comma-separated list of environment modules to be loaded before acting on any tests.

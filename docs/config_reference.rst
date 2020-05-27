@@ -1113,6 +1113,16 @@ General Configuration
    If specified from the command line, multiple modules can be passed by passing the command line option multiple times.
 
 
+.. js:attribute:: .general[].use_login_shell
+
+   :required: No
+   :default: ``false``
+
+   Use a login shell for the generated job scripts.
+   This option will cause ReFrame to emit ``-l`` in the shebang of shell scripts.
+   This option, if set to ``true``, may cause ReFrame to fail, if the shell changes permanently to a different directory during its start up.
+
+
 .. js:attribute:: .general[].user_modules
 
    :required: No
