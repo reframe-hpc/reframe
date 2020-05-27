@@ -289,31 +289,31 @@ Options controlling job submission
 
 .. option:: -A, --account=NAME
 
-   .. deprecated:: 2.21
+   .. deprecated:: 3.0
 
       Please use :attr:`--job-option` instead.
 
 .. option:: -P, --partition=NAME
 
-   .. deprecated:: 2.21
+   .. deprecated:: 3.0
 
       Please use :attr:`--job-option` instead.
 
 .. option:: --reservation=NAME
 
-   .. deprecated:: 2.21
+   .. deprecated:: 3.0
 
       Please use :attr:`--job-option` instead.
 
 .. option:: --nodelist=NODES
 
-   .. deprecated:: 2.21
+   .. deprecated:: 3.0
 
       Please use :attr:`--job-option` instead.
 
 .. option:: --exclude-nodes=NODES
 
-   .. deprecated:: 2.21
+   .. deprecated:: 3.0
 
       Please use :attr:`--job-option` instead.
 
