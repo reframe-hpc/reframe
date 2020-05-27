@@ -129,3 +129,14 @@ ReFrame tries to keep concurrency high by maintaining as many test cases as poss
 When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
+
+Time Profiling of the Pipeline
+------------------------------
+
+Since version 3.0, ReFrame keeps track of the time a test spends in each phases of the pipeline, but it has some limitations.
+The time that is reported for the run phase is not obtained from reliable sources, like the accounting information of the scheduler, but instead from the framework itself.
+This means that the end of the run phase is considered to be when ReFrame realizes the test has finished running and it can vary significantly because of the polling rate.
+
+The second limitation comes from the dependencies and the fact that a test's resources might not be cleaned up as soon as it finishes.
+ReFrame will wait until all the dependencies of a test finish successfully their execution before cleaning up its resources and if one of them fails it will ignore this phase completely.
+The final status of the test and its time profiling information are reported before the cleanup phase.
