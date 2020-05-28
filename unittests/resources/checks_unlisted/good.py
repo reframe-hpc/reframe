@@ -31,7 +31,8 @@ class MyBaseTest(RegressionTest):
 
 
 @rfm.parameterized_test(
-    *({'a': x, 'b': y} for x in range(3) for y in range(2)))
+    *({'a': x, 'b': y} for x in range(3) for y in range(2))
+)
 class AnotherBaseTest(RegressionTest):
     def __init__(self, a, b):
         self.a = a
