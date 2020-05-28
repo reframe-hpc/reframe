@@ -197,19 +197,25 @@ def main():
     # Run options
     run_options.add_argument(
         '-A', '--account', action='store',
-        help='*deprecated*, please use --job-option instead')
+        help="Use ACCOUNT for submitting jobs (Slurm) "
+             "*deprecated*, please use '-J account=NAME'")
     run_options.add_argument(
         '-P', '--partition', action='store', metavar='PART',
-        help='*deprecated*, please use --job-option instead')
+        help="Use PART for submitting jobs (Slurm/PBS/Torque) "
+             "*deprecated*, please use '-J partition=PART' "
+             "or '-J q=PART'")
     run_options.add_argument(
         '--reservation', action='store', metavar='RES',
-        help='*deprecated*, please use --job-option instead')
+        help="Use RES for submitting jobs (Slurm) "
+             "*deprecated*, please use '-J reservation=RES'")
     run_options.add_argument(
         '--nodelist', action='store',
-        help='*deprecated*, please use --job-option instead')
+        help="Run checks on the selected list of nodes (Slurm) "
+             "*deprecated*, please use '-J nodelist=NODELIST'")
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='*deprecated*, please use --flex-alloc-nodes instead')
+        help="Exclude the list of nodes from running checks (Slurm) "
+             "*deprecated*, please use '-J exclude=NODELIST'")
     run_options.add_argument(
         '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
@@ -564,6 +570,32 @@ def main():
                                         options.flex_alloc_tasks)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+        if options.account:
+            printer.warning(f"`--account' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J account={options.account}'")
+
+        if options.partition:
+            printer.warning(f"`--partition' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J partition={options.partition}'"
+                            f"or `-J q={options.partition}' depending on your "
+                            f"scheduler")
+
+        if options.reservation:
+            printer.warning(f"`--reservation' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J reservation={options.reservation}'")
+
+        if options.nodelist:
+            printer.warning(f"`--nodelist' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J nodelist={options.nodelist}'")
+
+        if options.exclude_nodes:
+            printer.warning(f"`--exclude-nodes' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J exclude={options.exclude_nodes}'")
 
         # Act on checks
         success = True
@@ -613,31 +645,6 @@ def main():
             exec_policy.sched_reservation = options.reservation
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
-            if options.account:
-                printer.warning("`--account' is deprecated and "
-                                "will be removed in the future; "
-                                "you should use `--job-option' instead")
-
-            if options.partition:
-                printer.warning("`--partition' is deprecated and "
-                                "will be removed in the future; "
-                                "you should use `--job-option' instead")
-
-            if options.reservation:
-                printer.warning("`--reservation' is deprecated and "
-                                "will be removed in the future; "
-                                "you should use `--job-option' instead")
-
-            if options.nodelist:
-                printer.warning("`--nodelist' is deprecated and "
-                                "will be removed in the future; "
-                                "you should use `--job-option' instead")
-
-            if options.exclude_nodes:
-                printer.warning("`--exclude-nodes' is deprecated and "
-                                "will be removed in the future; "
-                                "you should use `--job-option' instead")
-
             parsed_job_options = []
             for opt in options.job_options:
                 if opt.startswith('-') or opt.startswith('#'):

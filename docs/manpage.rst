@@ -289,37 +289,57 @@ Options controlling job submission
 
 .. option:: -A, --account=NAME
 
+   Submit test-related jobs using the account ``NAME``.
+   This option is relevant only for the Slurm backend and translates to Slurm's ``--account`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+
    .. deprecated:: 3.0
 
-      Please use :attr:`--job-option` instead.
+      This is equivalent to ``-J account=NAME`` for Slurm.
 
 .. option:: -P, --partition=NAME
 
+   Submit test-related jobs using scheduler partition ``NAME``.
+   This option is relevant only for the Slurm, PBS and Torque backends and it translates to the ``--partition`` or ``-q`` scheduler options, respectively and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+
    .. deprecated:: 3.0
 
-      Please use :attr:`--job-option` instead.
+      This is equivalent to ``-J partition=NAME`` for Slurm or ``-J q=NAME`` for PBS/Torque.
 
 .. option:: --reservation=NAME
 
+   Submit test-related jobs on reservation ``NAME``.
+   This option is relevant only for the Slurm backend and translates to Slurm's ``--reservation`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+
    .. deprecated:: 3.0
 
-      Please use :attr:`--job-option` instead.
+      This is equivalent to ``-J reservation=NAME`` for Slurm.
 
 .. option:: --nodelist=NODES
 
+   Submit test-related jobs on the selected nodes.
+   This option is relevant only for the Slurm backend and translates to Slurm's ``--nodelist`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+   The same node range naming conventions as of Slurm apply.
+
    .. deprecated:: 3.0
 
-      Please use :attr:`--job-option` instead.
+      This is equivalent to ``-J nodelist=NODES`` for Slurm.
 
 .. option:: --exclude-nodes=NODES
 
+   Do not submit test-related jobs on the selected nodes.
+   This option is relevant only for the Slurm backend and translates to Slurm's ``--exclude`` option and it precedes any options specified in the :js:attr:`access` system partition configuration parameter.
+   The same node range naming conventions as of Slurm apply.
+
    .. deprecated:: 3.0
 
-      Please use :attr:`--job-option` instead.
+      This is equivalent to ``-J exclude=NODES`` for Slurm.
 
-.. option:: --job-option=OPTION
+.. option:: -J, --job-option=OPTION
 
    Pass ``OPTION`` directly to the job scheduler backend.
+   The syntax for this option is ``-J key=value``.
+   If ``key`` starts with ``-`` or ``#``, the option will be passed verbatim to the job script.
+   Otherwise, ReFrame will add ``-`` or ``--`` as well as the directive corresponding to the current scheduler.
    This option will be emitted after any options specified in the :js:attr:`access` system partition configuration parameter.
 
 
