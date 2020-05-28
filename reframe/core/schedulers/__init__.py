@@ -144,34 +144,33 @@ class Job:
     launcher = fields.TypedField('launcher', JobLauncher)
     scheduler = fields.TypedField('scheduler', JobScheduler)
 
+    #: .. versionadded:: 2.21
+    #:
     #: The ID of the current job.
     #:
     #: :type: :class:`int` or :class:`None`.
-    #:
-    #: .. versionadded:: 2.21
-    #:
     jobid = fields.TypedField('jobid', int, type(None))
 
+    #: .. versionadded:: 2.21
+    #:
     #: The exit code of the job.
     #:
     #: This may or may not be set depending on the scheduler backend.
     #:
     #: :type: :class:`int` or :class:`None`.
-    #:
-    #: .. versionadded:: 2.21
-    #:
     exitcode = fields.TypedField('exitcode', int, type(None))
 
+    #: .. versionadded:: 2.21
+    #:
     #: The state of the job.
     #:
     #: The value of this field is scheduler-specific.
     #:
     #: :type: :class:`str` or :class:`None`.
-    #:
-    #: .. versionadded:: 2.21
-    #:
     state = fields.TypedField('state', str, type(None))
 
+    #: .. versionadded:: 2.17
+    #:
     #: The list of node names assigned to this job.
     #:
     #: This attribute is :class:`None` if no nodes are assigned to the job
@@ -189,9 +188,6 @@ class Job:
     #: |--flex-alloc-nodes|_ command-line option
     #:
     #: This attribute is *not* supported by the ``pbs`` scheduler backend.
-    #:
-    #: .. versionadded:: 2.17
-    #:
     nodelist = fields.TypedField('nodelist', typ.List[str], type(None))
 
     # The sched_* arguments are exposed also to the frontend
