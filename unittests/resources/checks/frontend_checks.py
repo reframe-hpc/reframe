@@ -220,3 +220,13 @@ class SelfKillCheck(rfm.RunOnlyRegressionTest, special=True):
         super().run()
         time.sleep(0.5)
         os.kill(os.getpid(), signal.SIGTERM)
+
+
+class CompileFailureCheck(rfm.RegressionTest):
+    def __init__(self):
+        self.valid_systems = ['*']
+        self.valid_prog_environs = ['*']
+        self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
+        self.sourcesdir = None
+        self.sourcepath = 'x.c'
+        self.prebuild_cmd = ['echo foo > x.c']
