@@ -332,7 +332,7 @@ def main():
     )
     misc_options.add_argument(
         '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
-         help='Upgrade old configuration file to new syntax'
+        help='Upgrade old configuration file to new syntax'
     )
     misc_options.add_argument(
         '-V', '--version', action='version', version=os_ext.reframe_version()
