@@ -246,6 +246,9 @@ System Partition Configuration
 				    'environs': ['builtin'],
 				}
 
+   - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
+   - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
+
 .. js:attribute:: .systems[].partitions[].access
 
    :required: No
