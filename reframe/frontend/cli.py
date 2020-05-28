@@ -53,6 +53,14 @@ def format_check(check, detailed):
     return '\n'.join(lines)
 
 
+def format_env(envvars):
+    ret = '[ReFrame Environment]\n'
+    notset = '<not set>'
+    envvars = [*envvars, 'RFM_INSTALL_PREFIX']
+    ret += '\n'.join(sorted(f'  {e}={os.getenv(e, notset)}' for e in envvars))
+    return ret
+
+
 def list_checks(checks, printer, detailed=False):
     printer.info('[List of matched checks]')
     for c in checks:
@@ -64,64 +72,75 @@ def list_checks(checks, printer, detailed=False):
 def main():
     # Setup command line options
     argparser = argparse.ArgumentParser()
-    output_options = argparser.add_argument_group('Options controlling output')
+    output_options = argparser.add_argument_group(
+        'Options controlling ReFrame output'
+    )
     locate_options = argparser.add_argument_group(
-        'Options for locating checks')
+        'Options for discovering checks'
+    )
     select_options = argparser.add_argument_group(
-        'Options for selecting checks')
+        'Options for selecting checks'
+    )
     action_options = argparser.add_argument_group(
-        'Options controlling actions')
+        'Options controlling actions'
+    )
     run_options = argparser.add_argument_group(
-        'Options controlling execution of checks')
+        'Options controlling the execution of checks'
+    )
     env_options = argparser.add_argument_group(
-        'Options controlling environment')
+        'Options controlling the ReFrame environment'
+    )
     misc_options = argparser.add_argument_group('Miscellaneous options')
 
     # Output directory options
     output_options.add_argument(
         '--prefix', action='store', metavar='DIR',
-        help='Set output directory prefix to DIR',
+        help='Set general directory prefix to DIR',
         envvar='RFM_PREFIX', configvar='systems/prefix'
     )
     output_options.add_argument(
         '-o', '--output', action='store', metavar='DIR',
-        help='Set output directory to DIR',
+        help='Set output directory prefix to DIR',
         envvar='RFM_OUTPUT_DIR', configvar='systems/outputdir'
     )
     output_options.add_argument(
         '-s', '--stage', action='store', metavar='DIR',
-        help='Set stage directory to DIR',
+        help='Set stage directory prefix to DIR',
         envvar='RFM_STAGE_DIR', configvar='systems/stagedir'
     )
     output_options.add_argument(
+        '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
+        help=('Append a timestamp to the output and stage directory prefixes '
+              '(default: "%%FT%%T")'),
+        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
+    )
+    output_options.add_argument(
         '--perflogdir', action='store', metavar='DIR',
-        help=('Set directory prefix for the performance logs '
-              '(default: ${prefix}/perflogs, '
-              'relevant only if the filelog backend is used)'),
+        help=('Set performance log data directory prefix '
+              '(relevant only to the filelog log handler)'),
         envvar='RFM_PERFLOG_DIR',
         configvar='logging/handlers_perflog/filelog_basedir'
     )
     output_options.add_argument(
         '--keep-stage-files', action='store_true',
-        help='Keep stage directory even if check is successful',
+        help='Keep stage directories even for successful checks',
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
     output_options.add_argument(
         '--save-log-files', action='store_true', default=False,
-        help=('Copy the log file from the current directory to the '
-              'output directory when ReFrame ends'),
+        help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
     )
 
     # Check discovery options
     locate_options.add_argument(
-        '-c', '--checkpath', action='append', metavar='DIR|FILE',
-        help="Add DIR or FILE to the check search path",
+        '-c', '--checkpath', action='append', metavar='PATH',
+        help="Add PATH to the check search path list",
         envvar='RFM_CHECK_SEARCH_PATH :', configvar='general/check_search_path'
     )
     locate_options.add_argument(
         '-R', '--recursive', action='store_true',
-        help='Load checks recursively',
+        help='Search for checks in the search path recursively',
         envvar='RFM_CHECK_SEARCH_RECURSIVE',
         configvar='general/check_search_recursive'
     )
@@ -134,129 +153,152 @@ def main():
 
     # Select options
     select_options.add_argument(
-        '-t', '--tag', action='append', dest='tags', metavar='TAG', default=[],
-        help='Select checks matching TAG'
+        '-t', '--tag', action='append', dest='tags', metavar='PATTERN',
+        default=[],
+        help='Select checks with at least one tag matching PATTERN'
     )
     select_options.add_argument(
         '-n', '--name', action='append', dest='names', default=[],
-        metavar='NAME', help='Select checks with NAME'
+        metavar='PATTERN', help='Select checks whose name matches PATTERN'
     )
     select_options.add_argument(
         '-x', '--exclude', action='append', dest='exclude_names',
-        metavar='NAME', default=[], help='Exclude checks with NAME'
+        metavar='PATTERN', default=[],
+        help='Exclude checks whose name matches PATTERN'
     )
     select_options.add_argument(
-        '-p', '--prgenv', action='append', default=[r'.*'],
-        help='Select tests for PRGENV programming environment only'
+        '-p', '--prgenv', action='append', default=[r'.*'],  metavar='PATTERN',
+        help=('Select checks with at least one '
+              'programming environment matching PATTERN')
     )
     select_options.add_argument(
         '--gpu-only', action='store_true',
-        help='Select only GPU tests')
+        help='Select only GPU checks'
+    )
     select_options.add_argument(
         '--cpu-only', action='store_true',
-        help='Select only CPU tests')
+        help='Select only CPU checks'
+    )
 
     # Action options
     action_options.add_argument(
         '-l', '--list', action='store_true',
-        help='List matched regression checks')
+        help='List the selected checks'
+    )
     action_options.add_argument(
         '-L', '--list-detailed', action='store_true',
-        help='List matched regression checks with a detailed description')
+        help='List the selected checks providing details for each test'
+    )
     action_options.add_argument(
         '-r', '--run', action='store_true',
-        help='Run regression with the selected checks')
+        help='Run the selected checks'
+    )
 
     # Run options
     run_options.add_argument(
         '-A', '--account', action='store',
-        help='Use ACCOUNT for submitting jobs')
+        help='Use ACCOUNT for submitting jobs (Slurm)'
+    )
     run_options.add_argument(
         '-P', '--partition', action='store', metavar='PART',
-        help='Use PART for submitting jobs')
+        help='Use PART for submitting jobs (Slurm/PBS/Torque)'
+    )
     run_options.add_argument(
         '--reservation', action='store', metavar='RES',
-        help='Use RES for submitting jobs')
+        help='Use RES for submitting jobs (Slurm)'
+    )
     run_options.add_argument(
         '--nodelist', action='store',
-        help='Run checks on the selected list of nodes')
+        help='Run checks on the selected list of nodes (Slurm)'
+    )
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='Exclude the list of nodes from running checks')
+        help='Exclude the list of nodes from running checks (Slurm)'
+    )
     run_options.add_argument(
         '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
-        help='Pass OPT to job scheduler')
+        help='Pass option OPT to job scheduler'
+    )
     run_options.add_argument(
         '--force-local', action='store_true',
-        help='Force local execution of checks')
+        help='Force local execution of checks'
+    )
     run_options.add_argument(
         '--skip-sanity-check', action='store_true',
-        help='Skip sanity checking')
+        help='Skip sanity checking'
+    )
     run_options.add_argument(
         '--skip-performance-check', action='store_true',
-        help='Skip performance checking')
+        help='Skip performance checking'
+    )
     run_options.add_argument(
         '--strict', action='store_true',
-        help='Force strict performance checking')
+        help='Enforce strict performance checking'
+    )
     run_options.add_argument(
         '--skip-system-check', action='store_true',
-        help='Skip system check')
+        help='Skip system check'
+    )
     run_options.add_argument(
         '--skip-prgenv-check', action='store_true',
-        help='Skip prog. environment check')
+        help='Skip programming environment check'
+    )
     run_options.add_argument(
         '--exec-policy', metavar='POLICY', action='store',
         choices=['async', 'serial'], default='async',
-        help='Specify the execution policy for running the regression tests. '
-             'Available policies: "async" (default), "serial"')
+        help='Set the execution policy of ReFrame (default: "async")'
+    )
     run_options.add_argument(
-        '--mode', action='store', help='Execution mode to use')
+        '--mode', action='store', help='Execution mode to use'
+    )
     run_options.add_argument(
         '--max-retries', metavar='NUM', action='store', default=0,
-        help='Specify the maximum number of times a failed regression test '
-             'may be retried (default: 0)')
+        help='Set the maximum number of times a failed regression test '
+             'may be retried (default: 0)'
+    )
     run_options.add_argument(
         '--flex-alloc-tasks', action='store',
         dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
-        help='*deprecated*, please use --flex-alloc-nodes instead')
+        help='*deprecated*, please use --flex-alloc-nodes instead'
+    )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
-        help="Strategy for flexible node allocation (default: 'idle').")
-
+        help='Set strategy for the flexible node allocation (default: "idle").'
+    )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
         dest='module_mappings', default=[],
-        help='Apply a single module mapping',
+        help='Add a module mapping',
         envvar='RFM_MODULE_MAPPINGS ,', configvar='general/module_mappings'
     )
     env_options.add_argument(
         '-m', '--module', action='append', default=[],
         metavar='MOD', dest='user_modules',
-        help='Load module MOD before running the regression suite',
+        help='Load module MOD before running any regression check',
         envvar='RFM_USER_MODULES ,', configvar='general/user_modules'
     )
     env_options.add_argument(
         '--module-mappings', action='store', metavar='FILE',
         dest='module_map_file',
-        help='Apply module mappings defined in FILE',
+        help='Load module mappings from FILE',
         envvar='RFM_MODULE_MAP_FILE', configvar='general/module_map_file'
     )
     env_options.add_argument(
         '-u', '--unload-module', action='append', metavar='MOD',
         dest='unload_modules', default=[],
-        help='Unload module MOD before running the regression suite',
+        help='Unload module MOD before running any regression check',
         envvar='RFM_UNLOAD_MODULES ,', configvar='general/unload_modules'
     )
     env_options.add_argument(
         '--purge-env', action='store_true', dest='purge_env', default=False,
-        help='Purge environment before running the regression suite',
+        help='Unload all modules before running any regression check',
         envvar='RFM_PURGE_ENVIRONMENT', configvar='general/purge_environment'
     )
     env_options.add_argument(
         '--non-default-craype', action='store_true',
-        help='Test a non-default Cray PE',
+        help='Test a non-default Cray Programming Environment',
         envvar='RFM_NON_DEFAULT_CRAYPE', configvar='general/non_default_craype'
     )
 
@@ -264,7 +306,7 @@ def main():
     misc_options.add_argument(
         '-C', '--config-file', action='store',
         dest='config_file', metavar='FILE',
-        help='ReFrame configuration file to use',
+        help='Set configuration file',
         envvar='RFM_CONFIG_FILE'
     )
     misc_options.add_argument(
@@ -277,28 +319,20 @@ def main():
     )
     misc_options.add_argument(
         '--performance-report', action='store_true',
-        help='Print a report for performance tests run'
+        help='Print a report for performance tests'
     )
     misc_options.add_argument(
         '--show-config', action='store', nargs='?', const='all',
         metavar='PARAM',
-        help=(
-            'Print how parameter PARAM is configured '
-            'for the current system and exit'
-        )
+        help='Print the value of configuration parameter PARAM and exit'
     )
     misc_options.add_argument(
         '--system', action='store', help='Load configuration for SYSTEM',
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
-        '--timestamp', action='store', nargs='?', const='', metavar='TIMEFMT',
-        help=('Append a timestamp component to the various '
-              'ReFrame directories (default format: "%%FT%%T")'),
-        envvar='RFM_TIMESTAMP_DIRS', configvar='general/timestamp_dirs'
+        '-V', '--version', action='version', version=os_ext.reframe_version()
     )
-    misc_options.add_argument('-V', '--version', action='version',
-                              version=os_ext.reframe_version())
     misc_options.add_argument(
         '-v', '--verbose', action='count',
         help='Increase verbosity level of output',
@@ -416,13 +450,14 @@ def main():
 
         sys.exit(0)
 
+    printer.debug(format_env(options.env_vars))
+
     # Setup the check loader
     loader = RegressionCheckLoader(
         load_path=site_config.get('general/0/check_search_path'),
         recurse=site_config.get('general/0/check_search_recursive'),
         ignore_conflicts=site_config.get('general/0/ignore_check_conflicts')
     )
-    printer.debug(argparse.format_options(options))
 
     def print_infoline(param, value):
         param = param + ':'
@@ -435,6 +470,7 @@ def main():
     print_infoline('launched by',
                    f"{os_ext.osuser() or '<unknown>'}@{socket.gethostname()}")
     print_infoline('working directory', repr(os.getcwd()))
+    print_infoline('settings file', f'{site_config.filename!r}')
     print_infoline('check search path',
                    f"{'(R) ' if loader.recurse else ''}"
                    f"{':'.join(loader.load_path)!r}")

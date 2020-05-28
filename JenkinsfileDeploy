@@ -2,7 +2,7 @@ def tag = env.TAG_NAME
 def version = tag.substring(1)      // Remove the first character of the tag which is 'v'
 def machines = '[dom daint TSAtds]' // To be included in the PR title
 def reviewersPR = 'teojgo,vkarak'   // The Github usernames requested for review
-def ebTemplate = '3.0-dev5'         // The eb recipe of ReFrame to use as template
+def ebTemplate = '3.0-dev6'         // The eb recipe of ReFrame to use as template
 
 stage('Deploy Tests') {
     node('daint') {
