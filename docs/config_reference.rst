@@ -235,8 +235,6 @@ System Partition Configuration
      This launcher uses the partition’s |access|_ property in order to determine the remote host and any additional options to be passed to the SSH client.
      The ssh command will be launched in "batch mode," meaning that password-less access to the remote host must be configured.
      Here is an example configuration for the ssh launcher:
-   - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>` ``upcrun`` command.
-   - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>` ``upcxx-run`` command.
 
      .. code:: python
 
@@ -247,6 +245,9 @@ System Partition Configuration
 				    'access': ['-l admin', 'remote.host'],
 				    'environs': ['builtin'],
 				}
+
+   - ``upcrun``: Parallel programs will be launched using the `UPC <https://upc.lbl.gov/>`__ ``upcrun`` command.
+   - ``upcxx-run``: Parallel programs will be launched using the `UPC++ <https://bitbucket.org/berkeleylab/upcxx/wiki/Home>`__ ``upcxx-run`` command.
 
 .. js:attribute:: .systems[].partitions[].access
 
