@@ -129,12 +129,6 @@ In this case, all you have to do is mark your test class as "special", and ReFra
 If you try to override the ``setup()`` method in any of the subclasses of ``MyExtendedTest``, you will still get a deprecation warning, which a desired behavior since the subclasses should be normal tests.
 
 
-Suppressing deprecation warnings
-================================
-
-Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
-
-
 Getting schedulers and launchers by name
 ========================================
 
@@ -165,6 +159,20 @@ Now you have to simply replace the import statement with the following:
 
 
 Similarly for schedulers, the ``reframe.core.schedulers.registry`` module must be replaced with ``reframe.core.backends``.
+
+
+Other deprecations
+==================
+
+The :attr:`prebuild_cmd` and :attr:`postbuild_cmd` test attributes are replaced by the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` respectively.
+Similarly, the :attr:`pre_run` and :attr:`post_run` test attributes are replaced by the :attr:`prerun_cmds` and :attr:`postrun_cmds` respectively.
+
+
+
+Suppressing deprecation warnings
+================================
+
+Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 
 
 Other Changes
