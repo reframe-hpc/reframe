@@ -231,6 +231,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are emitted in the build script before the actual build
@@ -239,19 +241,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionchanged:: 3.0
-    #:       Attribute name changed from `prebuild_cmd` to `prebuild_cmds`.
     prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
-    #: This field is deprecated, use `prebuild_cmds
-    #: <#reframe.core.pipeline.RegressionTest.prebuild_cmds>`__.
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prebuild_cmds` instead.
     prebuild_cmd = fields.DeprecatedField(
         fields.TypedField('prebuild_cmds', typ.List[str]),
-        '`prebuild_cmd` is deprecated; please use `prebuild_cmds` instead'
+        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
     )
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed after a successful compilation.
     #:
     #: These commands are emitted in the script after the actual build
@@ -260,17 +261,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionchanged:: 3.0
-    #:       Attribute name changed from `postbuild_cmd` to `postbuild_cmds`.
     postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
 
-    #: This field is deprecated, use `postbuild_cmds
-    #: <#reframe.core.pipeline.RegressionTest.postbuild_cmds>`__.
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postbuild_cmds` instead.
     postbuild_cmd = fields.DeprecatedField(
-        fields.TypedField('postbuild_cmd', typ.List[str]),
-        '`postbuild_cmd` is deprecated; please use `postbuild_cmds` instead'
+        fields.TypedField('postbuild_cmds', typ.List[str]),
+        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
     )
 
     #: The name of the executable to be launched during the run phase.
@@ -310,6 +308,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     container_platform = ContainerPlatformField('container_platform',
                                                 type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute before launching this job.
     #:
     #: These commands do not execute in the context of ReFrame.
@@ -318,22 +318,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    #:
-    #: .. note::
-    #:    .. versionchanged:: 3.0
-    #:       Attribute name changed from `pre_run` to `prerun_cmds`.
     prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
-    #: This field is deprecated, use `prerun_cmds
-    #: <#reframe.core.pipeline.RegressionTest.prerun_cmds>`__.
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prerun_cmds` instead.
     pre_run = fields.DeprecatedField(
         fields.TypedField('prerun_cmds', typ.List[str]),
-        '`pre_run` is deprecated; please use `prerun_cmds` instead'
+        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
     )
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute after launching this job.
     #:
     #: See :attr:`prerun_cmds` for a more detailed description of the
@@ -341,20 +337,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    #:
-    #: .. note::
-    #:    .. versionchanged:: 3.0
-    #:       Attribute name changed from `post_run` to `postrun_cmds`.
     postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
 
-    #: This field is deprecated, use `postrun_cmds
-    #: <#reframe.core.pipeline.RegressionTest.postrun_cmds>`__.
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postrun_cmds` instead.
     post_run = fields.DeprecatedField(
         fields.TypedField('postrun_cmds', typ.List[str]),
-        '`post_run` is deprecated; please use `postrun_cmds` instead'
+        "'post_run' is deprecated; please use 'postrun_cmds' instead"
     )
 
     #: List of files to be kept after the test finishes.
