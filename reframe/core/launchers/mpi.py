@@ -32,6 +32,7 @@ class UpcrunLauncher(JobLauncher):
             if job.num_tasks_per_node:
                 num_nodes = job.num_tasks // job.num_tasks_per_node
                 cmd += ['-N', str(num_nodes)]
+
             cmd += ['-n', str(job.num_tasks)]
         return cmd
 
@@ -46,6 +47,7 @@ class UpcxxrunLauncher(JobLauncher):
             if job.num_tasks_per_node:
                 num_nodes = job.num_tasks // job.num_tasks_per_node
                 cmd += ['-N', str(num_nodes)]
+
             cmd += ['-n', str(job.num_tasks)]
         return cmd
 

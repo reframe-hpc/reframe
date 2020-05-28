@@ -351,7 +351,7 @@ class SingleSource(BuildSystem):
     #: automatically based on the extension of the source file.
     #: The automatically detected extensions are the following:
     #:
-    #:   - C: `.c`, `upc`.
+    #:   - C: `.c` and `.upc`.
     #:   - C++: `.cc`, `.cp`, `.cxx`, `.cpp`, `.CPP`, `.c++`, and `.C`.
     #:   - Fortran: `.f`, `.for`, `.ftn`, `.F`, `.FOR`, `.fpp`, `.FPP`, `.FTN`,
     #:     `.f90`, `.f95`, `.f03`, `.f08`, `.F90`, `.F95`, `.F03` and `.F08`.
