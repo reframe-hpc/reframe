@@ -497,6 +497,9 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
 
+.. option:: --upgrade-config-file=OLD[:NEW]
+
+   Upgrades a ReFrame configuration file ``OLD`` written using the old configuration syntax to the new syntax and places it in ``NEW`` if given, otherwise a new file is created.
 
 .. option:: -v, --verbose
 

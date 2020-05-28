@@ -21,12 +21,13 @@ setuptools.setup(
     url='https://github.com/eth-cscs/reframe',
     license='BSD 3-Clause',
     packages=setuptools.find_namespace_packages(
-        include=['reframe', 'reframe.*']),
+        include=['reframe', 'reframe.*']
+    ),
     package_data={'reframe': ['schemas/*']},
     include_package_data=True,
     install_requires=['jsonschema'],
     python_requires='>=3.6',
-    scripts=['bin/reframe', 'tools/rfm_convert-config'],
+    scripts=['bin/reframe'],
     classifiers=(
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 3.6',
