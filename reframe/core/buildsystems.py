@@ -352,7 +352,7 @@ class SingleSource(BuildSystem):
     #: The automatically detected extensions are the following:
     #:
     #:   - C: `.c` and `.upc`.
-    #:   - C++: `.cc`, `.cp`, `.cxx`, `.cpp`, `.CPP`, `.c++`, and `.C`.
+    #:   - C++: `.cc`, `.cp`, `.cxx`, `.cpp`, `.CPP`, `.c++` and `.C`.
     #:   - Fortran: `.f`, `.for`, `.ftn`, `.F`, `.FOR`, `.fpp`, `.FPP`, `.FTN`,
     #:     `.f90`, `.f95`, `.f03`, `.f08`, `.F90`, `.F95`, `.F03` and `.F08`.
     #:   - CUDA: `.cu`.
