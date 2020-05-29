@@ -24,16 +24,12 @@ As soon as it detects an old-style configuration file, it will convert it to the
    ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
    ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
 
-Alternatively, you can convert any old configuration file using the conversion tool |convert_config|_:
-
-.. |convert_config| replace:: :obj:`convert-config`
-.. _convert_config: https://github.com/eth-cscs/reframe/blob/master/tools/convert-config
+Alternatively, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
 
 .. code-block:: none
 
-   $ ./tools/convert-config unittests/resources/settings_old_syntax.py new_config.py
+   $ ./bin/reframe --upgrade-config-file unittests/resources/settings_old_syntax.py:new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
-
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
 That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.

@@ -497,6 +497,10 @@ Miscellaneous options
 
    This option can also be set using the :envvar:`RFM_COLORIZE` environment variable or the :js:attr:`colorize` general configuration parameter.
 
+.. option:: --upgrade-config-file=OLD[:NEW]
+
+   Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
+   If a new file is not given, a file in the system temporary directory will be created.
 
 .. option:: -v, --verbose
 
