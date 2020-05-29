@@ -22,6 +22,34 @@ class IbrunLauncher(JobLauncher):
         return ['ibrun']
 
 
+@register_launcher('upcrun')
+class UpcrunLauncher(JobLauncher):
+    '''Launcher for UPC applications.'''
+
+    def command(self, job):
+        cmd = ['upcrun']
+        if job.num_tasks_per_node:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            cmd += ['-N', str(num_nodes)]
+
+        cmd += ['-n', str(job.num_tasks)]
+        return cmd
+
+
+@register_launcher('upcxx-run')
+class UpcxxrunLauncher(JobLauncher):
+    '''Launcher for UPC++ applications.'''
+
+    def command(self, job):
+        cmd = ['upcxx-run']
+        if job.num_tasks_per_node:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            cmd += ['-N', str(num_nodes)]
+
+        cmd += ['-n', str(job.num_tasks)]
+        return cmd
+
+
 @register_launcher('alps')
 class AlpsLauncher(JobLauncher):
     def command(self, job):
