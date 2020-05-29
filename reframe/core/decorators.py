@@ -81,7 +81,6 @@ def simple_test(cls):
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
-
     '''
 
     _validate_test(cls)
@@ -102,10 +101,8 @@ def parameterized_test(*inst):
    .. versionadded:: 2.13
 
    .. note::
-
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
-
     '''
     def _do_register(cls):
         _validate_test(cls)
@@ -124,6 +121,8 @@ def required_version(*versions):
     If the test is not compatible with the current ReFrame version it will be
     skipped.
 
+    .. versionadded:: 2.13
+
     :arg versions: A list of ReFrame version specifications that this test is
       allowed to run. A version specification string can have one of the
       following formats:
@@ -140,9 +139,6 @@ def required_version(*versions):
       ``@required_version('2.13', '>=2.16')``, in which case the test will be
       selected if *any* of the versions is satisfied, even if the versions
       specifications are conflicting.
-
-    .. versionadded:: 2.13
-
     '''
     if not versions:
         raise ValueError('no versions specified')
@@ -200,7 +196,6 @@ def run_before(stage):
     ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('pre_' + stage)
 
@@ -212,7 +207,6 @@ def run_after(stage):
     :py:attr:`reframe.core.decorators.run_before`.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('post_' + stage)
 
@@ -236,7 +230,6 @@ def require_deps(func):
     This decorator is also directly available under the :mod:`reframe` module.
 
     .. versionadded:: 2.21
-
     '''
     tests = inspect.getfullargspec(func).args[1:]
     func._rfm_resolve_deps = True

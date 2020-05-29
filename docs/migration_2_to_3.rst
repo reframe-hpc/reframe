@@ -61,6 +61,14 @@ Updating Your Tests
 -------------------
 
 
+ReFrame 3.0 deprecates particular test syntax as well as certain test attributes.
+Some more esoteric features have also changed which may cause tests that make use of them to break.
+In this section we summarize all these changes and how to make these tests compatible with ReFrame 3.0
+
+
+Pipeline methods and hooks
+==========================
+
 ReFrame 2.20 introduced a new powerful mechanism for attaching arbitrary functions hooks at the different pipeline stages.
 This mechanism provides an easy way to configure and extend the functionality of a test, eliminating essentially the need to override pipeline stages for this purpose.
 ReFrame 3.0 deprecates the old practice of overriding pipeline stage methods in favor of using pipeline hooks.
@@ -108,8 +116,9 @@ You could equally attach this function to run after the "setup" phase with ``@rf
 However, you can't attach this function *before* the "setup" phase, because the ``current_environ`` will not be available and it will be still ``None``.
 
 
+--------------------------------
 Force override a pipeline method
-================================
+--------------------------------
 
 Although pipeline hooks should be able to cover almost all the cases for writing tests in ReFrame, there might be corner cases that you need to override one of the pipeline methods, e.g., because you want to implement a stage differently.
 In this case, all you have to do is mark your test class as "special", and ReFrame will not issue any deprecation warning if you override pipeline stage methods:
@@ -123,12 +132,6 @@ In this case, all you have to do is mark your test class as "special", and ReFra
 
 
 If you try to override the ``setup()`` method in any of the subclasses of ``MyExtendedTest``, you will still get a deprecation warning, which a desired behavior since the subclasses should be normal tests.
-
-
-Suppressing deprecation warnings
-================================
-
-Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 
 
 Getting schedulers and launchers by name
@@ -161,6 +164,13 @@ Now you have to simply replace the import statement with the following:
 
 
 Similarly for schedulers, the ``reframe.core.schedulers.registry`` module must be replaced with ``reframe.core.backends``.
+
+
+Suppressing deprecation warnings
+================================
+
+Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
+
 
 
 Other Changes
