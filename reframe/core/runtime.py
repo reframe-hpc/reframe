@@ -24,9 +24,7 @@ class RuntimeContext:
 
     There is a single instance of this class globally in the framework.
 
-    .. note::
-       .. versionadded:: 2.13
-
+    .. versionadded:: 2.13
     '''
 
     def __init__(self, site_config):
@@ -175,10 +173,9 @@ def init_runtime(site_config):
 def runtime():
     '''Get the runtime context of the framework.
 
-    :returns: A :class:`reframe.core.runtime.RuntimeContext` object.
+    .. versionadded:: 2.13
 
-    .. note::
-       .. versionadded:: 2.13
+    :returns: A :class:`reframe.core.runtime.RuntimeContext` object.
     '''
     if _runtime_context is None:
         raise ReframeFatalError('no runtime context is configured')
