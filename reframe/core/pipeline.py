@@ -7,9 +7,10 @@
 # Basic functionality for regression tests
 #
 
-__all__ = ['final', 'RegressionTest',
-           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
-           'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
+__all__ = [
+    'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
+]
 
 
 import functools
@@ -214,6 +215,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
+    #: .. versionadded:: 2.14
+    #:
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
     #: based on the value of :attr:`sourcepath`.
@@ -227,8 +230,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', type(None))
 
     #: .. versionadded:: 3.0
@@ -283,6 +284,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
+    #: .. versionadded:: 2.20
+    #:
     #: The container platform to be used for launching this test.
     #:
     #: If this field is set, the test will run inside a container using the
@@ -303,8 +306,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`str` or
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.20
     container_platform = ContainerPlatformField('container_platform',
                                                 type(None))
 
@@ -475,15 +476,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: The maximum time a job can be pending before starting running.
     #:
     #: Time duration is specified as of the :attr:`time_limit` attribute.
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    #:
-    #: .. versionadded:: 3.0
-    #:
     max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
@@ -612,6 +612,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
     time_limit = fields.TimerField('time_limit', type(None))
 
+    #: .. versionadded:: 2.8
+    #:
     #: Extra resources for this test.
     #:
     #: This field is for specifying custom resources needed by this test. These
@@ -673,7 +675,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``{}``
     #:
     #: .. note::
-    #:    .. versionadded:: 2.8
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
@@ -943,11 +944,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         partition and the current programming environment that the test is
         currently executing on.
 
+        .. versionadded:: 2.10
+
         :returns: a string with an informational message about this test
 
         .. note ::
-           .. versionadded:: 2.10
-
            When overriding this method, you should pay extra attention on how
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
@@ -1168,8 +1169,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                      workdir=self._stagedir)
         with os_ext.change_dir(self._stagedir):
             try:
-                self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                self._build_job.prepare(
+                    build_commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=True
+                )
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1282,7 +1286,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._job.options = resources_opts + self._job.options
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs)
+                self._job.prepare(
+                    commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                )
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 

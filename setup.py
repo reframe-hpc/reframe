@@ -19,9 +19,14 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/eth-cscs/reframe',
-    licence='BSD 3-Clause',
-    packages=setuptools.find_packages(exclude=['unittests']),
-    python_requires='>=3.5',
+    license='BSD 3-Clause',
+    packages=setuptools.find_namespace_packages(
+        include=['reframe', 'reframe.*']
+    ),
+    package_data={'reframe': ['schemas/*']},
+    include_package_data=True,
+    install_requires=['jsonschema'],
+    python_requires='>=3.6',
     scripts=['bin/reframe'],
     classifiers=(
         'Development Status :: 5 - Production/Stable',

@@ -24,16 +24,12 @@ As soon as it detects an old-style configuration file, it will convert it to the
    ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
    ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
 
-Alternatively, you can convert any old configuration file using the conversion tool |convert_config|_:
-
-.. |convert_config| replace:: :obj:`convert-config`
-.. _convert_config: https://github.com/eth-cscs/reframe/blob/master/tools/convert-config
+Alternatively, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
 
 .. code-block:: none
 
-   $ ./tools/convert-config unittests/resources/settings_old_syntax.py new_config.py
+   $ ./bin/reframe --upgrade-config-file unittests/resources/settings_old_syntax.py:new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
-
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
 That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.
@@ -64,6 +60,14 @@ ReFrame does a pretty good job in converting correctly your old configuration fi
 Updating Your Tests
 -------------------
 
+
+ReFrame 3.0 deprecates particular test syntax as well as certain test attributes.
+Some more esoteric features have also changed which may cause tests that make use of them to break.
+In this section we summarize all these changes and how to make these tests compatible with ReFrame 3.0
+
+
+Pipeline methods and hooks
+==========================
 
 ReFrame 2.20 introduced a new powerful mechanism for attaching arbitrary functions hooks at the different pipeline stages.
 This mechanism provides an easy way to configure and extend the functionality of a test, eliminating essentially the need to override pipeline stages for this purpose.
@@ -112,8 +116,9 @@ You could equally attach this function to run after the "setup" phase with ``@rf
 However, you can't attach this function *before* the "setup" phase, because the ``current_environ`` will not be available and it will be still ``None``.
 
 
+--------------------------------
 Force override a pipeline method
-================================
+--------------------------------
 
 Although pipeline hooks should be able to cover almost all the cases for writing tests in ReFrame, there might be corner cases that you need to override one of the pipeline methods, e.g., because you want to implement a stage differently.
 In this case, all you have to do is mark your test class as "special", and ReFrame will not issue any deprecation warning if you override pipeline stage methods:
