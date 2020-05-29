@@ -34,7 +34,7 @@ class OpenfoamExtendBaseTest(rfm.RunOnlyRegressionTest):
 
         self.maintainers = ['MKr', 'AJ']
         self.tags = {'scs', 'production', 'external-resources'}
-        self.pre_run = ['source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
+        self.prerun_cmds = ['source $FOAM_INST_DIR/foam-extend-4.0/etc/bashrc']
 
 
 @rfm.simple_test

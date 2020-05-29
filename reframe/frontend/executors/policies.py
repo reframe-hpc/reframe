@@ -290,7 +290,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 self.printer.status('HOLD', task.check.info(), just='right')
         except TaskExit:
             if not task.failed:
-                self._reschedule(task)
+                with contextlib.suppress(TaskExit):
+                    self._reschedule(task)
+
             return
         except ABORT_REASONS as e:
             if not task.failed:
@@ -409,7 +411,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                     time.sleep(t)
 
             except TaskExit:
-                self._reschedule_all()
+                with contextlib.suppress(TaskExit):
+                    self._reschedule_all()
             except ABORT_REASONS as e:
                 self._failall(e)
                 raise

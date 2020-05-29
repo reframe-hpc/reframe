@@ -84,7 +84,7 @@ class NsimdTest(rfm.RegressionTest):
         self.sourcesdir = None
         self.srcdir = 'benches/cxx_adv'
         self.sourcepath = '%s/%s.cpp' % (self.srcdir, self.testname)
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'tar xf $EBROOTNSIMD/benches.tar benches/benches.hpp',
             'tar xf $EBROOTNSIMD/benches.tar %s' % self.sourcepath,
         ]

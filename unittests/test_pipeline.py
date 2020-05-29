@@ -165,8 +165,8 @@ def test_hellocheck_make(remote_exec_ctx):
 
 def test_hellocheck_local(hellotest, local_exec_ctx):
     # Test also the prebuild/postbuild functionality
-    hellotest.prebuild_cmd = ['touch prebuild', 'mkdir prebuild_dir']
-    hellotest.postbuild_cmd = ['touch postbuild', 'mkdir postbuild_dir']
+    hellotest.prebuild_cmds = ['touch prebuild', 'mkdir prebuild_dir']
+    hellotest.postbuild_cmds = ['touch postbuild', 'mkdir postbuild_dir']
     hellotest.keep_files = ['prebuild', 'postbuild',
                             'prebuild_dir', 'postbuild_dir']
 
@@ -191,8 +191,8 @@ def test_hellocheck_local_prepost_run(hellotest, local_exec_ctx):
         return test.stagedir
 
     # Test also the prebuild/postbuild functionality
-    hellotest.pre_run = ['echo prerun: `pwd`']
-    hellotest.post_run = ['echo postrun: `pwd`']
+    hellotest.prerun_cmds = ['echo prerun: `pwd`']
+    hellotest.postrun_cmds = ['echo postrun: `pwd`']
     pre_run_path = sn.extractsingle(r'^prerun: (\S+)', hellotest.stdout, 1)
     post_run_path = sn.extractsingle(r'^postrun: (\S+)', hellotest.stdout, 1)
     hellotest.sanity_patterns = sn.all([
@@ -349,7 +349,7 @@ def test_sourcesdir_none_generated_sources(local_exec_ctx):
     class MyTest(rfm.RegressionTest):
         def __init__(self):
             self.sourcesdir = None
-            self.prebuild_cmd = [
+            self.prebuild_cmds = [
                 "printf '#include <stdio.h>\\n int main(){ "
                 "printf(\"Hello, World!\\\\n\"); return 0; }' > hello.c"
             ]
@@ -506,7 +506,7 @@ def test_run_hooks(local_exec_ctx):
 
         @rfm.run_before('run')
         def setflags(self):
-            self.post_run = ['echo hello > greetings.txt']
+            self.postrun_cmds = ['echo hello > greetings.txt']
 
         @rfm.run_after('run')
         def check_executable(self):
@@ -1026,7 +1026,7 @@ def container_test(tmp_path):
                     'pwd', 'ls', 'cat /etc/os-release'
                 ]
                 self.container_platform.workdir = '/workdir'
-                self.pre_run = ['touch foo']
+                self.prerun_cmds = ['touch foo']
                 self.sanity_patterns = sn.all([
                     sn.assert_found(
                         r'^' + self.container_platform.workdir, self.stdout),

@@ -170,19 +170,18 @@ class Stencil8HPXCheck(rfm.RunOnlyRegressionTest):
                             r'\s*(?P<parts>\d+),'
                             r'\s*(?P<steps>\d+)', self.stdout)
         num_threads = self.num_tasks * self.num_cpus_per_task
-        assert_num_tasks = sn.map(lambda x: sn.assert_eq(int(x.group('lid')),
-                                                         self.num_tasks), result)
-        assert_num_threads = sn.map(lambda x: sn.assert_eq(int(x.group('tid')),
-                                                           num_threads), result)
-        assert_num_points = sn.map(lambda x: sn.assert_eq(x.group('pts'),
-                                                          self.nx_opts), result)
-        assert_num_parts = sn.map(lambda x: sn.assert_eq(x.group('parts'),
-                                                         self.np_opts), result)
-        assert_num_steps = sn.map(lambda x: sn.assert_eq(x.group('steps'),
-                                                         self.nt_opts), result)
+        assert_num_tasks = sn.map(
+            lambda x: sn.assert_eq(int(x.group('lid')), self.num_tasks),
+            result)
+        assert_num_threads = sn.map(
+            lambda x: sn.assert_eq(int(x.group('tid')), num_threads), result)
+        assert_num_points = sn.map(
+            lambda x: sn.assert_eq(x.group('pts'), self.nx_opts), result)
+        assert_num_parts = sn.map(
+            lambda x: sn.assert_eq(x.group('parts'), self.np_opts), result)
+        assert_num_steps = sn.map(
+            lambda x: sn.assert_eq(x.group('steps'), self.nt_opts), result)
 
-        self.sanity_patterns = sn.all(sn.chain(assert_num_tasks,
-                                               assert_num_threads,
-                                               assert_num_points,
-                                               assert_num_parts,
-                                               assert_num_steps))
+        self.sanity_patterns = sn.all(
+            sn.chain(assert_num_tasks, assert_num_threads, assert_num_points,
+                     assert_num_parts, assert_num_steps))

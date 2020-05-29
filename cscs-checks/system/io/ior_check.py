@@ -19,7 +19,7 @@ class IorCheck(rfm.RegressionTest):
         self.test_dir = os.path.join(self.base_dir,
                                      self.username,
                                      '.ior')
-        self.pre_run = ['mkdir -p ' + self.test_dir]
+        self.prerun_cmds = ['mkdir -p ' + self.test_dir]
         self.test_file = os.path.join(self.test_dir, 'ior')
         self.fs = {
             '/scratch/snx1600tds': {

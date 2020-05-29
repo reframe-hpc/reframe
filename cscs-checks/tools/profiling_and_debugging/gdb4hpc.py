@@ -51,8 +51,8 @@ class Gdb4hpcCheck(rfm.RegressionTest):
         # additional jobscript. The reframe jobscript can be copied for that
         # purpose, by adding the cray_debug_ comments around the job launch
         # command to be debugged, gdb4hpc is then activated by removing the
-        # #GDB4HPC comments in the next (post_run) step.
-        self.pre_run = [
+        # #GDB4HPC comments in the next (postrun_cmds) step.
+        self.prerun_cmds = [
             '#GDB4HPC #cray_debug_start',
             '#GDB4HPC srun %s' % self.target_executable,
             '#GDB4HPC #cray_debug_end'
@@ -61,7 +61,7 @@ class Gdb4hpcCheck(rfm.RegressionTest):
     def setup(self, partition, environ, **job_opts):
         super().setup(partition, environ, **job_opts)
         # create extra jobscript for gdb4hpc:
-        self.post_run = [
+        self.postrun_cmds = [
             'sed "s-#GDB4HPC --" %s | '
             'egrep -v "output=|error=|^gdb4hpc" &> %s' %
             (self.job.script_filename, self.gdbslm),
