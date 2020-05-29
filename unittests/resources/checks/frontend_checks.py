@@ -229,4 +229,4 @@ class CompileFailureCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
         self.sourcesdir = None
         self.sourcepath = 'x.c'
-        self.prebuild_cmd = ['echo foo > x.c']
+        self.prebuild_cmds = ['echo foo > x.c']
