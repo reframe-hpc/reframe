@@ -166,11 +166,11 @@ class RegressionTask:
         mssg = ''
         for phase in phases:
             if phase == 'compile_complete':
-                mssg += f"compile: {_tf(self.duration('compile_complete'))} "
+                mssg += f"compile: {_tf(self.duration('compile_complete'))}s "
             elif phase == 'run_complete':
-                mssg += f"run: {_tf(self.duration('run_complete'))} "
+                mssg += f"run: {_tf(self.duration('run_complete'))}s "
             else:
-                mssg += f"{phase}: {_tf(self.duration(phase))} "
+                mssg += f"{phase}: {_tf(self.duration(phase))}s "
 
         if mssg:
             mssg = mssg[:-1]
