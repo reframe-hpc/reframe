@@ -258,6 +258,11 @@ def test_select_subconfig():
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
 
+    # Test default values for non-existent name-addressable objects
+    # See https://github.com/eth-cscs/reframe/issues/1339
+    assert site_config.get('modes/@foo/options') == []
+    assert site_config.get('modes/10/options') == []
+
     # Test inexistent options
     site_config.select_subconfig('testsys')
     assert site_config.get('systems/1/name') is None
