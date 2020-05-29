@@ -44,6 +44,11 @@ ReFrame's latest stable version is available through different channels:
 
      pip install reframe-hpc
 
+  .. note::
+
+     The above method performs a bare installation of ReFrame, therefore, unittests and tutorial examples are not included.
+
+
 - As a `Spack <https://spack.io/>`__ package:
 
   .. code:: bash
@@ -56,10 +61,6 @@ ReFrame's latest stable version is available through different channels:
   .. code:: bash
 
      eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
-
-.. note::
-
-    The above methods perform a bare installation of ReFrame, therefore, unittests and tutorial examples are not included.
 
 
 -------------------------------

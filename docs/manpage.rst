@@ -499,7 +499,8 @@ Miscellaneous options
 
 .. option:: --upgrade-config-file=OLD[:NEW]
 
-   Upgrades a ReFrame configuration file ``OLD`` written using the old configuration syntax to the new syntax and places it in ``NEW`` if given, otherwise a new file is created.
+   Convert the old-style configuration file ``OLD``, place it into the new file ``NEW`` and exit.
+   If a new file is not given, a file in the system temporary directory will be created.
 
 .. option:: -v, --verbose
 

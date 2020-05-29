@@ -373,9 +373,9 @@ def main():
     printer.inc_verbosity(site_config.get('general/0/verbose'))
 
     if options.upgrade_config_file is not None:
-        configs = options.upgrade_config_file.split(':', maxsplit=1)
-        old_config = configs[0]
-        new_config = None if len(configs) == 1 else configs[1]
+        old_config, *new_config = options.upgrade_config_file.split(
+            ':', maxsplit=1)
+        new_config = new_config[0] if new_config else None
 
         try:
             new_config = config.convert_old_config(old_config, new_config)
@@ -384,8 +384,8 @@ def main():
             sys.exit(1)
 
         printer.info(
-            f"Conversion successful! "
-            f"The converted file can be found at '{new_config}'."
+            f'Conversion successful! '
+            f'The converted file can be found at {new_config!r}.'
         )
 
         sys.exit(0)
