@@ -83,7 +83,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
             self.reference_lang = (0.17, -0.6, None, 's')
 
     @rfm.run_before('compile')
-    def set_(self):
+    def set_flags(self):
         envname = self.current_environ.name
         # if generic, falls back to -g:
         prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
