@@ -50,7 +50,7 @@ class _SiteConfig:
         self._sticky_options = {}
 
         # Open and store the JSON schema for later validation
-        schema_filename = os.path.join(reframe.INSTALL_PREFIX,
+        schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
                                        'schemas', 'config.json')
         with open(schema_filename) as fp:
             try:
