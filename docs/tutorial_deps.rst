@@ -16,7 +16,7 @@ We first create a basic compile-only test, that fetches the benchmarks and build
    :lines: 92-106
 
 There is nothing particular to that test, except perhaps that you can set :attr:`sourcesdir <reframe.core.pipeline.RegressionTest.sourcesdir>` to ``None`` even for a test that needs to compile something.
-In such a case, you should at least provide the commands that fetch the code inside the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` attribute.
+In such a case, you should at least provide the commands that fetch the code inside the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>` attribute.
 
 For the next test we need to use the OSU benchmark binaries that we just built, so as to run the MPI ping-pong benchmark.
 Here is the relevant part:

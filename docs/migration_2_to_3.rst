@@ -5,7 +5,7 @@ Migrating to ReFrame 3
 ReFrame 3 brings substantial changes in its configuration.
 The configuration component was completely revised and rewritten from scratch in order to allow much more flexibility in how the framework's configuration options are handled, as well as to ensure the maintainability of the framework in the future.
 
-At the same time, ReFrame 3 deprecates some common pre-2.20 test syntax in favor of the more modern and intuitive pipeline hooks.
+At the same time, ReFrame 3 deprecates some common pre-2.20 test syntax in favor of the more modern and intuitive pipeline hooks, as well as renames some regression test attributes.
 
 This guide details the necessary steps in order to easily migrate to ReFrame 3.
 
@@ -51,8 +51,7 @@ ReFrame does a pretty good job in converting correctly your old configuration fi
   ReFrame will generate the new configuration based on what was the actual old configuration after any dynamic generation.
 
 
-
-.. note::
+.. warning::
 
    The very old logging configuration syntax (prior to ReFrame 2.13) is no more recognized and the configuration conversion tool does not take it into account.
 
@@ -166,11 +165,18 @@ Now you have to simply replace the import statement with the following:
 Similarly for schedulers, the ``reframe.core.schedulers.registry`` module must be replaced with ``reframe.core.backends``.
 
 
+Other deprecations
+==================
+
+The :attr:`prebuild_cmd` and :attr:`postbuild_cmd` test attributes are replaced by the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` respectively.
+Similarly, the :attr:`pre_run` and :attr:`post_run` test attributes are replaced by the :attr:`prerun_cmds` and :attr:`postrun_cmds` respectively.
+
+
+
 Suppressing deprecation warnings
 ================================
 
 Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
-
 
 
 Other Changes

@@ -232,6 +232,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: :class:`None`.
     build_system = BuildSystemField('build_system', type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are emitted in the build script before the actual build
@@ -240,8 +242,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmd = fields.TypedField('prebuild_cmd', typ.List[str])
+    prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prebuild_cmds` instead.
+    prebuild_cmd = fields.DeprecatedField(
+        fields.TypedField('prebuild_cmds', typ.List[str]),
+        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed after a successful compilation.
     #:
     #: These commands are emitted in the script after the actual build
@@ -250,7 +262,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmd = fields.TypedField('postbuild_cmd', typ.List[str])
+    postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postbuild_cmds` instead.
+    postbuild_cmd = fields.DeprecatedField(
+        fields.TypedField('postbuild_cmds', typ.List[str]),
+        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
+    )
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -289,7 +309,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
     container_platform = ContainerPlatformField('container_platform',
                                                 type(None))
 
-    #: .. versionadded:: 2.10
+    #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute before launching this job.
     #:
@@ -299,17 +319,34 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    pre_run = fields.TypedField('pre_run', typ.List[str])
+    prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
-    #: .. versionadded:: 2.10
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prerun_cmds` instead.
+    pre_run = fields.DeprecatedField(
+        fields.TypedField('prerun_cmds', typ.List[str]),
+        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
     #:
     #: List of shell commands to execute after launching this job.
     #:
-    #: See :attr:`pre_run` for a more detailed description of the semantics.
+    #: See :attr:`prerun_cmds` for a more detailed description of the
+    #: semantics.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    post_run = fields.TypedField('post_run', typ.List[str])
+    postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postrun_cmds` instead.
+    post_run = fields.DeprecatedField(
+        fields.TypedField('postrun_cmds', typ.List[str]),
+        "'post_run' is deprecated; please use 'postrun_cmds' instead"
+    )
 
     #: List of files to be kept after the test finishes.
     #:
@@ -683,12 +720,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd = []
-        self.postbuild_cmd = []
+        self.prebuild_cmds = []
+        self.postbuild_cmds = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run = []
-        self.post_run = []
+        self.prerun_cmds = []
+        self.postrun_cmds = []
         self.keep_files = []
         self.readonly_files = []
         self.tags = set()
@@ -1117,9 +1154,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Prepare build job
         build_commands = [
-            *self.prebuild_cmd,
+            *self.prebuild_cmds,
             *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmd
+            *self.postbuild_cmds
         ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
@@ -1203,7 +1240,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.executable_opts = []
             prepare_container = self.container_platform.emit_prepare_commands()
             if prepare_container:
-                self.pre_run += prepare_container
+                self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1214,7 +1251,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
