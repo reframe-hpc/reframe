@@ -66,7 +66,7 @@ Updating Your Tests
 
 
 ReFrame 3.0 deprecates particular test syntax as well as certain test attributes.
-Some more esoteric features have also changed which may cause tests that make use of them break.
+Some more esoteric features have also changed which may cause tests that make use of them to break.
 In this section we summarize all these changes and how to make these tests compatible with ReFrame 3.0
 
 
