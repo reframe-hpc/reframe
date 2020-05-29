@@ -46,7 +46,7 @@ ReFrame's latest stable version is available through different channels:
 
   .. note::
 
-     The above method performs a bare installation of ReFrame, therefore, unittests and tutorial examples are not included.
+     The above method performs a bare installation of ReFrame not including unittests and tutorial examples.
 
 
 - As a `Spack <https://spack.io/>`__ package:
