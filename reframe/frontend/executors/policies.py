@@ -256,8 +256,7 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                                          'run_complete',
                                          'sanity',
                                          'performance',
-                                         'total']
-                                    )
+                                         'total'])
         getlogger().verbose(f"==> {timings}")
         # update reference count of dependencies
         for c in task.testcase.deps:
