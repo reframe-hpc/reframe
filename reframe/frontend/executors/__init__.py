@@ -132,61 +132,50 @@ class RegressionTask:
         self.zombie = False
 
         # Timestamps for the start and finish phases of the pipeline
-        self._timestamp = {}
+        self._timestamps = {}
 
-    @property
-    def duration(self, phase=None):
-        if phase:
-            try:
-                res = (self._timestamp[f'{phase}_finish'] -
-                       self._timestamp[f'{phase}_start'])
-            except KeyError:
-                res = None
-
-            return res
-
-        res = {}
-        for phase in ['setup', 'compile', 'compile_wait', 'run',
-                      'wait', 'sanity', 'performance', 'finalize',
-                      'cleanup']:
-            try:
-                d = (self._timestamp[f'{phase}_finish'] -
-                     self._timestamp[f'{phase}_start'])
-                res[phase] = d
-            except KeyError:
-                res[phase] = None
-
-        if 'compile_start' in self._timestamp:
-            if 'compile_wait_finish' in self._timestamp:
-                f_t = 'compile_wait_finish'
-            else:
-                f_t = 'compile_finish'
-
-            res['compile_complete'] = (self._timestamp[f_t] -
-                                       self._timestamp['compile_start'])
+    def duration(self, phase):
+        # Treat pseudo-phases first
+        if phase == 'compile_complete':
+            t_start = 'compile_start'
+            t_finish = 'compile_wait_finish'
+        elif phase == 'run_complete':
+            t_start = 'run_start'
+            t_finish = 'wait_finish'
+        elif phase == 'total':
+            t_start = 'setup_start'
+            t_finish = 'pipeline_end'
         else:
-            res['compile_complete'] = None
+            t_start  = f'{phase}_start'
+            t_finish = f'{phase}_finish'
 
-        if 'run_start' in self._timestamp:
-            if 'wait_finish' in self._timestamp:
-                f_t = 'wait_finish'
+        start = self._timestamps.get(t_start)
+        if not start:
+            return None
+
+        finish = self._timestamps.get(t_finish)
+        if not finish:
+            finish = self._timestamps.get('pipeline_end')
+
+        return finish - start
+
+    def pipeline_timings(self, phases):
+        def _tf(t):
+            return f'{t:.3f}' if t else 'n/a'
+
+        mssg = ''
+        for phase in phases:
+            if phase == 'compile_complete':
+                mssg += f"compile: {_tf(self.duration('compile_complete'))} "
+            elif phase == 'run_complete':
+                mssg += f"run: {_tf(self.duration('run_complete'))} "
             else:
-                f_t = 'run_finish'
+                mssg += f"{phase}: {_tf(self.duration(phase))} "
 
-            res['run_complete'] = (self._timestamp[f_t] -
-                                   self._timestamp['run_start'])
-        else:
-            res['run_complete'] = None
+        if mssg:
+            mssg = mssg[:-1]
 
-        try:
-            res['total'] = (
-                self._timestamp['pipeline_end'] -
-                self._timestamp['setup_start']
-            )
-        except KeyError:
-            res['total'] = None
-
-        return res
+        return mssg
 
     @property
     def testcase(self):
@@ -220,23 +209,23 @@ class RegressionTask:
     def _safe_call(self, fn, *args, **kwargs):
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
-            self._timestamp[f'{self._current_stage}_start'] = time.time()
+            self._timestamps[f'{self._current_stage}_start'] = time.time()
 
         try:
             with logging.logging_context(self.check) as logger:
                 logger.debug('entering stage: %s' % self._current_stage)
                 ret = fn(*args, **kwargs)
-                self._timestamp[f'{self._current_stage}_finish'] = time.time()
-                self._timestamp['pipeline_end'] = time.time()
+                self._timestamps[f'{self._current_stage}_finish'] = time.time()
+                self._timestamps['pipeline_end'] = time.time()
                 return ret
         except ABORT_REASONS:
-            self._timestamp[f'{self._current_stage}_finish'] = time.time()
-            self._timestamp['pipeline_end'] = time.time()
+            self._timestamps[f'{self._current_stage}_finish'] = time.time()
+            self._timestamps['pipeline_end'] = time.time()
             self.fail()
             raise
         except BaseException as e:
-            self._timestamp[f'{self._current_stage}_finish'] = time.time()
-            self._timestamp['pipeline_end'] = time.time()
+            self._timestamps[f'{self._current_stage}_finish'] = time.time()
+            self._timestamps['pipeline_end'] = time.time()
             self.fail()
             raise TaskExit from e
 

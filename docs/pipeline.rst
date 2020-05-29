@@ -133,7 +133,9 @@ ReFrame uses polling to check the status of the spawned jobs, but it does so in 
 Time Profiling of the Pipeline
 ------------------------------
 
-Since version 3.0, ReFrame keeps track of the time a test spends in each phases of the pipeline, but it has some limitations.
+.. versionadded:: 3.0
+
+ReFrame keeps track of the time a test spends in each phases of the pipeline, but it has some limitations.
 The time that is reported for the run phase is not obtained from reliable sources, like the accounting information of the scheduler, but instead from the framework itself.
 This means that the end of the run phase is considered to be when ReFrame realizes the test has finished running and it can vary significantly because of the polling rate.
 

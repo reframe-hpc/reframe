@@ -27,28 +27,6 @@ def _cleanup_all(tasks, *args, **kwargs):
     tasks[:] = [t for t in tasks if t.ref_count]
 
 
-def format_duration(duration):
-    mssg = '[compile: '
-    if duration['compile_complete']:
-        mssg += f"{duration['compile_complete']:.3f} "
-    else:
-        mssg += 'n/a '
-
-    mssg += 'run: '
-    if duration['run_complete']:
-        mssg += f"{duration['run_complete']:.3f} "
-    else:
-        mssg += 'n/a '
-
-    mssg += 'total: '
-    if duration['total']:
-        mssg += f"{duration['total']:.3f}]"
-    else:
-        mssg += 'n/a]'
-
-    return mssg
-
-
 class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def __init__(self):
         super().__init__()
@@ -116,15 +94,36 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
-        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        mssg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', mssg, just='right')
         else:
             self.printer.status('FAIL', mssg, just='right')
 
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f"==> {timings}")
+
     def on_task_success(self, task):
-        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        mssg = f'{task.check.info()} [{timings}]'
         self.printer.status('OK', mssg, just='right')
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f"==> {timings}")
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -228,16 +227,38 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks.append(task)
 
     def on_task_failure(self, task):
-        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        mssg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
             self.printer.status('ERROR', mssg, just='right')
         else:
             self._remove_from_running(task)
             self.printer.status('FAIL', mssg, just='right')
 
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f"==> {timings}")
+
     def on_task_success(self, task):
-        mssg = f'{task.check.info()} {format_duration(task.duration)}'
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        mssg = f'{task.check.info()} [{timings}]'
         self.printer.status('OK', mssg, just='right')
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total']
+                                    )
+        getlogger().verbose(f"==> {timings}")
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
