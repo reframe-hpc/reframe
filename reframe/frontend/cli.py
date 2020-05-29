@@ -198,7 +198,7 @@ def main():
     run_options.add_argument(
         '-A', '--account', action='store',
         help="Use ACCOUNT for submitting jobs (Slurm) "
-             "*deprecated*, please use '-J account=NAME'")
+             "*deprecated*, please use '-J account=ACCOUNT'")
     run_options.add_argument(
         '-P', '--partition', action='store', metavar='PART',
         help="Use PART for submitting jobs (Slurm/PBS/Torque) "
@@ -578,7 +578,7 @@ def main():
         if options.partition:
             printer.warning(f"`--partition' is deprecated and "
                             f"will be removed in the future; you should "
-                            f"use `-J partition={options.partition}'"
+                            f"use `-J partition={options.partition}' "
                             f"or `-J q={options.partition}' depending on your "
                             f"scheduler")
 
