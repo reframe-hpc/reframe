@@ -91,6 +91,7 @@ The Cleanup Phase
 During this final stage of the pipeline, the test's resources are cleaned up.
 More specifically, if the test has finished successfully, all interesting test files (build/job scripts, build/job script output and any user-specified files) are copied to ReFrame's output directory and the stage directory of the test is deleted.
 
+.. note:: This phase might be deferred in case a test has dependent test (see `Cleaning up stage files <dependencies.html#cleaning-up-stage-files>`__ for more details).
 
 Execution Policies
 ------------------
