@@ -366,12 +366,6 @@ If no node can be selected, the test will be marked as a failure with an appropr
      This is the default policy.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
 
-.. option:: --flex-alloc-tasks[=POLICY]
-
-   .. deprecated:: 2.21
-
-      Please use |--flex-alloc-nodes|_ instead.
-
 .. |--flex-alloc-nodes| replace:: :attr:`--flex-alloc-nodes`
 .. _--flex-alloc-nodes: #cmdoption-flex-alloc-nodes
 
