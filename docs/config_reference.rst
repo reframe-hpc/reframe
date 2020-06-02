@@ -960,6 +960,15 @@ Common scheduler options
    A list of systems or system/partitions combinations that this scheduler configuration is valid for.
    For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
 
+.. js:attribute:: .schedulers[].emit_num_nodes
+
+   :required: No
+   :default: ``false``
+
+   This option is relevant to the Slurm backend only.
+
+   Force emitting the option ``-N`` in the preamble of the submission scripts.
+   
 
 
 Execution Mode Configuration

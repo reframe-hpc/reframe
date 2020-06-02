@@ -358,6 +358,13 @@ def main():
         action='store_true',
         help='Use a login shell for job scripts'
     )
+    argparser.add_argument(
+        dest='emit_num_nodes',
+        envvar='RFM_EMIT_NUM_NODES',
+        configvar='schedulers/emit_num_nodes',
+        action='store_true',
+        help='Emit -N in Slurm job script'
+    )
 
     if len(sys.argv) == 1:
         argparser.print_help()
