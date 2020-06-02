@@ -108,7 +108,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
         emit_num_nodes = rt.runtime().get_option(
-                f'schedulers/@{self.registered_name}/emit_num_nodes')
+            f'schedulers/@{self.registered_name}/emit_num_nodes')
         self._emit_num_nodes = emit_num_nodes
 
     def completion_time(self, job):
