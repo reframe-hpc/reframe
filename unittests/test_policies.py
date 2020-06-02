@@ -21,6 +21,7 @@ from unittests.resources.checks.hellocheck import HelloTest
 from unittests.resources.checks.frontend_checks import (
     BadSetupCheck,
     BadSetupCheckEarly,
+    CompileFailureCheck,
     KeyboardInterruptCheck,
     RetriesCheck,
     SelfKillCheck,
@@ -557,8 +558,8 @@ def test_kbd_interrupt_in_setup_with_limited_concurrency(
     assert_interrupted_run(runner)
 
 
-def test_poll_fails_in_main_loop(async_runner, make_cases,
-                                 make_async_exec_ctx):
+def test_poll_fails_main_loop(async_runner, make_cases,
+                              make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
@@ -573,8 +574,8 @@ def test_poll_fails_in_main_loop(async_runner, make_cases,
     assert num_checks == len(stats.failures())
 
 
-def test_poll_fails_in_busy_loop(async_runner, make_cases,
-                                 make_async_exec_ctx):
+def test_poll_fails_busy_loop(async_runner, make_cases,
+                              make_async_exec_ctx):
     ctx = make_async_exec_ctx(1)
     next(ctx)
 
@@ -583,6 +584,37 @@ def test_poll_fails_in_busy_loop(async_runner, make_cases,
     runner.runall(make_cases([SleepCheckPollFailLate(1/i)
                               for i in range(1, num_checks+1)]))
 
+    stats = runner.stats
+    assert num_checks == stats.num_cases()
+    assert_runall(runner)
+    assert num_checks == len(stats.failures())
+
+
+def test_compile_fail_reschedule_main_loop(async_runner, make_cases,
+                                           make_async_exec_ctx):
+    ctx = make_async_exec_ctx(1)
+    next(ctx)
+
+    runner, _ = async_runner
+    num_checks = 2
+    runner.runall(make_cases([SleepCheckPollFail(.1), CompileFailureCheck()]))
+
+    stats = runner.stats
+    assert num_checks == stats.num_cases()
+    assert_runall(runner)
+    assert num_checks == len(stats.failures())
+
+
+def test_compile_fail_reschedule_busy_loop(async_runner, make_cases,
+                                           make_async_exec_ctx):
+    ctx = make_async_exec_ctx(1)
+    next(ctx)
+
+    runner, _ = async_runner
+    num_checks = 2
+    runner.runall(
+        make_cases([SleepCheckPollFailLate(1.5), CompileFailureCheck()])
+    )
     stats = runner.stats
     assert num_checks == stats.num_cases()
     assert_runall(runner)

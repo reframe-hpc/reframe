@@ -102,16 +102,16 @@ Retrieving the source code from a Git repository
 
 It might be the case that a regression test needs to clone its source code from a remote repository.
 This can be achieved in two ways with ReFrame.
-One way is to set the :attr:`sourcesdir` attribute to :class:`None` and explicitly clone or checkout a repository using the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>`:
+One way is to set the :attr:`sourcesdir` attribute to :class:`None` and explicitly clone or checkout a repository using the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>`:
 
 .. code-block:: python
 
    self.sourcesdir = None
-   self.prebuild_cmd = ['git clone https://github.com/me/myrepo .']
+   self.prebuild_cmds = ['git clone https://github.com/me/myrepo .']
 
 
 By setting :attr:`sourcesdir` to :class:`None`, you are telling ReFrame that you are going to provide the source files in the stage directory.
-The working directory of the :attr:`prebuild_cmd` and :attr:`postbuild_cmd` commands will be the stage directory of the test.
+The working directory of the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` commands will be the stage directory of the test.
 
 
 An alternative way to retrieve specifically a Git repository is to assign its URL directly to the :attr:`sourcesdir` attribute:
@@ -136,12 +136,12 @@ It is often the case that a configuration step is needed before compiling a code
 To address this kind of projects, ReFrame aims to offer specific abstractions for "configure-make" style of build systems.
 It supports `CMake-based <https://cmake.org/>`__ projects through the :class:`CMake <reframe.core.buildsystems.CMake>` build system, as well as `Autotools-based <https://www.gnu.org/software/automake/>`__ projects through the :class:`Autotools <reframe.core.buildsystems.Autotools>` build system.
 
-For other build systems, you can achieve the same effect using the :class:`Make <reframe.core.buildsystems.Make>` build system and the :attr:`prebuild_cmd <reframe.core.pipeline.RegressionTest.prebuild_cmd>` for performing the configuration step.
+For other build systems, you can achieve the same effect using the :class:`Make <reframe.core.buildsystems.Make>` build system and the :attr:`prebuild_cmds <reframe.core.pipeline.RegressionTest.prebuild_cmds>` for performing the configuration step.
 The following code snippet will configure a code with ``./custom_configure`` before invoking ``make``:
 
 .. code-block:: python
 
-  self.prebuild_cmd = ['./custom_configure -with-mylib']
+  self.prebuild_cmds = ['./custom_configure -with-mylib']
   self.build_system = 'Make'
   self.build_system.cppflags = ['-DHAVE_FOO']
   self.build_system.flags_from_environ = False
@@ -302,7 +302,7 @@ Customizing the Generated Job Script
 ------------------------------------
 
 It is often the case that you must run some commands before or after the parallel launch of your executable.
-This can be easily achieved by using the :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` and :attr:`post_run <reframe.core.pipeline.RegressionTest.post_run>` attributes of a ReFrame test.
+This can be easily achieved by using the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` and :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` attributes of a ReFrame test.
 
 The following example is a slightly modified version of the previous one.
 The lower and upper limits for the random numbers are now set inside a helper shell script in |limits.sh|_ and we want also to print the word ``FINISHED`` after our executable has finished.
@@ -311,7 +311,7 @@ Here is the test file:
 
 .. literalinclude:: ../tutorial/advanced/advanced_example7.py
 
-Notice the use of the :attr:`pre_run` and :attr:`post_run` attributes.
+Notice the use of the :attr:`prerun_cmds` and :attr:`postrun_cmds` attributes.
 These are lists of shell commands that are emitted verbatim in the job script.
 The generated job script for this example is the following:
 
@@ -338,14 +338,14 @@ ReFrame generates the job shell script using the following pattern:
    #!/bin/bash -l
    {job_scheduler_preamble}
    {test_environment}
-   {pre_run}
+   {prerun_cmds}
    {parallel_launcher} {executable} {executable_opts}
-   {post_run}
+   {postrun_cmds}
 
 The ``job_scheduler_preamble`` contains the directives that control the job allocation.
 The ``test_environment`` are the necessary commands for setting up the environment of the test.
 This is the place where the modules and environment variables specified in :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` and :attr:`variables <reframe.core.pipeline.RegressionTest.variables>` attributes are emitted.
-Then the commands specified in :attr:`pre_run <reframe.core.pipeline.RegressionTest.pre_run>` follow, while those specified in the :attr:`post_run <reframe.core.pipeline.RegressionTest.post_run>` come after the launch of the parallel job.
+Then the commands specified in :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` follow, while those specified in the :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` come after the launch of the parallel job.
 The parallel launch itself consists of three parts:
 
 #. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,

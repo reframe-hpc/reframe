@@ -5,7 +5,7 @@ Migrating to ReFrame 3
 ReFrame 3 brings substantial changes in its configuration.
 The configuration component was completely revised and rewritten from scratch in order to allow much more flexibility in how the framework's configuration options are handled, as well as to ensure the maintainability of the framework in the future.
 
-At the same time, ReFrame 3 deprecates some common pre-2.20 test syntax in favor of the more modern and intuitive pipeline hooks.
+At the same time, ReFrame 3 deprecates some common pre-2.20 test syntax in favor of the more modern and intuitive pipeline hooks, as well as renames some regression test attributes.
 
 This guide details the necessary steps in order to easily migrate to ReFrame 3.
 
@@ -24,16 +24,12 @@ As soon as it detects an old-style configuration file, it will convert it to the
    ./bin/reframe: the syntax of the configuration file 'unittests/resources/settings_old_syntax.py' is deprecated
    ./bin/reframe: configuration file has been converted to the new syntax here: '/var/folders/h7/k7cgrdl13r996m4dmsvjq7v80000gp/T/tmph5n8u3kf.py'
 
-Alternatively, you can convert any old configuration file using the conversion tool |convert_config|_:
-
-.. |convert_config| replace:: :obj:`convert-config`
-.. _convert_config: https://github.com/eth-cscs/reframe/blob/master/tools/convert-config
+Alternatively, you can convert any old configuration file using the command line option :option:`--upgrade-config-file`:
 
 .. code-block:: none
 
-   $ ./tools/convert-config unittests/resources/settings_old_syntax.py new_config.py
+   $ ./bin/reframe --upgrade-config-file unittests/resources/settings_old_syntax.py:new_config.py
    Conversion successful! The converted file can be found at 'new_config.py'.
-
 
 Another important change is that default locations for looking up a configuration file has changed (see `Configuring ReFrame for Your Site <configure.html>`__ for more details).
 That practically means that if you were relying on ReFrame loading your ``reframe/settings.py`` by default, this is no longer true.
@@ -55,8 +51,7 @@ ReFrame does a pretty good job in converting correctly your old configuration fi
   ReFrame will generate the new configuration based on what was the actual old configuration after any dynamic generation.
 
 
-
-.. note::
+.. warning::
 
    The very old logging configuration syntax (prior to ReFrame 2.13) is no more recognized and the configuration conversion tool does not take it into account.
 
@@ -64,6 +59,14 @@ ReFrame does a pretty good job in converting correctly your old configuration fi
 Updating Your Tests
 -------------------
 
+
+ReFrame 3.0 deprecates particular test syntax as well as certain test attributes.
+Some more esoteric features have also changed which may cause tests that make use of them to break.
+In this section we summarize all these changes and how to make these tests compatible with ReFrame 3.0
+
+
+Pipeline methods and hooks
+==========================
 
 ReFrame 2.20 introduced a new powerful mechanism for attaching arbitrary functions hooks at the different pipeline stages.
 This mechanism provides an easy way to configure and extend the functionality of a test, eliminating essentially the need to override pipeline stages for this purpose.
@@ -112,8 +115,9 @@ You could equally attach this function to run after the "setup" phase with ``@rf
 However, you can't attach this function *before* the "setup" phase, because the ``current_environ`` will not be available and it will be still ``None``.
 
 
+--------------------------------
 Force override a pipeline method
-================================
+--------------------------------
 
 Although pipeline hooks should be able to cover almost all the cases for writing tests in ReFrame, there might be corner cases that you need to override one of the pipeline methods, e.g., because you want to implement a stage differently.
 In this case, all you have to do is mark your test class as "special", and ReFrame will not issue any deprecation warning if you override pipeline stage methods:
@@ -127,12 +131,6 @@ In this case, all you have to do is mark your test class as "special", and ReFra
 
 
 If you try to override the ``setup()`` method in any of the subclasses of ``MyExtendedTest``, you will still get a deprecation warning, which a desired behavior since the subclasses should be normal tests.
-
-
-Suppressing deprecation warnings
-================================
-
-Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 
 
 Getting schedulers and launchers by name
@@ -165,6 +163,20 @@ Now you have to simply replace the import statement with the following:
 
 
 Similarly for schedulers, the ``reframe.core.schedulers.registry`` module must be replaced with ``reframe.core.backends``.
+
+
+Other deprecations
+==================
+
+The :attr:`prebuild_cmd` and :attr:`postbuild_cmd` test attributes are replaced by the :attr:`prebuild_cmds` and :attr:`postbuild_cmds` respectively.
+Similarly, the :attr:`pre_run` and :attr:`post_run` test attributes are replaced by the :attr:`prerun_cmds` and :attr:`postrun_cmds` respectively.
+
+
+
+Suppressing deprecation warnings
+================================
+
+Although not recommended, you can suppress any deprecation warning issued by ReFrame by passing the ``--no-deprecation-warnings`` flag.
 
 
 Other Changes

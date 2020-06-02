@@ -135,10 +135,9 @@ class SystemPartition:
     def launcher(self):
         '''The type of the backend launcher of this partition.
 
-        :returns: a subclass of :class:`reframe.core.launchers.JobLauncher`.
+        .. versionadded:: 2.8
 
-        .. note::
-           .. versionadded:: 2.8
+        :returns: a subclass of :class:`reframe.core.launchers.JobLauncher`.
         '''
         return self._launcher
 
@@ -351,10 +350,9 @@ class System:
     def preload_environ(self):
         '''The environment to load whenever ReFrame runs on this system.
 
-        :type: :class:`reframe.core.environments.Environment`
+        .. versionadded:: 2.19
 
-        .. note::
-           .. versionadded:: 2.19
+        :type: :class:`reframe.core.environments.Environment`
         '''
         return self._preload_env
 

@@ -365,6 +365,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "use_login_shell": {"type": "boolean"},
                     "user_modules": {
                         "type": "array",
                         "items": {"type": "string"}
@@ -402,6 +403,7 @@
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
         "general/unload_modules": [],
+        "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "debug",

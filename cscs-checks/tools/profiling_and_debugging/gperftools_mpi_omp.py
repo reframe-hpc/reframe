@@ -64,13 +64,13 @@ class GperftoolsMpiCheck(rfm.RegressionTest):
             'OMP_PROC_BIND': 'true',
             'CRAYPE_LINK_TYPE': 'dynamic',
         }
-        self.pre_run = [
+        self.prerun_cmds = [
             'echo \'#!/bin/bash\' &> %s' % self.split_file,
             'echo \'CPUPROFILE=`hostname`.$SLURM_PROCID\' %s >> %s' %
             (self.exe, self.split_file),
             'chmod u+x %s' % (self.split_file),
         ]
-        self.post_run = [
+        self.postrun_cmds = [
             '$EBROOTPPROF/bin/pprof --unit=ms --text --lines %s %s &> %s' %
             (self.exe, '*.0', self.rpt_file_txt),
             '$EBROOTPPROF/bin/pprof --pdf %s %s &> %s' %
