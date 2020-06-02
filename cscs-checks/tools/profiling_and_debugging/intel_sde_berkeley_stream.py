@@ -31,14 +31,16 @@ class SdeBaseTest(rfm.RegressionTest):
         self.build_system.ldflags = ['-g', '-O3', '-qopenmp', '-restrict',
                                      '-qopt-streaming-stores', 'always']
         exp = '/apps/dom/UES/jenkins/7.0.UP00/mc/easybuild/experimental'
-        self.pre_run = [
+        self.prerun_cmds = [
             'mv %s %s' % (self.executable, self.target_executable),
             'module use %s/modules/all' % exp,
             'module load sde',
             'sde -help'
         ]
         self.sanity_patterns = sn.assert_found('Total FLOPs =', self.rpt)
-        self.post_run = ['SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)]
+        self.postrun_cmds = [
+            'SDE/parse-sde.sh %s.* &> %s' % (self.sde, self.rpt)
+        ]
         self.maintainers = ['JG']
         self.tags = {'scs', 'external-resources'}
 

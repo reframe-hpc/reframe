@@ -16,12 +16,12 @@ class G2GMeteoswissTest(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.exclusive_access = True
         self.modules = ['cmake']
-        self.pre_run = ["export EXECUTABLE=$(ls src/ | "
-                        "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"]
+        self.prerun_cmds = ["export EXECUTABLE=$(ls src/ | "
+                            "grep 'GNU.*MVAPICH.*CUDA.*kesch.*')"]
         self.executable = 'build/src/comm_overlap_benchmark'
         self.sourcesdir = ('https://github.com/MeteoSwiss-APN/'
                            'comm_overlap_bench.git')
-        self.prebuild_cmd = ['git checkout barebones']
+        self.prebuild_cmds = ['git checkout barebones']
         self.build_system = 'CMake'
         self.build_system.builddir = 'build'
         self.build_system.config_opts = ['-DMPI_VENDOR=mvapich2',

@@ -14,8 +14,8 @@ class PrerunDemoTest(rfm.RunOnlyRegressionTest):
                       'pre- and post-run commands')
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.pre_run  = ['source scripts/limits.sh']
-        self.post_run = ['echo FINISHED']
+        self.prerun_cmds  = ['source scripts/limits.sh']
+        self.postrun_cmds = ['echo FINISHED']
         self.executable = './random_numbers.sh'
         numbers = sn.extractall(
             r'Random: (?P<number>\S+)', self.stdout, 'number', float)

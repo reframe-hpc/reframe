@@ -63,7 +63,7 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.tags = {'production'}
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:
-            self.post_run = ['module list -t']
+            self.postrun_cmds = ['module list -t']
         self.perf_patterns = {
             'elapsed_time': sn.extractsingle(r'Elapsed Time\s*:\s+(\S+)',
                                              self.stdout, 1, float)

@@ -54,7 +54,7 @@ class DdtCheck(rfm.RegressionTest):
         }
         self.maintainers = ['MKr', 'JG']
         self.tags = {'production', 'craype'}
-        self.post_run = ['ddt -V ; which ddt ;']
+        self.postrun_cmds = ['ddt -V ; which ddt ;']
         self.keep_files = ['ddtreport.txt']
 
     def setup(self, partition, environ, **job_opts):
@@ -73,8 +73,8 @@ class DdtCpuCheck(DdtCheck):
         super().__init__(lang, extension)
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'tiger:gpu', 'arolla:cn', 'tsa:cn']
-        if (self.current_system.name in ['arolla', 'kesch', 'tsa']
-                and self.lang == 'C'):
+        if (self.current_system.name in ['arolla', 'kesch', 'tsa'] and
+            self.lang == 'C'):
             self.build_system.ldflags = ['-lm']
 
         residual_pattern = '_jacobi.%s:%d,residual'
