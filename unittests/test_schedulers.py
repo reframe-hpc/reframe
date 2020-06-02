@@ -184,6 +184,7 @@ def _expected_pbs_directives(job):
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
+        '#PBS -A %s' % job.sched_account,
         '#PBS -l select=%s:mpiprocs=%s:ncpus=%s'
         ':mem=100GB:cpu_type=haswell' % (num_nodes,
                                          job.num_tasks_per_node,
@@ -203,6 +204,7 @@ def _expected_torque_directives(job):
         '#PBS -l walltime=0:5:0',
         '#PBS -o %s' % job.stdout,
         '#PBS -e %s' % job.stderr,
+        '#PBS -A %s' % job.sched_account,
         '#PBS -l nodes=%s:ppn=%s:haswell' % (num_nodes, num_cpus_per_node),
         '#PBS -l mem=100GB',
         '#PBS -q %s' % job.sched_partition,
