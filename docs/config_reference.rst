@@ -965,7 +965,7 @@ Common scheduler options
    :required: No
    :default: ``false``
 
-   Always emit the ``-N`` Slurm option in the preamble of the job script.
+   Always emit the ``--nodes`` Slurm option in the preamble of the job script.
    This option is relevant to Slurm backends only.
 
 
