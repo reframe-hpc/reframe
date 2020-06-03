@@ -76,7 +76,7 @@ class HDF5Test(rfm.RegressionTest):
         self.num_tasks_per_node = 1
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-%s' % linkage]
-        self.post_run = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
+        self.postrun_cmds = ['h5dump h5ex_d_chunk.h5 > h5dump_out.txt']
 
         self.maintainers = ['SO', 'RS']
         self.tags = {'production', 'craype'}

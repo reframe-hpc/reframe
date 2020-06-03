@@ -273,7 +273,11 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
+                    "name": {
+                        "type": "string",
+                        "enum": ["local", "pbs", "slurm", "squeue", "torque"]
+                    },
+                    "ignore_reqnodenotavail": {"type": "boolean"},
                     "job_submit_timeout": {"type": "number"},
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
@@ -361,6 +365,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "use_login_shell": {"type": "boolean"},
                     "user_modules": {
                         "type": "array",
                         "items": {"type": "string"}
@@ -398,6 +403,7 @@
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
         "general/unload_modules": [],
+        "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "debug",
@@ -415,6 +421,7 @@
         "logging/handlers*/syslog_facility": "user",
         "modes/options": [],
         "modes/target_systems": ["*"],
+        "schedulers/ignore_reqnodenotavail": false,
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
         "systems/descr": "",

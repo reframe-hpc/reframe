@@ -7,9 +7,10 @@
 # Basic functionality for regression tests
 #
 
-__all__ = ['final', 'RegressionTest',
-           'RunOnlyRegressionTest', 'CompileOnlyRegressionTest',
-           'DEPEND_EXACT', 'DEPEND_BY_ENV', 'DEPEND_FULLY']
+__all__ = [
+    'CompileOnlyRegressionTest', 'RegressionTest', 'RunOnlyRegressionTest',
+    'DEPEND_BY_ENV', 'DEPEND_EXACT', 'DEPEND_FULLY', 'final'
+]
 
 
 import functools
@@ -214,6 +215,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:        :class:`None`.
     sourcesdir = fields.TypedField('sourcesdir', str, type(None))
 
+    #: .. versionadded:: 2.14
+    #:
     #: The build system to be used for this test.
     #: If not specified, the framework will try to figure it out automatically
     #: based on the value of :attr:`sourcepath`.
@@ -227,10 +230,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`str` or :class:`reframe.core.buildsystems.BuildSystem`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.14
     build_system = BuildSystemField('build_system', type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed before compiling.
     #:
     #: These commands are emitted in the build script before the actual build
@@ -239,8 +242,18 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    prebuild_cmd = fields.TypedField('prebuild_cmd', typ.List[str])
+    prebuild_cmds = fields.TypedField('prebuild_cmds', typ.List[str])
 
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prebuild_cmds` instead.
+    prebuild_cmd = fields.DeprecatedField(
+        fields.TypedField('prebuild_cmds', typ.List[str]),
+        "'prebuild_cmd' is deprecated; please use 'prebuild_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to be executed after a successful compilation.
     #:
     #: These commands are emitted in the script after the actual build
@@ -249,7 +262,15 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    postbuild_cmd = fields.TypedField('postbuild_cmd', typ.List[str])
+    postbuild_cmds = fields.TypedField('postbuild_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`postbuild_cmds` instead.
+    postbuild_cmd = fields.DeprecatedField(
+        fields.TypedField('postbuild_cmds', typ.List[str]),
+        "'postbuild_cmd' is deprecated; please use 'postbuild_cmds' instead"
+    )
 
     #: The name of the executable to be launched during the run phase.
     #:
@@ -263,6 +284,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``[]``
     executable_opts = fields.TypedField('executable_opts', typ.List[str])
 
+    #: .. versionadded:: 2.20
+    #:
     #: The container platform to be used for launching this test.
     #:
     #: If this field is set, the test will run inside a container using the
@@ -283,11 +306,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :type: :class:`str` or
     #:     :class:`reframe.core.containers.ContainerPlatform`.
     #: :default: :class:`None`.
-    #:
-    #: .. versionadded:: 2.20
     container_platform = ContainerPlatformField('container_platform',
                                                 type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute before launching this job.
     #:
     #: These commands do not execute in the context of ReFrame.
@@ -296,21 +319,34 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
-    #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    pre_run = fields.TypedField('pre_run', typ.List[str])
+    prerun_cmds = fields.TypedField('prerun_cmds', typ.List[str])
 
+    #: .. deprecated:: 3.0
+    #:
+    #: Use :attr:`prerun_cmds` instead.
+    pre_run = fields.DeprecatedField(
+        fields.TypedField('prerun_cmds', typ.List[str]),
+        "'pre_run' is deprecated; please use 'prerun_cmds' instead"
+    )
+
+    #: .. versionadded:: 3.0
+    #:
     #: List of shell commands to execute after launching this job.
     #:
-    #: See :attr:`pre_run` for a more detailed description of the semantics.
+    #: See :attr:`prerun_cmds` for a more detailed description of the
+    #: semantics.
     #:
     #: :type: :class:`List[str]`
     #: :default: ``[]``
+    postrun_cmds = fields.TypedField('postrun_cmds', typ.List[str])
+
+    #: .. deprecated:: 3.0
     #:
-    #: .. note::
-    #:    .. versionadded:: 2.10
-    post_run = fields.TypedField('post_run', typ.List[str])
+    #: Use :attr:`postrun_cmds` instead.
+    post_run = fields.DeprecatedField(
+        fields.TypedField('postrun_cmds', typ.List[str]),
+        "'post_run' is deprecated; please use 'postrun_cmds' instead"
+    )
 
     #: List of files to be kept after the test finishes.
     #:
@@ -440,15 +476,14 @@ class RegressionTest(metaclass=RegressionTestMeta):
     use_multithreading = fields.TypedField('use_multithreading',
                                            bool, type(None))
 
+    #: .. versionadded:: 3.0
+    #:
     #: The maximum time a job can be pending before starting running.
     #:
     #: Time duration is specified as of the :attr:`time_limit` attribute.
     #:
     #: :type: :class:`str` or :class:`datetime.timedelta`
     #: :default: :class:`None`
-    #:
-    #: .. versionadded:: 3.0
-    #:
     max_pending_time = fields.TimerField('max_pending_time', type(None))
 
     #: Specify whether this test needs exclusive access to nodes.
@@ -577,6 +612,8 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #:       The old syntax using a ``(h, m, s)`` tuple is deprecated.
     time_limit = fields.TimerField('time_limit', type(None))
 
+    #: .. versionadded:: 2.8
+    #:
     #: Extra resources for this test.
     #:
     #: This field is for specifying custom resources needed by this test. These
@@ -638,7 +675,6 @@ class RegressionTest(metaclass=RegressionTestMeta):
     #: :default: ``{}``
     #:
     #: .. note::
-    #:    .. versionadded:: 2.8
     #:    .. versionchanged:: 2.9
     #:       A new more powerful syntax was introduced
     #:       that allows also custom job script directive prefixes.
@@ -684,12 +720,12 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self.valid_prog_environs = []
         self.valid_systems = []
         self.sourcepath = ''
-        self.prebuild_cmd = []
-        self.postbuild_cmd = []
+        self.prebuild_cmds = []
+        self.postbuild_cmds = []
         self.executable = os.path.join('.', self.name)
         self.executable_opts = []
-        self.pre_run = []
-        self.post_run = []
+        self.prerun_cmds = []
+        self.postrun_cmds = []
         self.keep_files = []
         self.readonly_files = []
         self.tags = set()
@@ -908,11 +944,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
         partition and the current programming environment that the test is
         currently executing on.
 
+        .. versionadded:: 2.10
+
         :returns: a string with an informational message about this test
 
         .. note ::
-           .. versionadded:: 2.10
-
            When overriding this method, you should pay extra attention on how
            you use the :class:`RegressionTest`'s attributes, because this
            method may be called at any point of the test's lifetime.
@@ -1118,9 +1154,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         # Prepare build job
         build_commands = [
-            *self.prebuild_cmd,
+            *self.prebuild_cmds,
             *self.build_system.emit_build_commands(self._current_environ),
-            *self.postbuild_cmd
+            *self.postbuild_cmds
         ]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
@@ -1133,8 +1169,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                      workdir=self._stagedir)
         with os_ext.change_dir(self._stagedir):
             try:
-                self._build_job.prepare(build_commands, environs,
-                                        trap_errors=True)
+                self._build_job.prepare(
+                    build_commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                    trap_errors=True
+                )
             except OSError as e:
                 raise PipelineError('failed to prepare build job') from e
 
@@ -1201,7 +1240,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
             self.executable_opts = []
             prepare_container = self.container_platform.emit_prepare_commands()
             if prepare_container:
-                self.pre_run += prepare_container
+                self.prerun_cmds += prepare_container
 
         self.job.num_tasks = self.num_tasks
         self.job.num_tasks_per_node = self.num_tasks_per_node
@@ -1212,7 +1251,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
         exec_cmd = [self.job.launcher.run_command(self.job),
                     self.executable, *self.executable_opts]
-        commands = [*self.pre_run, ' '.join(exec_cmd), *self.post_run]
+        commands = [*self.prerun_cmds, ' '.join(exec_cmd), *self.postrun_cmds]
         user_environ = env.Environment(type(self).__name__,
                                        self.modules, self.variables.items())
         environs = [
@@ -1247,7 +1286,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._job.options = resources_opts + self._job.options
         with os_ext.change_dir(self._stagedir):
             try:
-                self._job.prepare(commands, environs)
+                self._job.prepare(
+                    commands, environs,
+                    login=rt.runtime().get_option('general/0/use_login_shell'),
+                )
             except OSError as e:
                 raise PipelineError('failed to prepare job') from e
 

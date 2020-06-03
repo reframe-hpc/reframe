@@ -20,7 +20,7 @@ class CudaMemtest(rfm.RegressionTest):
         self.modules = ['cudatoolkit']
         src_url = ('https://downloads.sourceforge.net/project/cudagpumemtest/'
                    'cuda_memtest-1.2.3.tar.gz')
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'wget %s' % src_url,
             'tar -xzf cuda_memtest-1.2.3.tar.gz',
             'cd cuda_memtest-1.2.3',
