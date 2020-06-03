@@ -77,7 +77,7 @@ Here is the output when running the OSU tests with the asynchronous execution po
 .. code-block:: none
 
   [==========] Running 7 check(s)
-  [==========] Started on Fri May 29 10:38:39 2020
+  [==========] Started on Wed Jun  3 09:00:40 2020
 
   [----------] started processing OSUBuildTest (OSU benchmarks build test)
   [ RUN      ] OSUBuildTest on daint:gpu using PrgEnv-gnu
@@ -140,31 +140,31 @@ Here is the output when running the OSU tests with the asynchronous execution po
   [----------] finished processing OSUAllreduceTest_16 (OSU Allreduce test)
 
   [----------] waiting for spawned checks to finish
-  [       OK ] ( 1/21) OSUBuildTest on daint:gpu using PrgEnv-pgi [compile: 40.798s run: 0.049s total: 40.871s]
-  [       OK ] ( 2/21) OSUBuildTest on daint:gpu using PrgEnv-gnu [compile: 37.491s run: 94.722s total: 132.269s]
-  [       OK ] ( 3/21) OSUBuildTest on daint:gpu using PrgEnv-intel [compile: 53.682s run: 149.022s total: 204.305s]
-  [       OK ] ( 4/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi [compile: 0.013s run: 285.790s total: 310.205s]
-  [       OK ] ( 5/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi [compile: 0.013s run: 292.393s total: 310.225s]
-  [       OK ] ( 6/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi [compile: 0.013s run: 298.706s total: 310.239s]
-  [       OK ] ( 7/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi [compile: 0.015s run: 307.942s total: 310.241s]
-  [       OK ] ( 8/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu [compile: 0.015s run: 361.561s total: 382.128s]
-  [       OK ] ( 9/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu [compile: 0.018s run: 375.334s total: 382.083s]
-  [       OK ] (10/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu [compile: 0.013s run: 429.159s total: 450.733s]
-  [       OK ] (11/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel [compile: 0.016s run: 396.904s total: 397.451s]
-  [       OK ] (12/21) OSULatencyTest on daint:gpu using PrgEnv-pgi [compile: 0.014s run: 469.009s total: 507.141s]
-  [       OK ] (13/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-gnu [compile: 0.013s run: 480.193s total: 507.121s]
-  [       OK ] (14/21) OSULatencyTest on daint:gpu using PrgEnv-gnu [compile: 0.015s run: 507.327s total: 548.098s]
-  [       OK ] (15/21) OSUBandwidthTest on daint:gpu using PrgEnv-pgi [compile: 0.016s run: 517.850s total: 548.074s]
-  [       OK ] (16/21) OSUBandwidthTest on daint:gpu using PrgEnv-gnu [compile: 0.015s run: 542.910s total: 578.974s]
-  [       OK ] (17/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-intel [compile: 0.022s run: 492.948s total: 494.999s]
-  [       OK ] (18/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-intel [compile: 0.017s run: 556.185s total: 560.729s]
-  [       OK ] (19/21) OSULatencyTest on daint:gpu using PrgEnv-intel [compile: 0.016s run: 569.278s total: 576.155s]
-  [       OK ] (20/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-intel [compile: 0.022s run: 572.871s total: 576.079s]
-  [       OK ] (21/21) OSUBandwidthTest on daint:gpu using PrgEnv-intel [compile: 0.024s run: 621.716s total: 627.347s]
+  [       OK ] ( 1/21) OSUBuildTest on daint:gpu using PrgEnv-pgi [compile: 29.581s run: 0.086s total: 29.708s]
+  [       OK ] ( 2/21) OSUBuildTest on daint:gpu using PrgEnv-gnu [compile: 26.250s run: 69.120s total: 95.437s]
+  [       OK ] ( 3/21) OSUBuildTest on daint:gpu using PrgEnv-intel [compile: 39.385s run: 89.213s total: 129.871s]
+  [       OK ] ( 4/21) OSULatencyTest on daint:gpu using PrgEnv-pgi [compile: 0.012s run: 145.355s total: 154.504s]
+  [       OK ] ( 5/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-pgi [compile: 0.014s run: 148.276s total: 154.433s]
+  [       OK ] ( 6/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-pgi [compile: 0.011s run: 149.763s total: 154.407s]
+  [       OK ] ( 7/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-pgi [compile: 0.013s run: 151.262s total: 154.378s]
+  [       OK ] ( 8/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-pgi [compile: 0.010s run: 152.716s total: 154.360s]
+  [       OK ] ( 9/21) OSULatencyTest on daint:gpu using PrgEnv-gnu [compile: 0.014s run: 210.952s total: 220.847s]
+  [       OK ] (10/21) OSUBandwidthTest on daint:gpu using PrgEnv-pgi [compile: 0.015s run: 213.285s total: 220.758s]
+  [       OK ] (11/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-gnu [compile: 0.011s run: 215.596s total: 220.717s]
+  [       OK ] (12/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-gnu [compile: 0.011s run: 218.742s total: 220.651s]
+  [       OK ] (13/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-intel [compile: 0.013s run: 203.214s total: 206.115s]
+  [       OK ] (14/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-intel [compile: 0.016s run: 204.819s total: 206.078s]
+  [       OK ] (15/21) OSUBandwidthTest on daint:gpu using PrgEnv-gnu [compile: 0.012s run: 258.772s total: 266.873s]
+  [       OK ] (16/21) OSUAllreduceTest_8 on daint:gpu using PrgEnv-gnu [compile: 0.014s run: 263.576s total: 266.752s]
+  [       OK ] (17/21) OSULatencyTest on daint:gpu using PrgEnv-intel [compile: 0.011s run: 227.234s total: 231.789s]
+  [       OK ] (18/21) OSUAllreduceTest_4 on daint:gpu using PrgEnv-intel [compile: 0.013s run: 229.729s total: 231.724s]
+  [       OK ] (19/21) OSUAllreduceTest_2 on daint:gpu using PrgEnv-gnu [compile: 0.013s run: 286.203s total: 292.444s]
+  [       OK ] (20/21) OSUAllreduceTest_16 on daint:gpu using PrgEnv-intel [compile: 0.028s run: 242.030s total: 242.091s]
+  [       OK ] (21/21) OSUBandwidthTest on daint:gpu using PrgEnv-intel [compile: 0.013s run: 243.719s total: 247.384s]
   [----------] all spawned checks have finished
 
   [  PASSED  ] Ran 21 test case(s) from 7 check(s) (0 failure(s))
-  [==========] Finished on Fri May 29 10:53:08 2020
+  [==========] Finished on Wed Jun  3 09:07:24 2020
 
 Before starting running the tests, ReFrame topologically sorts them based on their dependencies and schedules them for running using the selected execution policy.
 With the serial execution policy, ReFrame simply executes the tests to completion as they "arrive", since the tests are already topologically sorted.
