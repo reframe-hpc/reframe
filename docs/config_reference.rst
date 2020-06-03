@@ -969,6 +969,17 @@ Common scheduler options
    This option is relevant to Slurm backends only.
 
 
+.. js:attribute:: .schedulers[].ignore_reqnodenotavail
+
+   :required: No
+   :default: ``false``
+
+   This option is relevant to the Slurm backends only.
+
+   If a job associated to a test is in pending state with the Slurm reason ``ReqNodeNotAvail`` and a list of unavailable nodes is also specified, ReFrame will check the status of the nodes and, if all of them are indeed down, it will cancel the job.
+   Sometimes, however, when Slurm's backfill algorithm takes too long to compute, Slurm will set the pending reason to ``ReqNodeNotAvail`` and mark all system nodes as unavailable, causing ReFrame to kill the job.
+   In such cases, you may set this parameter to ``true`` to avoid this.
+
 
 Execution Mode Configuration
 ----------------------------

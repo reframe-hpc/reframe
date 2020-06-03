@@ -352,6 +352,13 @@ def main():
         help='Graylog server address'
     )
     argparser.add_argument(
+        dest='ignore_reqnodenotavail',
+        envvar='RFM_IGNORE_REQNODENOTAVAIL',
+        configvar='schedulers/ignore_reqnodenotavail',
+        action='store_true',
+        help='Graylog server address'
+    )
+    argparser.add_argument(
         dest='use_login_shell',
         envvar='RFM_USE_LOGIN_SHELL',
         configvar='general/use_login_shell',
