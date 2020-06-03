@@ -259,11 +259,6 @@ def main():
              'may be retried (default: 0)'
     )
     run_options.add_argument(
-        '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
-        help='*deprecated*, please use --flex-alloc-nodes instead'
-    )
-    run_options.add_argument(
         '--flex-alloc-nodes', action='store',
         dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
@@ -597,13 +592,6 @@ def main():
                 printer.warning("could not load module '%s' correctly: "
                                 "Skipping..." % m)
                 printer.debug(str(e))
-
-        if options.flex_alloc_tasks:
-            printer.warning("`--flex-alloc-tasks' is deprecated and "
-                            "will be removed in the future; "
-                            "you should use --flex-alloc-nodes instead")
-            options.flex_alloc_nodes = (options.flex_alloc_nodes or
-                                        options.flex_alloc_tasks)
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
         if options.account:
