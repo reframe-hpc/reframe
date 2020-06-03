@@ -94,13 +94,36 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pass
 
     def on_task_failure(self, task):
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        msg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', task.check.info(), just='right')
+            self.printer.status('ERROR', msg, just='right')
         else:
-            self.printer.status('FAIL', task.check.info(), just='right')
+            self.printer.status('FAIL', msg, just='right')
+
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f"==> {timings}")
 
     def on_task_success(self, task):
-        self.printer.status('OK', task.check.info(), just='right')
+        timings = task.pipeline_timings(['compile_complete',
+                                         'run_complete',
+                                         'total'])
+        msg = f'{task.check.info()} [{timings}]'
+        self.printer.status('OK', msg, just='right')
+        timings = task.pipeline_timings(['setup',
+                                         'compile_complete',
+                                         'run_complete',
+                                         'sanity',
+                                         'performance',
+                                         'total'])
+        getlogger().verbose(f"==> {timings}")
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1
@@ -204,14 +227,19 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._running_tasks.append(task)
 
     def on_task_failure(self, task):
+        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', task.check.info(), just='right')
+            self.printer.status('ERROR', msg, just='right')
         else:
             self._remove_from_running(task)
-            self.printer.status('FAIL', task.check.info(), just='right')
+            self.printer.status('FAIL', msg, just='right')
+
+        getlogger().verbose(f"==> {task.pipeline_timings_all()}")
 
     def on_task_success(self, task):
-        self.printer.status('OK', task.check.info(), just='right')
+        msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
+        self.printer.status('OK', msg, just='right')
+        getlogger().verbose(f"==> {task.pipeline_timings_all()}")
         # update reference count of dependencies
         for c in task.testcase.deps:
             self._task_index[c].ref_count -= 1

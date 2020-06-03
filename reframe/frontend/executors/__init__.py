@@ -7,6 +7,7 @@ import abc
 import copy
 import signal
 import sys
+import time
 import weakref
 
 import reframe.core.debug as debug
@@ -130,6 +131,63 @@ class RegressionTask:
         # Test case has finished, but has not been waited for yet
         self.zombie = False
 
+        # Timestamps for the start and finish phases of the pipeline
+        self._timestamps = {}
+
+    def duration(self, phase):
+        # Treat pseudo-phases first
+        if phase == 'compile_complete':
+            t_start = 'compile_start'
+            t_finish = 'compile_wait_finish'
+        elif phase == 'run_complete':
+            t_start = 'run_start'
+            t_finish = 'wait_finish'
+        elif phase == 'total':
+            t_start = 'setup_start'
+            t_finish = 'pipeline_end'
+        else:
+            t_start  = f'{phase}_start'
+            t_finish = f'{phase}_finish'
+
+        start = self._timestamps.get(t_start)
+        if not start:
+            return None
+
+        finish = self._timestamps.get(t_finish)
+        if not finish:
+            finish = self._timestamps.get('pipeline_end')
+
+        return finish - start
+
+    def pipeline_timings(self, phases):
+        def _tf(t):
+            return f'{t:.3f}s' if t else 'n/a'
+
+        msg = ''
+        for phase in phases:
+            if phase == 'compile_complete':
+                msg += f"compile: {_tf(self.duration('compile_complete'))} "
+            elif phase == 'run_complete':
+                msg += f"run: {_tf(self.duration('run_complete'))} "
+            else:
+                msg += f"{phase}: {_tf(self.duration(phase))} "
+
+        if msg:
+            msg = msg[:-1]
+
+        return msg
+
+    def pipeline_timings_all(self):
+        return self.pipeline_timings([
+            'setup', 'compile_complete', 'run_complete',
+            'sanity', 'performance', 'total'
+        ])
+
+    def pipeline_timings_basic(self):
+        return self.pipeline_timings([
+            'compile_complete', 'run_complete', 'total'
+        ])
+
     @property
     def testcase(self):
         return self._case
@@ -160,13 +218,31 @@ class RegressionTask:
             callback(self)
 
     def _safe_call(self, fn, *args, **kwargs):
+        class update_timestamps:
+            '''Context manager to set the start and finish timestamps.'''
+
+            # We use `this` to refer to the update_timestamps object, because
+            # we don't want to masquerade the self argument of our containing
+            # function
+            def __enter__(this):
+                if fn.__name__ != 'poll':
+                    stage = self._current_stage
+                    self._timestamps[f'{stage}_start'] = time.time()
+
+            def __exit__(this, exc_type, exc_value, traceback):
+                stage = self._current_stage
+                self._timestamps[f'{stage}_finish'] = time.time()
+                self._timestamps['pipeline_end'] = time.time()
+
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
 
         try:
             with logging.logging_context(self.check) as logger:
-                logger.debug('entering stage: %s' % self._current_stage)
-                return fn(*args, **kwargs)
+                logger.debug(f'entering stage: {self._current_stage}')
+                with update_timestamps():
+                    return fn(*args, **kwargs)
+
         except ABORT_REASONS:
             self.fail()
             raise
