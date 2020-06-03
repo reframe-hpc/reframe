@@ -175,6 +175,7 @@ In fact, any ``@require_deps``-decorated function will be invoked before any oth
 Cleaning up stage files
 -----------------------
 
-Since we are assuming the output of a test might be needed by its dependent tests, the test's resources will be cleaned up only after all of its dependents have finished successfully.
-In case one of its descendants has failed, the cleanup phase will not be performed at all and all the test's files will remain in the stage directory of the test.
-This allows the user to reproduce the error of the failed test, since all the relevant files are in the same place.
+In principle, the output of a test might be needed by its dependent tests.
+As a result, the stage directory of the test will only be cleaned up after all of its *immediate* dependent tests have finished successfully.
+If any of its children has failed, the cleanup phase will be skipped, such that all the test's files will remain in the stage directory.
+This allows users to reproduce manually the error of a failed test with dependencies, since all the needed resources of the failing test are left in their original location.
