@@ -39,10 +39,8 @@ class TorqueJobScheduler(PbsJobScheduler):
         if job.nodelist is not None:
             return
 
-        nodelist = [x.split('/')[0]
-                    for x in nodespec.split('+')]
-        nodelist.sort()
-        job.nodelist = nodelist
+        job.nodelist = [x.split('/')[0] for x in nodespec.split('+')]
+        job.nodelist.sort()
 
     def _update_state(self, job):
         '''Check the status of the job.'''
