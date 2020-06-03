@@ -107,9 +107,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
-        emit_num_nodes = rt.runtime().get_option(
-            f'schedulers/@{self.registered_name}/emit_num_nodes')
-        self._emit_num_nodes = emit_num_nodes
+        self._use_nodes_opt = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/use_nodes_option'
+        )
 
     def completion_time(self, job):
         if (self._completion_time or
@@ -173,11 +173,9 @@ class SlurmJobScheduler(sched.JobScheduler):
                 self._format_option(job.sched_exclusive_access, '--exclusive')
             )
 
-        if self._emit_num_nodes:
-            preamble.append(
-                self._format_option(job.num_tasks // job.num_tasks_per_node,
-                                    '-N={0}')
-            )
+        if self._use_nodes_opt:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            preamble.append(self._format_option(num_nodes, '--nodes={0}'))
 
         if job.use_smt is None:
             hint = None

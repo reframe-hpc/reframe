@@ -608,19 +608,6 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
 
 
-.. envvar:: RFM_EMIT_NUM_NODES
-
-   Force emitting the option ``-N`` in the preamble of the submission scripts.
-
-   .. table::
-      :align: left
-
-      ================================== ==================
-      Associated command line option     N/A
-      Associated configuration parameter js:attr:`emit_num_nodes` scheduler configuration parameter
-      ================================== ==================
-
-
 .. envvar:: RFM_GRAYLOG_SERVER
 
    The address of the Graylog server to send performance logs.

@@ -274,7 +274,7 @@
                 "type": "object",
                 "properties": {
                     "name": {"type": "string"},
-                    "emit_num_nodes": {"type": "boolean"},
+                    "use_nodes_option": {"type": "boolean"},
                     "job_submit_timeout": {"type": "number"},
                     "target_systems": {"$ref": "#/defs/system_ref"}
                 },
@@ -420,7 +420,7 @@
         "modes/target_systems": ["*"],
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
-        "schedulers/emit_num_nodes": false,
+        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/modules_system": "nomod",
         "systems/modules": [],
