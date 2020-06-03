@@ -67,7 +67,6 @@ class TorqueJobScheduler(PbsJobScheduler):
         )
         if nodelist_match:
             nodespec = nodelist_match.group('nodespec')
-
             self._set_nodelist(job, nodespec)
 
         state_match = re.search(
