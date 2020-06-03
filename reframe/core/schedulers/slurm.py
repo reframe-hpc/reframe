@@ -131,7 +131,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not state_match:
             return None
 
-        self._completion_time = max(float(s.group('end')) for s in state_match)
+        completion_times = []
+        for s in state_match:
+            with suppress(ValueError):
+                completion_times.append(float(s.group('end')))
+
+        if completion_times:
+            self._completion_time = max(completion_times)
+
         return self._completion_time
 
     def _format_option(self, var, option):
