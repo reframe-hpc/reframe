@@ -207,25 +207,34 @@ class RegressionTask:
             callback(self)
 
     def _safe_call(self, fn, *args, **kwargs):
+        class update_timestamps:
+            '''Context manager to set the start and finish timestamps.'''
+
+            def __init__(self, obj):
+                self.obj = obj
+
+            def __enter__(self):
+                if fn.__name__ != 'poll':
+                    cs = self.obj._current_stage
+                    self.obj._timestamps[f'{cs}_start'] = time.time()
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                cs = self.obj._current_stage
+                self.obj._timestamps[f'{cs}_finish'] = time.time()
+                self.obj._timestamps['pipeline_end'] = time.time()
+
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
-            self._timestamps[f'{self._current_stage}_start'] = time.time()
 
         try:
             with logging.logging_context(self.check) as logger:
-                logger.debug('entering stage: %s' % self._current_stage)
-                ret = fn(*args, **kwargs)
-                self._timestamps[f'{self._current_stage}_finish'] = time.time()
-                self._timestamps['pipeline_end'] = time.time()
-                return ret
+                logger.debug(f'entering stage: {self._current_stage}')
+                with update_timestamps(self):
+                    return fn(*args, **kwargs)
         except ABORT_REASONS:
-            self._timestamps[f'{self._current_stage}_finish'] = time.time()
-            self._timestamps['pipeline_end'] = time.time()
             self.fail()
             raise
         except BaseException as e:
-            self._timestamps[f'{self._current_stage}_finish'] = time.time()
-            self._timestamps['pipeline_end'] = time.time()
             self.fail()
             raise TaskExit from e
 

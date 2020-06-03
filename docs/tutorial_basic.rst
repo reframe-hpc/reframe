@@ -178,14 +178,14 @@ If everything is configured correctly for your system, you should get an output 
 .. code-block:: none
 
   [ReFrame Setup]
-   version:           3.0-dev7 (rev: 85ca676f)
-   command:           './bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r'
-   launched by:       user@daint104
-   working directory: '/path/to/reframe'
-   settings file:     'tutorial/config/settings.py'
-   check search path: (R) '/path/to/reframe/tutorial/example1.py'
-   stage directory:   '/path/to/reframe/stage'
-   output directory:  '/path/to/reframe/output'
+    version:           3.0-dev7 (rev: 85ca676f)
+    command:           './bin/reframe -C tutorial/config/settings.py -c tutorial/example1.py -r'
+    launched by:       user@daint104
+    working directory: '/path/to/reframe'
+    settings file:     'tutorial/config/settings.py'
+    check search path: (R) '/path/to/reframe/tutorial/example1.py'
+    stage directory:   '/path/to/reframe/stage'
+    output directory:  '/path/to/reframe/output'
 
   [==========] Running 1 check(s)
   [==========] Started on Wed Jun  3 08:50:46 2020
