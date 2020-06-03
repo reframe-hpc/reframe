@@ -161,21 +161,21 @@ class RegressionTask:
 
     def pipeline_timings(self, phases):
         def _tf(t):
-            return f'{t:.3f}' if t else 'n/a'
+            return f'{t:.3f}s' if t else 'n/a'
 
-        mssg = ''
+        msg = ''
         for phase in phases:
             if phase == 'compile_complete':
-                mssg += f"compile: {_tf(self.duration('compile_complete'))}s "
+                msg += f"compile: {_tf(self.duration('compile_complete'))} "
             elif phase == 'run_complete':
-                mssg += f"run: {_tf(self.duration('run_complete'))}s "
+                msg += f"run: {_tf(self.duration('run_complete'))} "
             else:
-                mssg += f"{phase}: {_tf(self.duration(phase))}s "
+                msg += f"{phase}: {_tf(self.duration(phase))} "
 
-        if mssg:
-            mssg = mssg[:-1]
+        if msg:
+            msg = msg[:-1]
 
-        return mssg
+        return msg
 
     @property
     def testcase(self):

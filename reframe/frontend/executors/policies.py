@@ -97,11 +97,11 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        mssg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', mssg, just='right')
+            self.printer.status('ERROR', msg, just='right')
         else:
-            self.printer.status('FAIL', mssg, just='right')
+            self.printer.status('FAIL', msg, just='right')
 
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -115,8 +115,8 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        mssg = f'{task.check.info()} [{timings}]'
-        self.printer.status('OK', mssg, just='right')
+        msg = f'{task.check.info()} [{timings}]'
+        self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
@@ -230,12 +230,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        mssg = f'{task.check.info()} [{timings}]'
+        msg = f'{task.check.info()} [{timings}]'
         if task.failed_stage == 'cleanup':
-            self.printer.status('ERROR', mssg, just='right')
+            self.printer.status('ERROR', msg, just='right')
         else:
             self._remove_from_running(task)
-            self.printer.status('FAIL', mssg, just='right')
+            self.printer.status('FAIL', msg, just='right')
 
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
@@ -249,8 +249,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         timings = task.pipeline_timings(['compile_complete',
                                          'run_complete',
                                          'total'])
-        mssg = f'{task.check.info()} [{timings}]'
-        self.printer.status('OK', mssg, just='right')
+        msg = f'{task.check.info()} [{timings}]'
+        self.printer.status('OK', msg, just='right')
         timings = task.pipeline_timings(['setup',
                                          'compile_complete',
                                          'run_complete',
