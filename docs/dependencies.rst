@@ -172,6 +172,8 @@ It binds the function arguments to a partial realization of the :func:`getdep` f
 In fact, any ``@require_deps``-decorated function will be invoked before any other after-setup hook.
 
 
+.. _cleaning-up-stage-files:
+
 Cleaning up stage files
 -----------------------
 
