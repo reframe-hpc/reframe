@@ -128,3 +128,68 @@ Container Platforms
    :members:
    :exclude-members: ContainerPlatformField
    :show-inheritance:
+
+
+The ``reframe`` module
+----------------------
+
+The :py:mod:`reframe` module offers direct access to the basic test classes, constants and decorators.
+
+
+.. py:class:: reframe.CompileOnlyRegressionTest
+
+   See :class:`reframe.core.pipeline.CompileOnlyRegressionTest`.
+
+
+.. py:class:: reframe.RegressionTest
+
+   See :class:`reframe.core.pipeline.RegressionTest`.
+
+
+.. py:class:: reframe.RunOnlyRegressionTest
+
+   See :class:`reframe.core.pipeline.RunOnlyRegressionTest`.
+
+.. py:attribute:: reframe.DEPEND_BY_ENV
+
+   See :attr:`reframe.core.pipeline.DEPEND_BY_ENV`.
+
+
+.. py:attribute:: reframe.DEPEND_EXACT
+
+   See :attr:`reframe.core.pipeline.DEPEND_EXACT`.
+
+
+.. py:attribute:: reframe.DEPEND_FULLY
+
+   See :attr:`reframe.core.pipeline.DEPEND_FULLY`.
+
+
+.. py:decorator:: reframe.parameterized_test
+
+   See :func:`@reframe.core.decorators.parameterized_test <reframe.core.decorators.parameterized_test>`.
+
+
+.. py:decorator:: reframe.require_deps
+
+   See :func:`@reframe.core.decorators.require_deps <reframe.core.decorators.require_deps>`.
+
+
+.. py:decorator:: reframe.required_version
+
+   See :func:`@reframe.core.decorators.required_version <reframe.core.decorators.required_version>`.
+
+
+.. py:decorator:: reframe.run_after
+
+   See :func:`@reframe.core.decorators.run_after <reframe.core.decorators.run_after>`.
+
+
+.. py:decorator:: reframe.run_before
+
+   See :func:`@reframe.core.decorators.run_before <reframe.core.decorators.run_before>`.
+
+
+.. py:decorator:: reframe.simple_test
+
+   See :func:`@reframe.core.decorators.simple_test <reframe.core.decorators.simple_test>`.

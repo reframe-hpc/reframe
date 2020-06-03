@@ -32,7 +32,7 @@ class NvmlCheck(rfm.RegressionTest):
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'SingleSource'
         self.sourcepath = 'example.c'
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'cp $CUDATOOLKIT_HOME/nvml/example/example.c .',
             'patch -i ./nvml_example.patch'
         ]

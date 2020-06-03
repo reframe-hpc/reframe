@@ -37,7 +37,7 @@ class FieldextraAccuracyTest(FieldextraTestBase):
             'cookbook/support/input',
             'reference_cookbook'
         ]
-        self.pre_run = [
+        self.prerun_cmds = [
             'ln -s ${EBROOTFIELDEXTRA}/bin bin',
             'ln -s ${EBROOTFIELDEXTRA}/tools tools',
             'ln -s ${EBROOTFIELDEXTRA}/resources resources',
@@ -69,7 +69,7 @@ class FieldextraPerformanceTest(FieldextraTestBase):
         self.executable = 'fieldextra_gnu_opt_omp'
         self.executable_opts = ['nl.TC']
         self.readonly_files = ['18112900_204']
-        self.pre_run = ['source create_nl_6h.template']
+        self.prerun_cmds = ['source create_nl_6h.template']
         self.variables = {
             'OMP_STACKSIZE': '500M',
             'OMP_NUM_THREADS': '$SLURM_CPUS_PER_TASK',

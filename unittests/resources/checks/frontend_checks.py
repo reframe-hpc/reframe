@@ -169,8 +169,8 @@ class SleepCheck(BaseFrontendCheck):
         print_timestamp = (
             "python3 -c \"from datetime import datetime; "
             "print(datetime.today().strftime('%s.%f'), flush=True)\"")
-        self.pre_run  = [print_timestamp]
-        self.post_run = [print_timestamp]
+        self.prerun_cmds  = [print_timestamp]
+        self.postrun_cmds = [print_timestamp]
         self.sanity_patterns = sn.assert_found(r'.*', self.stdout)
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
@@ -199,10 +199,10 @@ class RetriesCheck(BaseFrontendCheck):
         self.sourcesdir = None
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.pre_run = ['current_run=$(cat %s)' % filename]
+        self.prerun_cmds = ['current_run=$(cat %s)' % filename]
         self.executable = 'echo $current_run'
-        self.post_run = ['((current_run++))',
-                         'echo $current_run > %s' % filename]
+        self.postrun_cmds = ['((current_run++))',
+                             'echo $current_run > %s' % filename]
         self.sanity_patterns = sn.assert_found('%d' % run_to_pass, self.stdout)
 
 
@@ -229,4 +229,4 @@ class CompileFailureCheck(rfm.RegressionTest):
         self.sanity_patterns = sn.assert_found(r'hello', self.stdout)
         self.sourcesdir = None
         self.sourcepath = 'x.c'
-        self.prebuild_cmd = ['echo foo > x.c']
+        self.prebuild_cmds = ['echo foo > x.c']

@@ -30,6 +30,7 @@ http://github.com/eth-cscs/hpctools
 
 * debugging:
     * debug/arm_ddt.py
+    * debug/arm_ddt_cuda.py
     * debug/gdb.py
-    * debug/cray_atp.py
     * debug/cuda_gdb.py
+    * debug/cray_atp.py

@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import argparse
+import os
 import pytest
 import sys
 
@@ -13,6 +14,12 @@ import unittests.fixtures as fixtures
 
 
 if __name__ == '__main__':
+    # Unset any ReFrame environment variable; unit tests must start in a clean
+    # environment
+    for var in list(os.environ.keys()):
+        if var.startswith('RFM_') and var != 'RFM_INSTALL_PREFIX':
+            del os.environ[var]
+
     parser = argparse.ArgumentParser(
         add_help=False,
         usage='%(prog)s [REFRAME_OPTIONS...] [NOSE_OPTIONS...]')

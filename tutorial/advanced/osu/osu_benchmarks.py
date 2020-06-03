@@ -96,7 +96,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
         self.valid_systems = ['daint:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi', 'PrgEnv-intel']
         self.sourcesdir = None
-        self.prebuild_cmd = [
+        self.prebuild_cmds = [
             'wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz',
             'tar xzf osu-micro-benchmarks-5.6.2.tar.gz',
             'cd osu-micro-benchmarks-5.6.2'

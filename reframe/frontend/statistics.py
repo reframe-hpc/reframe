@@ -86,6 +86,7 @@ class TestStats:
 
             report.append(line_width * '-')
             report.append('FAILURE INFO for %s %s' % (check.name, retry_info))
+            report.append('  * Test Description: %s' % check.descr)
             report.append('  * System partition: %s' % partname)
             report.append('  * Environment: %s' % environ_name)
             report.append('  * Stage directory: %s' % check.stagedir)

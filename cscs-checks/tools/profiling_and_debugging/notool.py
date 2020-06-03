@@ -64,10 +64,10 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         url = 'http://github.com/eth-cscs/hpctools'
         readme_str = (r'More debug and performance tools ReFrame checks are'
                       r' available at %s' % url)
-        self.post_run = ['echo "%s"' % readme_str]
+        self.postrun_cmds = ['echo "%s"' % readme_str]
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:
-            self.post_run += ['module list -t']
+            self.postrun_cmds += ['module list -t']
         self.perf_patterns = {
             'elapsed_time': sn.extractsingle(r'Elapsed Time\s*:\s+(\S+)',
                                              self.stdout, 1, float)

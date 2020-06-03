@@ -23,8 +23,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         self.sourcepath = 'hello_world'
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'tiger:gpu', 'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'kesch:cn', 'tiger:gpu', 'arolla:cn',
+                              'arolla:pn', 'tsa:cn', 'tsa:pn']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
                                     'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
