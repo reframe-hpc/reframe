@@ -35,11 +35,14 @@ JOB_STATES = {
 class TorqueJobScheduler(PbsJobScheduler):
     TASKS_OPT = '-l nodes={num_nodes}:ppn={num_cpus_per_node}'
 
-    def _set_nodelist(self, job, nodelist):
+    def _set_nodelist(self, job, nodespec):
         if job.nodelist is not None:
             return
-        else:
-            job.nodelist = nodelist
+
+        nodelist = [x.split('/')[0]
+                    for x in nodespec.split('+')]
+        nodelist.sort()
+        job.nodelist = nodelist
 
     def _update_state(self, job):
         '''Check the status of the job.'''
@@ -60,13 +63,12 @@ class TorqueJobScheduler(PbsJobScheduler):
             raise JobError('qstat failed: %s' % completed.stderr, job.jobid)
 
         nodelist_match = re.search(
-            r'exec_host = (?P<nodelist>\S+)', completed.stdout
+            r'exec_host = (?P<nodespec>\S+)', completed.stdout
         )
         if nodelist_match:
-            nodelist = [x.split('/')[0]
-                        for x in nodelist_match.group('nodelist').split('+')]
-            nodelist.sort()
-            self._set_nodelist(job, nodelist)
+            nodespec = nodelist_match.group('nodespec')
+
+            self._set_nodelist(job, nodespec)
 
         state_match = re.search(
             r'^\s*job_state = (?P<state>[A-Z])', completed.stdout, re.MULTILINE
