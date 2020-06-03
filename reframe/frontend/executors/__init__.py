@@ -177,6 +177,17 @@ class RegressionTask:
 
         return msg
 
+    def pipeline_timings_all(self):
+        return self.pipeline_timings([
+            'setup', 'compile_complete', 'run_complete',
+            'sanity', 'performance', 'total'
+        ])
+
+    def pipeline_timings_basic(self):
+        return self.pipeline_timings([
+            'compile_complete', 'run_complete', 'total'
+        ])
+
     @property
     def testcase(self):
         return self._case
@@ -210,18 +221,18 @@ class RegressionTask:
         class update_timestamps:
             '''Context manager to set the start and finish timestamps.'''
 
-            def __init__(self, obj):
-                self.obj = obj
-
-            def __enter__(self):
+            # We use `this` to refer to the update_timestamps object, because
+            # we don't want to masquerade the self argument of our containing
+            # function
+            def __enter__(this):
                 if fn.__name__ != 'poll':
-                    cs = self.obj._current_stage
-                    self.obj._timestamps[f'{cs}_start'] = time.time()
+                    stage = self._current_stage
+                    self._timestamps[f'{stage}_start'] = time.time()
 
-            def __exit__(self, exc_type, exc_value, traceback):
-                cs = self.obj._current_stage
-                self.obj._timestamps[f'{cs}_finish'] = time.time()
-                self.obj._timestamps['pipeline_end'] = time.time()
+            def __exit__(this, exc_type, exc_value, traceback):
+                stage = self._current_stage
+                self._timestamps[f'{stage}_finish'] = time.time()
+                self._timestamps['pipeline_end'] = time.time()
 
         if fn.__name__ != 'poll':
             self._current_stage = fn.__name__
@@ -229,8 +240,9 @@ class RegressionTask:
         try:
             with logging.logging_context(self.check) as logger:
                 logger.debug(f'entering stage: {self._current_stage}')
-                with update_timestamps(self):
+                with update_timestamps():
                     return fn(*args, **kwargs)
+
         except ABORT_REASONS:
             self.fail()
             raise
