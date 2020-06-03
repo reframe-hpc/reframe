@@ -279,7 +279,8 @@
                     },
                     "ignore_reqnodenotavail": {"type": "boolean"},
                     "job_submit_timeout": {"type": "number"},
-                    "target_systems": {"$ref": "#/defs/system_ref"}
+                    "target_systems": {"$ref": "#/defs/system_ref"},
+                    "use_nodes_option": {"type": "boolean"}
                 },
                 "required": ["name"],
                 "additionalProperties": false
@@ -424,6 +425,7 @@
         "schedulers/ignore_reqnodenotavail": false,
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
+        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/modules_system": "nomod",
         "systems/modules": [],

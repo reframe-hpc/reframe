@@ -960,6 +960,14 @@ Common scheduler options
    A list of systems or system/partitions combinations that this scheduler configuration is valid for.
    For a detailed description of this property, you may refer `here <#.environments[].target_systems>`__.
 
+.. js:attribute:: .schedulers[].use_nodes_option
+
+   :required: No
+   :default: ``false``
+
+   Always emit the ``--nodes`` Slurm option in the preamble of the job script.
+   This option is relevant to Slurm backends only.
+
 
 .. js:attribute:: .schedulers[].ignore_reqnodenotavail
 
