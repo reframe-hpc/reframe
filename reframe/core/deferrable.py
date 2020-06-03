@@ -338,20 +338,3 @@ class _DeferredExpression:
     @deferrable
     def __invert__(a):
         return ~a
-
-
-def evaluate(expr):
-    user_deprecation_warning('evaluate() is deprecated: '
-                             'please use reframe.utility.sanity.evaluate')
-
-    if isinstance(expr, _DeferredExpression):
-        return expr.evaluate()
-    else:
-        return expr
-
-
-@deferrable
-def make_deferrable(a):
-    user_deprecation_warning('make_deferrable() is deprecated: '
-                             'please use reframe.utility.sanity.defer')
-    return a
