@@ -130,15 +130,18 @@ When the `concurrency limit <config_reference.html#.systems[].partitions[].max_j
 
 ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
 
-Time Profiling of the Pipeline
-------------------------------
+Timing the Test Pipeline
+------------------------
 
 .. versionadded:: 3.0
 
-ReFrame keeps track of the time a test spends in each phases of the pipeline, but it has some limitations.
-The time that is reported for the run phase is not obtained from reliable sources, like the accounting information of the scheduler, but instead from the framework itself.
-This means that the end of the run phase is considered to be when ReFrame realizes the test has finished running and it can vary significantly because of the polling rate.
+ReFrame keeps track of the time a test spends in every pipeline stage and reports that after each test finishes.
+However, it does so from its own perspective and not from that of the scheduler backend used.
+This has some practical implications:
+As soon as a test enters the "run" phase, ReFrame's timer for that phase starts ticking regardless if the associated job is pending.
+Similarly, the "run" phase ends as soon as ReFrame realizes it.
+This will happen after the associated job has finished.
+For this reason, the time spent in the pipeline's "run" phase should *not* be interpreted as the actual runtime of the test, especially if a non-local scheduler backend is used.
 
-The second limitation comes from the dependencies and the fact that a test's resources might not be cleaned up as soon as it finishes.
-ReFrame will wait until all the dependencies of a test finish successfully their execution before cleaning up its resources and if one of them fails it will ignore this phase completely.
-The final status of the test and its time profiling information are reported before the cleanup phase.
+Finally, the execution time of the "cleanup" phase is not reported when a test finishes, since it may be deferred in case that there exist tests that depend on that one.
+See :doc:`dependencies` for more information on how ReFrame treats tests with dependencies.
