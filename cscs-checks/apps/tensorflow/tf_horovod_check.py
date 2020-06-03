@@ -47,7 +47,7 @@ class TensorFlowHorovodTest(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.assert_eq(sn.count(sn.findall(
             r'total images/sec:', self.stdout)), self.num_tasks)
 
-        self.pre_run = ['git checkout cnn_tf_v%s_compatible' % tfshortver]
+        self.prerun_cmds = ['git checkout cnn_tf_v%s_compatible' % tfshortver]
         self.variables = {
             'NCCL_DEBUG': 'INFO',
             'NCCL_IB_HCA': 'ipogif0',

@@ -24,10 +24,10 @@ class SpecAccelCheckBase(rfm.RegressionTest):
 
         app_source = os.path.join(self.current_system.resourcesdir,
                                   'SPEC_ACCELv1.2')
-        self.prebuild_cmd = ['cp -r %s/* .' % app_source,
-                             './install.sh -d . -f']
+        self.prebuild_cmds = ['cp -r %s/* .' % app_source,
+                              './install.sh -d . -f']
 
-        # I just want prebuild_cmd, but no action for the build_system
+        # I just want prebuild_cmds, but no action for the build_system
         # is not supported, so I find it something useless to do
         self.build_system = 'SingleSource'
         self.sourcepath = './benchspec/ACCEL/353.clvrleaf/src/timer_c.c'
@@ -67,8 +67,8 @@ class SpecAccelCheckBase(rfm.RegressionTest):
     @rfm.run_after('setup')
     def setup_per_env(self):
         envname = self.current_environ.name
-        self.pre_run = ['source ./shrc', 'mv %s config' %
-                        self.configs[envname]]
+        self.prerun_cmds = ['source ./shrc', 'mv %s config' %
+                            self.configs[envname]]
         self.executable_opts = [
             '--config=%s' %
             self.configs[envname],

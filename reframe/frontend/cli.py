@@ -197,26 +197,27 @@ def main():
     # Run options
     run_options.add_argument(
         '-A', '--account', action='store',
-        help='Use ACCOUNT for submitting jobs (Slurm)'
-    )
+        help="Use ACCOUNT for submitting jobs (Slurm) "
+             "*deprecated*, please use '-J account=ACCOUNT'")
     run_options.add_argument(
         '-P', '--partition', action='store', metavar='PART',
-        help='Use PART for submitting jobs (Slurm/PBS/Torque)'
-    )
+        help="Use PART for submitting jobs (Slurm/PBS/Torque) "
+             "*deprecated*, please use '-J partition=PART' "
+             "or '-J q=PART'")
     run_options.add_argument(
         '--reservation', action='store', metavar='RES',
-        help='Use RES for submitting jobs (Slurm)'
-    )
+        help="Use RES for submitting jobs (Slurm) "
+             "*deprecated*, please use '-J reservation=RES'")
     run_options.add_argument(
         '--nodelist', action='store',
-        help='Run checks on the selected list of nodes (Slurm)'
-    )
+        help="Run checks on the selected list of nodes (Slurm) "
+             "*deprecated*, please use '-J nodelist=NODELIST'")
     run_options.add_argument(
         '--exclude-nodes', action='store', metavar='NODELIST',
-        help='Exclude the list of nodes from running checks (Slurm)'
-    )
+        help="Exclude the list of nodes from running checks (Slurm) "
+             "*deprecated*, please use '-J exclude=NODELIST'")
     run_options.add_argument(
-        '--job-option', action='append', metavar='OPT',
+        '-J', '--job-option', action='append', metavar='OPT',
         dest='job_options', default=[],
         help='Pass option OPT to job scheduler'
     )
@@ -256,11 +257,6 @@ def main():
         '--max-retries', metavar='NUM', action='store', default=0,
         help='Set the maximum number of times a failed regression test '
              'may be retried (default: 0)'
-    )
-    run_options.add_argument(
-        '--flex-alloc-tasks', action='store',
-        dest='flex_alloc_tasks', metavar='{all|idle|NUM}', default=None,
-        help='*deprecated*, please use --flex-alloc-nodes instead'
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
@@ -331,6 +327,10 @@ def main():
         envvar='RFM_SYSTEM'
     )
     misc_options.add_argument(
+        '--upgrade-config-file', action='store', metavar='OLD[:NEW]',
+        help='Upgrade old configuration file to new syntax'
+    )
+    misc_options.add_argument(
         '-V', '--version', action='version', version=os_ext.reframe_version()
     )
     misc_options.add_argument(
@@ -345,6 +345,20 @@ def main():
         envvar='RFM_GRAYLOG_SERVER',
         configvar='logging/handlers_perflog/graylog_address',
         help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='ignore_reqnodenotavail',
+        envvar='RFM_IGNORE_REQNODENOTAVAIL',
+        configvar='schedulers/ignore_reqnodenotavail',
+        action='store_true',
+        help='Graylog server address'
+    )
+    argparser.add_argument(
+        dest='use_login_shell',
+        envvar='RFM_USE_LOGIN_SHELL',
+        configvar='general/use_login_shell',
+        action='store_true',
+        help='Use a login shell for job scripts'
     )
 
     if len(sys.argv) == 1:
@@ -367,6 +381,24 @@ def main():
     printer = PrettyPrinter()
     printer.colorize = site_config.get('general/0/colorize')
     printer.inc_verbosity(site_config.get('general/0/verbose'))
+
+    if options.upgrade_config_file is not None:
+        old_config, *new_config = options.upgrade_config_file.split(
+            ':', maxsplit=1)
+        new_config = new_config[0] if new_config else None
+
+        try:
+            new_config = config.convert_old_config(old_config, new_config)
+        except Exception as e:
+            printer.error(f'could not convert file: {e}')
+            sys.exit(1)
+
+        printer.info(
+            f'Conversion successful! '
+            f'The converted file can be found at {new_config!r}.'
+        )
+
+        sys.exit(0)
 
     # Now configure ReFrame according to the user configuration file
     try:
@@ -561,14 +593,33 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
-        if options.flex_alloc_tasks:
-            printer.warning("`--flex-alloc-tasks' is deprecated and "
-                            "will be removed in the future; "
-                            "you should use --flex-alloc-nodes instead")
-            options.flex_alloc_nodes = (options.flex_alloc_nodes or
-                                        options.flex_alloc_tasks)
-
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+        if options.account:
+            printer.warning(f"`--account' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J account={options.account}'")
+
+        if options.partition:
+            printer.warning(f"`--partition' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J partition={options.partition}' "
+                            f"or `-J q={options.partition}' depending on your "
+                            f"scheduler")
+
+        if options.reservation:
+            printer.warning(f"`--reservation' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J reservation={options.reservation}'")
+
+        if options.nodelist:
+            printer.warning(f"`--nodelist' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J nodelist={options.nodelist}'")
+
+        if options.exclude_nodes:
+            printer.warning(f"`--exclude-nodes' is deprecated and "
+                            f"will be removed in the future; you should "
+                            f"use `-J exclude={options.exclude_nodes}'")
 
         # Act on checks
         success = True
@@ -618,7 +669,16 @@ def main():
             exec_policy.sched_reservation = options.reservation
             exec_policy.sched_nodelist = options.nodelist
             exec_policy.sched_exclude_nodelist = options.exclude_nodes
-            exec_policy.sched_options = options.job_options
+            parsed_job_options = []
+            for opt in options.job_options:
+                if opt.startswith('-') or opt.startswith('#'):
+                    parsed_job_options.append(opt)
+                elif len(opt) == 1:
+                    parsed_job_options.append(f'-{opt}')
+                else:
+                    parsed_job_options.append(f'--{opt}')
+
+            exec_policy.sched_options = parsed_job_options
             try:
                 max_retries = int(options.max_retries)
             except ValueError:

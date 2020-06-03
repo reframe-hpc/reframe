@@ -149,6 +149,36 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
                 '--foo')
 
 
+class TestUpcrunLauncher(_TestLauncher, unittest.TestCase):
+
+    @property
+    def launcher(self):
+        return getlauncher('upcrun')()
+
+    @property
+    def expected_command(self):
+        return 'upcrun -N 2 -n 4 --foo'
+
+    @property
+    def expected_minimal_command(self):
+        return 'upcrun -n 1 --foo'
+
+
+class TestUpcxxrunLauncher(_TestLauncher, unittest.TestCase):
+
+    @property
+    def launcher(self):
+        return getlauncher('upcxx-run')()
+
+    @property
+    def expected_command(self):
+        return 'upcxx-run -N 2 -n 4 --foo'
+
+    @property
+    def expected_minimal_command(self):
+        return 'upcxx-run -n 1 --foo'
+
+
 class TestAlpsLauncher(_TestLauncher, unittest.TestCase):
     @property
     def launcher(self):

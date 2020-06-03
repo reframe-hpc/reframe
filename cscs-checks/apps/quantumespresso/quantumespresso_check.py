@@ -117,20 +117,20 @@ class QuantumESPRESSOGpuCheck(QuantumESPRESSOCheck):
         references = {
             'maint': {
                 'small': {
-                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
                 }
             },
             'prod': {
                 'small': {
-                    'dom:gpu': {'time': (60.0, None, 0.05, 's')},
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'dom:gpu': {'time': (61.0, None, 0.05, 's')},
+                    'daint:gpu': {'time': (61.0, None, 0.05, 's')}
                 },
                 'large': {
-                    'daint:gpu': {'time': (60.0, None, 0.10, 's')}
+                    'daint:gpu': {'time': (54.0, None, 0.05, 's')}
                 }
             }
         }

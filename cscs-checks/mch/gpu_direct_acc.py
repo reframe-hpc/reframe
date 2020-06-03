@@ -51,7 +51,7 @@ class GpuDirectAccCheck(rfm.RegressionTest):
 
         self.sourcepath = 'gpu_direct_acc.F90'
         self.build_system = 'SingleSource'
-        self.prebuild_cmd = ['module list -l']
+        self.prebuild_cmds = ['module list -l']
         self.sanity_patterns = sn.all([
             sn.assert_found(r'GPU with OpenACC', self.stdout),
             sn.assert_found(r'Result :\s+OK', self.stdout)

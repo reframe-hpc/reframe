@@ -28,8 +28,8 @@ class TensorFlowBaseTest(rfm.RunOnlyRegressionTest):
         # TensorFlow
         # FIXME: Currently the branch for Tensorflow 1.14.0 is not
         # available, we use the one for 1.13.0
-        # self.pre_run = ['git checkout r%s' % tf_version]
-        self.pre_run = ['git checkout r1.13.0']
+        # self.prerun_cmds = ['git checkout r%s' % tf_version]
+        self.prerun_cmds = ['git checkout r1.13.0']
         self.variables = {'PYTHONPATH': '$PYTHONPATH:.'}
 
 
@@ -74,6 +74,6 @@ class TensorFlowWidedeepTest(TensorFlowBaseTest):
                 0.85, -0.05, None)
         ])
 
-        self.pre_run += ['mkdir ./official/wide_deep/model_dir',
-                         'python3 ./official/wide_deep/census_dataset.py '
-                         '--data_dir ./official/wide_deep/']
+        self.prerun_cmds += ['mkdir ./official/wide_deep/model_dir',
+                             'python3 ./official/wide_deep/census_dataset.py '
+                             '--data_dir ./official/wide_deep/']

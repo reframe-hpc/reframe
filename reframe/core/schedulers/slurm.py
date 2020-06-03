@@ -97,8 +97,13 @@ class SlurmJobScheduler(sched.JobScheduler):
                                 'PartitionNodeLimit',
                                 'QOSJobLimit',
                                 'QOSResourceLimit',
-                                'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
+        ignore_reqnodenotavail = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/ignore_reqnodenotavail'
+        )
+        if not ignore_reqnodenotavail:
+            self._cancel_reasons.append('ReqNodeNotAvail')
+
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
@@ -126,7 +131,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not state_match:
             return None
 
-        self._completion_time = max(float(s.group('end')) for s in state_match)
+        completion_times = []
+        for s in state_match:
+            with suppress(ValueError):
+                completion_times.append(float(s.group('end')))
+
+        if completion_times:
+            self._completion_time = max(completion_times)
+
         return self._completion_time
 
     def _format_option(self, var, option):
