@@ -27,3 +27,10 @@ http://github.com/eth-cscs/hpctools
 
 * Cray
     * perftools/patrun.py
+
+* debugging:
+    * debug/arm_ddt.py
+    * debug/arm_ddt_cuda.py
+    * debug/gdb.py
+    * debug/cuda_gdb.py
+    * debug/cray_atp.py
