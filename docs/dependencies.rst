@@ -170,3 +170,14 @@ In fact, you can rewrite :func:`set_executable` function as follows:
 Now it's easier to understand what the ``@require_deps`` decorator does behind the scenes.
 It binds the function arguments to a partial realization of the :func:`getdep` function and attaches the decorated function as an after-setup hook.
 In fact, any ``@require_deps``-decorated function will be invoked before any other after-setup hook.
+
+
+.. _cleaning-up-stage-files:
+
+Cleaning up stage files
+-----------------------
+
+In principle, the output of a test might be needed by its dependent tests.
+As a result, the stage directory of the test will only be cleaned up after all of its *immediate* dependent tests have finished successfully.
+If any of its children has failed, the cleanup phase will be skipped, such that all the test's files will remain in the stage directory.
+This allows users to reproduce manually the error of a failed test with dependencies, since all the needed resources of the failing test are left in their original location.
