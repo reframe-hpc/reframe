@@ -195,15 +195,34 @@ class SlurmJobScheduler(sched.JobScheduler):
             hint = 'multithread' if job.use_smt else 'nomultithread'
 
         for opt in job.sched_access:
-            preamble.append('%s %s' % (self._prefix, opt))
+            if not opt.strip().startswith(('-C', '--constraint')):
+                preamble.append('%s %s' % (self._prefix, opt))
+
+        constraints = []
+        option_parser = ArgumentParser()
+        option_parser.add_argument('-C', '--constraint')
+        parsed_args, _ = option_parser.parse_known_args(job.sched_access)
+        if parsed_args.constraint:
+            constraints += [parsed_args.constraint]
+
+        # NOTE: Here last of the passed --constraint job options is taken
+        # into account in order to respect the behavior of slurm.
+        parsed_args, _ = option_parser.parse_known_args(job.options)
+        if parsed_args.constraint:
+            constraints += [parsed_args.constraint]
+
+        if constraints:
+            preamble.append(
+                self._format_option(','.join(constraints), '--constraint={0}'))
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
         for opt in job.options:
-            if not prefix_patt.match(opt):
-                preamble.append('%s %s' % (self._prefix, opt))
-            else:
-                preamble.append(opt)
+            if not opt.strip().startswith(('-C', '--constraint')):
+                if not prefix_patt.match(opt):
+                    preamble.append('%s %s' % (self._prefix, opt))
+                else:
+                    preamble.append(opt)
 
         # Filter out empty statements before returning
         return list(filter(None, preamble))
