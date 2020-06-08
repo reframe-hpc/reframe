@@ -38,7 +38,6 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
         if self.current_system.name in ['kesch']:
-            self.valid_prog_environs = ['PrgEnv-gnu']
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
