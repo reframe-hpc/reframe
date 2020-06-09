@@ -82,7 +82,7 @@ class CDO_NC4SupportTest(CDOBaseTest):
 # then the NCO module to see if there appear any conflicts. If there are no
 # conflicts then self.stdout and self.stderr are empty. Note that the command
 # 'module load NCO' cannot be passed via self.executable to srun as 'module'
-# is not an executable. Thus, we run the command as a pre_run command and
+# is not an executable. Thus, we run the command as a prerun_cmds command and
 # define as executable just an echo with no arguments.
 @rfm.simple_test
 class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
@@ -99,7 +99,7 @@ class CDO_NCOModuleCompatibilityTest(CDOBaseTest):
         else:
             nco_name = 'NCO'
 
-        self.pre_run = ['module load %s' % nco_name]
+        self.prerun_cmds = ['module load %s' % nco_name]
 
 
 @rfm.simple_test

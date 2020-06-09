@@ -61,9 +61,13 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         #    self.omp_versions['PrgEnv-pgi'] = '200805'
         self.maintainers = ['JG', 'MKr']
         self.tags = {'production'}
+        url = 'http://github.com/eth-cscs/hpctools'
+        readme_str = (r'More debug and performance tools ReFrame checks are'
+                      r' available at %s' % url)
+        self.postrun_cmds = ['echo "%s"' % readme_str]
         if self.current_system.name in {'dom', 'daint'}:
             # get general info about the environment:
-            self.post_run = ['module list -t']
+            self.postrun_cmds += ['module list -t']
         self.perf_patterns = {
             'elapsed_time': sn.extractsingle(r'Elapsed Time\s*:\s+(\S+)',
                                              self.stdout, 1, float)
@@ -78,8 +82,8 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         elif lang == 'F90':
             self.reference_lang = (0.17, -0.6, None, 's')
 
-    def setup(self, partition, environ, **job_opts):
-        super().setup(partition, environ, **job_opts)
+    @rfm.run_before('compile')
+    def set_flags(self):
         envname = self.current_environ.name
         # if generic, falls back to -g:
         prgenv_flags = self.prgenv_flags.get(envname, ['-g'])
@@ -87,20 +91,27 @@ class JacobiNoToolHybrid(rfm.RegressionTest):
         self.build_system.cxxflags = prgenv_flags
         self.build_system.fflags = prgenv_flags
         self.build_system.ldflags = ['-lm']
-        found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
-                                         int)
-        ompversion_key = '%s:%s:version' % (envname, self.lang)
-        self.sanity_patterns = sn.all([
-            sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
-            sn.assert_found('SUCCESS', self.stdout),
-        ])
-        if self.current_system.name in {'dom', 'daint'}:
-            self.reference['*:elapsed_time'] = self.reference_lang
 
     @rfm.run_before('compile')
     def cray_linker_workaround(self):
         # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
         # See Patch Set README.txt for more details.
-        if (self.current_system.name == 'dom' and
-            self.current_environ.name.startswith('PrgEnv-cray')):
+        prgenv = self.current_environ.name.startswith('PrgEnv-cray')
+        if (self.current_system.name == 'dom' and prgenv):
             self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+
+    @rfm.run_before('sanity')
+    def set_sanity(self):
+        found_version = sn.extractsingle(r'OpenMP-\s*(\d+)', self.stdout, 1,
+                                         int)
+        envname = self.current_environ.name
+        ompversion_key = '%s:%s:version' % (envname, self.lang)
+        self.sanity_patterns = sn.all([
+            sn.assert_eq(found_version, self.openmp_versions[ompversion_key]),
+            sn.assert_found('SUCCESS', self.stdout),
+        ])
+
+    @rfm.run_before('sanity')
+    def set_reference(self):
+        if self.current_system.name in {'dom', 'daint'}:
+            self.reference['*:elapsed_time'] = self.reference_lang

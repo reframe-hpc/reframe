@@ -17,13 +17,8 @@ class HostnameCheck(rfm.RunOnlyRegressionTest):
         self.num_tasks = 0
         self.num_tasks_per_node = 1
         self.sanity_patterns = sn.assert_eq(
-            self.num_tasks_assigned,
+            sn.getattr(self, 'num_tasks'),
             sn.count(sn.findall(r'nid\d+', self.stdout))
         )
         self.maintainers = ['you-can-type-your-email-here']
         self.tags = {'tutorial'}
-
-    @property
-    @sn.sanity_function
-    def num_tasks_assigned(self):
-        return self.job.num_tasks

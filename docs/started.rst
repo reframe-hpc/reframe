@@ -5,38 +5,83 @@ Getting Started
 Requirements
 ------------
 
-* Python 3.6 or higher. Python 2 is not supported.
+* Python 3.6 or higher.
+  Python 2 is not supported.
+* Required Python packages can be found in the ``requirements.txt`` file, which you can install as follows:
 
-  .. note::
-    .. versionchanged:: 2.8
-      A functional TCL modules system is no more required. ReFrame can now operate without a modules system at all.
+  .. code:: bash
 
-  .. note::
-    .. versionchanged:: 3.0
-      Support for Python 3.5 has been dropped.
+     pip3 install -r requirements.txt
 
-Optional
-~~~~~~~~
 
-* For running the unit tests of the framework, the `pytest <https://pytest.org/>`__ unittesting framework is needed.
+---------------------
+Optional Requirements
+---------------------
 
-You are advised to run the `unit tests <#running-the-unit-tests>`__ of the framework after installing it on a new system to make sure that everything works fine.
+If you want to run the framework's unit tests, you will also need a C compiler that is able to compile a "Hello, World!" program and recognize the ``-O3`` option.
+
+
+.. note::
+  .. versionchanged:: 2.8
+
+    A functional TCL modules system is no more required. ReFrame can now operate without a modules system at all.
+
+.. note::
+  .. versionchanged:: 3.0
+
+    Support for Python 3.5 has been dropped.
+
+
 
 Getting the Framework
 ---------------------
 
-To get the latest stable version of the framework, you can just clone it from the `github <https://github.com/eth-cscs/reframe>`__ project page:
+ReFrame's latest stable version is available through different channels:
+
+- As a `PyPI <https://pypi.org/project/ReFrame-HPC/>`__ package:
+
+  .. code:: bash
+
+     pip install reframe-hpc
+
+  .. note::
+
+     The above method performs a bare installation of ReFrame not including unittests and tutorial examples.
+
+
+- As a `Spack <https://spack.io/>`__ package:
+
+  .. code:: bash
+
+     spack install reframe
+
+
+- As an `EasyBuild <https://easybuild.readthedocs.io/en/latest/>`__ package:
+
+  .. code:: bash
+
+     eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
+
+
+-------------------------------
+Getting the Latest and Greatest
+-------------------------------
+
+If you want the latest development version or any pre-release, you can clone ReFrame from Github:
 
 .. code:: bash
 
     git clone https://github.com/eth-cscs/reframe.git
 
-Alternatively, you can pick a previous stable version by downloading it from the previous `releases <https://github.com/eth-cscs/reframe/releases>`__ section.
+
+Pre-release versions are denoted with the ``devX`` suffix and are `tagged <https://github.com/eth-cscs/reframe/releases>`__ in the repository.
+
 
 Running the Unit Tests
 ----------------------
 
-After you have downloaded the framework, it is important to run the unit tests of to make sure that everything is set up correctly:
+You can optionally run the framework's unit tests to make sure that everything is set up correctly:
+
 
 .. code:: bash
 
@@ -46,43 +91,87 @@ The output should look like the following:
 
 .. code:: bash
 
-    collected 442 items
+   ======================================== test session starts =========================================
+   platform darwin -- Python 3.7.3, pytest-4.3.0, py-1.8.0, pluggy-0.9.0 -- /usr/local/opt/python/bin/python3.7
+   cachedir: .pytest_cache
+   rootdir: /Users/karakasv/Repositories/reframe, inifile:
+   collected 697 items
 
-    unittests/test_argparser.py ..                                                     [  0%]
-    unittests/test_cli.py ....s...........                                             [  4%]
-    unittests/test_config.py ...............                                           [  7%]
-    unittests/test_deferrable.py ..............................................        [ 17%]
-    unittests/test_environments.py sss...s.....                                        [ 20%]
-    unittests/test_exceptions.py .............                                         [ 23%]
-    unittests/test_fields.py ....................                                      [ 28%]
-    unittests/test_launchers.py ..............                                         [ 31%]
-    unittests/test_loader.py .........                                                 [ 33%]
-    unittests/test_logging.py .....................                                    [ 38%]
-    unittests/test_modules.py ........ssssssssssssssss............................     [ 49%]
-    unittests/test_pipeline.py ....s..s.........................                       [ 57%]
-    unittests/test_policies.py ...............................                         [ 64%]
-    unittests/test_runtime.py .                                                        [ 64%]
-    unittests/test_sanity_functions.py ............................................... [ 75%]
-    ..............                                                                     [ 78%]
-    unittests/test_schedulers.py ..........s.s......ss...................s.s......ss.  [ 90%]
-    unittests/test_script_builders.py .                                                [ 90%]
-    unittests/test_utility.py .........................................                [ 99%]
-    unittests/test_versioning.py ..                                                    [100%]
+   unittests/test_argparser.py::test_arguments PASSED                                             [  0%]
+   unittests/test_argparser.py::test_parsing PASSED                                               [  0%]
+   unittests/test_argparser.py::test_option_precedence PASSED                                     [  0%]
+   unittests/test_argparser.py::test_option_with_config PASSED                                    [  0%]
+   unittests/test_argparser.py::test_option_envvar_conversion_error PASSED                        [  0%]
+   unittests/test_buildsystems.py::TestMake::test_emit_from_buildsystem PASSED                    [  0%]
+   unittests/test_buildsystems.py::TestMake::test_emit_from_env PASSED                            [  1%]
+   unittests/test_buildsystems.py::TestMake::test_emit_no_env_defaults PASSED                     [  1%]
+   unittests/test_buildsystems.py::TestCMake::test_emit_from_buildsystem PASSED                   [  1%]
+   unittests/test_buildsystems.py::TestCMake::test_emit_from_env PASSED                           [  1%]
+   unittests/test_buildsystems.py::TestCMake::test_emit_no_env_defaults PASSED                    [  1%]
+   unittests/test_buildsystems.py::TestAutotools::test_emit_from_buildsystem PASSED               [  1%]
+   unittests/test_buildsystems.py::TestAutotools::test_emit_from_env PASSED                       [  1%]
+   unittests/test_buildsystems.py::TestAutotools::test_emit_no_env_defaults PASSED                [  2%]
+   unittests/test_buildsystems.py::TestSingleSource::test_emit_from_env PASSED                    [  2%]
+   unittests/test_buildsystems.py::TestSingleSource::test_emit_no_env PASSED                      [  2%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_cpu_only PASSED                   [  2%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_gpu_only PASSED                   [  2%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_name PASSED                       [  2%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_not_name PASSED                   [  2%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_prgenv PASSED                     [  3%]
+   unittests/test_check_filters.py::TestCheckFilters::test_have_tags PASSED                       [  3%]
+   unittests/test_check_filters.py::TestCheckFilters::test_invalid_regex PASSED                   [  3%]
+   unittests/test_check_filters.py::TestCheckFilters::test_partition PASSED                       [  3%]
+   unittests/test_cli.py::test_check_success PASSED                                               [  3%]
+   unittests/test_cli.py::test_check_submit_success SKIPPED                                       [  3%]
+   unittests/test_cli.py::test_check_failure PASSED                                               [  3%]
+   <... output omitted ...>
+   unittests/test_utility.py::TestPpretty::test_simple_types PASSED                               [ 95%]
+   unittests/test_utility.py::TestPpretty::test_mixed_types PASSED                                [ 95%]
+   unittests/test_utility.py::TestPpretty::test_obj_print PASSED                                  [ 95%]
+   unittests/test_utility.py::TestChangeDirCtxManager::test_change_dir_working PASSED             [ 95%]
+   unittests/test_utility.py::TestChangeDirCtxManager::test_exception_propagation PASSED          [ 95%]
+   unittests/test_utility.py::TestMiscUtilities::test_allx PASSED                                 [ 95%]
+   unittests/test_utility.py::TestMiscUtilities::test_decamelize PASSED                           [ 96%]
+   unittests/test_utility.py::TestMiscUtilities::test_sanitize PASSED                             [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_construction PASSED                            [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_contains PASSED                                [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_delitem PASSED                                 [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_iter_items PASSED                              [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_iter_keys PASSED                               [ 96%]
+   unittests/test_utility.py::TestScopedDict::test_iter_values PASSED                             [ 97%]
+   unittests/test_utility.py::TestScopedDict::test_key_resolution PASSED                          [ 97%]
+   unittests/test_utility.py::TestScopedDict::test_scope_key_name_pseudoconflict PASSED           [ 97%]
+   unittests/test_utility.py::TestScopedDict::test_setitem PASSED                                 [ 97%]
+   unittests/test_utility.py::TestScopedDict::test_update PASSED                                  [ 97%]
+   unittests/test_utility.py::TestReadOnlyViews::test_mapping PASSED                              [ 97%]
+   unittests/test_utility.py::TestReadOnlyViews::test_sequence PASSED                             [ 97%]
+   unittests/test_utility.py::TestOrderedSet::test_concat_files PASSED                            [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_construction PASSED                            [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_construction_empty PASSED                      [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_construction_error PASSED                      [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_difference PASSED                              [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_intersection PASSED                            [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_operators PASSED                               [ 98%]
+   unittests/test_utility.py::TestOrderedSet::test_reversed PASSED                                [ 99%]
+   unittests/test_utility.py::TestOrderedSet::test_str PASSED                                     [ 99%]
+   unittests/test_utility.py::TestOrderedSet::test_union PASSED                                   [ 99%]
+   unittests/test_utility.py::TestOrderedSet::test_unique_abs_paths PASSED                        [ 99%]
+   unittests/test_versioning.py::TestVersioning::test_comparing_versions PASSED                   [ 99%]
+   unittests/test_versioning.py::TestVersioning::test_version_format PASSED                       [ 99%]
+   unittests/test_versioning.py::TestVersioning::test_version_validation PASSED                   [100%]
 
-    ======================== 411 passed, 31 skipped in 28.10 seconds =========================
+   ============================== 620 passed, 77 skipped in 64.58 seconds ===============================
 
-You will notice in the output that all the job submission related tests have been skipped.
-The test suite detects if the current system has a job submission system and is configured for ReFrame (see `Configuring ReFrame for your site <configure.html>`__) and it will skip all the unsupported unit tests.
-As soon as you configure ReFrame for your system, you can rerun the test suite to check that job submission unit tests pass as well.
-Note here that some unit tests may still be skipped depending on the configured job submission system.
+
+You will notice that several tests will be skipped.
+ReFrame uses a generic configuration by default, so that it can run on any system.
+As a result, all tests for scheduler backends, environment modules, container platforms etc. will be skipped.
+As soon as you configure ReFrame specifically for your system, you may rerun the test suite using your system configuration file by passing the ``--rfm-user-config=CONFIG_FILE``.
+
 
 Where to Go from Here
 ---------------------
 
-The next step from here is to setup and configure ReFrame for your site, so that ReFrame can automatically recognize it and submit jobs.
-Please refer to the `"Configuring ReFrame For Your Site" <configure.html>`__ section on how to do that.
-
-Before starting implementing a regression test, you should go through the `"The Regression Test Pipeline" <pipeline.html>`__ section, so as to understand the mechanism that ReFrame uses to run the regression tests.
-This section will let you follow easily the `"ReFrame Tutorial" <tutorial.html>`__ as well as understand the more advanced examples in the `"Customizing Further A Regression Test" <advanced.html>`__ section.
-
-To learn how to invoke the ReFrame command-line interface for running your tests, please refer to the `"Running ReFrame" <running.html>`__ section.
+The :doc:`configure` page guides you through the basic configuration aspects of ReFrame.
+The :doc:`tutorials` will allow you to get a first idea on how to write and run ReFrame tests.
+:doc:`topics` explain different aspects of the framework whereas the :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.

@@ -19,85 +19,85 @@ class BuildSystem(abc.ABC):
     '''
 
     #: The C compiler to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the compiler defined in the current programming environment will be
     #: used.
     #:
     #: :type: :class:`str`
-    #: :default: :class:`None`
-    cc  = fields.TypedField('cc', str, type(None))
+    #: :default: ``''``
+    cc  = fields.TypedField('cc', str)
 
     #: The C++ compiler to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the compiler defined in the current programming environment will be
     #: used.
     #:
     #: :type: :class:`str`
-    #: :default: :class:`None`
-    cxx = fields.TypedField('cxx', str, type(None))
+    #: :default: ``''``
+    cxx = fields.TypedField('cxx', str)
 
     #: The Fortran compiler to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the compiler defined in the current programming environment will be
     #: used.
     #:
     #: :type: :class:`str`
-    #: :default: :class:`None`
-    ftn = fields.TypedField('ftn', str, type(None))
+    #: :default: ``''``
+    ftn = fields.TypedField('ftn', str)
 
     #: The CUDA compiler to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the compiler defined in the current programming environment will be
     #: used.
     #:
     #: :type: :class:`str`
-    #: :default: :class:`None`
-    nvcc = fields.TypedField('nvcc', str, type(None))
+    #: :default: ``''``
+    nvcc = fields.TypedField('nvcc', str)
 
     #: The C compiler flags to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
     #: :type: :class:`List[str]`
-    #: :default: :class:`None`
-    cflags = fields.TypedField('cflags', typ.List[str], type(None))
+    #: :default: ``[]``
+    cflags = fields.TypedField('cflags', typ.List[str])
 
     #: The preprocessor flags to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
     #: :type: :class:`List[str]`
-    #: :default: :class:`None`
-    cppflags = fields.TypedField('cppflags', typ.List[str], type(None))
+    #: :default: ``[]``
+    cppflags = fields.TypedField('cppflags', typ.List[str])
 
     #: The C++ compiler flags to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
     #: :type: :class:`List[str]`
-    #: :default: :class:`None`
-    cxxflags = fields.TypedField('cxxflags', typ.List[str], type(None))
+    #: :default: ``[]``
+    cxxflags = fields.TypedField('cxxflags', typ.List[str])
 
     #: The Fortran compiler flags to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
     #: :type: :class:`List[str]`
-    #: :default: :class:`None`
-    fflags  = fields.TypedField('fflags', typ.List[str], type(None))
+    #: :default: ``[]``
+    fflags  = fields.TypedField('fflags', typ.List[str])
 
     #: The linker flags to be used.
-    #: If set to :class:`None` and :attr:`flags_from_environ` is :class:`True`,
+    #: If empty and :attr:`flags_from_environ` is :class:`True`,
     #: the corresponding flags defined in the current programming environment
     #: will be used.
     #:
     #: :type: :class:`List[str]`
-    #: :default: :class:`None`
-    ldflags = fields.TypedField('ldflags', typ.List[str], type(None))
+    #: :default: ``[]``
+    ldflags = fields.TypedField('ldflags', typ.List[str])
 
     #: Set compiler and compiler flags from the current programming environment
     #: if not specified otherwise.
@@ -107,10 +107,10 @@ class BuildSystem(abc.ABC):
     flags_from_environ = fields.TypedField('flags_from_environ', bool)
 
     def __init__(self):
-        self.cc  = None
-        self.cxx = None
-        self.ftn = None
-        self.nvcc = None
+        self.cc  = ''
+        self.cxx = ''
+        self.ftn = ''
+        self.nvcc = ''
         self.cflags = []
         self.cxxflags = []
         self.cppflags = []
@@ -351,7 +351,7 @@ class SingleSource(BuildSystem):
     #: automatically based on the extension of the source file.
     #: The automatically detected extensions are the following:
     #:
-    #:   - C: `.c`.
+    #:   - C: `.c` and `.upc`.
     #:   - C++: `.cc`, `.cp`, `.cxx`, `.cpp`, `.CPP`, `.c++` and `.C`.
     #:   - Fortran: `.f`, `.for`, `.ftn`, `.F`, `.FOR`, `.fpp`, `.FPP`, `.FTN`,
     #:     `.f90`, `.f95`, `.f03`, `.f08`, `.F90`, `.F95`, `.F03` and `.F08`.
@@ -433,7 +433,7 @@ class SingleSource(BuildSystem):
 
     def _guess_language(self, filename):
         _, ext = os.path.splitext(filename)
-        if ext in ['.c']:
+        if ext in ['.c', '.upc']:
             return 'C'
 
         if ext in ['.cc', '.cp', '.cxx', '.cpp', '.CPP', '.c++', '.C']:

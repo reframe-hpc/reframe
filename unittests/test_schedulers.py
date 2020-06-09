@@ -261,6 +261,18 @@ def test_prepare_without_smt(fake_job, slurm_only):
         assert re.search(r'--hint=nomultithread', fp.read()) is not None
 
 
+def test_prepare_nodes_option(temp_runtime, make_job, slurm_only):
+    rt = temp_runtime(fixtures.TEST_CONFIG_FILE, 'generic',
+                      {'schedulers/use_nodes_option': True})
+    next(rt)
+    job = make_job()
+    job.num_tasks = 16
+    job.num_tasks_per_node = 2
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        assert re.search(r'--nodes=8', fp.read()) is not None
+
+
 def test_submit(make_job, exec_ctx):
     minimal_job = make_job(sched_access=exec_ctx.access)
     prepare_job(minimal_job)
@@ -274,7 +286,7 @@ def test_submit(make_job, exec_ctx):
     if sched_name == 'local':
         assert [socket.gethostname()] == minimal_job.nodelist
         assert 0 == minimal_job.exitcode
-    elif sched_name == ('slurm', 'squeue'):
+    elif sched_name == ('slurm', 'squeue', 'pbs', 'torque'):
         num_tasks_per_node = minimal_job.num_tasks_per_node or 1
         num_nodes = minimal_job.num_tasks // num_tasks_per_node
         assert num_nodes == len(minimal_job.nodelist)

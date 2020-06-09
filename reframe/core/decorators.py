@@ -81,7 +81,6 @@ def simple_test(cls):
     available directly under the :mod:`reframe` module.
 
     .. versionadded:: 2.13
-
     '''
 
     _validate_test(cls)
@@ -102,10 +101,8 @@ def parameterized_test(*inst):
    .. versionadded:: 2.13
 
    .. note::
-
       This decorator does not instantiate any test.  It only registers them.
       The actual instantiation happens during the loading phase of the test.
-
     '''
     def _do_register(cls):
         _validate_test(cls)
@@ -124,27 +121,24 @@ def required_version(*versions):
     If the test is not compatible with the current ReFrame version it will be
     skipped.
 
+    .. versionadded:: 2.13
+
     :arg versions: A list of ReFrame version specifications that this test is
       allowed to run. A version specification string can have one of the
       following formats:
 
       1. ``VERSION``: Specifies a single version.
-
       2. ``{OP}VERSION``, where ``{OP}`` can be any of ``>``, ``>=``, ``<``,
-      ``<=``, ``==`` and ``!=``. For example, the version specification string
-      ``'>=2.15'`` will only allow the following test to be loaded only by
-      ReFrame 2.15 and higher. The ``==VERSION`` specification is the
-      equivalent of ``VERSION``.
-
+         ``<=``, ``==`` and ``!=``. For example, the version specification
+         string ``'>=2.15'`` will allow the following test to be loaded only
+         by ReFrame 2.15 and higher. The ``==VERSION`` specification is the
+         equivalent of ``VERSION``.
       3. ``V1..V2``: Specifies a range of versions.
 
       You can specify multiple versions with this decorator, such as
       ``@required_version('2.13', '>=2.16')``, in which case the test will be
       selected if *any* of the versions is satisfied, even if the versions
       specifications are conflicting.
-
-    .. versionadded:: 2.13
-
     '''
     if not versions:
         raise ValueError('no versions specified')
@@ -190,23 +184,29 @@ def _runx(phase):
 
 
 def run_before(stage):
-    '''Run the decorated function before the specified pipeline stage.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    The decorated function must be a method of a regression test.
+    The method will run just before the specified pipeline stage and it should
+    not accept any arguments except ``self``.
+
+    This decorator can be stacked, in which case the function will be attached
+    to multiple pipeline stages.
+
+    The ``stage`` argument can be any of ``'setup'``, ``'compile'``,
+    ``'run'``, ``'sanity'``, ``'performance'`` or ``'cleanup'``.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('pre_' + stage)
 
 
 def run_after(stage):
-    '''Run the decorated function after the specified pipeline stage.
+    '''Decorator for attaching a test method to a pipeline stage.
 
-    The decorated function must be a method of a regression test.
+    This is completely analogous to the
+    :py:attr:`reframe.core.decorators.run_before`.
 
     .. versionadded:: 2.20
-
     '''
     return _runx('post_' + stage)
 
@@ -220,7 +220,7 @@ def require_deps(func):
     :func:`reframe.core.pipeline.RegressionTest.getdep` function, such that
     conceptually the new function arguments will be the following:
 
-    .. code:: python
+    .. code-block:: python
 
        new_arg = functools.partial(getdep, orig_arg_name)
 
@@ -230,7 +230,6 @@ def require_deps(func):
     This decorator is also directly available under the :mod:`reframe` module.
 
     .. versionadded:: 2.21
-
     '''
     tests = inspect.getfullargspec(func).args[1:]
     func._rfm_resolve_deps = True

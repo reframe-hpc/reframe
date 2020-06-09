@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+
 class ColorRGB:
     def __init__(self, r, g, b):
         self.__check_rgb(r)

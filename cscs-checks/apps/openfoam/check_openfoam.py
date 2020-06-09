@@ -29,7 +29,7 @@ class OpenFOAMBaseTest(rfm.RunOnlyRegressionTest):
         self.maintainers = ['MKr', 'AJ']
         self.tags = {'scs', 'production', 'external-resources'}
 
-        self.pre_run = ['source $FOAM_BASH']
+        self.prerun_cmds = ['source $FOAM_BASH']
 
 
 @rfm.simple_test

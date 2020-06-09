@@ -97,8 +97,13 @@ class SlurmJobScheduler(sched.JobScheduler):
                                 'PartitionNodeLimit',
                                 'QOSJobLimit',
                                 'QOSResourceLimit',
-                                'ReqNodeNotAvail',
                                 'QOSUsageThreshold']
+        ignore_reqnodenotavail = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/ignore_reqnodenotavail'
+        )
+        if not ignore_reqnodenotavail:
+            self._cancel_reasons.append('ReqNodeNotAvail')
+
         self._is_cancelling = False
         self._is_job_array = None
         self._update_state_count = 0
@@ -106,6 +111,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         self._completion_time = None
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
+        )
+        self._use_nodes_opt = rt.runtime().get_option(
+            f'schedulers/@{self.registered_name}/use_nodes_option'
         )
 
     def completion_time(self, job):
@@ -126,7 +134,14 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not state_match:
             return None
 
-        self._completion_time = max(float(s.group('end')) for s in state_match)
+        completion_times = []
+        for s in state_match:
+            with suppress(ValueError):
+                completion_times.append(float(s.group('end')))
+
+        if completion_times:
+            self._completion_time = max(completion_times)
+
         return self._completion_time
 
     def _format_option(self, var, option):
@@ -169,6 +184,10 @@ class SlurmJobScheduler(sched.JobScheduler):
             preamble.append(
                 self._format_option(job.sched_exclusive_access, '--exclusive')
             )
+
+        if self._use_nodes_opt:
+            num_nodes = job.num_tasks // job.num_tasks_per_node
+            preamble.append(self._format_option(num_nodes, '--nodes={0}'))
 
         if job.use_smt is None:
             hint = None

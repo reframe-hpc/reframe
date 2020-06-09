@@ -37,6 +37,7 @@ def test_convert_old_config():
     site_config = config.load_config(converted)
     site_config.validate()
     assert len(site_config.get('systems')) == 3
+    assert len(site_config.get('logging')) == 2
 
     site_config.select_subconfig('testsys')
     assert len(site_config.get('systems/0/partitions')) == 2
@@ -256,6 +257,11 @@ def test_select_subconfig():
     assert site_config.get('environments/@PrgEnv-gnu/cc') == 'cc'
     assert site_config.get('environments/0/cxx') == 'CC'
     assert site_config.get('general/0/check_search_path') == ['c:d']
+
+    # Test default values for non-existent name-addressable objects
+    # See https://github.com/eth-cscs/reframe/issues/1339
+    assert site_config.get('modes/@foo/options') == []
+    assert site_config.get('modes/10/options') == []
 
     # Test inexistent options
     site_config.select_subconfig('testsys')

@@ -273,9 +273,14 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": {"type": "string"},
+                    "name": {
+                        "type": "string",
+                        "enum": ["local", "pbs", "slurm", "squeue", "torque"]
+                    },
+                    "ignore_reqnodenotavail": {"type": "boolean"},
                     "job_submit_timeout": {"type": "number"},
-                    "target_systems": {"$ref": "#/defs/system_ref"}
+                    "target_systems": {"$ref": "#/defs/system_ref"},
+                    "use_nodes_option": {"type": "boolean"}
                 },
                 "required": ["name"],
                 "additionalProperties": false
@@ -361,6 +366,7 @@
                         "type": "array",
                         "items": {"type": "string"}
                     },
+                    "use_login_shell": {"type": "boolean"},
                     "user_modules": {
                         "type": "array",
                         "items": {"type": "string"}
@@ -386,7 +392,7 @@
         "environments/ldflags": [],
         "environments/target_systems": ["*"],
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
-        "general/check_search_recursive": true,
+        "general/check_search_recursive": false,
         "general/colorize": true,
         "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,
@@ -398,6 +404,7 @@
         "general/target_systems": ["*"],
         "general/timestamp_dirs": "",
         "general/unload_modules": [],
+        "general/use_login_shell": false,
         "general/user_modules": [],
         "general/verbose": 0,
         "logging/level": "debug",
@@ -415,8 +422,10 @@
         "logging/handlers*/syslog_facility": "user",
         "modes/options": [],
         "modes/target_systems": ["*"],
+        "schedulers/ignore_reqnodenotavail": false,
         "schedulers/job_submit_timeout": 60,
         "schedulers/target_systems": ["*"],
+        "schedulers/use_nodes_option": false,
         "systems/descr": "",
         "systems/modules_system": "nomod",
         "systems/modules": [],

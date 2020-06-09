@@ -1,130 +1,150 @@
-============================
-The Regression Test Pipeline
-============================
+==========================
+How ReFrame Executes Tests
+==========================
 
-The backbone of the ReFrame regression framework is the regression test pipeline.
-This is a set of well defined phases that each regression test goes through during its lifetime.
-The figure below depicts this pipeline in detail.
+A ReFrame test will be normally tried for different programming environments and different partitions within the same ReFrame run.
+These are defined in the test's :func:`__init__` method, but it is not this original test object that is scheduled for execution.
+The following figure explains in more detail the process:
+
+.. figure:: _static/img/reframe-test-cases.svg
+  :align: center
+  :alt: How ReFrame loads and schedules tests for execution.
+
+  :sub:`How ReFrame loads and schedules tests for execution.`
+
+When ReFrame loads a test from the disk it unconditionally constructs it executing its :func:`__init__` method.
+The practical implication of this is that your test will be instantiated even if it will not run on the current system.
+After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see `Test Filtering <manpage.html#test-filtering>`__ for more details).
+After the tests are filtered, ReFrame creates the actual `test cases` to be run. A test case is essentially a tuple consisting of the test, the system partition and the programming environment to try.
+The test that goes into a test case is essentially a `clone` of the original test that was instantiated upon loading.
+This ensures that the test case's state is not shared and may not be reused in any case.
+Finally, the generated test cases are passed to a `runner` that is responsible for scheduling them for execution based on the selected execution policy.
+
+
+The Regression Test Pipeline
+----------------------------
+
+Each ReFrame test case goes through a pipeline with clearly defined stages.
+ReFrame tests can customize their operation as they execute by attaching hooks to the pipeline stages.
+The following figure shows the different pipeline stages.
 
 .. figure:: _static/img/pipeline.svg
   :align: center
   :alt: The regression test pipeline
 
+  :sub:`The regression test pipeline.`
 
-  The regression test pipeline
 
-A regression test starts its life after it has been instantiated by the framework.
-This is where all the basic information of the test is set.
-At this point, although it is initialized, the regression test is not yet *live*, meaning that it does not run yet.
-The framework will then go over all the loaded and initialized checks (we will talk about the loading and selection phases later), it will pick the next partition of the current system and the next programming environment for testing and will try to run the test.
-If the test supports the current system partition and the current programming environment, it will be run and it will go through all the following seven phases:
+All tests will go through every stage one after the other.
+However, some types of tests implement some stages as no-ops, whereas the sanity or performance check phases may be skipped on demand (see :option:`--skip-sanity-check` and :option:`--skip-performance-check` options).
+In the following we describe in more detail what happens in every stage.
 
-1. Setup
-2. Compilation
-3. Running
-4. Sanity checking
-5. Performance checking
-6. Cleanup
+---------------
+The Setup Phase
+---------------
 
-A test may implement some of them as no-ops. As soon as the test is finished, its resources are cleaned up and the framework's environment is restored.
-ReFrame will try to repeat the same procedure on the same regression test using the next programming environment and the next system partition until no further environments and partitions are left to be tested.
-In the following we elaborate on each of the individual phases of the lifetime of a regression test.
+During this phase the test will be set up for the currently selected system partition and programming environment.
+The :attr:`current_partition` and :attr:`current_environ` test attributes will be set and the paths associated to this test case (stage, output and performance log directories) will be created.
+A `job descriptor <regression_test_api.html#reframe.core.pipeline.RegressionTest.job>`__ will also be created for the test case containing information about the job to be submitted later in the pipeline.
 
-0. The Initialization Phase
----------------------------
 
-This phase is not part of the regression test pipeline as shown above, but it is quite important, since during this phase the test is loaded into memory and initialized.
-As we shall see in the `"Tutorial" <tutorial.html>`__ and in the `"Customizing Further A ReFrame Regression Test" <advanced.html>`__ sections, this is the phase where the *specification* of a test is set.
-At this point the current system is already known and the test may be set up accordingly.
-If no further differentiation is needed depending on the system partition or the programming environment, the test could go through the whole pipeline performing all of its work without the need to override any of the other pipeline stages.
-In fact, this is perhaps the most common case for most of the regression tests.
+---------------
+The Build Phase
+---------------
 
-1. The Setup Phase
-------------------
+During this phase the source code associated with the test is compiled using the current programming environment.
+If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ this phase is a no-op.
 
-A regression test is instantiated once by the framework and it is then copied each time a new system partition or programming environment is tried.
-This first phase of the regression pipeline serves the purpose of preparing the test to run on the specified partition and programming environment by performing a number of operations described below:
+Before building the test, all the `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ associated with it are copied to the test case's stage directory.
+ReFrame then temporarily switches to that directory and builds the test.
 
-Set up and load the test's environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------
+The Run Phase
+-------------
 
-At this point the environment of the current partition, the current programming environment and any test's specific environment will be loaded.
-For example, if the current partition requires ``slurm``, the current programming environment is ``PrgEnv-gnu`` and the test requires also ``cudatoolkit``, this phase will be equivalent to the following:
+During this phase a job script associated with the test case will be created and it will be submitted for execution.
+If the test is `"run-only," <regression_test_api.html#reframe.core.pipeline.RunOnlyRegressionTest>`__ its `resources <regression_test_api.html#reframe.core.pipeline.RegressionTest.sourcesdir>`__ will be first copied to the test case's stage directory.
+ReFrame will temporarily switch to that directory and spawn the test's job from there.
+This phase is executed asynchronously (either a batch job is spawned or a local process is started) and it is up to the selected `execution policy <#execution-policies>`__ to block or not until the associated job finishes.
 
-.. code:: bash
 
-  module load slurm
-  module unload PrgEnv-cray
-  module load PrgEnv-gnu
-  module load cudatoolkit
-
-Note that the framework automatically detects conflicting modules and unloads them first.
-So the user need not to care about the existing environment at all.
-She only needs to specify what is needed by her test.
-
-Setup the test's paths
-^^^^^^^^^^^^^^^^^^^^^^
-
-Each regression test is associated with a stage directory and an output directory.
-The stage directory will be the working directory of the test and all of its resources will be copied there before running.
-The output directory is the directory where some important output files of the test will be kept.
-By default these are the generated job script file, the standard output and standard error.
-The user can also specify additional files to be kept in the test's specification.
-At this phase, all these directories are created.
-
-Prepare a job for the test
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-At this point a *job descriptor* will be created for the test.
-A job descriptor in ReFrame is an abstraction of the job scheduler's functionality relevant to the regression framework.
-It is responsible for submitting a job in a job queue and waiting for its completion.
-ReFrame supports two job scheduler backends that can be combined with several different parallel program launchers.
-For a complete list of the job scheduler/parallel launchers combinations, please refer to `"Partition Configuration" <configure.html#partition-configuration>`__.
-
-2. The Compilation Phase
-------------------------
-
-At this phase the source code associated with test is compiled with the current programming environment.
-Before compiling, all the resources of the test are copied to its stage directory and the compilation is performed from that directory.
-
-3. The Run Phase
+----------------
+The Sanity Phase
 ----------------
 
-This phase comprises two subphases:
+During this phase, the sanity of the test's output is checked.
+ReFrame makes no assumption as of what a successful test is; it does not even look into its exit code.
+This is entirely up to the test to define.
+ReFrame provides a flexible and expressive way for specifying complex patterns and operations to be performed on the test's output in order to determine the outcome of the test.
 
-* **Job launch**: At this subphase a job script file for the regression test is generated and submitted to the job scheduler queue.
-  If the job scheduler for the current partition is the **local** one, a simple wrapper shell script will be generated and will be launched as a local OS process.
-* **Job wait**: At this subphase the job (or local process) launched in the previous subphase is waited for.
-  This phase is pretty basic: it just checks that the launched job (or local process) has finished.
-  No check is made of whether the job or process has finished successfully or not.
-  This is the responsibility of the next pipeline stage.
+---------------------
+The Performance Phase
+---------------------
 
-ReFrame currently supports two execution policies:
+During this phase, the performance metrics reported by the test (if it is performance test) are collected, logged and compared to their reference values.
+The mechanism for extracting performance metrics from the test's output is the same used by the sanity checking phase for extracting patterns from the test's output.
 
-* **serial**: In the serial execution policy, these two subphases are performed back-to-back and the framework blocks until the current regression test finishes.
-* **asynchronous**: In the asynchronous execution policy, as soon as the job associated to the current test is launched, ReFrame continues its execution by executing and launching the subsequent test cases.
+-----------------
+The Cleanup Phase
+-----------------
 
-4. The Sanity Checking Phase
-----------------------------
+During this final stage of the pipeline, the test's resources are cleaned up.
+More specifically, if the test has finished successfully, all interesting test files (build/job scripts, build/job script output and any user-specified files) are copied to ReFrame's output directory and the stage directory of the test is deleted.
 
-At this phase it is determined whether the check has finished successfully or not.
-Although this decision is test-specific, ReFrame provides a very flexible and expressive way for specifying complex patterns and operations to be performed on the test's output in order to determine the outcome of the test.
+.. note::
+   This phase might be deferred in case a test has dependents (see :ref:`cleaning-up-stage-files` for more details).
 
-5. The Performance Checking Phase
----------------------------------
 
-At this phase the performance of the regression test is checked.
-ReFrame uses the same mechanism for analyzing the output of the test as with sanity checking.
-The only difference is that the user can now specify reference values per system or system partition, as well as acceptable performance thresholds
+Execution Policies
+------------------
 
-6. The Cleanup Phase
---------------------
+All regression tests in ReFrame will execute the pipeline stages described above.
+However, how exactly this pipeline will be executed is responsibility of the test execution policy.
+There are two execution policies in ReFrame: the serial and the asynchronous one.
 
-This is the final stage of the regression test pipeline and it is responsible for cleaning up the resources of the test.
-Three steps are performed in this phase:
+In the serial execution policy, a new test gets into the pipeline after the previous one has exited.
+As the figure below shows, this can lead to long idling times in the run phase, since the execution blocks until the associated test job finishes.
 
-1. The interesting files of the test (job script, standard output and standard error and any additional files specified by the user) are copied to its output directory for later inspection and bookkeeping,
-2. the stage directory is removed and
-3. the test's environment is revoked.
 
-At this point the ReFrame's environment is clean and in its original state and the framework may continue by running more test cases.
+.. figure:: _static/img/serial-exec-policy.svg
+  :align: center
+  :alt: The serial execution policy.
+
+  :sub:`The serial execution policy.`
+
+
+In the asynchronous execution policy, multiple tests can be simultaneously on-the-fly.
+When a test enters the run phase, ReFrame does not block, but continues by picking the next test case to run.
+This continues until no more test cases are left for execution or until a maximum concurrency limit is reached.
+At the end, ReFrame enters a busy-wait loop monitoring the spawned test cases.
+As soon as test case finishes, it resumes its pipeline and runs it to completion.
+The following figure shows how the asynchronous execution policy works.
+
+
+.. figure:: _static/img/async-exec-policy.svg
+  :align: center
+  :alt: The asynchronous execution policy.
+
+  :sub:`The asynchronous execution policy.`
+
+
+ReFrame tries to keep concurrency high by maintaining as many test cases as possible simultaneously active.
+When the `concurrency limit <config_reference.html#.systems[].partitions[].max_jobs>`__ is reached, ReFrame will first try to free up execution slots by checking if any of the spawned jobs have finished, and it will fill that slots first before throttling execution.
+
+ReFrame uses polling to check the status of the spawned jobs, but it does so in a dynamic way, in order to ensure both responsiveness and avoid overloading the system job scheduler with excessive polling.
+
+Timing the Test Pipeline
+------------------------
+
+.. versionadded:: 3.0
+
+ReFrame keeps track of the time a test spends in every pipeline stage and reports that after each test finishes.
+However, it does so from its own perspective and not from that of the scheduler backend used.
+This has some practical implications:
+As soon as a test enters the "run" phase, ReFrame's timer for that phase starts ticking regardless if the associated job is pending.
+Similarly, the "run" phase ends as soon as ReFrame realizes it.
+This will happen after the associated job has finished.
+For this reason, the time spent in the pipeline's "run" phase should *not* be interpreted as the actual runtime of the test, especially if a non-local scheduler backend is used.
+
+Finally, the execution time of the "cleanup" phase is not reported when a test finishes, since it may be deferred in case that there exist tests that depend on that one.
+See :doc:`dependencies` for more information on how ReFrame treats tests with dependencies.

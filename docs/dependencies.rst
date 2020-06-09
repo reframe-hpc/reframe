@@ -2,24 +2,7 @@
 How Test Dependencies Work In ReFrame
 =====================================
 
-Before going into details on how ReFrame treats test dependencies, it is important to understand how tests are actually treated and executed by the runtime.
-Normally, a ReFrame test will be tried for different programming environments and different partitions within the same ReFrame run.
-These are defined in the test's :func:`__init__` method, but it is not this original object that is being executed by the regression test pipeline.
-The following figure explains in more detail the process:
-
-.. figure:: _static/img/reframe-test-cases.svg
-  :align: center
-  :alt: How ReFrame loads and schedules tests for execution.
-
-When ReFrame loads a test from the disk it unconditionally constructs it executing its :func:`__init__` method.
-The practical implication of this is that your test will be instantiated even if it will not run on the current system.
-After all the tests are loaded, they are filtered based on the current system and any other criteria (such as programming environment, test attributes etc.) specified by the user (see `Filtering of Regression Tests <running.html#filtering-of-regression-tests>`__ for more details).
-After the tests are filtered, ReFrame creates the actual `test cases` to be run. A test case is essentially a tuple consisting of the test, the system partition and the programming environment to try.
-The test that goes into a test case is essentially a `clone` of the original test that was instantiated upon loading.
-This ensures that the test case's state is not shared and may not be reused in any case.
-Finally, the generated test cases are passed to a `runner` that is responsible for scheduling them for execution based on the selected execution policy.
-
-Dependencies in ReFrame are defined at the test level using the :func:`depends_on` function, but are projected to the test cases space.
+Dependencies in ReFrame are defined at the test level using the :func:`depends_on` function, but are projected to the `test cases <pipeline.html>`__ space.
 We will see the rules of that projection in a while.
 The dependency graph construction and the subsequent dependency analysis happen also at the level of the test cases.
 
@@ -118,16 +101,16 @@ Assume, for example, that :class:`T0` and :class:`T1` are defined as follows:
 
    import reframe as rfm
    import reframe.utility.sanity as sn
-   
-   
+
+
    @rfm.simple_test
    class T0(rfm.RegressionTest):
        def __init__(self):
            self.valid_systems = ['P0']
            self.valid_prog_environs = ['E0']
            ...
-   
-   
+
+
    @rfm.simple_test
    class T1(rfm.RegressionTest):
        def __init__(self):
@@ -156,7 +139,7 @@ The ``(T0, E1)`` test case would simply have no dependent test cases.
 Resolving dependencies
 ----------------------
 
-As shown in the `tutorial <advanced.html#using-dependencies-in-your-tests>`__, test dependencies would be of limited usage if you were not able to use the results or information of the target tests.
+As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usage if you were not able to use the results or information of the target tests.
 Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
 
 .. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
@@ -187,3 +170,14 @@ In fact, you can rewrite :func:`set_executable` function as follows:
 Now it's easier to understand what the ``@require_deps`` decorator does behind the scenes.
 It binds the function arguments to a partial realization of the :func:`getdep` function and attaches the decorated function as an after-setup hook.
 In fact, any ``@require_deps``-decorated function will be invoked before any other after-setup hook.
+
+
+.. _cleaning-up-stage-files:
+
+Cleaning up stage files
+-----------------------
+
+In principle, the output of a test might be needed by its dependent tests.
+As a result, the stage directory of the test will only be cleaned up after all of its *immediate* dependent tests have finished successfully.
+If any of its children has failed, the cleanup phase will be skipped, such that all the test's files will remain in the stage directory.
+This allows users to reproduce manually the error of a failed test with dependencies, since all the needed resources of the failing test are left in their original location.
