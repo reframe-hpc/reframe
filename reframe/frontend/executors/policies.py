@@ -56,11 +56,6 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
             task.setup(partition, environ,
                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                       sched_account=self.sched_account,
-                       sched_partition=self.sched_partition,
-                       sched_reservation=self.sched_reservation,
-                       sched_nodelist=self.sched_nodelist,
-                       sched_exclude_nodelist=self.sched_exclude_nodelist,
                        sched_options=self.sched_options)
 
             task.compile()
@@ -257,11 +252,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                           sched_account=self.sched_account,
-                           sched_partition=self.sched_partition,
-                           sched_reservation=self.sched_reservation,
-                           sched_nodelist=self.sched_nodelist,
-                           sched_exclude_nodelist=self.sched_exclude_nodelist,
                            sched_options=self.sched_options)
             except TaskExit:
                 return False

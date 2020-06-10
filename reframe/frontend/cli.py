@@ -595,11 +595,13 @@ def main():
 
         options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
         if options.account:
+            options.job_options.append(f'account={options.account}')
             printer.warning(f"`--account' is deprecated and "
                             f"will be removed in the future; you should "
                             f"use `-J account={options.account}'")
 
         if options.partition:
+            options.job_options.append(f'partition={options.partition}')
             printer.warning(f"`--partition' is deprecated and "
                             f"will be removed in the future; you should "
                             f"use `-J partition={options.partition}' "
@@ -607,16 +609,19 @@ def main():
                             f"scheduler")
 
         if options.reservation:
+            options.job_options.append(f'reservation={options.reservation}')
             printer.warning(f"`--reservation' is deprecated and "
                             f"will be removed in the future; you should "
                             f"use `-J reservation={options.reservation}'")
 
         if options.nodelist:
+            options.job_options.append(f'nodelist={options.nodelist}')
             printer.warning(f"`--nodelist' is deprecated and "
                             f"will be removed in the future; you should "
                             f"use `-J nodelist={options.nodelist}'")
 
         if options.exclude_nodes:
+            options.job_options.append(f'exclude={options.exclude_nodes}')
             printer.warning(f"`--exclude-nodes' is deprecated and "
                             f"will be removed in the future; you should "
                             f"use `-J exclude={options.exclude_nodes}'")
@@ -663,12 +668,6 @@ def main():
                 sched_flex_alloc_nodes = options.flex_alloc_nodes
 
             exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes
-            exec_policy.flex_alloc_nodes = options.flex_alloc_nodes
-            exec_policy.sched_account = options.account
-            exec_policy.sched_partition = options.partition
-            exec_policy.sched_reservation = options.reservation
-            exec_policy.sched_nodelist = options.nodelist
-            exec_policy.sched_exclude_nodelist = options.exclude_nodes
             parsed_job_options = []
             for opt in options.job_options:
                 if opt.startswith('-') or opt.startswith('#'):

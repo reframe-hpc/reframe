@@ -48,11 +48,6 @@ class _TestLauncher(abc.ABC):
                               script_filename='fake_script',
                               stdout='fake_stdout',
                               stderr='fake_stderr',
-                              sched_account='fake_account',
-                              sched_partition='fake_partition',
-                              sched_reservation='fake_reservation',
-                              sched_nodelist="mynode",
-                              sched_exclude_nodelist='fake_exclude_nodelist',
                               sched_exclusive_access='fake_exclude_access',
                               sched_options=['--fake'])
         self.job.num_tasks = 4
@@ -128,13 +123,8 @@ class TestSrunallocLauncher(_TestLauncher, unittest.TestCase):
                 '--ntasks-per-core=1 '
                 '--ntasks-per-socket=1 '
                 '--cpus-per-task=2 '
-                '--partition=fake_partition '
                 '--exclusive '
                 '--hint=multithread '
-                '--partition=fake_partition '
-                '--account=fake_account '
-                '--nodelist=mynode '
-                '--exclude=fake_exclude_nodelist '
                 '--fake '
                 '--gres=gpu:4 '
                 '--foo')

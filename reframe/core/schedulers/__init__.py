@@ -200,11 +200,6 @@ class Job:
                  max_pending_time=None,
                  sched_flex_alloc_nodes=None,
                  sched_access=[],
-                 sched_account=None,
-                 sched_partition=None,
-                 sched_reservation=None,
-                 sched_nodelist=None,
-                 sched_exclude_nodelist=None,
                  sched_exclusive_access=None,
                  sched_options=None):
 
@@ -236,11 +231,6 @@ class Job:
         # Backend scheduler related information
         self._sched_flex_alloc_nodes = sched_flex_alloc_nodes
         self._sched_access = sched_access
-        self._sched_nodelist = sched_nodelist
-        self._sched_exclude_nodelist = sched_exclude_nodelist
-        self._sched_partition = sched_partition
-        self._sched_reservation = sched_reservation
-        self._sched_account = sched_account
         self._sched_exclusive_access = sched_exclusive_access
 
     @classmethod
@@ -280,26 +270,6 @@ class Job:
     @property
     def sched_access(self):
         return self._sched_access
-
-    @property
-    def sched_nodelist(self):
-        return self._sched_nodelist
-
-    @property
-    def sched_exclude_nodelist(self):
-        return self._sched_exclude_nodelist
-
-    @property
-    def sched_partition(self):
-        return self._sched_partition
-
-    @property
-    def sched_reservation(self):
-        return self._sched_reservation
-
-    @property
-    def sched_account(self):
-        return self._sched_account
 
     @property
     def sched_exclusive_access(self):
