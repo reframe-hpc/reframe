@@ -12,7 +12,8 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.modules = ['ipcmagic']
         self.pre_run = [
             'module unload dask',
-            'module load Horovod/0.16.4-CrayGNU-19.10-tf-1.14.0']
+            'module load Horovod/0.16.4-CrayGNU-19.10-tf-1.14.0'
+        ]
         self.num_tasks = 2
         self.num_tasks_per_node = 1
         self.executable = 'ipython'
@@ -25,16 +26,16 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         ])
         self.reference = {
             'daint:gpu': {
-                'slope': (2.0, -0.1, 0.1, ''),
-                'offset': (0.0, -0.1, 0.1, ''),
-                'retries': (0, None, None, ''),
-                'time': (10, None, None, 'seconds'),
+                'slope': (2.0, -0.1, 0.1, None),
+                'offset': (0.0, -0.1, 0.1, None),
+                'retries': (0, None, None, None),
+                'time': (10, None, None, 's'),
             },
             'dom:gpu': {
-                'slope': (2.0, -0.1, 0.1, ''),
-                'offset': (0.0, -0.1, 0.1, ''),
-                'retries': (0, None, None, ''),
-                'time': (10, None, None, 'seconds'),
+                'slope': (2.0, -0.1, 0.1, None),
+                'offset': (0.0, -0.1, 0.1, None),
+                'retries': (0, None, None, None),
+                'time': (10, None, None, 's'),
             }
         }
         self.perf_patterns = {
@@ -42,7 +43,8 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
                                       self.stdout, 'slope', float),
             'offset': sn.extractsingle(r'offset=(?P<offset>\S+)',
                                        self.stdout, 'offset', float),
-            'retries': self.retries(),
+            'retries': 4 - sn.count(sn.findall(r'IPCluster is already running',
+                                               self.stdout)),
             'time': sn.extractsingle(r'IPCluster is ready\!\s+'
                                      r'\((?P<time>\d+) seconds\)',
                                      self.stdout, 'time', float)
@@ -53,10 +55,5 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
     @rfm.run_before('run')
     def prepare_run(self):
         # Change the job launcher since `ipython`
-        # needs to be emitted without `srun`.
+        # needs to be launched without `srun`.
         self.job.launcher = getlauncher('local')()
-
-    @sn.sanity_function
-    def retries(self):
-        return 4 - sn.count(sn.findall(r'IPCluster is already running.',
-                                       self.stdout))
