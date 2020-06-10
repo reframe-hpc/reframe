@@ -199,30 +199,35 @@ class SlurmJobScheduler(sched.JobScheduler):
                 preamble.append('%s %s' % (self._prefix, opt))
 
         constraints = []
-        option_parser = ArgumentParser()
-        option_parser.add_argument('-C', '--constraint')
-        parsed_args, _ = option_parser.parse_known_args(job.sched_access)
-        if parsed_args.constraint:
-            constraints += [parsed_args.constraint]
+        constraint_parser = ArgumentParser()
+        constraint_parser.add_argument('-C', '--constraint')
+        parsed_options, _ = constraint_parser.parse_known_args(
+            job.sched_access)
+        if parsed_options.constraint:
+            constraints.append(parsed_options.constraint.strip())
 
         # NOTE: Here last of the passed --constraint job options is taken
         # into account in order to respect the behavior of slurm.
-        parsed_args, _ = option_parser.parse_known_args(job.options)
-        if parsed_args.constraint:
-            constraints += [parsed_args.constraint]
+        parsed_options, _ = constraint_parser.parse_known_args(job.options)
+        if parsed_options.constraint:
+            constraints.append(parsed_options.constraint.strip())
 
         if constraints:
             preamble.append(
-                self._format_option(','.join(constraints), '--constraint={0}'))
+                self._format_option(','.join(constraints), '--constraint={0}')
+            )
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
         for opt in job.options:
-            if not opt.strip().startswith(('-C', '--constraint')):
-                if not prefix_patt.match(opt):
-                    preamble.append('%s %s' % (self._prefix, opt))
-                else:
-                    preamble.append(opt)
+            if opt.strip().startswith(('-C', '--constraint')):
+                # Constraints are already processed
+                continue
+
+            if not prefix_patt.match(opt):
+                preamble.append('%s %s' % (self._prefix, opt))
+            else:
+                preamble.append(opt)
 
         # Filter out empty statements before returning
         return list(filter(None, preamble))

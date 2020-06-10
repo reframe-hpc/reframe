@@ -372,22 +372,20 @@ def test_no_empty_lines_in_preamble(minimal_job):
 
 def test_combined_access_constraint(make_job, slurm_only):
     job = make_job(sched_access=['--constraint=c1'])
-    job.options = ['--constraint=c2,c3']
+    job.options = ['-C c2,c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
-        assert re.search(r'--constraint=c1,c2,c3$', fp.read(), re.MULTILINE)
-        assert re.search(r'--constraint=(c1|c2,c3)$', fp.read(),
-                         re.MULTILINE) is None
+        assert re.search(r'(?m)--constraint=c1,c2,c3$', fp.read())
+        assert re.search(r'(?m)--constraint=(c1|c2,c3)$', fp.read()) is None
 
 
 def test_combined_access_multiple_constraints(make_job, slurm_only):
     job = make_job(sched_access=['--constraint=c1'])
-    job.options = ['--constraint=c2', '--constraint=c3']
+    job.options = ['--constraint=c2', '-C c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
-        assert re.search(r'--constraint=c1,c3$', fp.read(), re.MULTILINE)
-        assert re.search(r'--constraint=(c1|c2|c3)$', fp.read(),
-                         re.MULTILINE) is None
+        assert re.search(r'(?m)--constraint=c1,c3$', fp.read())
+        assert re.search(r'(?m)--constraint=(c1|c2|c3)$', fp.read()) is None
 
 
 def test_guess_num_tasks(minimal_job, scheduler):
