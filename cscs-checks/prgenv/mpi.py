@@ -40,6 +40,7 @@ class MpiInitTest(rfm.RegressionTest):
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.build_system = 'SingleSource'
         self.sourcepath = 'mpi_init_thread.cpp'
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.cppflags = {
             'single':     ['-D_MPI_THREAD_SINGLE'],
             'funneled':   ['-D_MPI_THREAD_FUNNELED'],
@@ -85,6 +86,7 @@ class MpiHelloTest(rfm.RegressionTest):
 
         self.descr = 'MPI Hello World'
         self.sourcepath = 'mpi_helloworld.c'
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.maintainers = ['RS', 'AJ']
         self.num_tasks_per_node = 1
         self.num_tasks = 0

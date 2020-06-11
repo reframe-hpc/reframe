@@ -16,6 +16,7 @@ class UlimitCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray',  'PrgEnv-gnu',
                                     'PrgEnv-intel', 'PrgEnv-pgi']
         self.sourcepath = 'ulimit.c'
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.sanity_patterns = sn.all([
             sn.assert_found(r'The soft limit is unlimited', self.stdout),
             sn.assert_found(r'The hard limit is unlimited', self.stdout),

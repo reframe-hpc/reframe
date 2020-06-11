@@ -21,6 +21,7 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         }
         self.descr = self.lang_names[lang] + ' Hello World'
         self.sourcepath = 'hello_world'
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'tiger:gpu', 'arolla:cn',
@@ -122,6 +123,7 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
         self.sourcepath += '_serial.' + lang
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': [],
@@ -152,6 +154,7 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         super().__init__('openmp', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
         self.sourcepath += '_openmp.' + lang
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
@@ -190,6 +193,7 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
         self.sourcepath += '_mpi.' + lang
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': [],
@@ -215,6 +219,7 @@ class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
         self.sourcepath += '_mpi_openmp.' + lang
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],

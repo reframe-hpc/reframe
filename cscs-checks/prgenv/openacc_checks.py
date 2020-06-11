@@ -46,6 +46,7 @@ class OpenACCFortranCheck(rfm.RegressionTest):
 
         self.executable = self.name
         self.build_system = 'SingleSource'
+        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.num_gpus_per_node = 1
         self.num_tasks_per_node = 1
         result = sn.extractsingle(r'final result:\s+(?P<result>\d+\.?\d*)',

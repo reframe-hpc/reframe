@@ -17,6 +17,9 @@ class MpiTCheck(rfm.RegressionTest):
                                     'PrgEnv-intel', 'PrgEnv-cray_classic']
         self.build_system = 'SingleSource'
         self.sourcepath = 'mpit_vars.c'
+        src_ref_files = ['mpit_categories.ref', 'mpit_perf_vars.ref',
+                         'mpit_control_vars.ref', self.sourcepath]
+        self.prebuild_cmds = ['ln -s src/%s .' % f for f in src_ref_files]
         self.num_tasks_per_node = 1
         self.variables = {'MPITEST_VERBOSE': '1', 'MPICH_VERSION_DISPLAY': '1'}
         self.rpt = 'rpt'
