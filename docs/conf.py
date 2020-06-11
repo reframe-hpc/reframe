@@ -29,7 +29,12 @@ import sys
 
 import sphinx_rtd_theme
 
-sys.path.insert(0, os.path.abspath('..'))
+prefix = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+pymajver = sys.version_info.major
+pyminver = sys.version_info.minor
+external = os.path.join(prefix, 'external', 'lib',
+                        f'python{pymajver}.{pyminver}', 'site-packages')
+sys.path = [prefix, external] + sys.path
 
 import reframe                           # noqa: F401, F403
 import reframe.utility.os_ext as os_ext  # noqa: F401, F403
