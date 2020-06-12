@@ -15,4 +15,5 @@ pip3 install -r requirements.txt --prefix=external/
 
 if [ x"$1" == x"+docs" ]; then
     pip3 install -r docs/requirements.txt --prefix=external/
+    make -C docs
 fi
