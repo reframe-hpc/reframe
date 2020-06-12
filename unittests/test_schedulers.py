@@ -375,8 +375,10 @@ def test_combined_access_constraint(make_job, slurm_only):
     job.options = ['-C c2,c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
-        assert re.search(r'(?m)--constraint=c1,c2,c3$', fp.read())
-        assert re.search(r'(?m)--constraint=(c1|c2,c3)$', fp.read()) is None
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1,c2,c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2,c3)$', script_content) is None
 
 
 def test_combined_access_multiple_constraints(make_job, slurm_only):
@@ -384,8 +386,22 @@ def test_combined_access_multiple_constraints(make_job, slurm_only):
     job.options = ['--constraint=c2', '-C c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
-        assert re.search(r'(?m)--constraint=c1,c3$', fp.read())
-        assert re.search(r'(?m)--constraint=(c1|c2|c3)$', fp.read()) is None
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1,c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
+
+
+def test_combined_access_verbatim_constraint(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['#SBATCH --constraint=c2', '#SBATCH -C c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1$', script_content)
+    assert re.search(r'(?m)^#SBATCH --constraint=c2$', script_content)
+    assert re.search(r'(?m)^#SBATCH -C c3$', script_content)
 
 
 def test_guess_num_tasks(minimal_job, scheduler):
