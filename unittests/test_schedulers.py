@@ -178,7 +178,6 @@ def _expected_pbs_directives(job):
         ':mem=100GB:cpu_type=haswell' % (num_nodes,
                                          job.num_tasks_per_node,
                                          num_cpus_per_node),
-        # '#PBS -q %s' % job.sched_partition,
         '#PBS --gres=gpu:4',
         '#DW jobdw capacity=100GB',
         '#DW stage_in source=/foo'
