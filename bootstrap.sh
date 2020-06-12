@@ -10,9 +10,41 @@
 #
 # Run once before the first run.
 
-pip3 install --upgrade pip
-pip3 install -r requirements.txt --prefix=external/
+CMD()
+{
+    echo '==>' $* && $*
+}
+
+usage()
+{
+    echo "Usage: $0 [-h] [+docs]"
+    echo "Bootstrap ReFrame; \
+run once before invoking ReFrame for the first time"
+    echo "  -h      Print this help message and exit"
+    echo "  +docs   Build also the documentation"
+}
+
+
+while getopts "h" opt; do
+    case $opt in
+        "h") usage && exit 0 ;;
+        "?") usage && exit 0 ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+pyver=$(python3 -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
+
+# Install pip for Python 3
+CMD python3 -m ensurepip --root external/ --default-pip
+
+export PATH=external/usr/bin:$PATH
+export PYTHONPATH=external/usr/lib/python$pyver/site-packages:$PYTHONPATH
+
+CMD pip install --upgrade pip --target=external/
+CMD pip install -r requirements.txt --target=external/
 
 if [ x"$1" == x"+docs" ]; then
-    pip3 install -r docs/requirements.txt --prefix=external/
+    CMD pip install -r docs/requirements.txt --target=external/
 fi
