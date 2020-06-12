@@ -39,13 +39,14 @@ pyver=$(python3 -V | sed -n 's/Python \([0-9]\+\)\.\([0-9]\+\)\..*/\1.\2/p')
 # Install pip for Python 3
 CMD python3 -m ensurepip --root external/ --default-pip
 
-export PATH=external/usr/bin:$PATH
-export PYTHONPATH=external/usr/lib/python$pyver/site-packages:$PYTHONPATH
+export PATH=external/bin:$PATH
+#export PYTHONPATH=external/usr/lib/python$pyver/site-packages:$PYTHONPATH
+export PYTHONPATH=external/:$PYTHONPATH
 
-CMD pip install --upgrade pip --target=external/
-CMD pip install -r requirements.txt --target=external/
+CMD pip install -q --upgrade pip --target=external/
+CMD pip install -q -r requirements.txt --upgrade --target=external/
 
 if [ x"$1" == x"+docs" ]; then
-    CMD pip install -r docs/requirements.txt --target=external/
+    CMD pip install -q -r docs/requirements.txt --upgrade --target=external/
     make -C docs
 fi
