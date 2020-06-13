@@ -35,9 +35,8 @@ tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."
 echo "Working directory: $tmpdir ..."
 cd $tmpdir
-git clone https://github.com/vkarak/reframe.git
+git clone https://github.com/eth-cscs/reframe.git
 cd reframe
-git checkout feat/immediate-install-ci-script
 ./bootstrap.sh
 found_version=$(./bin/reframe -V | sed -e 's/ (.*)//g')
 if [ $found_version != $version ]; then
