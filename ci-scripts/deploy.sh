@@ -35,23 +35,29 @@ tmpdir=$(mktemp -d)
 echo "Deploying ReFrame version $version ..."
 echo "Working directory: $tmpdir ..."
 cd $tmpdir
-git clone https://github.com/eth-cscs/reframe.git
+git clone https://github.com/vkarak/reframe.git
 cd reframe
-found_version=$(./reframe.py -V | sed -e 's/ (.*)//g')
+git checkout feat/immediate-install-ci-script
+./bootstrap.sh
+found_version=$(./bin/reframe -V | sed -e 's/ (.*)//g')
 if [ $found_version != $version ]; then
     echo "$0: version mismatch: found $found_version, but required $version" >&2
     exit 1
 fi
 
-python3 -m venv venv.deployment
-source venv.deployment/bin/activate
-pip install --upgrade pip setuptools wheel twine
-pip install -r requirements.txt
 ./test_reframe.py
 git tag -a v$version -m "ReFrame $version"
 git push origin --tags
-python setup.py sdist bdist_wheel
-twine upload dist/*
+
+# We need this for running the setup.py of ReFrame
+export PYTHONPATH=$(pwd)/external:$PYTHONPATH
+
+# We create a virtual environment here just for the deployment
+python3 -m venv venv.deployment
+source venv.deployment/bin/activate
+python3 -m pip install --upgrade pip setuptools wheel twine
+python3 setup.py sdist bdist_wheel
+python3 -m twine upload dist/*
 deactivate
 cd $oldpwd
 echo "Deployment was successful!"
