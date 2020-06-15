@@ -195,11 +195,35 @@ class SlurmJobScheduler(sched.JobScheduler):
             hint = 'multithread' if job.use_smt else 'nomultithread'
 
         for opt in job.sched_access:
-            preamble.append('%s %s' % (self._prefix, opt))
+            if not opt.strip().startswith(('-C', '--constraint')):
+                preamble.append('%s %s' % (self._prefix, opt))
+
+        constraints = []
+        constraint_parser = ArgumentParser()
+        constraint_parser.add_argument('-C', '--constraint')
+        parsed_options, _ = constraint_parser.parse_known_args(
+            job.sched_access)
+        if parsed_options.constraint:
+            constraints.append(parsed_options.constraint.strip())
+
+        # NOTE: Here last of the passed --constraint job options is taken
+        # into account in order to respect the behavior of slurm.
+        parsed_options, _ = constraint_parser.parse_known_args(job.options)
+        if parsed_options.constraint:
+            constraints.append(parsed_options.constraint.strip())
+
+        if constraints:
+            preamble.append(
+                self._format_option(','.join(constraints), '--constraint={0}')
+            )
 
         preamble.append(self._format_option(hint, '--hint={0}'))
         prefix_patt = re.compile(r'(#\w+)')
         for opt in job.options:
+            if opt.strip().startswith(('-C', '--constraint')):
+                # Constraints are already processed
+                continue
+
             if not prefix_patt.match(opt):
                 preamble.append('%s %s' % (self._prefix, opt))
             else:
@@ -589,6 +613,10 @@ class _SlurmNode(sched.Node):
 
     def is_available(self):
         return all([self._states == {'IDLE'}, self._partitions,
+                    self._active_features, self._states])
+
+    def under_maintenance(self):
+        return all([self._states == {'MAINT'}, self._partitions,
                     self._active_features, self._states])
 
     def is_down(self):

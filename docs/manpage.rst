@@ -341,6 +341,10 @@ Options controlling job submission
    If ``key`` starts with ``-`` or ``#``, the option will be passed verbatim to the job script.
    Otherwise, ReFrame will add ``-`` or ``--`` as well as the directive corresponding to the current scheduler.
    This option will be emitted after any options specified in the :js:attr:`access` system partition configuration parameter.
+   Especially for the Slurm scheduler, constraint options, i.e ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value``, ``-J -C=value` are going to be combined with the corresponding ones specified in the :js:attr:`access` system partition configuration parameter.
+   If multiple constraint options are specified with separate key-value pairs, only the last one is going to be taken into account.
+   For multiple combined constraints use the ``-J constraint=value1,value2`` syntax.
+   Note that the above is not valid if ``key`` starts with ``#`` in which case the option is going to be passed verbatim to the job script.
 
 
 ------------------------
@@ -364,6 +368,8 @@ If no node can be selected, the test will be marked as a failure with an appropr
      It is therefore possible that the number of tasks assigned does not correspond to the actual idle nodes.
 
      This is the default policy.
+
+   - ``maint``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes of the node pool which are currently under maintenance.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
 
 ---------------------------------------

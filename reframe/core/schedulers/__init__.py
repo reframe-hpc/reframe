@@ -361,6 +361,13 @@ class Job:
                 'flex_alloc_nodes: selecting idle nodes: '
                 'available nodes now: %s' % len(available_nodes)
             )
+        elif self.sched_flex_alloc_nodes == 'maint':
+            available_nodes = {n for n in available_nodes
+                               if n.under_maintenance()}
+            getlogger().debug(
+                'flex_alloc_nodes: selecting nodes under maintenance: '
+                'available nodes now: %s' % len(available_nodes)
+            )
 
         return len(available_nodes) * num_tasks_per_node
 

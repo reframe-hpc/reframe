@@ -260,7 +260,7 @@ def main():
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
-        dest='flex_alloc_nodes', metavar='{all|idle|NUM}', default=None,
+        dest='flex_alloc_nodes', metavar='{all|idle|maint|NUM}', default=None,
         help='Set strategy for the flexible node allocation (default: "idle").'
     )
     env_options.add_argument(
@@ -656,7 +656,8 @@ def main():
                 if sched_flex_alloc_nodes <= 0:
                     raise ConfigError(errmsg.format(options.flex_alloc_nodes))
             except ValueError:
-                if not options.flex_alloc_nodes.casefold() in {'idle', 'all'}:
+                if (not options.flex_alloc_nodes.casefold() in
+                    {'idle', 'all', 'maint'}):
                     raise ConfigError(
                         errmsg.format(options.flex_alloc_nodes)) from None
 

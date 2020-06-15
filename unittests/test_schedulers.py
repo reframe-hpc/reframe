@@ -67,7 +67,7 @@ def exec_ctx(temp_runtime, scheduler):
     next(rt)
     if scheduler.registered_name == 'squeue':
         # slurm backend fulfills the functionality of the squeue backend, so
-        # if squeue is not configured, use slurrm instead
+        # if squeue is not configured, use slurm instead
         partition = (fixtures.partition_by_scheduler('squeue') or
                      fixtures.partition_by_scheduler('slurm'))
     else:
@@ -370,6 +370,40 @@ def test_no_empty_lines_in_preamble(minimal_job):
         assert line != ''
 
 
+def test_combined_access_constraint(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['-C c2,c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1,c2,c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2,c3)$', script_content) is None
+
+
+def test_combined_access_multiple_constraints(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['--constraint=c2', '-C c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1,c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
+
+
+def test_combined_access_verbatim_constraint(make_job, slurm_only):
+    job = make_job(sched_access=['--constraint=c1'])
+    job.options = ['#SBATCH --constraint=c2', '#SBATCH -C c3']
+    prepare_job(job)
+    with open(job.script_filename) as fp:
+        script_content = fp.read()
+
+    assert re.search(r'(?m)--constraint=c1$', script_content)
+    assert re.search(r'(?m)^#SBATCH --constraint=c2$', script_content)
+    assert re.search(r'(?m)^#SBATCH -C c3$', script_content)
+
+
 def test_guess_num_tasks(minimal_job, scheduler):
     minimal_job.num_tasks = 0
     if scheduler.registered_name == 'local':
@@ -613,6 +647,24 @@ def slurm_nodes():
             'ExtSensorsTemp=n/s Reason=Foo/ '
             'failed [reframe_user@01 Jan 2018]',
 
+            'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f6 ActiveFeatures=f6 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+            'NodeHostName=nid00006 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=MAINT '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p4 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]',
+
             'Node invalid_node2 not found']
 
 
@@ -827,6 +879,13 @@ def test_flex_alloc_not_enough_idle_nodes(make_flexible_job):
         prepare_job(job)
 
 
+def test_flex_alloc_maintenance_nodes(make_flexible_job):
+    job = make_flexible_job('maint')
+    job.options = ['--partition=p4']
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+
 def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
     job.options = ['-C f1,f2', '--partition=p1,p2']
@@ -934,6 +993,29 @@ def slurm_node_nopart():
     )
 
 
+@pytest.fixture
+def slurm_node_maintenance():
+    return _SlurmNode(
+        'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+        'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+        'AvailableFeatures=f6 ActiveFeatures=f6 '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+        'NodeHostName=nid00006 Version=10.00 OS=Linux '
+        'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+        'Sockets=1 Boards=1 State=MAINT '
+        'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+        'MCS_label=N/A Partitions=p4 '
+        'BootTime=01 Jan 2018 '
+        'SlurmdStartTime=01 Jan 2018 '
+        'CfgTRES=cpu=24,mem=32220M '
+        'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+        'LowestJoules=100000000 ConsumedJoules=0 '
+        'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+        'ExtSensorsTemp=n/s Reason=Foo/ '
+        'failed [reframe_user@01 Jan 2018]'
+    )
+
+
 def test_slurm_node_noname():
     with pytest.raises(JobError):
         _SlurmNode(
@@ -1006,22 +1088,9 @@ def test_slurm_node_is_down(slurm_node_allocated,
     assert slurm_node_nopart.is_down()
 
 
-class TestSlurmNode:
-    def setUp(self):
-        idle_node_description = (
-        )
-
-        idle_drained_node_description = (
-        )
-
-        no_partition_node_description = (
-        )
-
-        self.no_name_node_description = (
-        )
-
-        self.allocated_node = _SlurmNode(allocated_node_description)
-        self.allocated_node_copy = _SlurmNode(allocated_node_description)
-        self.idle_node = _SlurmNode(idle_node_description)
-        self.idle_drained = _SlurmNode(idle_drained_node_description)
-        self.no_partition_node = _SlurmNode(no_partition_node_description)
+def test_slurm_node_under_maintenance(slurm_node_allocated,
+                                      slurm_node_idle,
+                                      slurm_node_maintenance):
+    assert not slurm_node_allocated.under_maintenance()
+    assert not slurm_node_idle.under_maintenance()
+    assert slurm_node_maintenance.under_maintenance()
