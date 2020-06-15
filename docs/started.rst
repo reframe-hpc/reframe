@@ -7,11 +7,8 @@ Requirements
 
 * Python 3.6 or higher.
   Python 2 is not supported.
-* Required Python packages can be found in the ``requirements.txt`` file, which you can install as follows:
-
-  .. code:: bash
-
-     pip3 install -r requirements.txt
+* Required Python packages can be found in the ``requirements.txt`` file.
+  See :ref:`install-from-source` for more information on how to install ReFrame from source.
 
 
 ---------------------
@@ -63,6 +60,8 @@ ReFrame's latest stable version is available through different channels:
      eb easybuild/easyconfigs/r/ReFrame/ReFrame-VERSION.eb -r
 
 
+.. _install-from-source:
+
 -------------------------------
 Getting the Latest and Greatest
 -------------------------------
@@ -71,10 +70,23 @@ If you want the latest development version or any pre-release, you can clone ReF
 
 .. code:: bash
 
-    git clone https://github.com/eth-cscs/reframe.git
+   git clone https://github.com/eth-cscs/reframe.git
 
 
 Pre-release versions are denoted with the ``devX`` suffix and are `tagged <https://github.com/eth-cscs/reframe/releases>`__ in the repository.
+Preparing and running ReFrame from source is pretty straightforward:
+
+.. code:: bash
+
+   git clone https://github.com/eth-cscs/reframe.git
+   cd reframe
+   ./bootstrap.sh
+   ./bin/reframe -V
+
+.. note::
+   .. versionadded:: 3.1
+      The bootstrap script for ReFrame was added.
+      For previous ReFrame versions you should install its requirements using ``pip install -r requirements.txt`` in a Python virtual environment.
 
 
 Running the Unit Tests
