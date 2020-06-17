@@ -400,4 +400,9 @@ class Node(abc.ABC):
 
     @abc.abstractmethod
     def in_state(self, state):
-        '''Return ``True`` if this node is in the given state, ``False`` otherwise.'''
+        '''Returns whether the node is in the given state.
+
+           :arg state: The node state.
+           :returns: :class:`True` if the nodes's state matches the given one,
+                     :class:`False` otherwise.
+        '''
