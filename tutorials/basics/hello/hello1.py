@@ -8,12 +8,9 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class ExampleCompileOnlyTest(rfm.CompileOnlyRegressionTest):
+class HelloTest(rfm.RegressionTest):
     def __init__(self):
-        self.descr = ('ReFrame tutorial demonstrating the class'
-                      'CompileOnlyRegressionTest')
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.sanity_patterns = sn.assert_not_found('warning', self.stderr)
-        self.maintainers = ['put-your-name-here']
-        self.tags = {'tutorial'}
+        self.sourcepath = 'hello.c'
+        self.sanity_patterns = sn.assert_found(r'Hello, World\!', self.stdout)

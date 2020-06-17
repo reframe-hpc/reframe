@@ -146,8 +146,8 @@ html_theme_options = {
 html_logo = "_static/img/reframe-logo-dark-bg.svg"
 
 
-#autodoc_default_flags=['members', 'undoc-members', 'private-members', 'special-members', 'inherited-members', 'show-inheritance']
-#autodoc_default_flags=['members', 'undoc-members', 'inherited-members', 'show-inheritance']
+# autodoc_default_flags=['members', 'undoc-members', 'private-members', 'special-members', 'inherited-members', 'show-inheritance']
+# autodoc_default_flags=['members', 'undoc-members', 'inherited-members', 'show-inheritance']
 autodoc_default_flags = ['members']
 
 # End of READTHEDOCS
@@ -178,7 +178,6 @@ autodoc_default_flags = ['members']
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
