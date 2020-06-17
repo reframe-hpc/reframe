@@ -1070,14 +1070,14 @@ def test_str(slurm_node_allocated):
     assert 'nid00001' == str(slurm_node_allocated)
 
 
-def test_slurm_node_is_available(slurm_node_allocated,
-                                 slurm_node_idle,
-                                 slurm_node_drained,
-                                 slurm_node_nopart):
-    assert not slurm_node_allocated.is_available()
-    assert slurm_node_idle.is_available()
-    assert not slurm_node_drained.is_available()
-    assert not slurm_node_nopart.is_available()
+def test_slurm_node_in_state(slurm_node_allocated,
+                             slurm_node_idle,
+                             slurm_node_drained,
+                             slurm_node_nopart):
+    assert slurm_node_allocated.in_state('allocated')
+    assert slurm_node_idle.in_state('Idle')
+    assert slurm_node_drained.in_state('IDLE+Drain')
+    assert not slurm_node_nopart.in_state('IDLE')
 
 
 def test_slurm_node_is_down(slurm_node_allocated,
@@ -1086,11 +1086,3 @@ def test_slurm_node_is_down(slurm_node_allocated,
     assert not slurm_node_allocated.is_down()
     assert not slurm_node_idle.is_down()
     assert slurm_node_nopart.is_down()
-
-
-def test_slurm_node_under_maintenance(slurm_node_allocated,
-                                      slurm_node_idle,
-                                      slurm_node_maintenance):
-    assert not slurm_node_allocated.under_maintenance()
-    assert not slurm_node_idle.under_maintenance()
-    assert slurm_node_maintenance.under_maintenance()

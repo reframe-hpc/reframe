@@ -341,10 +341,6 @@ Options controlling job submission
    If ``key`` starts with ``-`` or ``#``, the option will be passed verbatim to the job script.
    Otherwise, ReFrame will add ``-`` or ``--`` as well as the directive corresponding to the current scheduler.
    This option will be emitted after any options specified in the :js:attr:`access` system partition configuration parameter.
-   Especially for the Slurm scheduler, constraint options, i.e ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value``, ``-J -C=value` are going to be combined with the corresponding ones specified in the :js:attr:`access` system partition configuration parameter.
-   If multiple constraint options are specified with separate key-value pairs, only the last one is going to be taken into account.
-   For multiple combined constraints use the ``-J constraint=value1,value2`` syntax.
-   Note that the above is not valid if ``key`` starts with ``#`` in which case the option is going to be passed verbatim to the job script.
 
 
 ------------------------
@@ -363,14 +359,16 @@ If no node can be selected, the test will be marked as a failure with an appropr
    Available values are the following:
 
    - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``idle``: Flexible tests will be assigned as many tasks as needed in order to span over the *idle* nodes of the node pool.
+   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes in state ``STATE``.
      Querying of the node state and submission of the test job are two separate steps not executed atomically.
-     It is therefore possible that the number of tasks assigned does not correspond to the actual idle nodes.
+     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given ``STATE``.
 
-     This is the default policy.
-
-   - ``maint``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes of the node pool which are currently under maintenance.
+     The default policy is to use the ``IDLE`` state which conforms to Slurm's convention for idle nodes.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
+
+   .. versionchanged:: 3.1
+      It is now possible to pass a string corresponding to the required state of the node to be considered for the flexible node allocation.
+
 
 ---------------------------------------
 Options controlling ReFrame environment

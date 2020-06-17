@@ -260,8 +260,8 @@ def main():
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
-        dest='flex_alloc_nodes', metavar='{all|idle|maint|NUM}', default=None,
-        help='Set strategy for the flexible node allocation (default: "idle").'
+        dest='flex_alloc_nodes', metavar='{STATE|ALL||NUM}', default=None,
+        help='Set strategy for the flexible node allocation (default: "IDLE").'
     )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',
@@ -593,7 +593,7 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
-        options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
+        options.flex_alloc_nodes = options.flex_alloc_nodes or 'IDLE'
         if options.account:
             printer.warning(f"`--account' is deprecated and "
                             f"will be removed in the future; you should "
@@ -656,11 +656,6 @@ def main():
                 if sched_flex_alloc_nodes <= 0:
                     raise ConfigError(errmsg.format(options.flex_alloc_nodes))
             except ValueError:
-                if (not options.flex_alloc_nodes.casefold() in
-                    {'idle', 'all', 'maint'}):
-                    raise ConfigError(
-                        errmsg.format(options.flex_alloc_nodes)) from None
-
                 sched_flex_alloc_nodes = options.flex_alloc_nodes
 
             exec_policy.sched_flex_alloc_nodes = sched_flex_alloc_nodes

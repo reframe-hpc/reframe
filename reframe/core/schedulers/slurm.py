@@ -611,13 +611,9 @@ class _SlurmNode(sched.Node):
     def __hash__(self):
         return hash(self.name)
 
-    def is_available(self):
-        return all([self._states == {'IDLE'}, self._partitions,
-                    self._active_features, self._states])
-
-    def under_maintenance(self):
-        return all([self._states == {'MAINT'}, self._partitions,
-                    self._active_features, self._states])
+    def in_state(self, state):
+        return all([self._states == set(state.upper().split('+')),
+                    self._partitions, self._active_features, self._states])
 
     def is_down(self):
         return bool({'DOWN', 'DRAIN', 'MAINT', 'NO_RESPOND'} & self._states)

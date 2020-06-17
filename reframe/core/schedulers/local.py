@@ -182,5 +182,5 @@ class _LocalNode(sched.Node):
     def __init__(self, name):
         self._name = name
 
-    def is_available(self):
-        return True
+    def in_state(self, state):
+        return NotImplemented
