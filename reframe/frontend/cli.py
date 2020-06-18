@@ -260,8 +260,8 @@ def main():
     )
     run_options.add_argument(
         '--flex-alloc-nodes', action='store',
-        dest='flex_alloc_nodes', metavar='{STATE|ALL||NUM}', default=None,
-        help='Set strategy for the flexible node allocation (default: "IDLE").'
+        dest='flex_alloc_nodes', metavar='{all|STATE|NUM}', default=None,
+        help='Set strategy for the flexible node allocation (default: "idle").'
     )
     env_options.add_argument(
         '-M', '--map-module', action='append', metavar='MAPPING',

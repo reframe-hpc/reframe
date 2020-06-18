@@ -612,7 +612,7 @@ class _SlurmNode(sched.Node):
         return hash(self.name)
 
     def in_state(self, state):
-        return all([self._states == set(state.upper().split('+')),
+        return all([self._states >= set(state.upper().split('+')),
                     self._partitions, self._active_features, self._states])
 
     def is_down(self):

@@ -183,4 +183,4 @@ class _LocalNode(sched.Node):
         self._name = name
 
     def in_state(self, state):
-        return NotImplemented
+        return state.casefold() == 'idle'

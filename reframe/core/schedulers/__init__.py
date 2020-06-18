@@ -359,7 +359,7 @@ class Job:
                                if n.in_state(self.sched_flex_alloc_nodes)}
             getlogger().debug(
                 f'flex_alloc_nodes: selecting nodes in state '
-                f'"{self.sched_flex_alloc_nodes}: " '
+                f'{self.sched_flex_alloc_nodes!r}: '
                 f'available nodes now: {len(available_nodes)}'
             )
 

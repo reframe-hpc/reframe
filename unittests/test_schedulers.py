@@ -1077,6 +1077,9 @@ def test_slurm_node_in_state(slurm_node_allocated,
     assert slurm_node_allocated.in_state('allocated')
     assert slurm_node_idle.in_state('Idle')
     assert slurm_node_drained.in_state('IDLE+Drain')
+    assert slurm_node_drained.in_state('IDLE')
+    assert slurm_node_drained.in_state('idle')
+    assert slurm_node_drained.in_state('DRAIN')
     assert not slurm_node_nopart.in_state('IDLE')
 
 

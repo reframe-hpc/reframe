@@ -359,15 +359,15 @@ If no node can be selected, the test will be marked as a failure with an appropr
    Available values are the following:
 
    - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes in state ``STATE``.
+   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes that are currently in state ``STATE``.
      Querying of the node state and submission of the test job are two separate steps not executed atomically.
-     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given ``STATE``.
+     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given state.
 
      The default policy is to use the ``IDLE`` state which conforms to Slurm's convention for idle nodes.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
 
    .. versionchanged:: 3.1
-      It is now possible to pass a string corresponding to the required state of the node to be considered for the flexible node allocation.
+      It is now possible to pass an arbitrary node state as a flexible node allocation parameter.
 
 
 ---------------------------------------
