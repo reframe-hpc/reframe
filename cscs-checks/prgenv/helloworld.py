@@ -27,10 +27,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                               'arolla:pn', 'tsa:cn', 'tsa:pn']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-intel',
-                                    'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda',
-                                    'PrgEnv-gnu', 'PrgEnv-gnu-nompi-nocuda',
-                                    'PrgEnv-pgi', 'PrgEnv-pgi-nompi-nocuda']
+                                    'PrgEnv-intel', 'PrgEnv-gnu', 'PrgEnv-pgi',
+                                    'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda']
 
         if self.current_system.name in ['kesch', 'arolla', 'tsa']:
             self.exclusive_access = True
@@ -129,6 +127,9 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.valid_prog_environs += ['PrgEnv-gnu-nompi', 'PrgEnv-pgi-nompi',
+                                     'PrgEnv-gnu-nompi-nocuda',
+                                     'PrgEnf-pgi-nompi-nocuda']
         self.sourcepath += '_serial.' + lang
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
