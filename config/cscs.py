@@ -545,8 +545,10 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla login nodes',
                     'launcher': 'local'
@@ -560,8 +562,10 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla post-processing nodes',
                     'launcher': 'srun'
@@ -575,8 +579,10 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nompi-nocuda',
                         'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi'
+                        'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Arolla compute nodes',
                     'resources': [
@@ -794,6 +800,18 @@ site_configuration = {
             'ftn': 'gfortran'
         },
         {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'arolla'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
                 'arolla'
@@ -818,6 +836,18 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'arolla'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-gnu',
             'target_systems': [
                 'arolla'
@@ -830,12 +860,36 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-gnu-nocuda',
+            'target_systems': [
+                'arolla'
+            ],
+            'modules': [
+                'PrgEnv-gnu/19.2-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-gnu-nompi',
             'target_systems': [
                 'arolla'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
+            ],
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran'
+        },
+        {
+            'name': 'PrgEnv-gnu-nompi-nocuda',
+            'target_systems': [
+                'arolla'
+            ],
+            'modules': [
+                'PrgEnv-gnu/19.2-nocuda'
             ],
             'cc': 'gcc',
             'cxx': 'g++',
