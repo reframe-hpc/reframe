@@ -25,8 +25,7 @@ class AutomaticArraysCheck(rfm.RegressionTest):
                 'MV2_USE_CUDA': '1'
             }
         elif self.current_system.name in ['arolla', 'tsa']:
-            self.valid_prog_environs += ['PrgEnv-gnu', 'PrgEnv-gnu-nompi',
-                                         'PrgEnv-pgi-nompi']
+            self.valid_prog_environs += ['PrgEnv-pgi-nompi']
             self.exclusive_access = True
 
         # This tets requires an MPI compiler, although it uses a single task
