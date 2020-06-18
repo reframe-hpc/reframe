@@ -551,6 +551,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla login nodes',
+                    'max_jobs': 4,
                     'launcher': 'local'
                 },
                 {
@@ -568,6 +569,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla post-processing nodes',
+                    'max_jobs': 25,
                     'launcher': 'srun'
                 },
                 {
@@ -593,6 +595,7 @@ site_configuration = {
                             ]
                         }
                     ],
+                    'max_jobs': 25,
                     'launcher': 'srun'
                 }
             ]
@@ -620,6 +623,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa login nodes',
+                    'max_jobs': 4,
                     'launcher': 'local'
                 },
                 {
@@ -639,6 +643,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa post-processing nodes',
+                    'max_jobs': 25,
                     'launcher': 'srun'
                 },
                 {
@@ -658,6 +663,7 @@ site_configuration = {
                         'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Tsa compute nodes',
+                    'max_jobs': 25,
                     'resources': [
                         {
                             'name': '_rfm_gpu',
