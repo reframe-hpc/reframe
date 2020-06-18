@@ -27,7 +27,10 @@ class HelloWorldBaseTest(rfm.RegressionTest):
                               'arolla:pn', 'tsa:cn', 'tsa:pn']
 
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-cray_classic',
-                                    'PrgEnv-gnu', 'PrgEnv-intel', 'PrgEnv-pgi']
+                                    'PrgEnv-intel',
+                                    'PrgEnv-gnu-nocuda', 'PrgEnv-pgi-nocuda',
+                                    'PrgEnv-gnu', 'PrgEnv-gnu-nompi-nocuda',
+                                    'PrgEnv-pgi', 'PrgEnv-pgi-nompi-nocuda']
 
         if self.current_system.name in ['kesch', 'arolla', 'tsa']:
             self.exclusive_access = True
@@ -89,7 +92,12 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        envname = self.current_environ.name.replace('-nompi', '')
+        if '-nompi-nocuda' in self.current_environ.name:
+            envname = self.current_environ.name.replace('-nompi-nocuda', '')
+        elif '-nocuda' in self.current_environ.name:
+            envname = self.current_environ.name.replace('-nocuda', '')
+        else:
+            envname = self.current_environ.name.replace('-nompi', '')
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
@@ -140,7 +148,9 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
         elif (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
+                                         'PrgEnv-pgi-nompi-nocuda',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-gnu-nompi-nocuda']
 
 
 @rfm.required_version('>=2.14')
@@ -173,7 +183,9 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
         elif (self.current_system.name in ['arolla', 'tsa'] and
               linkage == 'dynamic'):
             self.valid_prog_environs += ['PrgEnv-pgi-nompi',
-                                         'PrgEnv-gnu-nompi']
+                                         'PrgEnv-pgi-nompi-nocuda',
+                                         'PrgEnv-gnu-nompi',
+                                         'PrgEnv-gnu-nompi-nocuda']
 
         # On SLURM there is no need to set OMP_NUM_THREADS if one defines
         # num_cpus_per_task, but adding for completeness and portability
