@@ -606,8 +606,12 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa login nodes',
                     'launcher': 'local'
@@ -621,8 +625,12 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-pgi',
                         'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda',
                         'PrgEnv-gnu',
-                        'PrgEnv-gnu-nompi'
+                        'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa post-processing nodes',
                     'launcher': 'srun'
@@ -636,8 +644,12 @@ site_configuration = {
                     'environs': [
                         'PrgEnv-gnu',
                         'PrgEnv-gnu-nompi',
+                        'PrgEnv-gnu-nocuda',
+                        'PrgEnv-gnu-nompi-nocuda',
                         'PrgEnv-pgi',
-                        'PrgEnv-pgi-nompi'
+                        'PrgEnv-pgi-nompi',
+                        'PrgEnv-pgi-nocuda',
+                        'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Tsa compute nodes',
                     'resources': [
@@ -854,6 +866,30 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-pgi-nocuda',
+            'target_systems': [
+                'tsa'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
+            'name': 'PrgEnv-pgi-nompi-nocuda',
+            'target_systems': [
+                'tsa'
+            ],
+            'modules': [
+                'PrgEnv-pgi/19.9-nocuda'
+            ],
+            'cc': 'pgcc',
+            'cxx': 'pgc++',
+            'ftn': 'pgf90'
+        },
+        {
             'name': 'PrgEnv-gnu',
             'target_systems': [
                 'tsa'
@@ -866,12 +902,36 @@ site_configuration = {
             'ftn': 'mpifort'
         },
         {
+            'name': 'PrgEnv-gnu-nocuda',
+            'target_systems': [
+                'tsa'
+            ],
+            'modules': [
+                'PrgEnv-gnu/19.2-nocuda'
+            ],
+            'cc': 'mpicc',
+            'cxx': 'mpicxx',
+            'ftn': 'mpifort'
+        },
+        {
             'name': 'PrgEnv-gnu-nompi',
             'target_systems': [
                 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
+            ],
+            'cc': 'gcc',
+            'cxx': 'g++',
+            'ftn': 'gfortran'
+        },
+        {
+            'name': 'PrgEnv-gnu-nompi-nocuda',
+            'target_systems': [
+                'tsa'
+            ],
+            'modules': [
+                'PrgEnv-gnu/19.2-nocuda'
             ],
             'cc': 'gcc',
             'cxx': 'g++',
