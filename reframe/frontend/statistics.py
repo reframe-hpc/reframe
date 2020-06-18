@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import json
+import jsonschema
 import reframe.core.debug as debug
 import reframe.core.runtime as rt
 from reframe.core.exceptions import StatisticsError
@@ -69,6 +71,75 @@ class TestStats:
             report.append(messages[key])
 
         return '\n'.join(report)
+
+    def output_dict(self):
+        report = []
+        current_run = rt.runtime().current_run
+        for t in self.tasks(current_run):
+            check = t.check
+            partition = check.current_partition
+            partname = partition.fullname if partition else 'None'
+            environ_name = (check.current_environ.name
+                            if check.current_environ else 'None')
+            nodelist = (','.join(check.job.nodelist)
+                        if check.job and check.job.nodelist else '<None>')
+            job_type = 'local' if check.is_local() else 'batch job'
+            jobid = check.job.jobid if check.job else -1
+            if t.failed:
+                result = 'fail'
+            else:
+                result = 'success'
+
+            report.append({
+                'test': check.name,
+                'description': check.descr,
+                'result': result,
+                'system': partname,
+                'environment': environ_name,
+                'stagedir': check.stagedir,
+                'outputdir': check.outputdir,
+                'nodelist': nodelist,
+                'jobtype': job_type,
+                'jobid': jobid,
+                'maintainers': check.maintainers,
+                'tags': list(check.tags),
+                'retries': current_run
+            })
+
+        return report
+
+    def json_report(self):
+        schema = {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "test": {"type": "string"},
+                    "description": {"type": "string"},
+                    "result": {"type": "string"},
+                    "system": {"type": "string"},
+                    "environment": {"type": "string"},
+                    "stagedir": {"type": "string"},
+                    "outputdir": {"type": "string"},
+                    "nodelist": {"type": "string"},
+                    "jobtype": {"type": "string"},
+                    "jobid": {"type": "number"},
+                    "maintainers": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "retries": {"type": "number"}
+                }
+            },
+        }
+        report = self.output_dict()
+        jsonschema.validate(instance=report, schema=schema)
+        with open('report.json', 'w') as fp:
+            json.dump(report, fp, indent=4)
 
     def failure_report(self):
         line_width = 78

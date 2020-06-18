@@ -702,6 +702,8 @@ def main():
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
 
+                runner.stats.json_report()
+
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "
                           "listing or `-r' for running. "
