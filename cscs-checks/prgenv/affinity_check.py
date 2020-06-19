@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -17,8 +18,9 @@ class AffinityTestBase(rfm.RegressionTest):
         # The github URL can not be specifid as `self.sourcedir` as that
         # would prevent the src folder from being copied to stage which is
         # necessary since these tests need files from it.
-        self.prebuild_cmds = ['git clone https://github.com/vkarak/affinity',
-                              'ln -s src/*.txt .']
+        # self.reference_dir = os.path.join('/mpi_openmp', lang)
+        self.sourcesdir += os.path.join('/affinity_ref')
+        self.prebuild_cmds = ['git clone https://github.com/vkarak/affinity']
         self.executable = './affinity/affinity'
         self.variant = variant
         self.maintainers = ['RS', 'SK']
@@ -68,7 +70,7 @@ class AffinityTestBase(rfm.RegressionTest):
 class AffinityOpenMPTest(AffinityTestBase):
     def __init__(self, variant):
         super().__init__(variant)
-        self.descr = 'Checking the cpu affinity for OMP threads.'
+        self.descr = 'Checking the cpu affinity for OMP threads'
         self.cases = {
             'omp_bind_threads': {
                 'ref_daint:gpu': 'gpu_omp_bind_threads.txt',

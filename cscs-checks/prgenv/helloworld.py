@@ -5,6 +5,7 @@
 
 from datetime import datetime
 
+import os
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -21,7 +22,6 @@ class HelloWorldBaseTest(rfm.RegressionTest):
         }
         self.descr = self.lang_names[lang] + ' Hello World'
         self.sourcepath = 'hello_world'
-        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.build_system = 'SingleSource'
         self.valid_systems = ['daint:gpu', 'daint:mc', 'dom:gpu', 'dom:mc',
                               'kesch:cn', 'tiger:gpu', 'arolla:cn',
@@ -122,8 +122,8 @@ class HelloWorldTestSerial(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('serial', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.sourcesdir += os.path.join('/serial', lang)
         self.sourcepath += '_serial.' + lang
-        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' Serial ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': [],
@@ -153,8 +153,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('openmp', lang, linkage)
         self.valid_systems += ['kesch:pn', 'arolla:pn', 'tsa:pn']
+        self.sourcesdir += os.path.join('/openmp', lang)
         self.sourcepath += '_openmp.' + lang
-        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' OpenMP ' + str.capitalize(linkage)
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],
@@ -192,8 +192,8 @@ class HelloWorldTestOpenMP(HelloWorldBaseTest):
 class HelloWorldTestMPI(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi', lang, linkage)
+        self.sourcesdir += os.path.join('/mpi', lang)
         self.sourcepath += '_mpi.' + lang
-        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' MPI ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': [],
@@ -218,8 +218,8 @@ class HelloWorldTestMPI(HelloWorldBaseTest):
 class HelloWorldTestMPIOpenMP(HelloWorldBaseTest):
     def __init__(self, lang, linkage):
         super().__init__('mpi_openmp', lang, linkage)
+        self.sourcesdir += os.path.join('/mpi_openmp', lang)
         self.sourcepath += '_mpi_openmp.' + lang
-        self.prebuild_cmds = ['ln -s src/%s .' % self.sourcepath]
         self.descr += ' MPI + OpenMP ' + linkage.capitalize()
         self.prgenv_flags = {
             'PrgEnv-cray': ['-homp' if lang == 'F90' else '-fopenmp'],

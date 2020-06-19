@@ -19,9 +19,9 @@ class OpenCLCheck(rfm.RegressionTest):
         self.valid_prog_environs = ['PrgEnv-cray', 'PrgEnv-pgi']
         self.modules = ['craype-accel-nvidia60']
         self.build_system = 'Make'
+        self.sourcesdir += os.path.join('/opencl')
         src_files = ['src/vecAddKernel.cl', 'src/vecAdd_opencl.c',
                      'src/Makefile']
-        self.prebuild_cmds = ['ln -s %s .' % f for f in src_files]
         self.num_gpus_per_node = 1
         self.executable = 'vecAdd_opencl'
 
