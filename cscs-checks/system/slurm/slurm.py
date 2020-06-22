@@ -21,7 +21,7 @@ class SlurmSimpleBaseCheck(rfm.RunOnlyRegressionTest):
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
         if self.current_system.name in ['arolla', 'kesch', 'tsa']:
-            self.valid_prog_environs = [ 'PrgEnv-gnu', 'PrgEnv-pgi']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi']
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
