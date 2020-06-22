@@ -349,17 +349,18 @@ class Job:
             return self.sched_flex_alloc_nodes * num_tasks_per_node
 
         available_nodes = self.scheduler.allnodes()
-        getlogger().debug('flex_alloc_nodes: total available nodes %s ' %
+        getlogger().debug('flex_alloc_nodes: total available nodes: %s ' %
                           len(available_nodes))
 
         # Try to guess the number of tasks now
         available_nodes = self.scheduler.filternodes(self, available_nodes)
-        if self.sched_flex_alloc_nodes == 'idle':
+        if self.sched_flex_alloc_nodes.casefold() != 'all':
             available_nodes = {n for n in available_nodes
-                               if n.is_available()}
+                               if n.in_state(self.sched_flex_alloc_nodes)}
             getlogger().debug(
-                'flex_alloc_nodes: selecting idle nodes: '
-                'available nodes now: %s' % len(available_nodes)
+                f'flex_alloc_nodes: selecting nodes in state '
+                f'{self.sched_flex_alloc_nodes!r}: '
+                f'available nodes now: {len(available_nodes)}'
             )
 
         return len(available_nodes) * num_tasks_per_node
@@ -398,5 +399,10 @@ class Node(abc.ABC):
     '''
 
     @abc.abstractmethod
-    def is_available(self):
-        '''Return ``True`` if this node is available, ``False`` otherwise.'''
+    def in_state(self, state):
+        '''Returns whether the node is in the given state.
+
+           :arg state: The node state.
+           :returns: :class:`True` if the nodes's state matches the given one,
+                     :class:`False` otherwise.
+        '''
