@@ -337,11 +337,19 @@ Options controlling job submission
 .. option:: -J, --job-option=OPTION
 
    Pass ``OPTION`` directly to the job scheduler backend.
-   The syntax for this option is ``-J key=value``.
-   If ``key`` starts with ``-`` or ``#``, the option will be passed verbatim to the job script.
-   Otherwise, ReFrame will add ``-`` or ``--`` as well as the directive corresponding to the current scheduler.
-   This option will be emitted after any options specified in the :js:attr:`access` system partition configuration parameter.
+   The syntax of ``OPTION`` is ``-J key=value``.
+   If ``OPTION`` starts with ``-`` it will be passed verbatim to the backend job scheduler.
+   If ``OPTION`` starts with ``#`` it will be emitted verbatim in the job script.
+   Otherwise, ReFrame will pass ``--key=value`` or ``-k value`` (if ``key`` is a single character) to the backend scheduler.
+   Any job options specified with this command-line option will be emitted after any job options specified in the :js:attr:`access` system partition configuration parameter.
 
+   Especially for the Slurm backends, constraint options, such as ``-J constraint=value``, ``-J C=value``, ``-J --constraint=value`` or ``-J -C=value``, are going to be combined with any constraint options specified in the :js:attr:`access` system partition configuration parameter.
+   For example, if ``-C x`` is specified in the :js:attr:`access` and ``-J C=y`` is passed to the command-line, ReFrame will pass ``-C x,y`` as a constraint to the scheduler.
+   Notice, however, that if constraint options are specified through multiple :option:`-J` options, only the last one will be considered.
+   If you wish to completely overwrite any constraint options passed in :js:attr:`access`, you should consider passing explicitly the Slurm directive with ``-J '#SBATCH --constraint=new'``.
+
+   .. versionchanged:: 3.0
+      This option has become more flexible.
 
 ------------------------
 Flexible node allocation

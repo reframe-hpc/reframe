@@ -48,6 +48,9 @@ class RegressionTestMeta(type):
 
         for v in namespace.values():
             for b in bases:
+                if not hasattr(b, '_final_methods'):
+                    continue
+
                 if callable(v) and v.__name__ in b._final_methods:
                     msg = (f"'{cls.__qualname__}.{v.__name__}' attempts to "
                            f"override final method "

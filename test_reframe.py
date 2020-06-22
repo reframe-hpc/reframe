@@ -5,12 +5,16 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import argparse
 import os
-import pytest
 import sys
 
-import unittests.fixtures as fixtures
+prefix = os.path.abspath(os.path.dirname(__file__))
+external = os.path.join(prefix, 'external')
+sys.path = [prefix, external] + sys.path
+
+import argparse                         # noqa: F401, F403
+import pytest                           # noqa: F401, F403
+import unittests.fixtures as fixtures   # noqa: F401, F403
 
 
 if __name__ == '__main__':
@@ -38,5 +42,12 @@ if __name__ == '__main__':
     fixtures.USER_CONFIG_FILE = options.rfm_user_config
     fixtures.USER_SYSTEM = options.rfm_user_system
     fixtures.init_runtime()
+
+    # If no positional argument is specified, use the `unittests` directory,
+    # so as to avoid any automatic discovery of random unit tests from the
+    # external dependencies.
+    if all(arg.startswith('-') for arg in rem_args):
+        rem_args.append('unittests')
+
     sys.argv = [sys.argv[0], *rem_args]
     sys.exit(pytest.main())

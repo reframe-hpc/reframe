@@ -32,14 +32,12 @@ class SlurmCompiledBaseCheck(rfm.RegressionTest):
     def __init__(self):
         self.valid_systems = ['daint:gpu', 'daint:mc',
                               'dom:gpu', 'dom:mc',
-                              'kesch:cn', 'kesch:pn',
-                              'arolla:cn', 'arolla:pn',
-                              'tsa:cn', 'tsa:pn']
+                              'kesch:cn', 'kesch:pn']
         self.valid_prog_environs = ['PrgEnv-cray']
         self.tags = {'slurm', 'maintenance', 'ops',
                      'production', 'single-node'}
         self.num_tasks_per_node = 1
-        if self.current_system.name in ['arolla', 'kesch', 'tsa']:
+        if self.current_system.name in ['kesch']:
             self.exclusive_access = True
 
         self.maintainers = ['RS', 'VH']
