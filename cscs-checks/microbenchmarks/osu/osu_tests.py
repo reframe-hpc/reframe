@@ -185,10 +185,10 @@ class P2PCPUBandwidthTest(P2PBaseTest):
                 'bw': (9649.0, -0.10, None, 'MB/s')
             },
             'dom:gpu': {
-                'bw': (9360.0, -0.05, None, 'MB/s')
+                'bw': (9476.3, -0.05, None, 'MB/s')
             },
             'dom:mc': {
-                'bw': (9528.4, -0.10, None, 'MB/s')
+                'bw': (9528.0, -0.20, None, 'MB/s')
             },
             # keeping as reference:
             # 'monch:compute': {
@@ -223,10 +223,10 @@ class P2PCPULatencyTest(P2PBaseTest):
                 'latency': (1.61, None, 0.85, 'us')
             },
             'dom:gpu': {
-                'latency': (1.20, None, 0.35, 'us')
+                'latency': (1.138, None, 0.10, 'us')
             },
             'dom:mc': {
-                'latency': (1.21, None, 0.10, 'us')
+                'latency': (1.24, None, 0.15, 'us')
             },
             # keeping as reference:
             # 'monch:compute': {
