@@ -361,18 +361,22 @@ When allocating nodes automatically, ReFrame will take into account all node lim
 Nodes from this pool are allocated according to different policies.
 If no node can be selected, the test will be marked as a failure with an appropriate message.
 
-.. option:: --flex-alloc-nodes[=POLICY]
+.. option:: --flex-alloc-nodes=POLICY
 
    Set the flexible node allocation policy.
    Available values are the following:
 
    - ``all``: Flexible tests will be assigned as many tasks as needed in order to span over *all* the nodes of the node pool.
-   - ``idle``: Flexible tests will be assigned as many tasks as needed in order to span over the *idle* nodes of the node pool.
+   - ``STATE``: Flexible tests will be assigned as many tasks as needed in order to span over the nodes that are currently in state ``STATE``.
      Querying of the node state and submission of the test job are two separate steps not executed atomically.
-     It is therefore possible that the number of tasks assigned does not correspond to the actual idle nodes.
+     It is therefore possible that the number of tasks assigned does not correspond to the actual nodes in the given state.
 
-     This is the default policy.
+     If this option is not specified, the default allocation policy for flexible tests is 'idle'.
    - Any positive integer: Flexible tests will be assigned as many tasks as needed in order to span over the specified number of nodes from the node pool.
+
+   .. versionchanged:: 3.1
+      It is now possible to pass an arbitrary node state as a flexible node allocation parameter.
+
 
 ---------------------------------------
 Options controlling ReFrame environment
