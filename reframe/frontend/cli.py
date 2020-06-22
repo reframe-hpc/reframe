@@ -593,7 +593,7 @@ def main():
                                 "Skipping..." % m)
                 printer.debug(str(e))
 
-        options.flex_alloc_nodes = options.flex_alloc_nodes or 'IDLE'
+        options.flex_alloc_nodes = options.flex_alloc_nodes or 'idle'
         if options.account:
             printer.warning(f"`--account' is deprecated and "
                             f"will be removed in the future; you should "
