@@ -569,7 +569,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Arolla post-processing nodes',
-                    'max_jobs': 25,
+                    'max_jobs': 50,
                     'launcher': 'srun'
                 },
                 {
@@ -595,7 +595,7 @@ site_configuration = {
                             ]
                         }
                     ],
-                    'max_jobs': 25,
+                    'max_jobs': 50,
                     'launcher': 'srun'
                 }
             ]
