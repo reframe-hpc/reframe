@@ -256,7 +256,7 @@ class G2GBandwidthTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'bw': (8897.86, -0.1, None, 'MB/s')
+                'bw': (8813.09, -0.05, None, 'MB/s')
             },
             'daint:gpu': {
                 'bw': (8765.65, -0.1, None, 'MB/s')
@@ -301,7 +301,7 @@ class G2GLatencyTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'latency': (5.62, None, 0.1, 'us')
+                'latency': (5.56, None, 0.1, 'us')
             },
             'daint:gpu': {
                 'latency': (6.8, None, 0.65, 'us')
