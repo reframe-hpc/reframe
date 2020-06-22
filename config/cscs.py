@@ -643,7 +643,7 @@ site_configuration = {
                         'PrgEnv-gnu-nompi-nocuda'
                     ],
                     'descr': 'Tsa post-processing nodes',
-                    'max_jobs': 50,
+                    'max_jobs': 20,
                     'launcher': 'srun'
                 },
                 {
@@ -663,7 +663,7 @@ site_configuration = {
                         'PrgEnv-pgi-nompi-nocuda'
                     ],
                     'descr': 'Tsa compute nodes',
-                    'max_jobs': 50,
+                    'max_jobs': 20,
                     'resources': [
                         {
                             'name': '_rfm_gpu',
