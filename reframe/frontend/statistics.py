@@ -81,30 +81,46 @@ class TestStats:
             partname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            nodelist = (','.join(check.job.nodelist)
-                        if check.job and check.job.nodelist else '<None>')
             job_type = 'local' if check.is_local() else 'batch job'
             jobid = check.job.jobid if check.job else -1
-            if t.failed:
-                result = 'fail'
-            else:
-                result = 'success'
-
-            report.append({
-                'test': check.name,
+            report_dict = {
+                'name': check.name,
                 'description': check.descr,
-                'result': result,
                 'system': partname,
                 'environment': environ_name,
-                'stagedir': check.stagedir,
-                'outputdir': check.outputdir,
-                'nodelist': nodelist,
-                'jobtype': job_type,
-                'jobid': jobid,
-                'maintainers': check.maintainers,
                 'tags': list(check.tags),
-                'retries': current_run
-            })
+                'maintainers': check.maintainers,
+                'scheduler': check.job.scheduler.registered_name,
+                'job_stdout': check.job.stdout,
+                'job_stderr': check.job.stderr,
+            }
+            if not check.is_local():
+                report_dict['jobid'] = check.job.jobid if check.job else -1
+                report_dict['nodelist'] = (check.job.nodelist
+                                           if check.job and check.job.nodelist
+                                           else '<None>')
+
+            if check._build_job:
+                report_dict['build_stdout'] = check._build_job.stdout
+                report_dict['build_stderr'] = check._build_job.stderr
+
+            if t.failed:
+                report_dict['result'] = 'fail'
+                if t.exc_info is not None:
+                    from reframe.core.exceptions import format_exception
+
+                    report_dict['failing_reason'] = format_exception(
+                        *t.exc_info)
+                    report_dict['failing_phase'] = t.failed_stage
+                    report_dict['stagedir'] = check.stagedir
+            else:
+                report_dict['result'] = 'success'
+                report_dict['outputdir'] = check.outputdir
+
+            if current_run > 0:
+                report_dict['retries'] = current_run
+
+            report.append(report_dict)
 
         return report
 
@@ -114,16 +130,25 @@ class TestStats:
             "items": {
                 "type": "object",
                 "properties": {
-                    "test": {"type": "string"},
+                    "name": {"type": "string"},
                     "description": {"type": "string"},
-                    "result": {"type": "string"},
                     "system": {"type": "string"},
                     "environment": {"type": "string"},
                     "stagedir": {"type": "string"},
                     "outputdir": {"type": "string"},
-                    "nodelist": {"type": "string"},
-                    "jobtype": {"type": "string"},
+                    "nodelist": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                    },
+                    "scheduler": {"type": "string"},
                     "jobid": {"type": "number"},
+                    "result": {"type": "string"},
+                    "failing_phase": {"type": "string"},
+                    "failing_reason": {"type": "string"},
+                    "build_stdout": {"type": "string"},
+                    "build_stderr": {"type": "string"},
+                    "job_stdout": {"type": "string"},
+                    "job_stderr": {"type": "string"},
                     "maintainers": {
                         "type": "array",
                         "items": {"type": "string"}
