@@ -1,0 +1,41 @@
+{
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "description": {"type": ["string", "null"]},
+            "system": {"type": ["string", "null"]},
+            "environment": {"type": ["string", "null"]},
+            "stagedir": {"type": ["string", "null"]},
+            "outputdir": {"type": ["string", "null"]},
+            "nodelist": {
+                "type": "array",
+                "items": {"type": ["string"]}
+            },
+            "scheduler": {"type": ["string", "null"]},
+            "jobid": {"type": ["number", "null"]},
+            "result": {"type": "string"},
+            "failing_phase": {"type": ["string", "null"]},
+            "failing_reason": {"type": ["string", "null"]},
+            "build_stdout": {"type": ["string", "null"]},
+            "build_stderr": {"type": ["string", "null"]},
+            "job_stdout": {"type": ["string", "null"]},
+            "job_stderr": {"type": ["string", "null"]},
+            "maintainers": {
+                "type": "array",
+                "items": {"type": ["string", "null"]}
+            },
+            "tags": {
+                "type": "array",
+                "items": {"type": ["string", "null"]}
+            },
+            "try": {"type": "number"}
+        },
+        "additionalProperties": false,
+	"required": ["name", "description", "system", "environment", "stagedir",
+		     "outputdir", "nodelist", "scheduler", "jobid", "result",
+	             "failing_phase", "failing_reason", "build_stdout", "build_stderr",
+	             "job_stdout", "job_stderr", "maintainers", "tags", "try"]
+    }
+}

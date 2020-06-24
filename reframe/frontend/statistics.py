@@ -4,10 +4,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import json
-import jsonschema
+import os
+
+import reframe
 import reframe.core.debug as debug
 import reframe.core.runtime as rt
-from reframe.core.exceptions import StatisticsError
+from reframe.core.exceptions import StatisticsError, ConfigError
 
 
 class TestStats:
@@ -72,111 +74,79 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def output_dict(self):
-        report = []
+    @property
+    def report_dict(self):
+        _report = []
         current_run = rt.runtime().current_run
-        for t in self.tasks(current_run):
-            check = t.check
-            partition = check.current_partition
-            partname = partition.fullname if partition else 'None'
-            environ_name = (check.current_environ.name
-                            if check.current_environ else 'None')
-            report_dict = {
-                'name': check.name,
-                'description': check.descr,
-                'system': partname,
-                'environment': environ_name,
-                'tags': list(check.tags),
-                'maintainers': check.maintainers,
-                'scheduler': 'None',
-                'jobid': -1,
-                'nodelist': [],
-                'job_stdout': 'None',
-                'job_stderr': 'None'
-            }
-            if check.job:
-                report_dict['scheduler'] = check.job.scheduler.registered_name
-                report_dict['jobid'] = (check.job.jobid if check.job.jobid
-                                        else -1)
-                report_dict['nodelist'] = (check.job.nodelist
-                                           if check.job.nodelist
-                                           else [])
-                report_dict['job_stdout'] = check.job.stdout
-                report_dict['job_stderr'] = check.job.stderr
+        for tl, tr in zip(self._tasks, range(current_run + 1)):
+            for t in tl:
+                check = t.check
+                partition = check.current_partition
+                partname = partition.fullname if partition else None
+                environ_name = (check.current_environ.name
+                                if check.current_environ else None)
+                report = {
+                    'name': check.name,
+                    'description': check.descr,
+                    'system': partname,
+                    'environment': environ_name,
+                    'tags': list(check.tags),
+                    'maintainers': check.maintainers,
+                    'scheduler': None,
+                    'jobid': None,
+                    'nodelist': [],
+                    'job_stdout': None,
+                    'job_stderr': None,
+                    'build_stdout': None,
+                    'build_stderr': None,
+                    'failing_reason': None,
+                    'failing_phase': None,
+                    'outputdir': None,
+                    'stagedir': None
+                }
+                if check.job:
+                    report['scheduler'] = check.job.scheduler.registered_name
+                    report['jobid'] = check.job.jobid
+                    report['nodelist'] = (check.job.nodelist
+                                          if check.job.nodelist
+                                          else [])
+                    report['job_stdout'] = check.job.stdout
+                    report['job_stderr'] = check.job.stderr
 
-            if check._build_job:
-                report_dict['build_stdout'] = check._build_job.stdout
-                report_dict['build_stderr'] = check._build_job.stderr
+                if check._build_job:
+                    report['build_stdout'] = check._build_job.stdout
+                    report['build_stderr'] = check._build_job.stderr
 
-            if t.failed:
-                report_dict['result'] = 'fail'
-                if t.exc_info is not None:
-                    from reframe.core.exceptions import format_exception
+                if t.failed:
+                    report['result'] = 'fail'
+                    if t.exc_info is not None:
+                        from reframe.core.exceptions import format_exception
 
-                    report_dict['failing_reason'] = format_exception(
-                        *t.exc_info)
-                    report_dict['failing_phase'] = t.failed_stage
-                    report_dict['stagedir'] = (check.stagedir if check.stagedir
-                                               else 'None')
-            else:
-                report_dict['result'] = 'success'
-                report_dict['outputdir'] = check.outputdir
+                        report['failing_reason'] = format_exception(
+                            *t.exc_info)
+                        report['failing_phase'] = t.failed_stage
+                        report['stagedir'] = check.stagedir
+                else:
+                    report['result'] = 'success'
+                    report['outputdir'] = check.outputdir
 
-            if current_run > 0:
-                report_dict['retries'] = current_run
+                report['try'] = tr
 
-            report.append(report_dict)
+                _report.append(report)
 
-        return report
+        return _report
 
     def json_report(self):
-        schema = {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "description": {"type": "string"},
-                    "system": {"type": "string"},
-                    "environment": {"type": "string"},
-                    "stagedir": {"type": "string"},
-                    "outputdir": {"type": "string"},
-                    "nodelist": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "scheduler": {"type": "string"},
-                    "jobid": {"type": "number"},
-                    "result": {"type": "string"},
-                    "failing_phase": {"type": "string"},
-                    "failing_reason": {"type": "string"},
-                    "build_stdout": {"type": "string"},
-                    "build_stderr": {"type": "string"},
-                    "job_stdout": {"type": "string"},
-                    "job_stderr": {"type": "string"},
-                    "maintainers": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "tags": {
-                        "type": "array",
-                        "items": {"type": "string"}
-                    },
-                    "retries": {"type": "number"}
-                }
-            },
-        }
-        report = self.output_dict()
-        jsonschema.validate(instance=report, schema=schema)
         with open('report.json', 'w') as fp:
-            json.dump(report, fp, indent=4)
+            json.dump(self.report_dict, fp, indent=4)
 
     def failure_report(self):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
         current_run = rt.runtime().current_run
-        for tf in (t for t in self.output_dict() if t['result'] == 'fail'):
+        for tf in (t for t in self.report_dict
+                   if t['result'] == 'fail' and t['try'] == current_run):
             retry_info = ('(for the last of %s retries)' % current_run
                           if 'retries' in tf.keys() else '')
 
@@ -188,9 +158,9 @@ class TestStats:
             report.append('  * Stage directory: %s' % tf['stagedir'])
             report.append('  * Node list: %s' %
                           (','.join(tf['nodelist'])
-                           if tf['nodelist'] else 'None'))
+                           if tf['nodelist'] else None))
             job_type = 'local' if tf['scheduler'] == 'local' else 'batch job'
-            jobid = tf['jobid'] if tf['jobid'] > 0 else 'None'
+            jobid = tf['jobid']
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
             report.append('  * Maintainers: %s' % tf['maintainers'])
             report.append('  * Failing phase: %s' % tf['failing_phase'])

@@ -3,9 +3,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import json
+import jsonschema
 import os
 import pytest
 
+import reframe
 import reframe.core.runtime as rt
 import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
@@ -104,10 +107,28 @@ def num_failures_stage(runner, stage):
     return len([t for t in stats.failures() if t.failed_stage == stage])
 
 
+def open_json_schema():
+    # Open and store the JSON schema for later validation
+    schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
+                                   'schemas', 'report.json')
+    with open(schema_filename) as fp:
+        try:
+            schema = json.loads(fp.read())
+        except json.JSONDecodeError as e:
+            raise ReframeFatalError(
+                f"invalid configuration schema: '{schema_filename}'"
+            ) from e
+
+    return schema
+
+
 def test_runall(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases())
     stats = runner.stats
+    json_out = runner.stats.report_dict
+    schema = open_json_schema()
+    jsonschema.validate(json_out, schema)
     assert 8 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
