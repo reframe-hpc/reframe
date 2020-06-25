@@ -808,7 +808,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nompi-nocuda',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
@@ -820,7 +820,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nompi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -832,7 +832,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9'
@@ -844,7 +844,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-pgi-nocuda',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-pgi/19.9-nocuda'
@@ -856,7 +856,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
@@ -868,7 +868,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu-nocuda',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2-nocuda'
@@ -880,7 +880,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu-nompi',
             'target_systems': [
-                'arolla'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2'
@@ -892,103 +892,7 @@ site_configuration = {
         {
             'name': 'PrgEnv-gnu-nompi-nocuda',
             'target_systems': [
-                'arolla'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2-nocuda'
-            ],
-            'cc': 'gcc',
-            'cxx': 'g++',
-            'ftn': 'gfortran'
-        },
-        {
-            'name': 'PrgEnv-pgi-nompi',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
-            'cc': 'pgcc',
-            'cxx': 'pgc++',
-            'ftn': 'pgf90'
-        },
-        {
-            'name': 'PrgEnv-pgi',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-pgi-nocuda',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9-nocuda'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-pgi-nompi-nocuda',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-pgi/19.9-nocuda'
-            ],
-            'cc': 'pgcc',
-            'cxx': 'pgc++',
-            'ftn': 'pgf90'
-        },
-        {
-            'name': 'PrgEnv-gnu',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-gnu-nocuda',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2-nocuda'
-            ],
-            'cc': 'mpicc',
-            'cxx': 'mpicxx',
-            'ftn': 'mpifort'
-        },
-        {
-            'name': 'PrgEnv-gnu-nompi',
-            'target_systems': [
-                'tsa'
-            ],
-            'modules': [
-                'PrgEnv-gnu/19.2'
-            ],
-            'cc': 'gcc',
-            'cxx': 'g++',
-            'ftn': 'gfortran'
-        },
-        {
-            'name': 'PrgEnv-gnu-nompi-nocuda',
-            'target_systems': [
-                'tsa'
+                'arolla', 'tsa'
             ],
             'modules': [
                 'PrgEnv-gnu/19.2-nocuda'
