@@ -185,10 +185,10 @@ class P2PCPUBandwidthTest(P2PBaseTest):
                 'bw': (9649.0, -0.10, None, 'MB/s')
             },
             'dom:gpu': {
-                'bw': (9360.0, -0.05, None, 'MB/s')
+                'bw': (9476.3, -0.05, None, 'MB/s')
             },
             'dom:mc': {
-                'bw': (9528.4, -0.10, None, 'MB/s')
+                'bw': (9528.0, -0.20, None, 'MB/s')
             },
             # keeping as reference:
             # 'monch:compute': {
@@ -223,10 +223,10 @@ class P2PCPULatencyTest(P2PBaseTest):
                 'latency': (1.61, None, 0.85, 'us')
             },
             'dom:gpu': {
-                'latency': (1.20, None, 0.35, 'us')
+                'latency': (1.138, None, 0.10, 'us')
             },
             'dom:mc': {
-                'latency': (1.21, None, 0.10, 'us')
+                'latency': (1.24, None, 0.15, 'us')
             },
             # keeping as reference:
             # 'monch:compute': {
@@ -256,7 +256,7 @@ class G2GBandwidthTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'bw': (8897.86, -0.1, None, 'MB/s')
+                'bw': (8813.09, -0.05, None, 'MB/s')
             },
             'daint:gpu': {
                 'bw': (8765.65, -0.1, None, 'MB/s')
@@ -301,7 +301,7 @@ class G2GLatencyTest(P2PBaseTest):
 
         self.reference = {
             'dom:gpu': {
-                'latency': (5.62, None, 0.1, 'us')
+                'latency': (5.56, None, 0.1, 'us')
             },
             'daint:gpu': {
                 'latency': (6.8, None, 0.65, 'us')
