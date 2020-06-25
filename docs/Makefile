@@ -38,7 +38,9 @@ TARGET_DOCS := \
 	coverage
 
 latest:
-	@make html man
+	@make html
+	@make man && mkdir -p man/man1 man/man8 && \
+		mv man/reframe.1 man/man1/ && mv man/reframe.settings.8 man/man8/
 	@touch html/.nojekyll
 
 clean:
