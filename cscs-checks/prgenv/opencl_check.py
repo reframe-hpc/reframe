@@ -28,3 +28,8 @@ class OpenCLCheck(rfm.RegressionTest):
     def setflags(self):
         if self.current_environ.name == 'PrgEnv-pgi':
             self.build_system.cflags = ['-mmmx']
+
+    @rfm.run_before('compile')
+    def cdt2006_pgi_workaround(self):
+        if self.current_system.name == 'dom':
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})
