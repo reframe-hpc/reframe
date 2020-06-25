@@ -5,6 +5,7 @@
 
 from datetime import datetime
 
+import re
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -90,12 +91,8 @@ class HelloWorldBaseTest(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def setflags(self):
-        if '-nompi-nocuda' in self.current_environ.name:
-            envname = self.current_environ.name.replace('-nompi-nocuda', '')
-        elif '-nocuda' in self.current_environ.name:
-            envname = self.current_environ.name.replace('-nocuda', '')
-        else:
-            envname = self.current_environ.name.replace('-nompi', '')
+        envname = re.sub(r'(PrgEnv-\w+).*', lambda m: m.group(1),
+                         self.current_environ.name)
         prgenv_flags = self.prgenv_flags[envname]
         self.build_system.cflags = prgenv_flags
         self.build_system.cxxflags = prgenv_flags
