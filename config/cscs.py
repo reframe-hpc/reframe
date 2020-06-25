@@ -141,6 +141,7 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
+                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -175,6 +176,7 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
+                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -221,6 +223,7 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
+                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -288,7 +291,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -323,7 +325,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
@@ -364,7 +365,6 @@ site_configuration = {
                     'environs': [
                         'builtin',
                         'PrgEnv-cray',
-                        'PrgEnv-cray_classic',
                         'PrgEnv-gnu',
                         'PrgEnv-intel',
                         'PrgEnv-pgi'
