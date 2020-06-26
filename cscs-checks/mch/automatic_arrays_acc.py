@@ -84,3 +84,9 @@ class AutomaticArraysCheck(rfm.RegressionTest):
         if (self.current_system.name == 'dom' and
             self.current_environ.name == 'PrgEnv-cray'):
             self.variables['LINKER_X86_64'] = '/usr/bin/ld'
+
+    @rfm.run_before('compile')
+    def cdt2006_pgi_workaround(self):
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-pgi'):
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})

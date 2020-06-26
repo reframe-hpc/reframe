@@ -90,3 +90,9 @@ class OpenaccCudaCpp(rfm.RegressionTest):
                 self.build_system.ldflags += [
                     '-L$EBROOTCUDA/lib64', '-lcublas', '-lcudart'
                 ]
+
+    @rfm.run_before('compile')
+    def cdt2006_pgi_workaround(self):
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-pgi'):
+            self.variables.update({'CUDA_HOME': '$CUDATOOLKIT_HOME'})
