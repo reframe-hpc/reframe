@@ -41,7 +41,7 @@ class CDOBaseTest(rfm.RunOnlyRegressionTest):
             self.modules = ['cdo']
         elif self.current_system.name in ['arolla', 'tsa']:
             self.exclusive_access = True
-            self.valid_prog_environs = ['PrgEnv-gnu-nompi']
+            self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-gnu-nompi']
             self.modules = ['cdo', 'netcdf-fortran']
         else:
             self.modules = ['CDO']

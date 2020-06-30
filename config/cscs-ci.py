@@ -162,7 +162,7 @@ site_configuration = {
                         'builtin'
                     ],
                     'descr': 'Tsa compute nodes',
-                    'max_jobs': 10,
+                    'max_jobs': 20,
                     'resources': [
                         {
                             'name': '_rfm_gpu',
