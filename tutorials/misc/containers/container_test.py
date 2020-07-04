@@ -8,11 +8,11 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class Example10Test(rfm.RunOnlyRegressionTest):
+class ContainerTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
         self.descr = 'Run commands inside a container'
         self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-cray']
+        self.valid_prog_environs = ['cray']
         self.container_platform = 'Singularity'
         self.container_platform.image = 'docker://ubuntu:18.04'
         self.container_platform.commands = [
@@ -25,5 +25,3 @@ class Example10Test(rfm.RunOnlyRegressionTest):
             sn.assert_found(r'^advanced_example1.c', self.stdout),
             sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', self.stdout),
         ])
-        self.maintainers = ['put-your-name-here']
-        self.tags = {'tutorial'}

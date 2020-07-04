@@ -4,14 +4,10 @@
 
 .. versionadded:: 3.1
 
-.. |tutorialdir| replace:: :obj:`tutorials/`
-.. |tutorialdir_basics| replace:: :obj:`tutorials/basics`
-.. _tutorialdir_basics: https://github.com/eth-cscs/reframe/tree/master/tutorials/basics
-
 This tutorial will give you a first overview of ReFrame and will acquaint with its basic concepts.
 We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.
 We will also explore performance tests and we will port our tests to an HPC cluster.
-The examples of this tutorial can be found in |tutorialdir_basics|_.
+The examples of this tutorial can be found under :obj:`tutorials/basics/`.
 
 
 Getting Ready
@@ -38,6 +34,7 @@ As simple as it may sound, a series of "naive" "Hello, World!" tests can reveal 
 Here is its C version:
 
 .. literalinclude:: ../tutorials/basics/hello/src/hello.c
+   :language: c
    :lines: 6-
 
 
@@ -321,6 +318,7 @@ We extend our C++ "Hello, World!" example to print the greetings from multiple t
 
 
 .. literalinclude:: ../tutorials/basics/hellomp/src/hello_threads.cpp
+   :language: cpp
    :lines: 6-
 
 This program takes as argument the number of threads it will create and it uses ``std::thread``, which is C++11 addition, meaning that we will need to pass ``-std=c++11`` to our compilers.

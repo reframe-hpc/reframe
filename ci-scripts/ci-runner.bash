@@ -41,8 +41,8 @@ checked_exec()
 
 run_tutorial_checks()
 {
-    cmd="./bin/reframe -C tutorial/config/settings.py \
---save-log-files -r -t tutorial $@"
+    cmd="./bin/reframe -C tutorials/config/settings.py \
+--save-log-files -r -c tutorials/ -R -x HelloThreadedExtendedTest $@"
     echo "[INFO] Running tutorial checks with \`$cmd'"
     checked_exec $cmd
 }
@@ -152,7 +152,7 @@ elif [ $CI_TUTORIAL -eq 1 ]; then
     # Run tutorial checks
     # Find modified or added tutorial checks
     tutorialchecks=( $(git diff origin/master...HEAD --name-only --oneline --no-merges | \
-                       grep -e '^tutorial/.*\.py') )
+                       grep -e '^tutorials/.*\.py') )
 
     if [ ${#tutorialchecks[@]} -ne 0 ]; then
         tutorialchecks_path=""

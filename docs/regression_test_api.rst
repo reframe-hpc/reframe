@@ -120,6 +120,8 @@ It is up to the concrete build system implementations on how to use or not these
    :show-inheritance:
 
 
+.. _container-platforms:
+
 Container Platforms
 -------------------
 

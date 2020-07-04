@@ -1,14 +1,5 @@
-.. |tutorialdir_adv| replace:: :obj:`tutorial/advanced/`
-.. _tutorialdir_adv: https://github.com/eth-cscs/reframe/tree/master/tutorial/advanced
-.. |tutorial_adv_example1| replace:: :obj:`tutorial/advanced/src/advanced_example1.c`
-.. _tutorial_adv_example1: https://github.com/eth-cscs/reframe/blob/master/tutorial/advanced/src/advanced_example1.c
-.. |limits.sh| replace:: :obj:`scripts/limits.sh`
-.. _limits.sh: https://github.com/eth-cscs/reframe/blob/master/tutorial/advanced/src/scripts/limits.sh
-
-
-
 ==================================
- Tutorial 2: Miscellaneous topics
+ Tutorial 3: Miscellaneous topics
 ==================================
 
 This page collects several smaller tutorials that show specific parts of ReFrame.
@@ -241,40 +232,37 @@ For more information about how exactly sanity functions work and how their execu
       ReFrame offers also the :func:`allx() <reframe.utility.sanity.allx>` sanity function which, conversely to the builtin :func:`all()` function, will return :class:`False` if its iterable argument is empty.
 
 
-Customizing the Generated Job Script
-------------------------------------
+Customizing the Test Job Script
+-------------------------------
 
-It is often the case that you must run some commands before or after the parallel launch of your executable.
+It is often the case that we need to run some commands before or after the parallel launch of our executable.
 This can be easily achieved by using the :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` and :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` attributes of a ReFrame test.
 
-The following example is a slightly modified version of the previous one.
-The lower and upper limits for the random numbers are now set inside a helper shell script in |limits.sh|_ and we want also to print the word ``FINISHED`` after our executable has finished.
-In order to achieve this, we need to source the helper script just before launching the executable and ``echo`` the desired message just after it finishes.
-Here is the test file:
+The following example is a slightly modified version of the random numbers test presented `above <#applying-a-sanity-function-iteratively>`__.
+The lower and upper limits for the random numbers are now set inside a helper shell script in ``limits.sh`` located in the test's resources, which we need to source before running our tests.
+Additionally, we want also to print ``FINISHED`` after our executable has finished.
+Here is the modified test file:
 
-.. literalinclude:: ../tutorial/advanced/advanced_example7.py
+.. literalinclude:: ../tutorials/misc/random/prepostrun.py
+   :lines: 6-
+   :emphasize-lines: 11-12,17,20-21
 
-Notice the use of the :attr:`prerun_cmds` and :attr:`postrun_cmds` attributes.
-These are lists of shell commands that are emitted verbatim in the job script.
-The generated job script for this example is the following:
+The :attr:`prerun_cmds` and :attr:`postrun_cmds` are lists of commands to be emitted in the generated job script before and after the parallel launch of the executable.
+Obviously, the working directory for these commands is that of the job script itself, which is the stage directory of the test.
+The generated job script for this test looks like the following:
+
+.. code-block:: console
+
+   cat output/catalina/default/gnu/PrepostRunTest/rfm_PrepostRunTest_job.sh
 
 .. code-block:: bash
 
-   #!/bin/bash -l
-   #SBATCH --job-name="prerun_demo_check_daint_gpu_PrgEnv-gnu"
-   #SBATCH --time=0:10:0
-   #SBATCH --ntasks=1
-   #SBATCH --output=prerun_demo_check.out
-   #SBATCH --error=prerun_demo_check.err
-   #SBATCH --constraint=gpu
-   module load daint-gpu
-   module unload PrgEnv-cray
-   module load PrgEnv-gnu
-   source scripts/limits.sh
-   srun ./random_numbers.sh
+   #!/bin/bash
+   source limits.sh
+    ./random_numbers.sh
    echo FINISHED
 
-ReFrame generates the job shell script using the following pattern:
+Generally, ReFrame generates the job shell scripts using the following pattern:
 
 .. code-block:: bash
 
@@ -285,17 +273,15 @@ ReFrame generates the job shell script using the following pattern:
    {parallel_launcher} {executable} {executable_opts}
    {postrun_cmds}
 
-The ``job_scheduler_preamble`` contains the directives that control the job allocation.
+The ``job_scheduler_preamble`` contains the backend job scheduler directives that control the job allocation.
 The ``test_environment`` are the necessary commands for setting up the environment of the test.
-This is the place where the modules and environment variables specified in :attr:`modules <reframe.core.pipeline.RegressionTest.modules>` and :attr:`variables <reframe.core.pipeline.RegressionTest.variables>` attributes are emitted.
+These include any modules or environment variables set at the `system partition level <config_reference.html#system-partition-configuration>`__ or any `modules <regression_test_api.html#reframe.core.pipeline.RegressionTest.modules>`__ or `environment variables <regression_test_api.html#reframe.core.pipeline.RegressionTest.variables>`__ set at the test level.
 Then the commands specified in :attr:`prerun_cmds <reframe.core.pipeline.RegressionTest.prerun_cmds>` follow, while those specified in the :attr:`postrun_cmds <reframe.core.pipeline.RegressionTest.postrun_cmds>` come after the launch of the parallel job.
 The parallel launch itself consists of three parts:
 
 #. The parallel launcher program (e.g., ``srun``, ``mpirun`` etc.) with its options,
 #. the regression test executable as specified in the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` attribute and
 #. the options to be passed to the executable as specified in the :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attribute.
-
-A key thing to note about the generated job script is that ReFrame submits it from the stage directory of the test, so that all relative paths are resolved against it.
 
 
 Flexible Regression Tests
@@ -313,21 +299,13 @@ Flexible tests are very useful for diagnostics tests, e.g., tests for checking t
 In this example, we demonstrate this feature through a simple test that runs ``hostname``.
 The test will verify that all the nodes print the expected host name:
 
-.. literalinclude:: ../tutorial/advanced/advanced_example9.py
+.. literalinclude:: ../tutorials/misc/flexnodes/flextest.py
+   :lines: 6-
+   :emphasize-lines: 11-16
 
 The first thing to notice in this test is that :attr:`num_tasks <reframe.core.pipeline.RegressionTest.num_tasks>` is set to zero.
-This is a requirement for flexible tests:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 17
-  :dedent: 8
-
-The sanity function of this test simply counts the host names and verifies that they are as many as expected:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example9.py
-  :lines: 19-22
-  :dedent: 8
-
+This is a requirement for flexible tests.
+The sanity check of this test simply counts the host names printed and verifies that they are as many as expected.
 Notice, however, that the sanity check does not use :attr:`num_tasks` directly, but rather access the attribute through the :func:`sn.getattr() <reframe.utility.sanity.getattr>` sanity function, which is a replacement for the :func:`getattr` builtin.
 The reason for that is that at the time the sanity check expression is created, :attr:`num_tasks` is ``0`` and it will only be set to its actual value during the run phase.
 Consequently, we need to defer the attribute retrieval, thus we use the :func:`sn.getattr() <reframe.utility.sanity.getattr>` sanity function instead of accessing it directly
@@ -345,45 +323,31 @@ Testing containerized applications
 
 
 ReFrame can be used also to test applications that run inside a container.
-A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>`.
-The following example shows a simple test that runs some basic commands inside an Ubuntu 18.04 container and checks that the test has indeed run inside the container and that the stage directory was correctly mounted:
+Here is a test that does so:
 
-.. literalinclude:: ../tutorial/advanced/advanced_example10.py
+.. literalinclude:: ../tutorials/misc/containers/container_test.py
+   :lines: 6-
+   :emphasize-lines: 11-16
 
-A container-based test in ReFrame requires that the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` is set:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 17
-
-This attribute accepts a string that corresponds to the name of the platform and it instantiates the appropriate :class:`ContainerPlatform <reframe.core.containers.ContainerPlatform>` object behind the scenes.
+A container-based test can be written as :class:`RunOnlyRegressionTest <reframe.core.pipeline.RunOnlyRegressionTest>` that sets the :attr:`container_platform <reframe.core.pipeline.RegressionTest.container_platform>` attribute.
+This attribute accepts a string that corresponds to the name of the container platform that will be used to run the container for this test.
 In this case, the test will be using `Singularity <https://sylabs.io>`__ as a container platform.
-If such a platform is not configured for the current system, the test will fail.
-For a complete list of supported container platforms, the user is referred to the `configuration reference <config_reference.html#container-platform-configuration>`__.
+If such a platform is not `configured <config_reference.html#container-platform-configuration>`__ for the current system, the test will fail.
 
-As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 17-20
-
-These two attributes are mandatory for container-based check.
-The :attr:`image <reframe.core.containers.ContainerPlatform.image>` attribute specifies the name of an image from a registry, whereas the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` attribute provides the list of commands to be run inside the container.
+As soon as the container platform to be used is defined, you need to specify the container image to use and the commands to run inside the container by setting the :attr:`image <reframe.core.containers.ContainerPlatform.image>` and the :attr:`commands <reframe.core.containers.ContainerPlatform.commands>` container platform attributes.
+These two attributes are mandatory for container-based checks.
 It is important to note that the :attr:`executable <reframe.core.pipeline.RegressionTest.executable>` and :attr:`executable_opts <reframe.core.pipeline.RegressionTest.executable_opts>` attributes of the actual test are ignored in case of container-based tests.
 
-In the above example, ReFrame will run the container as follows:
+ReFrame will run the container as follows:
 
-.. code:: shell
+.. code-block:: console
 
     singularity exec -B"/path/to/test/stagedir:/workdir" docker://ubuntu:18.04 bash -c 'cd rfm_workdir; pwd; ls; cat /etc/os-release'
 
 By default ReFrame will mount the stage directory of the test under ``/rfm_workdir`` inside the container and it will always prepend a ``cd`` command to that directory.
 The user commands then are then run from that directory one after the other.
 Once the commands are executed, the container is stopped and ReFrame goes on with the sanity and performance checks.
-
 Users may also change the default mount point of the stage directory by using :attr:`workdir <reframe.core.pipeline.RegressionTest.container_platform.workdir>` attribute:
-
-.. literalinclude:: ../tutorial/advanced/advanced_example10.py
-  :lines: 21
-
 Besides the stage directory, additional mount points can be specified through the :attr:`mount_points <reframe.core.pipeline.RegressionTest.container_platform.mount_points>` attribute:
 
 .. code-block:: python
@@ -391,5 +355,4 @@ Besides the stage directory, additional mount points can be specified through th
     self.container_platform.mount_points = [('/path/to/host/dir1', '/path/to/container/mount_point1'),
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
 
-
-For a complete list of the available attributes of a specific container platform, the reader is referred to `ReFrame Programming APIs <regression_test_api.html#container-platforms>`__ guide.
+For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.

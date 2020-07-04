@@ -14,7 +14,7 @@ class OSUBenchmarkTestBase(rfm.RunOnlyRegressionTest):
 
     def __init__(self):
         self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi', 'PrgEnv-intel']
+        self.valid_prog_environs = ['gnu', 'pgi', 'intel']
         self.sourcesdir = None
         self.num_tasks = 2
         self.num_tasks_per_node = 1
@@ -94,7 +94,7 @@ class OSUBuildTest(rfm.CompileOnlyRegressionTest):
     def __init__(self):
         self.descr = 'OSU benchmarks build test'
         self.valid_systems = ['daint:gpu']
-        self.valid_prog_environs = ['PrgEnv-gnu', 'PrgEnv-pgi', 'PrgEnv-intel']
+        self.valid_prog_environs = ['gnu', 'pgi', 'intel']
         self.sourcesdir = None
         self.prebuild_cmds = [
             'wget http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz',

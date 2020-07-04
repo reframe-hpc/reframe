@@ -8,21 +8,19 @@ import reframe.utility.sanity as sn
 
 
 @rfm.simple_test
-class PrerunDemoTest(rfm.RunOnlyRegressionTest):
+class PrepostRunTest(rfm.RunOnlyRegressionTest):
     def __init__(self):
-        self.descr = ('ReFrame tutorial demonstrating the use of '
-                      'pre- and post-run commands')
+        self.descr = 'Pre- and post-run demo test'
         self.valid_systems = ['*']
         self.valid_prog_environs = ['*']
-        self.prerun_cmds  = ['source scripts/limits.sh']
+        self.prerun_cmds = ['source limits.sh']
         self.postrun_cmds = ['echo FINISHED']
         self.executable = './random_numbers.sh'
         numbers = sn.extractall(
-            r'Random: (?P<number>\S+)', self.stdout, 'number', float)
+            r'Random: (?P<number>\S+)', self.stdout, 'number', float
+        )
         self.sanity_patterns = sn.all([
             sn.assert_eq(sn.count(numbers), 100),
-            sn.all(sn.map(lambda x: sn.assert_bounded(x, 50, 80), numbers)),
-            sn.assert_found('FINISHED', self.stdout)
+            sn.all(sn.map(lambda x: sn.assert_bounded(x, 90, 100), numbers)),
+            sn.assert_found(r'FINISHED', self.stdout)
         ])
-        self.maintainers = ['put-your-name-here']
-        self.tags = {'tutorial'}
