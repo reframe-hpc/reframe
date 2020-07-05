@@ -22,6 +22,5 @@ class ContainerTest(rfm.RunOnlyRegressionTest):
         self.sanity_patterns = sn.all([
             sn.assert_found(r'^' + self.container_platform.workdir,
                             self.stdout),
-            sn.assert_found(r'^advanced_example1.c', self.stdout),
             sn.assert_found(r'18.04.\d+ LTS \(Bionic Beaver\)', self.stdout),
         ])
