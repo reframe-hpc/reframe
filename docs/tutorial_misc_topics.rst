@@ -323,7 +323,16 @@ Testing containerized applications
 
 
 ReFrame can be used also to test applications that run inside a container.
-Here is a test that does so:
+First, we need to enable the container platform support in ReFrame's configuration and, specifically, at the partition configuration level:
+
+.. literalinclude:: ../tutorials/config/settings.py
+   :lines: 40-54
+   :emphasize-lines: 8-13
+
+For each partition, users can define a list of container platforms supported using the :js:attr:`container_platforms` configuration parameter.
+In this case, we define the `Singularity <https://sylabs.io>`__ platform, for which we set the :js:attr:`modules` parameter in order to instruct ReFrame to load the ``singularity`` module, whenever it needs to run with this container platform.
+
+The following test will use a Singularity container to run:
 
 .. literalinclude:: ../tutorials/misc/containers/container_test.py
    :lines: 6-
@@ -356,3 +365,4 @@ Besides the stage directory, additional mount points can be specified through th
                                             ('/path/to/host/dir2', '/path/to/container/mount_point2')]
 
 For a complete list of the available attributes of a specific container platform, please have a look at the :ref:`container-platforms` section of the :doc:`regression_test_api` guide.
+On how to configure ReFrame for running containerized tests, please have a look at the :ref:`container-platform-configuration` section of the :doc:`config_reference`.
