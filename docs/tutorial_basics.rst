@@ -4,7 +4,7 @@
 
 .. versionadded:: 3.1
 
-This tutorial will give you a first overview of ReFrame and will acquaint with its basic concepts.
+This tutorial will give you a first overview of ReFrame and will acquaint you with its basic concepts.
 We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.
 We will also explore performance tests and we will port our tests to an HPC cluster.
 The examples of this tutorial can be found under :obj:`tutorials/basics/`.
@@ -130,7 +130,7 @@ Let's inspect what files ReFrame produced for this test:
    rfm_HelloTest_build.err rfm_HelloTest_build.sh  rfm_HelloTest_job.out
    rfm_HelloTest_build.out rfm_HelloTest_job.err   rfm_HelloTest_job.sh
 
-ReFrame stores in the output directory of the test the build and "job" scripts it generated for building and running the code along with their standard output and error.
+ReFrame stores in the output directory of the test the build and run scripts it generated for building and running the code along with their standard output and error.
 All these files are prefixed with ``rfm_``.
 
 
@@ -915,7 +915,7 @@ In ReFrame, you don't have to care about all the system interaction details, but
 Adapting a test to new systems and programming environments
 -----------------------------------------------------------
 
-Unless a test is rather generic, you will need to do some adaptations for the system that you port it to.
+Unless a test is rather generic, you will need to make some adaptations for the system that you port it to.
 In this case, we will adapt the STREAM benchmark so as to run it with multiple compiler and adjust its execution parameters based on the target architecture of each partition.
 Let's see and comment the changes:
 
