@@ -169,7 +169,8 @@
                                     "type": "string",
                                     "enum": [
                                         "alps",  "ibrun", "local", "mpirun",
-                                        "mpiexec", "srun", "srunalloc", "ssh"
+                                        "mpiexec", "srun", "srunalloc", "ssh",
+                                        "upcrun", "upcxx-run"
                                     ]
                                 },
                                 "access": {

@@ -15,7 +15,7 @@ class IPCMagicCheck(rfm.RunOnlyRegressionTest):
         self.valid_systems = ['daint:gpu', 'dom:gpu']
         self.valid_prog_environs = ['PrgEnv-gnu']
         self.modules = ['ipcmagic']
-        self.pre_run = [
+        self.prerun_cmds = [
             'module unload dask',
             'module load Horovod/0.16.4-CrayGNU-19.10-tf-1.14.0'
         ]
