@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import reframe as rfm
 import reframe.utility.sanity as sn
 
@@ -49,3 +51,12 @@ class TrilinosTest(rfm.RegressionTest):
     def set_cxxflags(self):
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
+
+    @rfm.run_before('compile')
+    def set_prebuild_cmd(self):
+        if self.current_environ.name.startswith('PrgEnv-intel'):
+            if '20.06' in os.getenv('MODULERCFILE', ''):
+                self.modules += ['cray-netcdf-hdf5parallel']
+                self.prebuild_cmds = [
+                    'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc',
+                    'export PKG_CONFIG_PATH=`pwd`:$PKG_CONFIG_PATH']
