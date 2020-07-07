@@ -8,7 +8,9 @@ import sys
 
 
 VERSION = '3.1-dev1'
-INSTALL_PREFIX = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+INSTALL_PREFIX = os.path.normpath(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+)
 MIN_PYTHON_VERSION = (3, 6, 0)
 
 # Check python version
