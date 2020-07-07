@@ -28,13 +28,6 @@ class LocalJobScheduler(sched.JobScheduler):
         self._cancel_grace_period = 2
         self._wait_poll_secs = 0.1
 
-        # Underlying process
-        self._proc = None
-
-        # Underlying process' stdout/stderr
-        self._f_stdout = None
-        self._f_stderr = None
-
     def completion_time(self, job):
         return None
 
@@ -44,20 +37,20 @@ class LocalJobScheduler(sched.JobScheduler):
                  os.stat(job.script_filename).st_mode | stat.S_IEXEC)
 
         # Run from the absolute path
-        self._f_stdout = open(job.stdout, 'w+')
-        self._f_stderr = open(job.stderr, 'w+')
+        job._f_stdout = open(job.stdout, 'w+')
+        job._f_stderr = open(job.stderr, 'w+')
 
         # The new process starts also a new session (session leader), so that
         # we can later kill any other processes that this might spawn by just
         # killing this one.
-        self._proc = os_ext.run_command_async(
+        job._proc = os_ext.run_command_async(
             os.path.abspath(job.script_filename),
-            stdout=self._f_stdout,
-            stderr=self._f_stderr,
+            stdout=job._f_stdout,
+            stderr=job._f_stderr,
             start_new_session=True)
 
         # Update job info
-        job.jobid = self._proc.pid
+        job.jobid = job._proc.pid
         job.nodelist = [socket.gethostname()]
 
     def emit_preamble(self, job):
@@ -92,7 +85,7 @@ class LocalJobScheduler(sched.JobScheduler):
                    number, too). If `None` or `0`, no timeout will be set.
         '''
         t_wait = datetime.now()
-        self._proc.wait(timeout=timeout or None)
+        job._proc.wait(timeout=timeout or None)
         t_wait = datetime.now() - t_wait
         try:
             # Wait for all processes in the process group to finish
@@ -149,7 +142,7 @@ class LocalJobScheduler(sched.JobScheduler):
 
         try:
             self._wait_all(job, timeout)
-            job.exitcode = self._proc.returncode
+            job.exitcode = job._proc.returncode
             if job.exitcode != 0:
                 job.state = 'FAILURE'
             else:
@@ -161,8 +154,8 @@ class LocalJobScheduler(sched.JobScheduler):
             # Cleanup all the processes of this job
             self._kill_all(job)
             self._wait_all(job)
-            self._f_stdout.close()
-            self._f_stderr.close()
+            job._f_stdout.close()
+            job._f_stderr.close()
 
     def finished(self, job):
         '''Check if the spawned process has finished.
@@ -171,11 +164,15 @@ class LocalJobScheduler(sched.JobScheduler):
         the process has finished, you *must* call wait() to properly cleanup
         after it.
         '''
-        self._proc.poll()
-        if self._proc.returncode is None:
+        if job._proc.returncode is None:
             return False
 
         return True
+
+    def poll_jobs(self, jobs):
+        for job in jobs:
+            if job and job._proc:
+                job._proc.poll()
 
 
 class _LocalNode(sched.Node):

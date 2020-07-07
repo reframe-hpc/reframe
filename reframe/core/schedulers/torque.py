@@ -42,72 +42,100 @@ class TorqueJobScheduler(PbsJobScheduler):
         job.nodelist = [x.split('/')[0] for x in nodespec.split('+')]
         job.nodelist.sort()
 
-    def _update_state(self, job):
-        '''Check the status of the job.'''
+    def poll_jobs(self, jobs):
+        '''Update the status of the jobs.'''
 
-        completed = os_ext.run_command('qstat -f %s' % job.jobid)
+        if not jobs:
+            return
+
+        jobids = [str(job.jobid) for job in jobs]
+        completed = os_ext.run_command(f"qstat -f {' '.join(jobids)}")
 
         # Depending on the configuration, completed jobs will remain on the job
         # list for a limited time, or be removed upon completion.
         # If qstat cannot find the jobid, it returns code 153.
         if completed.returncode == 153:
             getlogger().debug(
-                'jobid not known by scheduler, assuming job completed'
+                'jobids not known by scheduler, assuming all jobs completed'
             )
-            job.state = 'COMPLETED'
+            for job in jobs:
+                job.state = 'COMPLETED'
             return
 
         if completed.returncode != 0:
-            raise JobError('qstat failed: %s' % completed.stderr, job.jobid)
+            for job in jobs:
+                job.exception = JobError('qstat failed: %s' % completed.stderr, jobids)
 
-        nodelist_match = re.search(
-            r'exec_host = (?P<nodespec>\S+)', completed.stdout
-        )
-        if nodelist_match:
-            nodespec = nodelist_match.group('nodespec')
-            self._set_nodelist(job, nodespec)
-
-        state_match = re.search(
-            r'^\s*job_state = (?P<state>[A-Z])', completed.stdout, re.MULTILINE
-        )
-        if not state_match:
-            getlogger().debug(
-                'job state not found (stdout follows)\n%s' % completed.stdout
-            )
             return
 
-        state = state_match.group('state')
-        job.state = JOB_STATES[state]
-        if job.state == 'COMPLETED':
-            code_match = re.search(
-                r'^\s*exit_status = (?P<code>\d+)',
-                completed.stdout,
-                re.MULTILINE,
+        jobs_stdout = {}
+        for jobout in completed.stdout.split('\n\n'):
+            jobid_match = re.search(
+                r'^Job Id: (?P<jobid>\S+)', completed.stdout, re.MULTILINE
             )
-            if not code_match:
-                return
+            if jobid_match:
+                jobs_stdout[jobid_match.group('jobid')] = jobout
 
-            job.exitcode = int(code_match.group('code'))
+        for job in jobs:
+            if job.jobid not in jobs_stdout:
+                getlogger().debug(
+                    'jobid not known by scheduler, assuming job completed'
+                )
+                job.state = 'COMPLETED'
+                continue
+
+            stdout = jobs_stdout[job.jobid]
+            nodelist_match = re.search(
+                r'^\s*exec_host = (?P<nodespec>\S+)', stdout, re.MULTILINE
+            )
+            if nodelist_match:
+                nodespec = nodelist_match.group('nodespec')
+                self._set_nodelist(job, nodespec)
+
+            state_match = re.search(
+                r'^\s*job_state = (?P<state>[A-Z])', stdout, re.MULTILINE
+            )
+            if not state_match:
+                getlogger().debug(
+                    'job state not found (stdout follows)\n%s' % stdout
+                )
+                continue
+
+            state = state_match.group('state')
+            job.state = JOB_STATES[state]
+            if job.state == 'COMPLETED':
+                code_match = re.search(
+                    r'^\s*exit_status = (?P<code>\d+)',
+                    stdout,
+                    re.MULTILINE,
+                )
+                if not code_match:
+                    continue
+
+                job.exitcode = int(code_match.group('code'))
 
     def finished(self, job):
-        try:
-            self._update_state(job)
-        except JobError as e:
-            # We ignore these exceptions at this point and we simply mark the
-            # job as unfinished.
-            getlogger().debug('ignoring error during polling: %s' % e)
-            return False
-        else:
-            if job.max_pending_time and job.state in ['QUEUED',
-                                                      'HELD',
-                                                      'WAITING']:
-                if datetime.now() - self._submit_time >= job.max_pending_time:
-                    self.cancel(job)
-                    raise JobError('maximum pending time exceeded',
-                                   jobid=job.jobid)
+        if job.exception:
+            try:
+                raise job.exception
+            except JobError as e:
+                # We ignore these exceptions at this point and we simply mark the
+                # job as unfinished.
+                getlogger().debug('ignoring error during polling: %s' % e)
+                return False
+            finally:
+                job.exception = None
 
-            stdout = os.path.join(job.workdir, job.stdout)
-            stderr = os.path.join(job.workdir, job.stderr)
-            output_ready = os.path.exists(stdout) and os.path.exists(stderr)
-            done = self._cancelled or output_ready
-            return job.state == 'COMPLETED' and done
+        if job.max_pending_time and job.state in ['QUEUED',
+                                                  'HELD',
+                                                  'WAITING']:
+            if datetime.now() - job._submit_time >= job.max_pending_time:
+                self.cancel(job)
+                raise JobError('maximum pending time exceeded',
+                                jobid=job.jobid)
+
+        stdout = os.path.join(job.workdir, job.stdout)
+        stderr = os.path.join(job.workdir, job.stderr)
+        output_ready = os.path.exists(stdout) and os.path.exists(stderr)
+        done = job._cancelled or output_ready
+        return job.state == 'COMPLETED' and done

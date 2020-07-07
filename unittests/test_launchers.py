@@ -37,6 +37,9 @@ class FakeJobScheduler(JobScheduler):
     def filternodes(self, job, nodes):
         pass
 
+    def poll_jobs(self, jobs):
+        pass
+
 
 class _TestLauncher(abc.ABC):
     '''Base class for launcher tests.'''

@@ -176,7 +176,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         self._task_index = {}
 
         # All currently running tasks
-        self._running_tasks = []
+        self._running_tasks = {}
+
+        # All schedulers per partition
+        self._schedulers = {}
 
         # Tasks that need to be finalized
         self._completed_tasks = []
@@ -203,13 +206,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
             'removing task from running list: %s' % task.check.info()
         )
         try:
-            self._running_tasks.remove(task)
-        except ValueError:
+            partname = task.check.current_partition.fullname
+            self._running_tasks[partname].remove(task)
+        except (ValueError, AttributeError, KeyError):
             getlogger().debug('not in running tasks')
             pass
-        else:
-            partname = task.check.current_partition.fullname
-            self._running_tasks_counts[partname] -= 1
 
     def deps_failed(self, task):
         return any(self._task_index[c].failed for c in task.testcase.deps)
@@ -220,11 +221,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def on_task_setup(self, task):
         partname = task.check.current_partition.fullname
         self._ready_tasks[partname].append(task)
+        if partname not in self._schedulers:
+            self._schedulers[partname] = task.check.job.scheduler
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
-        self._running_tasks_counts[partname] += 1
-        self._running_tasks.append(task)
+        # self._running_tasks_counts[partname] += 1
+        self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
         msg = f'{task.check.info()} [{task.pipeline_timings_basic()}]'
@@ -280,7 +283,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         check, partition, environ = case
 
         # Set partition-based counters, if not set already
-        self._running_tasks_counts.setdefault(partition.fullname, 0)
+        self._running_tasks.setdefault(partition.fullname, [])
+        # self._running_tasks_counts.setdefault(partition.fullname, 0)
         self._ready_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
@@ -304,13 +308,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
                 return
 
-            if self._running_tasks_counts[partname] >= partition.max_jobs:
+            if len(self._running_tasks[partname]) >= partition.max_jobs:
                 # Make sure that we still exceeded the job limit
                 getlogger().debug('reached job limit (%s) for partition %s' %
                                   (partition.max_jobs, partname))
                 self._poll_tasks()
 
-            if self._running_tasks_counts[partname] < partition.max_jobs:
+            if len(self._running_tasks[partname]) < partition.max_jobs:
                 # Task was put in _ready_tasks during setup
                 self._ready_tasks[partname].pop()
                 self._reschedule(task)
@@ -334,8 +338,15 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _poll_tasks(self):
         '''Update the counts of running checks per partition.'''
         getlogger().debug('updating counts for running test cases')
-        getlogger().debug('polling %s task(s)' % len(self._running_tasks))
-        for t in self._running_tasks:
+        all_running = sum(self._running_tasks.values(), [])
+        getlogger().debug('polling %s task(s)' % len(all_running))
+        for partname, sched in self._schedulers.items():
+            getlogger().debug(f'polling {len(self._running_tasks[partname])} '
+                              f'task(s) in {partname}')
+            jobids = [task.check.job for task in self._running_tasks[partname]]
+            sched.poll_jobs(jobids)
+
+        for t in all_running:
             t.poll()
 
     def _setup_all(self):
@@ -369,11 +380,13 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def _failall(self, cause):
         '''Mark all tests as failures'''
-        try:
-            while True:
-                self._running_tasks.pop().abort(cause)
-        except IndexError:
-            pass
+        for partname in self._running_tasks.keys():
+            try:
+                while True:
+                    self._running_tasks[partname].pop().abort(cause)
+            except IndexError:
+                pass
+        self._running_tasks = {}
 
         for ready_list in self._ready_tasks.values():
             getlogger().debug('ready list size: %s' % len(ready_list))
@@ -393,7 +406,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         task.run()
 
     def _reschedule_all(self):
-        for partname, num_jobs in self._running_tasks_counts.items():
+        partitions = self._running_tasks.keys()
+        for partname in partitions:
+            num_jobs = len(self._running_tasks[partname])
             assert(num_jobs >= 0)
             num_empty_slots = self._max_jobs[partname] - num_jobs
             num_rescheduled = 0
@@ -416,9 +431,9 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         pollrate = PollRateFunction(0.2, 60)
         num_polls = 0
         t_start = datetime.now()
-        while (self._running_tasks or self._waiting_tasks):
+        while (sum(self._running_tasks.values(), []) or self._waiting_tasks):
             getlogger().debug('running tasks: %s' % len(self._running_tasks))
-            num_polls += len(self._running_tasks)
+            num_polls += len(sum(self._running_tasks.values(), []))
             try:
                 self._poll_tasks()
                 self._finalize_all()
@@ -430,11 +445,11 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getlogger().debug(
                     'polling rate (real): %.3f polls/sec' % real_rate)
 
-                if len(self._running_tasks):
+                if len(sum(self._running_tasks.values(), [])):
                     desired_rate = pollrate(t_elapsed, real_rate)
                     getlogger().debug(
                         'polling rate (desired): %.3f' % desired_rate)
-                    t = len(self._running_tasks) / desired_rate
+                    t = len(sum(self._running_tasks.values(), [])) / desired_rate
                     getlogger().debug('sleeping: %.3fs' % t)
                     time.sleep(t)
 
