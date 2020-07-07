@@ -42,6 +42,11 @@ class RuntimeContext:
         return ret
 
     def _format_dirs(self, *dirs):
+        if not self.get_option('general/0/clean_stagedir'):
+            # If stagedir is to be reused, no new stage directories will be
+            # used for retries
+            return dirs
+
         try:
             last = dirs[-1]
         except IndexError:
@@ -134,11 +139,13 @@ class RuntimeContext:
 
         return os.path.abspath(ret)
 
-    def make_stagedir(self, *dirs, wipeout=True):
+    def make_stagedir(self, *dirs):
+        wipeout = self.get_option('general/0/clean_stagedir')
         return self._makedir(self.stage_prefix,
                              *self._format_dirs(*dirs), wipeout=wipeout)
 
-    def make_outputdir(self, *dirs, wipeout=True):
+    def make_outputdir(self, *dirs):
+        wipeout = self.get_option('general/0/clean_stagedir')
         return self._makedir(self.output_prefix,
                              *self._format_dirs(*dirs), wipeout=wipeout)
 

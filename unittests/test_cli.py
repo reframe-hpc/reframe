@@ -221,6 +221,31 @@ def test_check_sanity_failure(run_reframe, tmp_path):
     )
 
 
+def test_dont_restage(run_reframe, tmp_path):
+    run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-t', 'SanityFailureCheck']
+    )
+
+    # Place a random file in the test's stage directory and rerun with
+    # `--dont-restage` and `--max-retries`
+    stagedir = (tmp_path / 'stage' / 'generic' / 'default' /
+                'builtin-gcc' / 'SanityFailureCheck')
+    (stagedir / 'foobar').touch()
+    returncode, stdout, stderr = run_reframe(
+        checkpath=['unittests/resources/checks/frontend_checks.py'],
+        more_options=['-t', 'SanityFailureCheck',
+                      '--dont-restage', '--max-retries=1']
+    )
+    assert os.path.exists(stagedir / 'foobar')
+    assert not os.path.exists(f'{stagedir}_retry1')
+
+    # And some standard assertions
+    assert 'Traceback' not in stdout
+    assert 'Traceback' not in stderr
+    assert returncode != 0
+
+
 def test_checkpath_symlink(run_reframe, tmp_path):
     # FIXME: This should move to test_loader.py
     checks_symlink = tmp_path / 'checks_symlink'
