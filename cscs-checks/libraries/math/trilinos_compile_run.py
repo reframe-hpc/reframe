@@ -58,5 +58,6 @@ class TrilinosTest(rfm.RegressionTest):
             if '20.06' in os.getenv('MODULERCFILE', ''):
                 self.modules += ['cray-netcdf-hdf5parallel']
                 self.prebuild_cmds = [
-                    'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc',
+                    'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/'\
+                        'netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc',
                     'export PKG_CONFIG_PATH=`pwd`:$PKG_CONFIG_PATH']
