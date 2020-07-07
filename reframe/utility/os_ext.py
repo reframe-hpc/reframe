@@ -95,25 +95,44 @@ def osgroup():
 
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
-             ignore_dangling_symlinks=False):
-    '''Same as shutil.copytree() but valid also if 'dst' exists.
-
-    In this case it will first remove it and then call the standard
-    shutil.copytree().'''
+             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+    '''Compatibility version of :py:func:`shutil.copytree()` for Python <= 3.8
+    '''
     if src == os.path.commonpath([src, dst]):
         raise ValueError("cannot copy recursively the parent directory "
                          "`%s' into one of its descendants `%s'" % (src, dst))
 
-    if os.path.exists(dst):
-        shutil.rmtree(dst)
+    if sys.version_info[2] >= 8:
+        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+                               ignore_dangling_symlinks, dirs_exist_ok)
 
-    shutil.copytree(src, dst, symlinks, ignore, copy_function,
-                    ignore_dangling_symlinks)
+    if not dirs_exist_ok:
+        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+                               ignore_dangling_symlinks)
+
+    # dirs_exist_ok=True and Python < 3.8
+    if not os.path.exists(dst):
+        return shutil.copytree(src, dst, symlinks, ignore, copy_function,
+                               ignore_dangling_symlinks)
+
+    # dst exists; manually descend into the subdirectories
+    _, subdirs, files = list(os.walk(src))[0]
+    ignore_paths = ignore(src, os.listdir(src)) if ignore else {}
+    for f in files:
+        if f not in ignore_paths:
+            copy_function(os.path.join(src, f), os.path.join(dst, f))
+
+    for d in subdirs:
+        if d not in ignore_paths:
+            copytree(os.path.join(src, d), os.path.join(dst, d), symlinks,
+                     ignore, copy_function, ignore_dangling_symlinks)
+
+    return dst
 
 
 def copytree_virtual(src, dst, file_links=[],
                      symlinks=False, copy_function=shutil.copy2,
-                     ignore_dangling_symlinks=False):
+                     ignore_dangling_symlinks=False, dirs_exist_ok=False):
     '''Copy `dst` to `src`, but create symlinks for the files in `file_links`.
 
     If `file_links` is empty, this is equivalent to `copytree()`.  The rest of
@@ -134,35 +153,42 @@ def copytree_virtual(src, dst, file_links=[],
     link_targets = set()
     for f in file_links:
         if os.path.isabs(f):
-            raise ValueError("copytree_virtual() failed: `%s': "
-                             "absolute paths not allowed in file_links" % f)
+            raise ValueError(f'copytree_virtual() failed: {f!r}: '
+                             f'absolute paths not allowed in file_links')
 
         target = os.path.join(src, f)
         if not os.path.exists(target):
-            raise ValueError("copytree_virtual() failed: `%s' "
-                             "does not exist" % target)
+            raise ValueError(f'copytree_virtual() failed: {target!r} '
+                             f'does not exist')
 
         if os.path.commonpath([src, target]) != src:
-            raise ValueError("copytree_virtual() failed: "
-                             "`%s' not under `%s'" % (target, src))
+            raise ValueError(f'copytree_virtual() failed: '
+                             f'{target!r} not under {src!r}')
 
         link_targets.add(os.path.abspath(target))
+
+    if '.' in file_links or '..' in file_links:
+        raise ValueError(f"'.' or '..' are not allowed in file_links")
 
     if not file_links:
         ignore = None
     else:
         def ignore(dir, contents):
-            return [c for c in contents
-                    if os.path.join(dir, c) in link_targets]
+            return {c for c in contents
+                    if os.path.join(dir, c) in link_targets}
 
     # Copy to dst ignoring the file_links
     copytree(src, dst, symlinks, ignore,
-             copy_function, ignore_dangling_symlinks)
+             copy_function, ignore_dangling_symlinks, dirs_exist_ok)
 
     # Now create the symlinks
     for f in link_targets:
         link_name = f.replace(src, dst)
-        os.symlink(f, link_name)
+        try:
+            os.symlink(f, link_name)
+        except FileExistsError:
+            if not dirs_exist_ok:
+                raise
 
 
 def rmtree(*args, max_retries=3, **kwargs):

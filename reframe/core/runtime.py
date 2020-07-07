@@ -145,9 +145,8 @@ class RuntimeContext:
                              *self._format_dirs(*dirs), wipeout=wipeout)
 
     def make_outputdir(self, *dirs):
-        wipeout = self.get_option('general/0/clean_stagedir')
         return self._makedir(self.output_prefix,
-                             *self._format_dirs(*dirs), wipeout=wipeout)
+                             *self._format_dirs(*dirs), wipeout=True)
 
     @property
     def modules_system(self):

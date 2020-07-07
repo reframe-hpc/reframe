@@ -1069,9 +1069,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                           (path, self._stagedir))
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         try:
-            os_ext.copytree_virtual(path, self._stagedir, self.readonly_files)
+            os_ext.copytree_virtual(
+                path, self._stagedir, self.readonly_files, dirs_exist_ok=True
+            )
         except (OSError, ValueError, TypeError) as e:
-            raise PipelineError('virtual copying of files failed') from e
+            raise PipelineError('copying of files failed') from e
 
     def _clone_to_stagedir(self, url):
         self.logger.debug('cloning URL %s to stage directory (%s)' %
