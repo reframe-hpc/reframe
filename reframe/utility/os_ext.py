@@ -102,7 +102,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
         raise ValueError("cannot copy recursively the parent directory "
                          "`%s' into one of its descendants `%s'" % (src, dst))
 
-    if sys.version_info[2] >= 8:
+    if sys.version_info[1] >= 8:
         return shutil.copytree(src, dst, symlinks, ignore, copy_function,
                                ignore_dangling_symlinks, dirs_exist_ok)
 
