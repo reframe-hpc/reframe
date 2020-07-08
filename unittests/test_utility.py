@@ -276,6 +276,9 @@ class TestCopyTree(unittest.TestCase):
         open(os.path.join(self.prefix, 'bar.txt'), 'w').close()
         open(os.path.join(self.prefix, 'foo.txt'), 'w').close()
 
+        # Create also a subdirectory in target, so as to check the recursion
+        os.makedirs(os.path.join(self.target, 'foo'), exist_ok=True)
+
     def verify_target_directory(self, file_links=[]):
         '''Verify the directory structure'''
         assert os.path.exists(os.path.join(self.target, 'bar', 'bar.txt'))
@@ -295,6 +298,10 @@ class TestCopyTree(unittest.TestCase):
     def test_virtual_copy_nolinks(self):
         os_ext.copytree_virtual(self.prefix, self.target, dirs_exist_ok=True)
         self.verify_target_directory()
+
+    def test_virtual_copy_nolinks_dirs_exist(self):
+        with pytest.raises(FileExistsError):
+            os_ext.copytree_virtual(self.prefix, self.target)
 
     def test_virtual_copy_valid_links(self):
         file_links = ['bar/', 'foo/bar.txt', 'foo.txt']

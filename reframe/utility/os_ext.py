@@ -124,8 +124,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
 
     for d in subdirs:
         if d not in ignore_paths:
-            copytree(os.path.join(src, d), os.path.join(dst, d), symlinks,
-                     ignore, copy_function, ignore_dangling_symlinks)
+            copytree(os.path.join(src, d), os.path.join(dst, d),
+                     symlinks, ignore, copy_function,
+                     ignore_dangling_symlinks, dirs_exist_ok)
 
     return dst
 
