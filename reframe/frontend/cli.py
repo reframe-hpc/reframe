@@ -418,6 +418,15 @@ def main():
         for err in options.update_config(site_config):
             printer.warning(str(err))
 
+        # Update options from the selected execution mode
+        if options.mode:
+            mode_args = site_config.get(f'modes/@{options.mode}/options')
+
+            # Parse the mode's options and reparse the command-line
+            options = argparser.parse_args(mode_args)
+            options = argparser.parse_args(namespace=options.cmd_options)
+            options.update_config(site_config)
+
         logging.configure_logging(site_config)
     except (OSError, ConfigError) as e:
         printer.error(f'failed to load configuration: {e}')
@@ -446,18 +455,6 @@ def main():
     except (ConfigError, OSError) as e:
         printer.error('could not load module mappings: %s' % e)
         sys.exit(1)
-
-    if options.mode:
-        try:
-            mode_args = rt.get_option(f'modes/@{options.mode}/options')
-
-            # Parse the mode's options and reparse the command-line
-            options = argparser.parse_args(mode_args)
-            options = argparser.parse_args(namespace=options.cmd_options)
-            options.update_config(rt.site_config)
-        except ConfigError as e:
-            printer.error('could not obtain execution mode: %s' % e)
-            sys.exit(1)
 
     if (os_ext.samefile(rt.stage_prefix, rt.output_prefix) and
         not site_config.get('general/0/keep_stage_files')):
