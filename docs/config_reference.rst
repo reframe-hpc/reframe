@@ -1040,6 +1040,16 @@ General Configuration
 
 
 
+.. js:attribute:: .general[].clean_stagedir
+
+   :required: No
+   :default: ``true``
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+
 .. js:attribute:: .general[].colorize
 
    :required: No

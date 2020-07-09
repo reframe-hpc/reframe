@@ -127,6 +127,11 @@ def main():
         envvar='RFM_KEEP_STAGE_FILES', configvar='general/keep_stage_files'
     )
     output_options.add_argument(
+        '--dont-restage', action='store_false', dest='clean_stagedir',
+        help='Reuse the test stage directory',
+        envvar='RFM_CLEAN_STAGEDIR', configvar='general/clean_stagedir'
+    )
+    output_options.add_argument(
         '--save-log-files', action='store_true', default=False,
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'

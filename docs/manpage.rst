@@ -219,6 +219,14 @@ Options controlling ReFrame output
 
    This option can also be set using the :envvar:`RFM_KEEP_STAGE_FILES` environment variable or the :js:attr:`keep_stage_files` general configuration parameter.
 
+.. option:: --dont-restage
+
+   Do not restage a test if its stage directory exists.
+   Normally, if the stage directory of a test exists, ReFrame will remove it and recreate it.
+   This option disables this behavior.
+
+   .. versionadded:: 3.1
+
 .. option:: --save-log-files
 
    Save ReFrame log files in the output directory before exiting.
@@ -582,6 +590,21 @@ Here is an alphabetical list of the environment variables recognized by ReFrame:
       ================================== ==================
       Associated command line option     :option:`-R`
       Associated configuration parameter :js:attr:`check_search_recursive` general configuration parameter
+      ================================== ==================
+
+
+.. envvar:: RFM_CLEAN_STAGEDIR
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
+
+   .. table::
+      :align: left
+
+      ================================== ==================
+      Associated command line option     :option:`--dont-restage`
+      Associated configuration parameter :js:attr:`clean_stagedir` general configuration parameter
       ================================== ==================
 
 
