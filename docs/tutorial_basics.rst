@@ -6,7 +6,7 @@
 
 This tutorial will give you a first overview of ReFrame and will acquaint you with its basic concepts.
 We will start with a simple "Hello, World!" test running with the default configuration and we will expand the example along the way.
-We will also explore performance tests and we will port our tests to an HPC cluster.
+We will also explore performance tests and port our tests to an HPC cluster.
 The examples of this tutorial can be found under :obj:`tutorials/basics/`.
 
 
@@ -147,7 +147,7 @@ ReFrame allows you to avoid this in several ways but the most compact is to defi
    :lines: 6-
 
 
-This exactly the same test as the ``hello1.py`` except that it is decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator instead of the :func:`@simple_test <reframe.core.decorators.simple_test>`.
+This is exactly the same test as the ``hello1.py`` except that it is decorated with the :func:`@parameterized_test <reframe.core.decorators.parameterized_test>` decorator instead of the :func:`@simple_test <reframe.core.decorators.simple_test>`.
 Also the constructor of the test now takes an argument.
 The :func:`@parameterized_test <>` decorator instructs ReFrame to instantiate a test class with different parameters.
 In this case the test will be instantiated for both C and C++ and then we use the ``lang`` parameter directly as the extension of the source file.
@@ -211,7 +211,7 @@ Oops! The C++ test has failed.
 ReFrame complains that it does not know how to compile a C++ program.
 Remember our discussion above that the default configuration of ReFrame defines a minimal programming environment named ``builtin`` which only knows of a ``cc`` compiler.
 We will fix that in a moment, but before doing that it's worth looking into the failure information provided for the test.
-For each test failing, ReFrame will print a short summary with information about the system partition and the programming environment that the test failed for, its job or process id (if any), the nodes it was running on, its stage directory, the phase that failed etc.
+For each failed test, ReFrame will print a short summary with information about the system partition and the programming environment that the test failed for, its job or process id (if any), the nodes it was running on, its stage directory, the phase that failed etc.
 
 When a test fails its stage directory is kept intact, so that users can inspect the failure and try to reproduce it manually.
 In this case, the stage directory contains only the "Hello, World" source files, since ReFrame could not produce a build script for the C++ test, as it doesn't know to compile a C++ program for the moment.
@@ -253,7 +253,7 @@ Notice, how the ``generic`` system matches any hostname, so that it acts as a fa
 .. note::
 
    The different systems in the configuration file are tried in order and the first match is picked.
-   This practically means that the more general the selection pattern for a system is, the lower in the list of systems should be.
+   This practically means that the more general the selection pattern for a system is, the lower in the list of systems it should be.
 
 The :doc:`configure` page describes the configuration file in more detail and the :doc:`config_reference` provides a complete reference guide of all the configuration options of ReFrame.
 
@@ -329,7 +329,7 @@ Here is the corresponding ReFrame test, where the new concepts introduced are hi
    :emphasize-lines: 11-13
 
 ReFrame delegates the compilation of a test to a *build system*, which is an abstraction of the steps needed to compile the test.
-Build system take also care of interactions with the programming environment if necessary.
+Build systems take also care of interactions with the programming environment if necessary.
 Compilation flags are a property of the build system.
 If not explicitly specified, ReFrame will try to pick the correct build system (e.g., CMake, Autotools etc.) by inspecting the test resources, but in cases as the one presented here where we need to set the compilation flags, we need to specify a build system explicitly.
 In this example, we instruct ReFrame to compile a single source file using the ``-std=c++11 -Wall`` compilation flags.
@@ -532,7 +532,7 @@ Let's run the test now:
 
    ./bin/reframe -c tutorials/basics/stream/stream1.py -r --performance-report
 
-The :option:`--performance-report` will generated a short report at the end for each performance test that has run.
+The :option:`--performance-report` will generate a short report at the end for each performance test that has run.
 
 
 .. code-block:: none
@@ -619,7 +619,7 @@ Examining the performance logs
 
 ReFrame has a powerful mechanism for logging its activities as well as performance data.
 It supports different types of log channels and it can send data simultaneously in any number of them.
-For examples, performance data might be logged in files and the same time being send to Syslog or to a centralized log management server.
+For example, performance data might be logged in files and the same time being send to Syslog or to a centralized log management server.
 By default (i.e., starting off from the builtin configuration file), ReFrame sends performance data to files per test under the ``perflogs/`` directory:
 
 .. code-block:: none
@@ -868,7 +868,7 @@ We will only do so with the final versions of the tests from the previous sectio
 
 There it is!
 Without any change in our tests, we could simply run them in a HPC cluster with all of its intricacies.
-Notice how our just four tests expanded to almost 40 test cases on that particular HPC cluster!
+Notice how our original four tests expanded to almost 40 test cases on that particular HPC cluster!
 One reason we could run immediately our tests on a new system was that we have not been restricting neither the valid system they can run nor the valid programming environments they can run with (except for the STREAM test).
 Otherwise we would have to add ``daint`` and its corresponding programming environments in :attr:`valid_systems` and :attr:`valid_prog_environs` lists respectively.
 

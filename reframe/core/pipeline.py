@@ -436,7 +436,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                            int, type(None))
 
     #: Number of GPUs per node required by this test.
-    #: This is attribute translated internally to the ``_rfm_gpu`` resource.
+    #: This attribute is translated internally to the ``_rfm_gpu`` resource.
     #: For more information on test resources, have a look at the
     #: :attr:`extra_resources` attribute.
     #:

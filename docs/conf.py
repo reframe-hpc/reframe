@@ -144,10 +144,6 @@ html_theme_options = {
     'logo_only': True
 }
 html_logo = "_static/img/reframe-logo-dark-bg.svg"
-
-
-# autodoc_default_flags=['members', 'undoc-members', 'private-members', 'special-members', 'inherited-members', 'show-inheritance']
-# autodoc_default_flags=['members', 'undoc-members', 'inherited-members', 'show-inheritance']
 autodoc_default_flags = ['members']
 
 # End of READTHEDOCS

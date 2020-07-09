@@ -137,7 +137,7 @@ A programming environment in ReFrame is essentially a collection of environment 
 An important feature in ReFrame's configuration, is that you can define section objects differently for different systems or system partitions by using the ``target_systems`` property.
 Notice, for example, how the ``gnu`` environment is defined differently for the system ``daint`` compared to the generic definition.
 The ``target_systems`` property is a list of systems or system/partition combinations where this definition of the environment is in effect.
-This means that ``gnu`` will defined this way only for regression tests running on ``daint``.
+This means that ``gnu`` will be defined this way only for regression tests running on ``daint``.
 For all the other systems, it will be defined using the first definition.
 
 
@@ -388,4 +388,4 @@ Let's see some concrete examples:
 
      "CC"
 
-  If you explicitly query a configuration value and this value is not defined in the configuration file, ReFrame will print its default value.
+  If you explicitly query a configuration value which is not defined in the configuration file, ReFrame will print its default value.
