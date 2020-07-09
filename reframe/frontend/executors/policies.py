@@ -226,7 +226,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
     def on_task_run(self, task):
         partname = task.check.current_partition.fullname
-        # self._running_tasks_counts[partname] += 1
         self._running_tasks[partname].append(task)
 
     def on_task_failure(self, task):
@@ -284,7 +283,6 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
 
         # Set partition-based counters, if not set already
         self._running_tasks.setdefault(partition.fullname, [])
-        # self._running_tasks_counts.setdefault(partition.fullname, 0)
         self._ready_tasks.setdefault(partition.fullname, [])
         self._max_jobs.setdefault(partition.fullname, partition.max_jobs)
 
