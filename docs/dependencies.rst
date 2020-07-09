@@ -142,7 +142,7 @@ Resolving dependencies
 As shown in the :doc:`tutorial_deps`, test dependencies would be of limited usage if you were not able to use the results or information of the target tests.
 Let's reiterate over the :func:`set_executable` function of the :class:`OSULatencyTest` that we presented previously:
 
-.. literalinclude:: ../tutorial/advanced/osu/osu_benchmarks.py
+.. literalinclude:: ../tutorials/deps/osu_benchmarks.py
    :lines: 32-38
 
 The ``@require_deps`` decorator does some magic -- we will unravel this shortly -- with the function arguments of the :func:`set_executable` function and binds them to the target test dependencies by their name.
