@@ -10,6 +10,7 @@ import reframe.core.runtime as rt
 import reframe.frontend.dependency as dependency
 import reframe.frontend.executors as executors
 import reframe.frontend.executors.policies as policies
+import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import (JobNotStartedError,
                                      ReframeForceExitError,
@@ -524,6 +525,8 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
             KeyboardInterruptCheck(), SleepCheck(10),
             SleepCheck(10), SleepCheck(10)
         ]))
+        # FIXME: Dump everything in case Github #1369 appears
+        print(util.repr(runner))
 
     assert_interrupted_run(runner)
 
