@@ -647,6 +647,24 @@ def slurm_nodes():
             'ExtSensorsTemp=n/s Reason=Foo/ '
             'failed [reframe_user@01 Jan 2018]',
 
+            'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+            'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+            'AvailableFeatures=f6 ActiveFeatures=f6 '
+            'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+            'NodeHostName=nid00006 Version=10.00 OS=Linux '
+            'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+            'Sockets=1 Boards=1 State=MAINT '
+            'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+            'MCS_label=N/A Partitions=p4 '
+            'BootTime=01 Jan 2018 '
+            'SlurmdStartTime=01 Jan 2018 '
+            'CfgTRES=cpu=24,mem=32220M '
+            'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+            'LowestJoules=100000000 ConsumedJoules=0 '
+            'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+            'ExtSensorsTemp=n/s Reason=Foo/ '
+            'failed [reframe_user@01 Jan 2018]',
+
             'Node invalid_node2 not found']
 
 
@@ -861,6 +879,13 @@ def test_flex_alloc_not_enough_idle_nodes(make_flexible_job):
         prepare_job(job)
 
 
+def test_flex_alloc_maintenance_nodes(make_flexible_job):
+    job = make_flexible_job('maint')
+    job.options = ['--partition=p4']
+    prepare_job(job)
+    assert job.num_tasks == 4
+
+
 def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
     job.options = ['-C f1,f2', '--partition=p1,p2']
@@ -968,6 +993,29 @@ def slurm_node_nopart():
     )
 
 
+@pytest.fixture
+def slurm_node_maintenance():
+    return _SlurmNode(
+        'NodeName=nid00006 Arch=x86_64 CoresPerSocket=12 '
+        'CPUAlloc=0 CPUErr=0 CPUTot=24 CPULoad=0.00 '
+        'AvailableFeatures=f6 ActiveFeatures=f6 '
+        'Gres=gpu_mem:16280,gpu:1 NodeAddr=nid00006'
+        'NodeHostName=nid00006 Version=10.00 OS=Linux '
+        'RealMemory=32220 AllocMem=0 FreeMem=10000 '
+        'Sockets=1 Boards=1 State=MAINT '
+        'ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A '
+        'MCS_label=N/A Partitions=p4 '
+        'BootTime=01 Jan 2018 '
+        'SlurmdStartTime=01 Jan 2018 '
+        'CfgTRES=cpu=24,mem=32220M '
+        'AllocTRES= CapWatts=n/a CurrentWatts=100 '
+        'LowestJoules=100000000 ConsumedJoules=0 '
+        'ExtSensorsJoules=n/s ExtSensorsWatts=0 '
+        'ExtSensorsTemp=n/s Reason=Foo/ '
+        'failed [reframe_user@01 Jan 2018]'
+    )
+
+
 def test_slurm_node_noname():
     with pytest.raises(JobError):
         _SlurmNode(
@@ -1022,14 +1070,17 @@ def test_str(slurm_node_allocated):
     assert 'nid00001' == str(slurm_node_allocated)
 
 
-def test_slurm_node_is_available(slurm_node_allocated,
-                                 slurm_node_idle,
-                                 slurm_node_drained,
-                                 slurm_node_nopart):
-    assert not slurm_node_allocated.is_available()
-    assert slurm_node_idle.is_available()
-    assert not slurm_node_drained.is_available()
-    assert not slurm_node_nopart.is_available()
+def test_slurm_node_in_state(slurm_node_allocated,
+                             slurm_node_idle,
+                             slurm_node_drained,
+                             slurm_node_nopart):
+    assert slurm_node_allocated.in_state('allocated')
+    assert slurm_node_idle.in_state('Idle')
+    assert slurm_node_drained.in_state('IDLE+Drain')
+    assert slurm_node_drained.in_state('IDLE')
+    assert slurm_node_drained.in_state('idle')
+    assert slurm_node_drained.in_state('DRAIN')
+    assert not slurm_node_nopart.in_state('IDLE')
 
 
 def test_slurm_node_is_down(slurm_node_allocated,
@@ -1038,24 +1089,3 @@ def test_slurm_node_is_down(slurm_node_allocated,
     assert not slurm_node_allocated.is_down()
     assert not slurm_node_idle.is_down()
     assert slurm_node_nopart.is_down()
-
-
-class TestSlurmNode:
-    def setUp(self):
-        idle_node_description = (
-        )
-
-        idle_drained_node_description = (
-        )
-
-        no_partition_node_description = (
-        )
-
-        self.no_name_node_description = (
-        )
-
-        self.allocated_node = _SlurmNode(allocated_node_description)
-        self.allocated_node_copy = _SlurmNode(allocated_node_description)
-        self.idle_node = _SlurmNode(idle_node_description)
-        self.idle_drained = _SlurmNode(idle_drained_node_description)
-        self.no_partition_node = _SlurmNode(no_partition_node_description)

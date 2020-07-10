@@ -184,6 +184,6 @@ As soon as you configure ReFrame specifically for your system, you may rerun the
 Where to Go from Here
 ---------------------
 
-The :doc:`configure` page guides you through the basic configuration aspects of ReFrame.
-The :doc:`tutorials` will allow you to get a first idea on how to write and run ReFrame tests.
-:doc:`topics` explain different aspects of the framework whereas the :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.
+The easiest way to start with ReFrame is to go through :doc:`tutorial_basics`, which will guide you step-by-step in both writing your first tests and in configuring ReFrame.
+The :doc:`configure` page provides more details on the basic configuration aspects of ReFrame.
+:doc:`topics` explain different aspects of the framework whereas :doc:`manuals` provide complete reference guides for the command line interface, the configuration parameters and the programming APIs for writing tests.
