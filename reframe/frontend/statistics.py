@@ -2,14 +2,11 @@
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-
 import json
-import os
 
-import reframe
 import reframe.core.debug as debug
 import reframe.core.runtime as rt
-from reframe.core.exceptions import StatisticsError, ConfigError
+from reframe.core.exceptions import format_exception, StatisticsError
 
 
 class TestStats:
@@ -17,21 +14,21 @@ class TestStats:
 
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
-        self._tasks = [[]]
+        self._alltasks = [[]]
 
     def __repr__(self):
         return debug.repr(self)
 
     def add_task(self, task):
         current_run = rt.runtime().current_run
-        if current_run == len(self._tasks):
-            self._tasks.append([])
+        if current_run == len(self._alltasks):
+            self._alltasks.append([])
 
-        self._tasks[current_run].append(task)
+        self._alltasks[current_run].append(task)
 
     def tasks(self, run=-1):
         try:
-            return self._tasks[run]
+            return self._alltasks[run]
         except IndexError:
             raise StatisticsError('no such run: %s' % run) from None
 
@@ -52,7 +49,7 @@ class TestStats:
         report.append(line_width * '-')
         messages = {}
 
-        for run in range(1, len(self._tasks)):
+        for run in range(1, len(self._alltasks)):
             for t in self.tasks(run):
                 partition_name = ''
                 environ_name = ''
@@ -74,21 +71,20 @@ class TestStats:
 
         return '\n'.join(report)
 
-    @property
-    def report_dict(self):
-        _report = []
+    def json(self):
+        records = []
         current_run = rt.runtime().current_run
-        for tl, tr in zip(self._tasks, range(current_run + 1)):
-            for t in tl:
+        for run_no, run in enumerate(self._alltasks):
+            for t in run:
                 check = t.check
                 partition = check.current_partition
-                partname = partition.fullname if partition else None
+                partfullname = partition.fullname if partition else None
                 environ_name = (check.current_environ.name
                                 if check.current_environ else None)
-                report = {
-                    'name': check.name,
+                entry = {
+                    'testname': check.name,
                     'description': check.descr,
-                    'system': partname,
+                    'system': partfullname,
                     'environment': environ_name,
                     'tags': list(check.tags),
                     'maintainers': check.maintainers,
@@ -102,75 +98,74 @@ class TestStats:
                     'failing_reason': None,
                     'failing_phase': None,
                     'outputdir': None,
-                    'stagedir': None
+                    'stagedir': None,
+                    'job_stdout': None,
+                    'job_stderr': None
                 }
                 if check.job:
-                    report['scheduler'] = check.job.scheduler.registered_name
-                    report['jobid'] = check.job.jobid
-                    report['nodelist'] = (check.job.nodelist
-                                          if check.job.nodelist
-                                          else [])
-                    report['job_stdout'] = check.job.stdout
-                    report['job_stderr'] = check.job.stderr
+                    entry['scheduler'] = partition.scheduler.registered_name
+                    entry['jobid'] = check.job.jobid
+                    entry['nodelist'] = check.job.nodelist or []
+                    entry['job_stdout'] = check.stdout.evaluate()
+                    entry['job_stderr'] = check.stderr.evaluate()
 
                 if check._build_job:
-                    report['build_stdout'] = check._build_job.stdout
-                    report['build_stderr'] = check._build_job.stderr
+                    entry['build_stdout'] = check.build_stdout.evaluate()
+                    entry['build_stderr'] = check.build_stderr.evaluate()
 
                 if t.failed:
-                    report['result'] = 'fail'
+                    entry['result'] = 'fail'
                     if t.exc_info is not None:
-                        from reframe.core.exceptions import format_exception
-
-                        report['failing_reason'] = format_exception(
+                        entry['failing_reason'] = format_exception(
                             *t.exc_info)
-                        report['failing_phase'] = t.failed_stage
-                        report['stagedir'] = check.stagedir
+                        entry['failing_phase'] = t.failed_stage
+                        entry['stagedir'] = check.stagedir
                 else:
-                    report['result'] = 'success'
-                    report['outputdir'] = check.outputdir
+                    entry['result'] = 'success'
+                    entry['outputdir'] = check.outputdir
 
-                report['try'] = tr
+                entry['run_no'] = run_no
 
-                _report.append(report)
+                records.append(entry)
 
-        return _report
+        return records
 
     def json_report(self):
         with open('report.json', 'w') as fp:
-            json.dump(self.report_dict, fp, indent=4)
+            json.dump(self.json(), fp, indent=4)
 
     def failure_report(self):
         line_width = 78
         report = [line_width * '=']
         report.append('SUMMARY OF FAILURES')
-        current_run = rt.runtime().current_run
-        for tf in (t for t in self.report_dict
-                   if t['result'] == 'fail' and t['try'] == current_run):
-            retry_info = ('(for the last of %s retries)' % current_run
-                          if 'retries' in tf.keys() else '')
-
+        last_run = rt.runtime().current_run
+        for r in self.json():
+            if r['result'] == 'success' or r['run_no'] != last_run:
+                continue
+            retry_info = ('(for the last of %s retries)' % last_run
+                          if last_run > 0 else '')
             report.append(line_width * '-')
-            report.append('FAILURE INFO for %s %s' % (tf['name'], retry_info))
-            report.append('  * Test Description: %s' % tf['description'])
-            report.append('  * System partition: %s' % tf['system'])
-            report.append('  * Environment: %s' % tf['environment'])
-            report.append('  * Stage directory: %s' % tf['stagedir'])
+            report.append('FAILURE INFO for %s %s' % (r['testname'],
+                                                      retry_info))
+            report.append('  * Test Description: %s' % r['description'])
+            report.append('  * System partition: %s' % r['system'])
+            report.append('  * Environment: %s' % r['environment'])
+            report.append('  * Stage directory: %s' % r['stagedir'])
             report.append('  * Node list: %s' %
-                          (','.join(tf['nodelist'])
-                           if tf['nodelist'] else None))
-            job_type = 'local' if tf['scheduler'] == 'local' else 'batch job'
-            jobid = tf['jobid']
+                          (','.join(r['nodelist'])
+                           if r['nodelist'] else None))
+            job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
+            jobid = r['jobid']
             report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
-            report.append('  * Maintainers: %s' % tf['maintainers'])
-            report.append('  * Failing phase: %s' % tf['failing_phase'])
+            report.append('  * Maintainers: %s' % r['maintainers'])
+            report.append('  * Failing phase: %s' % r['failing_phase'])
             report.append("  * Rerun with '-n %s -p %s --system %s'" %
-                          (tf['name'], tf['environment'], tf['system']))
-            report.append("  * Reason: %s" % tf['failing_reason'])
+                          (r['testname'], r['environment'], r['system']))
+            report.append("  * Reason: %s" % r['failing_reason'])
 
-            if tf['failing_phase'] == 'sanity':
+            if r['failing_phase'] == 'sanity':
                 report.append('Sanity check failure')
-            elif tf['failing_phase'] == 'performance':
+            elif r['failing_phase'] == 'performance':
                 report.append('Performance check failure')
             else:
                 # This shouldn't happen...
@@ -185,10 +180,10 @@ class TestStats:
         for tf in (t for t in self.tasks(current_run) if t.failed):
             check = tf.check
             partition = check.current_partition
-            partname = partition.fullname if partition else 'None'
+            partfullname = partition.fullname if partition else 'None'
             environ_name = (check.current_environ.name
                             if check.current_environ else 'None')
-            f = f'[{check.name}, {environ_name}, {partname}]'
+            f = f'[{check.name}, {environ_name}, {partfullname}]'
             if tf.failed_stage not in failures:
                 failures[tf.failed_stage] = []
 
