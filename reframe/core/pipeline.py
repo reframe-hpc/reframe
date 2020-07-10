@@ -436,6 +436,9 @@ class RegressionTest(metaclass=RegressionTestMeta):
                                            int, type(None))
 
     #: Number of GPUs per node required by this test.
+    #: This attribute is translated internally to the ``_rfm_gpu`` resource.
+    #: For more information on test resources, have a look at the
+    #: :attr:`extra_resources` attribute.
     #:
     #: :type: integral
     #: :default: ``0``
@@ -1072,9 +1075,11 @@ class RegressionTest(metaclass=RegressionTestMeta):
                           (path, self._stagedir))
         self.logger.debug('symlinking files: %s' % self.readonly_files)
         try:
-            os_ext.copytree_virtual(path, self._stagedir, self.readonly_files)
+            os_ext.copytree_virtual(
+                path, self._stagedir, self.readonly_files, dirs_exist_ok=True
+            )
         except (OSError, ValueError, TypeError) as e:
-            raise PipelineError('virtual copying of files failed') from e
+            raise PipelineError('copying of files failed') from e
 
     def _clone_to_stagedir(self, url):
         self.logger.debug('cloning URL %s to stage directory (%s)' %

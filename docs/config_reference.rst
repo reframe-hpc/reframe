@@ -313,6 +313,9 @@ System Partition Configuration
 
 
 
+.. _container-platform-configuration:
+
+
 Container Platform Configuration
 ================================
 
@@ -1035,6 +1038,16 @@ General Configuration
 
    Search directories in the `search path <#.general[].check_search_path>`__ recursively.
 
+
+
+.. js:attribute:: .general[].clean_stagedir
+
+   :required: No
+   :default: ``true``
+
+   Clean stage directory of tests before populating it.
+
+   .. versionadded:: 3.1
 
 
 .. js:attribute:: .general[].colorize
