@@ -527,6 +527,7 @@ def test_kbd_interrupt_in_wait_with_limited_concurrency(
         ]))
         # FIXME: Dump everything in case Github #1369 appears
         print(util.repr(runner))
+        print(runner.stats.failure_report())
 
     assert_interrupted_run(runner)
 
