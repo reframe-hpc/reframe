@@ -456,3 +456,21 @@ def unique_abs_paths(paths, prune_children=True):
     # FIXME: This should be performed using the minus operator of
     # `OrderedSet` once #1165 is fixed.
     return [p for p in unique_paths if p not in children]
+
+
+def cray_cdt_version():
+    '''Return the Cray CDT version or :class:`None` for non-Cray systems'''
+    rcfile = os.getenv('MODULERCFILE', '/opt/cray/pe/cdt/default/modulerc')
+    try:
+        with open(rcfile) as fp:
+            header = fp.readline()
+            if not header:
+                return None
+
+        match = re.search(r'^#%Module CDT (\S+)', header)
+        if not match:
+            return None
+
+        return match.group(1)
+    except OSError:
+        return None
