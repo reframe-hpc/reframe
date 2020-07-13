@@ -14,7 +14,6 @@ import socket
 import tempfile
 
 import reframe
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.core.settings as settings
 import reframe.utility as util
