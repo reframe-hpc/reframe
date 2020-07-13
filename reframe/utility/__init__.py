@@ -138,7 +138,7 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0,
     :arg basic_offset: Basic offset for the representation, any additional
         indentation space is added to the ``basic_offset``.
     :arg repr: The :func:`repr` to use for printing values. This function may
-        accept also a ``basic_offset`` argument
+        accept also all the arguments of :func:`ppretty` except the ``repr``.
 
     :returns: a formatted string of the ``value``.
     '''
@@ -183,7 +183,7 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0,
                          htchar * indent * basic_offset)
     else:
         try:
-            return repr(value, basic_offset=basic_offset)
+            return repr(value, htchar, lfchar, indent, basic_offset)
         except TypeError:
             # Not our custom repr()
             return repr(value)
@@ -193,7 +193,7 @@ def _tracked_repr(func):
     objects = set()
 
     @functools.wraps(func)
-    def _repr(obj, **kwargs):
+    def _repr(obj, *args, **kwargs):
         addr = id(obj)
         if addr in objects:
             return f'{type(obj).__name__}(...)@{hex(addr)}'
@@ -202,13 +202,13 @@ def _tracked_repr(func):
         if hasattr(obj, '__dict__'):
             objects.add(addr)
 
-        return func(obj, **kwargs)
+        return func(obj, *args, **kwargs)
 
     return _repr
 
 
 @_tracked_repr
-def repr(obj, *, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
+def repr(obj, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     '''A debug repr() function printing all object attributes recursively'''
     if (isinstance(obj, list) or isinstance(obj, tuple) or
         isinstance(obj, set) or isinstance(obj, dict)):
@@ -217,7 +217,7 @@ def repr(obj, *, htchar=' ', lfchar='\n', indent=4, basic_offset=0):
     if not hasattr(obj, '__dict__'):
         return builtins.repr(obj)
 
-    r = ppretty(obj.__dict__, basic_offset=basic_offset, repr=repr)
+    r = ppretty(obj.__dict__, htchar, lfchar, indent, basic_offset, repr)
     return f'{type(obj).__name__}({r})@{hex(id(obj))}'
 
 
