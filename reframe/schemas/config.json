@@ -350,6 +350,7 @@
                         "items": {"type": "string"}
                     },
                     "check_search_recursive": {"type": "boolean"},
+                    "clean_stagedir": {"type": "boolean"},
                     "colorize": {"type": "boolean"},
                     "ignore_check_conflicts": {"type": "boolean"},
                     "keep_stage_files": {"type": "boolean"},
@@ -394,6 +395,7 @@
         "environments/target_systems": ["*"],
         "general/check_search_path": ["${RFM_INSTALL_PREFIX}/checks/"],
         "general/check_search_recursive": false,
+        "general/clean_stagedir": true,
         "general/colorize": true,
         "general/ignore_check_conflicts": false,
         "general/keep_stage_files": false,

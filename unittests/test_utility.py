@@ -61,15 +61,7 @@ class TestOSTools(unittest.TestCase):
     def test_copytree(self):
         dir_src = tempfile.mkdtemp()
         dir_dst = tempfile.mkdtemp()
-
-        with pytest.raises(OSError):
-            shutil.copytree(dir_src, dir_dst)
-
-        try:
-            os_ext.copytree(dir_src, dir_dst)
-        except Exception as e:
-            pytest.fail('custom copytree failed: %s' % e)
-
+        os_ext.copytree(dir_src, dir_dst, dirs_exist_ok=True)
         shutil.rmtree(dir_src)
         shutil.rmtree(dir_dst)
 
@@ -284,6 +276,9 @@ class TestCopyTree(unittest.TestCase):
         open(os.path.join(self.prefix, 'bar.txt'), 'w').close()
         open(os.path.join(self.prefix, 'foo.txt'), 'w').close()
 
+        # Create also a subdirectory in target, so as to check the recursion
+        os.makedirs(os.path.join(self.target, 'foo'), exist_ok=True)
+
     def verify_target_directory(self, file_links=[]):
         '''Verify the directory structure'''
         assert os.path.exists(os.path.join(self.target, 'bar', 'bar.txt'))
@@ -301,38 +296,54 @@ class TestCopyTree(unittest.TestCase):
             assert target_name == os.readlink(link_name)
 
     def test_virtual_copy_nolinks(self):
-        os_ext.copytree_virtual(self.prefix, self.target)
+        os_ext.copytree_virtual(self.prefix, self.target, dirs_exist_ok=True)
         self.verify_target_directory()
+
+    def test_virtual_copy_nolinks_dirs_exist(self):
+        with pytest.raises(FileExistsError):
+            os_ext.copytree_virtual(self.prefix, self.target)
 
     def test_virtual_copy_valid_links(self):
         file_links = ['bar/', 'foo/bar.txt', 'foo.txt']
-        os_ext.copytree_virtual(self.prefix, self.target, file_links)
+        os_ext.copytree_virtual(self.prefix, self.target,
+                                file_links, dirs_exist_ok=True)
         self.verify_target_directory(file_links)
 
     def test_virtual_copy_inexistent_links(self):
         file_links = ['foobar/', 'foo/bar.txt', 'foo.txt']
         with pytest.raises(ValueError):
-            os_ext.copytree_virtual(self.prefix, self.target, file_links)
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
 
     def test_virtual_copy_absolute_paths(self):
         file_links = [os.path.join(self.prefix, 'bar'),
                       'foo/bar.txt', 'foo.txt']
         with pytest.raises(ValueError):
-            os_ext.copytree_virtual(self.prefix, self.target, file_links)
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
 
     def test_virtual_copy_irrelevenant_paths(self):
         file_links = ['/bin', 'foo/bar.txt', 'foo.txt']
         with pytest.raises(ValueError):
-            os_ext.copytree_virtual(self.prefix, self.target, file_links)
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
 
         file_links = [os.path.dirname(self.prefix), 'foo/bar.txt', 'foo.txt']
         with pytest.raises(ValueError):
-            os_ext.copytree_virtual(self.prefix, self.target, file_links)
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
 
     def test_virtual_copy_linkself(self):
         file_links = ['.']
-        with pytest.raises(OSError):
-            os_ext.copytree_virtual(self.prefix, self.target, file_links)
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
+
+    def test_virtual_copy_linkparent(self):
+        file_links = ['..']
+        with pytest.raises(ValueError):
+            os_ext.copytree_virtual(self.prefix, self.target,
+                                    file_links, dirs_exist_ok=True)
 
     def tearDown(self):
         shutil.rmtree(self.prefix)

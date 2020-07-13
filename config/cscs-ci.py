@@ -26,7 +26,8 @@ site_configuration = {
                     ],
                     'access': [
                         '--constraint=gpu',
-                        '--partition=cscsci'
+                        '--partition=cscsci',
+                        '--account=jenscscs'
                     ],
                     'environs': [
                         'builtin'
@@ -61,7 +62,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '--constraint=gpu'
+                        '--constraint=gpu',
+                        '--account=jenscscs'
                     ],
                     'environs': [
                         'builtin'
@@ -85,7 +87,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        'proc=gpu'
+                        'proc=gpu',
+                        '-A jenscscs'
                     ],
                     'environs': [
                         'builtin'
@@ -101,7 +104,8 @@ site_configuration = {
                         'daint-gpu'
                     ],
                     'access': [
-                        '-l proc=gpu'
+                        '-l proc=gpu',
+                        '-A jenscscs'
                     ],
                     'environs': [
                         'builtin'
