@@ -10,7 +10,6 @@ import sys
 import time
 import weakref
 
-import reframe.core.debug as debug
 import reframe.core.environments as env
 import reframe.core.logging as logging
 import reframe.core.runtime as runtime
@@ -350,9 +349,6 @@ class Runner:
         self._policy.printer = self._printer
         signal.signal(signal.SIGTERM, _handle_sigterm)
 
-    def __repr__(self):
-        return debug.repr(self)
-
     @property
     def max_retries(self):
         return self._max_retries
@@ -464,9 +460,6 @@ class ExecutionPolicy(abc.ABC):
         # Task event listeners
         self.task_listeners = []
         self.stats = None
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def enter(self):
         pass

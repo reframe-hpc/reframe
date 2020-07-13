@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import reframe.core.debug as debug
 import reframe.core.runtime as rt
 from reframe.core.exceptions import StatisticsError
 
@@ -14,9 +13,6 @@ class TestStats:
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
         self._tasks = [[]]
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def add_task(self, task):
         current_run = rt.runtime().current_run
