@@ -112,12 +112,7 @@ def open_json_schema():
     schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
                                    'schemas', 'runreport.json')
     with open(schema_filename) as fp:
-        try:
-            schema = json.loads(fp.read())
-        except json.JSONDecodeError as e:
-            raise ReframeFatalError(
-                f"invalid configuration schema: '{schema_filename}'"
-            ) from e
+        schema = json.loads(fp.read())
 
     return schema
 
