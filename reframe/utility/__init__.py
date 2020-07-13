@@ -143,7 +143,6 @@ def ppretty(value, htchar=' ', lfchar='\n', indent=4, basic_offset=0,
     :returns: a formatted string of the ``value``.
     '''
 
-    print(repr)
     ppretty2 = functools.partial(
         ppretty, htchar=htchar, lfchar=lfchar, indent=indent,
         basic_offset=basic_offset+1, repr=repr
