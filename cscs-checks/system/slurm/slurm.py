@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import reframe as rfm
+import reframe.utility.os_ext as ext
 import reframe.utility.sanity as sn
 
 
@@ -95,7 +96,7 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         super().__init__()
         self.valid_systems = ['daint:login', 'dom:login']
         self.executable = 'srun'
-        self.executable_opts = ['hostname']
+        self.executable_opts = ['-A', ext.osgroup(), 'hostname']
         self.sanity_patterns = sn.assert_found(
             r'error: You have to specify, at least, what sort of node you '
             r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '

@@ -216,7 +216,7 @@ class Job:
         self.num_cpus_per_task = None
         self.use_smt = None
         self.time_limit = None
-        self.options = sched_options or []
+        self.options = list(sched_options) if sched_options else []
 
         # Live job information; to be filled during job's lifetime by the
         # scheduler
