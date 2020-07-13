@@ -109,21 +109,23 @@ def num_failures_stage(runner, stage):
 
 def open_json_schema():
     # Open and store the JSON schema for later validation
-    schema_filename = os.path.join(reframe.INSTALL_PREFIX, 'reframe',
-                                   'schemas', 'runreport.json')
+    schema_filename = os.path.join('reframe/schemas/runreport.json')
     with open(schema_filename) as fp:
         schema = json.loads(fp.read())
 
     return schema
 
 
+def validate_report(runreport):
+    schema = open_json_schema()
+    jsonschema.validate(runreport, schema)
+
+
 def test_runall(make_runner, make_cases, common_exec_ctx):
     runner = make_runner()
     runner.runall(make_cases())
     stats = runner.stats
-    json_out = runner.stats.json()
-    schema = open_json_schema()
-    jsonschema.validate(json_out, schema)
+    validate_report(runner.stats.json())
     assert 8 == stats.num_cases()
     assert_runall(runner)
     assert 5 == len(stats.failures())
