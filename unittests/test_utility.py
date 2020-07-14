@@ -1189,7 +1189,7 @@ def test_cray_cle_info(tmp_path):
     assert cle_info.build == '7.0.1227'
     assert cle_info.date == '20200326'
     assert cle_info.network == 'ari'
-    assert cle_info.patchset == '09-202003261814'
+    assert cle_info.patchset == '09'
 
 
 def test_cray_cle_info_no_such_file(tmp_path):
@@ -1209,4 +1209,4 @@ def test_cray_cle_info_missing_parts(tmp_path):
     assert cle_info.build is None
     assert cle_info.date is None
     assert cle_info.network is None
-    assert cle_info.patchset == '09-202003261814'
+    assert cle_info.patchset == '09'

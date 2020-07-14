@@ -495,7 +495,12 @@ def cray_cle_info(filename='/etc/opt/cray/release/cle-release'):
         with open(filename) as fp:
             for line in fp:
                 key, value = line.split('=', maxsplit=1)
+                if key == 'PATCHSET':
+                    # Strip the date from the patchset
+                    value = value.split('-')[0]
+
                 info[key] = value.strip()
+
     except OSError:
         return None
 
