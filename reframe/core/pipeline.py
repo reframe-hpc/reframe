@@ -1009,7 +1009,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         except OSError as e:
             raise PipelineError('failed to set up paths') from e
 
-    def _setup_job(self, sched, **job_opts):
+    def _setup_job(self, _rfm_sched_type=None, **job_opts):
         '''Setup the job related to this check.'''
 
         self.logger.debug('setting up the job descriptor')
@@ -1026,10 +1026,10 @@ class RegressionTest(metaclass=RegressionTestMeta):
             scheduler_type = self._current_partition.scheduler
             launcher_type = self._current_partition.launcher
 
-        if not sched:
-            sched = scheduler_type()
+        if not _rfm_sched_type:
+            _rfm_sched_type = scheduler_type()
 
-        self._job = Job.create(sched,
+        self._job = Job.create(_rfm_sched_type,
                                launcher_type(),
                                name='rfm_%s_job' % self.name,
                                workdir=self._stagedir,
@@ -1044,7 +1044,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
 
     @_run_hooks()
     @final
-    def setup(self, partition, environ, sched=None, **job_opts):
+    def setup(self, partition, environ, **job_opts):
         '''The setup phase of the regression test pipeline.
 
         :arg partition: The system partition to set up this test for.
@@ -1066,7 +1066,7 @@ class RegressionTest(metaclass=RegressionTestMeta):
         self._current_partition = partition
         self._current_environ = environ
         self._setup_paths()
-        self._setup_job(sched, **job_opts)
+        self._setup_job(**job_opts)
         if self.perf_patterns is not None:
             self._setup_perf_logging()
 

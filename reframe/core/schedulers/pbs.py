@@ -47,9 +47,15 @@ class PbsJobScheduler(sched.JobScheduler):
 
     def __init__(self):
         self._prefix = '#PBS'
+        self._time_finished = {}
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
+        self._cancelled = set()
+
+        # Optional part of the job id refering to the PBS server
+        # Indexed by the jobid
+        self._pbs_server = {}
 
     def completion_time(self, job):
         return None
@@ -126,7 +132,7 @@ class PbsJobScheduler(sched.JobScheduler):
         jobid, *info = jobid_match.group('jobid').split('.', maxsplit=1)
         job.jobid = int(jobid)
         if info:
-            job._pbs_server = info[0]
+            self._pbs_server[job.jobid] = info[0]
 
         job._submit_time = datetime.now()
 
@@ -137,12 +143,12 @@ class PbsJobScheduler(sched.JobScheduler):
             time.sleep(next(intervals))
 
     def cancel(self, job):
-        job._cancelled = True
+        self._cancelled.add(job.jobid)
 
         # Recreate the full job id
         jobid = str(job.jobid)
-        if job._pbs_server:
-            jobid += '.' + job._pbs_server
+        if job.jobid in self._pbs_server:
+            jobid += '.' + self._pbs_server[job.jobid]
 
         time_from_submit = (datetime.now() - job._submit_time).total_seconds()
         if time_from_submit < PBS_CANCEL_DELAY:
@@ -156,12 +162,17 @@ class PbsJobScheduler(sched.JobScheduler):
             output_ready = (os.path.exists(job.stdout) and
                             os.path.exists(job.stderr))
 
-        done = job._cancelled or output_ready
+        done = job.jobid in self._cancelled or output_ready
 
         if done:
             t_now = datetime.now()
-            job._time_finished = job._time_finished or t_now
-            time_from_finish = (t_now - job._time_finished).total_seconds()
+            if job.jobid in self._time_finished:
+                job_time_finished = self._time_finished[job.jobid]
+            else:
+                self._time_finished[job.jobid] = t_now
+                job_time_finished = t_now
+
+            time_from_finish = (t_now - job_time_finished).total_seconds()
 
         return done and time_from_finish > PBS_OUTPUT_WRITEBACK_WAIT
 

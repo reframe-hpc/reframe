@@ -256,8 +256,10 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_task(self, task):
         if self.deps_succeeded(task):
             try:
+                sched = self._schedulers.get(task.testcase.partition.fullname, None)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
+                           _rfm_sched_type=sched,
                            sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
                            sched_account=self.sched_account,
                            sched_partition=self.sched_partition,

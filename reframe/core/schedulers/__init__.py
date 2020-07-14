@@ -252,30 +252,8 @@ class Job:
         self._sched_account = sched_account
         self._sched_exclusive_access = sched_exclusive_access
 
-        #TODO These variables should be managed differently
         self.exception = None
 
-        # from slurm.py
-        # SlurmJobScheduler
-        self._is_cancelling = False
-        self._is_job_array = None
-        self._update_state_count = 0
-        self._submit_time = None
-        # SqueueJobScheduler
-        self._cancelled = False
-
-        # from local.py
-        # Underlying process
-        self._proc = None
-        # Underlying process' stdout/stderr
-        self._f_stdout = None
-        self._f_stderr = None
-
-        # from pbs.py
-        self._time_finished = None
-        self._cancelled = False
-        # Optional part of the job id refering to the PBS server
-        self._pbs_server = None
 
     @classmethod
     def create(cls, scheduler, launcher, *args, **kwargs):

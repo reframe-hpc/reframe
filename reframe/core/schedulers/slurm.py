@@ -104,6 +104,9 @@ class SlurmJobScheduler(sched.JobScheduler):
         if not ignore_reqnodenotavail:
             self._cancel_reasons.append('ReqNodeNotAvail')
 
+        self._is_cancelling = set()
+        self._is_job_array = {}
+        self._update_state_count = {}
         self._job_submit_timeout = rt.runtime().get_option(
             f'schedulers/@{self.registered_name}/job_submit_timeout'
         )
@@ -237,6 +240,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 'could not retrieve the job id of the submitted job')
 
         job.jobid = int(jobid_match.group('jobid'))
+        self._update_state_count[job.jobid] = 0
         job._submit_time = datetime.now()
 
     def allnodes(self):
@@ -377,10 +381,10 @@ class SlurmJobScheduler(sched.JobScheduler):
 
         completed = _run_strict(
             'sacct -S %s -P -j %s -o jobid,state,exitcode,nodelist' %
-            (start_time.strftime('%F'), ','.join([str(j) for j in jobids]) )
+            (start_time.strftime('%F'), ','.join([str(j) for j in jobids]))
         )
         for job in jobs:
-            job._update_state_count += 1
+            self._update_state_count[job.jobid] += 1
 
         state_match = list(re.finditer(
             r'^(?P<jobid>%s)\|(?P<state>\S+)([^\|]*)\|(?P<exitcode>\d+)\:'
@@ -403,7 +407,7 @@ class SlurmJobScheduler(sched.JobScheduler):
                 continue
             # Join the states with ',' in case of job arrays
             job.state = ','.join(s.group('state') for s in job_match)
-            if not job._update_state_count % self.SACCT_SQUEUE_RATIO:
+            if not self._update_state_count[job.jobid] % self.SACCT_SQUEUE_RATIO:
                 self._cancel_if_blocked(job)
 
             if slurm_state_completed(job.state):
@@ -416,7 +420,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             )
 
     def _cancel_if_blocked(self, job):
-        if job._is_cancelling or not slurm_state_pending(job.state):
+        if job.jobid in self._is_cancelling or not slurm_state_pending(job.state):
             return
 
         completed = _run_strict('squeue -h -j %s -o %%r' % job.jobid)
@@ -494,7 +498,7 @@ class SlurmJobScheduler(sched.JobScheduler):
     def cancel(self, job):
         getlogger().debug('cancelling job (id=%s)' % job.jobid)
         _run_strict('scancel %s' % job.jobid, timeout=self._job_submit_timeout)
-        job._is_cancelling = True
+        self._is_cancelling.add(job.jobid)
 
     def finished(self, job):
         if job.exception:
@@ -520,18 +524,18 @@ class SlurmJobScheduler(sched.JobScheduler):
         return slurm_state_completed(job.state)
 
     def is_array(self, job):
-        if job._is_job_array is None:
+        if job.jobid not in self._is_job_array:
             option_parser = ArgumentParser()
             option_parser.add_argument('-a', '--array')
             parsed_args, _ = option_parser.parse_known_args(job.options)
             jobs_array = parsed_args.array
             if jobs_array:
-                job._is_job_array = True
+                self._is_job_array[job.jobid] = True
                 getlogger().debug('detected job array option: %s' % jobs_array)
             else:
-                job._is_job_array = False
+                self._is_job_array[job.jobid] = False
 
-        return job._is_job_array
+        return self._is_job_array[job.jobid]
 
 
 @register_scheduler('squeue')
@@ -541,6 +545,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
     def __init__(self):
         super().__init__()
         self._squeue_delay = 2
+        self._cancelled = set()
 
     def completion_time(self, job):
         return None
@@ -570,7 +575,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         if not state_match:
             # Assume that the jobs have finished
             for job in jobs:
-                job.state = 'CANCELLED' if job._cancelled else 'COMPLETED'
+                job.state = 'CANCELLED' if job.jobid in self._cancelled else 'COMPLETED'
 
                 # Set exit code manually, if not set already by the polling
                 if job.exitcode is None:
@@ -587,7 +592,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
             try:
                 job_match = jobs_captured[str(job.jobid)]
             except KeyError:
-                job.state = 'CANCELLED' if job._cancelled else 'COMPLETED'
+                job.state = 'CANCELLED' if job.jobid in self._cancelled else 'COMPLETED'
                 # Set exit code manually, if not set already by the polling
                 if job.exitcode is None:
                     job.exitcode = 0
@@ -597,12 +602,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
             # Join the states with ',' in case of job arrays
             job.state = ','.join(s.group('state') for s in job_match)
 
-            # Use ',' to join nodes to be consistent with Slurm syntax
-            self._set_nodelist(
-                job, ','.join(s.group('nodespec') for s in job_match)
-            )
-
-            if not job._is_cancelling and not slurm_state_pending(job.state):
+            if not job.jobid in self._is_cancelling and not slurm_state_pending(job.state):
                 for s in job_match:
                     self._check_and_cancel(job, s.group('reason'))
 
@@ -611,7 +611,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
         # finished, so we explicitly mark it as cancelled here. The
         # _update_state() will make sure to return the approriate state.
         super().cancel(job)
-        job._cancelled = True
+        self._cancelled.add(job.jobid)
 
 def _create_nodes(descriptions):
     nodes = set()
