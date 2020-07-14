@@ -11,7 +11,6 @@ import ast
 import collections
 import os
 
-import reframe.core.debug as debug
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
 from reframe.core.exceptions import NameConflictError, RegressionTestLoadError
@@ -47,9 +46,6 @@ class RegressionCheckLoader:
 
         # Loaded tests by name; maps test names to the file that were defined
         self._loaded = {}
-
-    def __repr__(self):
-        return debug.repr(self)
 
     def _module_name(self, filename):
         '''Figure out a module name from filename.

@@ -12,7 +12,6 @@ import tempfile
 import unittest
 
 import reframe
-import reframe.core.debug as debug
 import reframe.core.fields as fields
 import reframe.utility as util
 import reframe.utility.os_ext as os_ext
@@ -420,40 +419,6 @@ class TestImportFromFile(unittest.TestCase):
         assert 'unittests.resources' in sys.modules
 
 
-class TestDebugRepr(unittest.TestCase):
-    def test_builtin_types(self):
-        # builtin types must use the default repr()
-        assert repr(1) == debug.repr(1)
-        assert repr(1.2) == debug.repr(1.2)
-        assert repr([1, 2, 3]) == debug.repr([1, 2, 3])
-        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
-        assert repr({1, 2, 3}) == debug.repr({1, 2, 3})
-        assert repr({'a': 1, 'b': {2, 3}}) == debug.repr({'a': 1, 'b': {2, 3}})
-
-    def test_obj_repr(self):
-        class C:
-            def __repr__(self):
-                return debug.repr(self)
-
-        class D:
-            def __repr__(self):
-                return debug.repr(self)
-
-        c = C()
-        c._a = -1
-        c.a = 1
-        c.b = {1, 2, 3}
-        c.d = D()
-        c.d.a = 2
-        c.d.b = 3
-
-        rep = repr(c)
-        assert 'unittests.test_utility' in rep
-        assert '_a=%r' % c._a in rep
-        assert 'b=%r' % c.b in rep
-        assert 'D(...)' in rep
-
-
 class TestPpretty:
     def test_simple_types(self):
         assert util.ppretty(1) == repr(1)
@@ -540,6 +505,40 @@ class TestPpretty:
                                                   "    <class C>,\n"
                                                   "    <class D>\n"
                                                   "]")
+
+
+class _X:
+    def __init__(self):
+        self._a = False
+
+
+class _Y:
+    def __init__(self, x, a=None):
+        self.x = x
+        self.y = 'foo'
+        self.z = self
+        self.a = a
+
+
+def test_repr_default():
+    c0, c1 = _Y(1), _Y(2, _X())
+    s = util.repr([c0, c1])
+    assert s == f'''[
+    _Y({{
+        'x': 1,
+        'y': 'foo',
+        'z': _Y(...)@{hex(id(c0))},
+        'a': None
+    }})@{hex(id(c0))},
+    _Y({{
+        'x': 2,
+        'y': 'foo',
+        'z': _Y(...)@{hex(id(c1))},
+        'a': _X({{
+            '_a': False
+        }})@{hex(id(c1.a))}
+    }})@{hex(id(c1))}
+]'''
 
 
 class TestChangeDirCtxManager(unittest.TestCase):
