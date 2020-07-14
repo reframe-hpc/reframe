@@ -152,6 +152,13 @@ class ModulesSystem:
     def backend(self):
         return(self._backend)
 
+    def available_modules(self):
+        '''Return a list of available modules.
+
+        :rtype: List[str]
+        '''
+        return [str(m) for m in self._backend.available_modules()]
+
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
@@ -326,6 +333,13 @@ class ModulesSystemImpl(abc.ABC):
     '''Abstract base class for module systems.'''
 
     @abc.abstractmethod
+    def available_modules(self):
+        '''Return a list of available modules.
+
+        This method returns a list of Module instances.
+        '''
+
+    @abc.abstractmethod
     def loaded_modules(self):
         '''Return a list of loaded modules.
 
@@ -469,6 +483,17 @@ class TModImpl(ModulesSystemImpl):
     def _exec_module_command(self, *args, msg=None):
         completed = self._run_module_command(*args, msg=msg)
         exec(completed.stdout)
+
+    def available_modules(self):
+        avail = []
+        completed = self._run_module_command(
+            'available', '-t', msg="could not run module available")
+
+        for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
+            module = re.sub(r"\(default\)", "", line.group(0))
+            avail += [Module(module)]
+
+        return avail
 
     def loaded_modules(self):
         try:
@@ -681,6 +706,17 @@ class LModImpl(TModImpl):
     def _module_command_failed(self, completed):
         return completed.stdout.strip() == 'false'
 
+    def available_modules(self):
+        avail = []
+        completed = self._run_module_command(
+            '-t', 'available', msg="could not run module available")
+
+        for line in re.finditer(r'\S+[^:/]$', completed.stderr, re.MULTILINE):
+            module = re.sub(r"\(\S+\)", "", line.group(0))
+            avail += [Module(module)]
+
+        return avail
+
     def conflicted_modules(self, module):
         completed = self._run_module_command(
             'show', str(module), msg="could not show module '%s'" % module)
@@ -709,6 +745,9 @@ class LModImpl(TModImpl):
 
 class NoModImpl(ModulesSystemImpl):
     '''A convenience class that implements a no-op a modules system.'''
+
+    def available_modules(self):
+        return []
 
     def loaded_modules(self):
         return []

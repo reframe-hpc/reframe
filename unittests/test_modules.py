@@ -30,6 +30,12 @@ class _TestModulesSystem(abc.ABC):
         self.modules_system.searchpath_remove(TEST_MODULES)
         assert TEST_MODULES not in self.modules_system.searchpath
 
+    def test_module_available(self):
+        available_modules = self.modules_system.available_modules()
+
+        assert 'foo' not in available_modules
+        assert 'testmod_foo' in available_modules
+
     def test_module_load(self):
         with pytest.raises(EnvironError):
             self.modules_system.load_module('foo')
@@ -175,6 +181,11 @@ class TestNoModModulesSystem(_TestModulesSystem, unittest.TestCase):
         # Simply test that no exceptions are thrown
         self.modules_system.searchpath_remove(TEST_MODULES)
 
+    def test_module_available(self):
+        available_modules = self.modules_system.available_modules()
+
+        assert 0 == len(available_modules)
+
     def test_module_load(self):
         self.modules_system.load_module('foo')
         self.modules_system.unload_module('foo')
@@ -235,6 +246,9 @@ class ModulesSystemEmulator(modules.ModulesSystemImpl):
         # The following two variables record the sequence of loads and unloads
         self.load_seq = []
         self.unload_seq = []
+
+    def available_modules(self):
+        return []
 
     def loaded_modules(self):
         return list(self._loaded_modules)
