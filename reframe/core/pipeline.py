@@ -1674,7 +1674,7 @@ class CompileOnlyRegressionTest(RegressionTest, special=True):
         self.local = True
 
     @_run_hooks()
-    def setup(self, partition, environ, sched=None, **job_opts):
+    def setup(self, partition, environ, **job_opts):
         '''The setup stage of the regression test pipeline.
 
         Similar to the :func:`RegressionTest.setup`, except that no job
