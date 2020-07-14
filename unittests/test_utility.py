@@ -1136,3 +1136,38 @@ class TestOrderedSet(unittest.TestCase):
 
         with pytest.raises(TypeError):
             os_ext.unique_abs_paths(None)
+
+
+def test_cray_cdt_version(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('#%Module CDT 20.06\nblah blah\n')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() == '20.06'
+
+
+def test_cray_cdt_version_unknown_fmt(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    with open(rcfile, 'w') as fp:
+        fp.write('random stuff')
+
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_empty_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    rcfile.touch()
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
+
+
+def test_cray_cdt_version_no_such_file(tmp_path, monkeypatch):
+    # Mock up a CDT file
+    rcfile = tmp_path / 'rcfile'
+    monkeypatch.setenv('MODULERCFILE', str(rcfile))
+    assert os_ext.cray_cdt_version() is None
