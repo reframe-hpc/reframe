@@ -53,7 +53,7 @@ class TrilinosTest(rfm.RegressionTest):
         self.build_system.cxxflags = flags
 
     @rfm.run_before('compile')
-    def set_prebuild_cmd(self):
+    def cdt2006_workaround_intel(self):
         if self.current_environ.name.startswith('PrgEnv-intel'):
             if '20.06' in os.getenv('MODULERCFILE', ''):
                 self.modules += ['cray-netcdf-hdf5parallel']
