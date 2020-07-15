@@ -5,7 +5,6 @@
 
 import os
 import reframe as rfm
-import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
@@ -84,6 +83,6 @@ class GpuDirectAccCheck(rfm.RegressionTest):
 
     @rfm.run_before('compile')
     def cdt2006_pgi_workaround(self):
-        if (self.current_environ.name == 'PrgEnv-pgi' and
-            os_ext.cray_cdt_version() == '20.06'):
+        if (self.current_system.name == 'dom' and
+            self.current_environ.name == 'PrgEnv-pgi'):
             self.variables['CUDA_HOME'] = '$CUDATOOLKIT_HOME'
