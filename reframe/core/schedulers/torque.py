@@ -56,7 +56,8 @@ class TorqueJobScheduler(PbsJobScheduler):
         # If qstat cannot find the jobid, it returns code 153.
         if completed.returncode == 153:
             getlogger().debug(
-                'jobids not known by scheduler, assuming all jobs completed'
+                'return code = 153: jobids not known by scheduler, '
+                'assuming all jobs completed'
             )
             for job in jobs:
                 job.state = 'COMPLETED'
@@ -71,15 +72,16 @@ class TorqueJobScheduler(PbsJobScheduler):
         jobs_stdout = {}
         for jobout in completed.stdout.split('\n\n'):
             jobid_match = re.search(
-                r'^Job Id: (?P<jobid>\S+)', completed.stdout, re.MULTILINE
+                r'^Job Id:\s*(?P<jobid>\S+)', jobout, re.MULTILINE
             )
             if jobid_match:
-                jobs_stdout[jobid_match.group('jobid')] = jobout
+                jobid = int(jobid_match.group('jobid'))
+                jobs_stdout[jobid] = jobout
 
         for job in jobs:
             if job.jobid not in jobs_stdout:
                 getlogger().debug(
-                    'jobid not known by scheduler, assuming job completed'
+                    f'jobid {job.jobid} not known by scheduler, assuming job completed'
                 )
                 job.state = 'COMPLETED'
                 continue
@@ -138,4 +140,5 @@ class TorqueJobScheduler(PbsJobScheduler):
         stderr = os.path.join(job.workdir, job.stderr)
         output_ready = os.path.exists(stdout) and os.path.exists(stderr)
         done = job.jobid in self._cancelled or output_ready
+        getlogger().debug(f"finishedd: {job.state == 'COMPLETED' and done}")
         return job.state == 'COMPLETED' and done
