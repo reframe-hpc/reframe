@@ -60,15 +60,15 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             partname = task.testcase.partition.fullname
             sched = self._schedulers.get(partname, None)
             task.setup(task.testcase.partition,
-                        task.testcase.environ,
-                        _rfm_sched_type=sched,
-                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                        sched_account=self.sched_account,
-                        sched_partition=self.sched_partition,
-                        sched_reservation=self.sched_reservation,
-                        sched_nodelist=self.sched_nodelist,
-                        sched_exclude_nodelist=self.sched_exclude_nodelist,
-                        sched_options=self.sched_options)
+                       task.testcase.environ,
+                       _rfm_sched_type=sched,
+                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                       sched_account=self.sched_account,
+                       sched_partition=self.sched_partition,
+                       sched_reservation=self.sched_reservation,
+                       sched_nodelist=self.sched_nodelist,
+                       sched_exclude_nodelist=self.sched_exclude_nodelist,
+                       sched_options=self.sched_options)
 
             if partname not in self._schedulers:
                 self._schedulers[partname] = task.check.job.scheduler
@@ -288,7 +288,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
     def _setup_task(self, task):
         if self.deps_succeeded(task):
             try:
-                sched = self._schedulers.get(task.testcase.partition.fullname, None)
+                sched = self._schedulers.get(task.testcase.partition.fullname,
+                                             None)
                 task.setup(task.testcase.partition,
                            task.testcase.environ,
                            _rfm_sched_type=sched,
@@ -375,8 +376,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         for partname, sched in self._schedulers.items():
             getlogger().debug(f'polling {len(self._running_tasks[partname])} '
                               f'task(s) in {partname}')
-            jobids = [task.check.job for task in self._running_tasks[partname]]
-            sched.poll_jobs(jobids)
+            jobs = [task.check.job for task in self._running_tasks[partname]]
+            sched.poll_jobs(jobs)
 
         for t in all_running:
             t.poll()
@@ -464,7 +465,8 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
         num_polls = 0
         t_start = datetime.now()
         while (sum(self._running_tasks.values(), []) or self._waiting_tasks):
-            getlogger().debug('running tasks: %s' % len(self._running_tasks))
+            getlogger().debug(f'running tasks: '
+                              f'{len(sum(self._running_tasks.values(), []))}')
             num_polls += len(sum(self._running_tasks.values(), []))
             try:
                 self._poll_tasks()
@@ -477,11 +479,12 @@ class AsynchronousExecutionPolicy(ExecutionPolicy, TaskEventListener):
                 getlogger().debug(
                     'polling rate (real): %.3f polls/sec' % real_rate)
 
-                if len(sum(self._running_tasks.values(), [])):
+                count_running = len(sum(self._running_tasks.values(), []))
+                if count_running:
                     desired_rate = pollrate(t_elapsed, real_rate)
                     getlogger().debug(
                         'polling rate (desired): %.3f' % desired_rate)
-                    t = len(sum(self._running_tasks.values(), [])) / desired_rate
+                    t = count_running / desired_rate
                     getlogger().debug('sleeping: %.3fs' % t)
                     time.sleep(t)
 

@@ -522,7 +522,7 @@ class SlurmJobScheduler(sched.JobScheduler):
             if datetime.now() - job._submit_time >= job.max_pending_time:
                 self.cancel(job)
                 raise JobError('maximum pending time exceeded',
-                                jobid=job.jobid)
+                               jobid=job.jobid)
 
         return slurm_state_completed(job.state)
 
@@ -614,7 +614,7 @@ class SqueueJobScheduler(SlurmJobScheduler):
             # Join the states with ',' in case of job arrays
             job.state = ','.join(s.group('state') for s in job_match)
 
-            if (not job.jobid in self._is_cancelling and
+            if (job.jobid not in self._is_cancelling and
                 not slurm_state_pending(job.state)):
                 for s in job_match:
                     self._check_and_cancel(job, s.group('reason'))

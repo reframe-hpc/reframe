@@ -65,7 +65,8 @@ class TorqueJobScheduler(PbsJobScheduler):
 
         if completed.returncode != 0:
             for job in jobs:
-                job.exception = JobError('qstat failed: %s' % completed.stderr, jobids)
+                job.exception = JobError(f'qstat failed: {completed.stderr}',
+                                         jobid=job.jobid)
 
             return
 
@@ -81,7 +82,8 @@ class TorqueJobScheduler(PbsJobScheduler):
         for job in jobs:
             if job.jobid not in jobs_stdout:
                 getlogger().debug(
-                    f'jobid {job.jobid} not known by scheduler, assuming job completed'
+                    f'jobid {job.jobid} not known by scheduler, '
+                    'assuming job completed'
                 )
                 job.state = 'COMPLETED'
                 continue
@@ -121,8 +123,8 @@ class TorqueJobScheduler(PbsJobScheduler):
             try:
                 raise job.exception
             except JobError as e:
-                # We ignore these exceptions at this point and we simply mark the
-                # job as unfinished.
+                # We ignore these exceptions at this point and we simply mark
+                # the job as unfinished.
                 getlogger().debug('ignoring error during polling: %s' % e)
                 return False
             finally:
