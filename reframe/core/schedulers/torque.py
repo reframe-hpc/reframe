@@ -136,7 +136,7 @@ class TorqueJobScheduler(PbsJobScheduler):
             if datetime.now() - job._submit_time >= job.max_pending_time:
                 self.cancel(job)
                 raise JobError('maximum pending time exceeded',
-                                jobid=job.jobid)
+                               jobid=job.jobid)
 
         stdout = os.path.join(job.workdir, job.stdout)
         stderr = os.path.join(job.workdir, job.stderr)
