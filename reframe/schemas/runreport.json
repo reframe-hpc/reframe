@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/eth-cscs/reframe/master/schemas/runreport.json",
+    "title": "Validation schema for ReFrame's run report",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "testname": {"type": "string"},
+            "description": {"type": ["string"]},
+            "system": {"type": ["string", "null"]},
+            "environment": {"type": ["string", "null"]},
+            "stagedir": {"type": ["string", "null"]},
+            "outputdir": {"type": ["string", "null"]},
+            "nodelist": {
+                "type": "array",
+                "items": {"type": "string"}
+            },
+            "scheduler": {"type": ["string", "null"]},
+            "jobid": {"type": ["number", "null"]},
+            "result": {"type": "string"},
+            "failing_phase": {"type": ["string", "null"]},
+            "failing_reason": {"type": ["string", "null"]},
+            "build_stdout": {"type": ["string", "null"]},
+            "build_stderr": {"type": ["string", "null"]},
+            "job_stdout": {"type": ["string", "null"]},
+            "job_stderr": {"type": ["string", "null"]},
+            "maintainers": {
+                "type": "array",
+                "items": {"type": ["string", "null"]}
+            },
+            "tags": {
+                "type": "array",
+                "items": {"type": ["string", "null"]}
+            },
+            "run_no": {"type": "number"},
+            "time_setup": {"type": "number"},
+            "time_compile": {"type": ["number", "null"]},
+            "time_run": {"type": ["number", "null"]},
+            "time_sanity": {"type": ["number", "null"]},
+            "time_performance": {"type": ["number", "null"]},
+            "time_total": {"type": "number"}
+        },
+        "additionalProperties": false,
+        "required": ["build_stderr", "build_stdout", "description",
+                     "environment", "failing_phase", "failing_reason",
+                     "job_stderr", "job_stdout", "jobid", "maintainers",
+                     "nodelist", "outputdir", "result", "run_no",
+                     "scheduler", "stagedir", "system", "tags", "testname",
+                     "time_compile", "time_performance", "time_run",
+                     "time_sanity", "time_setup", "time_total"]
+    }
+}

@@ -107,17 +107,11 @@ def num_failures_stage(runner, stage):
     return len([t for t in stats.failures() if t.failed_stage == stage])
 
 
-def open_json_schema():
-    # Open and store the JSON schema for later validation
+def validate_report(runreport):
     schema_filename = os.path.join('reframe/schemas/runreport.json')
     with open(schema_filename) as fp:
         schema = json.loads(fp.read())
 
-    return schema
-
-
-def validate_report(runreport):
-    schema = open_json_schema()
     jsonschema.validate(runreport, schema)
 
 

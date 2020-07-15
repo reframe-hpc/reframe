@@ -78,14 +78,11 @@ class TestStats:
             for t in run:
                 check = t.check
                 partition = check.current_partition
-                partfullname = partition.fullname if partition else None
-                environ_name = (check.current_environ.name
-                                if check.current_environ else None)
                 entry = {
                     'testname': check.name,
                     'description': check.descr,
-                    'system': partfullname,
-                    'environment': environ_name,
+                    'system': None,
+                    'environment': None,
                     'tags': list(check.tags),
                     'maintainers': check.maintainers,
                     'scheduler': None,
@@ -100,10 +97,24 @@ class TestStats:
                     'outputdir': None,
                     'stagedir': None,
                     'job_stdout': None,
-                    'job_stderr': None
+                    'job_stderr': None,
+                    'time_setup': t.duration('setup'),
+                    'time_compile': t.duration('complete'),
+                    'time_run': t.duration('t.duration'),
+                    'time_sanity': t.duration('sanity'),
+                    'time_performance': t.duration('performance'),
+                    'time_total': t.duration('total')
                 }
-                if check.job:
+                partition, environ = (check.current_partition,
+                                      check.current_environ)
+                if check.current_partition:
+                    entry['system'] = partition.fullname
                     entry['scheduler'] = partition.scheduler.registered_name
+
+                if check.current_environ:
+                    entry['environment'] = environ.name
+
+                if check.job:
                     entry['jobid'] = check.job.jobid
                     entry['nodelist'] = check.job.nodelist or []
                     entry['job_stdout'] = check.stdout.evaluate()
@@ -142,27 +153,25 @@ class TestStats:
         for r in self.json():
             if r['result'] == 'success' or r['run_no'] != last_run:
                 continue
-            retry_info = ('(for the last of %s retries)' % last_run
+
+            retry_info = (f'(for the last of {last_run} retries)'
                           if last_run > 0 else '')
             report.append(line_width * '-')
-            report.append('FAILURE INFO for %s %s' % (r['testname'],
-                                                      retry_info))
-            report.append('  * Test Description: %s' % r['description'])
-            report.append('  * System partition: %s' % r['system'])
-            report.append('  * Environment: %s' % r['environment'])
-            report.append('  * Stage directory: %s' % r['stagedir'])
-            report.append('  * Node list: %s' %
-                          (','.join(r['nodelist'])
-                           if r['nodelist'] else None))
+            report.append(f"FAILURE INFO for {r['testname']} {retry_info}")
+            report.append(f"  * Test Description: {r['description']}")
+            report.append(f"  * System partition: {r['system']}")
+            report.append(f"  * Environment: {r['environment']}")
+            report.append(f"  * Stage directory: {r['stagedir']}")
+            nodelist = ','.join(r['nodelist']) if r['nodelist'] else None
+            report.append(f"  * Node list: {nodelist}")
             job_type = 'local' if r['scheduler'] == 'local' else 'batch job'
             jobid = r['jobid']
-            report.append('  * Job type: %s (id=%s)' % (job_type, jobid))
-            report.append('  * Maintainers: %s' % r['maintainers'])
-            report.append('  * Failing phase: %s' % r['failing_phase'])
-            report.append("  * Rerun with '-n %s -p %s --system %s'" %
-                          (r['testname'], r['environment'], r['system']))
-            report.append("  * Reason: %s" % r['failing_reason'])
-
+            report.append(f"  * Job type: {job_type} (id={r['jobid']})")
+            report.append(f"  * Maintainers: {r['maintainers']}")
+            report.append(f"  * Failing phase: {r['failing_phase']}")
+            report.append(f"  * Rerun with '-n {r['testname']}"
+                          f" -p {r['environment']} --system {r['system']}'")
+            report.append(f"  * Reason: {r['failing_reason']}")
             if r['failing_phase'] == 'sanity':
                 report.append('Sanity check failure')
             elif r['failing_phase'] == 'performance':
