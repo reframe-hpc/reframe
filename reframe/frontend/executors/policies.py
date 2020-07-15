@@ -34,6 +34,9 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
         # Index tasks by test cases
         self._task_index = {}
 
+        # All schedulers per partition
+        self._schedulers = {}
+
         # Tasks that have finished, but have not performed their cleanup phase
         self._retired_tasks = []
         self.task_listeners.append(self)
@@ -54,18 +57,47 @@ class SerialExecutionPolicy(ExecutionPolicy, TaskEventListener):
             if any(self._task_index[c].failed for c in case.deps):
                 raise TaskDependencyError('dependencies failed')
 
-            task.setup(partition, environ,
-                       sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
-                       sched_account=self.sched_account,
-                       sched_partition=self.sched_partition,
-                       sched_reservation=self.sched_reservation,
-                       sched_nodelist=self.sched_nodelist,
-                       sched_exclude_nodelist=self.sched_exclude_nodelist,
-                       sched_options=self.sched_options)
+            partname = task.testcase.partition.fullname
+            sched = self._schedulers.get(partname, None)
+            task.setup(task.testcase.partition,
+                        task.testcase.environ,
+                        _rfm_sched_type=sched,
+                        sched_flex_alloc_nodes=self.sched_flex_alloc_nodes,
+                        sched_account=self.sched_account,
+                        sched_partition=self.sched_partition,
+                        sched_reservation=self.sched_reservation,
+                        sched_nodelist=self.sched_nodelist,
+                        sched_exclude_nodelist=self.sched_exclude_nodelist,
+                        sched_options=self.sched_options)
+
+            if partname not in self._schedulers:
+                self._schedulers[partname] = task.check.job.scheduler
+                sched = task.check.job.scheduler
 
             task.compile()
             task.compile_wait()
             task.run()
+            pollrate = PollRateFunction(0.2, 60)
+            num_polls = 0
+            t_start = datetime.now()
+            while True:
+                num_polls += 1
+                sched.poll_jobs([task.check.job])
+                if task.poll():
+                    break
+
+                t_elapsed = (datetime.now() - t_start).total_seconds()
+                real_rate = num_polls / t_elapsed
+                getlogger().debug(
+                    'polling rate (real): %.3f polls/sec' % real_rate)
+
+                desired_rate = pollrate(t_elapsed, real_rate)
+                getlogger().debug(
+                    'polling rate (desired): %.3f' % desired_rate)
+                t = 1 / desired_rate
+                getlogger().debug('sleeping: %.3fs' % t)
+                time.sleep(t)
+
             task.wait()
             if not self.skip_sanity_check:
                 task.sanity()
