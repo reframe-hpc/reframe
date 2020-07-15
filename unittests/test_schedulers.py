@@ -9,9 +9,7 @@ import os
 import pytest
 import re
 import socket
-import tempfile
 import time
-import unittest
 from datetime import datetime, timedelta
 
 import reframe.core.runtime as rt

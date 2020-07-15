@@ -3,111 +3,126 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-import unittest
+import pytest
 import reframe.utility.sanity as sn
 
 
-class TestDeferredUtilities(unittest.TestCase):
-    def test_defer(self):
-        from reframe.core.deferrable import _DeferredExpression
+def test_defer():
+    from reframe.core.deferrable import _DeferredExpression
 
-        a = sn.defer(3)
-        assert isinstance(a, _DeferredExpression)
+    a = sn.defer(3)
+    assert isinstance(a, _DeferredExpression)
 
-    def test_evaluate(self):
-        a = sn.defer(3)
-        assert 3 == a.evaluate()
-        assert 3 == sn.evaluate(a)
-        assert 3 == sn.evaluate(3)
 
-    def test_implicit_eval(self):
-        # Call to bool() on a deferred expression triggers its immediate
-        # evaluation.
-        a = sn.defer(3)
-        assert 3 == a
+def test_evaluate():
+    a = sn.defer(3)
+    assert 3 == a.evaluate()
+    assert 3 == sn.evaluate(a)
+    assert 3 == sn.evaluate(3)
 
-    def test_str(self):
-        assert '[1, 2]' == str(sn.defer([1, 2]))
 
-    def test_iter(self):
-        l = [1, 2, 3]
-        dl = sn.defer(l)
-        l.append(4)
-        for i, e in enumerate(dl, start=1):
+def test_implicit_eval():
+    # Call to bool() on a deferred expression triggers its immediate
+    # evaluation.
+    a = sn.defer(3)
+    assert 3 == a
+
+
+def test_str():
+    assert '[1, 2]' == str(sn.defer([1, 2]))
+
+
+def test_iter():
+    l = [1, 2, 3]
+    dl = sn.defer(l)
+    l.append(4)
+    for i, e in enumerate(dl, start=1):
             assert i == e
 
 
-class TestKeywordArgs(unittest.TestCase):
-    @sn.sanity_function
-    def add(self, a, b):
-        return a + b
-
-    def test_kwargs_passing(self):
-        expr = self.add(a=4, b=2) / 3
-        assert 2 == expr
+@sn.sanity_function
+def add(a, b):
+    return a + b
 
 
-class TestDeferredRichComparison(unittest.TestCase):
-    def setUp(self):
-        self._value = 0
-
-    @property
-    @sn.sanity_function
-    def value(self):
-        return self._value
-
-    def test_eq(self):
-        expr = self.value == 2
-        self._value = 2
-        assert expr
-
-    def test_ne(self):
-        expr = self.value != 0
-        self._value = 2
-        assert expr
-
-    def test_lt(self):
-        expr = self.value < 0
-        self._value = -1
-        assert expr
-
-    def test_le(self):
-        expr = self.value <= 0
-        assert expr
-
-        self._value = -1
-        assert expr
-
-    def test_gt(self):
-        expr = self.value > 1
-        self._value = 2
-        assert expr
-
-    def test_ge(self):
-        expr = self.value >= 1
-        self._value = 1
-        assert expr
-
-        self._value = 2
-        assert expr
+def test_kwargs_passing():
+    expr = add(a=4, b=2) / 3
+    assert 2 == expr
 
 
-class TestDeferredContainerOps(unittest.TestCase):
-    def test_list_getitem(self):
-        l = [1, 2]
-        expr = sn.defer(l)[1] == 3
-        l[1] = 3
-        assert expr
+@pytest.fixture
+def value():
+    class _Value:
+        def __init__(self):
+            self._value = 0
 
-    def test_list_contains(self):
-        l = [1, 2]
-        assert 2 in sn.defer(l)
+        @property
+        @sn.sanity_function
+        def value(self):
+            return self._value
 
-    def test_set_contains(self):
-        s = {1, 2}
-        assert 2 in sn.defer(s)
+    return _Value()
 
-    def test_dict_contains(self):
+
+def test_eq(value):
+    expr = value.value == 2
+    value._value = 2
+    assert expr
+
+
+def test_ne(value):
+    expr = value.value != 0
+    value._value = 2
+    assert expr
+
+
+def test_lt(value):
+    expr = value.value < 0
+    value._value = -1
+    assert expr
+
+
+def test_le(value):
+    expr = value.value <= 0
+    assert expr
+
+    value._value = -1
+    assert expr
+
+
+def test_gt(value):
+    expr = value.value > 1
+    value._value = 2
+    assert expr
+
+
+def test_ge(value):
+    expr = value.value >= 1
+    value._value = 1
+    assert expr
+
+    value._value = 2
+    assert expr
+
+
+def test_list_getitem():
+    l = [1, 2]
+    expr = sn.defer(l)[1] == 3
+    l[1] = 3
+    assert expr
+
+
+def test_list_contains():
+    l = [1, 2]
+    assert 2 in sn.defer(l)
+
+
+def test_set_contains():
+    s = {1, 2}
+    assert 2 in sn.defer(s)
+
+
+def test_dict_contains():
         d = {1: 'a', 2: 'b'}
         assert 2 in sn.defer(d)
 
@@ -174,178 +189,206 @@ class V:
         return repr(self._value)
 
 
-class TestDeferredNumericOps(unittest.TestCase):
-    def test_add(self):
-        a = sn.defer(1)
-        assert 4 == a + 3
-        assert 4 == 3 + a
+def test_add():
+    a = sn.defer(1)
+    assert 4 == a + 3
+    assert 4 == 3 + a
 
-    def test_sub(self):
-        a = sn.defer(1)
-        assert -2 == a - 3
-        assert 2 == 3 - a
 
-    def test_mul(self):
-        a = sn.defer(1)
-        assert 3 == a * 3
-        assert 3 == 3 * a
+def test_sub():
+    a = sn.defer(1)
+    assert -2 == a - 3
+    assert 2 == 3 - a
 
-    def test_truediv(self):
-        a = sn.defer(3)
-        assert 1.5 == a / 2
-        assert 2 / 3 == 2 / a
 
-    def test_floordiv(self):
-        a = sn.defer(3)
-        assert 1 == a // 2
-        assert 0 == 2 // a
+def test_mul():
+    a = sn.defer(1)
+    assert 3 == a * 3
+    assert 3 == 3 * a
 
-    def test_mod(self):
-        a = sn.defer(3)
-        assert 1 == a % 2
-        assert 2 == 2 % a
 
-    def test_divmod(self):
-        a = sn.defer(3)
-        q, r = divmod(a, 2)
-        assert 1 == q
-        assert 1 == r
+def test_truediv():
+    a = sn.defer(3)
+    assert 1.5 == a / 2
+    assert 2 / 3 == 2 / a
 
-        # Test rdivmod here
-        q, r = divmod(2, a)
-        assert 0 == q
-        assert 2 == r
 
-    def test_pow(self):
-        a = sn.defer(3)
-        assert 9 == a**2
-        assert 8 == 2**a
+def test_floordiv():
+    a = sn.defer(3)
+    assert 1 == a // 2
+    assert 0 == 2 // a
 
-    def test_lshift(self):
-        a = sn.defer(1)
-        assert 4 == a << 2
-        assert 2 << 1 == 2 << a
 
-    def test_rshift(self):
-        a = sn.defer(8)
-        assert 1 == a >> 3
-        assert 3 >> 8 == 3 >> a
+def test_mod():
+    a = sn.defer(3)
+    assert 1 == a % 2
+    assert 2 == 2 % a
 
-    def test_and(self):
-        a = sn.defer(7)
-        assert 2 == a & 2
-        assert 2 == 2 & a
 
-    def test_xor(self):
-        a = sn.defer(7)
-        assert 0 == a ^ 7
-        assert 0 == 7 ^ a
+def test_divmod():
+    a = sn.defer(3)
+    q, r = divmod(a, 2)
+    assert 1 == q
+    assert 1 == r
 
-    def test_or(self):
-        a = sn.defer(2)
-        assert 7 == a | 5
-        assert 7 == 5 | a
+    # Test rdivmod here
+    q, r = divmod(2, a)
+    assert 0 == q
+    assert 2 == r
 
-    def test_expr_chaining(self):
-        a = sn.defer(2)
-        assert 64 == a**((a + 1) * a)
 
-    def test_neg(self):
-        a = sn.defer(3)
-        assert -3 == -a
+def test_pow():
+    a = sn.defer(3)
+    assert 9 == a**2
+    assert 8 == 2**a
 
-    def test_pos(self):
-        a = sn.defer(3)
-        assert +3 == +a
 
-    def test_abs(self):
-        a = sn.defer(-3)
-        assert 3 == abs(a)
+def test_lshift():
+    a = sn.defer(1)
+    assert 4 == a << 2
+    assert 2 << 1 == 2 << a
 
-    def test_invert(self):
-        a = sn.defer(3)
-        assert ~3 == ~a
 
-    def test_iadd(self):
-        v = V(1)
-        dv = sn.defer(v)
-        dv += V(3)
-        sn.evaluate(dv)
-        assert 4 == v._value
+def test_rshift():
+    a = sn.defer(8)
+    assert 1 == a >> 3
+    assert 3 >> 8 == 3 >> a
 
-    def test_isub(self):
-        v = V(1)
-        dv = sn.defer(v)
-        dv -= V(3)
-        sn.evaluate(dv)
-        assert -2 == v._value
 
-    def test_imul(self):
-        v = V(1)
-        dv = sn.defer(v)
-        dv *= V(3)
-        sn.evaluate(dv)
-        assert 3 == v._value
+def test_and():
+    a = sn.defer(7)
+    assert 2 == a & 2
+    assert 2 == 2 & a
 
-    def test_itruediv(self):
-        v = V(3)
-        dv = sn.defer(v)
-        dv /= V(2)
-        sn.evaluate(dv)
-        assert 1.5 == v._value
 
-    def test_ifloordiv(self):
-        v = V(3)
-        dv = sn.defer(v)
-        dv //= V(2)
-        sn.evaluate(dv)
-        assert 1 == v._value
+def test_xor():
+    a = sn.defer(7)
+    assert 0 == a ^ 7
+    assert 0 == 7 ^ a
 
-    def test_imod(self):
-        v = V(3)
-        dv = sn.defer(v)
-        dv %= V(2)
-        sn.evaluate(dv)
-        assert 1 == v._value
 
-    def test_ipow(self):
-        v = V(3)
-        dv = sn.defer(v)
-        dv **= V(2)
-        sn.evaluate(dv)
-        assert 9 == v._value
+def test_or():
+    a = sn.defer(2)
+    assert 7 == a | 5
+    assert 7 == 5 | a
 
-    def test_ilshift(self):
-        v = V(1)
-        dv = sn.defer(v)
-        dv <<= V(2)
-        sn.evaluate(dv)
-        assert 4 == v._value
 
-    def test_irshift(self):
-        v = V(8)
-        dv = sn.defer(v)
-        dv >>= V(3)
-        sn.evaluate(dv)
-        assert 1 == v._value
+def test_expr_chaining():
+    a = sn.defer(2)
+    assert 64 == a**((a + 1) * a)
 
-    def test_iand(self):
-        v = V(7)
-        dv = sn.defer(v)
-        dv &= V(2)
-        sn.evaluate(dv)
-        assert 2 == v._value
 
-    def test_ixor(self):
-        v = V(7)
-        dv = sn.defer(v)
-        dv ^= V(7)
-        sn.evaluate(dv)
-        assert 0 == v._value
+def test_neg():
+    a = sn.defer(3)
+    assert -3 == -a
 
-    def test_ior(self):
-        v = V(2)
-        dv = sn.defer(v)
-        dv |= V(5)
-        sn.evaluate(dv)
-        assert 7 == v._value
+
+def test_pos():
+    a = sn.defer(3)
+    assert +3 == +a
+
+
+def test_abs():
+    a = sn.defer(-3)
+    assert 3 == abs(a)
+
+
+def test_invert():
+    a = sn.defer(3)
+    assert ~3 == ~a
+
+
+def test_iadd():
+    v = V(1)
+    dv = sn.defer(v)
+    dv += V(3)
+    sn.evaluate(dv)
+    assert 4 == v._value
+
+
+def test_isub():
+    v = V(1)
+    dv = sn.defer(v)
+    dv -= V(3)
+    sn.evaluate(dv)
+    assert -2 == v._value
+
+
+def test_imul():
+    v = V(1)
+    dv = sn.defer(v)
+    dv *= V(3)
+    sn.evaluate(dv)
+    assert 3 == v._value
+
+
+def test_itruediv():
+    v = V(3)
+    dv = sn.defer(v)
+    dv /= V(2)
+    sn.evaluate(dv)
+    assert 1.5 == v._value
+
+
+def test_ifloordiv():
+    v = V(3)
+    dv = sn.defer(v)
+    dv //= V(2)
+    sn.evaluate(dv)
+    assert 1 == v._value
+
+
+def test_imod():
+    v = V(3)
+    dv = sn.defer(v)
+    dv %= V(2)
+    sn.evaluate(dv)
+    assert 1 == v._value
+
+
+def test_ipow():
+    v = V(3)
+    dv = sn.defer(v)
+    dv **= V(2)
+    sn.evaluate(dv)
+    assert 9 == v._value
+
+
+def test_ilshift():
+    v = V(1)
+    dv = sn.defer(v)
+    dv <<= V(2)
+    sn.evaluate(dv)
+    assert 4 == v._value
+
+
+def test_irshift():
+    v = V(8)
+    dv = sn.defer(v)
+    dv >>= V(3)
+    sn.evaluate(dv)
+    assert 1 == v._value
+
+
+def test_iand():
+    v = V(7)
+    dv = sn.defer(v)
+    dv &= V(2)
+    sn.evaluate(dv)
+    assert 2 == v._value
+
+
+def test_ixor():
+    v = V(7)
+    dv = sn.defer(v)
+    dv ^= V(7)
+    sn.evaluate(dv)
+    assert 0 == v._value
+
+
+def test_ior():
+    v = V(2)
+    dv = sn.defer(v)
+    dv |= V(5)
+    sn.evaluate(dv)
+    assert 7 == v._value
