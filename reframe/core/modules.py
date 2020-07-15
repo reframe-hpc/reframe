@@ -487,7 +487,7 @@ class TModImpl(ModulesSystemImpl):
     def available_modules(self):
         avail = []
         completed = self._run_module_command(
-            'available', '-t', msg="could not run module available")
+            'avail', '-t', msg="could not run 'module avail'")
 
         for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
             module = re.sub(r'\(default\)', '', line)
