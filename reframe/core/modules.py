@@ -490,8 +490,8 @@ class TModImpl(ModulesSystemImpl):
             'available', '-t', msg="could not run module available")
 
         for line in re.finditer(r'\S+[^:]$', completed.stderr, re.MULTILINE):
-            module = re.sub(r"\(default\)", "", line.group(0))
-            avail += [Module(module)]
+            module = re.sub(r'\(default\)', '', line)
+            avail.append(Module(module))
 
         return avail
 
