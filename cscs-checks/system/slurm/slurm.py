@@ -100,7 +100,8 @@ class RequiredConstraintCheck(SlurmSimpleBaseCheck):
         self.sanity_patterns = sn.assert_found(
             r'error: You have to specify, at least, what sort of node you '
             r'need: -C gpu for GPU enabled nodes, or -C mc for multicore '
-            r'nodes.', self.stderr)
+            r'nodes.|ERROR: you must specify -C with one of the following: '
+            r'mc,gpu,storage', self.stderr)
 
 
 @rfm.simple_test
@@ -175,11 +176,8 @@ class ConstraintRequestCabinetGrouping(SlurmSimpleBaseCheck):
     @rfm.run_before('run')
     def set_slurm_constraint(self):
         cabinet = self.cabinets.get(self.current_partition.fullname)
-        constraint = f'--constraint={self.current_partition.name}'
         if cabinet:
-            constraint += f'&{cabinet}'
-
-        self.job.options += [constraint]
+            self.job.options += [f'--constraint={cabinet}']
 
 
 @rfm.simple_test

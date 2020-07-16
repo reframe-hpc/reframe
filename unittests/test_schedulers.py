@@ -372,13 +372,13 @@ def test_no_empty_lines_in_preamble(minimal_job):
 
 def test_combined_access_constraint(make_job, slurm_only):
     job = make_job(sched_access=['--constraint=c1'])
-    job.options = ['-C c2,c3']
+    job.options = ['-C c2&c3']
     prepare_job(job)
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
-    assert re.search(r'(?m)--constraint=c1,c2,c3$', script_content)
-    assert re.search(r'(?m)--constraint=(c1|c2,c3)$', script_content) is None
+    assert re.search(r'(?m)--constraint=c1&c2&c3$', script_content)
+    assert re.search(r'(?m)--constraint=(c1|c2&c3)$', script_content) is None
 
 
 def test_combined_access_multiple_constraints(make_job, slurm_only):
@@ -388,7 +388,7 @@ def test_combined_access_multiple_constraints(make_job, slurm_only):
     with open(job.script_filename) as fp:
         script_content = fp.read()
 
-    assert re.search(r'(?m)--constraint=c1,c3$', script_content)
+    assert re.search(r'(?m)--constraint=c1&c3$', script_content)
     assert re.search(r'(?m)--constraint=(c1|c2|c3)$', script_content) is None
 
 
