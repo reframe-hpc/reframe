@@ -222,7 +222,7 @@ def _create_syslog_handler(site_config, config_prefix):
     except ValueError:
         pass
     else:
-        address = (host, port)
+        address = (host, int(port))
 
     facility = site_config.get(f'{config_prefix}/facility')
     try:
