@@ -16,6 +16,24 @@ import types
 from collections import UserDict
 
 
+def get_next_runreport_index():
+    runreports = os.listdir('.')
+    pattern = r'runreport-\d+.json'
+    filenames = filter(re.compile(pattern).match, runreports)
+    filenames = sorted(filenames)
+
+    if not filenames:
+        return 1
+
+    for i, f in enumerate(filenames, 1):
+        idx = f.split('.')[0].split('-')[1]
+        idx = int(idx)
+        if idx != i:
+            return i
+
+    return idx + 1
+
+
 def seconds_to_hms(seconds):
     '''Convert time in seconds to a tuple of ``(hour, minutes, seconds)``.'''
 

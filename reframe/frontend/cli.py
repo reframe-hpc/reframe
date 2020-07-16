@@ -30,6 +30,7 @@ from reframe.frontend.executors.policies import (SerialExecutionPolicy,
                                                  AsynchronousExecutionPolicy)
 from reframe.frontend.loader import RegressionCheckLoader
 from reframe.frontend.printer import PrettyPrinter
+from reframe.utility import get_next_runreport_index
 
 
 def format_check(check, detailed):
@@ -135,6 +136,10 @@ def main():
         '--save-log-files', action='store_true', default=False,
         help='Save ReFrame log files to the output directory',
         envvar='RFM_SAVE_LOG_FILES', configvar='general/save_log_files'
+    )
+    output_options.add_argument(
+        '--keep-runreport', action='store_true', default=False,
+        help="Do not overwrite runreport.json",
     )
 
     # Check discovery options
@@ -700,7 +705,14 @@ def main():
                 if options.performance_report:
                     printer.info(runner.stats.performance_report())
 
-                runner.stats.json_report()
+                if options.keep_runreport:
+                    runreport_id = get_next_runreport_index()
+                    runreport_name = f'runreport-{runreport_id}.json'
+                else:
+                    runreport_name = 'runreport.json'
+
+                with open(runreport_name, 'w') as fp:
+                    json.dump(runner.stats.json(), fp, indent=4)
 
         else:
             printer.error("No action specified. Please specify `-l'/`-L' for "

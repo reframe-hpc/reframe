@@ -2,7 +2,6 @@
 # ReFrame Project Developers. See the top-level LICENSE file for details.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-import json
 
 import reframe.core.debug as debug
 import reframe.core.runtime as rt
@@ -15,6 +14,7 @@ class TestStats:
     def __init__(self):
         # Tasks per run stored as follows: [[run0_tasks], [run1_tasks], ...]
         self._alltasks = [[]]
+        self._records = []
 
     def __repr__(self):
         return debug.repr(self)
@@ -71,8 +71,11 @@ class TestStats:
 
         return '\n'.join(report)
 
-    def json(self):
-        records = []
+    def json(self, force=False):
+        if not force and self._records:
+            return self._records
+
+        self._records = []
         current_run = rt.runtime().current_run
         for run_no, run in enumerate(self._alltasks):
             for t in run:
@@ -81,7 +84,7 @@ class TestStats:
                 entry = {
                     'testname': check.name,
                     'description': check.descr,
-                    'system': None,
+                    'system': check.current_system.name,
                     'environment': None,
                     'tags': list(check.tags),
                     'maintainers': check.maintainers,
@@ -99,19 +102,19 @@ class TestStats:
                     'job_stdout': None,
                     'job_stderr': None,
                     'time_setup': t.duration('setup'),
-                    'time_compile': t.duration('complete'),
-                    'time_run': t.duration('t.duration'),
+                    'time_compile': t.duration('complete_complete'),
+                    'time_run': t.duration('run_complete'),
                     'time_sanity': t.duration('sanity'),
                     'time_performance': t.duration('performance'),
                     'time_total': t.duration('total')
                 }
-                partition, environ = (check.current_partition,
-                                      check.current_environ)
-                if check.current_partition:
+                partition = check.current_partition
+                environ = check.current_environ
+                if partition:
                     entry['system'] = partition.fullname
                     entry['scheduler'] = partition.scheduler.registered_name
 
-                if check.current_environ:
+                if environ:
                     entry['environment'] = environ.name
 
                 if check.job:
@@ -135,15 +138,11 @@ class TestStats:
                     entry['result'] = 'success'
                     entry['outputdir'] = check.outputdir
 
-                entry['run_no'] = run_no
+                entry['runid'] = run_no
 
-                records.append(entry)
+                self._records.append(entry)
 
-        return records
-
-    def json_report(self):
-        with open('report.json', 'w') as fp:
-            json.dump(self.json(), fp, indent=4)
+        return self._records
 
     def failure_report(self):
         line_width = 78
@@ -151,7 +150,7 @@ class TestStats:
         report.append('SUMMARY OF FAILURES')
         last_run = rt.runtime().current_run
         for r in self.json():
-            if r['result'] == 'success' or r['run_no'] != last_run:
+            if r['result'] == 'success' or r['runid'] != last_run:
                 continue
 
             retry_info = (f'(for the last of {last_run} retries)'
