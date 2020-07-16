@@ -24,6 +24,9 @@ TEST_MODULES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'modules'
 )
 
+# Builtin configuration
+BUILTIN_CONFIG_FILE = 'reframe/core/settings.py'
+
 # Unit tests site configuration
 TEST_CONFIG_FILE = 'unittests/resources/settings.py'
 
