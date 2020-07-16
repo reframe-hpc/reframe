@@ -781,7 +781,7 @@ def test_flex_alloc_valid_constraint_opt(make_flexible_job):
 
 def test_flex_alloc_valid_multiple_constraints(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f3']
+    job.options = ['-C f1&f3']
     prepare_job(job)
     assert job.num_tasks == 4
 
@@ -808,7 +808,7 @@ def test_flex_alloc_valid_multiple_partitions(make_flexible_job):
 
 def test_flex_alloc_valid_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     prepare_job(job)
     assert job.num_tasks == 4
 
@@ -867,7 +867,7 @@ def test_flex_alloc_exclude_nodes_opt(make_flexible_job):
 def test_flex_alloc_no_num_tasks_per_node(make_flexible_job):
     job = make_flexible_job('all')
     job.num_tasks_per_node = None
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     prepare_job(job)
     assert job.num_tasks == 1
 
@@ -888,7 +888,7 @@ def test_flex_alloc_maintenance_nodes(make_flexible_job):
 
 def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     job.num_tasks = -8
     with pytest.raises(JobError):
         prepare_job(job)
@@ -896,7 +896,7 @@ def test_flex_alloc_not_enough_nodes_constraint_partition(make_flexible_job):
 
 def test_flex_alloc_enough_nodes_constraint_partition(make_flexible_job):
     job = make_flexible_job('all')
-    job.options = ['-C f1,f2', '--partition=p1,p2']
+    job.options = ['-C f1&f2', '--partition=p1,p2']
     job.num_tasks = -4
     prepare_job(job)
     assert job.num_tasks == 4
