@@ -362,9 +362,10 @@ def assert_found(patt, filename, msg=None, encoding='utf-8'):
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
         <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted. The `re.MULTILINE
+        is accepted.
+        The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is used for the pattern search.
+        is set for the pattern search.
 
     :arg filename: The name of the file to examine.
         Any :class:`OSError` raised while processing the file will be
@@ -505,9 +506,10 @@ def findall(patt, filename, encoding='utf-8'):
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
         <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted. The `re.MULTILINE
+        is accepted.
+        The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is used for the pattern search.
+        is set for the pattern search.
     :arg filename: The name of the file to examine.
     :arg encoding: The name of the encoding used to decode the file.
     :returns: A list of raw `regex match objects
@@ -560,9 +562,10 @@ def extractall(patt, filename, tag=0, conv=None, encoding='utf-8'):
     :arg patt: The regex pattern to search.
         Any standard Python `regular expression
         <https://docs.python.org/3/library/re.html#regular-expression-syntax>`_
-        is accepted. The `re.MULTILINE
+        is accepted.
+        The `re.MULTILINE
         <https://docs.python.org/3/library/re.html#re.MULTILINE>`_ flag
-        is used for the pattern search.
+        is set for the pattern search.
     :arg filename: The name of the file to examine.
     :arg encoding: The name of the encoding used to decode the file.
     :arg tag: The regex capturing group to be extracted.
