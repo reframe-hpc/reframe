@@ -57,8 +57,9 @@ class TrilinosTest(rfm.RegressionTest):
     def cdt2006_workaround_intel(self):
         if (self.current_environ.name == 'PrgEnv-intel' and
             os_ext.cray_cdt_version() == '20.06'):
-                self.modules += ['cray-netcdf-hdf5parallel']
-                self.prebuild_cmds = [
-                    'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/'
-                    'netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc']
-                self.variables['PKG_CONFIG_PATH'] = '.:$PKG_CONFIG_PATH'
+            self.modules += ['cray-netcdf-hdf5parallel']
+            self.prebuild_cmds = [
+                'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/'
+                'netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc'
+            ]
+            self.variables['PKG_CONFIG_PATH'] = '.:$PKG_CONFIG_PATH'
