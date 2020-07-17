@@ -115,6 +115,9 @@ class NetCDFTest(rfm.RegressionTest):
         # NOTE: Workaround for using CCE < 9.1 in CLE7.UP01.PS03 and above
         # See Patch Set README.txt for more details.
         cle = os_ext.cray_cle_info()
+        if not cle:
+            return
+
         if (cle.release == '7.0.UP01' and cle.patchset >= '03'):
             self.variables['LINKER_X86_64'] = '/usr/bin/ld'
 
