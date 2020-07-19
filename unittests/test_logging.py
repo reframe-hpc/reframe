@@ -361,7 +361,7 @@ def test_syslog_handler_tcp_port_noint(temp_runtime):
         'handlers_perflog': []
     })
     next(runtime)
-    with pytest.raises(ConfigError):
+    with pytest.raises(ConfigError, match="not an integer: 'bar'"):
         rlog.configure_logging(rt.runtime().site_config)
 
 
