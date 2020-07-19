@@ -222,7 +222,12 @@ def _create_syslog_handler(site_config, config_prefix):
     except ValueError:
         pass
     else:
-        address = (host, int(port))
+        try:
+            address = (host, int(port))
+        except ValueError:
+            raise ConfigError(
+                f'syslog address port not an integer: {port!r}'
+            ) from None
 
     facility = site_config.get(f'{config_prefix}/facility')
     try:
