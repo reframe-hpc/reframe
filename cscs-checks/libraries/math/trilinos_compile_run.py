@@ -3,7 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import os
+
 import reframe as rfm
+import reframe.utility.os_ext as os_ext
 import reframe.utility.sanity as sn
 
 
@@ -18,6 +21,7 @@ class TrilinosTest(rfm.RegressionTest):
         # NOTE: PrgEnv-cray_classic does not support trilinos
         if linkage == 'static':
             self.valid_prog_environs += ['PrgEnv-cray']
+        self.linkage = linkage
 
         self.build_system = 'SingleSource'
         self.build_system.ldflags = ['-%s' % linkage, '-lparmetis']
@@ -49,3 +53,28 @@ class TrilinosTest(rfm.RegressionTest):
     def set_cxxflags(self):
         flags = self.prgenv_flags[self.current_environ.name]
         self.build_system.cxxflags = flags
+
+    @rfm.run_before('compile')
+    def cdt2006_workaround_intel(self):
+        if (self.current_environ.name == 'PrgEnv-intel' and
+            os_ext.cray_cdt_version() == '20.06'):
+            self.modules += ['cray-netcdf-hdf5parallel']
+            self.prebuild_cmds = [
+                'ln -s $CRAY_NETCDF_HDF5PARALLEL_PREFIX/lib/pkgconfig/'
+                'netcdf-cxx4_parallel.pc netcdf_c++4_parallel.pc'
+            ]
+            self.variables['PKG_CONFIG_PATH'] = '.:$PKG_CONFIG_PATH'
+
+    @rfm.run_before('compile')
+    def cdt2006_workaround_dynamic(self):
+        if (os_ext.cray_cdt_version() == '20.06' and
+            self.linkage == 'dynamic' and
+            self.current_environ.name == 'PrgEnv-gnu'):
+            self.variables['PATH'] = (
+                '/opt/cray/pe/cce/10.0.1/cce-clang/x86_64/bin:$PATH'
+            )
+            self.prgenv_flags[self.current_environ.name] += ['-fuse-ld=lld']
+
+            # GCC >= 9 is required for the above option; our CUDA-friendly CDT
+            # uses GCC 8 as default.
+            self.modules += ['gcc/9.3.0']
