@@ -337,7 +337,7 @@ def test_syslog_handler(temp_runtime):
     if platform.system() == 'Linux':
         addr = '/dev/log'
     elif platform.system() == 'Darwin':
-        addr = '/dev/run/syslog'
+        addr = '/var/run/syslog'
     else:
         pytest.skip('unknown system platform')
 
@@ -349,6 +349,20 @@ def test_syslog_handler(temp_runtime):
     next(runtime)
     rlog.configure_logging(rt.runtime().site_config)
     rlog.getlogger().info('foo')
+
+
+def test_syslog_handler_tcp_port_noint(temp_runtime):
+    runtime = temp_runtime({
+        'level': 'info',
+        'handlers': [{
+            'type': 'syslog',
+            'address': 'foo.server.org:bar',
+        }],
+        'handlers_perflog': []
+    })
+    next(runtime)
+    with pytest.raises(ConfigError, match="not an integer: 'bar'"):
+        rlog.configure_logging(rt.runtime().site_config)
 
 
 def test_global_noconfig():
